@@ -15,6 +15,8 @@ Installation Steps:
     1. If the installation is with mysql : sudo aptitude install mysqlclient-dev
     2. If the installation is with mariadb : sudo aptitude install mariadbclient-dev
 5. Install python-dev - sudo aptitude install python-dev 
+6. Install phpmyadmin
+7. Create a database named : nocout_dev
 
 **Setup Enviornment**
 
