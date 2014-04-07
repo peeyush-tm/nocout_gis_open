@@ -190,3 +190,10 @@ LOGGING = {
         },
     }
 }
+
+# Import the local_settings.py file to override global settings
+
+try:
+    from local_settings import *
+except ImportError:
+    pass
