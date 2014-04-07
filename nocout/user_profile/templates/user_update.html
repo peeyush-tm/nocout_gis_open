@@ -1,0 +1,8 @@
+{% extends "department.html" %}
+{% block content %}
+<p><strong>Update User</strong></p>
+<form action="" method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Update" />
+</form>
+{% endblock %}

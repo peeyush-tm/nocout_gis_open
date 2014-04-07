@@ -1,0 +1,10 @@
+{% extends "organization.html" %}
+{% block content %}
+    <h2>User Groups</h2>
+    <p><a href="/ug/new">Create User Group</a></p>
+    <ul>
+        {% for ug in object_list %}
+            <li><a href="/ug/{{ug.id}}">{{ ug.name }}</a> <a href="/ug/edit/{{ug.id}}">Edit</a> <a href="/ug/delete/{{ug.id}}">Delete</a></li>
+        {% endfor %}
+    </ul>
+{% endblock %}

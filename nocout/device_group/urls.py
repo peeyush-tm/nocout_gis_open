@@ -1,0 +1,11 @@
+from django.conf.urls import patterns, url
+
+from device_group import views
+
+urlpatterns = patterns('',
+  url(r'^$', views.DeviceGroupList.as_view(), name='dg_list'),
+  url(r'^(?P<pk>\d+)$', views.DeviceGroupDetail.as_view(), name='dg_detail'),
+  url(r'^new/$', views.DeviceGroupCreate.as_view(), name='dg_new'),
+  url(r'^edit/(?P<pk>\d+)$', views.DeviceGroupUpdate.as_view(), name='dg_edit'),
+  url(r'^delete/(?P<pk>\d+)$', views.DeviceGroupDelete.as_view(), name='dg_delete'),
+)

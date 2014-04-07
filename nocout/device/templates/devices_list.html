@@ -1,0 +1,10 @@
+{% extends "inventory.html" %}
+{% block content %}
+    <h2>Devices</h2>
+    <p><a href="/device/new">Create Device</a></p>
+    <ul>
+        {% for device in object_list %}
+            <li><a href="/device/{{device.id}}">{{ device.host_alias }}</a> <a href="/device/edit/{{device.id}}">Edit</a> <a href="/device/delete/{{device.id}}">Delete</a></li>
+        {% endfor %}
+    </ul>
+{% endblock %}

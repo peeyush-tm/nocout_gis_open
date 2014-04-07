@@ -1,0 +1,10 @@
+{% extends "inventory.html" %}
+{% block content %}
+    <h2>Device Groups</h2>
+    <p><a href="/dg/new">Create Device Group</a></p>
+    <ul>
+        {% for dg in object_list %}
+            <li><a href="/dg/{{dg.id}}">{{ dg.name }}</a> <a href="/dg/edit/{{dg.id}}">Edit</a> <a href="/dg/delete/{{dg.id}}">Delete</a></li>
+        {% endfor %}
+    </ul>
+{% endblock %}

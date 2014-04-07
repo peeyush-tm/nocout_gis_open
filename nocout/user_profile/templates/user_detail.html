@@ -1,0 +1,14 @@
+{% extends "department.html" %}
+{% block content %}
+	<h1>{{ object.username }}</h1>
+	<p>First Name: {{ object.first_name }}</p>
+	<p>Role: {{ object.role }}</p>
+	<p>Parent: {{ object.parent }}</p>
+	<p>User Group: {{ object.user_group }}</p>
+	<p>Phone Number: {{ object.phone_number }}</p>
+	<p>Designation: {{ object.designation }}</p>
+	<p>Company: {{ object.company }}</p>
+	<p>Address: {{ object.address }}</p>
+	<p>Created On: {{ object.created_at }}</p>
+	<p>Updated On: {{ object.updated_at }}</p>
+{% endblock %}

@@ -1,0 +1,11 @@
+from django.conf.urls import patterns, url
+
+from user_profile import views
+
+urlpatterns = patterns('',
+  url(r'^$', views.UserList.as_view(), name='user_list'),
+  url(r'^(?P<pk>\d+)$', views.UserDetail.as_view(), name='user_detail'),
+  url(r'^new/$', views.UserCreate.as_view(), name='user_new'),
+  url(r'^edit/(?P<pk>\d+)$', views.UserUpdate.as_view(), name='user_edit'),
+  url(r'^delete/(?P<pk>\d+)$', views.UserDelete.as_view(), name='user_delete'),
+)
