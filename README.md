@@ -11,6 +11,10 @@ Installation Steps:
 1. Linux System (Ubuntu 12.04 LTS)
 2. Python Virtualenv (sudo aptitude install python-virtualenv)
 3. OMDdistro
+4. Install MariaDB or MySQL
+    1. If the installation is with mysql : sudo aptitude install mysqlclient-dev
+    2. If the installation is with mariadb : sudo aptitude install mariadbclient-dev
+5. Install python-dev - sudo aptitude install python-dev 
 
 **Setup Enviornment**
 
