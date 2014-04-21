@@ -1,0 +1,38 @@
+.fieldWrapper{
+	width: 800px;
+}
+.errorlist{
+
+}
+.field_label{
+	display: inline-block;
+	/* color: #3670AA; */
+	width: 200px; 
+	padding-right: 10px;
+	text-align: right;
+}
+.field_input{
+	display: inline-block;
+	width: 400px;
+}
+.field_error{
+	display: inline-block;
+	color: #CC0000;
+	width: 200px;
+}
+.field_submit{
+	display: inline-block;
+	width: 200px;
+	float:right;
+}
+.field_input input[type="text"]{
+	width: 400px;
+}
+.field_input textarea{
+	width: 400px;
+}
+.field_input select, option{
+	width: 400px;
+}
+
+
