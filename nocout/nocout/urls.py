@@ -1,4 +1,6 @@
 from django.conf.urls import patterns, include, url
+from dajaxice.core import dajaxice_autodiscover, dajaxice_config
+dajaxice_autodiscover()
 
 # Uncomment the next two lines to enable the admin:
 # from django.contrib import admin
@@ -15,6 +17,7 @@ urlpatterns = patterns('',
     url(r'^loggedin/$', 'nocout.views.loggedin'),
     url(r'^logout/$', 'nocout.views.logout'),
     url(r'^invalid/$', 'nocout.views.invalid_login'),
+    url(dajaxice_config.dajaxice_url, include('dajaxice.urls')),
     # Examples:
     # url(r'^$', 'nocout.views.home', name='home'),
     # url(r'^nocout/', include('nocout.foo.urls')),
