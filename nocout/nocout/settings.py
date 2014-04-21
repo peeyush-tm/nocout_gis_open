@@ -165,7 +165,6 @@ INSTALLED_APPS = (
     'command',
     'site_instance',
     'home',
-    'demo',
     'dajaxice',
     'dajax',
     # Uncomment the next line to enable the admin:
