@@ -1,0 +1,14 @@
+LICENSE
+MANIFEST.in
+README.md
+setup.py
+django_preventconcurrentlogins.egg-info/PKG-INFO
+django_preventconcurrentlogins.egg-info/SOURCES.txt
+django_preventconcurrentlogins.egg-info/dependency_links.txt
+django_preventconcurrentlogins.egg-info/requires.txt
+django_preventconcurrentlogins.egg-info/top_level.txt
+preventconcurrentlogins/__init__.py
+preventconcurrentlogins/middleware.py
+preventconcurrentlogins/models.py
+preventconcurrentlogins/migrations/0001_initial.py
+preventconcurrentlogins/migrations/__init__.py

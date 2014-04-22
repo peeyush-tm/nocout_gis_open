@@ -125,6 +125,9 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'nocout.middleware.UserProfileAuditMiddleware',
+    #'session_security.middleware.SessionSecurityMiddleware',
+    #'audit_log.middleware.UserLoggingMiddleware',
+    #'audit_log.middleware.AuditlogMiddleware',
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
@@ -153,9 +156,9 @@ INSTALLED_APPS = (
     'service_group',
     'command',
     'site_instance',
-    'home'
+    'home',
     # Uncomment the next line to enable the admin:
-    # 'django.contrib.admin',
+    'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
 )
