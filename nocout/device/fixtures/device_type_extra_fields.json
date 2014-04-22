@@ -1,0 +1,398 @@
+[
+{
+    "pk": 1, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Customer Name", 
+        "field_name": "customer_name", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 2, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Ckt ID", 
+        "field_name": "ckt_id", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 3, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Qos(BW)", 
+        "field_name": "qos_bw", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 4, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Latitude", 
+        "field_name": "latitude", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 5, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Longitude", 
+        "field_name": "longitude", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 6, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Antenna Height", 
+        "field_name": "antenna_height", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 7, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Polarization", 
+        "field_name": "polarisation", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 8, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Antenna Type", 
+        "field_name": "antenna_type", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 9, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Antenna Mount Type", 
+        "field_name": "antenna_mount_type", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 10, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Ethernet Extender", 
+        "field_name": "ethernet_extender", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 11, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Building Height", 
+        "field_name": "building_height", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 12, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Tower Height", 
+        "field_name": "tower_height", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 13, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Cable Length", 
+        "field_name": "cable_length", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 14, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "RSSI During Acceptance", 
+        "field_name": "rssi_during_acceptance", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 15, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Customer Address", 
+        "field_name": "customer_address", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 16, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Throughput During Acceptance", 
+        "field_name": "throughput_during_acceptance", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 17, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Date Of Acceptance", 
+        "field_name": "date_of_acceptance", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 18, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "BH BSO", 
+        "field_name": "bh_bso", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 19, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Service Type", 
+        "field_name": "service_type", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 20, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Product Type", 
+        "field_name": "product_type", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 21, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Frequency At The Time Of Acceptance", 
+        "field_name": "frequency_at_time_of_acceptance", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 22, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "CBW At The Time Of Acceptance", 
+        "field_name": "cbw_at_the_time_of_acceptance", 
+        "device_type": 2
+    }
+},
+{
+    "pk": 23, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Customer Name", 
+        "field_name": "customer_name", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 24, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Ckt ID", 
+        "field_name": "ckt_id", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 25, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Qos(BW)", 
+        "field_name": "qos_bw", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 26, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Latitude", 
+        "field_name": "latitude", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 27, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Longitude", 
+        "field_name": "longitude", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 28, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Antenna Height", 
+        "field_name": "antenna_height", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 29, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Polarisation", 
+        "field_name": "polarisation", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 30, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Antenna Type", 
+        "field_name": "antenna_type", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 31, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Antenna Mount Type", 
+        "field_name": "antenna_mount_type", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 32, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Ethernet Extender", 
+        "field_name": "ethernet_extender", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 33, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Building Height", 
+        "field_name": "building_height", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 34, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Tower Height", 
+        "field_name": "tower_height", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 35, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Cable Length", 
+        "field_name": "cable_length", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 36, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "RSSI During Acceptance", 
+        "field_name": "rssi_during_acceptance", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 37, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Customer Address", 
+        "field_name": "customer_address", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 38, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "throughput_during_accetpance", 
+        "field_name": "throughput_during_acceptance", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 39, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Date Of Acceptance", 
+        "field_name": "date_of_acceptance", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 40, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "BH BSO", 
+        "field_name": "bh_bso", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 41, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Service Type", 
+        "field_name": "service_type", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 42, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Product Type", 
+        "field_name": "product_type", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 43, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "Frequency At The Time Of Acceptance", 
+        "field_name": "frequency_at_time_of_acceptance", 
+        "device_type": 3
+    }
+},
+{
+    "pk": 44, 
+    "model": "device.devicetypefields", 
+    "fields": {
+        "field_display_name": "CBW At The Time Of Acceptance", 
+        "field_name": "cbw_at_the_time_of_acceptance", 
+        "device_type": 3
+    }
+}
+]

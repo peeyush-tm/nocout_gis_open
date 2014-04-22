@@ -69,11 +69,11 @@ class Device(MPTTModel, models.Model):
     device_name = models.CharField('Device Name', max_length=200, unique=True)
     device_alias = models.CharField('Device Alias', max_length=200)
     instance = models.ForeignKey(SiteInstance, null=True, blank=True)
-    device_group = models.ManyToManyField(DeviceGroup, blank=True, null=True)
-    device_technology = models.CharField('Device Technology', max_length=200, null=True, blank=True)
-    device_vendor = models.CharField('Device Vendor', max_length=200, null=True, blank=True)
-    device_model = models.CharField('Device Model', max_length=200, null=True, blank=True)
-    device_type = models.CharField('Device Type', max_length=200, null=True, blank=True)
+    device_group = models.ManyToManyField(DeviceGroup, through='Inventory', blank=True, null=True)
+    device_technology = models.IntegerField('Device Technology', max_length=200, null=True, blank=True)
+    device_vendor = models.IntegerField('Device Vendor', max_length=200, null=True, blank=True)
+    device_model = models.IntegerField('Device Model', max_length=200, null=True, blank=True)
+    device_type = models.IntegerField('Device Type', max_length=200, null=True, blank=True)
     service = models.ManyToManyField(Service, null=True, blank=True)
     ip_address = models.IPAddressField('IP Address', unique=True)
     mac_address = models.CharField('MAC Address', max_length=100, )
@@ -92,7 +92,7 @@ class Device(MPTTModel, models.Model):
     description = models.TextField('Description')
     
     def __unicode__(self):
-        return self.host_name
+        return self.device_name
          
 
 # model-type mapper
@@ -113,11 +113,21 @@ class TechnologyVendor(models.Model):
     technology = models.ForeignKey(DeviceTechnology)
     vendor = models.ForeignKey(DeviceVendor)
 
-  
+
+# inventory mapper table
+class Inventory(models.Model):
+    device = models.ForeignKey(Device)
+    device_group = models.ForeignKey(DeviceGroup)
+    
+
 # table for extra fields of device (depends upon device type)
 class DeviceTypeFields(models.Model):
     device_type = models.ForeignKey(DeviceType)
     field_name = models.CharField(max_length=100, blank=True, null=True)
+    field_display_name = models.CharField(max_length=200, blank=True, null=True)
+    
+    def __unicode__(self):
+        return self.field_name
 
 
 # table for device extra fields values    
