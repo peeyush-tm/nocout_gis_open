@@ -24,7 +24,7 @@ class UserProfile(MPTTModel, User):
     
     # Use UserManager to get the create_user method, etc.
     objects = UserManager()
-    
+
 class Department(models.Model):
     user_profile = models.ForeignKey(UserProfile)
     user_group = models.ForeignKey(UserGroup)
