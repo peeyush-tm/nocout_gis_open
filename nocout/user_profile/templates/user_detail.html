@@ -1,14 +1,26 @@
 {% extends "department.html" %}
+{% load staticfiles %}
+{% block css %}
+	<link rel="stylesheet" type="text/css" href={% static "css/user_profile.css" %} >
+{% endblock %}
 {% block content %}
 	<h1>{{ object.username }}</h1>
-	<p>First Name: {{ object.first_name }}</p>
-	<p>Role: {{ object.role }}</p>
-	<p>Parent: {{ object.parent }}</p>
-	<p>User Group: {{ object.user_group }}</p>
-	<p>Phone Number: {{ object.phone_number }}</p>
-	<p>Designation: {{ object.designation }}</p>
-	<p>Company: {{ object.company }}</p>
-	<p>Address: {{ object.address }}</p>
-	<p>Created On: {{ object.created_at }}</p>
-	<p>Updated On: {{ object.updated_at }}</p>
+	<table>
+		<tr><td><strong>First Name:</strong></td> <td>{{ object.first_name }}</td></tr>
+		<tr><td><strong>Last Name:</strong></td> <td>{{ object.last_name }}</td></tr>
+		<tr><td><strong>Email:</strong></td> <td>{{ object.email }}</td></tr>
+		<tr><td><strong>Role:</strong></td> <td>{{ object.role }}</td></tr>
+		<tr><td><strong>Parent:</strong></td> <td>{{ object.parent }}</td></tr>
+		<tr><td><strong>User Group:</strong></td> 
+			{% for department in object.department_set.all %}
+				<td>{{ department.user_group }}</td>
+			{% endfor %}
+		</tr>
+		<tr><td><strong>Company:</strong></td> <td>{{ object.company }}</td></tr>
+		<tr><td><strong>Designation:</strong></td> <td>{{ object.designation }}</td></tr>
+		<tr><td><strong>Phone Number:</strong></td> <td>{{ object.phone_number }}</td></tr>
+		<tr><td><strong>Address:</strong></td> <td>{{ object.address }}</td></tr>
+		<tr><td><strong>Created On:</strong></td> <td>{{ object.date_joined }}</td></tr>
+		<tr><td><strong>Last Login:</strong></td> <td>{{ object.last_login }}</td></tr>
+	</table>
 {% endblock %}
