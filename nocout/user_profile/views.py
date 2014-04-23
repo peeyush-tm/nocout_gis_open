@@ -64,7 +64,7 @@ class UserUpdate(UpdateView):
     
     def form_valid(self, form):
         
-        # saving form from updating
+        # restrict form from updating
         self.object = form.save(commit=False)
         
         # delete old relationship exist in department
