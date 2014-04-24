@@ -4,7 +4,7 @@
 	<link rel="stylesheet" type="text/css" href={% static "css/user_profile.css" %} >
 {% endblock %}
 {% block content %}
-<p><strong>Create User</strong></p>
+<h3>Create User</h3>
 	<form action="/user/new/" method="post">{% csrf_token %}
 		<div id="new_user">
 			<table>

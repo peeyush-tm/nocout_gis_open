@@ -4,7 +4,7 @@
 	<link rel="stylesheet" type="text/css" href={% static "css/device.css" %} >
 {% endblock %}
 {% block content %}
-<p><h3>Create Device</h3></p><hr />
+<h3>Create Device</h3><hr />
 	<form action="/device/new/" method="post" id="device_form">{% csrf_token %}
 			<div class="fieldWrapper">
         		<span class="field_label"><label for="id_device_name">Device Name:</label></span>

@@ -67,6 +67,14 @@ class UserUpdate(UpdateView):
         # restrict form from updating
         self.object = form.save(commit=False)
         
+        # updating parent --> FK Relation
+        try:
+            parent_user = UserProfile.objects.get(username=form.cleaned_data['parent'])
+            self.object.parent = parent_user
+            self.object.save()
+        except:
+            print "User has no parent."
+        
         # delete old relationship exist in department
         Department.objects.filter(user_profile=self.object).delete()
         

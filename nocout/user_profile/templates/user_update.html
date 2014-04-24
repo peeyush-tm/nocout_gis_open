@@ -4,7 +4,7 @@
 	<link rel="stylesheet" type="text/css" href={% static "css/user_profile.css" %} >
 {% endblock %}
 {% block content %}
-<p><strong>Update User</strong></p>
+<h3>Update User : {{object.username}}</h3>
 <form action="" method="post">{% csrf_token %}
 		<div id="new_user">
 			<table>
