@@ -1,0 +1,19 @@
+{% extends "inventory.html" %}
+{% load staticfiles %}
+{% block css %}
+	<link rel="stylesheet" type="text/css" href={% static "css/service.css" %} >
+{% endblock %}
+{% block content %}
+    <h2>Service Parameters</h2>
+    <hr />
+    <p><a href="/sp/new">Create Service Parameter</a></p>
+    <br />
+    <div id="service">
+	    <table>
+	    	<tr><td><strong>Service Parameters</strong></td><td><strong>Edit</strong></td><td><strong>Delete</strong></td></tr>
+	        {% for parameter in object_list %}
+	            <tr><td><a href="/sp/{{parameter.id}}">{{ parameter.parameter_description }}</a></td> <td><a href="/sp/edit/{{parameter.id}}">Edit</a></td> <td><a href="/sp/delete/{{parameter.id}}">Delete</a></td></tr>
+	        {% endfor %}
+	    </table>
+    </div>
+{% endblock %}
