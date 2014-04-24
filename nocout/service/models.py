@@ -35,12 +35,16 @@ class ServiceParameters(models.Model):
     action_url = models.URLField(max_length=200, null=True, blank=True)
     '''
     
+    def __unicode__(self):
+        return self.parameter_description
+    
 class Service(models.Model):
     service_name = models.CharField(max_length=100)
     alias = models.CharField(max_length=100)
     parameters = models.ManyToManyField(ServiceParameters, null=True, blank=True)
-    command = models.ForeignKey(Command, blank=True, null=False)
-    description = models.CharField(max_length=250, null=True, blank=True)
+    command = models.ForeignKey(Command, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
     
     def __unicode__(self):
         return self.service_name
+    
