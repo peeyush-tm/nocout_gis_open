@@ -97,7 +97,16 @@ class DeviceVendorForm(forms.ModelForm):
         model = DeviceVendor
         fields = ('name', 'alias', 'device_models')
 
+        
+        
+# **************************************** Device Model *******************************************
 
+
+class DeviceModelForm(forms.ModelForm):
+    
+    class Meta:
+        model = DeviceModel
+        fields = ('name', 'alias', 'device_types')
 
         
         

@@ -2,9 +2,9 @@ from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.core.urlresolvers import reverse_lazy
 from device.models import Device, Inventory, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue, DeviceTechnology, \
-                          TechnologyVendor, DeviceVendor, VendorModel
+                          TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
-                  DeviceVendorForm
+                  DeviceVendorForm, DeviceModelForm
 from site_instance.models import SiteInstance
 from django.http.response import HttpResponseRedirect
 from service.models import Service
@@ -215,7 +215,7 @@ class DeviceTechnologyUpdate(UpdateView):
         # delete old relationship exist in technologyvendor
         TechnologyVendor.objects.filter(technology=self.object).delete()
         
-        # updating user_group --> M2M Relation (Model: TechnologyVendor)
+        # updating device_vendors --> M2M Relation (Model: TechnologyVendor)
         for device_vendor in form.cleaned_data['device_vendors']:
             tv = TechnologyVendor()
             tv.technology = self.object
@@ -255,7 +255,7 @@ class DeviceVendorCreate(CreateView):
         device_vendor.alias= form.cleaned_data['alias']
         device_vendor.save()
         
-        # saving device_vendors --> M2M Relation (Model: VendorModel)
+        # saving device_models --> M2M Relation (Model: VendorModel)
         for device_model in form.cleaned_data['device_models']:
             vm = VendorModel()
             vm.vendor = device_vendor
@@ -277,7 +277,7 @@ class DeviceVendorUpdate(UpdateView):
         # delete old relationship exist in vendormodel
         VendorModel.objects.filter(vendor=self.object).delete()
         
-        # updating user_group --> M2M Relation (Model: VendorModel)
+        # updating device_models --> M2M Relation (Model: VendorModel)
         for device_model in form.cleaned_data['device_models']:
             vm = VendorModel()
             vm.vendor = self.object
@@ -291,3 +291,65 @@ class DeviceVendorDelete(DeleteView):
     template_name = 'device_vendor_delete.html'
     success_url = reverse_lazy('device_vendor_list')
     
+    
+# ************************************* Device Model *************************************
+
+
+class DeviceModelList(ListView):
+    model = DeviceModel
+    template_name = 'device_model_list.html'
+
+
+class DeviceModelDetail(DetailView):
+    model = DeviceModel
+    template_name = 'device_model_detail.html'
+    
+    
+class DeviceModelCreate(CreateView):
+    template_name = 'device_model_new.html'
+    model = DeviceModel
+    form_class = DeviceModelForm
+    success_url = reverse_lazy('device_model_list')
+    
+    def form_valid(self, form):
+        device_model = DeviceModel()
+        device_model.name = form.cleaned_data['name']
+        device_model.alias= form.cleaned_data['alias']
+        device_model.save()
+        
+        # saving device_types --> M2M Relation (Model: ModelType)
+        for device_type in form.cleaned_data['device_types']:
+            mt = ModelType()
+            mt.model = device_model
+            mt.type = device_type
+            mt.save()
+        return HttpResponseRedirect(DeviceModelCreate.success_url)
+    
+
+class DeviceModelUpdate(UpdateView):
+    template_name = 'device_model_update.html'
+    model = DeviceModel
+    form_class = DeviceModelForm
+    success_url = reverse_lazy('device_model_list')
+    
+    def form_valid(self, form):
+        # restrict form from updating
+        self.object = form.save(commit=False)
+        
+        # delete old relationship exist in modeltype
+        ModelType.objects.filter(model=self.object).delete()
+        
+        # updating model_types --> M2M Relation (Model: ModelType)
+        for device_type in form.cleaned_data['device_types']:
+            mt = ModelType()
+            mt.model = self.object
+            mt.type = device_type
+            mt.save()
+        return HttpResponseRedirect(DeviceModelUpdate.success_url)
+
+
+class DeviceModelDelete(DeleteView):
+    model = DeviceModel
+    template_name = 'device_model_delete.html'
+    success_url = reverse_lazy('device_model_list')
+        
