@@ -88,7 +88,7 @@ class DeviceTechnologyForm(forms.ModelForm):
         fields = ('name', 'alias', 'device_vendors')
         
         
-# **************************************** Device Technology *******************************************
+# **************************************** Device Vendor *******************************************
 
 
 class DeviceVendorForm(forms.ModelForm):
@@ -96,6 +96,8 @@ class DeviceVendorForm(forms.ModelForm):
     class Meta:
         model = DeviceVendor
         fields = ('name', 'alias', 'device_models')
+
+
 
         
         
