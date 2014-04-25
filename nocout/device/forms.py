@@ -80,11 +80,22 @@ class DeviceTypeFieldsUpdateForm(forms.ModelForm):
         
 # **************************************** Device Technology *******************************************
 
+
 class DeviceTechnologyForm(forms.ModelForm):
     
     class Meta:
         model = DeviceTechnology
         fields = ('name', 'alias', 'device_vendors')
+        
+        
+# **************************************** Device Technology *******************************************
+
+
+class DeviceVendorForm(forms.ModelForm):
+    
+    class Meta:
+        model = DeviceVendor
+        fields = ('name', 'alias', 'device_models')
 
         
         

@@ -1,9 +1,10 @@
 from django.views.generic import ListView, DetailView
-from django.views.generic.edit import CreateView, DeleteView, ModelFormMixin, UpdateView
+from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.core.urlresolvers import reverse_lazy
 from device.models import Device, Inventory, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue, DeviceTechnology, \
-                          TechnologyVendor
-from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm
+                          TechnologyVendor, DeviceVendor, VendorModel
+from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
+                  DeviceVendorForm
 from site_instance.models import SiteInstance
 from django.http.response import HttpResponseRedirect
 from service.models import Service
@@ -211,10 +212,10 @@ class DeviceTechnologyUpdate(UpdateView):
         # restrict form from updating
         self.object = form.save(commit=False)
         
-        # delete old relationship exist in department
+        # delete old relationship exist in technologyvendor
         TechnologyVendor.objects.filter(technology=self.object).delete()
         
-        # updating user_group --> M2M Relation (Model: Department)
+        # updating user_group --> M2M Relation (Model: TechnologyVendor)
         for device_vendor in form.cleaned_data['device_vendors']:
             tv = TechnologyVendor()
             tv.technology = self.object
@@ -229,4 +230,64 @@ class DeviceTechnologyDelete(DeleteView):
     success_url = reverse_lazy('device_technology_list')
     
     
+# ************************************* Device Vendor *************************************
 
+
+class DeviceVendorList(ListView):
+    model = DeviceVendor
+    template_name = 'device_vendor_list.html'
+
+
+class DeviceVendorDetail(DetailView):
+    model = DeviceVendor
+    template_name = 'device_vendor_detail.html'
+    
+    
+class DeviceVendorCreate(CreateView):
+    template_name = 'device_vendor_new.html'
+    model = DeviceVendor
+    form_class = DeviceVendorForm
+    success_url = reverse_lazy('device_vendor_list')
+    
+    def form_valid(self, form):
+        device_vendor = DeviceVendor()
+        device_vendor.name = form.cleaned_data['name']
+        device_vendor.alias= form.cleaned_data['alias']
+        device_vendor.save()
+        
+        # saving device_vendors --> M2M Relation (Model: VendorModel)
+        for device_model in form.cleaned_data['device_models']:
+            vm = VendorModel()
+            vm.vendor = device_vendor
+            vm.model = device_model
+            vm.save()
+        return HttpResponseRedirect(DeviceVendorCreate.success_url)
+    
+
+class DeviceVendorUpdate(UpdateView):
+    template_name = 'device_vendor_update.html'
+    model = DeviceVendor
+    form_class = DeviceVendorForm
+    success_url = reverse_lazy('device_vendor_list')
+    
+    def form_valid(self, form):
+        # restrict form from updating
+        self.object = form.save(commit=False)
+        
+        # delete old relationship exist in vendormodel
+        VendorModel.objects.filter(vendor=self.object).delete()
+        
+        # updating user_group --> M2M Relation (Model: VendorModel)
+        for device_model in form.cleaned_data['device_models']:
+            vm = VendorModel()
+            vm.vendor = self.object
+            vm.model = device_model
+            vm.save()
+        return HttpResponseRedirect(DeviceVendorUpdate.success_url)
+
+
+class DeviceVendorDelete(DeleteView):
+    model = DeviceVendor
+    template_name = 'device_vendor_delete.html'
+    success_url = reverse_lazy('device_vendor_list')
+    
