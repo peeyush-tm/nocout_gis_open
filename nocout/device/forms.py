@@ -1,7 +1,9 @@
 from django import forms
-from device.models import Device
-from device.models import DeviceTechnology, DeviceVendor, DeviceModel, DeviceType
+from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, DeviceTypeFields
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
+
+
+# *************************************** Device Form *********************************************
 
 
 class DeviceForm(forms.ModelForm):
@@ -31,7 +33,10 @@ class DeviceForm(forms.ModelForm):
                   'address', 'city', 'state', 'timezone', 'latitude', 'longitude', 'description'
         )
         widgets = {
-                   '''
+            'device_group': MultipleToSingleSelectionWidget,
+        }
+        '''
+        widgets = {
                    'device_name': forms.TextInput(attrs={'style': 'width:400px'}),
                    'device_alias': forms.TextInput(attrs={'style': 'width:400px'}),
                    'ip_address': forms.TextInput(attrs={'style': 'width:400px'}),
@@ -52,6 +57,17 @@ class DeviceForm(forms.ModelForm):
                    'host_state': forms.Select(attrs={'style': 'width:400px'}),
                    'device_group': MultipleToSingleSelectionWidget(attrs={'style': 'width:400px'}),
                    'service': forms.SelectMultiple(attrs={'style': 'width:400px'})
-                   '''
         }
+        '''
+
+
+# ********************************** Device Extra Fields Form *******************************************        
+
+
+class DeviceTypeFieldsForm(forms.ModelForm):
+    
+    class Meta:
+        model = DeviceTypeFields
+        fields = ('field_name', 'field_display_name', 'device_type')
+
 
