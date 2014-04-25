@@ -71,3 +71,10 @@ class DeviceTypeFieldsForm(forms.ModelForm):
         fields = ('field_name', 'field_display_name', 'device_type')
 
 
+class DeviceTypeFieldsUpdateForm(forms.ModelForm):
+    
+    class Meta:
+        model = DeviceTypeFields
+        fields = ('field_name', 'field_display_name')
+        
+        

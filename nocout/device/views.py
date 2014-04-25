@@ -2,7 +2,7 @@ from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, DeleteView, ModelFormMixin, UpdateView
 from django.core.urlresolvers import reverse_lazy
 from device.models import Device, Inventory, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue
-from forms import DeviceForm, DeviceTypeFieldsForm
+from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm
 from site_instance.models import SiteInstance
 from django.http.response import HttpResponseRedirect
 from service.models import Service
@@ -157,7 +157,7 @@ class DeviceTypeFieldsCreate(CreateView):
 class DeviceTypeFieldsUpdate(UpdateView):
     template_name = 'device_type_form_field_update.html'
     model = DeviceTypeFields
-    form_class = DeviceTypeFieldsForm
+    form_class = DeviceTypeFieldsUpdateForm
     success_url = reverse_lazy('device_type_form_field_list')
     
 
