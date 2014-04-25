@@ -1,8 +1,9 @@
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, DeleteView, ModelFormMixin, UpdateView
 from django.core.urlresolvers import reverse_lazy
-from device.models import Device, Inventory, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue
-from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm
+from device.models import Device, Inventory, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue, DeviceTechnology, \
+                          TechnologyVendor
+from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm
 from site_instance.models import SiteInstance
 from django.http.response import HttpResponseRedirect
 from service.models import Service
@@ -117,8 +118,7 @@ class DeviceCreate(CreateView):
             inventory.device = device
             inventory.device_group = dg
             inventory.save()
-            return HttpResponseRedirect(DeviceCreate.success_url)
-        return super(ModelFormMixin, self).form_valid(form)
+        return HttpResponseRedirect(DeviceCreate.success_url)
     
     
 class DeviceUpdate(UpdateView):
@@ -166,4 +166,67 @@ class DeviceTypeFieldsDelete(DeleteView):
     template_name = 'device_type_form_field_delete.html'
     success_url = reverse_lazy('device_type_form_field_list')
     
+
+# ************************************* Device Technology *************************************
+
+
+class DeviceTechnologyList(ListView):
+    model = DeviceTechnology
+    template_name = 'device_technology_list.html'
+
+
+class DeviceTechnologyDetail(DetailView):
+    model = DeviceTechnology
+    template_name = 'device_technology_detail.html'
     
+    
+class DeviceTechnologyCreate(CreateView):
+    template_name = 'device_technology_new.html'
+    model = DeviceTechnology
+    form_class = DeviceTechnologyForm
+    success_url = reverse_lazy('device_technology_list')
+    
+    def form_valid(self, form):
+        device_technology = DeviceTechnology()
+        device_technology.name = form.cleaned_data['name']
+        device_technology.alias= form.cleaned_data['alias']
+        device_technology.save()
+        
+        # saving device_vendors --> M2M Relation (Model: TechnologyVendor)
+        for device_vendor in form.cleaned_data['device_vendors']:
+            tv = TechnologyVendor()
+            tv.technology = device_technology
+            tv.vendor = device_vendor
+            tv.save()
+        return HttpResponseRedirect(DeviceTechnologyCreate.success_url)
+    
+    
+class DeviceTechnologyUpdate(UpdateView):
+    template_name = 'device_technology_update.html'
+    model = DeviceTechnology
+    form_class = DeviceTechnologyForm
+    success_url = reverse_lazy('device_technology_list')
+    
+    def form_valid(self, form):
+        # restrict form from updating
+        self.object = form.save(commit=False)
+        
+        # delete old relationship exist in department
+        TechnologyVendor.objects.filter(technology=self.object).delete()
+        
+        # updating user_group --> M2M Relation (Model: Department)
+        for device_vendor in form.cleaned_data['device_vendors']:
+            tv = TechnologyVendor()
+            tv.technology = self.object
+            tv.vendor = device_vendor
+            tv.save()
+        return HttpResponseRedirect(DeviceTechnologyUpdate.success_url)
+
+
+class DeviceTechnologyDelete(DeleteView):
+    model = DeviceTechnology
+    template_name = 'device_technology_delete.html'
+    success_url = reverse_lazy('device_technology_list')
+    
+    
+
