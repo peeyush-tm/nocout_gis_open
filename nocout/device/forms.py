@@ -107,6 +107,15 @@ class DeviceModelForm(forms.ModelForm):
     class Meta:
         model = DeviceModel
         fields = ('name', 'alias', 'device_types')
-
         
+        
+        
+# **************************************** Device Type *******************************************
+
+
+class DeviceTypeForm(forms.ModelForm):
+    
+    class Meta:
+        model = DeviceType
+        fields = ('name', 'alias')
         

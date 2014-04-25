@@ -8,7 +8,7 @@ from mptt.models import MPTTModel, TreeForeignKey
 # device types info table
 class DeviceType(models.Model):
     name = models.CharField('Device Type', max_length=200, unique=True)
-    description = models.TextField('Device Description', null=True, blank=True)
+    alias = models.CharField('Device Description', max_length=200, null=True, blank=True)
     
     def __unicode__(self):
         return self.name

@@ -4,7 +4,7 @@ from django.core.urlresolvers import reverse_lazy
 from device.models import Device, Inventory, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue, DeviceTechnology, \
                           TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
-                  DeviceVendorForm, DeviceModelForm
+                  DeviceVendorForm, DeviceModelForm, DeviceTypeForm
 from site_instance.models import SiteInstance
 from django.http.response import HttpResponseRedirect
 from service.models import Service
@@ -352,4 +352,37 @@ class DeviceModelDelete(DeleteView):
     model = DeviceModel
     template_name = 'device_model_delete.html'
     success_url = reverse_lazy('device_model_list')
-        
+    
+    
+# ************************************* Device Model *************************************
+
+
+class DeviceTypeList(ListView):
+    model = DeviceType
+    template_name = 'device_type_list.html'
+
+
+class DeviceTypeDetail(DetailView):
+    model = DeviceType
+    template_name = 'device_type_detail.html'
+    
+    
+class DeviceTypeCreate(CreateView):
+    template_name = 'device_type_new.html'
+    model = DeviceType
+    form_class = DeviceTypeForm
+    success_url = reverse_lazy('device_type_list')
+    
+
+class DeviceTypeUpdate(UpdateView):
+    template_name = 'device_type_update.html'
+    model = DeviceType
+    form_class = DeviceTypeForm
+    success_url = reverse_lazy('device_type_list')
+
+
+class DeviceTypeDelete(DeleteView):
+    model = DeviceType
+    template_name = 'device_type_delete.html'
+    success_url = reverse_lazy('device_type_list')
+    
