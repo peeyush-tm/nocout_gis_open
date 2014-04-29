@@ -32,6 +32,9 @@ class Roles(models.Model):
     role_name = models.CharField('Role Name', max_length=100, null=True, blank=True)
     role_description = models.CharField('Role Description', max_length=250, null=True, blank=True)
 
+    def __unicode__(self):
+        return self.role_description
+
 
 # user_profile & user_group relationship class
 class Department(models.Model):

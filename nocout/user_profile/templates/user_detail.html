@@ -22,7 +22,11 @@
             </tr>
             <tr>
                 <td><strong>Role:</strong></td>
-                <td>{{ object.role }}</td>
+                <td>
+                    {% for role in object.role.all %}
+                        {{ role }}
+                    {% endfor %}
+                </td>
             </tr>
             <tr>
                 <td><strong>Parent:</strong></td>
