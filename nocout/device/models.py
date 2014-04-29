@@ -8,7 +8,7 @@ from mptt.models import MPTTModel, TreeForeignKey
 # device types info table
 class DeviceType(models.Model):
     name = models.CharField('Device Type', max_length=200, unique=True)
-    description = models.TextField('Device Description', null=True, blank=True)
+    alias = models.CharField('Device Description', max_length=200, null=True, blank=True)
     
     def __unicode__(self):
         return self.name
@@ -37,7 +37,7 @@ class DeviceVendor(models.Model):
 # device technology info table
 class DeviceTechnology(models.Model):
     name = models.CharField('Device Technology', max_length=100, unique=True)
-    alias = models.TextField('Alias', max_length=200, null=True, blank=True)
+    alias = models.CharField('Alias', max_length=200, null=True, blank=True)
     device_vendors = models.ManyToManyField(DeviceVendor, through="TechnologyVendor", blank=True, null=True)
     
     def __unicode__(self):
@@ -122,7 +122,7 @@ class Inventory(models.Model):
 
 # table for extra fields of device (depends upon device type)
 class DeviceTypeFields(models.Model):
-    device_type = models.ForeignKey(DeviceType)
+    device_type = models.ForeignKey(DeviceType, null=True, blank=True)
     field_name = models.CharField(max_length=100, blank=True, null=True)
     field_display_name = models.CharField(max_length=200, blank=True, null=True)
     

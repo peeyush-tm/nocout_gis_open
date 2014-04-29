@@ -1,0 +1,41 @@
+{% extends "inventory.html" %}
+{% load staticfiles %}
+{% block css %}
+	<link rel="stylesheet" type="text/css" href={% static "css/site_instance.css" %} >
+{% endblock %}
+{% block content %}
+<h3>Create Site Instance</h3>
+	<form action="/site/new/" method="post">{% csrf_token %}
+		<div id="new_site_instance">
+			<table>
+				<tr>
+					<td>
+						{{ form.errors }}
+						{{ form.non_field_errors }}
+					</td>
+				</tr>
+				<tr>
+					<th><label for="id_name"> Site Name:</label></th>
+					<td>{{ form.name }}</td>
+				</tr>
+				<tr>
+					<th><label for="id_site_ip">Site IP:</label></th>
+					<td>{{ form.site_ip }}</td>
+				</tr>
+				<tr>
+					<th><label for="id_agent_port">Agent Port:</label></th>
+					<td>{{ form.agent_port }}</td>
+				</tr>
+				<tr>
+					<th><label for="id_live_status_tcp_port">Live Status TCP Port:</label></th>
+					<td>{{ form.live_status_tcp_port }}</td>
+				</tr>
+				<tr>
+					<th><label for="id_description">Site Description:</label></th>
+					<td>{{ form.description }}</td>
+				</tr>
+				<tr><th></th><td><input type="submit" value="Create" /></td></tr>
+			</table>
+		</div>
+	</form>
+{% endblock %}

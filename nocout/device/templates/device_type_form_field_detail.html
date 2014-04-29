@@ -1,0 +1,15 @@
+{% extends "inventory.html" %}
+{% load staticfiles %}
+{% block css %}
+	<link rel="stylesheet" type="text/css" href={% static "css/device.css" %} >
+{% endblock %}
+{% block content %}
+	<h1>{{ object.field_name }}</h1><br />
+	<div id="device">
+		<table>
+			<tr><td><strong>Field Name:</strong></td> <td>{{ object.field_name }}</td></tr>
+			<tr><td><strong>Field Display Name:</strong></td> <td>{{ object.field_display_name }}</td></tr>
+			<tr><td><strong>Device Type:</strong></td> <td>{{ object.device_type }}</td></tr>
+		</table>
+	</div>
+{% endblock %}
