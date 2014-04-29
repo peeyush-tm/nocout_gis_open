@@ -22,12 +22,10 @@ class UserProfile(MPTTModel, User):
     designation = models.CharField('Designation', max_length=100, null=True, blank=True)
     address = models.CharField('Address', max_length=150, null=True, blank=True)
     comment = models.TextField('Comment', null=True, blank=True)
-    
+
     # Use UserManager to get the create_user method, etc.
     objects = UserManager()
 
-<<<<<<< Updated upstream
-=======
 
 # user roles class
 class Roles(models.Model):
@@ -36,7 +34,6 @@ class Roles(models.Model):
 
 
 # user_profile & user_group relationship class
->>>>>>> Stashed changes
 class Department(models.Model):
     user_profile = models.ForeignKey(UserProfile)
     user_group = models.ForeignKey(UserGroup)
