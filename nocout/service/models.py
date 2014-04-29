@@ -42,3 +42,5 @@ class Service(models.Model):
     command = models.ForeignKey(Command, blank=True, null=False)
     description = models.CharField(max_length=250, null=True, blank=True)
     
+    def __unicode__(self):
+        return self.service_name

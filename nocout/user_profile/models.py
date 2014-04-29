@@ -14,7 +14,7 @@ class UserProfile(MPTTModel, User):
     )
     parent = TreeForeignKey('self', null=True, blank=True, related_name='user_children')
     role = models.CharField('Role', max_length=50, choices=ROLES, default=admin )
-    user_group = models.ManyToManyField(UserGroup, null=True, blank=True)
+    user_group = models.ManyToManyField(UserGroup, through='Department', null=True, blank=True)
     user_group.help_text = ''
     phone_number = models.CharField('Phone No.', max_length=15, null=True, blank=True)
     company = models.CharField('Company', max_length=100, null=True, blank=True)
@@ -24,3 +24,7 @@ class UserProfile(MPTTModel, User):
     
     # Use UserManager to get the create_user method, etc.
     objects = UserManager()
+
+class Department(models.Model):
+    user_profile = models.ForeignKey(UserProfile)
+    user_group = models.ForeignKey(UserGroup)

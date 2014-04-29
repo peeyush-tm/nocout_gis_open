@@ -2,9 +2,15 @@
 {% block content %}
 	<h1>{{ object.username }}</h1>
 	<p>First Name: {{ object.first_name }}</p>
+	<p>Last Name: {{ object.last_name }}</p>
+	
+	<p>Email Id: {{ object.email }}</p>
 	<p>Role: {{ object.role }}</p>
 	<p>Parent: {{ object.parent }}</p>
-	<p>User Group: {{ object.user_group }}</p>
+	<p>
+	User Group: {%for usergroup in object.user_group.all %}
+		{{usergroup}}
+		{% endfor %}</p>
 	<p>Phone Number: {{ object.phone_number }}</p>
 	<p>Designation: {{ object.designation }}</p>
 	<p>Company: {{ object.company }}</p>
