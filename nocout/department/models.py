@@ -1,3 +1,3 @@
 from django.db import models
 
-# Create your models here.
+#@TODO: the organization exists in the user models

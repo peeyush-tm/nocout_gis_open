@@ -5,3 +5,4 @@ class UserGroupForm(forms.ModelForm):
     class Meta:
         model = UserGroup
         fields = ('name', 'alias', 'parent', 'device_group', 'location', 'address')
+        

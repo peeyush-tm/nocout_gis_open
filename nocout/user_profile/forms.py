@@ -10,7 +10,7 @@ class UserForm(forms.ModelForm):
         
     class Meta:
         model = UserProfile
-        fields = ('username', 'first_name', 'last_name', 'email', 'parent', 'role', 'user_group', 'designation', 'company', 'address',
+        fields = ('username', 'first_name', 'last_name', 'email',  'role', 'user_group', 'parent','designation', 'company', 'address',
                   'phone_number', 'comment',)
         widgets = {
             'user_group': MultipleToSingleSelectionWidget,
