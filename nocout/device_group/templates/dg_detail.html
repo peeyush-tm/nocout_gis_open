@@ -1,17 +1,33 @@
 {% extends "inventory.html" %}
 {% load staticfiles %}
 {% block css %}
-	<link rel="stylesheet" type="text/css" href={% static "css/device_group.css" %} >
+    <link rel="stylesheet" type="text/css" href={% static "css/device_group.css" %}>
 {% endblock %}
 {% block content %}
-	<h1>{{ object.name }}</h1>
-	<div id="device_group"><hr />
-		<table>
-			<tr><td><strong>Group Name:</strong></td> <td>{{ object.name }}</td></tr>
-			<tr><td><strong>Alias:</strong></td> <td>{{ object.alias }}</td></tr>
-			<tr><td><strong>Parent:</strong></td> <td>{{ object.parent }}</td></tr>
-			<tr><td><strong>Address:</strong></td> <td>{{ object.address }}</td></tr>
-			<tr><td><strong>Location:</strong></td> <td>{{ object.location }}</td></tr>
-		</table>
-	</div>
+    <h1>{{ object.name }}</h1>
+    <div id="device_group">
+        <hr/>
+        <table>
+            <tr>
+                <td><strong>Group Name:</strong></td>
+                <td>{{ object.name }}</td>
+            </tr>
+            <tr>
+                <td><strong>Alias:</strong></td>
+                <td>{{ object.alias }}</td>
+            </tr>
+            <tr>
+                <td><strong>Parent:</strong></td>
+                <td>{{ object.parent }}</td>
+            </tr>
+            <tr>
+                <td><strong>Address:</strong></td>
+                <td>{{ object.address }}</td>
+            </tr>
+            <tr>
+                <td><strong>Location:</strong></td>
+                <td>{{ object.location }}</td>
+            </tr>
+        </table>
+    </div>
 {% endblock %}

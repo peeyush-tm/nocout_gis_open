@@ -1,49 +1,52 @@
 {% extends "inventory.html" %}
 {% load staticfiles %}
 {% block css %}
-	<link rel="stylesheet" type="text/css" href={% static "css/service.css" %} >
+    <link rel="stylesheet" type="text/css" href={% static "css/service.css" %}>
 {% endblock %}
 {% block content %}
-<h3>Create Service Parameters</h3>
-	<form action="/sp/new/" method="post">{% csrf_token %}
-		<div id="new_service">
-			<table>
-				<tr>
-					<td>
-						{{ form.errors }}
-						{{ form.non_field_errors }}
-					</td>
-				</tr>
-				<tr>
-					<th><label for="id_parameter_description"> Parameter Description:</label></th>
-					<td>{{ form.parameter_description }}</td>
-				</tr>
-				<tr>
-					<th><label for="id_max_check_attempts">Max Check Attempts:</label></th>
-					<td>{{ form.max_check_attempts }}</td>
-				</tr>
-				<tr>
-					<th><label for="id_check_interval">Check Interval:</label></th>
-					<td>{{ form.check_interval }}</td>
-				</tr>
-				<tr>
-					<th><label for="id_retry_interval">Retry Interval:</label></th>
-					<td>{{ form.retry_interval }}</td>
-				</tr>
-				<tr>
-					<th><label for="id_check_period">Check Period:</label></th>
-					<td>{{ form.check_period }}</td>
-				</tr>
-				<tr>
-					<th><label for="id_notification_interval">Notification Interval:</label></th>
-					<td>{{ form.notification_interval }}</td>
-				</tr>
-				<tr>
-					<th><label for="id_notification_period">Notification Period:</label></th>
-					<td>{{ form.notification_period }}</td>
-				</tr>
-				<tr><th></th><td><input type="submit" value="Create" /></td></tr>
-			</table>
-		</div>
-	</form>
+    <h3>Create Service Parameters</h3>
+    <form action="/sp/new/" method="post">{% csrf_token %}
+        <div id="new_service">
+            <table>
+                <tr>
+                    <td>
+                        {{ form.errors }}
+                        {{ form.non_field_errors }}
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="id_parameter_description"> Parameter Description:</label></th>
+                    <td>{{ form.parameter_description }}</td>
+                </tr>
+                <tr>
+                    <th><label for="id_max_check_attempts">Max Check Attempts:</label></th>
+                    <td>{{ form.max_check_attempts }}</td>
+                </tr>
+                <tr>
+                    <th><label for="id_check_interval">Check Interval:</label></th>
+                    <td>{{ form.check_interval }}</td>
+                </tr>
+                <tr>
+                    <th><label for="id_retry_interval">Retry Interval:</label></th>
+                    <td>{{ form.retry_interval }}</td>
+                </tr>
+                <tr>
+                    <th><label for="id_check_period">Check Period:</label></th>
+                    <td>{{ form.check_period }}</td>
+                </tr>
+                <tr>
+                    <th><label for="id_notification_interval">Notification Interval:</label></th>
+                    <td>{{ form.notification_interval }}</td>
+                </tr>
+                <tr>
+                    <th><label for="id_notification_period">Notification Period:</label></th>
+                    <td>{{ form.notification_period }}</td>
+                </tr>
+                <tr>
+                    <th></th>
+                    <td><input type="submit" value="Create"/></td>
+                </tr>
+            </table>
+        </div>
+    </form>
 {% endblock %}

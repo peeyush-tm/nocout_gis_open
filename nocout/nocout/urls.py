@@ -1,4 +1,6 @@
 from django.conf.urls import patterns, include, url
+
+# Include dajaxice ajax module
 from dajaxice.core import dajaxice_autodiscover, dajaxice_config
 dajaxice_autodiscover()
 

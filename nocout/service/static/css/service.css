@@ -1,49 +1,59 @@
-#service td{
-	padding-top: 10px;
-	padding-bottom: 10px;
-	padding-right: 25px;
-	padding-left: 25px;
-	vertical-align:text-top;
+#service td {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-right: 25px;
+    padding-left: 25px;
+    vertical-align: text-top;
 }
-#service tr{
-	border-bottom: solid 1px #75A5BB;
-	border-top: solid 1px #75A5BB;
+
+#service tr {
+    border-bottom: solid 1px #75A5BB;
+    border-top: solid 1px #75A5BB;
 }
-label{
-	display: inline-block;
-	/* color: #3670AA; */
-	width: 200px; 
-	padding-right: 10px;
-	text-align: right;
+
+label {
+    display: inline-block;
+    /* color: #3670AA; */
+    width: 200px;
+    padding-right: 10px;
+    text-align: right;
 }
-input{
-	display: inline-block;
-	width: 400px;
+
+input {
+    display: inline-block;
+    width: 400px;
 }
-.errorlist{
-	display: inline-block;
-	color: #CC0000;
-	width: 200px;
+
+.errorlist {
+    display: inline-block;
+    color: #CC0000;
+    width: 200px;
 }
-submit{
-	display: inline-block;
-	width: 200px;
-	float:right;
+
+submit {
+    display: inline-block;
+    width: 200px;
+    float: right;
 }
-input[type="text"]{
-	width: 400px;
+
+input[type="text"] {
+    width: 400px;
 }
-textarea{
-	width: 400px;
+
+textarea {
+    width: 400px;
 }
-select, option{
-	width: 400px;
+
+select, option {
+    width: 400px;
 }
-.helptext{
-	display: none;
+
+.helptext {
+    display: none;
 }
-#new_service td{
-	padding-top: 10px;
-	padding-bottom: 10px;
-	padding-right: 10px;
+
+#new_service td {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-right: 10px;
 }

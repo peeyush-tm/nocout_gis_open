@@ -1,33 +1,36 @@
 {% extends "inventory.html" %}
 {% load staticfiles %}
 {% block css %}
-	<link rel="stylesheet" type="text/css" href={% static "css/device.css" %} >
+    <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
 {% endblock %}
 {% block content %}
-<h3>Create Device Vendor</h3>
-	<form action="/vendor/new/" method="post">{% csrf_token %}
-		<div id="new_device">
-			<table>
-				<tr>
-					<td>
-						{{ form.errors }}
-						{{ form.non_field_errors }}
-					</td>
-				</tr>
-				<tr>
-					<th><label for="id_name"> Vendor Name:</label></th>
-					<td>{{ form.name }}</td>
-				</tr>
-				<tr>
-					<th><label for="id_alias">Vendor Alias:</label></th>
-					<td>{{ form.alias }}</td>
-				</tr>
-				<tr>
-					<th><label for="id_device_models">Device Models:</label></th>
-					<td>{{ form.device_models }}</td>
-				</tr>
-				<tr><th></th><td><input type="submit" value="Create" /></td></tr>
-			</table>
-		</div>
-	</form>
+    <h3>Create Device Vendor</h3>
+    <form action="/vendor/new/" method="post">{% csrf_token %}
+        <div id="new_device">
+            <table>
+                <tr>
+                    <td>
+                        {{ form.errors }}
+                        {{ form.non_field_errors }}
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="id_name"> Vendor Name:</label></th>
+                    <td>{{ form.name }}</td>
+                </tr>
+                <tr>
+                    <th><label for="id_alias">Vendor Alias:</label></th>
+                    <td>{{ form.alias }}</td>
+                </tr>
+                <tr>
+                    <th><label for="id_device_models">Device Models:</label></th>
+                    <td>{{ form.device_models }}</td>
+                </tr>
+                <tr>
+                    <th></th>
+                    <td><input type="submit" value="Create"/></td>
+                </tr>
+            </table>
+        </div>
+    </form>
 {% endblock %}

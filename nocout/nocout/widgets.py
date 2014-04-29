@@ -18,17 +18,17 @@ class MultipleToSingleSelectionWidget(SelectMultiple):
         output.append('</select>')
         return mark_safe('\n'.join(output))
 
-    
+
 class IntReturnModelChoiceField(ModelChoiceField):
-        def to_python(self, value):
-            if value in self.empty_values:
-                return None
-            '''
-            # this code is for getting values as string instead integer
-            try:
-                key = self.to_field_name or 'pk'
-                value = self.queryset.get(**{key:value})
-            except (ValueError, self.queryset.model.DoesNotExist):
-                raise ValidationError(self.error_messages['invalid_choice'], code='invalid_choice')
-            '''
-            return value
+    def to_python(self, value):
+        if value in self.empty_values:
+            return None
+        '''
+        # this code is for getting values as string instead integer
+        try:
+            key = self.to_field_name or 'pk'
+            value = self.queryset.get(**{key:value})
+        except (ValueError, self.queryset.model.DoesNotExist):
+            raise ValidationError(self.error_messages['invalid_choice'], code='invalid_choice')
+        '''
+        return value

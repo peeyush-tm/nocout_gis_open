@@ -1,19 +1,27 @@
 {% extends "inventory.html" %}
 {% load staticfiles %}
 {% block css %}
-	<link rel="stylesheet" type="text/css" href={% static "css/site_instance.css" %} >
+    <link rel="stylesheet" type="text/css" href={% static "css/site_instance.css" %}>
 {% endblock %}
 {% block content %}
     <h2>Site Instance</h2>
-    <hr />
+    <hr/>
     <p><a href="/site/new">Create Site</a></p>
-    <br />
+    <br/>
     <div id="site_instance">
-	    <table>
-	    	<tr><td><strong>Site Instances</strong></td><td><strong>Edit</strong></td><td><strong>Delete</strong></td></tr>
-	        {% for site in object_list %}
-	            <tr><td><a href="/site/{{site.id}}">{{ site.name }}</a></td> <td><a href="/site/edit/{{site.id}}">Edit</a></td> <td><a href="/site/delete/{{site.id}}">Delete</a></td></tr>
-	        {% endfor %}
-	    </table>
+        <table>
+            <tr>
+                <td><strong>Site Instances</strong></td>
+                <td><strong>Edit</strong></td>
+                <td><strong>Delete</strong></td>
+            </tr>
+            {% for site in object_list %}
+                <tr>
+                    <td><a href="/site/{{ site.id }}">{{ site.name }}</a></td>
+                    <td><a href="/site/edit/{{ site.id }}">Edit</a></td>
+                    <td><a href="/site/delete/{{ site.id }}">Delete</a></td>
+                </tr>
+            {% endfor %}
+        </table>
     </div>
 {% endblock %}

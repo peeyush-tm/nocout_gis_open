@@ -1,17 +1,33 @@
 {% extends "inventory.html" %}
 {% load staticfiles %}
 {% block css %}
-	<link rel="stylesheet" type="text/css" href={% static "css/site_instance.css" %} >
+    <link rel="stylesheet" type="text/css" href={% static "css/site_instance.css" %}>
 {% endblock %}
 {% block content %}
-	<h1>{{ object.name }}</h1>
-	<div id="site_instance"><hr />
-		<table>
-			<tr><td><strong>Site Name :</strong></td> <td>{{ object.name }}</td></tr>
-			<tr><td><strong>Site Description:</strong></td> <td>{{ object.description }}</td></tr>
-			<tr><td><strong>Site IP:</strong></td> <td>{{ object.site_ip }}</td></tr>
-			<tr><td><strong>Agent Port:</strong></td> <td>{{ object.agent_port }}</td></tr>
-			<tr><td><strong>Live Status TCP Port:</strong></td> <td>{{ object.live_status_tcp_port }}</td></tr>
-		</table>
-	</div>
+    <h1>{{ object.name }}</h1>
+    <div id="site_instance">
+        <hr/>
+        <table>
+            <tr>
+                <td><strong>Site Name :</strong></td>
+                <td>{{ object.name }}</td>
+            </tr>
+            <tr>
+                <td><strong>Site Description:</strong></td>
+                <td>{{ object.description }}</td>
+            </tr>
+            <tr>
+                <td><strong>Site IP:</strong></td>
+                <td>{{ object.site_ip }}</td>
+            </tr>
+            <tr>
+                <td><strong>Agent Port:</strong></td>
+                <td>{{ object.agent_port }}</td>
+            </tr>
+            <tr>
+                <td><strong>Live Status TCP Port:</strong></td>
+                <td>{{ object.live_status_tcp_port }}</td>
+            </tr>
+        </table>
+    </div>
 {% endblock %}

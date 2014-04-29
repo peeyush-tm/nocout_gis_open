@@ -9,17 +9,17 @@ from mptt.models import MPTTModel, TreeForeignKey
 class DeviceType(models.Model):
     name = models.CharField('Device Type', max_length=200, unique=True)
     alias = models.CharField('Device Description', max_length=200, null=True, blank=True)
-    
+
     def __unicode__(self):
         return self.name
-    
-    
+
+
 # device model info table
 class DeviceModel(models.Model):
     name = models.CharField('Device Model', max_length=100, unique=True)
     alias = models.CharField('Alias', max_length=200)
     device_types = models.ManyToManyField(DeviceType, through="ModelType", blank=True, null=True)
-    
+
     def __unicode__(self):
         return self.name
 
@@ -29,7 +29,7 @@ class DeviceVendor(models.Model):
     name = models.CharField('Device Vendor', max_length=100, unique=True)
     alias = models.CharField('Alias', max_length=200, null=True, blank=True)
     device_models = models.ManyToManyField(DeviceModel, through="VendorModel", blank=True, null=True)
-    
+
     def __unicode__(self):
         return self.name
 
@@ -39,7 +39,7 @@ class DeviceTechnology(models.Model):
     name = models.CharField('Device Technology', max_length=100, unique=True)
     alias = models.CharField('Alias', max_length=200, null=True, blank=True)
     device_vendors = models.ManyToManyField(DeviceVendor, through="TechnologyVendor", blank=True, null=True)
-    
+
     def __unicode__(self):
         return self.name
 
@@ -51,21 +51,21 @@ class Device(MPTTModel, models.Model):
     high = 'High'
     normal = 'Normal'
     low = 'Low'
-    
+
     DHCP_STATE = (
-          (enable, 'Enable'),
-          (disable, 'Disable'),
+        (enable, 'Enable'),
+        (disable, 'Disable'),
     )
     HOST_STATE = (
-          (enable, 'Enable'),
-          (disable, 'Disable'),
+        (enable, 'Enable'),
+        (disable, 'Disable'),
     )
     PRIORITY = (
-          (high, 'High'),
-          (normal, 'Normal'),
-          (low, 'Low')
+        (high, 'High'),
+        (normal, 'Normal'),
+        (low, 'Low')
     )
-    
+
     device_name = models.CharField('Device Name', max_length=200, unique=True)
     device_alias = models.CharField('Device Alias', max_length=200)
     instance = models.ForeignKey(SiteInstance, null=True, blank=True)
@@ -90,10 +90,10 @@ class Device(MPTTModel, models.Model):
     latitude = models.CharField('Latitude', max_length=20, null=True, blank=True)
     longitude = models.CharField('Longitude', max_length=20, null=True, blank=True)
     description = models.TextField('Description')
-    
+
     def __unicode__(self):
         return self.device_name
-         
+
 
 # model-type mapper
 class ModelType(models.Model):
@@ -118,14 +118,14 @@ class TechnologyVendor(models.Model):
 class Inventory(models.Model):
     device = models.ForeignKey(Device)
     device_group = models.ForeignKey(DeviceGroup)
-    
+
 
 # table for extra fields of device (depends upon device type)
 class DeviceTypeFields(models.Model):
     device_type = models.ForeignKey(DeviceType, null=True, blank=True)
     field_name = models.CharField(max_length=100, blank=True, null=True)
     field_display_name = models.CharField(max_length=200, blank=True, null=True)
-    
+
     def __unicode__(self):
         return self.field_name
 

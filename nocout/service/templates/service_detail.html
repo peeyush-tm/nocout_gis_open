@@ -1,23 +1,36 @@
 {% extends "inventory.html" %}
 {% load staticfiles %}
 {% block css %}
-	<link rel="stylesheet" type="text/css" href={% static "css/service.css" %} >
+    <link rel="stylesheet" type="text/css" href={% static "css/service.css" %}>
 {% endblock %}
 {% block content %}
-	<h1>{{ object.service_name }}</h1><br />
-	<div id="service">
-		<table>
-			<tr><td><strong>Service Name:</strong></td> <td>{{ object.service_name }}</td></tr>
-			<tr><td><strong>Service Alias:</strong></td> <td>{{ object.alias }}</td></tr>
-			<tr><td><strong>Service Parameters:</strong></td>
-				<td>
-					{% for parameter in object.parameters.all %}
-						{{ parameter }}<br />
-					{% endfor %}
-				</td>
-			</tr>
-			<tr><td><strong>Service Command:</strong></td> <td>{{ object.command }}</td></tr>
-			<tr><td><strong>Service Description:</strong></td> <td>{{ object.description }}</td></tr>
-		</table>
-	</div>
+    <h1>{{ object.service_name }}</h1><br/>
+    <div id="service">
+        <table>
+            <tr>
+                <td><strong>Service Name:</strong></td>
+                <td>{{ object.service_name }}</td>
+            </tr>
+            <tr>
+                <td><strong>Service Alias:</strong></td>
+                <td>{{ object.alias }}</td>
+            </tr>
+            <tr>
+                <td><strong>Service Parameters:</strong></td>
+                <td>
+                    {% for parameter in object.parameters.all %}
+                        {{ parameter }}<br/>
+                    {% endfor %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Service Command:</strong></td>
+                <td>{{ object.command }}</td>
+            </tr>
+            <tr>
+                <td><strong>Service Description:</strong></td>
+                <td>{{ object.description }}</td>
+            </tr>
+        </table>
+    </div>
 {% endblock %}

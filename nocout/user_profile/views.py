@@ -1,5 +1,5 @@
 from django.views.generic import ListView, DetailView
-from django.views.generic.edit import CreateView, UpdateView, DeleteView,ModelFormMixin
+from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin
 from django.core.urlresolvers import reverse_lazy
 from user_profile.models import UserProfile, Department
 from forms import UserForm
@@ -15,14 +15,14 @@ class UserList(ListView):
 class UserDetail(DetailView):
     model = UserProfile
     template_name = 'user_detail.html'
-    
-    
+
+
 class UserCreate(CreateView):
     template_name = 'user_new.html'
     model = UserProfile
     form_class = UserForm
     success_url = reverse_lazy('user_list')
-    
+
     def form_valid(self, form):
         user_profile = UserProfile()
         user_profile.username = form.cleaned_data['username']
@@ -37,7 +37,7 @@ class UserCreate(CreateView):
         user_profile.address = form.cleaned_data['address']
         user_profile.comment = form.cleaned_data['comment']
         user_profile.save()
-        
+
         # saving parent --> FK Relation
         try:
             parent_user = UserProfile.objects.get(username=form.cleaned_data['parent'])
@@ -45,7 +45,7 @@ class UserCreate(CreateView):
             user_profile.save()
         except:
             print "User has no parent."
-        
+
         # saving user_group --> M2M Relation (Model: Department)
         for ug in form.cleaned_data['user_group']:
             department = Department()
@@ -54,19 +54,19 @@ class UserCreate(CreateView):
             department.save()
             return HttpResponseRedirect(UserCreate.success_url)
         return super(ModelFormMixin, self).form_valid(form)
-        
+
 
 class UserUpdate(UpdateView):
     template_name = 'user_update.html'
     model = UserProfile
     form_class = UserForm
     success_url = reverse_lazy('user_list')
-    
+
     def form_valid(self, form):
-        
+
         # restrict form from updating
         self.object = form.save(commit=False)
-        
+
         # updating parent --> FK Relation
         try:
             parent_user = UserProfile.objects.get(username=form.cleaned_data['parent'])
@@ -74,10 +74,10 @@ class UserUpdate(UpdateView):
             self.object.save()
         except:
             print "User has no parent."
-        
+
         # delete old relationship exist in department
         Department.objects.filter(user_profile=self.object).delete()
-        
+
         # updating user_group --> M2M Relation (Model: Department)
         for ug in form.cleaned_data['user_group']:
             department = Department()

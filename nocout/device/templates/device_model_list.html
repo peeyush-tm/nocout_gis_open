@@ -1,19 +1,27 @@
 {% extends "inventory.html" %}
 {% load staticfiles %}
 {% block css %}
-	<link rel="stylesheet" type="text/css" href={% static "css/device.css" %} >
+    <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
 {% endblock %}
 {% block content %}
     <h2>Device Model</h2>
-    <hr />
+    <hr/>
     <p><a href="/model/new">Create Device Model</a></p>
-    <br />
+    <br/>
     <div id="device">
-	    <table>
-	    	<tr><td><strong>Model</strong></td><td><strong>Edit</strong></td><td><strong>Delete</strong></td></tr>
-	        {% for model in object_list %}
-	            <tr><td><a href="/model/{{model.id}}">{{ model.name }}</a></td> <td><a href="/model/edit/{{model.id}}">Edit</a></td> <td><a href="/model/delete/{{model.id}}">Delete</a></td></tr>
-	        {% endfor %}
-	    </table>
+        <table>
+            <tr>
+                <td><strong>Model</strong></td>
+                <td><strong>Edit</strong></td>
+                <td><strong>Delete</strong></td>
+            </tr>
+            {% for model in object_list %}
+                <tr>
+                    <td><a href="/model/{{ model.id }}">{{ model.name }}</a></td>
+                    <td><a href="/model/edit/{{ model.id }}">Edit</a></td>
+                    <td><a href="/model/delete/{{ model.id }}">Delete</a></td>
+                </tr>
+            {% endfor %}
+        </table>
     </div>
 {% endblock %}

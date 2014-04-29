@@ -1,160 +1,162 @@
 {% extends "inventory.html" %}
 {% load staticfiles %}
 {% block css %}
-	<link rel="stylesheet" type="text/css" href={% static "css/device.css" %} >
+    <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
 {% endblock %}
 {% block content %}
-<h3>Create Device</h3><hr />
-	<form action="/device/new/" method="post" id="device_form">{% csrf_token %}
-			<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_device_name">Device Name:</label></span>
-        		<span class="field_input">{{ form.device_name }}</span>
-        		<span class="field_error">{{ form.device_name.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_device_alias">Device Alias:</label></span>
-        		<span class="field_input">{{ form.device_alias }}</span>
-        		<span class="field_error">{{ form.device_alias.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_instance">Site Instance:</label></span>
-        		<span class="field_input">{{ form.instance }}</span>
-        		<span class="field_error">{{ form.instace.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_device_group">Device Group:</label></span>
-        		<span class="field_input">{{ form.device_group }}</span>
-        		<span class="field_error">{{ form.device_group.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_parent">Parent:</label></span>
-        		<span class="field_input">{{ form.parent }}</span>
-        		<span class="field_error">{{ form.parent.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_device_technology">Device Technology:</label></span>
-        		<span class="field_input">{{ form.device_technology }}</span>
-        		<span class="field_error">{{ form.device_technology.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_device_vendor">Device Vendor:</label></span>
-        		<span class="field_input">{{ form.device_vendor }}</span>
-        		<span class="field_error">{{ form.device_vendor.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_device_model">Device Model:</label></span>
-        		<span class="field_input">{{ form.device_model }}</span>
-        		<span class="field_error">{{ form.device_model.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_device_type">Device Type:</label></span>
-        		<span class="field_input">{{ form.device_type }}</span>
-        		<span class="field_error">{{ form.device_type.errors }}</span>
-    		</div>
-    		<span id="extra_fields"></span>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_sevice">Services:</label></span>
-        		<span class="field_input">{{ form.service }}</span>
-        		<span class="field_error">{{ form.service.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_ip_address">IP Address:</label></span>
-        		<span class="field_input">{{ form.ip_address }}</span>
-        		<span class="field_error">{{ form.ip_address.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_mac_address">MAC Address:</label></span>
-        		<span class="field_input">{{ form.mac_address }}</span>
-        		<span class="field_error">{{ form.mac_address.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_netmask">Netmask:</label></span>
-        		<span class="field_input">{{ form.netmask }}</span>
-        		<span class="field_error">{{ form.netmask.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_gateway">Gateway:</label></span>
-        		<span class="field_input">{{ form.gateway }}</span>
-        		<span class="field_error">{{ form.gateway.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_dhcp_state">DHCP State:</label></span>
-        		<span class="field_input">{{ form.dhcp_state }}</span>
-        		<span class="field_error">{{ form.dhcp_state.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_host_priority">Host Priority:</label></span>
-        		<span class="field_input">{{ form.host_priority }}</span>
-        		<span class="field_error">{{ form.host_priority.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_host_state">Host State:</label></span>
-        		<span class="field_input">{{ form.host_state }}</span>
-        		<span class="field_error">{{ form.host_state.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_address">Address:</label></span>
-        		<span class="field_input">{{ form.address }}</span>
-        		<span class="field_error">{{ form.address.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_city">City:</label></span>
-        		<span class="field_input">{{ form.city }}</span>
-        		<span class="field_error">{{ form.city.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_state">State:</label></span>
-        		<span class="field_input">{{ form.state }}</span>
-        		<span class="field_error">{{ form.state.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_timezone">Timezone:</label></span>
-        		<span class="field_input">{{ form.timezone }}</span>
-        		<span class="field_error">{{ form.timezone.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_latitude">Latitude:</label></span>
-        		<span class="field_input">{{ form.latitude }}</span>
-        		<span class="field_error">{{ form.latitude.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_longitude">Longitude:</label></span>
-        		<span class="field_input">{{ form.longitude }}</span>
-        		<span class="field_error">{{ form.longitude.errors }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-        		<span class="field_label"><label for="id_description">Description:</label></span>
-        		<span class="field_input">{{ form.description }}</span>
-        		<span class="field_error">{{ form.subject.description }}</span>
-    		</div>
-    		<div class="fieldWrapper">
-				<span class="field_submit"><input type="submit" value="Create" /></span>
-			</div>
-	</form>
-	<script>
-		$("#id_device_technology").change(function(){
-			Dajaxice.device.update_vendor(Dajax.process, {'option':$('#id_device_technology').val()});
-		});	
-		$("#id_device_vendor").change(function(){
-			Dajaxice.device.update_model(Dajax.process, {'option':$('#id_device_vendor').val()});
-		}).click(function(){
-			if ($('#id_device_vendor option').length == 1){
-				Dajaxice.device.update_model(Dajax.process, {'option':$('#id_device_vendor').val()});
-			}
-		});
-		$("#id_device_model").change(function(){
-			Dajaxice.device.update_type(Dajax.process, {'option':$('#id_device_model').val()});
-		}).click(function(){
-			if ($('#id_device_model option').length == 1){
-				Dajaxice.device.update_type(Dajax.process, {'option':$('#id_device_model').val()});
-			}
-		});
-		$("#id_device_type").change(function(){
-			Dajaxice.device.device_type_extra_fields(Dajax.process, {'option':$('#id_device_type').val()});
-		}).click(function(){
-			if ($('#id_device_type option').length == 1){
-				Dajaxice.device.device_type_extra_fields(Dajax.process, {'option':$('#id_device_type').val()});
-			}
-		});
-	</script>
+    <h3>Create Device</h3>
+    <hr/>
+    <form action="/device/new/" method="post" id="device_form">{% csrf_token %}
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_device_name">Device Name:</label></span>
+            <span class="field_input">{{ form.device_name }}</span>
+            <span class="field_error">{{ form.device_name.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_device_alias">Device Alias:</label></span>
+            <span class="field_input">{{ form.device_alias }}</span>
+            <span class="field_error">{{ form.device_alias.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_instance">Site Instance:</label></span>
+            <span class="field_input">{{ form.instance }}</span>
+            <span class="field_error">{{ form.instace.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_device_group">Device Group:</label></span>
+            <span class="field_input">{{ form.device_group }}</span>
+            <span class="field_error">{{ form.device_group.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_parent">Parent:</label></span>
+            <span class="field_input">{{ form.parent }}</span>
+            <span class="field_error">{{ form.parent.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_device_technology">Device Technology:</label></span>
+            <span class="field_input">{{ form.device_technology }}</span>
+            <span class="field_error">{{ form.device_technology.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_device_vendor">Device Vendor:</label></span>
+            <span class="field_input">{{ form.device_vendor }}</span>
+            <span class="field_error">{{ form.device_vendor.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_device_model">Device Model:</label></span>
+            <span class="field_input">{{ form.device_model }}</span>
+            <span class="field_error">{{ form.device_model.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_device_type">Device Type:</label></span>
+            <span class="field_input">{{ form.device_type }}</span>
+            <span class="field_error">{{ form.device_type.errors }}</span>
+        </div>
+        <span id="extra_fields"></span>
+
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_sevice">Services:</label></span>
+            <span class="field_input">{{ form.service }}</span>
+            <span class="field_error">{{ form.service.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_ip_address">IP Address:</label></span>
+            <span class="field_input">{{ form.ip_address }}</span>
+            <span class="field_error">{{ form.ip_address.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_mac_address">MAC Address:</label></span>
+            <span class="field_input">{{ form.mac_address }}</span>
+            <span class="field_error">{{ form.mac_address.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_netmask">Netmask:</label></span>
+            <span class="field_input">{{ form.netmask }}</span>
+            <span class="field_error">{{ form.netmask.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_gateway">Gateway:</label></span>
+            <span class="field_input">{{ form.gateway }}</span>
+            <span class="field_error">{{ form.gateway.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_dhcp_state">DHCP State:</label></span>
+            <span class="field_input">{{ form.dhcp_state }}</span>
+            <span class="field_error">{{ form.dhcp_state.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_host_priority">Host Priority:</label></span>
+            <span class="field_input">{{ form.host_priority }}</span>
+            <span class="field_error">{{ form.host_priority.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_host_state">Host State:</label></span>
+            <span class="field_input">{{ form.host_state }}</span>
+            <span class="field_error">{{ form.host_state.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_address">Address:</label></span>
+            <span class="field_input">{{ form.address }}</span>
+            <span class="field_error">{{ form.address.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_city">City:</label></span>
+            <span class="field_input">{{ form.city }}</span>
+            <span class="field_error">{{ form.city.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_state">State:</label></span>
+            <span class="field_input">{{ form.state }}</span>
+            <span class="field_error">{{ form.state.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_timezone">Timezone:</label></span>
+            <span class="field_input">{{ form.timezone }}</span>
+            <span class="field_error">{{ form.timezone.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_latitude">Latitude:</label></span>
+            <span class="field_input">{{ form.latitude }}</span>
+            <span class="field_error">{{ form.latitude.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_longitude">Longitude:</label></span>
+            <span class="field_input">{{ form.longitude }}</span>
+            <span class="field_error">{{ form.longitude.errors }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_label"><label for="id_description">Description:</label></span>
+            <span class="field_input">{{ form.description }}</span>
+            <span class="field_error">{{ form.subject.description }}</span>
+        </div>
+        <div class="fieldWrapper">
+            <span class="field_submit"><input type="submit" value="Create"/></span>
+        </div>
+    </form>
+    <script>
+        $("#id_device_technology").change(function () {
+            Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
+        });
+        $("#id_device_vendor").change(function () {
+            Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});
+        }).click(function () {
+            if ($('#id_device_vendor option').length == 1) {
+                Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});
+            }
+        });
+        $("#id_device_model").change(function () {
+            Dajaxice.device.update_type(Dajax.process, {'option': $('#id_device_model').val()});
+        }).click(function () {
+            if ($('#id_device_model option').length == 1) {
+                Dajaxice.device.update_type(Dajax.process, {'option': $('#id_device_model').val()});
+            }
+        });
+        $("#id_device_type").change(function () {
+            Dajaxice.device.device_type_extra_fields(Dajax.process, {'option': $('#id_device_type').val()});
+        }).click(function () {
+            if ($('#id_device_type option').length == 1) {
+                Dajaxice.device.device_type_extra_fields(Dajax.process, {'option': $('#id_device_type').val()});
+            }
+        });
+    </script>
 {% endblock %}

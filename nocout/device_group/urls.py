@@ -1,5 +1,4 @@
 from django.conf.urls import patterns, url
-
 from device_group import views
 
 urlpatterns = patterns('',
