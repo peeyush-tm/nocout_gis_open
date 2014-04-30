@@ -1,0 +1,26 @@
+{% extends "inventory.html" %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
+{% endblock %}
+{% block content %}
+    <h1>{{ object.name }}</h1><br/>
+    <div id="device">
+        <table>
+            <tr>
+                <td><strong>Model Name:</strong></td>
+                <td>{{ object.name }}</td>
+            </tr>
+            <tr>
+                <td><strong>Model Alias:</strong></td>
+                <td>{{ object.alias }}</td>
+            </tr>
+            <tr>
+                <td><strong>Model Types:</strong></td>
+                {% for type in object.modeltype_set.all %}
+                    <td>{{ type.type }}</td>
+                {% endfor %}
+            </tr>
+        </table>
+    </div>
+{% endblock %}

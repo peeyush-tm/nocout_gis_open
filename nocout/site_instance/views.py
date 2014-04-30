@@ -1,31 +1,35 @@
-# Create your views here.
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
+from models import SiteInstance
 from forms import SiteInstanceForm
-from site_instance.models import SiteInstance
 
-class SiteinstanceCreate(CreateView):
+
+class SiteInstanceList(ListView):
+    model = SiteInstance
+    template_name = 'site_instance_list.html'
+
+
+class SiteInstanceDetail(DetailView):
+    model = SiteInstance
+    template_name = 'site_instance_detail.html'
+
+
+class SiteInstanceCreate(CreateView):
+    template_name = 'site_instance_new.html'
     model = SiteInstance
     form_class = SiteInstanceForm
-    template_name = 'site_create.html'
-    success_url = reverse_lazy('site_list')
+    success_url = reverse_lazy('site_instance_list')
 
-class SiteinstanceList(ListView):
-    model = SiteInstance
-    template_name = 'site_list.html'
 
-class SiteinstanceDetail(DetailView):
-    model = SiteInstance
-    template_name = 'site_detail.html'  
-
-class SiteinstanceUpdate(UpdateView):
+class SiteInstanceUpdate(UpdateView):
+    template_name = 'site_instance_update.html'
     model = SiteInstance
     form_class = SiteInstanceForm
-    template_name = 'site_update.html'
-    success_url = reverse_lazy('site_list')
+    success_url = reverse_lazy('site_instance_list')
+
 
 class SiteInstanceDelete(DeleteView):
     model = SiteInstance
-    template_name = 'site_delete.html'
-    success_url = reverse_lazy('site_list')    
+    template_name = 'site_instance_delete.html'
+    success_url = reverse_lazy('site_instance_list')

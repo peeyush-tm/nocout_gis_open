@@ -7,8 +7,5 @@ nout/*
 *~
 nocout/.pydevproject
 nocout/.project
-nocout/.metadata
-nocout/build
+nocout/.idea
 nocout/venv
-
-

@@ -4,7 +4,7 @@
     "model": "device.devicetype", 
     "fields": {
         "name": "Default", 
-        "description": "Default"
+        "alias": "Default"
     }
 },
 {
@@ -12,7 +12,7 @@
     "model": "device.devicetype", 
     "fields": {
         "name": "Radwin2KSS", 
-        "description": "Radwin2KSS"
+        "alias": "Radwin2KSS"
     }
 },
 {
@@ -20,7 +20,7 @@
     "model": "device.devicetype", 
     "fields": {
         "name": "Radwin2KBS", 
-        "description": "Radwin2KBS"
+        "alias": "Radwin2KBS"
     }
 },
 {
@@ -28,7 +28,7 @@
     "model": "device.devicetype", 
     "fields": {
         "name": "StarmaxIDU", 
-        "description": "StarmaxIDU"
+        "alias": "StarmaxIDU"
     }
 },
 {
@@ -36,7 +36,7 @@
     "model": "device.devicetype", 
     "fields": {
         "name": "StarmaxSS", 
-        "description": "StarmaxSS"
+        "alias": "StarmaxSS"
     }
 },
 {
@@ -44,7 +44,7 @@
     "model": "device.devicetype", 
     "fields": {
         "name": "CanopyPM100AP", 
-        "description": "CanopyPM100AP"
+        "alias": "CanopyPM100AP"
     }
 },
 {
@@ -52,7 +52,7 @@
     "model": "device.devicetype", 
     "fields": {
         "name": "CanopyPM100SS", 
-        "description": "CanopyPM100SS"
+        "alias": "CanopyPM100SS"
     }
 },
 {
@@ -60,7 +60,7 @@
     "model": "device.devicetype", 
     "fields": {
         "name": "CanopySM100AP", 
-        "description": "CanopySM100AP"
+        "alias": "CanopySM100AP"
     }
 },
 {
@@ -68,7 +68,7 @@
     "model": "device.devicetype", 
     "fields": {
         "name": "CanopySM100SS", 
-        "description": "CanopySM100SS"
+        "alias": "CanopySM100SS"
     }
 },
 {

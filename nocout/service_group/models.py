@@ -1,6 +1,7 @@
 from django.db import models
 from service.models import Service
 
+
 class ServiceGroup(models.Model):
     servicegroup_name = models.CharField(max_length=100)
     alias = models.CharField(max_length=100)
