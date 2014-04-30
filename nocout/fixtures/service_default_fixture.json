@@ -1,0 +1,13 @@
+[
+{
+  "pk": 1, 
+  "model": "service.service", 
+  "fields": {
+    "service_name": "ping", 
+    "command": 1, 
+    "description": "It executes ping command on device.", 
+    "parameters": [], 
+    "alias": "Ping"
+  }
+}
+]

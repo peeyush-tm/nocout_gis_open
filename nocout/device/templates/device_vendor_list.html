@@ -1,0 +1,27 @@
+{% extends "inventory.html" %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
+{% endblock %}
+{% block content %}
+    <h2>Device Vendor</h2>
+    <hr/>
+    <p><a href="/vendor/new">Create Device Vendor</a></p>
+    <br/>
+    <div id="device">
+        <table>
+            <tr>
+                <td><strong>Vendor</strong></td>
+                <td><strong>Edit</strong></td>
+                <td><strong>Delete</strong></td>
+            </tr>
+            {% for vendor in object_list %}
+                <tr>
+                    <td><a href="/vendor/{{ vendor.id }}">{{ vendor.name }}</a></td>
+                    <td><a href="/vendor/edit/{{ vendor.id }}">Edit</a></td>
+                    <td><a href="/vendor/delete/{{ vendor.id }}">Delete</a></td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% endblock %}

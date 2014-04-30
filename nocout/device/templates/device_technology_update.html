@@ -1,0 +1,36 @@
+{% extends "inventory.html" %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
+{% endblock %}
+{% block content %}
+    <h3>Update Device Technology : {{ object.name }}</h3>
+    <form action="" method="post">{% csrf_token %}
+        <div id="new_device">
+            <table>
+                <tr>
+                    <td>
+                        {{ form.errors }}
+                        {{ form.non_field_errors }}
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="id_name"> Technology Name:</label></th>
+                    <td>{{ form.name }}</td>
+                </tr>
+                <tr>
+                    <th><label for="id_alias">Technology Alias:</label></th>
+                    <td>{{ form.alias }}</td>
+                </tr>
+                <tr>
+                    <th><label for="id_device_vendors">Device Vendors:</label></th>
+                    <td>{{ form.device_vendors }}</td>
+                </tr>
+                <tr>
+                    <th></th>
+                    <td><input type="submit" value="Update"/></td>
+                </tr>
+            </table>
+        </div>
+    </form>
+{% endblock %}

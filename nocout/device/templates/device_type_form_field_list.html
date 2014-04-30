@@ -1,0 +1,29 @@
+{% extends "inventory.html" %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
+{% endblock %}
+{% block content %}
+    <h2>Device Fields</h2>
+    <hr/>
+    <p><a href="/device_fields/new">Create Device Field</a></p>
+    <br/>
+    <div id="device">
+        <table>
+            <tr>
+                <td><strong>Device Field</strong></td>
+                <td><strong>Device Type</strong></td>
+                <td><strong>Edit</strong></td>
+                <td><strong>Delete</strong></td>
+            </tr>
+            {% for device_field in object_list %}
+                <tr>
+                    <td><a href="/device_fields/{{ device_field.id }}">{{ device_field.field_name }}</a></td>
+                    <td>{{ device_field.device_type }}</td>
+                    <td><a href="/device_fields/edit/{{ device_field.id }}">Edit</a></td>
+                    <td><a href="/device_fields/delete/{{ device_field.id }}">Delete</a></td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% endblock %}
