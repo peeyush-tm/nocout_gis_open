@@ -209,10 +209,11 @@ class DeviceTechnologyUpdate(UpdateView):
     success_url = reverse_lazy('device_technology_list')
 
     def form_valid(self, form):
-        # restrict form from updating
-        self.object = form.save(commit=False)
+        self.object.name = form.cleaned_data['name']
+        self.object.alias = form.cleaned_data['alias']
+        self.object.save()
 
-        # delete old relationship exist in technologyvendor
+        # delete old relationship exist in technology-vendor
         TechnologyVendor.objects.filter(technology=self.object).delete()
 
         # updating device_vendors --> M2M Relation (Model: TechnologyVendor)
