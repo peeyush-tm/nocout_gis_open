@@ -60,7 +60,7 @@ class UserCreate(CreateView):
             department.user_profile = user_profile
             department.user_group = ug
             department.save()
-        return super(ModelFormMixin, self).form_valid(form)
+        return HttpResponseRedirect(UserCreate.success_url)
 
 
 class UserUpdate(UpdateView):
@@ -73,6 +73,7 @@ class UserUpdate(UpdateView):
 
         # restrict form from updating
         self.object = form.save(commit=False)
+        
 
         # updating parent --> FK Relation
         try:
@@ -100,7 +101,7 @@ class UserUpdate(UpdateView):
             department.user_profile = self.object
             department.user_group = ug
             department.save()
-        return super(ModelFormMixin, self).form_valid(form)
+        return HttpResponseRedirect(UserCreate.success_url)
 
 
 class UserDelete(DeleteView):
