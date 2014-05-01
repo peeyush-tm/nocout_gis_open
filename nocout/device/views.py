@@ -272,10 +272,11 @@ class DeviceVendorUpdate(UpdateView):
     success_url = reverse_lazy('device_vendor_list')
 
     def form_valid(self, form):
-        # restrict form from updating
-        self.object = form.save(commit=False)
+        self.object.name = form.cleaned_data['name']
+        self.object.alias = form.cleaned_data['alias']
+        self.object.save()
 
-        # delete old relationship exist in vendormodel
+        # delete old relationship exist in vendor-model
         VendorModel.objects.filter(vendor=self.object).delete()
 
         # updating device_models --> M2M Relation (Model: VendorModel)
