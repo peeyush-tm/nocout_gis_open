@@ -73,6 +73,7 @@ class UserUpdate(UpdateView):
 
         # restrict form from updating
         self.object = form.save(commit=False)
+        
 
         # updating parent --> FK Relation
         try:
