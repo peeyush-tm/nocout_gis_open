@@ -54,8 +54,6 @@ class UserGroupUpdate(UpdateView):
     success_url = reverse_lazy('ug_list')
 
     def form_valid(self, form):
-
-        # restrict form from updating
         self.object = form.save(commit=False)
         self.object.name = form.cleaned_data['name']
         self.object.alias = form.cleaned_data['alias']
