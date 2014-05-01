@@ -28,6 +28,7 @@ class UserGroupCreate(CreateView):
         user_group.alias = form.cleaned_data['alias']
         user_group.location = form.cleaned_data['location']
         user_group.address = form.cleaned_data['address']
+        user_group.save()
 
         # saving parent --> FK Relation
         try:
@@ -43,8 +44,7 @@ class UserGroupCreate(CreateView):
             organization.user_group = user_group
             organization.device_group = dg
             organization.save()
-            return HttpResponseRedirect(UserGroupCreate.success_url)
-        return super(ModelFormMixin, self).form_valid(form)
+        return HttpResponseRedirect(UserGroupCreate.success_url)
 
 
 class UserGroupUpdate(UpdateView):
@@ -54,9 +54,12 @@ class UserGroupUpdate(UpdateView):
     success_url = reverse_lazy('ug_list')
 
     def form_valid(self, form):
-
-        # restrict form from updating
         self.object = form.save(commit=False)
+        self.object.name = form.cleaned_data['name']
+        self.object.alias = form.cleaned_data['alias']
+        self.object.location = form.cleaned_data['location']
+        self.object.address = form.cleaned_data['address']
+        self.object.save()
 
         # updating parent --> FK Relation
         try:
@@ -75,8 +78,7 @@ class UserGroupUpdate(UpdateView):
             organization.user_group = self.object
             organization.device_group = dg
             organization.save()
-            return HttpResponseRedirect(UserGroupUpdate.success_url)
-        return super(ModelFormMixin, self).form_valid(form)
+        return HttpResponseRedirect(UserGroupUpdate.success_url)
 
 
 class UserGroupDelete(DeleteView):

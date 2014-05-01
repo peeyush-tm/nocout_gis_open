@@ -24,9 +24,6 @@ class UserCreate(CreateView):
     success_url = reverse_lazy('user_list')
 
     def form_valid(self, form):
-        print "*******************************************"
-        print form.cleaned_data['role']
-        print "*******************************************"
         user_profile = UserProfile()
         user_profile.username = form.cleaned_data['username']
         user_profile.first_name = form.cleaned_data['first_name']
@@ -70,9 +67,17 @@ class UserUpdate(UpdateView):
     success_url = reverse_lazy('user_list')
 
     def form_valid(self, form):
-
-        # restrict form from updating
-        self.object = form.save(commit=False)
+        self.object.username = form.cleaned_data['username']
+        self.object.first_name = form.cleaned_data['first_name']
+        self.object.last_name = form.cleaned_data['last_name']
+        self.object.email = form.cleaned_data['email']
+        self.object.password = make_password(form.cleaned_data['password1'])
+        self.object.phone_number = form.cleaned_data['phone_number']
+        self.object.company = form.cleaned_data['company']
+        self.object.designation = form.cleaned_data['designation']
+        self.object.address = form.cleaned_data['address']
+        self.object.comment = form.cleaned_data['comment']
+        self.object.save()
 
         # updating parent --> FK Relation
         try:
@@ -107,5 +112,4 @@ class UserDelete(DeleteView):
     model = UserProfile
     template_name = 'user_delete.html'
     success_url = reverse_lazy('user_list')
-    
-    
+
