@@ -335,10 +335,11 @@ class DeviceModelUpdate(UpdateView):
     success_url = reverse_lazy('device_model_list')
 
     def form_valid(self, form):
-        # restrict form from updating
-        self.object = form.save(commit=False)
+        self.object.name = form.cleaned_data['name']
+        self.object.alias = form.cleaned_data['alias']
+        self.object.save()
 
-        # delete old relationship exist in modeltype
+        # delete old relationship exist in model-type
         ModelType.objects.filter(model=self.object).delete()
 
         # updating model_types --> M2M Relation (Model: ModelType)
