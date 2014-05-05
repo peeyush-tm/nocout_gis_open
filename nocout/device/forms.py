@@ -21,7 +21,21 @@ class DeviceForm(forms.ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
+        print "Enter form 1"
+        print "************************************************"
+        print kwargs
+        print "************************************************"
+        print "Enter form 2"
         super(DeviceForm, self).__init__(*args, **kwargs)
+        print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+        print kwargs
+        print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+        '''
+        self.fields['customer_name'] = forms.CharField(label="Customer Name")
+        self.fields.update({
+            'customer_name': forms.CharField(widget=forms.Textarea()),
+        })
+        '''
         self.base_fields['device_group'].help_text = ""
         self.base_fields['service'].help_text = ""
 
@@ -32,7 +46,7 @@ class DeviceForm(forms.ModelForm):
             'device_model',
             'device_type', 'service', 'ip_address', 'mac_address', 'netmask', 'gateway', 'dhcp_state', 'host_priority',
             'host_state',
-            'address', 'city', 'state', 'timezone', 'latitude', 'longitude', 'description'
+            'address', 'city', 'state', 'timezone', 'latitude', 'longitude', 'description',
         )
         widgets = {
             'device_group': MultipleToSingleSelectionWidget,

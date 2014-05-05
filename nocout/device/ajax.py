@@ -50,7 +50,7 @@ def device_type_extra_fields(request, option):
     out = []
     for extra_field in device_extra_fields:
         out.append(
-            "<div class='fieldWrapper'><span class='field_label'><label for='%s'>%s:</label></span><span class='field_input'><input id='%s' maxlength='200' name='%s' type='text' /></span></div>"
+            "<tr><th><label for='%s'>%s:</label></th><td><input id='%s' name='%s' type='text' /></td></tr>"
             % (extra_field.field_name, extra_field.field_display_name, extra_field.field_name, extra_field.field_name))
 
     dajax.assign('#extra_fields', 'innerHTML', ''.join(out))

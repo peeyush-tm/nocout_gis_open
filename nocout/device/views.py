@@ -29,15 +29,29 @@ class DeviceCreate(CreateView):
     form_class = DeviceForm
     success_url = reverse_lazy('device_list')
 
+    def get_context_data(self, **kwargs):
+        print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+        print self.__dict__
+        print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+        print kwargs.get('form')
+        print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+        kwargs['customer_name'] = self.request.POST.get('customer_name', False)
+        return CreateView.get_context_data(self, **kwargs)
     def form_invalid(self, form):
+        print "Enter invalid method."
+        print "***************************************"
+        print self.request.POST
+        print "***************************************"
         print form
         return CreateView.form_invalid(self, form)
 
     def form_valid(self, form):
+        '''
         print "***************************************"
         print "Enter in form_valid()."
         print len(self.request.POST)
         print "***************************************"
+        '''
         post_fields = self.request.POST
         all_non_empty_post_fields = []
 
@@ -45,12 +59,13 @@ class DeviceCreate(CreateView):
             if key == "csrfmiddlewaretoken": continue
             if value != "":
                 all_non_empty_post_fields.append(key)
-
+        '''
         print "***************************************"
         print all_non_empty_post_fields
         print "***************************************"
         print len(all_non_empty_post_fields)
         print "***************************************"
+        '''
 
         try:
             site = SiteInstance.objects.get(pk=form.cleaned_data['instance'])
@@ -103,9 +118,11 @@ class DeviceCreate(CreateView):
             try:
                 dtf = DeviceTypeFields.objects.filter(field_name=field,
                                                       device_type_id=int(self.request.POST.get('device_type')))
+                '''
                 print self.request.POST.get('device_type')
                 print dtf
                 print dtf[0]
+                '''
                 dtfv = DeviceTypeFieldsValue()
                 dtfv.device_type_field = dtf[0]
                 dtfv.field_value = self.request.POST.get(field)
