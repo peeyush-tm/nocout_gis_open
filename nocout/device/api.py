@@ -21,10 +21,14 @@ class DeviceStatsApi(View):
         ''' Handling http GET method for device data'''
 
         req_params = request.GET
+        self.false_response = {}
+        self.true_response = {}
+        self.true_response["success"] = 1
+        self.true_response["message"] = "Device Data"
+        self.false_response["success"] = 0
+        self.false_response["message"] = "No Device Data"
         obj = DeviceStats()
         device_stats_list = obj.p2p_device_info(req_params.get('username'))
-        self.false_response = {"success" : 0, "message" : "No Device Data"}
-        self.true_response = {"success" : 1, "message" : "Device Data"}
         if device_stats_list:
             self.true_response["data"] = device_stats_list
             return HttpResponse(json.dumps(self.true_response))
@@ -74,7 +78,7 @@ class DeviceStats(View):
             }
             ms_link = {"master" : master_device, "slave" : slave_device, "link" : { "color" : "green"}}
 
-            device_stats_list.append(json.dumps(ms_link))
+            device_stats_list.append(ms_link)
 
         return device_stats_list
 
