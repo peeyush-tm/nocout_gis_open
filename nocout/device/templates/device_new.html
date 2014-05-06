@@ -7,24 +7,28 @@
     <h3>Create Device</h3>
     <form action="/device/new/" method="post" id="device_form">{% csrf_token %}
         <div id="new_device">
-            <table>
+            <table id="wrap_complete">
                 <tr>
                     <td>
                         {{ form.errors }}
                         {{ form.non_field_errors }}
                     </td>
                 </tr>
+            </table>
+            <table id="left_align">
                 {% for field in form %}
                     <tr>
                         <th>{{ field.label_tag }}</th>
                         <td>{{ field }}</td>
                     </tr>
                 {% endfor %}
-                <span id="extra_fields"></span>
                 <tr>
                     <th></th>
                     <td><input type="submit" value="Create"/></td>
                 </tr>
+            </table>
+            <table id="right_align">
+                <span id="extra_fields"></span>
             </table>
         </div>
     </form>

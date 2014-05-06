@@ -92,7 +92,7 @@ class Device(MPTTModel, models.Model):
     description = models.TextField('Description')
 
     def __unicode__(self):
-        return self.device_name
+        return self.device_alias
 
 
 # model-type mapper
@@ -127,7 +127,7 @@ class DeviceTypeFields(models.Model):
     field_display_name = models.CharField(max_length=200, blank=True, null=True)
 
     def __unicode__(self):
-        return self.field_name
+        return self.field_display_name
 
 
 # table for device extra fields values    

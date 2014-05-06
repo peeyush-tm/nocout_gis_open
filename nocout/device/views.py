@@ -35,8 +35,8 @@ class DeviceCreate(CreateView):
         print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
         print kwargs.get('form')
         print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
-        kwargs['customer_name'] = self.request.POST.get('customer_name', False)
         return CreateView.get_context_data(self, **kwargs)
+
     def form_invalid(self, form):
         print "Enter invalid method."
         print "***************************************"

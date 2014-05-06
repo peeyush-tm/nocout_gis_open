@@ -1,6 +1,7 @@
 from django import forms
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, DeviceTypeFields
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
+from device.models import DeviceTypeFields
 
 
 # *************************************** Device Form *********************************************
@@ -26,28 +27,28 @@ class DeviceForm(forms.ModelForm):
         print kwargs
         print "************************************************"
         print "Enter form 2"
+        print
         super(DeviceForm, self).__init__(*args, **kwargs)
         print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
-        print kwargs
         print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
-        '''
-        self.fields['customer_name'] = forms.CharField(label="Customer Name")
-        self.fields.update({
-            'customer_name': forms.CharField(widget=forms.Textarea()),
-        })
-        '''
+        try:
+            if kwargs['data']['device_type']:
+                extra_fields = DeviceTypeFields.objects.filter(device_type_id=kwargs['data']['device_type'])
+                for extra_field in extra_fields:
+                    self.fields[extra_field.field_name] = forms.CharField(label=extra_field.field_display_name)
+                    self.fields[extra_field.field_name].required = False
+                    self.fields.update({
+                        extra_field.field_name: forms.CharField(widget=forms.TextInput(), required=False),
+                    })
+            else:
+                pass
+        except:
+            pass
         self.base_fields['device_group'].help_text = ""
         self.base_fields['service'].help_text = ""
 
     class Meta:
         model = Device
-        fields = (
-            'device_name', 'device_alias', 'instance', 'device_group', 'parent', 'device_technology', 'device_vendor',
-            'device_model',
-            'device_type', 'service', 'ip_address', 'mac_address', 'netmask', 'gateway', 'dhcp_state', 'host_priority',
-            'host_state',
-            'address', 'city', 'state', 'timezone', 'latitude', 'longitude', 'description',
-        )
         widgets = {
             'device_group': MultipleToSingleSelectionWidget,
         }
