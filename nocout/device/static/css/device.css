@@ -104,10 +104,7 @@ select, option {
 
 #left_align {
     float: left;
-}
-
-#right_align {
-    float: right;
+    margin-right: 40px;
 }
 
 #wrap_complete {

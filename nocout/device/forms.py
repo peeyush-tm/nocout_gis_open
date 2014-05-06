@@ -34,12 +34,14 @@ class DeviceForm(forms.ModelForm):
         try:
             if kwargs['data']['device_type']:
                 extra_fields = DeviceTypeFields.objects.filter(device_type_id=kwargs['data']['device_type'])
+                print extra_fields
                 for extra_field in extra_fields:
                     self.fields[extra_field.field_name] = forms.CharField(label=extra_field.field_display_name)
-                    self.fields[extra_field.field_name].required = False
                     self.fields.update({
-                        extra_field.field_name: forms.CharField(widget=forms.TextInput(), required=False),
+                        extra_field.field_name: forms.CharField(widget=forms.TextInput(), required=False,
+                                                                label=extra_field.field_display_name,),
                     })
+                    self.fields[extra_field.field_name].widget.attrs['class'] = 'extra'
             else:
                 pass
         except:
@@ -78,7 +80,7 @@ class DeviceForm(forms.ModelForm):
         '''
 
 
-# ********************************** Device Extra Fields Form *******************************************        
+# ********************************** Device Extra Fields Form *******************************************
 
 
 class DeviceTypeFieldsForm(forms.ModelForm):
@@ -93,7 +95,7 @@ class DeviceTypeFieldsUpdateForm(forms.ModelForm):
         fields = ('field_name', 'field_display_name')
 
 
-# **************************************** Device Technology *******************************************
+# **************************************** Device Technology ***************************************
 
 
 class DeviceTechnologyForm(forms.ModelForm):

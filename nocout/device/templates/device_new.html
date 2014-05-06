@@ -17,10 +17,12 @@
             </table>
             <table id="left_align">
                 {% for field in form %}
-                    <tr>
-                        <th>{{ field.label_tag }}</th>
-                        <td>{{ field }}</td>
-                    </tr>
+                    {% if field.field.widget.attrs.class != 'extra' %}
+                        <tr>
+                            <th>{{ field.label_tag }}</th>
+                            <td>{{ field }}</td>
+                        </tr>
+                    {% endif %}
                 {% endfor %}
                 <tr>
                     <th></th>
@@ -28,7 +30,16 @@
                 </tr>
             </table>
             <table id="right_align">
-                <span id="extra_fields"></span>
+                <span id="extra_fields">
+                    {% for field in form %}
+                        {% if field.field.widget.attrs.class == 'extra' %}
+                            <tr>
+                                <th>{{ field.label_tag }}</th>
+                                <td>{{ field }}</td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </span>
             </table>
         </div>
     </form>
@@ -60,6 +71,7 @@
         });
 
         $("#id_device_type").change(function () {
+            $("#right_align").empty();
             Dajaxice.device.device_type_extra_fields(Dajax.process, {'option': $('#id_device_type').val()});
         }).click(function () {
             if ($('#id_device_type option').length == 1) {
