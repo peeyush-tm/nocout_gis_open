@@ -46,6 +46,7 @@ class DeviceStats(View):
 
         device_stats_list = []
         device_info_list = []
+        slave_list = []
         try:
             self.user_id = User.objects.get(username=user).id
             self.user_gp_id = Department.objects.get(user_profile_id=self.user_id).\
@@ -110,8 +111,10 @@ class DeviceStats(View):
         for outer in device_info_list:
             for inner in device_info_list:
                 if outer.get('parent_id') == inner.get('dev_id'):
-                    ms_link = {"master" : inner, "slave" : outer, "link" : { "color" : "green"}}
+                    slave_list.append(outer)
+                    ms_link = {"master" : inner, "slave" : slave_list, "link" : [{ "color" : "green"}]}
                     device_stats_list.append(ms_link)
+                    slave_list = []
 
         return device_stats_list
 
