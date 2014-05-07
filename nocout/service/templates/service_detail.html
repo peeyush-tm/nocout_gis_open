@@ -17,11 +17,9 @@
             </tr>
             <tr>
                 <td><strong>Service Parameters:</strong></td>
-                <td>
-                    {% for parameter in object.parameters.all %}
-                        {{ parameter }}<br/>
-                    {% endfor %}
-                </td>
+                {% for parameter in object.parameters.all %}
+                    <td>{{ parameter }}</td>
+                {% endfor %}
             </tr>
             <tr>
                 <td><strong>Service Command:</strong></td>

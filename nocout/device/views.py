@@ -29,52 +29,39 @@ class DeviceCreate(CreateView):
     form_class = DeviceForm
     success_url = reverse_lazy('device_list')
 
-    def get_context_data(self, **kwargs):
-        print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
-        print self.__dict__
-        print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
-        print kwargs.get('form')
-        print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
-        return CreateView.get_context_data(self, **kwargs)
-
-    def form_invalid(self, form):
-        print "Enter invalid method."
-        print "***************************************"
-        print self.request.POST
-        print "***************************************"
-        print form
-        return CreateView.form_invalid(self, form)
-
     def form_valid(self, form):
-        '''
-        print "***************************************"
-        print "Enter in form_valid()."
-        print len(self.request.POST)
-        print "***************************************"
-        '''
+        """
+        If the form is valid, redirect to the supplied URL.
+        """
+
+        # post_fields: it contains form post data
+        # for e.g. <QueryDict: {u'tower_height': [u''], u'qos_bw': [u'fevefvef']}>
         post_fields = self.request.POST
+
+        # all_non_empty_post_fields: it's a list which contains all non empty fields
+        # for e.g. [u'qos_bw', u'device_group', u'device_type', u'timezone', u'device_technology']
         all_non_empty_post_fields = []
 
+        # It inserts all non empty fields keys from 'post_fields' into 'all_non_empty_post_fields'
+        # except 'csrf' hidden field
         for key, value in post_fields.iteritems():
             if key == "csrfmiddlewaretoken": continue
             if value != "":
                 all_non_empty_post_fields.append(key)
-        '''
-        print "***************************************"
-        print all_non_empty_post_fields
-        print "***************************************"
-        print len(all_non_empty_post_fields)
-        print "***************************************"
-        '''
+
 
         try:
-            site = SiteInstance.objects.get(pk=form.cleaned_data['instance'])
+            site = SiteInstance.objects.get(name=form.cleaned_data['instance'])
             service = Service.objects.get(pk=form.cleaned_data['service'])
         except:
             site = None
             service = None
+        print "Site: %s" % form.cleaned_data['instance']
+        print "Service: %s" % form.cleaned_data['service']
+        print "Site Object: %s" % site
+        print "Service Object: %s" % service
 
-        self.object = form.save(commit=False)
+        # creating Device object for saving device post data
         device = Device()
         device.device_name = form.cleaned_data['device_name']
         device.device_alias = form.cleaned_data['device_alias']
@@ -97,32 +84,35 @@ class DeviceCreate(CreateView):
         device.longitude = form.cleaned_data['longitude']
         device.description = form.cleaned_data['description']
         device.save()
+
         try:
             device_type = DeviceType.objects.get(id=int(self.request.POST.get('device_type')))
+            # it gives all device fields associated with device_type object
             device_type.devicetypefields_set.all()
         except:
             print "No device type exists."
-        try:
-            device.service.add(service)
+
+        # associating services  --> M2M Relation (Model: Service)
+        for service in form.cleaned_data['service']:
+            device_service = Service.objects.get(service_name=service)
+            device.service.add(device_service)
             device.save()
-        except:
-            print "No service to add."
+
+        # saving site_instance --> FK Relation
         try:
-            device.instance = site
+            device.instance = SiteInstance.objects.get(name=form.cleaned_data['instance'])
             device.save()
         except:
             print "No instance to add."
         print "Device ID: %d" % device.id
 
+        # it saves eav relation data i.e. device extra fields those depends on device type
         for field in all_non_empty_post_fields:
             try:
+                # dtf: device type field object
+                # dtfv: device type field value object
                 dtf = DeviceTypeFields.objects.filter(field_name=field,
                                                       device_type_id=int(self.request.POST.get('device_type')))
-                '''
-                print self.request.POST.get('device_type')
-                print dtf
-                print dtf[0]
-                '''
                 dtfv = DeviceTypeFieldsValue()
                 dtfv.device_type_field = dtf[0]
                 dtfv.field_value = self.request.POST.get(field)
@@ -131,6 +121,7 @@ class DeviceCreate(CreateView):
             except:
                 pass
 
+        # saving device_group --> M2M Relation (Model: Inventory)
         for dg in form.cleaned_data['device_group']:
             inventory = Inventory()
             inventory.device = device
