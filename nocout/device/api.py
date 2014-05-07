@@ -20,7 +20,7 @@ class DeviceStatsApi(View):
 
     def get(self, request):
         ''' Handling http GET method for device data'''
-
+        
         req_params = request.GET
         host_ip = request.get_host().split(':')[0]
         self.false_response = {}
@@ -39,7 +39,7 @@ class DeviceStatsApi(View):
             return HttpResponse(json.dumps(self.false_response))
 
 class DeviceStats(View):
-    ''' Class for Device stats methods'''
+    ''' Base class for Device stats methods'''
 
     def p2p_device_info(self, user, host_ip):
         ''' Getting P2P device stats associated with a particular user'''
@@ -52,16 +52,16 @@ class DeviceStats(View):
                                                     user_group_id
             self.dev_gp_id = Organization.objects.get(user_group_id=self.user_gp_id).\
                                                     device_group_id
-            device_id_list = Inventory.objects.filter(device_group_id=self.dev_gp_id)
+            inventory_dict = Inventory.objects.filter(device_group_id=self.dev_gp_id).values()
         except Exception, error:
             print "No Data for this user"
             return device_stats_list
 
         
-        for dev_id in device_id_list:
+        for dev in inventory_dict:
             device_info = {}
             try:
-                device_object = Device.objects.get(id=dev_id.device_id)
+                device_object = Device.objects.get(id=dev.get('device_id'))
             except ObjectDoesNotExist:
                 print "No Device found"
                 continue
