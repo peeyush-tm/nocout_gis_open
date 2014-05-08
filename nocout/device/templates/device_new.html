@@ -44,11 +44,26 @@
         </div>
     </form>
     <script>
-        /*
-         $(document).ready(function(){
-         Dajaxice.device.device_type_extra_fields(Dajax.process, {'option': $('#id_device_type').val()});
-         });
-         */
+        $(document).ready(function(){
+            if (!$('#id_device_technology')){
+                Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
+            }
+            if (!$('#id_device_vendor').val()){
+                $("#id_device_vendor").empty();
+            }
+            else{
+                Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});
+            }
+            if (!$('#id_device_model').val()){
+                $("#id_device_model").empty();
+            }
+            else{
+                Dajaxice.device.update_type(Dajax.process, {'option': $('#id_device_model').val()});
+            }
+            if (!$('#id_device_type').val()){
+                $("#id_device_type").empty();
+            }
+        });
 
         $("#id_device_technology").change(function () {
             Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
@@ -78,6 +93,5 @@
                 Dajaxice.device.device_type_extra_fields(Dajax.process, {'option': $('#id_device_type').val()});
             }
         });
-
     </script>
 {% endblock %}

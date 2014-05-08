@@ -68,7 +68,8 @@ class Device(MPTTModel, models.Model):
 
     device_name = models.CharField('Device Name', max_length=200, unique=True)
     device_alias = models.CharField('Device Alias', max_length=200)
-    instance = models.ForeignKey(SiteInstance, null=True, blank=True)
+    site_instance = models.ForeignKey(SiteInstance, null=True, blank=True)
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='device_children')
     device_group = models.ManyToManyField(DeviceGroup, through='Inventory', blank=True, null=True)
     device_technology = models.IntegerField('Device Technology', max_length=200, null=True, blank=True)
     device_vendor = models.IntegerField('Device Vendor', max_length=200, null=True, blank=True)
@@ -80,15 +81,14 @@ class Device(MPTTModel, models.Model):
     netmask = models.IPAddressField('Netmask', null=True, blank=True)
     gateway = models.IPAddressField('Gateway', null=True, blank=True)
     dhcp_state = models.CharField('DHCP State', max_length=200, choices=DHCP_STATE, default=disable)
-    parent = TreeForeignKey('self', null=True, blank=True, related_name='device_children')
     host_priority = models.CharField('Host Priority', max_length=200, choices=HOST_STATE, default=normal)
     host_state = models.CharField('Host State', max_length=200, choices=HOST_STATE, default=enable)
-    address = models.TextField('Address', null=True, blank=True)
-    city = models.CharField('City', max_length=100, null=True, blank=True)
-    state = models.CharField('State', max_length=100, null=True, blank=True)
     timezone = models.CharField('Timezone', max_length=100)
     latitude = models.CharField('Latitude', max_length=20, null=True, blank=True)
     longitude = models.CharField('Longitude', max_length=20, null=True, blank=True)
+    address = models.TextField('Address', null=True, blank=True)
+    city = models.CharField('City', max_length=100, null=True, blank=True)
+    state = models.CharField('State', max_length=100, null=True, blank=True)
     description = models.TextField('Description')
 
     def __unicode__(self):

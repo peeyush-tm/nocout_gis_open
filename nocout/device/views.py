@@ -10,7 +10,7 @@ from django.http.response import HttpResponseRedirect
 from service.models import Service
 
 
-# ***************************************** Device Views *******************************************
+# ***************************************** Device Views ********************************************
 
 
 class DeviceList(ListView):
@@ -21,6 +21,9 @@ class DeviceList(ListView):
 class DeviceDetail(DetailView):
     model = Device
     template_name = 'device_detail.html'
+
+    def get_context_data(self, **kwargs):
+        pass
 
 
 class DeviceCreate(CreateView):
@@ -49,19 +52,7 @@ class DeviceCreate(CreateView):
             if value != "":
                 all_non_empty_post_fields.append(key)
 
-
-        try:
-            site = SiteInstance.objects.get(name=form.cleaned_data['instance'])
-            service = Service.objects.get(pk=form.cleaned_data['service'])
-        except:
-            site = None
-            service = None
-        print "Site: %s" % form.cleaned_data['instance']
-        print "Service: %s" % form.cleaned_data['service']
-        print "Site Object: %s" % site
-        print "Service Object: %s" % service
-
-        # creating Device object for saving device post data
+        # saving device data
         device = Device()
         device.device_name = form.cleaned_data['device_name']
         device.device_alias = form.cleaned_data['device_alias']
@@ -85,6 +76,28 @@ class DeviceCreate(CreateView):
         device.description = form.cleaned_data['description']
         device.save()
 
+        # saving site_instance --> FK Relation
+        try:
+            device.site_instance = SiteInstance.objects.get(name=form.cleaned_data['site_instance'])
+            device.save()
+        except:
+            print "No instance to add."
+
+        # saving associated services  --> M2M Relation (Model: Service)
+        for service in form.cleaned_data['service']:
+            device_service = Service.objects.get(service_name=service)
+            device.service.add(device_service)
+            device.save()
+
+        # saving device 'parent device' --> FK Relation
+        try:
+            parent_device = Device.objects.get(device_alias=form.cleaned_data['parent'])
+            device.parent = parent_device
+            device.save()
+        except:
+            print "Device has no parent."
+
+        # fetching device extra fields associated with 'device type'
         try:
             device_type = DeviceType.objects.get(id=int(self.request.POST.get('device_type')))
             # it gives all device fields associated with device_type object
@@ -92,21 +105,7 @@ class DeviceCreate(CreateView):
         except:
             print "No device type exists."
 
-        # associating services  --> M2M Relation (Model: Service)
-        for service in form.cleaned_data['service']:
-            device_service = Service.objects.get(service_name=service)
-            device.service.add(device_service)
-            device.save()
-
-        # saving site_instance --> FK Relation
-        try:
-            device.instance = SiteInstance.objects.get(name=form.cleaned_data['instance'])
-            device.save()
-        except:
-            print "No instance to add."
-        print "Device ID: %d" % device.id
-
-        # it saves eav relation data i.e. device extra fields those depends on device type
+        # saving eav relation data i.e. device extra fields those depends on device type
         for field in all_non_empty_post_fields:
             try:
                 # dtf: device type field object
@@ -143,7 +142,7 @@ class DeviceDelete(DeleteView):
     success_url = reverse_lazy('device_list')
 
 
-# ************************** Device Type Form Fields Views **********************************
+# ******************************** Device Type Form Fields Views ************************************
 
 
 class DeviceTypeFieldsList(ListView):
@@ -176,7 +175,7 @@ class DeviceTypeFieldsDelete(DeleteView):
     success_url = reverse_lazy('device_type_form_field_list')
 
 
-# ************************************* Device Technology *************************************
+# **************************************** Device Technology ****************************************
 
 
 class DeviceTechnologyList(ListView):
@@ -239,7 +238,7 @@ class DeviceTechnologyDelete(DeleteView):
     success_url = reverse_lazy('device_technology_list')
 
 
-# ************************************* Device Vendor *************************************
+# ************************************* Device Vendor ***********************************************
 
 
 class DeviceVendorList(ListView):
@@ -302,7 +301,7 @@ class DeviceVendorDelete(DeleteView):
     success_url = reverse_lazy('device_vendor_list')
 
 
-# ************************************* Device Model *************************************
+# ****************************************** Device Model *******************************************
 
 
 class DeviceModelList(ListView):
@@ -365,7 +364,7 @@ class DeviceModelDelete(DeleteView):
     success_url = reverse_lazy('device_model_list')
 
 
-# ************************************* Device Model *************************************
+# ****************************************** Device Model *******************************************
 
 
 class DeviceTypeList(ListView):
@@ -396,4 +395,3 @@ class DeviceTypeDelete(DeleteView):
     model = DeviceType
     template_name = 'device_type_delete.html'
     success_url = reverse_lazy('device_type_list')
-    
