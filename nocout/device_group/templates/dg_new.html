@@ -1,10 +1,44 @@
 {% extends "inventory.html" %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/device_group.css" %}>
+{% endblock %}
 {% block content %}
-<p><strong>Create Device Group</strong></p>
-	<form action="/dg/new/" method="post">{% csrf_token %}
-			{{ form.errors }}
-			{{ form.non_field_errors }}
-			{{ form.as_p }}
-			<input type="submit" value="Create" />
-	</form>
+    <h3>Create Device Group</h3>
+    <form action="/dg/new/" method="post">{% csrf_token %}
+        <div id="new_device_group">
+            <table>
+                <tr>
+                    <td>
+                        {{ form.errors }}
+                        {{ form.non_field_errors }}
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="id_name"> Group Name:</label></th>
+                    <td>{{ form.name }}</td>
+                </tr>
+                <tr>
+                    <th><label for="id_alias">Group Alias:</label></th>
+                    <td>{{ form.alias }}</td>
+                </tr>
+                <tr>
+                    <th><label for="id_parent">Parent:</label></th>
+                    <td>{{ form.parent }}</td>
+                </tr>
+                <tr>
+                    <th><label for="id_location">Location:</label></th>
+                    <td>{{ form.location }}</td>
+                </tr>
+                <tr>
+                    <th><label for="id_address">Address:</label></th>
+                    <td>{{ form.address }}</td>
+                </tr>
+                <tr>
+                    <th></th>
+                    <td><input type="submit" value="Create"/></td>
+                </tr>
+            </table>
+        </div>
+    </form>
 {% endblock %}

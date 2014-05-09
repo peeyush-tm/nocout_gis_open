@@ -1,3 +1,3 @@
 from django.db import models
 
-#@TODO: the organization exists in the user models
+# @TODO: the organization exists in the 'user_profile' models

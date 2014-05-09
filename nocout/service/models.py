@@ -1,14 +1,15 @@
 from django.db import models
 from command.models import Command
 
+
 class ServiceParameters(models.Model):
     parameter_description = models.CharField(max_length=250)
     max_check_attempts = models.IntegerField()
     check_interval = models.IntegerField()
     retry_interval = models.IntegerField(null=True, blank=True)
-    check_period = models.CharField(max_length=100, null=True, blank=True) 
+    check_period = models.CharField(max_length=100, null=True, blank=True)
     notification_interval = models.IntegerField(null=True, blank=True)
-    notification_period = models.CharField(max_length=100, null=True, blank=True)                      # timeperiod_name
+    notification_period = models.CharField(max_length=100, null=True, blank=True)  # timeperiod_name
     '''
     is_volatile = models.IntegerField(null=True, blank=True)
     initial_state = models.CharField(max_length=1, null=True, blank=True)                              # [o,w,u,c]
@@ -34,13 +35,18 @@ class ServiceParameters(models.Model):
     notes_url = models.URLField(max_length=200, null=True, blank=True)
     action_url = models.URLField(max_length=200, null=True, blank=True)
     '''
-    
+
+    def __unicode__(self):
+        return self.parameter_description
+
+
 class Service(models.Model):
     service_name = models.CharField(max_length=100)
     alias = models.CharField(max_length=100)
     parameters = models.ManyToManyField(ServiceParameters, null=True, blank=True)
-    command = models.ForeignKey(Command, blank=True, null=False)
-    description = models.CharField(max_length=250, null=True, blank=True)
-    
+    command = models.ForeignKey(Command, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+
     def __unicode__(self):
         return self.service_name
+    
