@@ -1,0 +1,10 @@
+{% extends "inventory/inventory.html" %}
+{% block content %}
+<p><strong>Create Device Group</strong></p>
+	<form action="/dg/new/" method="post">{% csrf_token %}
+			{{ form.errors }}
+			{{ form.non_field_errors }}
+			{{ form.as_p }}
+			<input type="submit" value="Create" />
+	</form>
+{% endblock %}
