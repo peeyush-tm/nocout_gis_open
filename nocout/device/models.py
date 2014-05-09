@@ -69,7 +69,7 @@ class Device(MPTTModel, models.Model):
     device_name = models.CharField('Device Name', max_length=200, unique=True)
     device_alias = models.CharField('Device Alias', max_length=200)
     site_instance = models.ForeignKey(SiteInstance, null=True, blank=True)
-    parent = TreeForeignKey('self', null=True, blank=True, related_name='device_children')
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='device_children')
     device_group = models.ManyToManyField(DeviceGroup, through='Inventory', blank=True, null=True)
     device_technology = models.IntegerField('Device Technology', max_length=200, null=True, blank=True)
     device_vendor = models.IntegerField('Device Vendor', max_length=200, null=True, blank=True)
@@ -92,7 +92,7 @@ class Device(MPTTModel, models.Model):
     description = models.TextField('Description')
 
     def __unicode__(self):
-        return self.device_alias
+        return self.device_name
 
 
 # model-type mapper

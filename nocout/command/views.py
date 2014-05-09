@@ -7,23 +7,23 @@ from .forms import CommandForm
 
 class CommandList(ListView):
     model = Command
-    template_name = 'commands_list.html'
+    template_name = 'command/commands_list.html'
 
 
 class CommandDetail(DetailView):
     model = Command
-    template_name = 'command_detail.html'
+    template_name = 'command/command_detail.html'
 
 
 class CommandCreate(CreateView):
-    template_name = 'command_new.html'
+    template_name = 'command/command_new.html'
     model = Command
     form_class = CommandForm
     success_url = reverse_lazy('commands_list')
 
 
 class CommandUpdate(UpdateView):
-    template_name = 'command_update.html'
+    template_name = 'command/command_update.html'
     model = Command
     form_class = CommandForm
     success_url = reverse_lazy('commands_list')
@@ -31,7 +31,7 @@ class CommandUpdate(UpdateView):
 
 class CommandDelete(DeleteView):
     model = Command
-    template_name = 'command_delete.html'
+    template_name = 'command/command_delete.html'
     success_url = reverse_lazy('commands_list')
     
     

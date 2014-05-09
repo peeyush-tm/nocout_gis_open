@@ -1,0 +1,126 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
+{% endblock %}
+{% block content %}
+    <h3>Create Device</h3>
+    <form action="/device/new/" method="post" id="device_form">{% csrf_token %}
+        <div id="new_device">
+            <table id="wrap_complete">
+                <tr>
+                    <td>
+                        {{ form.errors }}
+                        {{ form.non_field_errors }}
+                    </td>
+                </tr>
+            </table>
+            <table id="left_align">
+                {% for field in form %}
+                    {% if field.field.widget.attrs.class != 'extra' %}
+                        <tr>
+                            <th>{{ field.label_tag }}</th>
+                            <td>{{ field }}</td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+                <tr>
+                    <th></th>
+                    <td><input type="submit" value="Create"/></td>
+                </tr>
+            </table>
+            <table id="right_align">
+                <span id="extra_fields">
+                    {% for field in form %}
+                        {% if field.field.widget.attrs.class == 'extra' %}
+                            <tr>
+                                <th>{{ field.label_tag }}</th>
+                                <td>{{ field }}</td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </span>
+            </table>
+        </div>
+    </form>
+    <script>
+        $(document).ready(function(){
+            // update 'device parent' select options
+            if ($('#id_parent').val()){
+                // called if 'device parent' is already selected i.e. after validation if form is invalid
+                Dajaxice.device.device_parent_choices_selected(Dajax.process, {'option': $('#id_parent').val()});
+            }
+            else{
+                // called if 'device parent' form is loaded first time i.e. before form submission
+                Dajaxice.device.device_parent_choices_initial(Dajax.process);
+            }
+
+            // update 'device technology' if it is already selected
+            // i.e. after validation if form is invalid
+            if ($('#id_device_technology')){
+                Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
+            }
+
+            // update 'device vendor' if it is already selected corresponding to 'device technology'
+            // i.e. after validation if form is invalid
+            // or just empty the selection menu
+            if (!$('#id_device_vendor').val()){
+                $("#id_device_vendor").empty();
+            }
+            else{
+                Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});
+            }
+
+            // update 'device model' if it is already selected corresponding to 'device vendor'
+            // i.e. after validation if form is invalid
+            // or just empty the selection menu
+            if (!$('#id_device_model').val()){
+                $("#id_device_model").empty();
+            }
+            else{
+                Dajaxice.device.update_type(Dajax.process, {'option': $('#id_device_model').val()});
+            }
+
+            // update 'device type' if it is already selected corresponding to 'device model'
+            // i.e. after validation if form is invalid
+            // or just empty the selection menu
+            if (!$('#id_device_type').val()){
+                $("#id_device_type").empty();
+            }
+
+        });
+
+        // update 'device vendor' on selecting 'device technology'
+        $("#id_device_technology").change(function () {
+            Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
+        });
+
+        // update 'device model' on selecting 'device vendor'
+        $("#id_device_vendor").change(function () {
+            Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});
+        }).click(function () {
+            if ($("#id_device_vendor").length == 1) {
+                Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});
+            }
+        });
+
+        // update 'device type' on selecting 'device model'
+        $("#id_device_model").change(function () {
+            Dajaxice.device.update_type(Dajax.process, {'option': $('#id_device_model').val()});
+        }).click(function () {
+            if ($("#id_device_model").length == 1) {
+                Dajaxice.device.update_type(Dajax.process, {'option': $('#id_device_model').val()});
+            }
+        });
+
+        // show device 'extra fields' on selecting 'device type'
+        $("#id_device_type").change(function () {
+            $("#right_align").empty();
+            Dajaxice.device.device_type_extra_fields(Dajax.process, {'option': $('#id_device_type').val()});
+        }).click(function () {
+            if ($("#id_device_type").length == 1) {
+                Dajaxice.device.device_type_extra_fields(Dajax.process, {'option': $('#id_device_type').val()});
+            }
+        });
+    </script>
+{% endblock %}

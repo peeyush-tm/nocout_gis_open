@@ -1,6 +1,5 @@
-from string import capitalize
 from django import forms
-from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, DeviceTypeFields
+from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
 from device.models import DeviceTypeFields
 
@@ -10,19 +9,16 @@ from device.models import DeviceTypeFields
 
 class DeviceForm(forms.ModelForm):
     device_technology = IntReturnModelChoiceField(queryset=DeviceTechnology.objects.all(),
-                                                  required=False
-    )
+                                                  required=False)
     device_vendor = IntReturnModelChoiceField(queryset=DeviceVendor.objects.all(),
-                                              required=False
-    )
+                                              required=False)
     device_model = IntReturnModelChoiceField(queryset=DeviceModel.objects.all(),
-                                             required=False
-    )
+                                             required=False)
     device_type = IntReturnModelChoiceField(queryset=DeviceType.objects.all(),
-                                            required=False
-    )
+                                            required=False)
 
     def __init__(self, *args, **kwargs):
+        # setting foreign keys field label
         self.base_fields['device_group'].label = 'Device Group'
         self.base_fields['site_instance'].label = 'Site Instance'
         self.base_fields['device_technology'].label = 'Device Technology'
@@ -46,8 +42,6 @@ class DeviceForm(forms.ModelForm):
                                                                 label=extra_field.field_display_name, ),
                     })
                     self.fields[extra_field.field_name].widget.attrs['class'] = 'extra'
-            else:
-                pass
         except:
             pass
 

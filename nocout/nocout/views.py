@@ -7,7 +7,7 @@ from django.contrib import auth
 def login(request):
     c = {}
     c.update(csrf(request))
-    return render_to_response('login.html', c)
+    return render_to_response('nocout/templates/login.html', c)
 
 
 def auth_view(request):
@@ -25,13 +25,13 @@ def auth_view(request):
 
 
 def loggedin(request):
-    return render_to_response('loggedin.html', {'username': request.user.username})
+    return render_to_response('nocout/templates/loggedin.html', {'username': request.user.username})
 
 
 def invalid_login(request):
-    return render_to_response('invalid_login.html')
+    return render_to_response('nocout/templates/invalid_login.html')
 
 
 def logout(request):
     auth.logout(request)
-    return render_to_response('logout.html') 
+    return render_to_response('nocout/templates/logout.html')

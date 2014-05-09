@@ -8,16 +8,16 @@ from django.http.response import HttpResponseRedirect
 
 class UserGroupList(ListView):
     model = UserGroup
-    template_name = 'ug_list.html'
+    template_name = 'user_group/ug_list.html'
 
 
 class UserGroupDetail(DetailView):
     model = UserGroup
-    template_name = 'ug_detail.html'
+    template_name = 'user_group/ug_detail.html'
 
 
 class UserGroupCreate(CreateView):
-    template_name = 'ug_new.html'
+    template_name = 'user_group/ug_new.html'
     model = UserGroup
     form_class = UserGroupForm
     success_url = reverse_lazy('ug_list')
@@ -48,7 +48,7 @@ class UserGroupCreate(CreateView):
 
 
 class UserGroupUpdate(UpdateView):
-    template_name = 'ug_update.html'
+    template_name = 'user_group/ug_update.html'
     model = UserGroup
     form_class = UserGroupForm
     success_url = reverse_lazy('ug_list')
@@ -83,6 +83,6 @@ class UserGroupUpdate(UpdateView):
 
 class UserGroupDelete(DeleteView):
     model = UserGroup
-    template_name = 'ug_delete.html'
+    template_name = 'user_group/ug_delete.html'
     success_url = reverse_lazy('ug_list')
 

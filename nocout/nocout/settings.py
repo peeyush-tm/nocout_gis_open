@@ -82,13 +82,6 @@ STATIC_URL = '/static/'
 
 # Additional locations of static files
 STATICFILES_DIRS = (
-    '%s/../static/' % PROJECT_DIR,
-    '%s/../user_profile/static' % PROJECT_DIR,
-    '%s/../user_group/static' % PROJECT_DIR,
-    '%s/../device/static' % PROJECT_DIR,
-    '%s/../device_group/static' % PROJECT_DIR,
-    '%s/../command/static' % PROJECT_DIR,
-    '%s/../site_instance/static' % PROJECT_DIR,
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
@@ -108,14 +101,6 @@ SECRET_KEY = 'q+(_ijqc+^&#_51_duhnl+u-$&63tzgdo2b0_gaw!*%swxkc!&'
 
 TEMPLATE_DIRS = (
     "%s/templates" % PROJECT_DIR,
-    "%s/../inventory/templates" % PROJECT_DIR,
-    "%s/../home/templates" % PROJECT_DIR,
-    "%s/../user_profile/templates" % PROJECT_DIR,
-    "%s/../user_group/templates" % PROJECT_DIR,
-    "%s/../device/templates" % PROJECT_DIR,
-    "%s/../device_group/templates" % PROJECT_DIR,
-    "%s/../organization/templates" % PROJECT_DIR,
-    '%s/../site_instance/static' % PROJECT_DIR,
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.

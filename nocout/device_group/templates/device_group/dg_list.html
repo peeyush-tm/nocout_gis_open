@@ -1,0 +1,27 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/device_group.css" %}>
+{% endblock %}
+{% block content %}
+    <h2>Device Groups</h2>
+    <hr/>
+    <p><a href="/dg/new">Create Device Group</a></p>
+    <br/>
+    <div id="device_group">
+        <table>
+            <tr>
+                <td><strong>Device Group</strong></td>
+                <td><strong>Edit</strong></td>
+                <td><strong>Delete</strong></td>
+            </tr>
+            {% for dg in object_list %}
+                <tr>
+                    <td><a href="/dg/{{ dg.id }}">{{ dg.name }}</a></td>
+                    <td><a href="/dg/edit/{{ dg.id }}">Edit</a></td>
+                    <td><a href="/dg/delete/{{ dg.id }}">Delete</a></td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% endblock %}

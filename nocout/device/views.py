@@ -15,19 +15,24 @@ from service.models import Service
 
 class DeviceList(ListView):
     model = Device
-    template_name = 'devices_list.html'
+    template_name = 'device/devices_list.html'
 
 
 class DeviceDetail(DetailView):
     model = Device
-    template_name = 'device_detail.html'
+    template_name = 'device/device_detail.html'
 
     def get_context_data(self, **kwargs):
-        pass
+        print "*********************************************************************************"
+        print self.object
+        print "**********************************************************************************"
+        print kwargs
+        context = super(DeviceDetail, self).get_context_data(**kwargs)
+        return context
 
 
 class DeviceCreate(CreateView):
-    template_name = 'device_new.html'
+    template_name = 'device/device_new.html'
     model = Device
     form_class = DeviceForm
     success_url = reverse_lazy('device_list')
@@ -91,7 +96,7 @@ class DeviceCreate(CreateView):
 
         # saving device 'parent device' --> FK Relation
         try:
-            parent_device = Device.objects.get(device_alias=form.cleaned_data['parent'])
+            parent_device = Device.objects.get(device_name=form.cleaned_data['parent'])
             device.parent = parent_device
             device.save()
         except:
@@ -130,7 +135,7 @@ class DeviceCreate(CreateView):
 
 
 class DeviceUpdate(UpdateView):
-    template_name = 'device_update.html'
+    template_name = 'device/device_update.html'
     model = Device
     form_class = DeviceForm
     success_url = reverse_lazy('device_list')
@@ -138,7 +143,7 @@ class DeviceUpdate(UpdateView):
 
 class DeviceDelete(DeleteView):
     model = Device
-    template_name = 'device_delete.html'
+    template_name = 'device/device_delete.html'
     success_url = reverse_lazy('device_list')
 
 
@@ -147,23 +152,23 @@ class DeviceDelete(DeleteView):
 
 class DeviceTypeFieldsList(ListView):
     model = DeviceTypeFields
-    template_name = 'device_type_form_field_list.html'
+    template_name = 'device/device_type_form_field_list.html'
 
 
 class DeviceTypeFieldsDetail(DetailView):
     model = DeviceTypeFields
-    template_name = 'device_type_form_field_detail.html'
+    template_name = 'device/device_type_form_field_detail.html'
 
 
 class DeviceTypeFieldsCreate(CreateView):
-    template_name = 'device_type_form_field_new.html'
+    template_name = 'device/device_type_form_field_new.html'
     model = DeviceTypeFields
     form_class = DeviceTypeFieldsForm
     success_url = reverse_lazy('device_type_form_field_list')
 
 
 class DeviceTypeFieldsUpdate(UpdateView):
-    template_name = 'device_type_form_field_update.html'
+    template_name = 'device/device_type_form_field_update.html'
     model = DeviceTypeFields
     form_class = DeviceTypeFieldsUpdateForm
     success_url = reverse_lazy('device_type_form_field_list')
@@ -171,7 +176,7 @@ class DeviceTypeFieldsUpdate(UpdateView):
 
 class DeviceTypeFieldsDelete(DeleteView):
     model = DeviceTypeFields
-    template_name = 'device_type_form_field_delete.html'
+    template_name = 'device/device_type_form_field_delete.html'
     success_url = reverse_lazy('device_type_form_field_list')
 
 
@@ -180,16 +185,16 @@ class DeviceTypeFieldsDelete(DeleteView):
 
 class DeviceTechnologyList(ListView):
     model = DeviceTechnology
-    template_name = 'device_technology_list.html'
+    template_name = 'device/device_technology_list.html'
 
 
 class DeviceTechnologyDetail(DetailView):
     model = DeviceTechnology
-    template_name = 'device_technology_detail.html'
+    template_name = 'device/device_technology_detail.html'
 
 
 class DeviceTechnologyCreate(CreateView):
-    template_name = 'device_technology_new.html'
+    template_name = 'device/device_technology_new.html'
     model = DeviceTechnology
     form_class = DeviceTechnologyForm
     success_url = reverse_lazy('device_technology_list')
@@ -210,7 +215,7 @@ class DeviceTechnologyCreate(CreateView):
 
 
 class DeviceTechnologyUpdate(UpdateView):
-    template_name = 'device_technology_update.html'
+    template_name = 'device/device_technology_update.html'
     model = DeviceTechnology
     form_class = DeviceTechnologyForm
     success_url = reverse_lazy('device_technology_list')
@@ -234,7 +239,7 @@ class DeviceTechnologyUpdate(UpdateView):
 
 class DeviceTechnologyDelete(DeleteView):
     model = DeviceTechnology
-    template_name = 'device_technology_delete.html'
+    template_name = 'device/device_technology_delete.html'
     success_url = reverse_lazy('device_technology_list')
 
 
@@ -243,16 +248,16 @@ class DeviceTechnologyDelete(DeleteView):
 
 class DeviceVendorList(ListView):
     model = DeviceVendor
-    template_name = 'device_vendor_list.html'
+    template_name = 'device/device_vendor_list.html'
 
 
 class DeviceVendorDetail(DetailView):
     model = DeviceVendor
-    template_name = 'device_vendor_detail.html'
+    template_name = 'device/device_vendor_detail.html'
 
 
 class DeviceVendorCreate(CreateView):
-    template_name = 'device_vendor_new.html'
+    template_name = 'device/device_vendor_new.html'
     model = DeviceVendor
     form_class = DeviceVendorForm
     success_url = reverse_lazy('device_vendor_list')
@@ -273,7 +278,7 @@ class DeviceVendorCreate(CreateView):
 
 
 class DeviceVendorUpdate(UpdateView):
-    template_name = 'device_vendor_update.html'
+    template_name = 'device/device_vendor_update.html'
     model = DeviceVendor
     form_class = DeviceVendorForm
     success_url = reverse_lazy('device_vendor_list')
@@ -297,7 +302,7 @@ class DeviceVendorUpdate(UpdateView):
 
 class DeviceVendorDelete(DeleteView):
     model = DeviceVendor
-    template_name = 'device_vendor_delete.html'
+    template_name = 'device/device_vendor_delete.html'
     success_url = reverse_lazy('device_vendor_list')
 
 
@@ -306,16 +311,16 @@ class DeviceVendorDelete(DeleteView):
 
 class DeviceModelList(ListView):
     model = DeviceModel
-    template_name = 'device_model_list.html'
+    template_name = 'device/device_model_list.html'
 
 
 class DeviceModelDetail(DetailView):
     model = DeviceModel
-    template_name = 'device_model_detail.html'
+    template_name = 'device/device_model_detail.html'
 
 
 class DeviceModelCreate(CreateView):
-    template_name = 'device_model_new.html'
+    template_name = 'device/device_model_new.html'
     model = DeviceModel
     form_class = DeviceModelForm
     success_url = reverse_lazy('device_model_list')
@@ -336,7 +341,7 @@ class DeviceModelCreate(CreateView):
 
 
 class DeviceModelUpdate(UpdateView):
-    template_name = 'device_model_update.html'
+    template_name = 'device/device_model_update.html'
     model = DeviceModel
     form_class = DeviceModelForm
     success_url = reverse_lazy('device_model_list')
@@ -360,7 +365,7 @@ class DeviceModelUpdate(UpdateView):
 
 class DeviceModelDelete(DeleteView):
     model = DeviceModel
-    template_name = 'device_model_delete.html'
+    template_name = 'device/device_model_delete.html'
     success_url = reverse_lazy('device_model_list')
 
 
@@ -369,23 +374,23 @@ class DeviceModelDelete(DeleteView):
 
 class DeviceTypeList(ListView):
     model = DeviceType
-    template_name = 'device_type_list.html'
+    template_name = 'device/device_type_list.html'
 
 
 class DeviceTypeDetail(DetailView):
     model = DeviceType
-    template_name = 'device_type_detail.html'
+    template_name = 'device/device_type_detail.html'
 
 
 class DeviceTypeCreate(CreateView):
-    template_name = 'device_type_new.html'
+    template_name = 'device/device_type_new.html'
     model = DeviceType
     form_class = DeviceTypeForm
     success_url = reverse_lazy('device_type_list')
 
 
 class DeviceTypeUpdate(UpdateView):
-    template_name = 'device_type_update.html'
+    template_name = 'device/device_type_update.html'
     model = DeviceType
     form_class = DeviceTypeForm
     success_url = reverse_lazy('device_type_list')
@@ -393,5 +398,5 @@ class DeviceTypeUpdate(UpdateView):
 
 class DeviceTypeDelete(DeleteView):
     model = DeviceType
-    template_name = 'device_type_delete.html'
+    template_name = 'device/device_type_delete.html'
     success_url = reverse_lazy('device_type_list')
