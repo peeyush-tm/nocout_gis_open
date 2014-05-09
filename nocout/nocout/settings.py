@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 """
 
 import os
-
+from django.conf import global_settings
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_DIR = os.path.dirname(__file__)
 
@@ -82,17 +82,8 @@ STATIC_URL = '/static/'
 
 # Additional locations of static files
 STATICFILES_DIRS = (
-    '%s/../static/' % PROJECT_DIR,
-    '%s/../user_profile/static' % PROJECT_DIR,
-    '%s/../user_group/static' % PROJECT_DIR,
-    '%s/../device/static' % PROJECT_DIR,
-    '%s/../device_group/static' % PROJECT_DIR,
-    '%s/../command/static' % PROJECT_DIR,
-    '%s/../site_instance/static' % PROJECT_DIR,
-    # Put strings here, like "/home/html/static" or "C:/www/django/static".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-)
+    os.path.join(BASE_DIR, "static"),
+    )
 
 # List of finder classes that know how to find static files in
 # various locations.
@@ -106,20 +97,7 @@ STATICFILES_FINDERS = (
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'q+(_ijqc+^&#_51_duhnl+u-$&63tzgdo2b0_gaw!*%swxkc!&'
 
-TEMPLATE_DIRS = (
-    "%s/templates" % PROJECT_DIR,
-    "%s/../inventory/templates" % PROJECT_DIR,
-    "%s/../home/templates" % PROJECT_DIR,
-    "%s/../user_profile/templates" % PROJECT_DIR,
-    "%s/../user_group/templates" % PROJECT_DIR,
-    "%s/../device/templates" % PROJECT_DIR,
-    "%s/../device_group/templates" % PROJECT_DIR,
-    "%s/../organization/templates" % PROJECT_DIR,
-    '%s/../site_instance/static' % PROJECT_DIR,
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-)
+TEMPLATE_DIRS = ( os.path.join(PROJECT_DIR, "templates"), )
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
@@ -127,15 +105,9 @@ TEMPLATE_LOADERS = (
     'django.template.loaders.eggs.Loader',
 )
 # Template context processors
-TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.contrib.auth.context_processors.auth',
-    'django.core.context_processors.debug',
-    'django.core.context_processors.i18n',
-    'django.core.context_processors.media',
-    'django.core.context_processors.static',
-    'django.core.context_processors.request',
-    'django.contrib.messages.context_processors.messages'
-)
+
+TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + ( 'django.core.context_processors.request', )
+
 MIDDLEWARE_CLASSES = (
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -163,6 +135,8 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_extensions',
+    'session_security',
     'south',
     'user_profile',
     'user_group',
@@ -178,11 +152,11 @@ INSTALLED_APPS = (
     'home',
     'dajaxice',
     'dajax',
-    # Uncomment the next line to enable the admin:
     'django.contrib.admin',
-    # Uncomment the next line to enable admin documentation:
-    # 'django.contrib.admindocs',
+    'debug_toolbar',
+    'preventconcurrentlogins'
     'corsheaders',
+
 )
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -217,6 +191,10 @@ LOGGING = {
         },
     }
 }
+
+SESSION_SECURITY_WARN_AFTER=540
+SESSION_SECURITY_EXPIRE_AFTER=600
+SESSION_EXPIRE_AT_BROWSER_CLOSE=True
 
 # Import the local_settings.py file to override global settings
 
