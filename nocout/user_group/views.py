@@ -8,81 +8,55 @@ from django.http.response import HttpResponseRedirect
 
 class UserGroupList(ListView):
     model = UserGroup
-    template_name = 'ug_list.html'
+    template_name = 'user_group/ug_list.html'
 
 
 class UserGroupDetail(DetailView):
     model = UserGroup
-    template_name = 'ug_detail.html'
-
-
+    template_name = 'user_group/ug_detail.html'
+    
 class UserGroupCreate(CreateView):
-    template_name = 'ug_new.html'
-    model = UserGroup
-    form_class = UserGroupForm
-    success_url = reverse_lazy('ug_list')
-
-    def form_valid(self, form):
-        user_group = UserGroup()
-        user_group.name = form.cleaned_data['name']
-        user_group.alias = form.cleaned_data['alias']
-        user_group.location = form.cleaned_data['location']
-        user_group.address = form.cleaned_data['address']
-        user_group.save()
-
-        # saving parent --> FK Relation
-        try:
-            parent_user_group = UserGroup.objects.get(name=form.cleaned_data['parent'])
-            user_group.parent = parent_user_group
-            user_group.save()
-        except:
-            print "UserGroup has no parent."
-
-        # saving device_group --> M2M Relation (Model: Organization)
-        for dg in form.cleaned_data['device_group']:
-            organization = Organization()
-            organization.user_group = user_group
-            organization.device_group = dg
-            organization.save()
-        return HttpResponseRedirect(UserGroupCreate.success_url)
-
-
-class UserGroupUpdate(UpdateView):
-    template_name = 'ug_update.html'
+    template_name = 'user_group/ug_new.html'
     model = UserGroup
     form_class = UserGroupForm
     success_url = reverse_lazy('ug_list')
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
-        self.object.name = form.cleaned_data['name']
-        self.object.alias = form.cleaned_data['alias']
-        self.object.location = form.cleaned_data['location']
-        self.object.address = form.cleaned_data['address']
+        #Add the default group if the parent field is None
+        # if not self.object.parent:
+        #     self.object.parent=Default_group
         self.object.save()
 
-        # updating parent --> FK Relation
-        try:
-            parent_user_group = UserGroup.objects.get(name=form.cleaned_data['parent'])
-            self.object.parent = parent_user_group
-            self.object.save()
-        except:
-            print "UserGroup has no parent."
-
-        # delete old relationship exist in Organization Model
-        Organization.objects.filter(user_group=self.object).delete()
-
-        # updating device_group --> M2M Relation (Model: Organization)
         for dg in form.cleaned_data['device_group']:
-            organization = Organization()
-            organization.user_group = self.object
-            organization.device_group = dg
-            organization.save()
-        return HttpResponseRedirect(UserGroupUpdate.success_url)
+            Organization.objects.create(user_group=self.object, device_group=dg)
+
+        return super(ModelFormMixin, self).form_valid(form)
+    
+class UserGroupUpdate(UpdateView):
+    template_name = 'user_group/ug_update.html'
+    model = UserGroup
+    form_class = UserGroupForm
+    success_url = reverse_lazy('ug_list')
+
+    def form_valid(self, form):
+        #IntegrityError: (1062, "Duplicate entry 'test_group4' for key 'name'")
+        #TODO:Disable the edit of name from the UI (name should be unique)
+        self.object = form.save(commit=False)
+        if form.cleaned_data['device_group']:
+            Organization.objects.filter( user_group = self.object ).delete()
+
+            for dg in form.cleaned_data['device_group']:
+                Organization.objects.create(user_group=self.object, device_group=dg)
+
+        UserGroup.objects.filter(name=self.object.name).update( alias=self.object.alias, address=self.object.address,
+                                                      location=self.object.location, parent=self.object.parent )
+        return super(ModelFormMixin, self).form_valid(form)
+
 
 
 class UserGroupDelete(DeleteView):
     model = UserGroup
-    template_name = 'ug_delete.html'
+    template_name = 'user_group/ug_delete.html'
     success_url = reverse_lazy('ug_list')
 
