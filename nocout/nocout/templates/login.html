@@ -1,5 +1,5 @@
 {% load staticfiles %}
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
@@ -10,7 +10,6 @@
 	<meta name="author" content="Priyesh" >
 	<!-- STYLESHEETS --><!--[if lt IE 9]><script src="js/flot/excanvas.min.js"></script><script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><script src="http://css3-mediaqueries-js.googlecode.com/svn/trunk/css3-mediaqueries.js"></script><![endif]-->
 	<link rel="stylesheet" type="text/css" href={% static "css/cloud-admin.css" %}>
-	
 	<link href={% static "font-awesome/css/font-awesome.min.css" %} rel="stylesheet">
 	<!-- UNIFORM -->
 	<link rel="stylesheet" type="text/css" href={% static "js/uniform/css/uniform.default.min.css" %}/>
@@ -18,9 +17,16 @@
 	<link rel="stylesheet" type="text/css" href={% static "css/animatecss/animate.min.css" %}/>
 	<!-- FONTS -->
 	<link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700' rel='stylesheet' type='text/css'>
+    <!--JQUERY-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js" ></script>
 </head>
-<body class="login">	
-	<!-- PAGE -->
+
+
+<body class="login">
+    <!-- session_security -->
+    {% include "session_security/all.html" %}
+    <!-- session_security -->
+    <!-- PAGE -->
 	<section id="page">
 			<!-- HEADER -->
 			<header>

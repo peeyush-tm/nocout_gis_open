@@ -10,16 +10,16 @@ from service.models import Service
 
 class DeviceList(ListView):
     model = Device
-    template_name = 'devices_list.html'
+    template_name = 'device/devices_list.html'
     
 
 class DeviceDetail(DetailView):
     model = Device
-    template_name = 'device_detail.html'
+    template_name = 'device/device_detail.html'
     
     
 class DeviceCreate(CreateView):
-    template_name = 'device_new.html'
+    template_name = 'device/device_new.html'
     model = Device
     form_class = DeviceForm
     success_url = reverse_lazy('device_list')
@@ -119,7 +119,7 @@ class DeviceCreate(CreateView):
     
     
 class DeviceUpdate(UpdateView):
-    template_name = 'device_update.html'
+    template_name = 'device/device_update.html'
     model = Device
     form_class = DeviceForm
     success_url = reverse_lazy('device_list')
@@ -127,5 +127,8 @@ class DeviceUpdate(UpdateView):
 
 class DeviceDelete(DeleteView):
     model = Device
-    template_name = 'device_delete.html'
+    template_name = 'device/device_delete.html'
     success_url = reverse_lazy('device_list')
+
+import socket
+socket.socket.connect

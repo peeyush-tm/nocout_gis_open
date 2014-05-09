@@ -8,24 +8,24 @@ from site_instance.models import SiteInstance
 class SiteinstanceCreate(CreateView):
     model = SiteInstance
     form_class = SiteInstanceForm
-    template_name = 'site_create.html'
+    template_name = 'site_instance/site_create.html'
     success_url = reverse_lazy('site_list')
 
 class SiteinstanceList(ListView):
     model = SiteInstance
-    template_name = 'site_list.html'
+    template_name = 'site_instance/site_list.html'
 
 class SiteinstanceDetail(DetailView):
     model = SiteInstance
-    template_name = 'site_detail.html'  
+    template_name = 'site_instance/site_detail.html'
 
 class SiteinstanceUpdate(UpdateView):
     model = SiteInstance
     form_class = SiteInstanceForm
-    template_name = 'site_update.html'
+    template_name = 'site_instance/site_update.html'
     success_url = reverse_lazy('site_list')
 
 class SiteInstanceDelete(DeleteView):
     model = SiteInstance
-    template_name = 'site_delete.html'
+    template_name = 'site_instance/site_delete.html'
     success_url = reverse_lazy('site_list')    

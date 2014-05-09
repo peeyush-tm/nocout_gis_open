@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.conf.urls import patterns, include, url
 from dajaxice.core import dajaxice_autodiscover, dajaxice_config
 dajaxice_autodiscover()
@@ -19,13 +20,14 @@ urlpatterns = patterns('',
     url(r'^invalid/$', 'nocout.views.invalid_login'),
     url(r'^site/', include('site_instance.urls')),
     url(dajaxice_config.dajaxice_url, include('dajaxice.urls')),
-    # Examples:
-    # url(r'^$', 'nocout.views.home', name='home'),
-    # url(r'^nocout/', include('nocout.foo.urls')),
-
-    # Uncomment the admin/doc line below to enable admin documentation:
-    # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
-
-    # Uncomment the next line to enable the admin:
-     url(r'^admin/', include(admin.site.urls)),
+    url(r'session_security/', include('session_security.urls')),
+    url(r'^admin/', include(admin.site.urls)),
 )
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += patterns('',
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    )
+
+
