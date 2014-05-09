@@ -1,0 +1,8 @@
+{% extends "organization/organization.html" %}
+{% block content %}
+	<h1>Name: {{ object.name }}</h1>
+	<p>Alias: {{ object.alias }}</p>
+	<p>Parent: {{ object.parent }}</p>
+	<p>Location: {{ object.location }}</p>
+	<p>Address: {{ object.address }}</p>
+{% endblock %}
