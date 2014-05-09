@@ -143,9 +143,9 @@ class DeviceUpdate(UpdateView):
 
 class DeviceDelete(DeleteView):
     model = Device
+
     template_name = 'device/device_delete.html'
     success_url = reverse_lazy('device_list')
-
 
 # ******************************** Device Type Form Fields Views ************************************
 

@@ -1,4 +1,5 @@
 {% extends "inventory/inventory.html" %}
+<<<<<<< HEAD
 {% load staticfiles %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
@@ -24,4 +25,14 @@
             {% endfor %}
         </table>
     </div>
+=======
+{% block content %}
+    <h2>Devices</h2>
+    <p><a href="/device/new">Create Device</a></p>
+    <ul>
+        {% for device in object_list %}
+            <li><a href="/device/{{device.id}}">{{ device.device_alias }}</a> <a href="/device/edit/{{device.id}}"></a><a href="/device/delete/{{device.id}}">Delete</a></li>
+        {% endfor %}
+    </ul>
+>>>>>>> adf1956fa4281751d63f83595ae0692f9f9169dd
 {% endblock %}

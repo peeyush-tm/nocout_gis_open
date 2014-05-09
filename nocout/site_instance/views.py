@@ -33,3 +33,4 @@ class SiteInstanceDelete(DeleteView):
     model = SiteInstance
     template_name = 'site_instance/site_instance_delete.html'
     success_url = reverse_lazy('site_instance_list')
+

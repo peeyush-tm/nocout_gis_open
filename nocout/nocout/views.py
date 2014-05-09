@@ -1,13 +1,20 @@
 from django.http import HttpResponseRedirect
-from django.core.context_processors import csrf
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, render
 from django.contrib import auth
+from django.views.decorators.csrf import csrf_protect
+
 # from forms import MyRegistrationForm
 
+
+@csrf_protect
 def login(request):
+<<<<<<< HEAD
     c = {}
     c.update(csrf(request))
     return render_to_response('nocout/templates/login.html', c)
+=======
+    return render(request, 'login.html')
+>>>>>>> adf1956fa4281751d63f83595ae0692f9f9169dd
 
 
 def auth_view(request):
@@ -25,8 +32,13 @@ def auth_view(request):
 
 
 def loggedin(request):
+<<<<<<< HEAD
     return render_to_response('nocout/templates/loggedin.html', {'username': request.user.username})
 
+=======
+    # return render_to_response('loggedin.html', {'full_name' : request.user.username})
+    return render(request,'loggedin.html',{'full_name' : request.user.username})
+>>>>>>> adf1956fa4281751d63f83595ae0692f9f9169dd
 
 def invalid_login(request):
     return render_to_response('nocout/templates/invalid_login.html')

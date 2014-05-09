@@ -1,5 +1,5 @@
 from django.conf.urls import patterns, url
-from device import views
+from device import views, api
 
 urlpatterns = patterns('',
   url(r'^$', views.DeviceList.as_view(), name='device_list'),
@@ -7,4 +7,5 @@ urlpatterns = patterns('',
   url(r'^new/$', views.DeviceCreate.as_view(), name='device_new'),
   url(r'^edit/(?P<pk>\d+)$', views.DeviceUpdate.as_view(), name='device_edit'),
   url(r'^delete/(?P<pk>\d+)$', views.DeviceDelete.as_view(), name='device_delete'),
+  url(r'^stats/$', api.DeviceStatsApi.as_view()),
 )
