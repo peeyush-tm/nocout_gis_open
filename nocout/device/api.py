@@ -1,5 +1,3 @@
-import os
-import sys
 import json
 import copy
 from django.core.exceptions import ObjectDoesNotExist
@@ -13,10 +11,15 @@ from device.models import Inventory, Device, DeviceType, DeviceVendor, \
 
 
 class DeviceStatsApi(View):
-    ''' Api calls initiated for device loc and stats'''
+    ''' 
+    Api calls initiated for device loc and stats
+    '''
 
     def get(self, request):
-        ''' Handling http GET method for device data'''
+        ''' 
+        Handling http GET method for device data
+        '''
+
         req_params = request.GET
         host_ip = request.get_host().split(':')[0]
         show_link = 1
@@ -43,11 +46,15 @@ class DeviceStatsApi(View):
 
 
 class DeviceStats(View):
-
-    ''' Base class for Device stats methods'''
+    ''' 
+    Base class for Device stats methods
+    '''
 
     def p2p_device_info(self, user, host_ip, show_link):
-        ''' Getting P2P device stats associated with a particular user'''
+        ''' 
+        Getting P2P device stats associated with a particular user
+        '''
+
         device_stats_dict = {
             "id": "root node",
             "name": "Root Site Instance",
@@ -122,19 +129,24 @@ class DeviceStats(View):
                 device_technology = None
             try:
                 device_info = {
-                    "id": device_object.id, "name":
-                    device_object.device_name, "alias":
-                    device_object.device_alias, "device_type":
-                    device_type, "mac": device_object.mac_address,
+                    "id": device_object.id,
+                    "name": device_object.device_name,
+                    "alias": device_object.device_alias,
+                    "device_type": device_type,
+                    "mac": device_object.mac_address,
                     "current_state": device_object.host_state,
-                    "vendor": device_vendor, "model": device_model,
+                    "vendor": device_vendor,
+                    "model": device_model,
                     "technology": device_technology,
-                    "parent_id": device_object.parent_id, "lat":
-                    device_object.latitude, "lon": device_object.longitude,
+                    "parent_id": device_object.parent_id,
+                    "lat": device_object.latitude,
+                    "lon": device_object.longitude,
                     "markerUrl": "http://%s:8000/static/img/marker/marker3.png"
-                    % host_ip, "perf": "75%", "ip":
-                    device_object.ip_address, "otherDetail": "No Detail",
-                    "city": device_object.city, "state": device_object.state
+                    % host_ip, "perf": "75%",
+                    "ip": device_object.ip_address,
+                    "otherDetail": "No Detail",
+                    "city": device_object.city,
+                    "state": device_object.state
                 }
                 device_info_list.append(device_info)
             except AttributeError, error:
@@ -143,11 +155,37 @@ class DeviceStats(View):
 
         for outer in device_info_list:
             master = copy.deepcopy(outer)
-            master.update({"showLink": show_link, "children": []})
+            master.update(
+                {
+                "showLink": show_link,
+                "children": []
+                }
+            )
+            master = {
+                "id": master.pop('id'),
+                "parent_id": master.pop('parent_id'),
+                "name": master.pop('name'),
+                "children": master.pop('children'),
+                "data": master
+            }
             for inner in device_info_list:
                 if inner.get('parent_id') == outer.get('id'):
                     slave = copy.deepcopy(inner)
-                    slave.update({"linkColor": "green"})
+                    slave.update(
+                        {
+                        "linkColor": "green",
+                        "children": []
+                        }
+                    )
+                    slave = {
+                        "id": slave.pop('id'),
+                        "name": slave.pop('name'),
+                        "parent_id": slave.pop('parent_id'),
+                        "children": slave.pop('children'),
+                        "data": slave
+                    }
+                    master.pop('parent_id', None)
+                    slave.pop('parent_id', None)
                     master.get('children').append(slave)
                     device_stats_dict.get('children').append(master)
 
