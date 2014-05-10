@@ -25,7 +25,7 @@ class DeviceDetail(DetailView):
     def get_context_data(self, **kwargs):
         print "*********************************************************************************"
         print self.object
-        print "**********************************************************************************"
+        print "*********************************************************************************"
         print kwargs
         context = super(DeviceDetail, self).get_context_data(**kwargs)
         return context
