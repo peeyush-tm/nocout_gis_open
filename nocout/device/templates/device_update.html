@@ -1,8 +1,0 @@
-{% extends "inventory.html" %}
-{% block content %}
-    <p><strong>Update Device</strong></p>
-    <form action="" method="post">{% csrf_token %}
-        {{ form.as_p }}
-        <input type="submit" value="Update"/>
-    </form>
-{% endblock %}

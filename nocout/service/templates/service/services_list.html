@@ -1,0 +1,27 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/service.css" %}>
+{% endblock %}
+{% block content %}
+    <h2>Service</h2>
+    <hr/>
+    <p><a href="/service/new">Create Service</a></p>
+    <br/>
+    <div id="service">
+        <table>
+            <tr>
+                <td><strong>Service</strong></td>
+                <td><strong>Edit</strong></td>
+                <td><strong>Delete</strong></td>
+            </tr>
+            {% for service in object_list %}
+                <tr>
+                    <td><a href="/service/{{ service.id }}">{{ service.service_name }}</a></td>
+                    <td><a href="/service/edit/{{ service.id }}">Edit</a></td>
+                    <td><a href="/service/delete/{{ service.id }}">Delete</a></td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% endblock %}

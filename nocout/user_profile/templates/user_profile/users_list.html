@@ -1,0 +1,27 @@
+{% extends "department/department.html" %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/user_profile.css" %}>
+{% endblock %}
+{% block content %}
+    <h2>Users</h2>
+    <hr/>
+    <p><a href="/user/new">Create User</a></p>
+    <br/>
+    <div id="user_profile">
+        <table>
+            <tr>
+                <td><strong>User</strong></td>
+                <td><strong>Edit</strong></td>
+                <td><strong>Delete</strong></td>
+            </tr>
+            {% for user in object_list %}
+                <tr>
+                    <td><a href="/user/{{ user.id }}">{{ user.username }}</a></td>
+                    <td><a href="/user/edit/{{ user.id }}">Edit</a></td>
+                    <td><a href="/user/delete/{{ user.id }}">Delete</a></td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% endblock %}

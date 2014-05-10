@@ -14,7 +14,7 @@ class UserGroupList(ListView):
 class UserGroupDetail(DetailView):
     model = UserGroup
     template_name = 'user_group/ug_detail.html'
-    
+
 class UserGroupCreate(CreateView):
     template_name = 'user_group/ug_new.html'
     model = UserGroup
@@ -32,7 +32,7 @@ class UserGroupCreate(CreateView):
             Organization.objects.create(user_group=self.object, device_group=dg)
 
         return super(ModelFormMixin, self).form_valid(form)
-    
+
 class UserGroupUpdate(UpdateView):
     template_name = 'user_group/ug_update.html'
     model = UserGroup
