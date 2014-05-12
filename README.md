@@ -17,6 +17,9 @@ Installation Steps:
 5. Install python-dev - sudo aptitude install python-dev 
 6. Install phpmyadmin
 7. Create a database named : nocout_dev
+8. Install graphviz -  sudo aptitude install graphviz
+9. Install Python Wrapper to graphwiz - sudo aptitude install python-pygraphviz
+10. Install Shared liberaries graphviz & python -  sudo aptitude install libgraphviz-dev
 
 **Setup Enviornment**
 
