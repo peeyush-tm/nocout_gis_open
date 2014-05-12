@@ -30,3 +30,12 @@ Installation Steps:
 5. Create virtualenv - $:~ virtualenv nout
 6. Activate virtualenv - (nout):~ source nout/bin/activate
 7. Install the requirements for Django app - (nout):~pip install -r requirements.txt 
+
+
+**Setup Application**
+
+1. Go to folder : /home/<USER>/Documents/NOCOUT/nocout_gis/nocout
+2. Run syncdb : python manage.py syncdb --noinput
+3. Run migrations : python manage.py migrate
+4. Run the data loading fixtures : Load Commands :  python manage.py loaddata fixtures/<FIXTURE NAME>.json
+
