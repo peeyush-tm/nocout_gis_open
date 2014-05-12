@@ -10,7 +10,5 @@ nocout/.project
 nocout/.idea
 nocout/venv
 
-^static/
-^media/
 ^static/*
 ^media/*
