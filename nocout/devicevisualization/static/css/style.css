@@ -1,0 +1,76 @@
+        #deviceMap
+        {
+            margin: 0px auto;       
+            height: 550px;
+        }
+        .windowContainer
+        {
+            min-width: 500px;
+            min-height: 30px;
+            padding: 8px;
+            border-radius: 10px;            
+        }
+        .windowContainer .innerTable
+        {
+            width: 200px;
+        }
+        .windowContainer .windowInfo
+        {
+            float: left;
+            width: 60%;
+        }
+        .windowContainer .box .box-body
+        {
+            width: 100%;
+        }
+        .windowContainer .windowInfo table
+        {
+            width: 98%;
+            max-width: 98%;
+            margin: 0px auto;
+            font-size: 12px;
+        }
+        .windowContainer table thead th
+        {
+            text-align: center;
+        }
+        .windowContainer .perf
+        {
+            float: right;
+            width: 39%;
+            text-align: center;
+            margin-top: 15%;
+        }
+        .windowContainer .perf h1
+        {
+            font-size: 50px;
+        }
+        .windowContainer .box.border .box-title h4, .windowContainer .box.solid .box-title h4
+        {
+            font-size: 14px;
+        }
+        .windowContainer .box-body table
+        {
+            font-size: 11px;
+        }
+        .clear
+        {
+            clear: both;
+        }
+        .mapContainerBlock .box-title .tools
+        {
+            margin-bottom: 0px !important;
+        }
+        .mapContainerBlock .box-title .tools select , .mapContainerBlock .box-title .tools button.btn
+        {
+            width: 165px;
+            float: right;
+            margin-right: 10px;
+            margin-top: 0px;
+            height: 22px;
+            padding: 0px 8px;
+        }
+        .mapContainerBlock .box-title .tools button.btn
+        {
+            width:auto;
+        }
