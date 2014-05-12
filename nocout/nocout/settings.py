@@ -160,7 +160,7 @@ INSTALLED_APPS = (
     'dajax',
     'django.contrib.admin',
     'debug_toolbar',
-    'preventconcurrentlogins'
+    'preventconcurrentlogins',
     'corsheaders',
 
 )
@@ -208,4 +208,3 @@ try:
     from local_settings import *
 except ImportError:
     pass
-

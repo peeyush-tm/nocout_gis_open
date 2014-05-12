@@ -13,7 +13,7 @@ class DeviceGroupList(ListView):
 class DeviceGroupDetail(DetailView):
     model = DeviceGroup
     template_name = 'device_group/dg_detail.html'
-    
+
 
 class DeviceGroupCreate(CreateView):
     template_name = 'device_group/dg_new.html'

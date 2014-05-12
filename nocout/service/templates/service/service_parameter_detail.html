@@ -1,0 +1,40 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/service.css" %}>
+{% endblock %}
+{% block content %}
+    <h1>{{ object.parameter_description }}</h1><br/>
+    <div id="service">
+        <table>
+            <tr>
+                <td><strong>Parameter Description:</strong></td>
+                <td>{{ object.parameter_description }}</td>
+            </tr>
+            <tr>
+                <td><strong>Max Check Attempts:</strong></td>
+                <td>{{ object.max_check_attempts }}</td>
+            </tr>
+            <tr>
+                <td><strong>Check Interval:</strong></td>
+                <td>{{ object.check_interval }}</td>
+            </tr>
+            <tr>
+                <td><strong>Retry Interval:</strong></td>
+                <td>{{ object.retry_interval }}</td>
+            </tr>
+            <tr>
+                <td><strong>Check Period:</strong></td>
+                <td>{{ object.check_period }}</td>
+            </tr>
+            <tr>
+                <td><strong>Notification Interval:</strong></td>
+                <td>{{ object.notification_interval }}</td>
+            </tr>
+            <tr>
+                <td><strong>Notification Period:</strong></td>
+                <td>{{ object.notification_period }}</td>
+            </tr>
+        </table>
+    </div>
+{% endblock %}

@@ -102,4 +102,13 @@ select, option {
     padding-right: 10px;
 }
 
+#left_align {
+    float: left;
+    margin-right: 40px;
+}
+
+#wrap_complete {
+    width: 100%;
+}
+
 
