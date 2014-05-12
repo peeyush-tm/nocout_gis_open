@@ -203,6 +203,14 @@ SESSION_SECURITY_WARN_AFTER=540
 SESSION_SECURITY_EXPIRE_AFTER=600
 SESSION_EXPIRE_AT_BROWSER_CLOSE=True
 
+################################################################################
+#### TO : REMOVE ####
+
+DEBUG_TOOLBAR_PATCH_SETTINGS = False
+
+#### TO : REMOVE ####
+################################################################################
+
 # Import the local_settings.py file to override global settings
 
 try:
