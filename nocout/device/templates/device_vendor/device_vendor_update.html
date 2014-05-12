@@ -3,6 +3,9 @@
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
 {% endblock %}
+{% block breadcrumb_page_title %} > Device Vendor {% endblock %}
+{% block content_title %}Device Vendors Management{% endblock %}
+{% block content_description %}Update a device vendor ....{% endblock %}
 {% block content %}
     <h3>Update Device Vendor : {{ object.name }}</h3>
     <form action="" method="post">{% csrf_token %}

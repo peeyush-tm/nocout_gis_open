@@ -1,4 +1,7 @@
 {% extends "inventory/inventory.html" %}
+{% block breadcrumb_page_title %} > Device {% endblock %}
+{% block content_title %}Device Management{% endblock %}
+{% block content_description %}List of devices ....{% endblock %}
 {% load staticfiles %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>

@@ -3,6 +3,9 @@
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/user_profile.css" %}>
 {% endblock %}
+{% block breadcrumb_page_title %} > User {% endblock %}
+{% block content_title %}Users Management{% endblock %}
+{% block content_description %}Detail of user ....{% endblock %}
 {% block content %}
     <h1>{{ object.username }}</h1>
     <div id="user_profile">
