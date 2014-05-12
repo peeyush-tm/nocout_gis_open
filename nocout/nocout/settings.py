@@ -157,6 +157,7 @@ INSTALLED_APPS = (
     'command',
     'site_instance',
     'home',
+    'devicevisualization',
     'dajaxice',
     'dajax',
     'django.contrib.admin',
