@@ -11,14 +11,26 @@ from device.models import Inventory, Device, DeviceType, DeviceVendor, \
 
 
 class DeviceStatsApi(View):
-    ''' 
-    Api calls initiated for device loc and stats
-    '''
+    """
+    Api calls initiated for device stats
 
+    """
+    
     def get(self, request):
-        ''' 
+        """
         Handling http GET method for device data
-        '''
+
+        Args:
+            request (WSGIRequest): The request object.
+
+        Returns:
+            {
+                'success': 1,
+                'message': 'Device Data',
+                'data': device stats `dict` object
+            }
+
+        """
 
         req_params = request.GET
         host_ip = request.get_host().split(':')[0]
@@ -46,15 +58,27 @@ class DeviceStatsApi(View):
 
 
 class DeviceStats(View):
-    ''' 
+    """
     Base class for Device stats methods
-    '''
+    """
 
     def p2p_device_info(self, user, host_ip, show_link):
-        ''' 
-        Getting P2P device stats associated with a particular user
-        '''
+        """
+        Serves device stats data for devices associated
+        with a particular user
 
+        Args:
+            user (str): Username passed in the querystring.
+            host_ip (str): IP address of the host machine.
+            show_link (int): Would show the links on GIS, 
+                if value goes to 1.
+
+        Returns:
+            Device stats `dict` object.
+        
+        """
+
+        #prototype for device dict
         device_stats_dict = {
             "id": "root node",
             "name": "Root Site Instance",
@@ -153,6 +177,7 @@ class DeviceStats(View):
                 print "Device is None"
                 print error
 
+        #master-slave pairs based on `parent_id` and `device_id`
         for outer in device_info_list:
             master = copy.deepcopy(outer)
             master.update(
