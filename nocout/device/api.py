@@ -174,7 +174,7 @@ class DeviceStats(View):
                 }
                 device_info_list.append(device_info)
             except AttributeError, error:
-                print "Device is None"
+                print "Device Info key error"
                 print error
 
         #master-slave pairs based on `parent_id` and `device_id`
@@ -186,6 +186,7 @@ class DeviceStats(View):
                 "children": []
                 }
             )
+            #dict to store master device info
             master = {
                 "id": master.pop('id'),
                 "parent_id": master.pop('parent_id'),
@@ -202,6 +203,7 @@ class DeviceStats(View):
                         "children": []
                         }
                     )
+                    #dict to store slave device info
                     slave = {
                         "id": slave.pop('id'),
                         "name": slave.pop('name'),
