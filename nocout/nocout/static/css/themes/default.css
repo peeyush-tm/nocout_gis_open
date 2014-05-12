@@ -46,7 +46,7 @@
   top: 8px;
 }
 .navbar .dropdown-toggle .username {
-	font-weight: 600;
+  font-weight: 600;
 }
 .navbar #header-notification .dropdown-toggle i,
 .navbar #header-message .dropdown-toggle i,
@@ -67,7 +67,7 @@
   color: #FFFFFF;
 }
 .navbar .nav.navbar-nav.pull-right {
-	min-width: 50px;
+  min-width: 300px;
 }
 .navbar .nav > li > a:hover,
 .navbar .nav > li > a:focus,
