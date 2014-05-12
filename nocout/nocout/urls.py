@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.conf.urls import patterns, include, url
-
+from django.views.generic import RedirectView
 # Include dajaxice ajax module
 from dajaxice.core import dajaxice_autodiscover, dajaxice_config
 dajaxice_autodiscover()
@@ -10,7 +10,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    url(r'^$', 'home.views.home'),
+    url(r'^$',RedirectView.as_view(url='login/')),
     url(r'^home/', 'home.views.home'),
     url(r'^user/', include('user_profile.urls')),
     url(r'^ug/', include('user_group.urls')),
