@@ -50,6 +50,9 @@ LANGUAGE_CODE = 'en-us'
 
 SITE_ID = 1
 
+LOGIN_URL='/login/'
+LOGIN_EXEMPT_URLS =(r'auth/','login/')
+
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
 USE_I18N = True
@@ -82,7 +85,7 @@ STATIC_URL = '/static/'
 
 # Additional locations of static files
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "static"),
+    os.path.join(PROJECT_DIR, "static"),
     )
 
 # List of finder classes that know how to find static files in
@@ -115,8 +118,11 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'nocout.middleware.UserProfileAuditMiddleware',
-    #'session_security.middleware.SessionSecurityMiddleware',
+    # 'nocout.middleware.UserProfileAuditMiddleware',
+    'session_security.middleware.SessionSecurityMiddleware',
+    'nocout.middlewares.LoginRequiredMiddleware.LoginRequiredMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'preventconcurrentlogins.middleware.PreventConcurrentLoginsMiddleware',
     #'audit_log.middleware.UserLoggingMiddleware',
     #'audit_log.middleware.AuditlogMiddleware',
     # Uncomment the next line for simple clickjacking protection:
