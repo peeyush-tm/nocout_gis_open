@@ -1,69 +1,58 @@
 from django import forms
-from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, DeviceTypeFields
+from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
+from device.models import DeviceTypeFields
 
 
-# *************************************** Device Form *********************************************
+# *************************************** Device Form ***********************************************
 
 
 class DeviceForm(forms.ModelForm):
     device_technology = IntReturnModelChoiceField(queryset=DeviceTechnology.objects.all(),
-                                                  required=False
-    )
+                                                  required=False)
     device_vendor = IntReturnModelChoiceField(queryset=DeviceVendor.objects.all(),
-                                              required=False
-    )
+                                              required=False)
     device_model = IntReturnModelChoiceField(queryset=DeviceModel.objects.all(),
-                                             required=False
-    )
+                                             required=False)
     device_type = IntReturnModelChoiceField(queryset=DeviceType.objects.all(),
-                                            required=False
-    )
+                                            required=False)
 
     def __init__(self, *args, **kwargs):
+        # setting foreign keys field label
+        self.base_fields['device_group'].label = 'Device Group'
+        self.base_fields['site_instance'].label = 'Site Instance'
+        self.base_fields['device_technology'].label = 'Device Technology'
+        self.base_fields['device_vendor'].label = 'Device Vendor'
+        self.base_fields['device_model'].label = 'Device Model'
+        self.base_fields['device_type'].label = 'Device Type'
+
         super(DeviceForm, self).__init__(*args, **kwargs)
-        self.base_fields['device_group'].help_text = ""
-        self.base_fields['service'].help_text = ""
+
+        # to redisplay the extra fields form with already filled values we follow these steps:
+        # 1. check that device type exist in 'kwargs' or not
+        # 2. if 'device type' value exist then fetch extra fields associated with that 'device type'
+        # 3. then we recreates text fields corresponding to each field we fetched in step 2
+        try:
+            if kwargs['data']['device_type']:
+                extra_fields = DeviceTypeFields.objects.filter(device_type_id=kwargs['data']['device_type'])
+                for extra_field in extra_fields:
+                    self.fields[extra_field.field_name] = forms.CharField(label=extra_field.field_display_name)
+                    self.fields.update({
+                        extra_field.field_name: forms.CharField(widget=forms.TextInput(), required=False,
+                                                                label=extra_field.field_display_name, ),
+                    })
+                    self.fields[extra_field.field_name].widget.attrs['class'] = 'extra'
+        except:
+            pass
 
     class Meta:
         model = Device
-        fields = (
-            'device_name', 'device_alias', 'instance', 'device_group', 'parent', 'device_technology', 'device_vendor',
-            'device_model',
-            'device_type', 'service', 'ip_address', 'mac_address', 'netmask', 'gateway', 'dhcp_state', 'host_priority',
-            'host_state',
-            'address', 'city', 'state', 'timezone', 'latitude', 'longitude', 'description'
-        )
         widgets = {
             'device_group': MultipleToSingleSelectionWidget,
         }
-        '''
-        widgets = {
-                   'device_name': forms.TextInput(attrs={'style': 'width:400px'}),
-                   'device_alias': forms.TextInput(attrs={'style': 'width:400px'}),
-                   'ip_address': forms.TextInput(attrs={'style': 'width:400px'}),
-                   'mac_address': forms.TextInput(attrs={'style': 'width:400px'}),
-                   'netmask': forms.TextInput(attrs={'style': 'width:400px'}),
-                   'gateway': forms.TextInput(attrs={'style': 'width:400px'}),
-                   'city': forms.TextInput(attrs={'style': 'width:400px'}),
-                   'state': forms.TextInput(attrs={'style': 'width:400px'}),
-                   'timezone': forms.TextInput(attrs={'style': 'width:400px'}),
-                   'latitude': forms.TextInput(attrs={'style': 'width:400px'}),
-                   'longitude': forms.TextInput(attrs={'style': 'width:400px'}),
-                   'address': forms.Textarea(attrs={'style': 'width:400px'}),
-                   'description': forms.Textarea(attrs={'style': 'width:400px'}),
-                   'parent': forms.Select(attrs={'style': 'width:400px'}),
-                   'instance': forms.Select(attrs={'style': 'width:400px'}),
-                   'dhcp_state': forms.Select(attrs={'style': 'width:400px'}),
-                   'host_priority': forms.Select(attrs={'style': 'width:400px'}),
-                   'host_state': forms.Select(attrs={'style': 'width:400px'}),
-                   'device_group': MultipleToSingleSelectionWidget(attrs={'style': 'width:400px'}),
-                   'service': forms.SelectMultiple(attrs={'style': 'width:400px'})
-        }
-        '''
 
 
-# ********************************** Device Extra Fields Form *******************************************        
+# ********************************** Device Extra Fields Form ***************************************
 
 
 class DeviceTypeFieldsForm(forms.ModelForm):
@@ -78,7 +67,7 @@ class DeviceTypeFieldsUpdateForm(forms.ModelForm):
         fields = ('field_name', 'field_display_name')
 
 
-# **************************************** Device Technology *******************************************
+# **************************************** Device Technology ****************************************
 
 
 class DeviceTechnologyForm(forms.ModelForm):
@@ -87,7 +76,7 @@ class DeviceTechnologyForm(forms.ModelForm):
         fields = ('name', 'alias', 'device_vendors')
 
 
-# **************************************** Device Vendor *******************************************
+# ****************************************** Device Vendor ******************************************
 
 
 class DeviceVendorForm(forms.ModelForm):
@@ -96,7 +85,7 @@ class DeviceVendorForm(forms.ModelForm):
         fields = ('name', 'alias', 'device_models')
 
 
-# **************************************** Device Model *******************************************
+# ******************************************* Device Model ******************************************
 
 
 class DeviceModelForm(forms.ModelForm):
@@ -105,11 +94,10 @@ class DeviceModelForm(forms.ModelForm):
         fields = ('name', 'alias', 'device_types')
 
 
-# **************************************** Device Type *******************************************
+# ******************************************* Device Type *******************************************
 
 
 class DeviceTypeForm(forms.ModelForm):
     class Meta:
         model = DeviceType
         fields = ('name', 'alias')
-        

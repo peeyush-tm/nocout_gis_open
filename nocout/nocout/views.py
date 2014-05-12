@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_protect
 
 @csrf_protect
 def login(request):
-    return render(request, 'login.html')
+    return render(request, 'nocout/login.html')
 
 
 def auth_view(request):
@@ -27,12 +27,12 @@ def auth_view(request):
 
 def loggedin(request):
     # return render_to_response('loggedin.html', {'full_name' : request.user.username})
-    return render(request,'loggedin.html',{'full_name' : request.user.username})
+    return render(request,'nocout/loggedin.html',{'full_name' : request.user.username})
 
 def invalid_login(request):
-    return render_to_response('invalid_login.html')
+    return render_to_response('nocout/templates/nocout/invalid_login.html')
 
 
 def logout(request):
     auth.logout(request)
-    return render_to_response('logout.html') 
+    return render_to_response('nocout/templates/nocout/logout.html')
