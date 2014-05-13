@@ -31,9 +31,14 @@ class DeviceStatsApi(View):
             }
 
         """
-        #Retreive currently logged-in user info from active session
-        username = request.user.username
+
         req_params = request.GET
+        if 'username' in req_params:
+            #Retreive username from querystring
+            username = req_params.get('username')
+        else:
+            #Retreive currently logged-in user info from active session
+            username = request.user.username
         host_ip = request.get_host().split(':')[0]
         show_link = 1
         self.result = {
@@ -43,7 +48,8 @@ class DeviceStatsApi(View):
         }
         cls = DeviceStats()
         device_stats_dict = DeviceStats.p2p_device_info(
-            cls, username,
+            cls,
+            username,
             host_ip,
             show_link
         )
@@ -54,8 +60,8 @@ class DeviceStatsApi(View):
                 "data": device_stats_dict
             })
             return HttpResponse(json.dumps(self.result))
-        else:
-            return HttpResponse(json.dumps(self.result))
+        
+        return HttpResponse(json.dumps(self.result))
 
 
 class DeviceStats(View):
