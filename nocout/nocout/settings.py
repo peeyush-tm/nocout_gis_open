@@ -50,6 +50,9 @@ LANGUAGE_CODE = 'en-us'
 
 SITE_ID = 1
 
+LOGIN_URL='/login/'
+LOGIN_EXEMPT_URLS =(r'auth/','login/')
+
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
 USE_I18N = True
@@ -74,7 +77,7 @@ MEDIA_URL = ''
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/var/www/example.com/static/"
-STATIC_ROOT = ''
+STATIC_ROOT = os.path.join(BASE_DIR, "static/")
 
 # URL prefix for static files.
 # Example: "http://example.com/static/", "http://static.example.com/"
@@ -82,8 +85,9 @@ STATIC_URL = '/static/'
 
 # Additional locations of static files
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "static"),
+    os.path.join(PROJECT_DIR, "static/"),
     )
+
 
 # List of finder classes that know how to find static files in
 # various locations.
@@ -115,8 +119,11 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'nocout.middleware.UserProfileAuditMiddleware',
-    #'session_security.middleware.SessionSecurityMiddleware',
+    # 'nocout.middleware.UserProfileAuditMiddleware',
+    'session_security.middleware.SessionSecurityMiddleware',
+    'nocout.middlewares.LoginRequiredMiddleware.LoginRequiredMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'preventconcurrentlogins.middleware.PreventConcurrentLoginsMiddleware',
     #'audit_log.middleware.UserLoggingMiddleware',
     #'audit_log.middleware.AuditlogMiddleware',
     # Uncomment the next line for simple clickjacking protection:
@@ -150,6 +157,7 @@ INSTALLED_APPS = (
     'command',
     'site_instance',
     'home',
+    'devicevisualization',
     'dajaxice',
     'dajax',
     'django.contrib.admin',
@@ -195,6 +203,14 @@ LOGGING = {
 SESSION_SECURITY_WARN_AFTER=540
 SESSION_SECURITY_EXPIRE_AFTER=600
 SESSION_EXPIRE_AT_BROWSER_CLOSE=True
+
+################################################################################
+#### TO : REMOVE ####
+
+DEBUG_TOOLBAR_PATCH_SETTINGS = False
+
+#### TO : REMOVE ####
+################################################################################
 
 # Import the local_settings.py file to override global settings
 
