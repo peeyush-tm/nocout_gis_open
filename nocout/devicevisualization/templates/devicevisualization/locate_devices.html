@@ -7,154 +7,156 @@
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
 {% endblock %}
 {% block content %}
-<div class='box border primary mapContainerBlock'>
-    <div class='box-title'>
-        <h4 class="col-md-1"><i class='fa fa-map-marker'></i> GIS</h4>
-        <!--Filters Block Start-->
-        <div class="tools col-md-11" style="margin-top:-25px;">
-            <!--Reset Button-->
-            <button class="btn btn-xs btn-inverse" id="resetFilters">
-                <i class="fa fa-refresh">&nbsp;</i> Refresh
-            </button>
-            <!--City Filter-->
-            <select name="city" id="city" class="form-control col-xs-1">
-                <option value="">Select City</option>
-            </select>
-            <!--State Filter-->
-            <select name="state" id="state" class="form-control col-xs-1">
-                <option value="">Select State</option>
-            </select>
-            <!--vendor Filter-->
-            <select name="vendor" id="vendor" class="form-control col-xs-1">
-                <option value="">Select Vendor</option>
-            </select>
-            <!--technology Filter-->
-            <select name="technology" id="technology" class="form-control col-xs-1">
-                <option value="">Select Technology</option>
-            </select>                           
+    <div class='box border primary mapContainerBlock'>
+        <div class='box-title'>
+            <h4 class="col-md-1"><i class='fa fa-map-marker'></i> GIS</h4>
+            <!--Filters Block Start-->
+            <div class="tools col-md-11" style="margin-top:-25px;">
+                <!--Reset Button-->
+                <button class="btn btn-xs btn-inverse" id="resetFilters">
+                    <i class="fa fa-refresh">&nbsp;</i> Refresh
+                </button>
+                <!--City Filter-->
+                <select name="city" id="city" class="form-control col-xs-1">
+                    <option value="">Select City</option>
+                </select>
+                <!--State Filter-->
+                <select name="state" id="state" class="form-control col-xs-1">
+                    <option value="">Select State</option>
+                </select>
+                <!--vendor Filter-->
+                <select name="vendor" id="vendor" class="form-control col-xs-1">
+                    <option value="">Select Vendor</option>
+                </select>
+                <!--technology Filter-->
+                <select name="technology" id="technology" class="form-control col-xs-1">
+                    <option value="">Select Technology</option>
+                </select>
+            </div>
+            <!--Filters Block End-->
+            <div class="clear"></div>
         </div>
-        <!--Filters Block End-->
-        <div class="clear"></div>
+        <div class='box-body'>
+            <!--div on which the map is to be plot-->
+
+            <!--Map Container Start-->
+            <div id="deviceMap"></div>
+            <!--Map Container End-->
+        </div>
     </div>
-    <div class='box-body'>
-        <!--div on which the map is to be plot-->
 
-        <!--Map Container Start-->
-        <div id="deviceMap"></div>
-        <!--Map Container End-->
-    </div>
-</div>
+    <!-- Google Map Library-->
+    <script type="text/javascript"
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
+    <!--OverlappingMarkerSpiderfier Library for marker spiderify effect-->
+    <script type="text/javascript" src={% static "js/oms.min.js" %}></script>
+    <!-- Our Library-->
+    <script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
 
-<!-- Google Map Library-->
-<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
-<!--OverlappingMarkerSpiderfier Library for marker spiderify effect-->
-<script type="text/javascript" src={% static "js/oms.min.js" %}></script>
-<!-- Our Library-->
-<script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
+    <script type="text/javascript">
 
-<script type="text/javascript">
+        var networkMapInstance = "";
 
-    var networkMapInstance = "";
+        $(document).ready(function (e) {
 
-    $(document).ready(function(e) {
-
-        /*Create a instance of networkMapClass*/
-        networkMapInstance = new networkMapClass();
-        /*Call the function to create map*/
-        networkMapInstance.createMap("deviceMap");
-        /*Call the make network to create the BS-SS network on the google map*/
-        makeNetwork();
-    });
-    /**
-     * This is the recursive function which calls the plotNetwork function of networkMapClass to plot the  the BS,SS network on the google map & it calls recursive after 150 seconds
-     * @method makeNetwork
-     */
-    function makeNetwork()
-    {
-        networkMapInstance.getDevicesData();
-        /*call itself after wvery 10 seconds*/
-        setTimeout(function() {
-            /*Recursive function*/
+            /*Create a instance of networkMapClass*/
+            networkMapInstance = new networkMapClass();
+            /*Call the function to create map*/
+            networkMapInstance.createMap("deviceMap");
+            /*Call the make network to create the BS-SS network on the google map*/
             makeNetwork();
-        },150000);
-    }
-
-    /*This event trigger when state dropdown value is changes*/
-    $("#state").change(function(e) {
-
-        makeFiltersArray();
-    });
-
-    /*This event trigger when city dropdown value is changes*/
-    $("#city").change(function(e) {
-
-        makeFiltersArray();
-    });
-
-    /*This event trigger when vendor dropdown value is changes*/
-    $("#vendor").change(function(e) {
-
-        makeFiltersArray();
-    });
-
-    /*This event trigger when technology dropdown value is changes*/
-    $("#technology").change(function(e) {
-
-        makeFiltersArray();
-    });
-    /**
-     * This function makes an array from the selected filters
-     * @function makeFiltersArray
-     * @return selectedArray [JSON Array] It is an object array of the selected filters with the keys
-     */
-    function makeFiltersArray()
-    {
-        var selectedTechnology = $("#technology").val(),
-            selectedvendor = $("#vendor").val(),
-            selectedState = $("#state").val(),
-            selectedCity = $("#city").val(),
-            selectedArray = {};
-
-        if(selectedTechnology != "")
-        {
-            selectedArray["technology"] = selectedTechnology;
+        });
+        /**
+         * This is the recursive function which calls the plotNetwork function of networkMapClass to plot the  the BS,SS network on the google map & it calls recursive after 150 seconds
+         * @method makeNetwork
+         */
+        function makeNetwork() {
+            networkMapInstance.getDevicesData();
+            /*call itself after wvery 10 seconds*/
+            setTimeout(function () {
+                /*Recursive function*/
+                makeNetwork();
+            }, 150000);
         }
 
-        if(selectedvendor != "")
-        {
-            selectedArray["vendor"] = selectedvendor;
+        /*This event trigger when state dropdown value is changes*/
+        $("#state").change(function (e) {
+
+            makeFiltersArray();
+        });
+
+        /*This event trigger when city dropdown value is changes*/
+        $("#city").change(function (e) {
+
+            makeFiltersArray();
+        });
+
+        /*This event trigger when vendor dropdown value is changes*/
+        $("#vendor").change(function (e) {
+
+            makeFiltersArray();
+        });
+
+        /*This event trigger when technology dropdown value is changes*/
+        $("#technology").change(function (e) {
+
+            makeFiltersArray();
+        });
+        /**
+         * This function makes an array from the selected filters
+         * @function makeFiltersArray
+         * @return selectedArray [JSON Array] It is an object array of the selected filters with the keys
+         */
+        function makeFiltersArray() {
+            var selectedTechnology = $("#technology").val(),
+                    selectedvendor = $("#vendor").val(),
+                    selectedState = $("#state").val(),
+                    selectedCity = $("#city").val(),
+                    selectedArray = {};
+
+            if (selectedTechnology != "") {
+                selectedArray["technology"] = selectedTechnology;
+            }
+
+            if (selectedvendor != "") {
+                selectedArray["vendor"] = selectedvendor;
+            }
+
+            if (selectedState != "") {
+                selectedArray["state"] = selectedState;
+            }
+
+            if (selectedCity != "") {
+                selectedArray["city"] = selectedCity;
+            }
+            /*Get The Length Of Filter Array*/
+            var filtersLength = Object.keys(selectedArray).length;
+
+            /*If any filter is applied then filter the data*/
+            if (filtersLength > 0) {
+                networkMapInstance.applyFilter(selectedArray);
+            }
+            /*If no filter is applied the load all the devices*/
+            else {
+                makeNetwork();
+            }
         }
 
-        if(selectedState != "")
-        {
-            selectedArray["state"] = selectedState;
-        }
+        /*This event triggers when Reset Filter button clicked*/
+        $("#resetFilters").click(function (e) {
 
-        if(selectedCity != "")
-        {
-            selectedArray["city"] = selectedCity;
-        }
-        /*Get The Length Of Filter Array*/
-        var filtersLength = Object.keys(selectedArray).length;
-
-        /*If any filter is applied then filter the data*/
-        if(filtersLength > 0)
-        {
-            networkMapInstance.applyFilter(selectedArray);
-        }
-        /*If no filter is applied the load all the devices*/
-        else
-        {
             makeNetwork();
-        }
-    }
+        });
 
-    /*This event triggers when Reset Filter button clicked*/
-    $("#resetFilters").click(function(e) {
+    </script>
+{% endblock %}
 
-        makeNetwork();
-    });
-
-</script>
+{% block load_js %}
+    <script>
+        jQuery(document).ready(function () {
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+        });
+    </script>
 {% endblock %}
 

@@ -63,6 +63,7 @@ var App = function () {
 	/*-----------------------------------------------------------------------------------*/
 	var handleSidebar = function () {
 	jQuery('.sidebar-menu .has-sub > a').click(function () {
+
             var last = jQuery('.has-sub.open', $('.sidebar-menu'));
             last.removeClass("open");
             jQuery('.arrow', last).removeClass("open");
