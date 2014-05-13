@@ -31,7 +31,8 @@ class DeviceStatsApi(View):
             }
 
         """
-
+        #Retreive currently logged-in user info from active session
+        username = request.user.username
         req_params = request.GET
         host_ip = request.get_host().split(':')[0]
         show_link = 1
@@ -42,9 +43,9 @@ class DeviceStatsApi(View):
         }
         cls = DeviceStats()
         device_stats_dict = DeviceStats.p2p_device_info(
-            cls, req_params.
-            get('username'),
-            host_ip, show_link
+            cls, username,
+            host_ip,
+            show_link
         )
         if len(device_stats_dict.get('children')):
             self.result.update({
