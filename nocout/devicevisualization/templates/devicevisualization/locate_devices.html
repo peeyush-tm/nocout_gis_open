@@ -54,10 +54,12 @@
 
 <script type="text/javascript">
 
-    var networkMapInstance = "";
+    var networkMapInstance = "",
+        hostIp = "";
 
     $(document).ready(function(e) {
 
+        hostIp = "{{host_ip}}";
         /*Create a instance of networkMapClass*/
         networkMapInstance = new networkMapClass();
         /*Call the function to create map*/
@@ -71,7 +73,7 @@
      */
     function makeNetwork()
     {
-        networkMapInstance.getDevicesData();
+        networkMapInstance.getDevicesData(hostIp);
         /*call itself after wvery 10 seconds*/
         setTimeout(function() {
             /*Recursive function*/
