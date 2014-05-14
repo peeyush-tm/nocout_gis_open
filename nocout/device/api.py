@@ -33,6 +33,7 @@ class DeviceStatsApi(View):
         """
 
         req_params = request.GET
+        print req_params
         if 'username' in req_params:
             #Retreive username from querystring
             username = req_params.get('username')
