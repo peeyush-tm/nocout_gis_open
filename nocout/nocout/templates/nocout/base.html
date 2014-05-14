@@ -48,7 +48,7 @@
         <div class="navbar-brand">
             <!-- COMPANY LOGO -->
             <a href="/home/">
-                <img src={% static "img/logo/logo.png" %} alt="CloudAdminLogo" class="img-responsive" height="30"
+                <img src={% static "img/logo/logo1.png" %} alt="CloudAdminLogo" class="img-responsive" height="30"
                      width="120">
             </a>
             <!-- /COMPANY LOGO -->
@@ -83,7 +83,7 @@
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                     <span class="username">{{ request.user.first_name }} {{ request.user.last_name }}</span><br/>
-                    <span>14-May-14 &nbsp;&nbsp; 08:15 PM</span>
+                    <span>{% now "j F Y (H:i) T" %}</span>
                     <i class="fa fa-caret-down"></i>
                 </a>
                 <ul class="dropdown-menu">
@@ -124,9 +124,6 @@
                         <span class="selected"></span>
                     </a>
                 </li>
-                <li>
-                    <a class="" href="javascript:;" target="_blank"><i class="fa fa-sitemap"></i> <span class="menu-text">Organization</span></a>
-                </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
                         <i class="fa fa-dropbox"></i> <span class="menu-text">Inventory</span>
@@ -160,7 +157,7 @@
                     </ul>
                 </li>
                 <li>
-                    <a class="" href="/organization/"><i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Organization</span></a>
+                    <a class="" href="/organization/"><i class="fa fa-sitemap"></i> <span class="menu-text">Organization</span></a>
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
