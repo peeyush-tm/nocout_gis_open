@@ -64,14 +64,14 @@ function networkMapClass()
 	 * @function getDevicesData
 	 * @class networkMap
 	 */
-	this.getDevicesData = function(hostIp)
+	this.getDevicesData = function()
 	{
 		/*Clear the marker array of OverlappingMarkerSpiderfier*/
 		oms.clearMarkers();
 
 		$.ajax({
 			// crossDomain: true,
-			url : "http://"+hostIp+":8000/device/stats/",
+			url : "http://192.168.0.104:8000/device/stats/?username=pardeep",
 			type : "GET",
 			/*If data fetched successful*/
 			success : function(result)
@@ -451,9 +451,7 @@ function networkMapClass()
 	this.applyFilter = function(filtersArray) {
 
 		var filterKey = [],
-			filteredData = [],
-			masterIds = [],
-			slaveIds = [];
+			filteredData = [];
 
 
 		/*Clear the marker array of OverlappingMarkerSpiderfier*/
@@ -483,13 +481,20 @@ function networkMapClass()
 		 			{
 	 					if(master.data[filterKey[0]] == filtersArray[filterKey[0]] || slave.data[filterKey[0]] == filtersArray[filterKey[0]])
 		 				{
-		 					/*Check For The Duplicacy*/
-		 					if(masterIds.indexOf(master.id) == -1 && slaveIds.indexOf(slave.id) == -1)
+		 					if(filteredData.length > 0)
 		 					{
-		 						/*Save the master & slave ids to array to remove duplicacy*/
-		 						masterIds.push(master.id);
-		 						slaveIds.push(slave.id);
-
+		 						for(var k=0;k<filteredData.length;k++)
+		 						{		 							
+		 							if(filteredData[k].id != master.id && filteredData[k].children[0].id != slave.id)
+		 							{
+		 								console.log(filteredData);
+		 								console.log(devicesObject.data.children[i]);
+		 								filteredData.push(devicesObject.data.children[i]);
+		 							}
+		 						}
+		 					}
+		 					else
+		 					{
 		 						filteredData.push(devicesObject.data.children[i]);
 		 					}
 		 				}
@@ -499,13 +504,18 @@ function networkMapClass()
 		 			{
 	 					if((master.data[filterKey[0]] == filtersArray[filterKey[0]] || slave.data[filterKey[0]] == filtersArray[filterKey[0]]) && (master.data[filterKey[1]] == filtersArray[filterKey[1]] || slave.data[filterKey[1]] == filtersArray[filterKey[1]]))
 		 				{	 					
-		 					/*Check For The Duplicacy*/
-		 					if(masterIds.indexOf(master.id) == -1 && slaveIds.indexOf(slave.id) == -1)
+		 					if(filteredData.length > 0)
 		 					{
-		 						/*Save the master & slave ids to array to remove duplicacy*/
-		 						masterIds.push(master.id);
-		 						slaveIds.push(slave.id);
-
+		 						for(var l=0;l<filteredData.length;l++)
+		 						{
+		 							if(filteredData[l].id != master.id && filteredData[l].children[0].id != slave.id)
+		 							{
+		 								filteredData.push(devicesObject.data.children[i]);			
+		 							}
+		 						}
+		 					}
+		 					else
+		 					{
 		 						filteredData.push(devicesObject.data.children[i]);
 		 					}
 		 				}
@@ -514,13 +524,18 @@ function networkMapClass()
 		 			{
 		 				if((master.data[filterKey[0]] == filtersArray[filterKey[0]] || slave.data[filterKey[0]] == filtersArray[filterKey[0]]) && (master.data[filterKey[1]] == filtersArray[filterKey[1]] || slave.data[filterKey[1]] == filtersArray[filterKey[1]]) && (master.data[filterKey[2]] == filtersArray[filterKey[2]] || slave.data[filterKey[2]] == filtersArray[filterKey[2]]))
 		 				{	 					
-		 					/*Check For The Duplicacy*/
-		 					if(masterIds.indexOf(master.id) == -1 && slaveIds.indexOf(slave.id) == -1)
+		 					if(filteredData.length > 0)
 		 					{
-		 						/*Save the master & slave ids to array to remove duplicacy*/
-		 						masterIds.push(master.id);
-		 						slaveIds.push(slave.id);
-
+		 						for(var m=0;m<filteredData.length;m++)
+		 						{
+		 							if(filteredData[m].id != master.id && filteredData[m].children[0].id != slave.id)
+		 							{
+		 								filteredData.push(devicesObject.data.children[i]);			
+		 							}
+		 						}
+		 					}
+		 					else
+		 					{
 		 						filteredData.push(devicesObject.data.children[i]);
 		 					}
 		 				}
@@ -529,13 +544,18 @@ function networkMapClass()
 		 			{
 		 				if((master.data[filterKey[0]] == filtersArray[filterKey[0]] || slave.data[filterKey[0]] == filtersArray[filterKey[0]]) && (master.data[filterKey[1]] == filtersArray[filterKey[1]] || slave.data[filterKey[1]] == filtersArray[filterKey[1]]) && (master.data[filterKey[2]] == filtersArray[filterKey[2]] || slave.data[filterKey[2]] == filtersArray[filterKey[2]]) && (master.data[filterKey[3]] == filtersArray[filterKey[3]] || slave.data[filterKey[3]] == filtersArray[filterKey[3]]))
 		 				{	 					
-		 					/*Check For The Duplicacy*/
-		 					if(masterIds.indexOf(master.id) == -1 && slaveIds.indexOf(slave.id) == -1)
+		 					if(filteredData.length > 0)
 		 					{
-		 						/*Save the master & slave ids to array to remove duplicacy*/
-		 						masterIds.push(master.id);
-		 						slaveIds.push(slave.id);
-
+		 						for(var n=0;n<filteredData.length;n++)
+		 						{
+		 							if(filteredData[n].id != master.id && filteredData[n].children[0].id != slave.id)
+		 							{
+		 								filteredData.push(devicesObject.data.children[i]);			
+		 							}
+		 						}
+		 					}
+		 					else
+		 					{
 		 						filteredData.push(devicesObject.data.children[i]);
 		 					}
 		 				}
@@ -553,15 +573,5 @@ function networkMapClass()
 	 		/*Populate the map with the filtered markers*/
 	 		that.populateNetwork(filteredData);
 	 	}	
-	};
-
-	/**
-	 * This function calls the populateNetwork function to load the fetched devices in case of no filters
-	 * @class devicePlottingLib
-	 * @method loadExistingDevices
-	 */
-	this.loadExistingDevices = function()
-	{
-		that.populateNetwork(devicesObject.data.children);
 	};
 }

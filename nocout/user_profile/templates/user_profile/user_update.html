@@ -3,6 +3,9 @@
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/user_profile.css" %}>
 {% endblock %}
+{% block breadcrumb_page_title %} > User {% endblock %}
+{% block content_title %}Users Management{% endblock %}
+{% block content_description %}Update a user ....{% endblock %}
 {% block content %}
     <h3>Update User : {{ object.username }}</h3>
     <form action="" method="post">{% csrf_token %}

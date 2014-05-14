@@ -3,6 +3,9 @@
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
 {% endblock %}
+{% block breadcrumb_page_title %} > Device {% endblock %}
+{% block content_title %}Device Management{% endblock %}
+{% block content_description %}Create a device ....{% endblock %}
 {% block content %}
     <h3>Create Device</h3>
     <form action="/device/new/" method="post" id="device_form">{% csrf_token %}

@@ -1,4 +1,14 @@
 {% extends "nocout/base.html" %}
-{% block breadcrumb_title %}Device Management{% endblock %}
-{% block content_title %}Device Management{% endblock %}
-{% block content_description %}Device and Device Group management....{% endblock %}
+{% block breadcrumb_title %}
+    Inventory
+    {% block breadcrumb_page_title %}
+    {% endblock %}
+{% endblock %}
+{% block load_js %}
+<script>
+    jQuery(document).ready(function () {
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+    });
+</script>
+{% endblock %}

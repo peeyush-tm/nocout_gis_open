@@ -37,23 +37,23 @@ class ServiceDelete(DeleteView):
 
 class ServiceParametersList(ListView):
     model = ServiceParameters
-    template_name = 'service/services_parameter_list.html'
+    template_name = 'service_parameter/services_parameter_list.html'
 
 
 class ServiceParametersDetail(DetailView):
     model = ServiceParameters
-    template_name = 'service/service_parameter_detail.html'
+    template_name = 'service_parameter/service_parameter_detail.html'
 
 
 class ServiceParametersCreate(CreateView):
-    template_name = 'service/service_parameter_new.html'
+    template_name = 'service_parameter/service_parameter_new.html'
     model = ServiceParameters
     form_class = ServiceParametersForm
     success_url = reverse_lazy('services_parameter_list')
 
 
 class ServiceParametersUpdate(UpdateView):
-    template_name = 'service/service_parameter_update.html'
+    template_name = 'service_parameter/service_parameter_update.html'
     model = ServiceParameters
     form_class = ServiceParametersForm
     success_url = reverse_lazy('services_parameter_list')
@@ -61,6 +61,6 @@ class ServiceParametersUpdate(UpdateView):
 
 class ServiceParametersDelete(DeleteView):
     model = ServiceParameters
-    template_name = 'service/service_parameter_delete.html'
+    template_name = 'service_parameter/service_parameter_delete.html'
     success_url = reverse_lazy('services_parameter_list')
     
