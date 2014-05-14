@@ -1,4 +1,6 @@
 {% extends "inventory/inventory.html" %}
+{% block content_title %}Device Management{% endblock %}
+{% block content_description %}Device deletion.....{% endblock %}
 {% block content %}
     <form action="" method="post">{% csrf_token %}
         <p>Are you sure you want to delete "{{ object }}" ?</p>

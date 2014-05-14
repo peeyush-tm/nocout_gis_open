@@ -3,6 +3,9 @@
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/device_group.css" %}>
 {% endblock %}
+{% block breadcrumb_page_title %} > Device Group {% endblock %}
+{% block content_title %}Device Groups Management{% endblock %}
+{% block content_description %}Update a device groups ....{% endblock %}
 {% block content %}
     <h3>Update Device Group : {{ object.name }}</h3>
     <form action="" method="post">{% csrf_token %}
