@@ -45,6 +45,7 @@
         </div>
     </div>
 
+
     <!-- Google Map Library-->
     <script type="text/javascript"
             src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
@@ -133,12 +134,14 @@
             var filtersLength = Object.keys(selectedArray).length;
 
             /*If any filter is applied then filter the data*/
-            if (filtersLength > 0) {
+            if(filtersLength > 0)
+            {
                 networkMapInstance.applyFilter(selectedArray);
             }
             /*If no filter is applied the load all the devices*/
-            else {
-                makeNetwork();
+            else
+            {
+                networkMapInstance.loadExistingDevices();
             }
         }
 
