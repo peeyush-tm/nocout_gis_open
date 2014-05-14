@@ -47,7 +47,7 @@
     <div class="container">
         <div class="navbar-brand">
             <!-- COMPANY LOGO -->
-            <a href="index.html">
+            <a href="/home/">
                 <img src={% static "img/logo/logo.png" %} alt="CloudAdminLogo" class="img-responsive" height="30"
                      width="120">
             </a>
@@ -68,24 +68,23 @@
             <!-- /SIDEBAR COLLAPSE -->
         </div>
         <!-- NAVBAR LEFT -->
-        <ul class="nav navbar-nav pull-left hidden-xs" id="navbar-left">
-            <li class="dropdown">
-                <a href="#" class="team-status-toggle dropdown-toggle tip-bottom" data-toggle="tooltip"
-                   title="Toggle Team View">
-                    <i class="fa fa-users"></i>
-                    <span class="name">Team Status</span>
-                    <i class="fa fa-angle-down"></i>
-                </a>
+        
+        <ul class="nav navbar-nav pull-left hidden-xs orgTitleBlock">
+            <li>
+                <span class="username">Org. - XYZ Pvt. Ltd.</span><br/>
+                <span>Dept. - Sales</span>
             </li>
         </ul>
+        
         <!-- /NAVBAR LEFT -->
         <!-- BEGIN TOP NAVIGATION MENU -->
-        <ul class="nav navbar-nav pull-right">
-            <!-- BEGIN USER LOGIN DROPDOWN -->
+        <ul class="nav navbar-nav pull-right topUserInfo">
+            <!-- BEGIN USER LOGIN DROPDOWN -->            
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    <span class="username">{{ request.user.first_name }} {{ request.user.last_name }}</span>
-                    <i class="fa fa-angle-down"></i>
+                    <span class="username">{{ request.user.first_name }} {{ request.user.last_name }}</span><br/>
+                    <span>14-May-14 &nbsp;&nbsp; 08:15 PM</span>
+                    <i class="fa fa-caret-down"></i>
                 </a>
                 <ul class="dropdown-menu">
                     <li><a href="#"><i class="fa fa-user"></i> My Profile</a></li>
@@ -121,13 +120,16 @@
             <ul>
                 <li class="active">
                     <a href="/home/">
-                        <i class="fa fa-tachometer fa-fw"></i> <span class="menu-text">Dashboard</span>
+                        <i class="fa fa-dashboard"></i> <span class="menu-text">Dashboard</span>
                         <span class="selected"></span>
                     </a>
                 </li>
+                <li>
+                    <a class="" href="javascript:;" target="_blank"><i class="fa fa-sitemap"></i> <span class="menu-text">Organization</span></a>
+                </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
-                        <i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Inventory</span>
+                        <i class="fa fa-dropbox"></i> <span class="menu-text">Inventory</span>
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
@@ -140,7 +142,7 @@
                         <li><a class="" href="/model/"><span class="sub-menu-text">Device Models</span></a></li>
                         <li><a class="" href="/type/"><span class="sub-menu-text">Device Types</span></a></li>
                         <li><a class="" href="/site/"><span class="sub-menu-text">Site Instance</span></a></li>
-                        <li><a class="" href=""><span class="sub-menu-text">Discovery</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Discovery</span></a></li>
                         <li><a class="" href="/service"><span class="sub-menu-text">Services</span></a></li>
                         <li><a class="" href="/sp/"><span class="sub-menu-text">Service Parameters</span></a></li>
                         <li><a class="" href="/command"><span class="sub-menu-text">Commands</span></a></li>
@@ -148,21 +150,18 @@
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
-                        <i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Department</span>
+                        <i class="fa fa-user"></i> <span class="menu-text">Department</span>
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
                         <li><a class="" href="/user/"><span class="sub-menu-text">Manage User</span></a></li>
                         <li><a class="" href="/ug/"><span class="sub-menu-text">Manage Group</span></a></li>
-                        <li><a class="" href=""><span class="sub-menu-text">Manage Session</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Manage Session</span></a></li>
                     </ul>
-                </li>
-                <li>
-                    <a class="" href="" target="_blank"><i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Organization</span></a>
-                </li>
+                </li>                
                 <li class="has-sub">
                     <a href="javascript:;" class="">
-                        <i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Network Maps</span>
+                        <i class="fa fa-map-marker"></i> <span class="menu-text">Network Maps</span>
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
@@ -174,50 +173,50 @@
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
-                        <i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Alarms</span>
+                        <i class="fa fa-bell"></i> <span class="menu-text">Alarms</span>
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
-                        <li><a class="" href="#"><span class="sub-menu-text">Event Details</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">Alarm Masking</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Event Details</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Alarm Masking</span></a></li>
                     </ul>
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
-                        <i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Reports</span>
+                        <i class="fa fa-file-text"></i> <span class="menu-text">Reports</span>
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
-                        <li><a class="" href="#"><span class="sub-menu-text">Report</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">Analyzed Report</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">Inventory Report</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">Event</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">Access Point Report</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">Backup & Restore</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Report</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Analyzed Report</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Inventory Report</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Event</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Access Point Report</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Backup & Restore</span></a></li>
                     </ul>
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
-                        <i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Logs</span>
+                        <i class="fa fa-bar-chart-o"></i> <span class="menu-text">Logs</span>
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
-                        <li><a class="" href="#"><span class="sub-menu-text">Host & Service Events</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">Search Global Logfile</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">User Logs</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Host & Service Events</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Search Global Logfile</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">User Logs</span></a></li>
                     </ul>
                 </li>
                 <li>
-                    <a class="" href="" target="_blank"><i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Scheduling</span></a>
+                    <a class="" href="javascript:;" target="_blank"><i class="fa fa-calendar"></i> <span class="menu-text">Scheduling</span></a>
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
-                        <i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Settings</span>
+                        <i class="fa fa-cog"></i> <span class="menu-text">Settings</span>
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
-                        <li><a class="" href="#"><span class="sub-menu-text">Daemon</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">License</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Daemon</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">License</span></a></li>
                     </ul>
                 </li>
             </ul>
@@ -319,14 +318,50 @@
 </script>
 {% endblock %}
 <script>
-    var sidebarMenu = $("#sidebar a");
-    for(var i=0;i<sidebarMenu.length;i++)
-    {
-        
-    }
-    console.log($("a").attr("href"));
-    console.log(window.location.href.split("/")[3]);
+    /*This script add & remove the current and active classes for the side hiperlinks as per the router to show the currently selected sidebar item.*/
 
+    /*All Sidebar anchor tags*/
+    var sideMenu = $("#sidebar ul li a");
+    /*Current router url text*/
+    var currentRouter = $.trim(window.location.href.split("/")[3]);
+
+    for(var i=0;i<sideMenu.length;i++)
+    {
+        /*Anchor tags hiperlink text*/
+        var menuLink = $.trim(sideMenu[i].href.split("/")[3]);
+        /*Parent Element(li) Classname*/
+        var activeClass = $.trim(sideMenu[i].parentElement.className);
+        /*If there is active class on the parent then remove it*/
+        if(activeClass === "active")
+        {
+            sideMenu[i].parentElement.className = "";
+        }
+        /*If the routertext matches the hiperlink text then add the active & current classes at the desired element*/
+        if(menuLink == currentRouter)
+        {
+            var superParentClass = $.trim(sideMenu[i].parentElement.parentElement.parentElement.className);
+            if(superParentClass.indexOf("has-sub") == -1)
+            {
+                var parent = sideMenu[i].parentElement;
+                parent.className = "active";
+            }
+            else
+            {
+                /*Add open class to the arrow*/
+                var arrowClass = sideMenu[i].parentElement.parentElement.parentElement.children[0].children[2];
+                arrowClass.className = arrowClass.className+" open";
+                
+                /*Add current class to the parent li*/
+                var parent = sideMenu[i].parentElement;
+                parent.className = "current";
+
+                /*Add active class to the super parent li*/
+                var superParent = sideMenu[i].parentElement.parentElement.parentElement;
+                superParent.className = superParent.className+" active";
+            }
+        }
+    }
 </script>
+
 </body>
 </html>
