@@ -64,14 +64,14 @@ function networkMapClass()
 	 * @function getDevicesData
 	 * @class networkMap
 	 */
-	this.getDevicesData = function()
+	this.getDevicesData = function(hostIp)
 	{
 		/*Clear the marker array of OverlappingMarkerSpiderfier*/
 		oms.clearMarkers();
 
 		$.ajax({
 			// crossDomain: true,
-			url : "http://192.168.0.104:8000/device/stats/?username=pardeep",
+			url : "http://"+hostIp+":8000/device/stats/",
 			type : "GET",
 			/*If data fetched successful*/
 			success : function(result)
