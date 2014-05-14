@@ -6,6 +6,7 @@
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
 {% endblock %}
+{% block fullname %}{{ firstname }} {{ lastname }}{% endblock %}
 {% block content %}
 <div class='box border primary mapContainerBlock'>
     <div class='box-title'>
@@ -157,6 +158,16 @@
         makeNetwork();
     });
 
+</script>
+{% endblock %}
+
+{% block load_js %}
+<!-- /JAVASCRIPTS -->
+<script>
+    jQuery(document).ready(function () {
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+    });
 </script>
 {% endblock %}
 
