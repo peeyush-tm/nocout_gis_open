@@ -12,3 +12,5 @@ nocout/venv
 
 ^static/*
 ^media/*
+^nocout/static/*
+^nocout/media/*
