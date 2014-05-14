@@ -10,6 +10,9 @@ nocout/.project
 nocout/.idea
 nocout/venv
 
+.idea/
+.idea/*
+
 ^static/*
 ^media/*
 ^nocout/static/*

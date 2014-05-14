@@ -33,8 +33,17 @@ class DeviceStatsApi(View):
         """
 
         req_params = request.GET
+        if 'username' in req_params:
+            #Get username from query string, if passed
+            username = req_params.get('username')
+        else:
+            #Retreive username from active session
+            username = request.user.username
+        #Get the host machine IP address
         host_ip = request.get_host().split(':')[0]
+        #Show link between master-slave device pairs
         show_link = 1
+        #Result dict prototype
         self.result = {
             "success": 0,
             "message": "No Device Data",
@@ -42,9 +51,10 @@ class DeviceStatsApi(View):
         }
         cls = DeviceStats()
         device_stats_dict = DeviceStats.p2p_device_info(
-            cls, req_params.
-            get('username'),
-            host_ip, show_link
+            cls,
+            username,
+            host_ip,
+            show_link
         )
         if len(device_stats_dict.get('children')):
             self.result.update({
@@ -78,7 +88,7 @@ class DeviceStats(View):
         
         """
 
-        #prototype for device dict
+        #Prototype for device dict
         device_stats_dict = {
             "id": "root node",
             "name": "Root Site Instance",
