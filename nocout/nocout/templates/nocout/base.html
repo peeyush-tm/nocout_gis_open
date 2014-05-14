@@ -9,29 +9,31 @@
     <title>{% block title %}Nocout{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
     <meta name="description" content="">
-    <meta name="author" content="Priyesh">
-    <link rel="stylesheet" type="text/css" href={% static "css/cloud-admin.css" %} >
-    <link rel="stylesheet" type="text/css" href={% static "css/themes/default.css" %} id="skin-switcher" >
+    <meta name="author" content="">
+    <link rel="stylesheet" type="text/css" href={% static "css/cloud-admin.css" %}>
+    <link rel="stylesheet" type="text/css" href={% static "css/themes/default.css" %} id="skin-switcher">
+    <link rel="stylesheet" type="text/css" href={% static "css/responsive.css" %}>
     <!-- STYLESHEETS -->
     <!--[if lt IE 9]>
-    <script src="js/flot/excanvas.min.js"></script>
-    <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <script src="http://css3-mediaqueries-js.googlecode.com/svn/trunk/css3-mediaqueries.js"></script>
+    <!-- STYLESHEETS -->
+    <!--[if lt IE 9]><script src="js/flot/excanvas.min.js"></script><script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><script src="http://css3-mediaqueries-js.googlecode.com/svn/trunk/css3-mediaqueries.js"></script>
     <![endif]-->
     <link href={% static "font-awesome/css/font-awesome.min.css" %} rel="stylesheet">
     <!-- ANIMATE -->
-    <link rel="stylesheet" type="text/css" href={% static "css/animatecss/animate.min.css" %} />
+    <link rel="stylesheet" type="text/css" href={% static "css/animatecss/animate.min.css" %}/>
+    <!-- DATE RANGE PICKER -->
+    <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-daterangepicker/daterangepicker-bs3.css" %}/>
     <!-- TODO -->
-    <link rel="stylesheet" type="text/css" href={% static "js/jquery-todo/css/styles.css" %} />
-    <!-- JQUERY -->
-
-    {#	<script src={% static "js/jquery/jquery-2.0.3.min.js" %}></script>#}
-
-    <script src={% static "dajax/jquery.dajax.core.js" %}></script>
-    {% dajaxice_js_import %}
-
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-todo/css/styles.css" %}/>
+    <!-- FULL CALENDAR -->
+    <link rel="stylesheet" type="text/css" href={% static "js/fullcalendar/fullcalendar.min.css" %}/>
+    <!-- GRITTER -->
+    <link rel="stylesheet" type="text/css" href={% static "js/gritter/css/jquery.gritter.css" %}/>
     <!-- FONTS -->
     <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700' rel='stylesheet' type='text/css'>
+    <!-- DAJAX -->
+    <script src={% static "dajax/jquery.dajax.core.js" %}></script>
+    {% dajaxice_js_import %}
     {% block css %}{% endblock %}
 
 </head>
@@ -68,22 +70,12 @@
         <!-- NAVBAR LEFT -->
         <ul class="nav navbar-nav pull-left hidden-xs" id="navbar-left">
             <li class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    <i class="fa fa-cog"></i>
-                    <span class="name">Skins</span>
+                <a href="#" class="team-status-toggle dropdown-toggle tip-bottom" data-toggle="tooltip"
+                   title="Toggle Team View">
+                    <i class="fa fa-users"></i>
+                    <span class="name">Team Status</span>
                     <i class="fa fa-angle-down"></i>
                 </a>
-                <ul class="dropdown-menu skins">
-                    <li class="dropdown-title">
-                        <span><i class="fa fa-leaf"></i> Theme Skins</span>
-                    </li>
-                    <li><a href="#" data-skin="default">Subtle (default)</a></li>
-                    <li><a href="#" data-skin="night">Night</a></li>
-                    <li><a href="#" data-skin="earth">Earth</a></li>
-                    <li><a href="#" data-skin="utopia">Utopia</a></li>
-                    <li><a href="#" data-skin="nature">Nature</a></li>
-                    <li><a href="#" data-skin="graphite">Graphite</a></li>
-                </ul>
             </li>
         </ul>
         <!-- /NAVBAR LEFT -->
@@ -92,7 +84,7 @@
             <!-- BEGIN USER LOGIN DROPDOWN -->
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    <span class="username">{{ username }}</span>
+                    <span class="username">{{ request.user.first_name }} {{ request.user.last_name }}</span>
                     <i class="fa fa-angle-down"></i>
                 </a>
                 <ul class="dropdown-menu">
@@ -115,6 +107,11 @@
     <div id="sidebar" class="sidebar">
         <div class="sidebar-menu nav-collapse">
             <div class="divide-20"></div>
+            <!-- SEARCH BAR -->
+            <div id="search-bar">
+                <input class="search" type="text" placeholder="Search"><i class="fa fa-search search-icon"></i>
+            </div>
+            <!-- /SEARCH BAR -->
 
             <!-- SIDEBAR QUICK-LAUNCH -->
             <!-- <div id="quicklaunch">
@@ -123,12 +120,10 @@
             <!-- SIDEBAR MENU -->
             <ul>
                 <li class="active">
-                    <a href="">
+                    <a href="/home/">
                         <i class="fa fa-tachometer fa-fw"></i> <span class="menu-text">Dashboard</span>
                         <span class="selected"></span>
                     </a>
-                </li>
-                <li><a class="" href="" target="_blank"><i class="fa fa-bookmark fa-fw"></i> <span class="menu-text">Scheduling</span></a>
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
@@ -153,7 +148,7 @@
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
-                        <i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">User Management</span>
+                        <i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Department</span>
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
@@ -162,14 +157,19 @@
                         <li><a class="" href=""><span class="sub-menu-text">Manage Session</span></a></li>
                     </ul>
                 </li>
+                <li>
+                    <a class="" href="" target="_blank"><i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Organization</span></a>
+                </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
                         <i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Network Maps</span>
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
-                        <li><a class="" href="/devicevisualization/"><span class="sub-menu-text">Geographical Map</span></a></li>
-                        <li><a class="" href="/devicevisualization/"><span class="sub-menu-text">Topology Map</span></a></li>
+                        <li><a class="" href="/devicevisualization/"><span class="sub-menu-text">Geographical Map</span></a>
+                        </li>
+                        <li><a class="" href="/devicevisualization/"><span class="sub-menu-text">Topology Map</span></a>
+                        </li>
                     </ul>
                 </li>
                 <li class="has-sub">
@@ -206,6 +206,9 @@
                         <li><a class="" href="#"><span class="sub-menu-text">Search Global Logfile</span></a></li>
                         <li><a class="" href="#"><span class="sub-menu-text">User Logs</span></a></li>
                     </ul>
+                </li>
+                <li>
+                    <a class="" href="" target="_blank"><i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Scheduling</span></a>
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
@@ -258,14 +261,18 @@
                                 <ul class="breadcrumb">
                                     <li>
                                         <i class="fa fa-home"></i>
-                                        <a href="index.html">Home</a>
+                                        <a href="/home/">Home</a>
                                     </li>
                                     <li>{% block breadcrumb_title %}Dashboard{% endblock %}</li>
                                 </ul>
                                 <!-- /BREADCRUMBS -->
                                 <div class="clearfix">
-                                    <h3 class="content-title pull-left">{% block content_title %}
-                                        Dashboard{% endblock %}</h3>
+                                    <h3 class="content-title pull-left">
+                                        {% block content_title %}Dashboard{% endblock %}
+                                    </h3>
+                                    {% block date_picker %}
+
+                                    {% endblock %}
                                 </div>
                                 <div class="description">{% block content_description %}Overview, Statistics and
                                     more{% endblock %}</div>
@@ -287,16 +294,39 @@
 <!--/PAGE -->
 <!-- JAVASCRIPTS -->
 <!-- Placed at the end of the document so the pages load faster -->
-<!-- BOOTSTRAP -->
-<script src={% static "bootstrap-dist/js/bootstrap.min.js" %}></script>
 <!-- CUSTOM SCRIPT -->
 <script src={% static "js/script.js" %}></script>
+<!-- JQUERY -->
+<script src={% static "js/jquery/jquery-2.0.3.min.js" %}></script>
+<!-- JQUERY UI-->
+<script src={% static "js/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.min.js" %}></script>
+<!-- SLIMSCROLL -->
+<script type="text/javascript" src={% static "js/jQuery-slimScroll-1.3.0/jquery.slimscroll.min.js" %}></script>
+<!-- SLIMSCROLL -->
+<script type="text/javascript" src={% static "js/jQuery-slimScroll-1.3.0/jquery.slimscroll.min.js" %}></script>
+<script type="text/javascript" src={% static "js/jQuery-slimScroll-1.3.0/slimScrollHorizontal.min.js" %}></script>
+<!-- BLOCK UI -->
+<script type="text/javascript" src={% static "js/jQuery-BlockUI/jquery.blockUI.min.js" %}></script>
+<!-- BOOTSTRAP -->
+<script src={% static "bootstrap-dist/js/bootstrap.min.js" %}></script>
+{% block load_js %}
+<!-- /JAVASCRIPTS -->
 <script>
     jQuery(document).ready(function () {
-        App.setPage("sample");  //Set current page
+        App.setPage("index");  //Set current page
         App.init(); //Initialise plugins and elements
     });
 </script>
-<!-- /JAVASCRIPTS -->
+{% endblock %}
+<script>
+    var sidebarMenu = $("#sidebar a");
+    for(var i=0;i<sidebarMenu.length;i++)
+    {
+        
+    }
+    console.log($("a").attr("href"));
+    console.log(window.location.href.split("/")[3]);
+
+</script>
 </body>
 </html>

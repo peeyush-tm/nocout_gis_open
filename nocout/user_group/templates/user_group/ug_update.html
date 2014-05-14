@@ -1,8 +1,11 @@
-{% extends "organization/organization.html" %}
+{% extends "department/department.html" %}
 {% load staticfiles %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/user_group.css" %}>
 {% endblock %}
+{% block breadcrumb_page_title %} > User Group {% endblock %}
+{% block content_title %}User Groups Management{% endblock %}
+{% block content_description %}Update a user group ....{% endblock %}
 {% block content %}
     <h3>Update User Group : {{ object.name }}</h3>
     <form action="" method="post">{% csrf_token %}

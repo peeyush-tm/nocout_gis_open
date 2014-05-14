@@ -3,6 +3,9 @@
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
 {% endblock %}
+{% block breadcrumb_page_title %} > Device Technology {% endblock %}
+{% block content_title %}Device Technologies Management{% endblock %}
+{% block content_description %}Detail of device technology ....{% endblock %}
 {% block content %}
     <h1>{{ object.name }}</h1><br/>
     <div id="device">

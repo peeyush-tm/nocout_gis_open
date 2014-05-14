@@ -3,6 +3,9 @@
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/service.css" %}>
 {% endblock %}
+{% block breadcrumb_page_title %} > Service {% endblock %}
+{% block content_title %}Service Management{% endblock %}
+{% block content_description %}Update a service ....{% endblock %}
 {% block content %}
     <h3>Update Service : {{ object.service_name }}</h3>
     <form action="" method="post">{% csrf_token %}

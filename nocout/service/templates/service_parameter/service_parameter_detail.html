@@ -3,6 +3,9 @@
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/service.css" %}>
 {% endblock %}
+{% block breadcrumb_page_title %} > Service Parameter {% endblock %}
+{% block content_title %}Service Parameters Management{% endblock %}
+{% block content_description %}Detail of service parameter ....{% endblock %}
 {% block content %}
     <h1>{{ object.parameter_description }}</h1><br/>
     <div id="service">

@@ -3,6 +3,9 @@
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/user_profile.css" %}>
 {% endblock %}
+{% block breadcrumb_page_title %} > User {% endblock %}
+{% block content_title %}Users Management{% endblock %}
+{% block content_description %}Create a user ....{% endblock %}
 {% block content %}
     <h3>Create User</h3>
     <form action="/user/new/" method="post">{% csrf_token %}
