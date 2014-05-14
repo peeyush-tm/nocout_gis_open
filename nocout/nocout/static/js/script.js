@@ -63,7 +63,6 @@ var App = function () {
 	/*-----------------------------------------------------------------------------------*/
 	var handleSidebar = function () {
 	jQuery('.sidebar-menu .has-sub > a').click(function () {
-
             var last = jQuery('.has-sub.open', $('.sidebar-menu'));
             last.removeClass("open");
             jQuery('.arrow', last).removeClass("open");
@@ -2993,12 +2992,9 @@ var App = function () {
         });
 		
 		//Check which theme skin is set
-        /*Self Commented Code*/
-		/*
-		*  if ($.cookie('skin_color')) {
+		 if ($.cookie('skin_color')) {
             setSkin($.cookie('skin_color'));
         }
-		* */
 	}
 	/*-----------------------------------------------------------------------------------*/
 	/*	Handles Gritter on Load
@@ -3176,7 +3172,7 @@ var App = function () {
 				handleDashFlotCharts(); //Function to display flot charts in dashboard
 				handleChat('chat-window'); //Function to handle chat
 				handleCalendar();	//Function to display calendar
-				// handleGritter();	//Function to display Gritter notifications
+				handleGritter();	//Function to display Gritter notifications
             }
 			if (App.isPage("widgets_box")) {
 				handleBoxSortable(); //Function to handle Box sortables
