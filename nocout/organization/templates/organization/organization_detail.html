@@ -1,0 +1,32 @@
+{% extends "organization/organization.html" %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/organization.css" %}>
+{% endblock %}
+{% block breadcrumb_page_title %}{% endblock %}
+{% block content_title %}Organizations Management{% endblock %}
+{% block content_description %}Detail of an organization ....{% endblock %}
+{% block content %}
+    <h1>{{ object.name }}</h1>
+    <div id="organization">
+        <hr/>
+        <table>
+            <tr>
+                <td><strong>Organization Name :</strong></td>
+                <td>{{ object.name }}</td>
+            </tr>
+            <tr>
+                <td><strong>Description:</strong></td>
+                <td>{{ object.description }}</td>
+            </tr>
+            <tr>
+                <td><strong>User Group:</strong></td>
+                <td>{{ object.user_group }}</td>
+            </tr>
+            <tr>
+                <td><strong>Device Group:</strong></td>
+                <td>{{ object.device_group }}</td>
+            </tr>
+        </table>
+    </div>
+{% endblock %}
