@@ -40,6 +40,7 @@ class DeviceStatsApi(View):
             #Retreive currently logged-in user info from active session
             username = request.user.username
         host_ip = request.get_host().split(':')[0]
+        #Show link on master-slave device pair
         show_link = 1
         self.result = {
             "success": 0,
