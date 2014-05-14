@@ -41,7 +41,6 @@ class DeviceStatsApi(View):
             username = request.user.username
         host_ip = request.get_host().split(':')[0]
         show_link = 1
-        #The result prototype dict
         self.result = {
             "success": 0,
             "message": "No Device Data",
