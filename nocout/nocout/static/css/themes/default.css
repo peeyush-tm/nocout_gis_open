@@ -45,9 +45,7 @@
   text-shadow: none !important;
   top: 8px;
 }
-/*Chnages as per our requirement*/
 .navbar .dropdown-toggle .username {
-  vertical-align: text-bottom;/*Our Style*/
   font-weight: 600;
 }
 .navbar #header-notification .dropdown-toggle i,
@@ -68,9 +66,8 @@
   margin-right: 5px;
   color: #FFFFFF;
 }
-/*Chnages as per our requirement*/
 .navbar .nav.navbar-nav.pull-right {
-  /*min-width: 300px;*/
+  min-width: 300px;
 }
 .navbar .nav > li > a:hover,
 .navbar .nav > li > a:focus,
@@ -750,45 +747,4 @@
   background-color: rgba(255, 255, 255, 0.07);
   opacity: 1;
   text-decoration: none;
-}
-
-/*Our CSS*/
-.topUserInfo li:first-child span
-{
-  color: #FFF;
-}
-.topUserInfo > li > a
-{
-  padding: 8px;
-  text-align: right;
-  line-height: 16px;
-}
-.topUserInfo > li > a > span
-{
-  margin-right: 5px;
-}
-.topUserInfo > li > a > span.username
-{
-  margin-right: 20px;
-}
-.topUserInfo > li > a > i
-{
-  position: relative;
-  top: -10px;
-}
-.orgTitleBlock li span.username
-{
-  vertical-align: text-bottom;
-  font-weight: 600;
-}
-.orgTitleBlock li, .topUserInfo li
-{
-    float:  none; 
-    color:  #FFF;
-}
-
-.orgTitleBlock li
-{
-    padding: 8px;
-    line-height: 16px;
 }
