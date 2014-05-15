@@ -23,6 +23,9 @@
     <link rel="stylesheet" type="text/css" href={% static "css/animatecss/animate.min.css" %} />
     <!-- TODO -->
     <link rel="stylesheet" type="text/css" href={% static "js/jquery-todo/css/styles.css" %} />
+    <link rel="stylesheet" type="text/css" href={% static "js/datatables/media/css/jquery.dataTables.min.css" %}/>
+	<link rel="stylesheet" type="text/css" href={% static "js/datatables/media/assets/css/datatables.min.css" %}/>
+	<link rel="stylesheet" type="text/css" href={% static "js/datatables/extras/TableTools/media/css/TableTools.min.css" %}/>
     <!-- JQUERY -->
 
     {#	<script src={% static "js/jquery/jquery-2.0.3.min.js" %}></script>#}
@@ -288,7 +291,14 @@
 <!-- JAVASCRIPTS -->
 <!-- Placed at the end of the document so the pages load faster -->
 <!-- BOOTSTRAP -->
+{% block jquery %}{% endblock %}
+
 <script src={% static "bootstrap-dist/js/bootstrap.min.js" %}></script>
+<!-- DATA TABLES -->
+	<script type="text/javascript" src={% static "js/datatables/media/js/jquery.dataTables.min.js" %}></script>
+	<script type="text/javascript" src={% static "js/datatables/media/assets/js/datatables.min.js" %}></script>
+	<script type="text/javascript" src={% static "js/datatables/extras/TableTools/media/js/TableTools.min.js" %}></script>
+	<script type="text/javascript" src={% static "js/datatables/extras/TableTools/media/js/ZeroClipboard.min.js" %}></script>
 <!-- CUSTOM SCRIPT -->
 <script src={% static "js/script.js" %}></script>
 <script>
