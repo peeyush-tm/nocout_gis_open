@@ -73,8 +73,8 @@
         
         <ul class="nav navbar-nav pull-left hidden-xs orgTitleBlock">
             <li>
-                <span class="username">Org. - XYZ Pvt. Ltd.</span><br/>
-                <span>Dept. - Sales</span>
+                <span class="username">Org. - {% block display_organization %}{{ user_organization }}{% endblock %}</span><br/>
+                <span>Dept. - {% block display_department %}{{ user_department }}{% endblock %}</span>
             </li>
         </ul>
         
