@@ -5,7 +5,8 @@ var mapInstance = "",
 	oms = "",
 	pathConnector = "",
 	infowindow = "",
-	devicesObject = {};
+	devicesObject = {},
+	metaRequest = {};
 /**
  * This class is used to plot the BS & SS on the google maps & show information on click
  * @class networkMap
@@ -17,6 +18,8 @@ function networkMapClass()
 {
 	/*Store the reference of current pointer in a global variable*/
 	that = this;
+	metaRequest["page_number"] = 1;
+	metaRequest["limit"] = 0;
 	/**
 	 * This function creates the base google map with the lat long of India
 	 * @function createMap
@@ -70,15 +73,15 @@ function networkMapClass()
 		oms.clearMarkers();
 
 		$.ajax({
-			//crossDomain: true,
-			url : "http://"+hostIp+":8000/device/stats/?username=pardeep",
-			type : "GET",
-			dataType: "json",			
+			// crossDomain: true,
+			// url : "http://"+hostIp+":8000/device/stats/",
+			url : "http://192.168.0.100:8000/device/stats/",
+			type : "POST",
+			data : metaRequest,
 			/*If data fetched successful*/
 			success : function(result)
 			{				
 				/*Save the result json to the global variable for global access*/
-				console.log(result);
 				devicesObject = result;
 
 				if(devicesObject.success == 1)
