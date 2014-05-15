@@ -2992,9 +2992,9 @@ var App = function () {
         });
 		
 		//Check which theme skin is set
-		 if ($.cookie('skin_color')) {
-            setSkin($.cookie('skin_color'));
-        }
+		 // if ($.cookie('skin_color')) {
+   //          setSkin($.cookie('skin_color'));
+   //      }
 	}
 	/*-----------------------------------------------------------------------------------*/
 	/*	Handles Gritter on Load
