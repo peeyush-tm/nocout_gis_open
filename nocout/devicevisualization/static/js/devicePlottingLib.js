@@ -70,14 +70,16 @@ function networkMapClass()
 		oms.clearMarkers();
 
 		$.ajax({
-			// crossDomain: true,
-			url : "http://"+hostIp+":8000/device/stats/",
+			//crossDomain: true,
+			url : "http://"+hostIp+":8000/device/stats/?username=pardeep",
 			type : "GET",
+			dataType: "json",			
 			/*If data fetched successful*/
 			success : function(result)
 			{				
 				/*Save the result json to the global variable for global access*/
-				devicesObject = JSON.parse(result);
+				console.log(result);
+				devicesObject = result;
 
 				if(devicesObject.success == 1)
 				{
@@ -87,59 +89,59 @@ function networkMapClass()
 						techArray = [];
 
 					/*Call the populateNetwork to show the markers on the map*/
-					that.populateNetwork(devicesObject.data.children);
+					that.populateNetwork(devicesObject.data.objects.children);
 
 					/*Make an array of master & slave cities as well as states*/
-					for(var i=0;i<devicesObject.data.children.length;i++)
+					for(var i=0;i<devicesObject.data.objects.children.length;i++)
 					{
 						/*Total number of slave for particular master*/
-						var slaveCount = devicesObject.data.children[i].children.length;
+						var slaveCount = devicesObject.data.objects.children[i].children.length;
 
 						/*Loop for the slaves*/
 						for(var j=0;j<slaveCount;j++)
 						{
 							/*Push master city in cityArray array*/
-							if(cityArray.indexOf($.trim(devicesObject.data.children[i].data.city)) == -1)
+							if(cityArray.indexOf($.trim(devicesObject.data.objects.children[i].data.city)) == -1)
 							{
-								cityArray.push($.trim(devicesObject.data.children[i].data.city));
+								cityArray.push($.trim(devicesObject.data.objects.children[i].data.city));
 							}
 							/*Push slave city in cityArray array*/
-							if(cityArray.indexOf($.trim(devicesObject.data.children[i].children[j].data.city)) == -1)
+							if(cityArray.indexOf($.trim(devicesObject.data.objects.children[i].children[j].data.city)) == -1)
 							{
-								cityArray.push($.trim(devicesObject.data.children[i].children[j].data.city));
+								cityArray.push($.trim(devicesObject.data.objects.children[i].children[j].data.city));
 							}
 
 							/*Push master states in stateArray array*/
-							if(stateArray.indexOf($.trim(devicesObject.data.children[i].data.state)) == -1)
+							if(stateArray.indexOf($.trim(devicesObject.data.objects.children[i].data.state)) == -1)
 							{
-								stateArray.push($.trim(devicesObject.data.children[i].data.state));
+								stateArray.push($.trim(devicesObject.data.objects.children[i].data.state));
 							}
 							/*Push slave states in stateArray array*/
-							if(stateArray.indexOf($.trim(devicesObject.data.children[i].children[j].data.state)) == -1)
+							if(stateArray.indexOf($.trim(devicesObject.data.objects.children[i].children[j].data.state)) == -1)
 							{
-								stateArray.push($.trim(devicesObject.data.children[i].children[j].data.state));
+								stateArray.push($.trim(devicesObject.data.objects.children[i].children[j].data.state));
 							}
 
 							/*Push master vendors in masterVendorArray array*/
-							if(vendorArray.indexOf($.trim(devicesObject.data.children[i].data.vendor)) == -1)
+							if(vendorArray.indexOf($.trim(devicesObject.data.objects.children[i].data.vendor)) == -1)
 							{
-								vendorArray.push($.trim(devicesObject.data.children[i].data.vendor));
+								vendorArray.push($.trim(devicesObject.data.objects.children[i].data.vendor));
 							}
 							/*Push slave vendors in slaveVendorArray array*/
-							if(vendorArray.indexOf($.trim(devicesObject.data.children[i].children[j].data.vendor)) == -1)
+							if(vendorArray.indexOf($.trim(devicesObject.data.objects.children[i].children[j].data.vendor)) == -1)
 							{
-								vendorArray.push($.trim(devicesObject.data.children[i].children[j].data.vendor));
+								vendorArray.push($.trim(devicesObject.data.objects.children[i].children[j].data.vendor));
 							}
 
 							/*Push master technology in techArray array*/
-							if(techArray.indexOf($.trim(devicesObject.data.children[i].data.technology)) == -1)
+							if(techArray.indexOf($.trim(devicesObject.data.objects.children[i].data.technology)) == -1)
 							{
-								techArray.push($.trim(devicesObject.data.children[i].data.technology));
+								techArray.push($.trim(devicesObject.data.objects.children[i].data.technology));
 							}
 							/*Push slave technology in techArray array*/
-							if(techArray.indexOf($.trim(devicesObject.data.children[i].children[j].data.technology)) == -1)
+							if(techArray.indexOf($.trim(devicesObject.data.objects.children[i].children[j].data.technology)) == -1)
 							{
-								techArray.push($.trim(devicesObject.data.children[i].children[j].data.technology));
+								techArray.push($.trim(devicesObject.data.objects.children[i].children[j].data.technology));
 							}
 						}
 					}
@@ -150,7 +152,7 @@ function networkMapClass()
 			/*If data not fetched*/
 			error : function(err)
 			{
-				console.log(err);
+				console.log(err.statusText);
 			}
 		});
 	};
@@ -468,15 +470,15 @@ function networkMapClass()
 	 	if(devicesObject.success == 1)
 	 	{
 	 		filteredData = [];
-	 		for(var i=0;i<devicesObject.data.children.length;i++)
+	 		for(var i=0;i<devicesObject.data.objects.children.length;i++)
 	 		{
 	 			/*Total Slaves Count*/
-	 			var slaveLength = devicesObject.data.children[i].children.length;
+	 			var slaveLength = devicesObject.data.objects.children[i].children.length;
 	 			/*Loop For Slaves*/
 	 			for(var j=0;j<slaveLength;j++)
 	 			{
-	 				var master = devicesObject.data.children[i];
-		 			var slave = devicesObject.data.children[i].children[j];
+	 				var master = devicesObject.data.objects.children[i];
+		 			var slave = devicesObject.data.objects.children[i].children[j];
 		 			
 		 			/*Conditions as per the number of filters*/
 		 			if(filterKey.length == 1)
@@ -490,7 +492,7 @@ function networkMapClass()
 		 						masterIds.push(master.id);
 		 						slaveIds.push(slave.id);
 
-		 						filteredData.push(devicesObject.data.children[i]);
+		 						filteredData.push(devicesObject.data.objects.children[i]);
 		 					}
 		 				}
 
@@ -506,7 +508,7 @@ function networkMapClass()
 		 						masterIds.push(master.id);
 		 						slaveIds.push(slave.id);
 
-		 						filteredData.push(devicesObject.data.children[i]);
+		 						filteredData.push(devicesObject.data.objects.children[i]);
 		 					}
 		 				}
 		 			}
@@ -521,7 +523,7 @@ function networkMapClass()
 		 						masterIds.push(master.id);
 		 						slaveIds.push(slave.id);
 
-		 						filteredData.push(devicesObject.data.children[i]);
+		 						filteredData.push(devicesObject.data.objects.children[i]);
 		 					}
 		 				}
 		 			}
@@ -536,7 +538,7 @@ function networkMapClass()
 		 						masterIds.push(master.id);
 		 						slaveIds.push(slave.id);
 
-		 						filteredData.push(devicesObject.data.children[i]);
+		 						filteredData.push(devicesObject.data.objects.children[i]);
 		 					}
 		 				}
 		 			}
@@ -562,6 +564,6 @@ function networkMapClass()
 	 */
 	this.loadExistingDevices = function()
 	{
-		that.populateNetwork(devicesObject.data.children);
+		that.populateNetwork(devicesObject.data.objects.children);
 	};
 }
