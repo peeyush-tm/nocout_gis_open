@@ -1,0 +1,30 @@
+{% extends "organization/organization.html" %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/organization.css" %}>
+{% endblock %}
+{% block breadcrumb_page_title %}{% endblock %}
+{% block content_title %}Organization Management{% endblock %}
+{% block content_description %}List of organizations ....{% endblock %}
+{% block content %}
+    <h2>Organizations</h2>
+    <hr/>
+    <p><a href="/organization/new">Create Organization</a></p>
+    <br/>
+    <div id="organization">
+        <table>
+            <tr>
+                <td><strong>Organizations</strong></td>
+                <td><strong>Edit</strong></td>
+                <td><strong>Delete</strong></td>
+            </tr>
+            {% for organization in object_list %}
+                <tr>
+                    <td><a href="/organization/{{ organization.id }}">{{ organization.name }}</a></td>
+                    <td><a href="/organization/edit/{{ organization.id }}">Edit</a></td>
+                    <td><a href="/organization/delete/{{ organization.id }}">Delete</a></td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% endblock %}

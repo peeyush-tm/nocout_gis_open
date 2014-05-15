@@ -63,7 +63,6 @@ var App = function () {
 	/*-----------------------------------------------------------------------------------*/
 	var handleSidebar = function () {
 	jQuery('.sidebar-menu .has-sub > a').click(function () {
-
             var last = jQuery('.has-sub.open', $('.sidebar-menu'));
             last.removeClass("open");
             jQuery('.arrow', last).removeClass("open");
@@ -2451,10 +2450,10 @@ var App = function () {
 	/*-----------------------------------------------------------------------------------*/
 	var handleBackstretch = function () {
 		 $.backstretch([
-		"img/login/1.jpg"
-		, "img/login/2.jpg"
-		, "img/login/3.jpg"
-		, "img/login/4.jpg"
+		"/static/img/login/1.jpg"
+		, "/static/img/login/2.jpg"
+		, "/static/img/login/3.jpg"
+		, "/static/img/login/4.jpg"
 		], {duration: 3000, fade: 750});
 	}
 	/*-----------------------------------------------------------------------------------*/
@@ -2475,7 +2474,7 @@ var App = function () {
 			var msg = '';
                 msg +='<li class="animated fadeInLeft media">';
 				msg +=  '<a class="pull-right" href="#">';
-				msg +=	'<img class="media-object" alt="Generic placeholder image" src="img/chat/headshot2.jpg">';
+				msg +=	'<img class="media-object" alt="Generic placeholder image" src="/static/img/chat/headshot2.jpg">';
 				msg +=  '</a>';
 				msg +=  '<div class="pull-right media-body chat-pop mod">';
 				msg +=	'<h4 class="media-heading">You <span class="pull-left"><abbr id="curr-time" class="timeago" title="'+curr_time+'" >'+curr_time+'</abbr> <i class="fa fa-clock-o"></i></span></h4>';
@@ -2538,7 +2537,7 @@ var App = function () {
 			//Randomize the image
 			var img_id = Math.floor(Math.random() * (5 - 1 + 1)) + 1;
 			//Set the image
-			$('#contact-card .headshot img').attr('src', 'img/addressbook/'+img_id+'.jpg');
+			$('#contact-card .headshot img').attr('src', '/static/img/addressbook/'+img_id+'.jpg');
 			contact_card.removeClass('animated fadeInUp').addClass('animated fadeInUp');
 			var wait = window.setTimeout( function(){
 				contact_card.removeClass('animated fadeInUp')},
@@ -2993,12 +2992,9 @@ var App = function () {
         });
 		
 		//Check which theme skin is set
-        /*Self Commented Code*/
-		/*
-		*  if ($.cookie('skin_color')) {
+		 if ($.cookie('skin_color')) {
             setSkin($.cookie('skin_color'));
         }
-		* */
 	}
 	/*-----------------------------------------------------------------------------------*/
 	/*	Handles Gritter on Load
@@ -3016,7 +3012,7 @@ var App = function () {
                     // (string | mandatory) the text inside the notification
                     text: 'Cloud is a feature-rich Responsive Admin Dashboard Template with a wide array of plugins!',
                     // (string | optional) the image to display on the left
-                    image: 'img/gritter/cloud.png',
+                    image: '/static/img/gritter/cloud.png',
                     // (bool | optional) if you want it to fade out on its own or just sit there
                     sticky: true,
                     // (int | optional) the time you want it to be alive for before fading out
@@ -3041,7 +3037,7 @@ var App = function () {
                     // (string | mandatory) the text inside the notification
                     text: 'Cloud Admin is easily customizable, lightweight and has a great User Experience.',
                     // (string | optional) the image to display on the left
-                    image: 'img/gritter/settings.png',
+                    image: '/static/img/gritter/settings.png',
                     // (bool | optional) if you want it to fade out on its own or just sit there
                     sticky: true,
                     // (int | optional) the time you want it to be alive for before fading out
@@ -3072,7 +3068,7 @@ var App = function () {
                     // (string | mandatory) the text inside the notification
                     text: 'Purchase Cloud Admin theme and get access to future updates at no extra cost. Buy now!',
                     // (string | optional) the image to display on the left
-                    image: 'img/gritter/buy.png',
+                    image: '/staic/img/gritter/buy.png',
                     // (bool | optional) if you want it to fade out on its own or just sit there
                     sticky: true,
                     // (int | optional) the time you want it to be alive for before fading out
@@ -3176,7 +3172,7 @@ var App = function () {
 				handleDashFlotCharts(); //Function to display flot charts in dashboard
 				handleChat('chat-window'); //Function to handle chat
 				handleCalendar();	//Function to display calendar
-				// handleGritter();	//Function to display Gritter notifications
+				handleGritter();	//Function to display Gritter notifications
             }
 			if (App.isPage("widgets_box")) {
 				handleBoxSortable(); //Function to handle Box sortables
@@ -3344,7 +3340,7 @@ var App = function () {
         blockUI: function (el, loaderOnTop) {
             lastBlockedUI = el;
             jQuery(el).block({
-                message: '<img src="./img/loaders/12.gif" align="absmiddle">',
+                message: '<img src="/static/img/loaders/12.gif" align="absmiddle">',
                 css: {
                     border: 'none',
                     padding: '2px',

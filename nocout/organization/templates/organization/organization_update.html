@@ -1,0 +1,43 @@
+{% extends "organization/organization.html" %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/organization.css" %}>
+{% endblock %}
+{% block breadcrumb_page_title %}{% endblock %}
+{% block content_title %}Organizations Management{% endblock %}
+{% block content_description %}Update an organization ....{% endblock %}
+{% block content %}
+    <h3>Update Organization</h3>
+    <form action="" method="post">{% csrf_token %}
+        <div id="new_organization">
+            <table>
+                <tr>
+                    <td>
+                        {{ form.errors }}
+                        {{ form.non_field_errors }}
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="id_name"> Organization Name:</label></th>
+                    <td>{{ form.name }}</td>
+                </tr>
+                <tr>
+                    <th><label for="id_description">Description:</label></th>
+                    <td>{{ form.description }}</td>
+                </tr>
+                <tr>
+                    <th><label for="id_user_group">User Group:</label></th>
+                    <td>{{ form.user_group }}</td>
+                </tr>
+                <tr>
+                    <th><label for="id_device_group">Device Group:</label></th>
+                    <td>{{ form.device_group }}</td>
+                </tr>
+                <tr>
+                    <th></th>
+                    <td><input type="submit" value="Update"/><input type="reset" value="Reset"/></td>
+                </tr>
+            </table>
+        </div>
+    </form>
+{% endblock %}
