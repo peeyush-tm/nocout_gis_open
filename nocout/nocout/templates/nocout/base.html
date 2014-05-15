@@ -9,18 +9,22 @@
     <title>{% block title %}Nocout{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
     <meta name="description" content="">
-    <meta name="author" content="Priyesh">
-    <link rel="stylesheet" type="text/css" href={% static "css/cloud-admin.css" %} >
-    <link rel="stylesheet" type="text/css" href={% static "css/themes/default.css" %} id="skin-switcher" >
+    <meta name="author" content="">
+    <link rel="stylesheet" type="text/css" href={% static "css/cloud-admin.css" %}>
+    <link rel="stylesheet" type="text/css" href={% static "css/themes/default.css" %} id="skin-switcher">
+    <link rel="stylesheet" type="text/css" href={% static "css/responsive.css" %}>
     <!-- STYLESHEETS -->
     <!--[if lt IE 9]>
-    <script src="js/flot/excanvas.min.js"></script>
-    <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <script src="http://css3-mediaqueries-js.googlecode.com/svn/trunk/css3-mediaqueries.js"></script>
+    <!-- STYLESHEETS -->
+    <!--[if lt IE 9]><script src="js/flot/excanvas.min.js"></script><script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><script src="http://css3-mediaqueries-js.googlecode.com/svn/trunk/css3-mediaqueries.js"></script>
     <![endif]-->
     <link href={% static "font-awesome/css/font-awesome.min.css" %} rel="stylesheet">
+    <!-- NOCOUT DEFAULT CSS -->
+    <link rel="stylesheet" type="text/css" href={% static "css/nocout_default.css" %} />
     <!-- ANIMATE -->
     <link rel="stylesheet" type="text/css" href={% static "css/animatecss/animate.min.css" %} />
+    <!-- DATE RANGE PICKER -->
+    <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-daterangepicker/daterangepicker-bs3.css" %} />
     <!-- TODO -->
     <link rel="stylesheet" type="text/css" href={% static "js/jquery-todo/css/styles.css" %} />
     <link rel="stylesheet" type="text/css" href={% static "js/datatables/media/css/jquery.dataTables.min.css" %}/>
@@ -33,8 +37,15 @@
     <script src={% static "dajax/jquery.dajax.core.js" %}></script>
     {% dajaxice_js_import %}
 
+    <!-- FULL CALENDAR -->
+    <link rel="stylesheet" type="text/css" href={% static "js/fullcalendar/fullcalendar.min.css" %} />
+    <!-- GRITTER -->
+    <link rel="stylesheet" type="text/css" href={% static "js/gritter/css/jquery.gritter.css" %} />
     <!-- FONTS -->
     <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700' rel='stylesheet' type='text/css'>
+    <!-- DAJAX -->
+    <script src={% static "dajax/jquery.dajax.core.js" %}></script>
+    {% dajaxice_js_import %}
     {% block css %}{% endblock %}
 
 </head>
@@ -48,8 +59,8 @@
     <div class="container">
         <div class="navbar-brand">
             <!-- COMPANY LOGO -->
-            <a href="index.html">
-                <img src={% static "img/logo/logo.png" %} alt="CloudAdminLogo" class="img-responsive" height="30"
+            <a href="/home/">
+                <img src={% static "img/logo/logo1.png" %} alt="CloudAdminLogo" class="img-responsive" height="30"
                      width="120">
             </a>
             <!-- /COMPANY LOGO -->
@@ -69,34 +80,23 @@
             <!-- /SIDEBAR COLLAPSE -->
         </div>
         <!-- NAVBAR LEFT -->
-        <ul class="nav navbar-nav pull-left hidden-xs" id="navbar-left">
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    <i class="fa fa-cog"></i>
-                    <span class="name">Skins</span>
-                    <i class="fa fa-angle-down"></i>
-                </a>
-                <ul class="dropdown-menu skins">
-                    <li class="dropdown-title">
-                        <span><i class="fa fa-leaf"></i> Theme Skins</span>
-                    </li>
-                    <li><a href="#" data-skin="default">Subtle (default)</a></li>
-                    <li><a href="#" data-skin="night">Night</a></li>
-                    <li><a href="#" data-skin="earth">Earth</a></li>
-                    <li><a href="#" data-skin="utopia">Utopia</a></li>
-                    <li><a href="#" data-skin="nature">Nature</a></li>
-                    <li><a href="#" data-skin="graphite">Graphite</a></li>
-                </ul>
+        
+        <ul class="nav navbar-nav pull-left hidden-xs orgTitleBlock">
+            <li>
+                <span class="username">Org. - XYZ Pvt. Ltd.</span><br/>
+                <span>Dept. - Sales</span>
             </li>
         </ul>
+        
         <!-- /NAVBAR LEFT -->
         <!-- BEGIN TOP NAVIGATION MENU -->
-        <ul class="nav navbar-nav pull-right">
-            <!-- BEGIN USER LOGIN DROPDOWN -->
+        <ul class="nav navbar-nav pull-right topUserInfo">
+            <!-- BEGIN USER LOGIN DROPDOWN -->            
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    <span class="username">{{ username }}</span>
-                    <i class="fa fa-angle-down"></i>
+                    <span class="username">{% block fullname %}{{ request.user.first_name }} {{ request.user.last_name }}{% endblock %}</span><br/>
+                    <span>{% now "j F Y (H:i) T" %}</span>
+                    <i class="fa fa-caret-down"></i>
                 </a>
                 <ul class="dropdown-menu">
                     <li><a href="#"><i class="fa fa-user"></i> My Profile</a></li>
@@ -118,6 +118,11 @@
     <div id="sidebar" class="sidebar">
         <div class="sidebar-menu nav-collapse">
             <div class="divide-20"></div>
+            <!-- SEARCH BAR -->
+            <div id="search-bar">
+                <input class="search" type="text" placeholder="Search"><i class="fa fa-search search-icon"></i>
+            </div>
+            <!-- /SEARCH BAR -->
 
             <!-- SIDEBAR QUICK-LAUNCH -->
             <!-- <div id="quicklaunch">
@@ -126,16 +131,17 @@
             <!-- SIDEBAR MENU -->
             <ul>
                 <li class="active">
-                    <a href="">
-                        <i class="fa fa-tachometer fa-fw"></i> <span class="menu-text">Dashboard</span>
+                    <a href="/home/">
+                        <i class="fa fa-dashboard"></i> <span class="menu-text">Dashboard</span>
                         <span class="selected"></span>
                     </a>
                 </li>
-                <li><a class="" href="" target="_blank"><i class="fa fa-bookmark fa-fw"></i> <span class="menu-text">Scheduling</span></a>
+                <li>
+                    <a class="" href="/organization/"><i class="fa fa-sitemap"></i> <span class="menu-text">Organization</span></a>
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
-                        <i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Inventory</span>
+                        <i class="fa fa-dropbox"></i> <span class="menu-text">Inventory</span>
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
@@ -148,7 +154,7 @@
                         <li><a class="" href="/model/"><span class="sub-menu-text">Device Models</span></a></li>
                         <li><a class="" href="/type/"><span class="sub-menu-text">Device Types</span></a></li>
                         <li><a class="" href="/site/"><span class="sub-menu-text">Site Instance</span></a></li>
-                        <li><a class="" href=""><span class="sub-menu-text">Discovery</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Discovery</span></a></li>
                         <li><a class="" href="/service"><span class="sub-menu-text">Services</span></a></li>
                         <li><a class="" href="/sp/"><span class="sub-menu-text">Service Parameters</span></a></li>
                         <li><a class="" href="/command"><span class="sub-menu-text">Commands</span></a></li>
@@ -156,68 +162,71 @@
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
-                        <i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">User Management</span>
+                        <i class="fa fa-user"></i> <span class="menu-text">Department</span>
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
                         <li><a class="" href="/user/"><span class="sub-menu-text">Manage User</span></a></li>
                         <li><a class="" href="/ug/"><span class="sub-menu-text">Manage Group</span></a></li>
-                        <li><a class="" href=""><span class="sub-menu-text">Manage Session</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Manage Session</span></a></li>
                     </ul>
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
-                        <i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Network Maps</span>
+                        <i class="fa fa-map-marker"></i> <span class="menu-text">Network Maps</span>
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
-                        <li><a class="" href="/devicevisualization/"><span class="sub-menu-text">Geographical Map</span></a></li>
-                        <li><a class="" href="/devicevisualization/"><span class="sub-menu-text">Topology Map</span></a></li>
+                        <li><a class="" href="/devicevisualization/"><span class="sub-menu-text">Geographical Map</span></a>
+                        </li>
                     </ul>
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
-                        <i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Alarms</span>
+                        <i class="fa fa-bell"></i> <span class="menu-text">Alarms</span>
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
-                        <li><a class="" href="#"><span class="sub-menu-text">Event Details</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">Alarm Masking</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Event Details</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Alarm Masking</span></a></li>
                     </ul>
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
-                        <i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Reports</span>
+                        <i class="fa fa-file-text"></i> <span class="menu-text">Reports</span>
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
-                        <li><a class="" href="#"><span class="sub-menu-text">Report</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">Analyzed Report</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">Inventory Report</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">Event</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">Access Point Report</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">Backup & Restore</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Report</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Analyzed Report</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Inventory Report</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Event</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Access Point Report</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Backup & Restore</span></a></li>
                     </ul>
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
-                        <i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Logs</span>
+                        <i class="fa fa-bar-chart-o"></i> <span class="menu-text">Logs</span>
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
-                        <li><a class="" href="#"><span class="sub-menu-text">Host & Service Events</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">Search Global Logfile</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">User Logs</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Host & Service Events</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Search Global Logfile</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">User Logs</span></a></li>
                     </ul>
+                </li>
+                <li>
+                    <a class="" href="javascript:;" target="_blank"><i class="fa fa-calendar"></i> <span class="menu-text">Scheduling</span></a>
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
-                        <i class="fa fa-bookmark-o fa-fw"></i> <span class="menu-text">Settings</span>
+                        <i class="fa fa-cog"></i> <span class="menu-text">Settings</span>
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
-                        <li><a class="" href="#"><span class="sub-menu-text">Daemon</span></a></li>
-                        <li><a class="" href="#"><span class="sub-menu-text">License</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Daemon</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">License</span></a></li>
                     </ul>
                 </li>
             </ul>
@@ -261,14 +270,18 @@
                                 <ul class="breadcrumb">
                                     <li>
                                         <i class="fa fa-home"></i>
-                                        <a href="index.html">Home</a>
+                                        <a href="/home/">Home</a>
                                     </li>
                                     <li>{% block breadcrumb_title %}Dashboard{% endblock %}</li>
                                 </ul>
                                 <!-- /BREADCRUMBS -->
                                 <div class="clearfix">
-                                    <h3 class="content-title pull-left">{% block content_title %}
-                                        Dashboard{% endblock %}</h3>
+                                    <h3 class="content-title pull-left">
+                                        {% block content_title %}Dashboard{% endblock %}
+                                    </h3>
+                                    {% block date_picker %}
+
+                                    {% endblock %}
                                 </div>
                                 <div class="description">{% block content_description %}Overview, Statistics and
                                     more{% endblock %}</div>
@@ -301,12 +314,73 @@
 	<script type="text/javascript" src={% static "js/datatables/extras/TableTools/media/js/ZeroClipboard.min.js" %}></script>
 <!-- CUSTOM SCRIPT -->
 <script src={% static "js/script.js" %}></script>
+<!-- JQUERY -->
+<script src={% static "js/jquery/jquery-2.0.3.min.js" %}></script>
+<!-- JQUERY UI-->
+<script src={% static "js/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.min.js" %}></script>
+<!-- SLIMSCROLL -->
+<script type="text/javascript" src={% static "js/jQuery-slimScroll-1.3.0/jquery.slimscroll.min.js" %}></script>
+<!-- SLIMSCROLL -->
+<script type="text/javascript" src={% static "js/jQuery-slimScroll-1.3.0/jquery.slimscroll.min.js" %}></script>
+<script type="text/javascript" src={% static "js/jQuery-slimScroll-1.3.0/slimScrollHorizontal.min.js" %}></script>
+<!-- BLOCK UI -->
+<script type="text/javascript" src={% static "js/jQuery-BlockUI/jquery.blockUI.min.js" %}></script>
+<!-- BOOTSTRAP -->
+<script src={% static "bootstrap-dist/js/bootstrap.min.js" %}></script>
+{% block load_js %}
+<!-- /JAVASCRIPTS -->
 <script>
     jQuery(document).ready(function () {
-        App.setPage("sample");  //Set current page
+        App.setPage("index");  //Set current page
         App.init(); //Initialise plugins and elements
     });
 </script>
-<!-- /JAVASCRIPTS -->
+{% endblock %}
+<script>
+    /*This script add & remove the current and active classes for the side hiperlinks as per the router to show the currently selected sidebar item.*/
+
+    /*All Sidebar anchor tags*/
+    var sideMenu = $("#sidebar ul li a");
+    /*Current router url text*/
+    var currentRouter = $.trim(window.location.href.split("/")[3]);
+
+    for(var i=0;i<sideMenu.length;i++)
+    {
+        /*Anchor tags hiperlink text*/
+        var menuLink = $.trim(sideMenu[i].href.split("/")[3]);
+        /*Parent Element(li) Classname*/
+        var activeClass = $.trim(sideMenu[i].parentElement.className);
+        /*If there is active class on the parent then remove it*/
+        if(activeClass === "active")
+        {
+            sideMenu[i].parentElement.className = "";
+        }
+        /*If the routertext matches the hiperlink text then add the active & current classes at the desired element*/
+        if(menuLink == currentRouter)
+        {
+            var superParentClass = $.trim(sideMenu[i].parentElement.parentElement.parentElement.className);
+            if(superParentClass.indexOf("has-sub") == -1)
+            {
+                var parent = sideMenu[i].parentElement;
+                parent.className = "active";
+            }
+            else
+            {
+                /*Add open class to the arrow*/
+                var arrowClass = sideMenu[i].parentElement.parentElement.parentElement.children[0].children[2];
+                arrowClass.className = arrowClass.className+" open";
+                
+                /*Add current class to the parent li*/
+                var parent = sideMenu[i].parentElement;
+                parent.className = "current";
+
+                /*Add active class to the super parent li*/
+                var superParent = sideMenu[i].parentElement.parentElement.parentElement;
+                superParent.className = superParent.className+" active";
+            }
+        }
+    }
+</script>
+
 </body>
 </html>

@@ -1,0 +1,62 @@
+#organization td {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-right: 25px;
+    padding-left: 25px;
+}
+
+#organization tr {
+    border-bottom: solid 1px #75A5BB;
+}
+
+label {
+    display: inline-block;
+    /* color: #3670AA; */
+    width: 200px;
+    padding-right: 10px;
+    text-align: right;
+}
+
+input {
+    display: inline-block;
+}
+
+.errorlist {
+    display: inline-block;
+    color: #CC0000;
+    width: 200px;
+}
+
+input[type="submit"] {
+    display: inline-block;
+    width: 200px;
+    float: right;
+}
+
+input[type="reset"] {
+    display: inline-block;
+    width: 200px;
+    float: right;
+}
+
+input[type="text"] {
+    width: 400px;
+}
+
+textarea {
+    width: 400px;
+}
+
+select, option {
+    width: 400px;
+}
+
+.helptext {
+    display: none;
+}
+
+#new_organization td {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-right: 10px;
+}

@@ -3,6 +3,9 @@
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/site_instance.css" %}>
 {% endblock %}
+{% block breadcrumb_page_title %} > Site Instance {% endblock %}
+{% block content_title %}Site Instances Management{% endblock %}
+{% block content_description %}Create a site instance ....{% endblock %}
 {% block content %}
     <h3>Create Site Instance</h3>
     <form action="/site/new/" method="post">{% csrf_token %}

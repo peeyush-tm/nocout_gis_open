@@ -34,13 +34,16 @@ class DeviceStatsApi(View):
 
         req_params = request.GET
         if 'username' in req_params:
-            #Retreive username from querystring
+            #Get username from query string, if passed
             username = req_params.get('username')
         else:
-            #Retreive currently logged-in user info from active session
+            #Retreive username from active session
             username = request.user.username
+        #Get the host machine IP address
         host_ip = request.get_host().split(':')[0]
+        #Show link between master-slave device pairs
         show_link = 1
+        #Result dict prototype
         self.result = {
             "success": 0,
             "message": "No Device Data",
@@ -60,8 +63,8 @@ class DeviceStatsApi(View):
                 "data": device_stats_dict
             })
             return HttpResponse(json.dumps(self.result))
-        
-        return HttpResponse(json.dumps(self.result))
+        else:
+            return HttpResponse(json.dumps(self.result))
 
 
 class DeviceStats(View):
@@ -85,7 +88,7 @@ class DeviceStats(View):
         
         """
 
-        #prototype for device dict
+        #Prototype for device dict
         device_stats_dict = {
             "id": "root node",
             "name": "Root Site Instance",

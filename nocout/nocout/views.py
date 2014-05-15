@@ -1,9 +1,7 @@
 from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response, render
+from django.shortcuts import render
 from django.contrib import auth
 from django.views.decorators.csrf import csrf_protect
-
-# from forms import MyRegistrationForm
 
 
 @csrf_protect
@@ -27,14 +25,14 @@ def auth_view(request):
 
 def loggedin(request):
     # return render_to_response('loggedin.html', {'full_name' : request.user.username})
-    return render(request,'nocout/loggedin.html',{'full_name' : request.user.username})
+    return HttpResponseRedirect('/home/')
+
 
 def invalid_login(request):
-    return render(request,'invalid_login.html')
-
+    return render(request,'nocout/login.html')
 
 
 def logout(request):
     auth.logout(request)
-    return render(request,'logout.html')
+    return render(request,'nocout/login.html')
 
