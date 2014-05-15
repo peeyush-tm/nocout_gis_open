@@ -55,3 +55,10 @@ select, option {
     padding-bottom: 10px;
     padding-right: 10px;
 }
+/*#tableContainer table tr td, #tableContainer table tr th{*/
+    /*color: #CCCCCC;*/
+
+/*}*/
+.dataTables_filter label, .dataTables_filter label input[type="text"]{
+    width:100%;
+}

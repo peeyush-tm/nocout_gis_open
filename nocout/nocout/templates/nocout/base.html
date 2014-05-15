@@ -27,6 +27,16 @@
     <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-daterangepicker/daterangepicker-bs3.css" %} />
     <!-- TODO -->
     <link rel="stylesheet" type="text/css" href={% static "js/jquery-todo/css/styles.css" %} />
+    <link rel="stylesheet" type="text/css" href={% static "js/datatables/media/css/jquery.dataTables.min.css" %}/>
+	<link rel="stylesheet" type="text/css" href={% static "js/datatables/media/assets/css/datatables.min.css" %}/>
+	<link rel="stylesheet" type="text/css" href={% static "js/datatables/extras/TableTools/media/css/TableTools.min.css" %}/>
+    <!-- JQUERY -->
+
+    {#	<script src={% static "js/jquery/jquery-2.0.3.min.js" %}></script>#}
+
+    <script src={% static "dajax/jquery.dajax.core.js" %}></script>
+    {% dajaxice_js_import %}
+
     <!-- FULL CALENDAR -->
     <link rel="stylesheet" type="text/css" href={% static "js/fullcalendar/fullcalendar.min.css" %} />
     <!-- GRITTER -->
@@ -293,12 +303,18 @@
 <!--/PAGE -->
 <!-- JAVASCRIPTS -->
 <!-- Placed at the end of the document so the pages load faster -->
-<!-- CUSTOM SCRIPT -->
-<script src={% static "js/script.js" %}></script>
-<!-- JQUERY -->
+
+<!-- JQUERY-->
 <script src={% static "js/jquery/jquery-2.0.3.min.js" %}></script>
 <!-- JQUERY UI-->
 <script src={% static "js/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.min.js" %}></script>
+<!-- BOOTSTRAP -->
+<script src={% static "bootstrap-dist/js/bootstrap.min.js" %}></script>
+<!-- DATA TABLES -->
+<script type="text/javascript" src={% static "js/datatables/media/js/jquery.dataTables.min.js" %}></script>
+<script type="text/javascript" src={% static "js/datatables/media/assets/js/datatables.min.js" %}></script>
+<script type="text/javascript" src={% static "js/datatables/extras/TableTools/media/js/TableTools.min.js" %}></script>
+<script type="text/javascript" src={% static "js/datatables/extras/TableTools/media/js/ZeroClipboard.min.js" %}></script>
 <!-- SLIMSCROLL -->
 <script type="text/javascript" src={% static "js/jQuery-slimScroll-1.3.0/jquery.slimscroll.min.js" %}></script>
 <!-- SLIMSCROLL -->
@@ -306,8 +322,11 @@
 <script type="text/javascript" src={% static "js/jQuery-slimScroll-1.3.0/slimScrollHorizontal.min.js" %}></script>
 <!-- BLOCK UI -->
 <script type="text/javascript" src={% static "js/jQuery-BlockUI/jquery.blockUI.min.js" %}></script>
-<!-- BOOTSTRAP -->
-<script src={% static "bootstrap-dist/js/bootstrap.min.js" %}></script>
+<!-- CUSTOM SCRIPT -->
+<script src={% static "js/script.js" %}></script>
+
+{% block jquery %}{% endblock %}
+
 {% block load_js %}
 <!-- /JAVASCRIPTS -->
 <script>
