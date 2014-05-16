@@ -27,7 +27,7 @@ class DeviceStatsApi(View):
             {
                 'success': 1,
                 'message': 'Device Data',
-                'data': device stats `dict` object
+                'object': device stats `dict` object
             }
 
         """
@@ -47,7 +47,10 @@ class DeviceStatsApi(View):
         self.result = {
             "success": 0,
             "message": "No Device Data",
-            "data": None
+            "data": {
+                "meta": None,
+                "objects": None
+            }
         }
         cls = DeviceStats()
         device_stats_dict = DeviceStats.p2p_device_info(
@@ -56,13 +59,18 @@ class DeviceStatsApi(View):
             host_ip,
             show_link
         )
+
         if len(device_stats_dict.get('children')):
             self.result.update({
                 "success": 1,
                 "message": "Device Data",
-                "data": device_stats_dict
+                "data": {
+                    "meta": None,
+                    "objects": device_stats_dict
+                }
             })
-            return HttpResponse(json.dumps(self.result))
+            return HttpResponse(json.dumps(self.result),
+                    mimetype="application/json")
         else:
             return HttpResponse(json.dumps(self.result))
 
@@ -98,6 +106,7 @@ class DeviceStats(View):
             "children": []
         }
         device_info_list = []
+        device_object_list = []
         try:
             self.user_id = User.objects.get(username=user).id
             self.user_gp_id = Department.objects.get(
@@ -108,7 +117,7 @@ class DeviceStats(View):
                 user_group_id=self.
                 user_gp_id
             ).device_group_id
-            inventory_dict = Inventory.objects.filter(
+            inventory_list = Inventory.objects.filter(
                 device_group_id=self.
                 dev_gp_id
             ).values()
@@ -116,19 +125,34 @@ class DeviceStats(View):
             print "No Data for this user"
             return device_stats_dict
 
-        for dev in inventory_dict:
+        meta_info={"page_number": 4, "limit": 2}
+        inventory_list = self.slice_object_list(inventory_list, meta_info)
+
+        for dev in inventory_list:
             device_info = {}
             try:
-                device_object = Device.objects.get(
-                    id=dev.get('device_id')
-                )
+                if not [d.id for d in device_object_list if d.id == dev.get('device_id')]:
+                    device_object = Device.objects.get(
+                        id=dev.get('device_id')
+                    )
+                    print "--Device Object--"
+                    print device_object
+                    device_object_list.append(device_object)
+                if not [d.id for d in device_object_list if d.id == device_object.parent_id]:
+                    master_device_object = Device.objects.get(
+                        id=device_object.parent_id
+                    )
+                    print "--Master Device Object--"
+                    print master_device_object
+                    device_object_list.append(master_device_object)
             except ObjectDoesNotExist:
                 print "No Device found"
                 continue
+
+        for obj in device_object_list:
             try:
                 device_type_object = DeviceType.objects.get(
-                    id=device_object.
-                    device_type
+                    id=obj.device_type
                 )
                 device_type = device_type_object.name
             except ObjectDoesNotExist:
@@ -136,8 +160,7 @@ class DeviceStats(View):
                 device_type = None
             try:
                 device_vendor_object = DeviceVendor.objects.get(
-                    id=device_object.
-                    device_vendor
+                    id=obj.device_vendor
                 )
                 device_vendor = device_vendor_object.name
             except ObjectDoesNotExist:
@@ -145,8 +168,7 @@ class DeviceStats(View):
                 device_vendor = None
             try:
                 device_model_object = DeviceModel.objects.get(
-                    id=device_object.
-                    device_model
+                    id=obj.device_model
                 )
                 device_model = device_model_object.name
             except ObjectDoesNotExist:
@@ -154,8 +176,7 @@ class DeviceStats(View):
                 device_model = None
             try:
                 device_technology_object = DeviceTechnology.objects.get(
-                    id=device_object.
-                    device_technology
+                    id=obj.device_technology
                 )
                 device_technology = device_technology_object.name
             except ObjectDoesNotExist:
@@ -163,31 +184,35 @@ class DeviceStats(View):
                 device_technology = None
             try:
                 device_info = {
-                    "id": device_object.id,
-                    "name": device_object.device_name,
-                    "alias": device_object.device_alias,
+                    "id": obj.id,
+                    "name": obj.device_name,
+                    "alias": obj.device_alias,
                     "device_type": device_type,
-                    "mac": device_object.mac_address,
-                    "current_state": device_object.host_state,
+                    "mac": obj.mac_address,
+                    "current_state": obj.host_state,
                     "vendor": device_vendor,
                     "model": device_model,
                     "technology": device_technology,
-                    "parent_id": device_object.parent_id,
-                    "lat": device_object.latitude,
-                    "lon": device_object.longitude,
+                    "parent_id": obj.parent_id,
+                    "lat": obj.latitude,
+                    "lon": obj.longitude,
                     "markerUrl": "http://%s:8000/static/img/marker/marker3.png"
                     % host_ip, "perf": "75%",
-                    "ip": device_object.ip_address,
+                    "ip": obj.ip_address,
                     "otherDetail": "No Detail",
-                    "city": device_object.city,
-                    "state": device_object.state
+                    "city": obj.city,
+                    "state": obj.state
                 }
                 device_info_list.append(device_info)
             except AttributeError, error:
                 print "Device Info key error"
                 print error
 
-        #master-slave pairs based on `parent_id` and `device_id`
+        print "-- Complete Device Info List --"
+        print device_info_list
+        
+
+        #Master-slave pairs based on `parent_id` and `device_id`
         for outer in device_info_list:
             master = copy.deepcopy(outer)
             master.update(
@@ -227,3 +252,14 @@ class DeviceStats(View):
                     device_stats_dict.get('children').append(master)
 
         return device_stats_dict
+
+
+    def slice_object_list(self, inventory_list, meta_info):
+        print meta_info
+        start = int(meta_info.get('limit')) * \
+            int(meta_info.get('page_number', 0)-1)
+        end = int(meta_info.get('limit')) * \
+            int(meta_info.get('page_number', 0))
+        print start, end
+        inventory_list = inventory_list[start:end]
+        return inventory_list
