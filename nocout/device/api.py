@@ -16,9 +16,9 @@ class DeviceStatsApi(View):
 
     """
     
-    def get(self, request):
+    def post(self, request):
         """
-        Handling http GET method for device data
+        Handling http POST method for device data
 
         Args:
             request (WSGIRequest): The request object.
@@ -27,12 +27,12 @@ class DeviceStatsApi(View):
             {
                 'success': 1,
                 'message': 'Device Data',
-                'object': device stats `dict` object
+                'objects': device stats `dict` object
             }
 
         """
-
-        req_params = request.GET
+        #Decode the json object
+        req_params = json.loads(request.body)
         if 'username' in req_params:
             #Get username from query string, if passed
             username = req_params.get('username')
@@ -69,8 +69,7 @@ class DeviceStatsApi(View):
                     "objects": device_stats_dict
                 }
             })
-            return HttpResponse(json.dumps(self.result),
-                    mimetype="application/json")
+            return HttpResponse(json.dumps(self.result))
         else:
             return HttpResponse(json.dumps(self.result))
 
@@ -135,15 +134,11 @@ class DeviceStats(View):
                     device_object = Device.objects.get(
                         id=dev.get('device_id')
                     )
-                    print "--Device Object--"
-                    print device_object
                     device_object_list.append(device_object)
                 if not [d.id for d in device_object_list if d.id == device_object.parent_id]:
                     master_device_object = Device.objects.get(
                         id=device_object.parent_id
                     )
-                    print "--Master Device Object--"
-                    print master_device_object
                     device_object_list.append(master_device_object)
             except ObjectDoesNotExist:
                 print "No Device found"
@@ -207,9 +202,6 @@ class DeviceStats(View):
             except AttributeError, error:
                 print "Device Info key error"
                 print error
-
-        print "-- Complete Device Info List --"
-        print device_info_list
         
 
         #Master-slave pairs based on `parent_id` and `device_id`
@@ -255,11 +247,9 @@ class DeviceStats(View):
 
 
     def slice_object_list(self, inventory_list, meta_info):
-        print meta_info
         start = int(meta_info.get('limit')) * \
             int(meta_info.get('page_number', 0)-1)
         end = int(meta_info.get('limit')) * \
             int(meta_info.get('page_number', 0))
-        print start, end
         inventory_list = inventory_list[start:end]
         return inventory_list
