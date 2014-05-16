@@ -1,6 +1,10 @@
+from collections import OrderedDict
+import json
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin
 from django.core.urlresolvers import reverse_lazy
+from nocout.utils.jquery_datatable_generation import Datatable_Generation
+from nocout.utils.util import date_handler
 from user_group.models import UserGroup, Organization
 from forms import UserGroupForm
 from django.http.response import HttpResponseRedirect
@@ -9,6 +13,23 @@ from django.http.response import HttpResponseRedirect
 class UserGroupList(ListView):
     model = UserGroup
     template_name = 'user_group/ug_list.html'
+
+    def get_queryset(self):
+        column_list=['name', 'alias', 'address', 'location', 'parent__name', 'device_group__name', 'device_group__location']
+        queryset = self.model._default_manager.values(*column_list)
+        return queryset[:10]
+
+    def get_context_data(self, **kwargs):
+
+        context=super( UserGroupList, self ).get_context_data(**kwargs)
+        object_list = context['object_list']
+        object_list, object_list_headers = Datatable_Generation( object_list ).main()
+        context['object_list'] = json.dumps( object_list, default=date_handler )
+        context.update({
+            'object_list_headers' : json.dumps(object_list_headers, default=date_handler )
+        })
+        return context
+
 
 
 class UserGroupDetail(DetailView):
