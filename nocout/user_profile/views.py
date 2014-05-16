@@ -5,12 +5,55 @@ from user_profile.models import UserProfile, Department, Roles
 from forms import UserForm
 from django.http.response import HttpResponseRedirect
 from django.contrib.auth.hashers import make_password
+import json, datetime
+
+date_handler = lambda obj: obj.strftime('%Y-%m-%d %H:%M:%S') if isinstance(obj, datetime.datetime) else None
 
 
 class UserList(ListView):
     model = UserProfile
     template_name = 'user_profile/users_list.html'
 
+    def get_queryset(self):
+
+        queryset = self.model._default_manager.values('username','first_name','last_name','email','role',
+                                           'user_group__name','parent__first_name','parent__last_name','phone_number','last_login')
+        return queryset[:10]
+
+    def get_context_data(self, **kwargs):
+        context=super(UserList, self).get_context_data(**kwargs)
+        ############################REQUIRED TO DEBUG IF REQUIRED(Code is yet not freezed )######################
+        # object_list=context['object_list']
+        # object_list_headers = [{"mData": "applicationName", "sTitle" : "Application Name" },
+        #                 { "mData" :"ipAddress", "sTitle" : "Application Name"},
+        #                 { "mData" :"url", "sTitle" : "URL"},
+        #                 { "mData" :"noOfCustomer", "sTitle" : "No. of Customers"},
+        #                 { "mData" :"roamingDrop", "sTitle" : "Roaming Drop"},]
+        #
+        # object_list=[{'applicationName': "ATM Monitoring",
+        #                 'roamingDrop': "",
+        #                 'noOfCustomer': 50,
+        #                 'ipAddress': "192.168.1.1",
+        #                  'url': "www.google.co.in",}]
+        # object_list = context['object_list']
+        # object_list = [ dict([ (key,value) if value else ( key,'') for object in object_list for key, value in object.iteritems() ])]
+        #######################################################################################################
+        object_list = [{ key: val if val else "" for key, val in dct.items() } for dct in context['object_list']]
+
+        object_list_sanity = lambda dict_final_key, dict_first_key, dict_last_key :[  dct.__setitem__(dict_final_key,
+                                dct.pop(dict_first_key) + ' ' + dct.pop(dict_last_key)) for dct in object_list ]
+
+        object_list_sanity('full_name','first_name','last_name')
+        object_list_sanity('manager_name','parent__first_name','parent__last_name')
+
+        object_list_headers = [ dict(mData=key, sTitle=key.replace('_',' ').title()) for key in object_list[0].keys() ]
+
+        context['object_list'] = json.dumps(object_list,default=date_handler)
+        context.update({
+            'object_list_headers' : json.dumps(object_list_headers, default=date_handler)
+        })
+
+        return context
 
 class UserDetail(DetailView):
     model = UserProfile
