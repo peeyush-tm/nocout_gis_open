@@ -30,10 +30,6 @@
     <link rel="stylesheet" type="text/css" href={% static "js/datatables/media/css/jquery.dataTables.min.css" %}/>
 	<link rel="stylesheet" type="text/css" href={% static "js/datatables/media/assets/css/datatables.min.css" %}/>
 	<link rel="stylesheet" type="text/css" href={% static "js/datatables/extras/TableTools/media/css/TableTools.min.css" %}/>
-    <!-- JQUERY -->
-    <script src={% static "dajax/jquery.dajax.core.js" %}></script>
-    {% dajaxice_js_import %}
-
     <!-- FULL CALENDAR -->
     <link rel="stylesheet" type="text/css" href={% static "js/fullcalendar/fullcalendar.min.css" %} />
     <!-- GRITTER -->
@@ -52,9 +48,9 @@
     <link rel="stylesheet" type="text/css" href={% static "js/uniform/css/uniform.default.min.css" %} />
     <!-- DAJAX -->
     <script src={% static "dajax/jquery.dajax.core.js" %}></script>
+    <!-- DAJAXICE -->
     {% dajaxice_js_import %}
     {% block css %}{% endblock %}
-
 </head>
 <body>
 <!-- session_security -->
@@ -317,8 +313,6 @@
 <!--/PAGE -->
 <!-- JAVASCRIPTS -->
 <!-- Placed at the end of the document so the pages load faster -->
-<!-- CUSTOM SCRIPT -->
-<script src={% static "js/script.js" %}></script>
 <!-- JQUERY -->
 <script src={% static "js/jquery/jquery-1.11.1.min.js" %}></script>
 <!-- JQUERY UI-->
@@ -335,9 +329,6 @@
 <script type="text/javascript" src={% static "js/jQuery-slimScroll-1.3.0/slimScrollHorizontal.min.js" %}></script>
 <!-- BLOCK UI -->
 <script type="text/javascript" src={% static "js/jQuery-BlockUI/jquery.blockUI.min.js" %}></script>
-<<<<<<< HEAD
-<!-- BOOTSTRAP -->
-<script src={% static "bootstrap-dist/js/bootstrap.min.js" %}></script>
 <!-- TYPEHEAD -->
 <script type="text/javascript" src={% static "js/typeahead/typeahead.min.js" %}></script>
 <!-- AUTOSIZE -->
@@ -352,15 +343,12 @@
 <script type="text/javascript" src={% static "js/select2/select2.min.js" %}></script>
 <!-- UNIFORM -->
 <script type="text/javascript" src={% static "js/uniform/jquery.uniform.min.js" %}></script>
-=======
 <!-- CUSTOM SCRIPT -->
 <script src={% static "js/script.js" %}></script>
-
+<!-- DATA TABLES CUSTOM JQUERY -->
 {% block jquery %}{% endblock %}
-
->>>>>>> c885883cb535c5b30b6101f7c29b62cbd3e76901
+<!-- CUSTOM JAVASCRIPTS IMPORT BLOCK -->
 {% block load_js %}
-    <!-- /JAVASCRIPTS -->
     <script>
         jQuery(document).ready(function () {
             App.setPage("index");  //Set current page
