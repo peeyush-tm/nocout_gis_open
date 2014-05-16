@@ -1,6 +1,6 @@
 $(document).ready(function (e) {
 
-    var inputContainers = $(".vendorFromContainer .col-sm-9");
+    var inputContainers = $(".formContainer .col-sm-9");
     for (var i = 0; i < inputContainers.length; i++) {
         var childrenCount = inputContainers[i].children.length;
         if (childrenCount == 2) {
@@ -14,7 +14,7 @@ $(document).ready(function (e) {
 });
 /*It removes the error class from fields if exists*/
 function resetForm() {
-    var inputContainers = $(".vendorFromContainer .col-sm-9");
+    var inputContainers = $(".formContainer .col-sm-9");
     for (var i = 0; i < inputContainers.length; i++) {
         var childrenCount = inputContainers[i].children.length;
         if (childrenCount == 2) {
