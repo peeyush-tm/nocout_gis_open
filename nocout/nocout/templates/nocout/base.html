@@ -290,7 +290,6 @@
                                         {% block content_title %}Dashboard{% endblock %}
                                     </h3>
                                     {% block date_picker %}
-
                                     {% endblock %}
                                 </div>
                                 <div class="description">{% block content_description %}Overview, Statistics and
@@ -301,7 +300,10 @@
                     </div>
                     <!-- /PAGE HEADER -->
                     <!-- PAGE CONTENT -->
-                    {% block content %}Default Content.{% endblock %}
+                    {% block content %}
+                        <p>Default Content.</p>
+                        {% block content_js %}{% endblock %}
+                    {% endblock %}
                     <!-- /PAGE CONTENT -->
                 </div>
                 <!-- /CONTENT-->

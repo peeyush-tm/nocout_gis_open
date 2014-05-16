@@ -1,7 +1,5 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block css %}
-{% endblock %}
 {% block breadcrumb_page_title %} > Device Vendor {% endblock %}
 {% block content_title %}Device Vendors Management{% endblock %}
 {% block content_description %}Create a device vendor ....{% endblock %}
@@ -58,7 +56,7 @@
             </div>
         </div>
     </div>
-{% endblock %}
-{% block load_js %}
-    <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+    {% endblock %}
 {% endblock %}
