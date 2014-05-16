@@ -1,7 +1,7 @@
 {% extends "department/department.html" %}
 {% load staticfiles %}
 {% block css %}
-    <link rel="stylesheet" type="text/css" href={% static "user_profile/css/user_profile.css" %}>
+{#    <link rel="stylesheet" type="text/css" href={% static "user_profile/css/user_profile.css" %}>#}
 {% endblock %}
 {% block breadcrumb_page_title %} > User {% endblock %}
 {% block content_title %}Users Management{% endblock %}
@@ -11,7 +11,7 @@
     <hr/>
     <p><a href="/user/new">Create User</a></p>
     <br/>
-    <div class="box border green">
+    <div class="box">
     <div id="tableContainer_div" class="box-title">
         <h4><i class="fa fa-table"></i>USER TABLE</h4>
         <div class="tools hidden-xs">
@@ -37,21 +37,25 @@
 {% endblock %}
 
 {% block jquery %}
-
-{#<script type="text/javascript" src="http://cdn.datatables.net/1.10.0/js/jquery.dataTables.js"></script>#}
-
+<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %} ></script>
 <script type="text/javascript" >
 
 $(document).ready(function(e)
+
 	{
+        var tableObject = {};
         var table_headers = $.parseJSON('{{ object_list_headers|safe }}');
         var table_data    = $.parseJSON('{{ object_list|safe }}');
 
-        $('#UserTable').dataTable({
-            "aaData" :table_data,
-            "aoColumns":  table_headers,
-            "sPaginationType":"bs_full"
-         });
+        tableObject["tableData"] = table_data;
+        tableObject["tableColumn"] = table_headers;
+        tableObject["sPaginationType"] = "bs_full";
+
+        /*Make a instance of ourDataTableWidget class */
+        var dataTableInstance = new ourDataTableWidget();
+
+        /*Call createDataTable function of ourDataTableWidget class*/
+		dataTableInstance.createDataTable("UserTable", tableObject);
 
         $('.datatable').each(function(){
 			var datatable = $(this);
