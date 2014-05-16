@@ -80,6 +80,20 @@ class DeviceTechnologyForm(forms.ModelForm):
 
 
 class DeviceVendorForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(DeviceVendorForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.__class__ == forms.widgets.TextInput:
+                if field.widget.attrs.has_key('class'):
+                    field.widget.attrs['class'] += ' form-control'
+                else:
+                    field.widget.attrs.update({'class':'form-control'})
+        for name, field in self.fields.items():
+            if field.widget.__class__ == forms.widgets.SelectMultiple:
+                if field.widget.attrs.has_key('class'):
+                    field.widget.attrs['class'] += ' form-control'
+                else:
+                    field.widget.attrs.update({'class':'form-control'})
     class Meta:
         model = DeviceVendor
         fields = ('name', 'alias', 'device_models')

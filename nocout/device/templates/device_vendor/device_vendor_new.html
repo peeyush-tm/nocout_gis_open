@@ -1,39 +1,110 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
 {% block css %}
-    <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
 {% endblock %}
 {% block breadcrumb_page_title %} > Device Vendor {% endblock %}
 {% block content_title %}Device Vendors Management{% endblock %}
 {% block content_description %}Create a device vendor ....{% endblock %}
 {% block content %}
-    <h3>Create Device Vendor</h3>
-    <form action="/vendor/new/" method="post">{% csrf_token %}
-        <div id="new_device">
-            <table>
-                <tr>
-                    <td>
-                        {{ form.errors }}
-                        {{ form.non_field_errors }}
-                    </td>
-                </tr>
-                <tr>
-                    <th><label for="id_name"> Vendor Name:</label></th>
-                    <td>{{ form.name }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_alias">Vendor Alias:</label></th>
-                    <td>{{ form.alias }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_device_models">Device Models:</label></th>
-                    <td>{{ form.device_models }}</td>
-                </tr>
-                <tr>
-                    <th></th>
-                    <td><input type="submit" value="Create"/></td>
-                </tr>
-            </table>
+    <div class="row vendorFromContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i>Device Vendor</h4>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="box-body big">
+                                <form action="/vendor/new/" method="post" class="form-horizontal"
+                                      role="form">{% csrf_token %}
+                                    <div class="form-group">
+                                        <label for="id_name" class="col-sm-3 control-label">Vendor Name:</label>
+
+                                        <div class="col-sm-9">
+                                            <input type="text" name="name" class="form-control" id="id_name"
+                                                   placeholder="Vendor Name"> {{ form.name.errors }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="id_alias" class="col-sm-3 control-label">Vendor Alias:</label>
+
+                                        <div class="col-sm-9">
+                                            <input type="text" name="alias" class="form-control" id="id_alias"
+                                                   placeholder="Vendor Alias"> {{ form.alias.errors }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="id_device_models" class="col-sm-3 control-label">Device
+                                            Models:</label>
+
+                                        <div class="col-sm-9">
+                                            {{ form.device_models }} {{ form.device_models.errors }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="col-sm-offset-3 col-sm-9">
+                                            <button type="submit" class="btn btn-pink">Create</button>
+                                            &nbsp;
+                                            <button type="reset" class="btn btn-grey" onclick="resetForm();">Reset</button>
+                                        </div>
+                                    </div>
+                                </form
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </form>
+    </div>
+    <style>
+        .errorlist
+        {
+            padding: 0px;
+            margin-top: 5px;
+            list-style: none;
+        }
+        .errorlist li
+        {
+            color: #b94a48;
+        }
+    </style>
+<script type="text/javascript">
+    $(document).ready(function(e) {
+
+        var inputContainers = $(".vendorFromContainer .col-sm-9");
+        for(var i=0;i<inputContainers.length;i++)
+        {
+            var childrenCount = inputContainers[i].children.length;
+            if(childrenCount == 2)
+            {
+                var errCLass = $.trim(inputContainers[i].children[1].className);
+                if(errCLass == "errorlist")
+                {
+                    var formGroup = inputContainers[i].parentElement;
+                    formGroup.className = formGroup.className+" has-error";
+                }
+            }
+        }
+    });
+    /*It removes the error class from fields if exists*/
+    function resetForm()
+    {
+        var inputContainers = $(".vendorFromContainer .col-sm-9");
+        for(var i=0;i<inputContainers.length;i++)
+        {
+            var childrenCount = inputContainers[i].children.length;
+            if(childrenCount == 2)
+            {
+                var errCLass = $.trim(inputContainers[i].children[1].className);
+
+                if(errCLass == "errorlist")
+                {
+                    inputContainers[i].children[1].remove();
+                    inputContainers[i].parentElement.className = "form-group";
+                }
+            }
+        }
+    }
+</script>
 {% endblock %}
