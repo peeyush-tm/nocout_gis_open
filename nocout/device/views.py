@@ -1,3 +1,4 @@
+import json
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.core.urlresolvers import reverse_lazy
@@ -5,6 +6,8 @@ from device.models import Device, Inventory, DeviceType, DeviceTypeFields, Devic
     TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
     DeviceVendorForm, DeviceModelForm, DeviceTypeForm
+from nocout.utils.jquery_datatable_generation import Datatable_Generation
+from nocout.utils.util import date_handler
 from site_instance.models import SiteInstance
 from django.http.response import HttpResponseRedirect
 from service.models import Service
@@ -16,6 +19,25 @@ from service.models import Service
 class DeviceList(ListView):
     model = Device
     template_name = 'device/devices_list.html'
+
+
+    def get_queryset(self):
+        queryset = self.model._default_manager.values('device_name', 'site_instance__name', 'device_group__name',
+                                                      'ip_address','city','state')
+        return queryset[:10]
+
+    def get_context_data(self, **kwargs):
+
+        context=super( DeviceList, self ).get_context_data(**kwargs)
+        object_list = context['object_list']
+        object_list, object_list_headers = Datatable_Generation( object_list ).main()
+        context['object_list'] = json.dumps( object_list, default=date_handler )
+        context.update({
+            'object_list_headers' : json.dumps(object_list_headers, default=date_handler )
+        })
+        return context
+
+
 
 
 class DeviceDetail(DetailView):
