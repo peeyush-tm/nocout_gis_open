@@ -569,8 +569,8 @@ function networkMapClass()
 		/*Ajax call to the API*/
 		$.ajax({
 			crossDomain: true,
-			// url : "http://"+hostIp+":8000/device/stats/",
-			url : "http://192.168.1.37:8000/device/stats/",
+			url : "http://"+hostIp+":8000/device/stats/",
+			// url : "http://192.168.1.37:8000/device/stats/",
 			type : "POST",
 			dataType : "json",
 			data : JSON.stringify(metaInfo),

@@ -10,6 +10,7 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 
 import os
 from django.conf import global_settings
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_DIR = os.path.dirname(__file__)
 
@@ -50,8 +51,8 @@ LANGUAGE_CODE = 'en-us'
 
 SITE_ID = 1
 
-LOGIN_URL='/login/'
-LOGIN_EXEMPT_URLS =(r'auth/','login/')
+LOGIN_URL = '/login/'
+LOGIN_EXEMPT_URLS = (r'auth/', 'login/')
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -86,7 +87,7 @@ STATIC_URL = '/static/'
 # Additional locations of static files
 STATICFILES_DIRS = (
     os.path.join(PROJECT_DIR, "static/"),
-    )
+)
 
 
 # List of finder classes that know how to find static files in
@@ -110,7 +111,11 @@ TEMPLATE_LOADERS = (
 )
 # Template context processors
 
-TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + ( 'django.core.context_processors.request', )
+TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
+    'django.core.context_processors.request',
+    'nocout.context_processors_profile.user_profile_atts.user_department',
+    'nocout.context_processors_profile.user_profile_atts.user_organization',
+)
 
 MIDDLEWARE_CLASSES = (
     'corsheaders.middleware.CorsMiddleware',
@@ -200,9 +205,9 @@ LOGGING = {
     }
 }
 
-SESSION_SECURITY_WARN_AFTER=540
-SESSION_SECURITY_EXPIRE_AFTER=600
-SESSION_EXPIRE_AT_BROWSER_CLOSE=True
+SESSION_SECURITY_WARN_AFTER = 540
+SESSION_SECURITY_EXPIRE_AFTER = 600
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 ################################################################################
 #### TO : REMOVE ####

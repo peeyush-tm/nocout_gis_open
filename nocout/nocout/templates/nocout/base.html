@@ -28,11 +28,9 @@
     <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-daterangepicker/daterangepicker-bs3.css" %} />
     <!-- TODO -->
     <link rel="stylesheet" type="text/css" href={% static "js/jquery-todo/css/styles.css" %} />
-    <link rel="stylesheet" type="text/css" href={% static "js/datatables/media/css/jquery.dataTables.min.css" %}/>
-	<link rel="stylesheet" type="text/css" href={% static "js/datatables/media/assets/css/datatables.min.css" %}/>
-	<link rel="stylesheet" type="text/css" href={% static "js/datatables/extras/TableTools/media/css/TableTools.min.css" %}/>
-    {% dajaxice_js_import %}
-
+    <link rel="stylesheet" type="text/css" href={% static "js/datatables/media/css/jquery.dataTables.min.css" %} />
+	<link rel="stylesheet" type="text/css" href={% static "js/datatables/media/assets/css/datatables.min.css" %} />
+	<link rel="stylesheet" type="text/css" href={% static "js/datatables/extras/TableTools/media/css/TableTools.min.css" %} />
     <!-- FULL CALENDAR -->
     <link rel="stylesheet" type="text/css" href={% static "js/fullcalendar/fullcalendar.min.css" %} />
     <!-- GRITTER -->
@@ -44,11 +42,21 @@
 
     <!-- JQUERY -->
     <script src={% static "js/jquery/jquery-1.11.1.min.js" %}></script>
+	<!-- blueimp Gallery styles -->
+	<link rel="stylesheet" href={% static "js/blueimp/gallery/blueimp-gallery.min.css" %} />
+    <!-- TYPEAHEAD -->
+    <link rel="stylesheet" type="text/css" href={% static "js/typeahead/typeahead.css" %} />
+    <!-- FILE UPLOAD -->
+    <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-fileupload/bootstrap-fileupload.min.css" %} />
+    <!-- SELECT2 -->
+    <link rel="stylesheet" type="text/css" href={% static "js/select2/select2.min.css" %} />
+    <!-- UNIFORM -->
+    <link rel="stylesheet" type="text/css" href={% static "js/uniform/css/uniform.default.min.css" %} />
     <!-- DAJAX -->
     <script src={% static "dajax/jquery.dajax.core.js" %}></script>
+    <!-- DAJAXICE -->
     {% dajaxice_js_import %}
     {% block css %}{% endblock %}
-
 </head>
 <body>
 <!-- session_security -->
@@ -60,7 +68,7 @@
         <div class="navbar-brand">
             <!-- COMPANY LOGO -->
             <a href="/home/">
-                <img src={% static "img/logo/logo1.png" %} alt="CloudAdminLogo" class="img-responsive" height="30"
+                <img src={% static "img/logo/logo.png" %} alt="CloudAdminLogo" class="img-responsive" height="30"
                      width="120">
             </a>
             <!-- /COMPANY LOGO -->
@@ -80,21 +88,23 @@
             <!-- /SIDEBAR COLLAPSE -->
         </div>
         <!-- NAVBAR LEFT -->
-        
+
         <ul class="nav navbar-nav pull-left hidden-xs orgTitleBlock">
             <li>
-                <span class="username">Org. - XYZ Pvt. Ltd.</span><br/>
-                <span>Dept. - Sales</span>
+                <span class="username">Org. -
+                    {% block display_organization %}{{ user_organization }}{% endblock %}</span><br/>
+                <span>Dept. - {% block display_department %}{{ user_department }}{% endblock %}</span>
             </li>
         </ul>
-        
+
         <!-- /NAVBAR LEFT -->
         <!-- BEGIN TOP NAVIGATION MENU -->
         <ul class="nav navbar-nav pull-right topUserInfo">
-            <!-- BEGIN USER LOGIN DROPDOWN -->            
+            <!-- BEGIN USER LOGIN DROPDOWN -->
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    <span class="username">{% block fullname %}{{ request.user.first_name }} {{ request.user.last_name }}{% endblock %}</span><br/>
+                    <span class="username">{% block fullname %}{{ request.user.first_name }}
+                        {{ request.user.last_name }}{% endblock %}</span><br/>
                     <span>{% now "j F Y (H:i) T" %}</span>
                     <i class="fa fa-caret-down"></i>
                 </a>
@@ -137,7 +147,8 @@
                     </a>
                 </li>
                 <li>
-                    <a class="" href="/organization/"><i class="fa fa-sitemap"></i> <span class="menu-text">Organization</span></a>
+                    <a class="" href="/organization/"><i class="fa fa-sitemap"></i> <span
+                            class="menu-text">Organization</span></a>
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
@@ -201,7 +212,8 @@
                         <li><a class="" href="javascript:;"><span class="sub-menu-text">Analyzed Report</span></a></li>
                         <li><a class="" href="javascript:;"><span class="sub-menu-text">Inventory Report</span></a></li>
                         <li><a class="" href="javascript:;"><span class="sub-menu-text">Event</span></a></li>
-                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Access Point Report</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Access Point Report</span></a>
+                        </li>
                         <li><a class="" href="javascript:;"><span class="sub-menu-text">Backup & Restore</span></a></li>
                     </ul>
                 </li>
@@ -211,13 +223,16 @@
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
-                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Host & Service Events</span></a></li>
-                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Search Global Logfile</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Host & Service Events</span></a>
+                        </li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Search Global Logfile</span></a>
+                        </li>
                         <li><a class="" href="javascript:;"><span class="sub-menu-text">User Logs</span></a></li>
                     </ul>
                 </li>
                 <li>
-                    <a class="" href="javascript:;" target="_blank"><i class="fa fa-calendar"></i> <span class="menu-text">Scheduling</span></a>
+                    <a class="" href="javascript:;" target="_blank"><i class="fa fa-calendar"></i> <span
+                            class="menu-text">Scheduling</span></a>
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
@@ -280,7 +295,6 @@
                                         {% block content_title %}Dashboard{% endblock %}
                                     </h3>
                                     {% block date_picker %}
-
                                     {% endblock %}
                                 </div>
                                 <div class="description">{% block content_description %}Overview, Statistics and
@@ -291,7 +305,10 @@
                     </div>
                     <!-- /PAGE HEADER -->
                     <!-- PAGE CONTENT -->
-                    {% block content %}Default Content.{% endblock %}
+                    {% block content %}
+                        <p>Default Content.</p>
+                        {% block content_js %}{% endblock %}
+                    {% endblock %}
                     <!-- /PAGE CONTENT -->
                 </div>
                 <!-- /CONTENT-->
@@ -315,23 +332,34 @@
 <script type="text/javascript" src={% static "js/datatables/extras/TableTools/media/js/TableTools.min.js" %}></script>
 <script type="text/javascript" src={% static "js/datatables/extras/TableTools/media/js/ZeroClipboard.min.js" %}></script>
 <!-- SLIMSCROLL -->
-<!-- SLIMSCROLL -->
 <script type="text/javascript" src={% static "js/jQuery-slimScroll-1.3.0/jquery.slimscroll.min.js" %}></script>
 <script type="text/javascript" src={% static "js/jQuery-slimScroll-1.3.0/slimScrollHorizontal.min.js" %}></script>
 <!-- BLOCK UI -->
 <script type="text/javascript" src={% static "js/jQuery-BlockUI/jquery.blockUI.min.js" %}></script>
+<!-- TYPEHEAD -->
+<script type="text/javascript" src={% static "js/typeahead/typeahead.min.js" %}></script>
+<!-- AUTOSIZE -->
+<script type="text/javascript" src={% static "js/autosize/jquery.autosize.min.js" %}></script>
+<!-- COUNTABLE -->
+<script type="text/javascript" src={% static "js/countable/jquery.simplyCountable.min.js" %}></script>
+<!-- INPUT MASK -->
+<script type="text/javascript" src={% static "js/bootstrap-inputmask/bootstrap-inputmask.min.js" %}></script>
+<!-- FILE UPLOAD -->
+<script type="text/javascript" src={% static "js/bootstrap-fileupload/bootstrap-fileupload.min.js" %}></script>
+<!-- SELECT2 -->
+<script type="text/javascript" src={% static "js/select2/select2.min.js" %}></script>
+<!-- UNIFORM -->
+<script type="text/javascript" src={% static "js/uniform/jquery.uniform.min.js" %}></script>
 <!-- CUSTOM SCRIPT -->
-
 {% block jquery %}{% endblock %}
-
+<!-- CUSTOM JAVASCRIPTS IMPORT BLOCK -->
 {% block load_js %}
-<!-- /JAVASCRIPTS -->
-<script>
-    jQuery(document).ready(function () {
-        App.setPage("index");  //Set current page
-        App.init(); //Initialise plugins and elements
-    });
-</script>
+    <script>
+        jQuery(document).ready(function () {
+            App.setPage("index");  //Set current page
+            App.init(); //Initialise plugins and elements
+        });
+    </script>
 {% endblock %}
 <script>
     /*This script add & remove the current and active classes for the side hiperlinks as per the router to show the currently selected sidebar item.*/
@@ -341,39 +369,34 @@
     /*Current router url text*/
     var currentRouter = $.trim(window.location.href.split("/")[3]);
 
-    for(var i=0;i<sideMenu.length;i++)
-    {
+    for (var i = 0; i < sideMenu.length; i++) {
         /*Anchor tags hiperlink text*/
         var menuLink = $.trim(sideMenu[i].href.split("/")[3]);
         /*Parent Element(li) Classname*/
         var activeClass = $.trim(sideMenu[i].parentElement.className);
         /*If there is active class on the parent then remove it*/
-        if(activeClass === "active")
-        {
+        if (activeClass === "active") {
             sideMenu[i].parentElement.className = "";
         }
         /*If the routertext matches the hiperlink text then add the active & current classes at the desired element*/
-        if(menuLink == currentRouter)
-        {
+        if (menuLink == currentRouter) {
             var superParentClass = $.trim(sideMenu[i].parentElement.parentElement.parentElement.className);
-            if(superParentClass.indexOf("has-sub") == -1)
-            {
+            if (superParentClass.indexOf("has-sub") == -1) {
                 var parent = sideMenu[i].parentElement;
                 parent.className = "active";
             }
-            else
-            {
+            else {
                 /*Add open class to the arrow*/
                 var arrowClass = sideMenu[i].parentElement.parentElement.parentElement.children[0].children[2];
-                arrowClass.className = arrowClass.className+" open";
-                
+                arrowClass.className = arrowClass.className + " open";
+
                 /*Add current class to the parent li*/
                 var parent = sideMenu[i].parentElement;
                 parent.className = "current";
 
                 /*Add active class to the super parent li*/
                 var superParent = sideMenu[i].parentElement.parentElement.parentElement;
-                superParent.className = superParent.className+" active";
+                superParent.className = superParent.className + " active";
             }
         }
     }
