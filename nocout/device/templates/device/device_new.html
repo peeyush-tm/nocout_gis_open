@@ -7,87 +7,104 @@
 {% block content_title %}Device Management{% endblock %}
 {% block content_description %}Create a device ....{% endblock %}
 {% block content %}
-    <h3>Create Device</h3>
-    <form action="/device/new/" method="post" id="device_form">{% csrf_token %}
-        <div id="new_device">
-            <table id="wrap_complete">
-                <tr>
-                    <td>
-                        {{ form.errors }}
-                        {{ form.non_field_errors }}
-                    </td>
-                </tr>
-            </table>
-            <table id="left_align">
-                {% for field in form %}
-                    {% if field.field.widget.attrs.class != 'extra' %}
-                        <tr>
-                            <th>{{ field.label_tag }}</th>
-                            <td>{{ field }}</td>
-                        </tr>
-                    {% endif %}
-                {% endfor %}
-                <tr>
-                    <th></th>
-                    <td><input type="submit" value="Create"/></td>
-                </tr>
-            </table>
-            <table id="right_align">
-                <span id="extra_fields">
-                    {% for field in form %}
-                        {% if field.field.widget.attrs.class == 'extra' %}
-                            <tr>
-                                <th>{{ field.label_tag }}</th>
-                                <td>{{ field }}</td>
-                            </tr>
-                        {% endif %}
-                    {% endfor %}
-                </span>
-            </table>
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i>Device</h4>
+                        </div>
+                        <form action="/device/new/" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                            <div class="col-md-4">
+                                <div class="box-body big">
+                                    {% for field in form %}
+                                        {% if field.field.widget.attrs.class == 'form-control' %}
+                                            <div class="form-group">
+                                                <label for="{{ field.id_for_label }}"
+                                                       class="col-sm-3 control-label">{{ field.label }}</label>
+                                                <div class="col-sm-9">
+                                                    {{ field }} {{ field.errors }}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <div class="form-group">
+                                        <div class="col-sm-offset-3 col-sm-9">
+                                            <button type="submit" class="btn btn-pink">Create</button>
+                                            &nbsp;
+                                            <button type="reset" class="btn btn-grey" onclick="resetForm();">Reset
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <span id="extra_fields">
+                                    {% for field in form %}
+                                        {% if field.field.widget.attrs.class == 'extra form-control' %}
+                                            <div class="form-group">
+                                                <label for="{{ field.id_for_label }}"
+                                                       class="col-sm-3 control-label">{{ field.label }}</label>
+                                                <div class="col-sm-9">
+                                                    {{ field }} {{ field.errors }}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </span>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
-    </form>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+    {% endblock %}
     <script>
-        $(document).ready(function(){
+        $(document).ready(function () {
             // update 'device parent' select options
-            if ($('#id_parent').val()){
+            if ($('#id_parent').val()) {
                 // called if 'device parent' is already selected i.e. after validation if form is invalid
                 Dajaxice.device.device_parent_choices_selected(Dajax.process, {'option': $('#id_parent').val()});
             }
-            else{
+            else {
                 // called if 'device parent' form is loaded first time i.e. before form submission
                 Dajaxice.device.device_parent_choices_initial(Dajax.process);
             }
 
             // update 'device technology' if it is already selected
             // i.e. after validation if form is invalid
-            if ($('#id_device_technology')){
+            if ($('#id_device_technology')) {
                 Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
             }
 
             // update 'device vendor' if it is already selected corresponding to 'device technology'
             // i.e. after validation if form is invalid
             // or just empty the selection menu
-            if (!$('#id_device_vendor').val()){
+            if (!$('#id_device_vendor').val()) {
                 $("#id_device_vendor").empty();
             }
-            else{
+            else {
                 Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});
             }
 
             // update 'device model' if it is already selected corresponding to 'device vendor'
             // i.e. after validation if form is invalid
             // or just empty the selection menu
-            if (!$('#id_device_model').val()){
+            if (!$('#id_device_model').val()) {
                 $("#id_device_model").empty();
             }
-            else{
+            else {
                 Dajaxice.device.update_type(Dajax.process, {'option': $('#id_device_model').val()});
             }
 
             // update 'device type' if it is already selected corresponding to 'device model'
             // i.e. after validation if form is invalid
             // or just empty the selection menu
-            if (!$('#id_device_type').val()){
+            if (!$('#id_device_type').val()) {
                 $("#id_device_type").empty();
             }
 

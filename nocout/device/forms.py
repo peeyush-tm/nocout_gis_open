@@ -27,11 +27,6 @@ class DeviceForm(forms.ModelForm):
         self.base_fields['device_type'].label = 'Device Type'
 
         super(DeviceForm, self).__init__(*args, **kwargs)
-        for name, field in self.fields.items():
-            if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
-            else:
-                field.widget.attrs.update({'class':'form-control'})
 
         # to redisplay the extra fields form with already filled values we follow these steps:
         # 1. check that device type exist in 'kwargs' or not
@@ -49,6 +44,11 @@ class DeviceForm(forms.ModelForm):
                     self.fields[extra_field.field_name].widget.attrs['class'] = 'extra'
         except:
             pass
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' form-control'
+            else:
+                field.widget.attrs.update({'class':'form-control'})
 
     class Meta:
         model = Device
