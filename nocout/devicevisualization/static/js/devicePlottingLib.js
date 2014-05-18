@@ -6,7 +6,19 @@ var mapInstance = "",
 	pathConnector = "",
 	infowindow = "",
 	devicesObject = {},
-	metaRequest = {};
+	metaRequest = {},
+	metaData = {},
+	hitCounter = 0,
+	devicesCount = 0,
+	remainingDevices = 0,
+	cityArray = [],
+	stateArray = [],
+	vendorArray = [],
+	techArray = [],
+	devices = [],
+	slaveMarkersObj = {},
+	masterMarkersObj = {};
+
 /**
  * This class is used to plot the BS & SS on the google maps & show information on click
  * @class networkMap
@@ -18,8 +30,9 @@ function networkMapClass()
 {
 	/*Store the reference of current pointer in a global variable*/
 	that = this;
-	metaRequest["page_number"] = 1;
-	metaRequest["limit"] = 0;
+	metaData["page_number"] = 1;
+	metaData["limit"] = 0;
+	metaRequest["meta"] = metaData;
 	/**
 	 * This function creates the base google map with the lat long of India
 	 * @function createMap
@@ -33,7 +46,7 @@ function networkMapClass()
 
 		var mapObject = {
 			center    : new google.maps.LatLng(21.0000,78.0000),
-			zoom      : 5
+			zoom      : 3
 		};    
 		/*Create Map Type Object*/
 		mapInstance = new google.maps.Map(document.getElementById(domElement),mapObject);
@@ -67,97 +80,12 @@ function networkMapClass()
 	 * @function getDevicesData
 	 * @class networkMap
 	 */
-	this.getDevicesData = function(hostIp)
-	{
-		/*Clear the marker array of OverlappingMarkerSpiderfier*/
-		oms.clearMarkers();
+	this.getDevicesData = function(hostIp,username)
+	{	
+		/*Append the username in the object*/
+		metaRequest["username"] = username;
 
-		$.ajax({
-			// crossDomain: true,
-			// url : "http://"+hostIp+":8000/device/stats/",
-			url : "http://192.168.0.100:8000/device/stats/",
-			type : "POST",
-			data : metaRequest,
-			/*If data fetched successful*/
-			success : function(result)
-			{				
-				/*Save the result json to the global variable for global access*/
-				devicesObject = result;
-
-				if(devicesObject.success == 1)
-				{
-					var cityArray = [],
-						stateArray = [],
-						vendorArray = [],
-						techArray = [];
-
-					/*Call the populateNetwork to show the markers on the map*/
-					that.populateNetwork(devicesObject.data.objects.children);
-
-					/*Make an array of master & slave cities as well as states*/
-					for(var i=0;i<devicesObject.data.objects.children.length;i++)
-					{
-						/*Total number of slave for particular master*/
-						var slaveCount = devicesObject.data.objects.children[i].children.length;
-
-						/*Loop for the slaves*/
-						for(var j=0;j<slaveCount;j++)
-						{
-							/*Push master city in cityArray array*/
-							if(cityArray.indexOf($.trim(devicesObject.data.objects.children[i].data.city)) == -1)
-							{
-								cityArray.push($.trim(devicesObject.data.objects.children[i].data.city));
-							}
-							/*Push slave city in cityArray array*/
-							if(cityArray.indexOf($.trim(devicesObject.data.objects.children[i].children[j].data.city)) == -1)
-							{
-								cityArray.push($.trim(devicesObject.data.objects.children[i].children[j].data.city));
-							}
-
-							/*Push master states in stateArray array*/
-							if(stateArray.indexOf($.trim(devicesObject.data.objects.children[i].data.state)) == -1)
-							{
-								stateArray.push($.trim(devicesObject.data.objects.children[i].data.state));
-							}
-							/*Push slave states in stateArray array*/
-							if(stateArray.indexOf($.trim(devicesObject.data.objects.children[i].children[j].data.state)) == -1)
-							{
-								stateArray.push($.trim(devicesObject.data.objects.children[i].children[j].data.state));
-							}
-
-							/*Push master vendors in masterVendorArray array*/
-							if(vendorArray.indexOf($.trim(devicesObject.data.objects.children[i].data.vendor)) == -1)
-							{
-								vendorArray.push($.trim(devicesObject.data.objects.children[i].data.vendor));
-							}
-							/*Push slave vendors in slaveVendorArray array*/
-							if(vendorArray.indexOf($.trim(devicesObject.data.objects.children[i].children[j].data.vendor)) == -1)
-							{
-								vendorArray.push($.trim(devicesObject.data.objects.children[i].children[j].data.vendor));
-							}
-
-							/*Push master technology in techArray array*/
-							if(techArray.indexOf($.trim(devicesObject.data.objects.children[i].data.technology)) == -1)
-							{
-								techArray.push($.trim(devicesObject.data.objects.children[i].data.technology));
-							}
-							/*Push slave technology in techArray array*/
-							if(techArray.indexOf($.trim(devicesObject.data.objects.children[i].children[j].data.technology)) == -1)
-							{
-								techArray.push($.trim(devicesObject.data.objects.children[i].children[j].data.technology));
-							}
-						}
-					}
-					/*Populate the city & state dropdown filters*/
-					that.populateFilters(cityArray,stateArray,vendorArray,techArray);
-				}
-			},
-			/*If data not fetched*/
-			error : function(err)
-			{
-				console.log(err.statusText);
-			}
-		});
+		that.apiCallFunction(metaRequest,hostIp,username);
 	};
 
 	/**
@@ -168,11 +96,7 @@ function networkMapClass()
 	 */
 	this.populateNetwork = function(resultantMarkers)
 	{
-
-		/*Clear the marker array of OverlappingMarkerSpiderfier*/
-		oms.clearMarkers();
-
-		that.createMap(currentDomElement);
+		// that.createMap(currentDomElement);
 
 		for(var i=0;i<resultantMarkers.length;i++)
 		{
@@ -199,6 +123,8 @@ function networkMapClass()
 			};
 			/*Create Master Marker*/
 		    var masterMarker = new google.maps.Marker(masterMarkerObject);
+		    /*Add the master marker to the global master markers array*/
+		    masterMarkersObj.push(masterMarker);
 		    /*Loop for the number of slave & their links with the master*/
 		    var slaveCount = resultantMarkers[i].children.length;
 
@@ -227,7 +153,8 @@ function networkMapClass()
 				};
 				/*Create Slave Marker*/
 			    var slaveMarker = new google.maps.Marker(slaveMarkerObject);				    				    
-
+			    /*Add the slave marker to the global slave array*/
+		    	slaveMarkersObj.push(slaveMarker);
 			    /*Add BS & SS markers to the OverlappingMarkerSpiderfier*/
 			    oms.addMarker(masterMarker);
 				oms.addMarker(slaveMarker);
@@ -408,41 +335,43 @@ function networkMapClass()
 	 * @params technologyArray [String Array] Contains the available technology list
 	 */
 	this.populateFilters = function(cityArray,stateArray,vendorArray,technologyArray) {
-	 	
-	 	var stateOptions = "<option value=''>Select State</option>",
+		
+		var stateOptions = "<option value=''>Select State</option>",
 	 		cityOptions = "<option value=''>Select City</option>",
 	 		vendorOptions = "<option value=''>Select Vendor</option>",
 	 		technologyOptions = "<option value=''>Select Technology</option>";
+
 
  		/*Loop for the state array*/
 	 	for(var i=0;i<stateArray.length;i++)
 	 	{
 	 		stateOptions += '<option value="'+stateArray[i]+'">'+stateArray[i]+'</option>';
 	 	}
-	 	/*Append the option string to the state dropdown*/
-	 	$("#state").html(stateOptions);
 
 	 	/*Loop for the city array*/
 	 	for(var j=0;j<cityArray.length;j++)
 	 	{
 	 		cityOptions += '<option value="'+cityArray[j]+'">'+cityArray[j]+'</option>';
 	 	}
-	 	/*Append the option string to the city dropdown*/
-	 	$("#city").html(cityOptions);
 
 	 	/*Loop for the vendor array*/
 	 	for(var k=0;k<vendorArray.length;k++)
 	 	{
 	 		vendorOptions += '<option value="'+vendorArray[k]+'">'+vendorArray[k]+'</option>';
-	 	}
-	 	/*Append the option string to the vendor dropdown*/
-	 	$("#vendor").html(vendorOptions);
+	 	}	 	
 
 	 	/*Loop for the technology array*/
 	 	for(var l=0;l<technologyArray.length;l++)
 	 	{
 	 		technologyOptions += '<option value="'+technologyArray[l]+'">'+technologyArray[l]+'</option>';
 	 	}
+
+	 	/*Append the option string to the state dropdown*/
+	 	$("#state").html(stateOptions);
+	 	/*Append the option string to the city dropdown*/
+	 	$("#city").html(cityOptions);
+	 	/*Append the option string to the vendor dropdown*/
+	 	$("#vendor").html(vendorOptions);
 	 	/*Append the option string to the technology dropdown*/
 	 	$("#technology").html(technologyOptions);
 	};
@@ -473,15 +402,15 @@ function networkMapClass()
 	 	if(devicesObject.success == 1)
 	 	{
 	 		filteredData = [];
-	 		for(var i=0;i<devicesObject.data.objects.children.length;i++)
+	 		for(var i=0;i<devices.length;i++)
 	 		{
 	 			/*Total Slaves Count*/
-	 			var slaveLength = devicesObject.data.objects.children[i].children.length;
+	 			var slaveLength = devices[i].children.length;
 	 			/*Loop For Slaves*/
 	 			for(var j=0;j<slaveLength;j++)
 	 			{
-	 				var master = devicesObject.data.objects.children[i];
-		 			var slave = devicesObject.data.objects.children[i].children[j];
+	 				var master = devices[i];
+		 			var slave = devices[i].children[j];
 		 			
 		 			/*Conditions as per the number of filters*/
 		 			if(filterKey.length == 1)
@@ -495,7 +424,7 @@ function networkMapClass()
 		 						masterIds.push(master.id);
 		 						slaveIds.push(slave.id);
 
-		 						filteredData.push(devicesObject.data.objects.children[i]);
+		 						filteredData.push(devices[i]);
 		 					}
 		 				}
 
@@ -511,7 +440,7 @@ function networkMapClass()
 		 						masterIds.push(master.id);
 		 						slaveIds.push(slave.id);
 
-		 						filteredData.push(devicesObject.data.objects.children[i]);
+		 						filteredData.push(devices[i]);
 		 					}
 		 				}
 		 			}
@@ -526,7 +455,7 @@ function networkMapClass()
 		 						masterIds.push(master.id);
 		 						slaveIds.push(slave.id);
 
-		 						filteredData.push(devicesObject.data.objects.children[i]);
+		 						filteredData.push(devices[i]);
 		 					}
 		 				}
 		 			}
@@ -541,7 +470,7 @@ function networkMapClass()
 		 						masterIds.push(master.id);
 		 						slaveIds.push(slave.id);
 
-		 						filteredData.push(devicesObject.data.objects.children[i]);
+		 						filteredData.push(devices[i]);
 		 					}
 		 				}
 		 			}
@@ -567,6 +496,183 @@ function networkMapClass()
 	 */
 	this.loadExistingDevices = function()
 	{
-		that.populateNetwork(devicesObject.data.objects.children);
+		that.populateNetwork(devices);
 	};
+
+	/**
+	 * This function makes the ajax call for the API to get the devices
+	 * @class devicePlottingLib
+	 * @method apiCallFunction
+	 */
+	this.apiCallFunction = function(metaInfo,hostIp,username)
+	{
+		hitCounter = hitCounter + 1;
+
+		/*Update the page number*/
+		metaInfo.meta.page_number = hitCounter;
+		console.log(metaInfo.meta.limit);
+		console.log(remainingDevices);
+
+		if((remainingDevices <= metaInfo.meta.limit) && (remainingDevices != 0) && (metaInfo.meta.limit != 0))
+		{
+			metaRequest.meta.page_number = 1;
+			metaRequest.meta.limit = 0;
+			hitCounter = 0;
+			remainingDevices = 0;
+			devicesObject = {};
+			devices = [];
+			cityArray = [];
+			stateArray = [];
+			vendorArray = [];
+			techArray = [];
+			devices = [];
+
+			setTimeout(function() {
+
+				if(masterMarkersObj.length > 0)
+				{
+					/*Remove All Master Markers*/
+					for(var i=0;i<masterMarkersObj.length;i++)
+					{
+						masterMarkersObj[i].setMap(null);
+					}
+				}
+				if(slaveMarkersObj.length > 0)
+				{
+					/*Remove All Slave Markers*/
+					for(var j=0;j<slaveMarkersObj.length;j++)
+					{
+						slaveMarkersObj[j].setMap(null);
+					}
+				}
+				
+				that.getDevicesData(hostIp,username);
+
+			},50000);
+		}
+		else
+		{
+			setTimeout(function(){
+				
+				that.getDevicesData(hostIp,username);
+
+			},3000);
+			
+		}
+		
+		/*Clear the marker array of OverlappingMarkerSpiderfier*/
+		oms.clearMarkers();
+
+		/*To Enable The Cross Domain Request*/
+		$.support.cors = true;
+
+		/*Ajax call to the API*/
+		$.ajax({
+			crossDomain: true,
+			// url : "http://"+hostIp+":8000/device/stats/",
+			url : "http://192.168.1.37:8000/device/stats/",
+			type : "POST",
+			dataType : "json",
+			data : JSON.stringify(metaInfo),
+			/*If data fetched successful*/
+			success : function(result)
+			{
+				console.log(result);
+				/*First call case*/
+				if(devicesObject.data == undefined)
+				{
+					/*Save the result json to the global variable for global access*/
+					devicesObject = result;
+					/**/
+					devices = devicesObject.data.objects.children;
+				}
+				else
+				{
+					devices = devices.concat(result.data.objects.children);
+				}
+
+				/*Update the device count with the received data*/
+				devicesCount = devicesObject.data.meta.total_count;
+				/*Update the device count with the received data*/
+				metaRequest.meta.limit = devicesObject.data.meta.limit;
+
+				if(remainingDevices == 0)
+				{
+					remainingDevices = devicesCount - devicesObject.data.meta.limit;
+				}
+				else
+				{
+					remainingDevices = remainingDevices - devicesObject.data.meta.limit;
+				}
+
+				if(devicesObject.success == 1)
+				{
+					/*Call the populateNetwork to show the markers on the map*/
+					that.populateNetwork(devices);
+
+					/*Make an array of master & slave cities as well as states*/
+					for(var i=0;i<devices.length;i++)
+					{
+						/*Total number of slave for particular master*/
+						var slaveCount = devices[i].children.length;
+
+						/*Loop for the slaves*/
+						for(var j=0;j<slaveCount;j++)
+						{
+							/*Push master city in cityArray array*/
+							if(cityArray.indexOf($.trim(devices[i].data.city)) == -1)
+							{
+								cityArray.push($.trim(devices[i].data.city));
+							}
+							/*Push slave city in cityArray array*/
+							if(cityArray.indexOf($.trim(devices[i].children[j].data.city)) == -1)
+							{
+								cityArray.push($.trim(devices[i].children[j].data.city));
+							}
+
+							/*Push master states in stateArray array*/
+							if(stateArray.indexOf($.trim(devices[i].data.state)) == -1)
+							{
+								stateArray.push($.trim(devices[i].data.state));
+							}
+							/*Push slave states in stateArray array*/
+							if(stateArray.indexOf($.trim(devices[i].children[j].data.state)) == -1)
+							{
+								stateArray.push($.trim(devices[i].children[j].data.state));
+							}
+
+							/*Push master vendors in masterVendorArray array*/
+							if(vendorArray.indexOf($.trim(devices[i].data.vendor)) == -1)
+							{
+								vendorArray.push($.trim(devices[i].data.vendor));
+							}
+							/*Push slave vendors in slaveVendorArray array*/
+							if(vendorArray.indexOf($.trim(devices[i].children[j].data.vendor)) == -1)
+							{
+								vendorArray.push($.trim(devices[i].children[j].data.vendor));
+							}
+
+							/*Push master technology in techArray array*/
+							if(techArray.indexOf($.trim(devices[i].data.technology)) == -1)
+							{
+								techArray.push($.trim(devices[i].data.technology));
+							}
+							/*Push slave technology in techArray array*/
+							if(techArray.indexOf($.trim(devices[i].children[j].data.technology)) == -1)
+							{
+								techArray.push($.trim(devices[i].children[j].data.technology));
+							}
+						}
+					}
+					/*Populate the city & state dropdown filters*/
+					that.populateFilters(cityArray,stateArray,vendorArray,techArray);
+				}
+			},
+			/*If data not fetched*/
+			error : function(err)
+			{
+				console.log(err.success());
+			}
+		});
+	}
 }
