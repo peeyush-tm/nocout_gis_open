@@ -1,83 +1,119 @@
 {% extends "department/department.html" %}
 {% load staticfiles %}
-{% block css %}
-    <link rel="stylesheet" type="text/css" href={% static "css/user_profile.css" %}>
-{% endblock %}
 {% block breadcrumb_page_title %} > User {% endblock %}
 {% block content_title %}Users Management{% endblock %}
 {% block content_description %}Update a user ....{% endblock %}
 {% block content %}
-    <h3>Update User : {{ object.username }}</h3>
-    <form action="" method="post">{% csrf_token %}
-        <div id="new_user">
-            <table>
-                <tr>
-                    <td>
-                        {{ form.errors }}
-                        {{ form.non_field_errors }}
-                    </td>
-                </tr>
-                <tr>
-                    <th><label for="id_username">Username:</label></th>
-                    <td>{{ form.username }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_first_name">First Name:</label></th>
-                    <td>{{ form.first_name }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_last_name">Last Name:</label></th>
-                    <td>{{ form.last_name }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_email">Email:</label></th>
-                    <td>{{ form.email }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_parent">Parent:</label></th>
-                    <td>{{ form.parent }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_role">Role:</label></th>
-                    <td>{{ form.role }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_user_group">User Group:</label></th>
-                    <td>{{ form.user_group }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_designation">Designation:</label></th>
-                    <td>{{ form.designation }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_company">Company:</label></th>
-                    <td>{{ form.company }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_address">Address:</label></th>
-                    <td>{{ form.address }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_phone_number">Phone No.:</label></th>
-                    <td>{{ form.phone_number }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_comment">Comment:</label></th>
-                    <td>{{ form.comment }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_password1">Password:</label></th>
-                    <td>{{ form.password1 }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_password2">Password Confirmation:</label></th>
-                    <td>{{ form.password2 }}</td>
-                </tr>
-                <tr>
-                    <th></th>
-                    <td><input type="submit" value="Update"/></td>
-                </tr>
-            </table>
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i>Update User : {{ object.username }}</h4>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="box-body big">
+                                <form action="" method="post" class="form-horizontal"
+                                      role="form">{% csrf_token %}
+                                    <div class="form-group">
+                                        <label for="id_username" class="col-sm-3 control-label">Username</label>
+                                        <div class="col-sm-9">
+                                            {{ form.username }} {{ form.username.errors }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="id_first_name" class="col-sm-3 control-label">First Name</label>
+                                        <div class="col-sm-9">
+                                            {{ form.first_name }} {{ form.first_name.errors }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="id_last_name" class="col-sm-3 control-label">Last Name</label>
+                                        <div class="col-sm-9">
+                                            {{ form.last_name }} {{ form.last_name.errors }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="id_email" class="col-sm-3 control-label">Email</label>
+                                        <div class="col-sm-9">
+                                            {{ form.email }} {{ form.email.errors }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="id_parent" class="col-sm-3 control-label">Parent</label>
+                                        <div class="col-sm-9">
+                                            {{ form.parent }} {{ form.parent.errors }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="id_role" class="col-sm-3 control-label">Role</label>
+                                        <div class="col-sm-9">
+                                            {{ form.role }} {{ form.role.errors }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="id_user_group" class="col-sm-3 control-label">User Group</label>
+                                        <div class="col-sm-9">
+                                            {{ form.user_group }} {{ form.user_group.errors }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="id_designation" class="col-sm-3 control-label">Designation</label>
+                                        <div class="col-sm-9">
+                                            {{ form.designation }} {{ form.designation.errors }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="id_company" class="col-sm-3 control-label">Company</label>
+                                        <div class="col-sm-9">
+                                            {{ form.company }} {{ form.company.errors }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="id_address" class="col-sm-3 control-label">Address</label>
+                                        <div class="col-sm-9">
+                                            {{ form.address }} {{ form.address.errors }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="id_phone_number" class="col-sm-3 control-label">Phone No.</label>
+                                        <div class="col-sm-9">
+                                            {{ form.phone_number }} {{ form.phone_number.errors }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="id_comment" class="col-sm-3 control-label">Comment</label>
+                                        <div class="col-sm-9">
+                                            {{ form.comment }} {{ form.comment.errors }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="id_password1" class="col-sm-3 control-label">Password</label>
+                                        <div class="col-sm-9">
+                                            {{ form.password1 }} {{ form.password1.errors }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="id_password2" class="col-sm-3 control-label">Password Confirmation</label>
+                                        <div class="col-sm-9">
+                                            {{ form.password2 }} {{ form.password2.errors }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="col-sm-offset-3 col-sm-9">
+                                            <button type="submit" class="btn btn-pink">Update</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </form>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+    {% endblock %}
 {% endblock %}

@@ -1,39 +1,49 @@
-.topUserInfo li:first-child span
-{
-  color: #FFF;
-}
-.topUserInfo > li > a
-{
-  padding: 8px;
-  text-align: right;
-  line-height: 16px;
-}
-.topUserInfo > li > a > span
-{
-  margin-right: 5px;
-}
-.topUserInfo > li > a > span.username
-{
-  margin-right: 20px;
-}
-.topUserInfo > li > a > i
-{
-  position: relative;
-  top: -10px;
-}
-.orgTitleBlock li span.username
-{
-  vertical-align: text-bottom;
-  font-weight: 600;
-}
-.orgTitleBlock li, .topUserInfo li
-{
-    float:  none; 
-    color:  #FFF;
+.topUserInfo li:first-child span {
+    color: #FFF;
 }
 
-.orgTitleBlock li
-{
+.topUserInfo > li > a {
+    padding: 8px;
+    text-align: right;
+    line-height: 16px;
+}
+
+.topUserInfo > li > a > span {
+    margin-right: 5px;
+}
+
+.topUserInfo > li > a > span.username {
+    margin-right: 20px;
+}
+
+.topUserInfo > li > a > i {
+    position: relative;
+    top: -10px;
+}
+
+.orgTitleBlock li span.username {
+    vertical-align: text-bottom;
+    font-weight: 600;
+}
+
+.orgTitleBlock li, .topUserInfo li {
+    float: none;
+    color: #FFF;
+}
+
+.orgTitleBlock li {
     padding: 8px;
     line-height: 16px;
+}
+
+/* forms style */
+
+.errorlist {
+    padding: 0px;
+    margin-top: 5px;
+    list-style: none;
+}
+
+.errorlist li {
+    color: #b94a48;
 }
