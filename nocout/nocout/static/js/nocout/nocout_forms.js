@@ -12,9 +12,10 @@ $(document).ready(function (e) {
         }
     }
 });
+
 /*It removes the error class from fields if exists*/
 function resetForm() {
-    var inputContainers = $(".formContainer .col-sm-9");
+    var inputContainers = $(".formContainer .col-sm-7");
     for (var i = 0; i < inputContainers.length; i++) {
         var childrenCount = inputContainers[i].children.length;
         if (childrenCount == 2) {
