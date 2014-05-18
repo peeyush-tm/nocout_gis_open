@@ -7,7 +7,7 @@
 {% block content_title %}Organizations Management{% endblock %}
 {% block content_description %}Create an organization ....{% endblock %}
 {% block content %}
-    <h3>Create Organization</h3>
+
     <form action="/organization/new/" method="post">{% csrf_token %}
         <div id="new_organization">
             <table>
