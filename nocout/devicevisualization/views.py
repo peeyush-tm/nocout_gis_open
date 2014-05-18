@@ -7,6 +7,7 @@ def locate_devices(request):
     try:
         first_name = request.user.first_name
         last_name = request.user.last_name
+        username = request.user.username
         user_profile = UserProfile.objects.get(username=request.user)
         user_department = user_profile.department_set.all()[0].user_group.alias
         user_group = user_profile.department_set.all()[0].user_group
@@ -19,6 +20,7 @@ def locate_devices(request):
     try:
         c.update({"host_ip": host_ip,
                   "firstname": first_name,
+                  "username": username,
                   "lastname": last_name,
                   "user_department": user_department,
                   "user_organization": user_organization})
