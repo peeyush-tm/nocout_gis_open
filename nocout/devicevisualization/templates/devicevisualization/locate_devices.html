@@ -18,21 +18,13 @@
                 <i class="fa fa-refresh">&nbsp;</i> Refresh
             </button>
             <!--City Filter-->
-            <select name="city" id="city" class="form-control col-xs-1">
-                <option value="">Select City</option>
-            </select>
+            <select name="city" id="city" class="form-control col-xs-1"></select>
             <!--State Filter-->
-            <select name="state" id="state" class="form-control col-xs-1">
-                <option value="">Select State</option>
-            </select>
+            <select name="state" id="state" class="form-control col-xs-1"></select>
             <!--vendor Filter-->
-            <select name="vendor" id="vendor" class="form-control col-xs-1">
-                <option value="">Select Vendor</option>
-            </select>
+            <select name="vendor" id="vendor" class="form-control col-xs-1"></select>
             <!--technology Filter-->
-            <select name="technology" id="technology" class="form-control col-xs-1">
-                <option value="">Select Technology</option>
-            </select>                           
+            <select name="technology" id="technology" class="form-control col-xs-1"></select>                           
         </div>
         <!--Filters Block End-->
         <div class="clear"></div>
@@ -56,11 +48,13 @@
 <script type="text/javascript">
 
     var networkMapInstance = "",
-        hostIp = "";
+        hostIp = "",
+        username = "";
 
     $(document).ready(function(e) {
 
         hostIp = "{{host_ip}}";
+        username = "{{username}}";
         /*Create a instance of networkMapClass*/
         networkMapInstance = new networkMapClass();
         /*Call the function to create map*/
@@ -74,12 +68,12 @@
      */
     function makeNetwork()
     {
-        networkMapInstance.getDevicesData(hostIp);
-        /*call itself after wvery 10 seconds*/
-        setTimeout(function() {
-            /*Recursive function*/
-            makeNetwork();
-        },150000);
+        networkMapInstance.getDevicesData(hostIp,username);
+        // /*call itself after wvery 10 seconds*/
+        // setTimeout(function() {
+        //     /*Recursive function*/
+        //     makeNetwork();
+        // },10000);
     }
 
     /*This event trigger when state dropdown value is changes*/
