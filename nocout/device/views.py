@@ -186,20 +186,20 @@ class DeviceTypeFieldsCreate(CreateView):
     template_name = 'device_extra_fields/device_extra_field_new.html'
     model = DeviceTypeFields
     form_class = DeviceTypeFieldsForm
-    success_url = reverse_lazy('device_extra_fields_list')
+    success_url = reverse_lazy('device_extra_field_list')
 
 
 class DeviceTypeFieldsUpdate(UpdateView):
     template_name = 'device_extra_fields/device_extra_field_update.html'
     model = DeviceTypeFields
     form_class = DeviceTypeFieldsUpdateForm
-    success_url = reverse_lazy('device_type_form_field_list')
+    success_url = reverse_lazy('device_extra_field_list')
 
 
 class DeviceTypeFieldsDelete(DeleteView):
     model = DeviceTypeFields
     template_name = 'device_extra_fields/device_extra_field_delete.html'
-    success_url = reverse_lazy('device_type_form_field_list')
+    success_url = reverse_lazy('device_extra_field_list')
 
 
 # **************************************** Device Technology ****************************************
