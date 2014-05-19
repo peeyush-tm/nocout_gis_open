@@ -123,8 +123,8 @@ class Inventory(models.Model):
 # table for extra fields of device (depends upon device type)
 class DeviceTypeFields(models.Model):
     device_type = models.ForeignKey(DeviceType, null=True, blank=True)
-    field_name = models.CharField(max_length=100, blank=True, null=True)
-    field_display_name = models.CharField(max_length=200, blank=True, null=True)
+    field_name = models.CharField(max_length=100)
+    field_display_name = models.CharField(max_length=200)
 
     def __unicode__(self):
         return self.field_display_name

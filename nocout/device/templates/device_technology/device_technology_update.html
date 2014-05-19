@@ -7,33 +7,44 @@
 {% block content_title %}Device Technologies Management{% endblock %}
 {% block content_description %}Update a device technology ....{% endblock %}
 {% block content %}
-    <h3>Update Device Technology : {{ object.name }}</h3>
-    <form action="" method="post">{% csrf_token %}
-        <div id="new_device">
-            <table>
-                <tr>
-                    <td>
-                        {{ form.errors }}
-                        {{ form.non_field_errors }}
-                    </td>
-                </tr>
-                <tr>
-                    <th><label for="id_name"> Technology Name:</label></th>
-                    <td>{{ form.name }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_alias">Technology Alias:</label></th>
-                    <td>{{ form.alias }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_device_vendors">Device Vendors:</label></th>
-                    <td>{{ form.device_vendors }}</td>
-                </tr>
-                <tr>
-                    <th></th>
-                    <td><input type="submit" value="Update"/></td>
-                </tr>
-            </table>
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i>Device Technology : {{ object.name }}</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-5"><br />
+                                    <form action="" method="post" class="form-horizontal"
+                                          role="form">{% csrf_token %}
+                                        <div class="form-group">
+                                            {% for field in form %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}"
+                                                           class="col-sm-5 control-label">{{ field.label|title }}</label>
+                                                    <div class="col-sm-7">
+                                                        {{ field }} {{ field.errors }}
+                                                    </div>
+                                                </div>
+                                        {% endfor %}
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-5 col-sm-7">
+                                                <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </form>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+    {% endblock %}
 {% endblock %}

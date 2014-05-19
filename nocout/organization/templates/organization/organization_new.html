@@ -20,7 +20,7 @@
                                             {% for field in form %}
                                                 <div class="form-group">
                                                     <label for="{{ field.id_for_label }}"
-                                                           class="col-sm-5 control-label">{{ field.label }}</label>
+                                                           class="col-sm-5 control-label">{{ field.label|title }}</label>
                                                     <div class="col-sm-7">
                                                         {{ field }} {{ field.errors }}
                                                     </div>
