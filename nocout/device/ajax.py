@@ -57,7 +57,7 @@ def device_type_extra_fields(request, option):
     out = []
     for extra_field in device_extra_fields:
         out.append(
-            "<div class='form-group'><label for='%s' class='col-sm-3 control-label'>%s:</label><div class='col-sm-9'><input id='%s' name='%s' type='text' class='form-control' /></div></div>"
+            "<div class='form-group'><label for='%s' class='col-sm-5 control-label'>%s:</label><div class='col-sm-7'><input id='%s' name='%s' type='text' class='form-control' /></div></div>"
             % (extra_field.field_name, extra_field.field_display_name,
                extra_field.field_name, extra_field.field_name))
 

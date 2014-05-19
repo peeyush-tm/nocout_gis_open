@@ -11,50 +11,54 @@
         <div class="col-md-12">
             <div class="row">
                 <div class="col-md-12">
-                    <div class="box">
+                    <div class="box border lite">
                         <div class="box-title">
                             <h4><i class="fa fa-bars"></i>Device</h4>
                         </div>
-                        <form action="/device/new/" method="post" class="form-horizontal" role="form">{% csrf_token %}
-                            <div class="col-md-4">
-                                <div class="box-body big">
-                                    {% for field in form %}
-                                        {% if field.field.widget.attrs.class == 'form-control' %}
-                                            <div class="form-group">
-                                                <label for="{{ field.id_for_label }}"
-                                                       class="col-sm-3 control-label">{{ field.label }}</label>
-                                                <div class="col-sm-9">
-                                                    {{ field }} {{ field.errors }}
+                        <div class="box-body">
+                            <br/>
+                            <form action="/device/new/" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                                <div class="col-md-12">
+                                    <div class="col-md-5">
+                                        {% for field in form %}
+                                            {% if field.field.widget.attrs.class == 'form-control' %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}"
+                                                           class="col-sm-5 control-label">{{ field.label }}</label>
+                                                    <div class="col-sm-7">
+                                                        {{ field }} {{ field.errors }}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-                                    <div class="form-group">
-                                        <div class="col-sm-offset-3 col-sm-9">
-                                            <button type="submit" class="btn btn-pink">Create</button>
+                                            {% endif %}
+                                        {% endfor %}
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-5 col-sm-7">
+                                            <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i> Create</button>
                                             &nbsp;
-                                            <button type="reset" class="btn btn-grey" onclick="resetForm();">Reset
+                                            <button type="reset" class="btn btn-danger" onclick="resetForm();"><i class="fa fa-refresh"></i> Reset
                                             </button>
+                                            </div>
                                         </div>
                                     </div>
+                                    <div class="col-md-5">
+                                        <span id="extra_fields">
+                                            {% for field in form %}
+                                                {% if field.field.widget.attrs.class == 'extra form-control' %}
+                                                    <div class="form-group">
+                                                        <label for="{{ field.id_for_label }}"
+                                                               class="col-sm-5 control-label">{{ field.label }}</label>
+                                                        <div class="col-sm-7">
+                                                            {{ field }} {{ field.errors }}
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </span>
+                                    </div>
+                                    <div class="clearfix"></div>
                                 </div>
-                            </div>
-                            <div class="col-md-4">
-                                <span id="extra_fields">
-                                    {% for field in form %}
-                                        {% if field.field.widget.attrs.class == 'extra form-control' %}
-                                            <div class="form-group">
-                                                <label for="{{ field.id_for_label }}"
-                                                       class="col-sm-3 control-label">{{ field.label }}</label>
-                                                <div class="col-sm-9">
-                                                    {{ field }} {{ field.errors }}
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-                                </span>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
