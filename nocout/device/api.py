@@ -16,7 +16,7 @@ class DeviceStatsApi(View):
 
     """
     
-    def post(self, request):
+    def get(self, request):
         """
         Handling http POST method for device data
 
@@ -46,37 +46,31 @@ class DeviceStatsApi(View):
                 "objects": None
             }
         }
-        try:
-
-            #Decode the json object
-            req_params = json.loads(request.body)
-            print "-- Req Params --"
-            print req_params
-        except (ValueError, TypeError) as e:
-            self.result.update({
-                "message": str(e).split(':')[0]
-            })
-            return HttpResponse(json.dumps(self.result))
-        meta_info = req_params.get('meta')
+        req_params = request.GET
+        
         if 'username' in req_params:
             #Get username from query string, if passed
             username = req_params.get('username')
         else:
             #Retreive username from active session
             username = request.user.username
-        print "-- Username --"
-        print username
+        page_number = req_params.get('page_number')
+        limit = req_params.get('limit')
+        
         #Get the host machine IP address
         host_ip = request.get_host().split(':')[0]
+        
         #Show link between master-slave device pairs
         show_link = 1
+        
         cls = DeviceStats()
         device_stats_dict = DeviceStats.p2p_device_info(
             cls,
             username,
             host_ip=host_ip,
             show_link=show_link,
-            meta_info=meta_info
+            page_number=page_number,
+            limit=limit
         )
 
         if len(device_stats_dict.get('children')):
@@ -123,6 +117,8 @@ class DeviceStats(View):
             },
             "children": []
         }
+        page_number = kwargs.get('page_number') if kwargs.get('page_number') else 0
+        limit = kwargs.get('limit') if kwargs.get('limit') else 4
         device_info_list = []
         device_object_list = []
         try:
@@ -144,8 +140,11 @@ class DeviceStats(View):
             print "No Data for this user"
             return device_stats_dict
 
-        meta_info = kwargs.get('meta_info')
-        inventory_list = self.slice_object_list(inventory_list, meta_info)
+        inventory_list = self.slice_object_list(
+            inventory_list,
+            page_number=page_number,
+            limit=limit
+        )
 
         for dev in inventory_list:
             device_info = {}
@@ -266,20 +265,22 @@ class DeviceStats(View):
         device_stats_dict.update({
             "meta": {
                 "total_count": total_count,
-                "limit": 4
+                "limit": limit
             }
         })
         return device_stats_dict
 
 
-    def slice_object_list(self, inventory_list, meta_info):
-        if isinstance(meta_info, dict):
-            limit = int(meta_info.get('limit')) \
-                if int(meta_info.get('limit')) else 4
-            page_number = int(meta_info.get('page_number', 0))
-            start = limit * (page_number-1)
-            end = limit * (page_number)
+    def slice_object_list(self, inventory_list, **kwargs):
+        if int(kwargs.get('limit')) is not 0:
+            limit = int(kwargs.get('limit'))
         else:
-            start, end = 0, 4
+            limit = 4
+        if int(kwargs.get('page_number')) is not 0:
+            page_number = int(kwargs.get('page_number'))
+        else:
+            page_number = 1
+        start = limit * (page_number-1)
+        end = limit * (page_number)
         inventory_list = inventory_list[start:end]
         return inventory_list
