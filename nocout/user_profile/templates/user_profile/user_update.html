@@ -8,106 +8,34 @@
         <div class="col-md-12">
             <div class="row">
                 <div class="col-md-12">
-                    <div class="box">
+                    <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i>Update User : {{ object.username }}</h4>
+                            <h4><i class="fa fa-bars"></i>User : {{ object.username }}</h4>
                         </div>
-                        <div class="col-md-4">
-                            <div class="box-body big">
-                                <form action="" method="post" class="form-horizontal"
-                                      role="form">{% csrf_token %}
-                                    <div class="form-group">
-                                        <label for="id_username" class="col-sm-3 control-label">Username</label>
-                                        <div class="col-sm-9">
-                                            {{ form.username }} {{ form.username.errors }}
+                            <div class="box-body">
+                                <div class="col-md-5"><br />
+                                    <form action="" method="post" class="form-horizontal"
+                                          role="form">{% csrf_token %}
+                                        <div class="form-group">
+                                            {% for field in form %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}"
+                                                           class="col-sm-5 control-label">{{ field.label|title }}</label>
+                                                    <div class="col-sm-7">
+                                                        {{ field }} {{ field.errors }}
+                                                    </div>
+                                                </div>
+                                        {% endfor %}
                                         </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_first_name" class="col-sm-3 control-label">First Name</label>
-                                        <div class="col-sm-9">
-                                            {{ form.first_name }} {{ form.first_name.errors }}
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-5 col-sm-7">
+                                                <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_last_name" class="col-sm-3 control-label">Last Name</label>
-                                        <div class="col-sm-9">
-                                            {{ form.last_name }} {{ form.last_name.errors }}
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_email" class="col-sm-3 control-label">Email</label>
-                                        <div class="col-sm-9">
-                                            {{ form.email }} {{ form.email.errors }}
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_parent" class="col-sm-3 control-label">Parent</label>
-                                        <div class="col-sm-9">
-                                            {{ form.parent }} {{ form.parent.errors }}
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_role" class="col-sm-3 control-label">Role</label>
-                                        <div class="col-sm-9">
-                                            {{ form.role }} {{ form.role.errors }}
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_user_group" class="col-sm-3 control-label">User Group</label>
-                                        <div class="col-sm-9">
-                                            {{ form.user_group }} {{ form.user_group.errors }}
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_designation" class="col-sm-3 control-label">Designation</label>
-                                        <div class="col-sm-9">
-                                            {{ form.designation }} {{ form.designation.errors }}
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_company" class="col-sm-3 control-label">Company</label>
-                                        <div class="col-sm-9">
-                                            {{ form.company }} {{ form.company.errors }}
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_address" class="col-sm-3 control-label">Address</label>
-                                        <div class="col-sm-9">
-                                            {{ form.address }} {{ form.address.errors }}
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_phone_number" class="col-sm-3 control-label">Phone No.</label>
-                                        <div class="col-sm-9">
-                                            {{ form.phone_number }} {{ form.phone_number.errors }}
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_comment" class="col-sm-3 control-label">Comment</label>
-                                        <div class="col-sm-9">
-                                            {{ form.comment }} {{ form.comment.errors }}
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_password1" class="col-sm-3 control-label">Password</label>
-                                        <div class="col-sm-9">
-                                            {{ form.password1 }} {{ form.password1.errors }}
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_password2" class="col-sm-3 control-label">Password Confirmation</label>
-                                        <div class="col-sm-9">
-                                            {{ form.password2 }} {{ form.password2.errors }}
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <div class="col-sm-offset-3 col-sm-9">
-                                            <button type="submit" class="btn btn-pink">Update</button>
-                                        </div>
-                                    </div>
-                                </form>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
                             </div>
-                        </div>
                     </div>
                 </div>
             </div>
