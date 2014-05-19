@@ -7,7 +7,7 @@
 {% block content_title %}Service Parameters Management{% endblock %}
 {% block content_description %}List of service parameters{% endblock %}
 {% block content %}
-    <p><a href="/sp/new"><i class="fa fa-plus">&nbsp;</i> Create Service Parameter</a></p>
+    <p><a href="/service_parameter/new"><i class="fa fa-plus">&nbsp;</i> Create Service Parameter</a></p>
 
     <div class="box">
         <div id="tableContainer_div" class="box-title">
@@ -39,9 +39,9 @@
                     </tr>
                     {% for parameter in object_list %}
                         <tr>
-                            <td><a href="/sp/{{ parameter.id }}">{{ parameter.parameter_description }}</a></td>
-                            <td><a href="/sp/edit/{{ parameter.id }}">Edit</a></td>
-                            <td><a href="/sp/delete/{{ parameter.id }}">Delete</a></td>
+                            <td><a href="/service_parameter/{{ parameter.id }}">{{ parameter.parameter_description }}</a></td>
+                            <td><a href="/service_parameter/edit/{{ parameter.id }}">Edit</a></td>
+                            <td><a href="/service_parameter/delete/{{ parameter.id }}">Delete</a></td>
                         </tr>
                     {% endfor %}
                 </table>
