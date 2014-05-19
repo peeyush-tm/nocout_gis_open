@@ -8,36 +8,37 @@
         <div class="col-md-12">
             <div class="row">
                 <div class="col-md-12">
-                    <div class="box">
+                    <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i>Organization</h4>
+                            <h4><i class="fa fa-bars"></i>Organization{{ object.name }}</h4>
                         </div>
-                        <div class="col-md-5">
-                            <div class="box-body big">
-                                <form action="/organization/new/" method="post" class="form-horizontal"
-                                      role="form">{% csrf_token %}
-                                    <div class="form-group">
-                                        {% for field in form %}
-                                            <div class="form-group">
-                                                <label for="{{ field.id_for_label }}"
-                                                       class="col-sm-5 control-label">{{ field.label }}</label>
-                                                <div class="col-sm-7">
-                                                    {{ field }} {{ field.errors }}
+                            <div class="box-body">
+                                <div class="col-md-5"><br />
+                                    <form action="/organization/new/" method="post" class="form-horizontal"
+                                          role="form">{% csrf_token %}
+                                        <div class="form-group">
+                                            {% for field in form %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}"
+                                                           class="col-sm-5 control-label">{{ field.label }}</label>
+                                                    <div class="col-sm-7">
+                                                        {{ field }} {{ field.errors }}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                    {% endfor %}
-                                    </div>
-                                    <div class="form-group">
-                                        <div class="col-sm-offset-5 col-sm-7">
-                                            <button type="submit" class="btn btn-pink">Create</button>
-                                            &nbsp;
-                                            <button type="reset" class="btn btn-grey" onclick="resetForm();">Reset
-                                            </button>
+                                        {% endfor %}
                                         </div>
-                                    </div>
-                                </form>
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-5 col-sm-7">
+                                            <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i> Create</button>
+                                            &nbsp;
+                                            <button type="reset" class="btn btn-danger" onclick="resetForm();"><i class="fa fa-refresh"></i> Reset
+                                            </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
                             </div>
-                        </div>
                     </div>
                 </div>
             </div>

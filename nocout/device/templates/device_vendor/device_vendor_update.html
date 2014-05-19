@@ -8,44 +8,34 @@
         <div class="col-md-12">
             <div class="row">
                 <div class="col-md-12">
-                    <div class="box">
+                    <div class="box border lite">
                         <div class="box-title">
                             <h4><i class="fa fa-bars"></i>Update Device Vendor : {{ object.name }}</h4>
                         </div>
-                        <div class="col-md-4">
-                            <div class="box-body big">
-                                <form action="" method="post" class="form-horizontal"
-                                      role="form">{% csrf_token %}
-                                    <div class="form-group">
-                                        <label for="id_name" class="col-sm-3 control-label">Vendor Name</label>
-
-                                        <div class="col-sm-9">
-                                            {{ form.name }} {{ form.name.errors }}
+                            <div class="box-body">
+                                <div class="col-md-5"><br />
+                                    <form action="" method="post" class="form-horizontal"
+                                          role="form">{% csrf_token %}
+                                        <div class="form-group">
+                                            {% for field in form %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}"
+                                                           class="col-sm-5 control-label">{{ field.label }}</label>
+                                                    <div class="col-sm-7">
+                                                        {{ field }} {{ field.errors }}
+                                                    </div>
+                                                </div>
+                                        {% endfor %}
                                         </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_alias" class="col-sm-3 control-label">Vendor Alias</label>
-
-                                        <div class="col-sm-9">
-                                            {{ form.alias }} {{ form.alias.errors }}
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-5 col-sm-7">
+                                                <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_device_models" class="col-sm-3 control-label">Device
-                                            Models</label>
-
-                                        <div class="col-sm-9">
-                                            {{ form.device_models }} {{ form.device_models.errors }}
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <div class="col-sm-offset-3 col-sm-9">
-                                            <button type="submit" class="btn btn-pink">Update</button>
-                                        </div>
-                                    </div>
-                                </form>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
                             </div>
-                        </div>
                     </div>
                 </div>
             </div>
