@@ -12,48 +12,48 @@
                         <div class="box-title">
                             <h4><i class="fa fa-bars"></i>User Group</h4>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-5">
                             <div class="box-body big">
                                 <form action="/ug/new/" method="post" class="form-horizontal"
                                       role="form">{% csrf_token %}
                                     <div class="form-group">
-                                        <label for="id_name" class="col-sm-3 control-label">Group Name</label>
-                                        <div class="col-sm-9">
+                                        <label for="id_name" class="col-sm-5 control-label">Group Name</label>
+                                        <div class="col-sm-7">
                                             {{ form.name }} {{ form.name.errors }}
                                         </div>
                                     </div>
                                     <div class="form-group">
-                                        <label for="id_alias" class="col-sm-3 control-label">Group Alias</label>
-                                        <div class="col-sm-9">
+                                        <label for="id_alias" class="col-sm-5 control-label">Group Alias</label>
+                                        <div class="col-sm-7">
                                             {{ form.alias }} {{ form.alias.errors }}
                                         </div>
                                     </div>
                                     <div class="form-group">
-                                        <label for="id_parent" class="col-sm-3 control-label">Parent</label>
-                                        <div class="col-sm-9">
+                                        <label for="id_parent" class="col-sm-5 control-label">Parent</label>
+                                        <div class="col-sm-7">
                                             {{ form.parent }} {{ form.parent.errors }}
                                         </div>
                                     </div>
                                     <div class="form-group">
-                                        <label for="id_device_group" class="col-sm-3 control-label">Device Group</label>
-                                        <div class="col-sm-9">
+                                        <label for="id_device_group" class="col-sm-5 control-label">Device Group</label>
+                                        <div class="col-sm-7">
                                             {{ form.device_group }} {{ form.device_group.errors }}
                                         </div>
                                     </div>
                                     <div class="form-group">
-                                        <label for="id_location" class="col-sm-3 control-label">Location</label>
-                                        <div class="col-sm-9">
+                                        <label for="id_location" class="col-sm-5 control-label">Location</label>
+                                        <div class="col-sm-7">
                                             {{ form.location }} {{ form.location.errors }}
                                         </div>
                                     </div>
                                     <div class="form-group">
-                                        <label for="id_address" class="col-sm-3 control-label">Address</label>
-                                        <div class="col-sm-9">
+                                        <label for="id_address" class="col-sm-5 control-label">Address</label>
+                                        <div class="col-sm-7">
                                             {{ form.address }} {{ form.address.errors }}
                                         </div>
                                     </div>
                                     <div class="form-group">
-                                        <div class="col-sm-offset-3 col-sm-9">
+                                        <div class="col-sm-offset-5 col-sm-7">
                                             <button type="submit" class="btn btn-pink">Create</button>
                                             &nbsp;
                                             <button type="reset" class="btn btn-grey" onclick="resetForm();">Reset

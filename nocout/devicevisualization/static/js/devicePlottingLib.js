@@ -510,8 +510,6 @@ function networkMapClass()
 
 		/*Update the page number*/
 		metaInfo.meta.page_number = hitCounter;
-		console.log(metaInfo.meta.limit);
-		console.log(remainingDevices);
 
 		if((remainingDevices <= metaInfo.meta.limit) && (remainingDevices != 0) && (metaInfo.meta.limit != 0))
 		{
@@ -548,7 +546,7 @@ function networkMapClass()
 				
 				that.getDevicesData(hostIp,username);
 
-			},50000);
+			},120000);
 		}
 		else
 		{
@@ -577,7 +575,6 @@ function networkMapClass()
 			/*If data fetched successful*/
 			success : function(result)
 			{
-				console.log(result);
 				/*First call case*/
 				if(devicesObject.data == undefined)
 				{
