@@ -23,21 +23,18 @@ class DeviceList(ListView):
 
     def get_queryset(self):
         queryset = self.model._default_manager.values('device_name', 'site_instance__name', 'device_group__name',
-                                                      'ip_address','city','state')
+                                                      'ip_address', 'city', 'state')
         return queryset[:10]
 
     def get_context_data(self, **kwargs):
-
-        context=super( DeviceList, self ).get_context_data(**kwargs)
+        context = super(DeviceList, self).get_context_data(**kwargs)
         object_list = context['object_list']
-        object_list, object_list_headers = Datatable_Generation( object_list ).main()
-        context['object_list'] = json.dumps( object_list, default=date_handler )
+        object_list, object_list_headers = Datatable_Generation(object_list).main()
+        context['object_list'] = json.dumps(object_list, default=date_handler)
         context.update({
-            'object_list_headers' : json.dumps(object_list_headers, default=date_handler )
+            'object_list_headers': json.dumps(object_list_headers, default=date_handler)
         })
         return context
-
-
 
 
 class DeviceDetail(DetailView):
@@ -276,6 +273,7 @@ class DeviceDelete(DeleteView):
 
     template_name = 'device/device_delete.html'
     success_url = reverse_lazy('device_list')
+
 
 # ******************************** Device Type Form Fields Views ************************************
 
