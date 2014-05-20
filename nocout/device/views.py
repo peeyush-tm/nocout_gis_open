@@ -23,21 +23,18 @@ class DeviceList(ListView):
 
     def get_queryset(self):
         queryset = self.model._default_manager.values('device_name', 'site_instance__name', 'device_group__name',
-                                                      'ip_address','city','state')
+                                                      'ip_address', 'city', 'state')
         return queryset[:10]
 
     def get_context_data(self, **kwargs):
-
-        context=super( DeviceList, self ).get_context_data(**kwargs)
+        context = super(DeviceList, self).get_context_data(**kwargs)
         object_list = context['object_list']
-        object_list, object_list_headers = Datatable_Generation( object_list ).main()
-        context['object_list'] = json.dumps( object_list, default=date_handler )
+        object_list, object_list_headers = Datatable_Generation(object_list).main()
+        context['object_list'] = json.dumps(object_list, default=date_handler)
         context.update({
-            'object_list_headers' : json.dumps(object_list_headers, default=date_handler )
+            'object_list_headers': json.dumps(object_list_headers, default=date_handler)
         })
         return context
-
-
 
 
 class DeviceDetail(DetailView):
@@ -163,11 +160,120 @@ class DeviceUpdate(UpdateView):
     success_url = reverse_lazy('device_list')
 
 
+    def form_valid(self, form):
+        """
+        If the form is valid, redirect to the supplied URL.
+        """
+
+        # post_fields: it contains form post data
+        # for e.g. <QueryDict: {u'tower_height': [u''], u'qos_bw': [u'fevefvef']}>
+        post_fields = self.request.POST
+
+        # all_non_empty_post_fields: it's a list which contains all non empty fields
+        # for e.g. [u'qos_bw', u'device_group', u'device_type', u'timezone', u'device_technology']
+        all_non_empty_post_fields = []
+
+        # It inserts all non empty fields keys from 'post_fields' into 'all_non_empty_post_fields'
+        # except 'csrf' hidden field
+        for key, value in post_fields.iteritems():
+            if key == "csrfmiddlewaretoken": continue
+            if value != "":
+                all_non_empty_post_fields.append(key)
+
+        # saving device data
+        self.object.device_name = form.cleaned_data['device_name']
+        self.object.device_alias = form.cleaned_data['device_alias']
+        self.object.device_technology = form.cleaned_data['device_technology']
+        self.object.device_vendor = form.cleaned_data['device_vendor']
+        self.object.device_model = form.cleaned_data['device_model']
+        self.object.device_type = form.cleaned_data['device_type']
+        self.object.ip_address = form.cleaned_data['ip_address']
+        self.object.mac_address = form.cleaned_data['mac_address']
+        self.object.netmask = form.cleaned_data['netmask']
+        self.object.gateway = form.cleaned_data['gateway']
+        self.object.dhcp_state = form.cleaned_data['dhcp_state']
+        self.object.host_priority = form.cleaned_data['host_priority']
+        self.object.host_state = form.cleaned_data['host_state']
+        self.object.address = form.cleaned_data['address']
+        self.object.city = form.cleaned_data['city']
+        self.object.state = form.cleaned_data['state']
+        self.object.timezone = form.cleaned_data['timezone']
+        self.object.latitude = form.cleaned_data['latitude']
+        self.object.longitude = form.cleaned_data['longitude']
+        self.object.description = form.cleaned_data['description']
+        self.object.save()
+
+        # saving site_instance --> FK Relation
+        try:
+            self.object.site_instance = SiteInstance.objects.get(name=form.cleaned_data['site_instance'])
+            self.object.save()
+        except:
+            print "No instance to add."
+
+        # deleting old services of device
+        self.object.service.clear()
+
+        # saving associated services  --> M2M Relation (Model: Service)
+        for service in form.cleaned_data['service']:
+            device_service = Service.objects.get(service_name=service)
+            self.object.service.add(device_service)
+            self.object.save()
+
+        # saving device 'parent device' --> FK Relation
+        try:
+            parent_device = Device.objects.get(device_name=form.cleaned_data['parent'])
+            self.object.parent = parent_device
+            self.object.save()
+        except:
+            print "Device has no parent."
+
+        # deleting old device extra field values
+        try:
+            DeviceTypeFieldsValue.objects.filter(device_id=self.object.id).delete()
+        except:
+            print "No device extra fields to delete."
+
+        # fetching device extra fields associated with 'device type'
+        try:
+            device_type = DeviceType.objects.get(id=int(self.request.POST.get('device_type')))
+            # it gives all device fields associated with device_type object
+            device_type.devicetypefields_set.all()
+        except:
+            print "No device type exists."
+
+        # saving eav relation data i.e. device extra fields those depends on device type
+        for field in all_non_empty_post_fields:
+            try:
+                # dtf: device type field object
+                # dtfv: device type field value object
+                dtf = DeviceTypeFields.objects.filter(field_name=field,
+                                                      device_type_id=int(self.request.POST.get('device_type')))
+                dtfv = DeviceTypeFieldsValue()
+                dtfv.device_type_field = dtf[0]
+                dtfv.field_value = self.request.POST.get(field)
+                dtfv.device_id = self.object.id
+                dtfv.save()
+            except:
+                pass
+
+        # delete old relationship exist in inventory
+        Inventory.objects.filter(device=self.object).delete()
+
+        # saving device_group --> M2M Relation (Model: Inventory)
+        for dg in form.cleaned_data['device_group']:
+            inventory = Inventory()
+            inventory.device = self.object
+            inventory.device_group = dg
+            inventory.save()
+        return HttpResponseRedirect(DeviceCreate.success_url)
+
+
 class DeviceDelete(DeleteView):
     model = Device
 
     template_name = 'device/device_delete.html'
     success_url = reverse_lazy('device_list')
+
 
 # ******************************** Device Type Form Fields Views ************************************
 

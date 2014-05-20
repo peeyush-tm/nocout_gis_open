@@ -1,6 +1,7 @@
 from dajax.core import Dajax
 from dajaxice.decorators import dajaxice_register
-from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType
+from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
+    DeviceTypeFieldsValue
 
 
 # updating vendor corresponding to the selected technology
@@ -90,4 +91,27 @@ def device_parent_choices_selected(request, option):
             out.append("<option value='%d'>%s - (%s)</option>"
                        % (int(device.id), device.device_alias, device.ip_address))
     dajax.assign("#id_parent", 'innerHTML', ''.join(out))
+    return dajax.json()
+
+# generate device extra device fields during device update
+@dajaxice_register
+def device_extra_fields_update(request, device_type, device_name):
+    dajax = Dajax()
+    device = Device.objects.get(device_name=device_name)
+    device_type = DeviceType.objects.filter(id=device_type)[0]
+    device_extra_fields = device_type.devicetypefields_set.all()
+    out = []
+    for extra_field in device_extra_fields:
+        field_value=""
+        try:
+            dtfv = DeviceTypeFieldsValue.objects.get(device_type_field=extra_field.id, device_id=device.id)
+            field_value = dtfv.field_value
+        except:
+            print "Device type field doesn't exist."
+        out.append(
+            "<div class='form-group'><label for='%s' class='col-sm-5 control-label'>%s:</label><div class='col-sm-7'><input id='%s' name='%s' type='text' class='form-control' value='%s' /></div></div>"
+            % (extra_field.field_name, extra_field.field_display_name,
+               extra_field.field_name, extra_field.field_name, field_value))
+
+    dajax.assign('#extra_fields', 'innerHTML', ''.join(out))
     return dajax.json()
