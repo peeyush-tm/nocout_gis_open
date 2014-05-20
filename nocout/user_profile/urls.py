@@ -7,4 +7,5 @@ urlpatterns = patterns('',
   url(r'^new/$', views.UserCreate.as_view(), name='user_new'),
   url(r'^edit/(?P<pk>\d+)$', views.UserUpdate.as_view(), name='user_edit'),
   url(r'^delete/(?P<pk>\d+)$', views.UserDelete.as_view(), name='user_delete'),
+  url(r'userlistingtable/', views.UserListingTable.as_view(), name= 'UserListingTable')
 )
