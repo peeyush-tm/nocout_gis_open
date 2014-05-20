@@ -1,3 +1,5 @@
+/*Initialize the timer*/
+var timer = "";
 // Use 'yourlabs' as namespace.
 if (window.yourlabs == undefined) window.yourlabs = {};
 
@@ -17,6 +19,8 @@ if (window.yourlabs == undefined) window.yourlabs = {};
 yourlabs.SessionSecurity = function(options) {
     
     var that = this;
+    /*Assign the default value to the timer*/
+    timer = 10;
 
     // **HTML element** that should show to warn the user that his session will
     // expire.    
@@ -68,13 +72,19 @@ yourlabs.SessionSecurity.prototype = {
     // Called when there has been no activity for more than warnAfter
     // seconds.
     showWarning: function() {
-        
+
         this.$warning.fadeIn('slow');
+        this.startCountdown(timer);
     },
     
     // Called to hide the warning, for example if there has been activity on
     // the server side - in another browser tab.
     hideWarning: function() {
+
+        /*Reset the timer counter to initial value*/
+        timer = 10;
+
+        /*hide the dialog*/
         this.$warning.hide();
     },
 
@@ -128,6 +138,7 @@ yourlabs.SessionSecurity.prototype = {
         if (idleFor >= this.expireAfter) {
             return this.expire();
         } else if (idleFor >= this.warnAfter) {
+
             this.showWarning();
             nextPing = this.expireAfter - idleFor;
         } else if(keyVal == 'logoutClicked')
@@ -159,7 +170,7 @@ yourlabs.SessionSecurity.prototype = {
     },
     /*Triggers when 'Continue' button is clicked*/
     continueFunction: function(e) {
-
+        
         this.apply("");
         this.hideWarning();
     },
@@ -167,8 +178,30 @@ yourlabs.SessionSecurity.prototype = {
     logoutFunction: function(e) {
 
         var currentUrl = window.location.href.split("/");
-        currentUrl[3] = "login";
+        currentUrl[3] = "logout";
         
         window.location.href = currentUrl.join("/");
+    },
+    /*To show the countdown on the dialog*/
+    startCountdown : function(timer)
+    {
+        if(timer > 0)
+        {
+            $("#counterVal > h1").html(timer+' <i class="fa fa-clock-o">&nbsp;</i>');
+
+            /*Save the current point reference for further use*/
+            var current = this;
+            /*Time out of 1 sec*/
+            setTimeout(function() {
+
+                timer = timer - 1;
+                /*Recursive Calling*/
+                current.startCountdown(timer);
+            },1000);
+        }
+        else
+        {
+            return;
+        }
     }
 }
