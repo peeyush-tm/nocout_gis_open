@@ -1,55 +1,50 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block css %}
-    <link rel="stylesheet" type="text/css" href={% static "css/service.css" %}>
-{% endblock %}
 {% block breadcrumb_page_title %} > Service Parameter {% endblock %}
 {% block content_title %}Service Parameters Management{% endblock %}
 {% block content_description %}Create a service parameter ....{% endblock %}
 {% block content %}
-    <h3>Create Service Parameters</h3>
-    <form action="/sp/new/" method="post">{% csrf_token %}
-        <div id="new_service">
-            <table>
-                <tr>
-                    <td>
-                        {{ form.errors }}
-                        {{ form.non_field_errors }}
-                    </td>
-                </tr>
-                <tr>
-                    <th><label for="id_parameter_description"> Parameter Description:</label></th>
-                    <td>{{ form.parameter_description }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_max_check_attempts">Max Check Attempts:</label></th>
-                    <td>{{ form.max_check_attempts }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_check_interval">Check Interval:</label></th>
-                    <td>{{ form.check_interval }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_retry_interval">Retry Interval:</label></th>
-                    <td>{{ form.retry_interval }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_check_period">Check Period:</label></th>
-                    <td>{{ form.check_period }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_notification_interval">Notification Interval:</label></th>
-                    <td>{{ form.notification_interval }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_notification_period">Notification Period:</label></th>
-                    <td>{{ form.notification_period }}</td>
-                </tr>
-                <tr>
-                    <th></th>
-                    <td><input type="submit" value="Create"/></td>
-                </tr>
-            </table>
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i>Service Parameter</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-5"><br />
+                                    <form action="/service_parameter/new/" method="post" class="form-horizontal"
+                                          role="form">{% csrf_token %}
+                                        <div class="form-group">
+                                            {% for field in form %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}"
+                                                           class="col-sm-5 control-label">{{ field.label|title }}</label>
+                                                    <div class="col-sm-7">
+                                                        {{ field }} {{ field.errors }}
+                                                    </div>
+                                                </div>
+                                        {% endfor %}
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-5 col-sm-7">
+                                            <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i> Create</button>
+                                            &nbsp;
+                                            <button type="reset" class="btn btn-danger" onclick="resetForm();"><i class="fa fa-refresh"></i> Reset
+                                            </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </form>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+    {% endblock %}
 {% endblock %}

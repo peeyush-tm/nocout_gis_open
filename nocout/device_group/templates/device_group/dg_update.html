@@ -2,63 +2,40 @@
 {% load staticfiles %}
 {% block breadcrumb_page_title %} > Device Group {% endblock %}
 {% block content_title %}Device Groups Management{% endblock %}
-{% block content_description %}Update a device groups ....{% endblock %}
+{% block content_description %}Update a device group ....{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
             <div class="row">
                 <div class="col-md-12">
-                    <div class="box">
+                    <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i>Update Device Group : {{ object.name }}</h4>
+                            <h4><i class="fa fa-bars"></i>Device Group : {{ object.name }}</h4>
                         </div>
-                        <div class="col-md-4">
-                            <div class="box-body big">
-                                <form action="" method="post" class="form-horizontal"
-                                      role="form">{% csrf_token %}
-                                    <div class="form-group">
-                                        <label for="id_name" class="col-sm-3 control-label">Device Group Name</label>
-
-                                        <div class="col-sm-9">
-                                            {{ form.name }} {{ form.name.errors }}
+                            <div class="box-body">
+                                <div class="col-md-5"><br />
+                                    <form action="" method="post" class="form-horizontal"
+                                          role="form">{% csrf_token %}
+                                        <div class="form-group">
+                                            {% for field in form %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}"
+                                                           class="col-sm-5 control-label">{{ field.label }}</label>
+                                                    <div class="col-sm-7">
+                                                        {{ field }} {{ field.errors }}
+                                                    </div>
+                                                </div>
+                                        {% endfor %}
                                         </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_alias" class="col-sm-3 control-label">Device Group Alias</label>
-
-                                        <div class="col-sm-9">
-                                            {{ form.alias }} {{ form.alias.errors }}
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-5 col-sm-7">
+                                                <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_device_models" class="col-sm-3 control-label">Device Group Parent</label>
-
-                                        <div class="col-sm-9">
-                                            {{ form.parent }} {{ form.parent.errors }}
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_location" class="col-sm-3 control-label">Location</label>
-
-                                        <div class="col-sm-9">
-                                            {{ form.location }} {{ form.location.errors }}
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="id_address" class="col-sm-3 control-label">Address</label>
-
-                                        <div class="col-sm-9">
-                                            {{ form.address }} {{ form.address.errors }}
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <div class="col-sm-offset-3 col-sm-9">
-                                            <button type="submit" class="btn btn-pink">Create</button>
-                                        </div>
-                                    </div>
-                                </form>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
                             </div>
-                        </div>
                     </div>
                 </div>
             </div>
