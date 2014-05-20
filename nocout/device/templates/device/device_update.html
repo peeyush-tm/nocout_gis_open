@@ -1,8 +1,120 @@
 {% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+{% block breadcrumb_page_title %} > Device {% endblock %}
+{% block content_title %}Device Management{% endblock %}
+{% block content_description %}Create a device ....{% endblock %}
 {% block content %}
-    <p><strong>Update Device</strong></p>
-    <form action="" method="post">{% csrf_token %}
-        {{ form.as_p }}
-        <input type="submit" value="Update"/>
-    </form>
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i>Device : {{ object.device_name }}</h4>
+                        </div>
+                        <div class="box-body">
+                            <br/>
+                            <form action="" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                                <div class="col-md-12">
+                                    <div class="col-md-5">
+                                        {% for field in form %}
+                                            {% if field.field.widget.attrs.class == 'form-control' %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}"
+                                                           class="col-sm-5 control-label">{{ field.label }}</label>
+                                                    <div class="col-sm-7">
+                                                        {{ field }} {{ field.errors }}
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-5 col-sm-7">
+                                            <button type="submit" class="btn btn-success"><i class="fa fa-refresh"></i> Update</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <span id="extra_fields">
+                                            {% for field in form %}
+                                                {% if field.field.widget.attrs.class == 'extra form-control' %}
+                                                    <div class="form-group">
+                                                        <label for="{{ field.id_for_label }}"
+                                                               class="col-sm-5 control-label">{{ field.label }}</label>
+                                                        <div class="col-sm-7">
+                                                            {{ field }} {{ field.errors }}
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </span>
+                                    </div>
+                                    <div class="clearfix"></div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+    {% endblock %}
+    <script>
+        $(document).ready(function () {
+            // update 'device parent' select options
+            if ($('#id_parent').val()) {
+                // called if 'device parent' is already selected i.e. after validation if form is invalid
+                Dajaxice.device.device_parent_choices_selected(Dajax.process, {'option': $('#id_parent').val()});
+            }
+            else {
+                // called if 'device parent' form is loaded first time i.e. before form submission
+                Dajaxice.device.device_parent_choices_initial(Dajax.process);
+            }
+
+            // generate device extra fields form in 2 case:
+            // 1. When update form is loaded first time
+            // 2. When device type choice is modified and again changed to previous one, so to pop up previous
+            //    field values form database
+            if ($("#extra_fields div").length == 0){
+                if ($('#id_device_type').val()){
+                    Dajaxice.device.device_extra_fields_update(Dajax.process, {'device_type': $('#id_device_type').val(), 'device_name': $('#id_device_name').val()});
+                }
+            }
+
+        });
+
+        // update 'device vendor' on selecting 'device technology'
+        $("#id_device_technology").change(function () {
+            Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
+        });
+
+        // update 'device model' on selecting 'device vendor'
+        $("#id_device_vendor").change(function () {
+            Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});
+        }).click(function () {
+            if ($("#id_device_vendor").length == 1) {
+                Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});
+            }
+        });
+
+        // update 'device type' on selecting 'device model'
+        $("#id_device_model").change(function () {
+            Dajaxice.device.update_type(Dajax.process, {'option': $('#id_device_model').val()});
+        }).click(function () {
+            if ($("#id_device_model").length == 1) {
+                Dajaxice.device.update_type(Dajax.process, {'option': $('#id_device_model').val()});
+            }
+        });
+
+        // show device 'extra fields' on selecting 'device type'
+        $("#id_device_type").change(function () {
+            Dajaxice.device.device_extra_fields_update(Dajax.process, {'device_type': $('#id_device_type').val(), 'device_name': $('#id_device_name').val()});
+        }).click(function () {
+            if ($("#id_device_type").length == 1) {
+                Dajaxice.device.device_extra_fields_update(Dajax.process, {'device_type': $('#id_device_type').val(), 'device_name': $('#id_device_name').val()});
+            }
+        });
+    </script>
 {% endblock %}
