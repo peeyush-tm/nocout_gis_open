@@ -1,0 +1,14 @@
+{% load i18n %}
+
+<div class="bootbox fade in">
+	<div id="session_security_warning" class="session_security" style="display:none">
+	    <div class="session_security_overlay"></div>
+	    <div class="session_security_modal" style="width:40%;left:30%;border:5px solid #CCC;">
+	        <h3>{% trans 'Your session is about to expire' %}</h3>
+	        <p>{% trans 'Click to extend your session.' %}</p>
+	    	<button class="btn btn-success" id="sessionContinue">Continue</button>
+	    	<button class="btn btn-danger" id="sessionLogout">Logout</button>
+	    </div>
+	</div>
+</div>
+
