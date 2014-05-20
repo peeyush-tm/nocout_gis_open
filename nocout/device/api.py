@@ -117,7 +117,7 @@ class DeviceStats(View):
             },
             "children": []
         }
-        page_number = kwargs.get('page_number') if kwargs.get('page_number') else 0
+        page_number = kwargs.get('page_number') if kwargs.get('page_number') else 1
         limit = kwargs.get('limit') if kwargs.get('limit') else 4
         device_info_list = []
         device_object_list = []
