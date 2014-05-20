@@ -1,13 +1,14 @@
+from django.db.models import Q
 from django.views.generic import ListView, DetailView
-from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
 from nocout.utils.jquery_datatable_generation import Datatable_Generation
-from nocout.utils.util import date_handler
 from user_profile.models import UserProfile, Department, Roles
 from forms import UserForm
 from django.http.response import HttpResponseRedirect
 from django.contrib.auth.hashers import make_password
 from collections import OrderedDict
+from django_datatables_view.base_datatable_view import BaseDatatableView
 import json
 
 
@@ -15,23 +16,12 @@ class UserList(ListView):
     model = UserProfile
     template_name = 'user_profile/users_list.html'
 
-    def get_queryset(self):
-        queryset = self.model._default_manager.values('username','first_name','last_name','email','role',
-                   'user_group__name','parent__first_name','parent__last_name','phone_number','last_login')
-        return queryset[:10]
 
     def get_context_data(self, **kwargs):
-
         context=super(UserList, self).get_context_data(**kwargs)
-        object_list = context['object_list']
-        sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
-          OrderedDict({'dict_final_key':'manager_name', 'dict_key1':'parent__first_name', 'dict_key2':'parent__last_name'})]
-
-        object_list, object_list_headers = Datatable_Generation( object_list, sanity_dicts_list ).main()
-        context['object_list'] = json.dumps( object_list, default=date_handler )
-        context.update({
-            'object_list_headers' : json.dumps(object_list_headers, default=date_handler )
-        })
+        datatable_headers=('username', 'full_name', 'email', 'role__role_name', 'user_group__name', 'manager_name',
+                       'phone_number', 'last_login')
+        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title()) for key in datatable_headers ])
         return context
 
 class UserDetail(DetailView):
@@ -135,3 +125,44 @@ class UserDelete(DeleteView):
     template_name = 'user_profile/user_delete.html'
     success_url = reverse_lazy('user_list')
 
+class UserListingTable(BaseDatatableView):
+    model = UserProfile
+    columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'user_group__name', 'parent__first_name',
+               'parent__last_name', 'phone_number', 'last_login']
+    order_columns = ['username' , 'first_name', 'last_name', 'email', 'role__role_name', 'user_group__name', 'parent__first_name',
+                     'parent__last_name', 'phone_number', 'last_login']
+
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        ##TODO:Need to optimise with the query making login.
+        if sSearch:
+            query=[]
+            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            for column in self.columns[:-1]:
+                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*"+str(self.columns)+")"
+            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
+            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return UserProfile.objects.values(*self.columns)
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+            sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
+            OrderedDict({'dict_final_key':'manager_name', 'dict_key1':'parent__first_name', 'dict_key2':'parent__last_name'})]
+            qs, qs_headers = Datatable_Generation( qs, sanity_dicts_list ).main()
+
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(UserListingTable, self).get_context_data(*args, **kwargs)
+        return context
