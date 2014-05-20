@@ -7,24 +7,46 @@
 {% block content_title %}Service Management{% endblock %}
 {% block content_description %}List of services ....{% endblock %}
 {% block content %}
-    <h2>Service</h2>
-    <hr/>
-    <p><a href="/service/new">Create Service</a></p>
-    <br/>
-    <div id="service">
-        <table>
-            <tr>
-                <td><strong>Service</strong></td>
-                <td><strong>Edit</strong></td>
-                <td><strong>Delete</strong></td>
-            </tr>
-            {% for service in object_list %}
-                <tr>
-                    <td><a href="/service/{{ service.id }}">{{ service.service_name }}</a></td>
-                    <td><a href="/service/edit/{{ service.id }}">Edit</a></td>
-                    <td><a href="/service/delete/{{ service.id }}">Delete</a></td>
-                </tr>
-            {% endfor %}
-        </table>
+    <p><a href="/service/new"><i class="fa fa-plus">&nbsp;</i> Create Service</a></p>
+
+    <div class="box">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>SERVICE</h4>
+            <div class="tools hidden-xs">
+                <a href="#box-config" data-toggle="modal" class="config">
+                    <i class="fa fa-cog"></i>
+                </a>
+                <a href="javascript:;" class="reload">
+                    <i class="fa fa-refresh"></i>
+                </a>
+                <a href="javascript:;" class="collapse">
+                    <i class="fa fa-chevron-up"></i>
+                </a>
+                <a href="javascript:;" class="remove">
+                    <i class="fa fa-times"></i>
+                </a>
+            </div>
+        </div>
+
+        <div id="tableContainer" class="box-body">
+
+            <div id="service">
+                <table>
+                    <tr>
+                        <td><strong>Service</strong></td>
+                        <td><strong>Edit</strong></td>
+                        <td><strong>Delete</strong></td>
+                    </tr>
+                    {% for service in object_list %}
+                        <tr>
+                            <td><a href="/service/{{ service.id }}">{{ service.service_name }}</a></td>
+                            <td><a href="/service/edit/{{ service.id }}">Edit</a></td>
+                            <td><a href="/service/delete/{{ service.id }}">Delete</a></td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
     </div>
+
 {% endblock %}

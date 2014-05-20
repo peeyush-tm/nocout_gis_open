@@ -10,7 +10,7 @@
 {% block content %}
 <div class='box mapContainerBlock'>
     <div class='box-title'>
-        <h4 class="col-md-1"><i class='fa fa-map-marker'></i> GIS</h4>
+        <h4 class="col-md-1"><i class='fa fa-map-marker'></i>GIS <i class="fa fa-spinner fa fa-spin" id="loadingIcon">&nbsp;</i></h4>
         <!--Filters Block Start-->
         <div class="tools col-md-11" style="margin-top:-25px;">
             <!--Reset Button-->
@@ -56,17 +56,19 @@
 <script type="text/javascript">
 
     var networkMapInstance = "",
-        hostIp = "";
+        hostIp = "",
+        username = "";
 
     $(document).ready(function(e) {
 
         hostIp = "{{host_ip}}";
+        username = "{{username}}";
         /*Create a instance of networkMapClass*/
         networkMapInstance = new networkMapClass();
         /*Call the function to create map*/
         networkMapInstance.createMap("deviceMap");
         /*Call the make network to create the BS-SS network on the google map*/
-        makeNetwork();
+        networkMapInstance.getDevicesData(hostIp,username);
     });
     /**
      * This is the recursive function which calls the plotNetwork function of networkMapClass to plot the  the BS,SS network on the google map & it calls recursive after 150 seconds
@@ -74,12 +76,7 @@
      */
     function makeNetwork()
     {
-        networkMapInstance.getDevicesData(hostIp);
-        /*call itself after wvery 10 seconds*/
-        setTimeout(function() {
-            /*Recursive function*/
-            makeNetwork();
-        },150000);
+        
     }
 
     /*This event trigger when state dropdown value is changes*/

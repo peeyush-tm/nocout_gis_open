@@ -37,3 +37,15 @@
     padding: 8px;
     line-height: 16px;
 }
+
+/* forms style */
+
+.errorlist {
+    padding: 0px;
+    margin-top: 5px;
+    list-style: none;
+}
+
+.errorlist li {
+    color: #b94a48;
+}

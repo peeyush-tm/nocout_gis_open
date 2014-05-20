@@ -5,7 +5,23 @@ var mapInstance = "",
 	oms = "",
 	pathConnector = "",
 	infowindow = "",
-	devicesObject = {};
+	devicesObject = {},
+	metaData = {},
+	hitCounter = 1,
+	showLimit = 0,
+	devicesCount = 0,
+	remainingDevices = 0,
+	cityArray = [],
+	stateArray = [],
+	vendorArray = [],
+	techArray = [],
+	devices = [],
+	masterMarkersObj = [],
+	slaveMarkersObj = [],
+	pathLineArray = []
+	counter = 0,
+	totalCalls = 1;
+
 /**
  * This class is used to plot the BS & SS on the google maps & show information on click
  * @class networkMap
@@ -17,6 +33,7 @@ function networkMapClass()
 {
 	/*Store the reference of current pointer in a global variable*/
 	that = this;
+
 	/**
 	 * This function creates the base google map with the lat long of India
 	 * @function createMap
@@ -30,7 +47,7 @@ function networkMapClass()
 
 		var mapObject = {
 			center    : new google.maps.LatLng(21.0000,78.0000),
-			zoom      : 5
+			zoom      : 1
 		};    
 		/*Create Map Type Object*/
 		mapInstance = new google.maps.Map(document.getElementById(domElement),mapObject);
@@ -64,97 +81,173 @@ function networkMapClass()
 	 * @function getDevicesData
 	 * @class networkMap
 	 */
-	this.getDevicesData = function(hostIp)
+	this.getDevicesData = function(hostIp,username)
 	{
-		/*Clear the marker array of OverlappingMarkerSpiderfier*/
-		oms.clearMarkers();
-
-		$.ajax({
-			//crossDomain: true,
-			url : "http://"+hostIp+":8000/device/stats/?username=pardeep",
-			type : "GET",
-			dataType: "json",			
-			/*If data fetched successful*/
-			success : function(result)
-			{				
-				/*Save the result json to the global variable for global access*/
-				console.log(result);
-				devicesObject = result;
-
-				if(devicesObject.success == 1)
+		if(counter < totalCalls)
+		{
+			/*To Enable The Cross Domain Request*/
+			$.support.cors = true;
+			/*Ajax call to the API*/
+			$.ajax({
+				crossDomain: true,
+				url : "http://"+hostIp+":8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
+				// url : "http://192.168.0.109:8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
+				type : "GET",
+				dataType : "json",
+				/*If data fetched successful*/
+				success : function(result)
 				{
-					var cityArray = [],
-						stateArray = [],
-						vendorArray = [],
-						techArray = [];
-
-					/*Call the populateNetwork to show the markers on the map*/
-					that.populateNetwork(devicesObject.data.objects.children);
-
-					/*Make an array of master & slave cities as well as states*/
-					for(var i=0;i<devicesObject.data.objects.children.length;i++)
+					if(result.data.objects != null)
 					{
-						/*Total number of slave for particular master*/
-						var slaveCount = devicesObject.data.objects.children[i].children.length;
+						/*Show The loading Icon*/
+						$("#loadingIcon").show();
 
-						/*Loop for the slaves*/
-						for(var j=0;j<slaveCount;j++)
+						hitCounter = hitCounter + 1;
+						/*First call case*/
+						if(devicesObject.data == undefined)
 						{
-							/*Push master city in cityArray array*/
-							if(cityArray.indexOf($.trim(devicesObject.data.objects.children[i].data.city)) == -1)
-							{
-								cityArray.push($.trim(devicesObject.data.objects.children[i].data.city));
-							}
-							/*Push slave city in cityArray array*/
-							if(cityArray.indexOf($.trim(devicesObject.data.objects.children[i].children[j].data.city)) == -1)
-							{
-								cityArray.push($.trim(devicesObject.data.objects.children[i].children[j].data.city));
-							}
-
-							/*Push master states in stateArray array*/
-							if(stateArray.indexOf($.trim(devicesObject.data.objects.children[i].data.state)) == -1)
-							{
-								stateArray.push($.trim(devicesObject.data.objects.children[i].data.state));
-							}
-							/*Push slave states in stateArray array*/
-							if(stateArray.indexOf($.trim(devicesObject.data.objects.children[i].children[j].data.state)) == -1)
-							{
-								stateArray.push($.trim(devicesObject.data.objects.children[i].children[j].data.state));
-							}
-
-							/*Push master vendors in masterVendorArray array*/
-							if(vendorArray.indexOf($.trim(devicesObject.data.objects.children[i].data.vendor)) == -1)
-							{
-								vendorArray.push($.trim(devicesObject.data.objects.children[i].data.vendor));
-							}
-							/*Push slave vendors in slaveVendorArray array*/
-							if(vendorArray.indexOf($.trim(devicesObject.data.objects.children[i].children[j].data.vendor)) == -1)
-							{
-								vendorArray.push($.trim(devicesObject.data.objects.children[i].children[j].data.vendor));
-							}
-
-							/*Push master technology in techArray array*/
-							if(techArray.indexOf($.trim(devicesObject.data.objects.children[i].data.technology)) == -1)
-							{
-								techArray.push($.trim(devicesObject.data.objects.children[i].data.technology));
-							}
-							/*Push slave technology in techArray array*/
-							if(techArray.indexOf($.trim(devicesObject.data.objects.children[i].children[j].data.technology)) == -1)
-							{
-								techArray.push($.trim(devicesObject.data.objects.children[i].children[j].data.technology));
-							}
+							/*Save the result json to the global variable for global access*/
+							devicesObject = result;
+							/**/
+							devices = devicesObject.data.objects.children;
 						}
+						else
+						{
+							devices = devices.concat(result.data.objects.children);
+						}
+
+
+						/*Update the device count with the received data*/
+						devicesCount = devicesObject.data.meta.total_count;
+
+						/*Update the device count with the received data*/
+						showLimit = devicesObject.data.meta.limit;
+
+						if(remainingDevices == 0)
+						{
+							showLimit = devicesObject.data.meta.limit;
+							remainingDevices = devicesCount - devicesObject.data.meta.limit;
+						}
+						else
+						{
+							remainingDevices = remainingDevices - devicesObject.data.meta.limit;
+						}
+						
+						if(devicesObject.success == 1)
+						{
+							/*Call the populateNetwork to show the markers on the map*/
+							that.populateNetwork(devices);
+
+							/*Make an array of master & slave cities as well as states*/
+							for(var i=0;i<devices.length;i++)
+							{
+								/*Total number of slave for particular master*/
+								var slaveCount = devices[i].children.length;
+
+								/*Loop for the slaves*/
+								for(var j=0;j<slaveCount;j++)
+								{
+									/*Push master city in cityArray array*/
+									if(cityArray.indexOf($.trim(devices[i].data.city)) == -1)
+									{
+										cityArray.push($.trim(devices[i].data.city));
+									}
+									/*Push slave city in cityArray array*/
+									if(cityArray.indexOf($.trim(devices[i].children[j].data.city)) == -1)
+									{
+										cityArray.push($.trim(devices[i].children[j].data.city));
+									}
+
+									/*Push master states in stateArray array*/
+									if(stateArray.indexOf($.trim(devices[i].data.state)) == -1)
+									{
+										stateArray.push($.trim(devices[i].data.state));
+									}
+									/*Push slave states in stateArray array*/
+									if(stateArray.indexOf($.trim(devices[i].children[j].data.state)) == -1)
+									{
+										stateArray.push($.trim(devices[i].children[j].data.state));
+									}
+
+									/*Push master vendors in masterVendorArray array*/
+									if(vendorArray.indexOf($.trim(devices[i].data.vendor)) == -1)
+									{
+										vendorArray.push($.trim(devices[i].data.vendor));
+									}
+									/*Push slave vendors in slaveVendorArray array*/
+									if(vendorArray.indexOf($.trim(devices[i].children[j].data.vendor)) == -1)
+									{
+										vendorArray.push($.trim(devices[i].children[j].data.vendor));
+									}
+
+									/*Push master technology in techArray array*/
+									if(techArray.indexOf($.trim(devices[i].data.technology)) == -1)
+									{
+										techArray.push($.trim(devices[i].data.technology));
+									}
+									/*Push slave technology in techArray array*/
+									if(techArray.indexOf($.trim(devices[i].children[j].data.technology)) == -1)
+									{
+										techArray.push($.trim(devices[i].children[j].data.technology));
+									}
+								}
+							}
+							/*Populate the city & state dropdown filters*/
+							that.populateFilters(cityArray,stateArray,vendorArray,techArray);
+						}
+						/*Calculate the total number of pages from limit & total count*/
+						totalCalls = Math.ceil(result.data.meta.total_count/result.data.meta.limit);
+						/*Call the function after 3 sec.*/
+						setTimeout(function(){
+								
+							that.getDevicesData(hostIp,username);
+						},3000);
 					}
-					/*Populate the city & state dropdown filters*/
-					that.populateFilters(cityArray,stateArray,vendorArray,techArray);
+					else
+					{
+				
+					}
+				},
+				/*If data not fetched*/
+				error : function(err)
+				{
+					console.log(err.success());
 				}
-			},
-			/*If data not fetched*/
-			error : function(err)
-			{
-				console.log(err.statusText);
-			}
-		});
+			});
+		}
+		else
+		{
+			/*Hide The loading Icon*/
+			$("#loadingIcon").hide();
+
+			setTimeout(function() {
+				/*Reset The Filters*/
+				$("#technology").html("<option value=''>Select Technology</option>");
+				$("#vendor").html("<option value=''>Select Vendor</option>");
+				$("#state").html("<option value=''>Select State</option>");
+				$("#city").html("<option value=''>Select City</option>");
+				/*Reset All The Variables*/				
+				hitCounter = 1;
+				showLimit = 0;
+				remainingDevices = 0;
+				counter = 0;
+				totalCalls = 1;
+				devicesObject = {};
+				devices = [];
+				cityArray = [];
+				stateArray = [];
+				vendorArray = [];
+				techArray = [];
+				
+				/*Reselt markers, polyline & filters*/
+				that.resetAllElements();
+				/*Recall the API*/
+				that.getDevicesData(hostIp,username);
+
+			},120000);
+		}
+
+		counter = counter + 1;
 	};
 
 	/**
@@ -165,12 +258,6 @@ function networkMapClass()
 	 */
 	this.populateNetwork = function(resultantMarkers)
 	{
-
-		/*Clear the marker array of OverlappingMarkerSpiderfier*/
-		oms.clearMarkers();
-
-		that.createMap(currentDomElement);
-
 		for(var i=0;i<resultantMarkers.length;i++)
 		{
 			/*Create Master Marker Object*/
@@ -196,6 +283,8 @@ function networkMapClass()
 			};
 			/*Create Master Marker*/
 		    var masterMarker = new google.maps.Marker(masterMarkerObject);
+		    /*Add the master marker to the global master markers array*/
+		    masterMarkersObj.push(masterMarker);
 		    /*Loop for the number of slave & their links with the master*/
 		    var slaveCount = resultantMarkers[i].children.length;
 
@@ -224,7 +313,8 @@ function networkMapClass()
 				};
 				/*Create Slave Marker*/
 			    var slaveMarker = new google.maps.Marker(slaveMarkerObject);				    				    
-
+			    /*Add the slave marker to the global slave array*/
+		    	slaveMarkersObj.push(slaveMarker);
 			    /*Add BS & SS markers to the OverlappingMarkerSpiderfier*/
 			    oms.addMarker(masterMarker);
 				oms.addMarker(slaveMarker);
@@ -242,7 +332,7 @@ function networkMapClass()
 						path 				: pathDataObject,						
 						strokeColor			: resultantMarkers[i].children[j].data.linkColor,
 						strokeOpacity		: 1.0,
-						strokeWeight		: 4,
+						strokeWeight		: 2,
 						pointType 			: "path",
 						/*Master Information*/
 						masterLat 			: resultantMarkers[i].data.lat,
@@ -280,7 +370,9 @@ function networkMapClass()
 				    	geodesic			: true
 					});
 					/*Plot the link line between master & slave*/
-					pathConnector.setMap(mapInstance);					
+					pathConnector.setMap(mapInstance);
+
+					pathLineArray.push(pathConnector);
 
 					/*Bind Click Event on Link Path Between Master & Slave*/
 					google.maps.event.addListener(pathConnector, 'click', function(e) {
@@ -405,41 +497,43 @@ function networkMapClass()
 	 * @params technologyArray [String Array] Contains the available technology list
 	 */
 	this.populateFilters = function(cityArray,stateArray,vendorArray,technologyArray) {
-	 	
-	 	var stateOptions = "<option value=''>Select State</option>",
+		
+		var stateOptions = "<option value=''>Select State</option>",
 	 		cityOptions = "<option value=''>Select City</option>",
 	 		vendorOptions = "<option value=''>Select Vendor</option>",
 	 		technologyOptions = "<option value=''>Select Technology</option>";
+
 
  		/*Loop for the state array*/
 	 	for(var i=0;i<stateArray.length;i++)
 	 	{
 	 		stateOptions += '<option value="'+stateArray[i]+'">'+stateArray[i]+'</option>';
 	 	}
-	 	/*Append the option string to the state dropdown*/
-	 	$("#state").html(stateOptions);
 
 	 	/*Loop for the city array*/
 	 	for(var j=0;j<cityArray.length;j++)
 	 	{
 	 		cityOptions += '<option value="'+cityArray[j]+'">'+cityArray[j]+'</option>';
 	 	}
-	 	/*Append the option string to the city dropdown*/
-	 	$("#city").html(cityOptions);
 
 	 	/*Loop for the vendor array*/
 	 	for(var k=0;k<vendorArray.length;k++)
 	 	{
 	 		vendorOptions += '<option value="'+vendorArray[k]+'">'+vendorArray[k]+'</option>';
-	 	}
-	 	/*Append the option string to the vendor dropdown*/
-	 	$("#vendor").html(vendorOptions);
+	 	}	 	
 
 	 	/*Loop for the technology array*/
 	 	for(var l=0;l<technologyArray.length;l++)
 	 	{
 	 		technologyOptions += '<option value="'+technologyArray[l]+'">'+technologyArray[l]+'</option>';
 	 	}
+
+	 	/*Append the option string to the state dropdown*/
+	 	$("#state").html(stateOptions);
+	 	/*Append the option string to the city dropdown*/
+	 	$("#city").html(cityOptions);
+	 	/*Append the option string to the vendor dropdown*/
+	 	$("#vendor").html(vendorOptions);
 	 	/*Append the option string to the technology dropdown*/
 	 	$("#technology").html(technologyOptions);
 	};
@@ -457,29 +551,25 @@ function networkMapClass()
 			masterIds = [],
 			slaveIds = [];
 
-
-		/*Clear the marker array of OverlappingMarkerSpiderfier*/
-		oms.clearMarkers();
-
 		/*Fetch the keys from the filter array*/
 		$.each(filtersArray, function(key, value) {
 
 		    filterKey.push(key);
 		});
-
-	 	if(devicesObject.success == 1)
+		
+	 	if(devices.length > 0)
 	 	{
 	 		filteredData = [];
-	 		for(var i=0;i<devicesObject.data.objects.children.length;i++)
+	 		for(var i=0;i<devices.length;i++)
 	 		{
 	 			/*Total Slaves Count*/
-	 			var slaveLength = devicesObject.data.objects.children[i].children.length;
+	 			var slaveLength = devices[i].children.length;
 	 			/*Loop For Slaves*/
 	 			for(var j=0;j<slaveLength;j++)
 	 			{
-	 				var master = devicesObject.data.objects.children[i];
-		 			var slave = devicesObject.data.objects.children[i].children[j];
-		 			
+	 				var master = devices[i];
+		 			var slave = devices[i].children[j];
+		 				
 		 			/*Conditions as per the number of filters*/
 		 			if(filterKey.length == 1)
 		 			{
@@ -492,7 +582,7 @@ function networkMapClass()
 		 						masterIds.push(master.id);
 		 						slaveIds.push(slave.id);
 
-		 						filteredData.push(devicesObject.data.objects.children[i]);
+		 						filteredData.push(devices[i]);
 		 					}
 		 				}
 
@@ -508,7 +598,7 @@ function networkMapClass()
 		 						masterIds.push(master.id);
 		 						slaveIds.push(slave.id);
 
-		 						filteredData.push(devicesObject.data.objects.children[i]);
+		 						filteredData.push(devices[i]);
 		 					}
 		 				}
 		 			}
@@ -523,7 +613,7 @@ function networkMapClass()
 		 						masterIds.push(master.id);
 		 						slaveIds.push(slave.id);
 
-		 						filteredData.push(devicesObject.data.objects.children[i]);
+		 						filteredData.push(devices[i]);
 		 					}
 		 				}
 		 			}
@@ -538,7 +628,7 @@ function networkMapClass()
 		 						masterIds.push(master.id);
 		 						slaveIds.push(slave.id);
 
-		 						filteredData.push(devicesObject.data.objects.children[i]);
+		 						filteredData.push(devices[i]);
 		 					}
 		 				}
 		 			}
@@ -548,10 +638,17 @@ function networkMapClass()
 	 		{
 	 			alert("User Don't Have Any Devies For Selected Filters");
 	 		}
-	 		
-	 		/*Clear the marker array of OverlappingMarkerSpiderfier*/
-			oms.clearMarkers();
+	 		else
+	 		{
+				/*Reset the markers, polyline & filters*/
+	 			that.resetAllElements();
 
+	 			/*Clear the marker array of OverlappingMarkerSpiderfier*/
+				oms.clearMarkers();
+				masterMarkersObj = [];
+				slaveMarkersObj = [];
+	 		}
+	 	
 	 		/*Populate the map with the filtered markers*/
 	 		that.populateNetwork(filteredData);
 	 	}	
@@ -564,6 +661,39 @@ function networkMapClass()
 	 */
 	this.loadExistingDevices = function()
 	{
-		that.populateNetwork(devicesObject.data.objects.children);
+		that.populateNetwork(devices);
 	};
+
+	/**
+	 * This function removes all the devices from the map
+	 * @class devicePlottingLib
+	 * @method resetAllElements
+	 */
+	this.resetAllElements = function()
+	{
+		if(masterMarkersObj.length > 0)
+		{
+			/*Remove All Master Markers*/
+			for(var i=0;i<masterMarkersObj.length;i++)
+			{
+				masterMarkersObj[i].setMap(null);
+			}
+		}
+		if(slaveMarkersObj.length > 0)
+		{
+			/*Remove All Slave Markers*/
+			for(var j=0;j<slaveMarkersObj.length;j++)
+			{
+				slaveMarkersObj[j].setMap(null);
+			}
+		}
+		if(pathLineArray.length > 0)
+		{
+			/*Remove all link line between devices*/
+			for(var j=0;j<pathLineArray.length;j++)
+			{
+				pathLineArray[j].setMap(null);
+			}
+		}
+	}
 }

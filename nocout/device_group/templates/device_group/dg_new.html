@@ -1,47 +1,50 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block css %}
-    <link rel="stylesheet" type="text/css" href={% static "css/device_group.css" %}>
-{% endblock %}
 {% block breadcrumb_page_title %} > Device Group {% endblock %}
 {% block content_title %}Device Groups Management{% endblock %}
 {% block content_description %}Create a device group ....{% endblock %}
 {% block content %}
-    <h3>Create Device Group</h3>
-    <form action="/dg/new/" method="post">{% csrf_token %}
-        <div id="new_device_group">
-            <table>
-                <tr>
-                    <td>
-                        {{ form.errors }}
-                        {{ form.non_field_errors }}
-                    </td>
-                </tr>
-                <tr>
-                    <th><label for="id_name"> Group Name:</label></th>
-                    <td>{{ form.name }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_alias">Group Alias:</label></th>
-                    <td>{{ form.alias }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_parent">Parent:</label></th>
-                    <td>{{ form.parent }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_location">Location:</label></th>
-                    <td>{{ form.location }}</td>
-                </tr>
-                <tr>
-                    <th><label for="id_address">Address:</label></th>
-                    <td>{{ form.address }}</td>
-                </tr>
-                <tr>
-                    <th></th>
-                    <td><input type="submit" value="Create"/></td>
-                </tr>
-            </table>
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i>Device Group</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-5"><br />
+                                    <form action="/device_group/new/" method="post" class="form-horizontal"
+                                          role="form">{% csrf_token %}
+                                        <div class="form-group">
+                                            {% for field in form %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}"
+                                                           class="col-sm-5 control-label">{{ field.label }}</label>
+                                                    <div class="col-sm-7">
+                                                        {{ field }} {{ field.errors }}
+                                                    </div>
+                                                </div>
+                                        {% endfor %}
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-5 col-sm-7">
+                                            <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i> Create</button>
+                                            &nbsp;
+                                            <button type="reset" class="btn btn-danger" onclick="resetForm();"><i class="fa fa-refresh"></i> Reset
+                                            </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </form>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+    {% endblock %}
 {% endblock %}

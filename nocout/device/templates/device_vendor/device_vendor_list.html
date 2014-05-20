@@ -7,24 +7,44 @@
 {% block content_title %}Device Vendors Management{% endblock %}
 {% block content_description %}List of device vendors ....{% endblock %}
 {% block content %}
-    <h2>Device Vendor</h2>
-    <hr/>
-    <p><a href="/vendor/new">Create Device Vendor</a></p>
-    <br/>
-    <div id="device">
-        <table>
-            <tr>
-                <td><strong>Vendor</strong></td>
-                <td><strong>Edit</strong></td>
-                <td><strong>Delete</strong></td>
-            </tr>
-            {% for vendor in object_list %}
-                <tr>
-                    <td><a href="/vendor/{{ vendor.id }}">{{ vendor.name }}</a></td>
-                    <td><a href="/vendor/edit/{{ vendor.id }}">Edit</a></td>
-                    <td><a href="/vendor/delete/{{ vendor.id }}">Delete</a></td>
-                </tr>
-            {% endfor %}
-        </table>
+    <p><a href="/vendor/new"><i class="fa fa-plus">&nbsp;</i> Create Device Vendor</a></p>
+    <div class="box">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>DEVICE VENDOR</h4>
+            <div class="tools hidden-xs">
+                <a href="#box-config" data-toggle="modal" class="config">
+                    <i class="fa fa-cog"></i>
+                </a>
+                <a href="javascript:;" class="reload">
+                    <i class="fa fa-refresh"></i>
+                </a>
+                <a href="javascript:;" class="collapse">
+                    <i class="fa fa-chevron-up"></i>
+                </a>
+                <a href="javascript:;" class="remove">
+                    <i class="fa fa-times"></i>
+                </a>
+            </div>
+        </div>
+
+        <div id="tableContainer" class="box-body">
+            
+            <div id="device">
+                <table>
+                    <tr>
+                        <td><strong>Vendor</strong></td>
+                        <td><strong>Edit</strong></td>
+                        <td><strong>Delete</strong></td>
+                    </tr>
+                    {% for vendor in object_list %}
+                        <tr>
+                            <td><a href="/vendor/{{ vendor.id }}">{{ vendor.name }}</a></td>
+                            <td><a href="/vendor/edit/{{ vendor.id }}">Edit</a></td>
+                            <td><a href="/vendor/delete/{{ vendor.id }}">Delete</a></td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
     </div>
 {% endblock %}

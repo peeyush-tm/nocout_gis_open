@@ -44,6 +44,11 @@ class DeviceForm(forms.ModelForm):
                     self.fields[extra_field.field_name].widget.attrs['class'] = 'extra'
         except:
             pass
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' form-control'
+            else:
+                field.widget.attrs.update({'class':'form-control'})
 
     class Meta:
         model = Device
@@ -56,12 +61,26 @@ class DeviceForm(forms.ModelForm):
 
 
 class DeviceTypeFieldsForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(DeviceTypeFieldsForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' form-control'
+            else:
+                field.widget.attrs.update({'class':'form-control'})
     class Meta:
         model = DeviceTypeFields
         fields = ('field_name', 'field_display_name', 'device_type')
 
 
 class DeviceTypeFieldsUpdateForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(DeviceTypeFieldsUpdateForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' form-control'
+            else:
+                field.widget.attrs.update({'class':'form-control'})
     class Meta:
         model = DeviceTypeFields
         fields = ('field_name', 'field_display_name')
@@ -71,6 +90,13 @@ class DeviceTypeFieldsUpdateForm(forms.ModelForm):
 
 
 class DeviceTechnologyForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(DeviceTechnologyForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' form-control'
+            else:
+                field.widget.attrs.update({'class':'form-control'})
     class Meta:
         model = DeviceTechnology
         fields = ('name', 'alias', 'device_vendors')
@@ -80,6 +106,14 @@ class DeviceTechnologyForm(forms.ModelForm):
 
 
 class DeviceVendorForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(DeviceVendorForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' form-control'
+            else:
+                field.widget.attrs.update({'class':'form-control'})
+
     class Meta:
         model = DeviceVendor
         fields = ('name', 'alias', 'device_models')
@@ -89,6 +123,13 @@ class DeviceVendorForm(forms.ModelForm):
 
 
 class DeviceModelForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(DeviceModelForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' form-control'
+            else:
+                field.widget.attrs.update({'class':'form-control'})
     class Meta:
         model = DeviceModel
         fields = ('name', 'alias', 'device_types')
@@ -98,6 +139,13 @@ class DeviceModelForm(forms.ModelForm):
 
 
 class DeviceTypeForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(DeviceTypeForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' form-control'
+            else:
+                field.widget.attrs.update({'class':'form-control'})
     class Meta:
         model = DeviceType
         fields = ('name', 'alias')

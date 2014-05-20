@@ -18,7 +18,7 @@ class DeviceStatsApi(View):
     
     def get(self, request):
         """
-        Handling http GET method for device data
+        Handling http POST method for device data
 
         Args:
             request (WSGIRequest): The request object.
@@ -27,22 +27,16 @@ class DeviceStatsApi(View):
             {
                 'success': 1,
                 'message': 'Device Data',
-                'object': device stats `dict` object
+                'data': {
+                    'meta': {
+                        'total_count': <total_count>,
+                        'limit': <limit>
+                    }
+                    'objects': <device_objects>
             }
 
         """
 
-        req_params = request.GET
-        if 'username' in req_params:
-            #Get username from query string, if passed
-            username = req_params.get('username')
-        else:
-            #Retreive username from active session
-            username = request.user.username
-        #Get the host machine IP address
-        host_ip = request.get_host().split(':')[0]
-        #Show link between master-slave device pairs
-        show_link = 1
         #Result dict prototype
         self.result = {
             "success": 0,
@@ -52,12 +46,31 @@ class DeviceStatsApi(View):
                 "objects": None
             }
         }
+        req_params = request.GET
+        
+        if 'username' in req_params:
+            #Get username from query string, if passed
+            username = req_params.get('username')
+        else:
+            #Retreive username from active session
+            username = request.user.username
+        page_number = req_params.get('page_number')
+        limit = req_params.get('limit')
+        
+        #Get the host machine IP address
+        host_ip = request.get_host().split(':')[0]
+        
+        #Show link between master-slave device pairs
+        show_link = 1
+        
         cls = DeviceStats()
         device_stats_dict = DeviceStats.p2p_device_info(
             cls,
             username,
-            host_ip,
-            show_link
+            host_ip=host_ip,
+            show_link=show_link,
+            page_number=page_number,
+            limit=limit
         )
 
         if len(device_stats_dict.get('children')):
@@ -65,12 +78,11 @@ class DeviceStatsApi(View):
                 "success": 1,
                 "message": "Device Data",
                 "data": {
-                    "meta": None,
+                    "meta": device_stats_dict.pop('meta'),
                     "objects": device_stats_dict
                 }
             })
-            return HttpResponse(json.dumps(self.result),
-                    mimetype="application/json")
+            return HttpResponse(json.dumps(self.result))
         else:
             return HttpResponse(json.dumps(self.result))
 
@@ -80,7 +92,7 @@ class DeviceStats(View):
     Base class for Device stats methods
     """
 
-    def p2p_device_info(self, user, host_ip, show_link):
+    def p2p_device_info(self, user, **kwargs):
         """
         Serves device stats data for devices associated
         with a particular user
@@ -105,6 +117,8 @@ class DeviceStats(View):
             },
             "children": []
         }
+        page_number = kwargs.get('page_number') if kwargs.get('page_number') else 0
+        limit = kwargs.get('limit') if kwargs.get('limit') else 4
         device_info_list = []
         device_object_list = []
         try:
@@ -121,12 +135,16 @@ class DeviceStats(View):
                 device_group_id=self.
                 dev_gp_id
             ).values()
+            total_count = len(inventory_list)
         except Exception, error:
             print "No Data for this user"
             return device_stats_dict
 
-        meta_info={"page_number": 4, "limit": 2}
-        inventory_list = self.slice_object_list(inventory_list, meta_info)
+        inventory_list = self.slice_object_list(
+            inventory_list,
+            page_number=page_number,
+            limit=limit
+        )
 
         for dev in inventory_list:
             device_info = {}
@@ -135,18 +153,15 @@ class DeviceStats(View):
                     device_object = Device.objects.get(
                         id=dev.get('device_id')
                     )
-                    print "--Device Object--"
-                    print device_object
                     device_object_list.append(device_object)
                 if not [d.id for d in device_object_list if d.id == device_object.parent_id]:
                     master_device_object = Device.objects.get(
                         id=device_object.parent_id
                     )
-                    print "--Master Device Object--"
-                    print master_device_object
                     device_object_list.append(master_device_object)
-            except ObjectDoesNotExist:
+            except ObjectDoesNotExist as e:
                 print "No Device found"
+                print e
                 continue
 
         for obj in device_object_list:
@@ -197,7 +212,7 @@ class DeviceStats(View):
                     "lat": obj.latitude,
                     "lon": obj.longitude,
                     "markerUrl": "http://%s:8000/static/img/marker/marker3.png"
-                    % host_ip, "perf": "75%",
+                    % kwargs.get('host_ip'), "perf": "75%",
                     "ip": obj.ip_address,
                     "otherDetail": "No Detail",
                     "city": obj.city,
@@ -207,9 +222,6 @@ class DeviceStats(View):
             except AttributeError, error:
                 print "Device Info key error"
                 print error
-
-        print "-- Complete Device Info List --"
-        print device_info_list
         
 
         #Master-slave pairs based on `parent_id` and `device_id`
@@ -217,7 +229,7 @@ class DeviceStats(View):
             master = copy.deepcopy(outer)
             master.update(
                 {
-                "showLink": show_link,
+                "showLink": kwargs.get('show_link'),
                 "children": []
                 }
             )
@@ -250,16 +262,25 @@ class DeviceStats(View):
                     slave.pop('parent_id', None)
                     master.get('children').append(slave)
                     device_stats_dict.get('children').append(master)
-
+        device_stats_dict.update({
+            "meta": {
+                "total_count": total_count,
+                "limit": limit
+            }
+        })
         return device_stats_dict
 
 
-    def slice_object_list(self, inventory_list, meta_info):
-        print meta_info
-        start = int(meta_info.get('limit')) * \
-            int(meta_info.get('page_number', 0)-1)
-        end = int(meta_info.get('limit')) * \
-            int(meta_info.get('page_number', 0))
-        print start, end
+    def slice_object_list(self, inventory_list, **kwargs):
+        if int(kwargs.get('limit')) is not 0:
+            limit = int(kwargs.get('limit'))
+        else:
+            limit = 4
+        if int(kwargs.get('page_number')) is not 0:
+            page_number = int(kwargs.get('page_number'))
+        else:
+            page_number = 1
+        start = limit * (page_number-1)
+        end = limit * (page_number)
         inventory_list = inventory_list[start:end]
         return inventory_list
