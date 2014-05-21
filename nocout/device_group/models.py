@@ -8,6 +8,7 @@ class DeviceGroup(MPTTModel, models.Model):
     parent = TreeForeignKey('self', null=True, blank=True, related_name='devicegroup_children')
     location = models.CharField('Location', max_length=200, null=True, blank=True)
     address = models.CharField('Address', max_length=200, null=True, blank=True)
+    is_deleted = models.IntegerField('Is Deleted', max_length=1, null=True, blank=True)
 
     def __unicode__(self):
         return self.name
