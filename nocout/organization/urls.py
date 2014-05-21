@@ -7,4 +7,6 @@ urlpatterns = patterns('',
     url(r'^new/$', views.OrganizationCreate.as_view(), name='organization_new'),
     url(r'^edit/(?P<pk>\d+)$', views.OrganizationUpdate.as_view(), name='organization_edit'),
     url(r'^delete/(?P<pk>\d+)$', views.OrganizationDelete.as_view(), name='organization_delete'),
-)
+    url(r'organizationlistingtable/', views.OrganizationListingTable.as_view(), name= 'OrganizationListingTable')
+
+    )

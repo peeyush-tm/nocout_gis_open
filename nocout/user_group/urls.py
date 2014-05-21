@@ -7,4 +7,5 @@ urlpatterns = patterns('',
   url(r'^new/$', views.UserGroupCreate.as_view(), name='ug_new'),
   url(r'^edit/(?P<pk>\d+)$', views.UserGroupUpdate.as_view(), name='ug_edit'),
   url(r'^delete/(?P<pk>\d+)$', views.UserGroupDelete.as_view(), name='ug_delete'),
+  url(r'usergrouplistingtable/', views.UserGroupListingTable.as_view(), name= 'UserGroupListingTable')
 )

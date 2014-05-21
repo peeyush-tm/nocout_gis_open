@@ -1,7 +1,10 @@
 import json
+from django.db.models import Q
+from django.db.models.query import ValuesQuerySet
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.core.urlresolvers import reverse_lazy
+from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, Inventory, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue, DeviceTechnology, \
     TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
@@ -20,22 +23,11 @@ class DeviceList(ListView):
     model = Device
     template_name = 'device/devices_list.html'
 
-
-    def get_queryset(self):
-        queryset = self.model._default_manager.values('device_name', 'site_instance__name', 'device_group__name',
-                                                      'ip_address', 'city', 'state')
-        return queryset[:10]
-
     def get_context_data(self, **kwargs):
-        context = super(DeviceList, self).get_context_data(**kwargs)
-        object_list = context['object_list']
-        object_list, object_list_headers = Datatable_Generation(object_list).main()
-        context['object_list'] = json.dumps(object_list, default=date_handler)
-        context.update({
-            'object_list_headers': json.dumps(object_list_headers, default=date_handler)
-        })
+        context=super(DeviceList, self).get_context_data(**kwargs)
+        datatable_headers=('device_name', 'site_instance__name', 'device_group__name', 'ip_address', 'city', 'state')
+        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title()) for key in datatable_headers ])
         return context
-
 
 class DeviceDetail(DetailView):
     model = Device
@@ -528,3 +520,64 @@ class DeviceTypeDelete(DeleteView):
     model = DeviceType
     template_name = 'device_type/device_type_delete.html'
     success_url = reverse_lazy('device_type_list')
+
+class DeviceListingTable(BaseDatatableView):
+    model = Device
+    columns = ['device_name', 'site_instance__name', 'device_group__name', 'ip_address', 'city', 'state']
+    order_columns = ['device_name', 'site_instance__name', 'device_group__name', 'ip_address', 'city', 'state']
+
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        ##TODO:Need to optimise with the query making login.
+        if sSearch:
+            query=[]
+            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            for column in self.columns[:-1]:
+                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*"+str(self.columns)+")"
+            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
+            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return Device.objects.values(*self.columns)
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs=list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+               }
+        return ret

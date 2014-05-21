@@ -8,4 +8,5 @@ urlpatterns = patterns('',
   url(r'^edit/(?P<pk>\d+)$', views.DeviceUpdate.as_view(), name='device_edit'),
   url(r'^delete/(?P<pk>\d+)$', views.DeviceDelete.as_view(), name='device_delete'),
   url(r'^stats/$', api.DeviceStatsApi.as_view()),
+  url(r'devicelistingtable/', views.DeviceListingTable.as_view(), name= 'DeviceListingTable')
 )
