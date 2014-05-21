@@ -9,8 +9,6 @@ from device.models import Device, Inventory, DeviceType, DeviceTypeFields, Devic
     TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
     DeviceVendorForm, DeviceModelForm, DeviceTypeForm
-from nocout.utils.jquery_datatable_generation import Datatable_Generation
-from nocout.utils.util import date_handler
 from site_instance.models import SiteInstance
 from django.http.response import HttpResponseRedirect
 from service.models import Service
@@ -25,9 +23,76 @@ class DeviceList(ListView):
 
     def get_context_data(self, **kwargs):
         context=super(DeviceList, self).get_context_data(**kwargs)
-        datatable_headers=('device_name', 'site_instance__name', 'device_group__name', 'ip_address', 'city', 'state')
-        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title()) for key in datatable_headers ])
+        datatable_headers=('device_name', 'site_instance__name', 'device_group__name', 'ip_address', 'city', 'state', 'actions')
+        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
+                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
         return context
+
+class DeviceListingTable(BaseDatatableView):
+    model = Device
+    columns = ['device_name', 'site_instance__name', 'device_group__name', 'ip_address', 'city', 'state']
+    order_columns = ['device_name', 'site_instance__name', 'device_group__name', 'ip_address', 'city', 'state']
+
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        ##TODO:Need to optimise with the query making login.
+        if sSearch:
+            query=[]
+            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            for column in self.columns[:-1]:
+                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*"+str(self.columns)+")"
+            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
+            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return Device.objects.values(*self.columns+['id'])
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in qs:
+            dct.update(actions='<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/device/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs=list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+               }
+        return ret
+
+
 
 class DeviceDetail(DetailView):
     model = Device
@@ -274,6 +339,79 @@ class DeviceTypeFieldsList(ListView):
     model = DeviceTypeFields
     template_name = 'device_extra_fields/device_extra_fields_list.html'
 
+    def get_context_data(self, **kwargs):
+        context=super(DeviceTypeFieldsList, self).get_context_data(**kwargs)
+        datatable_headers=('field_name', 'field_display_name','device_type__name','actions')
+        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
+                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+        return context
+
+class DeviceTypeFieldsListingTable(BaseDatatableView):
+    model = DeviceTypeFields
+    columns = ['field_name', 'field_display_name','device_type__name']
+    order_columns = ['field_name', 'field_display_name','device_type__name']
+
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        ##TODO:Need to optimise with the query making login.
+        if sSearch:
+            query=[]
+            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            for column in self.columns[:-1]:
+                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*"+str(self.columns)+")"
+            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
+            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return DeviceTypeFields.objects.values(*self.columns+['id'])
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in qs:
+            dct.update(actions='<a href="/device_fields/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                        <a href="/device_fields/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs=list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+               }
+        return ret
+
+
+
 
 class DeviceTypeFieldsDetail(DetailView):
     model = DeviceTypeFields
@@ -306,6 +444,78 @@ class DeviceTypeFieldsDelete(DeleteView):
 class DeviceTechnologyList(ListView):
     model = DeviceTechnology
     template_name = 'device_technology/device_technology_list.html'
+
+    def get_context_data(self, **kwargs):
+        context=super(DeviceTechnologyList, self).get_context_data(**kwargs)
+        datatable_headers=('name', 'alias','actions')
+        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
+                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+        return context
+
+class DeviceTechnologyListingTable(BaseDatatableView):
+    model = DeviceType
+    columns = ['name', 'alias']
+    order_columns = ['name', 'alias']
+
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        ##TODO:Need to optimise with the query making login.
+        if sSearch:
+            query=[]
+            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            for column in self.columns[:-1]:
+                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*"+str(self.columns)+")"
+            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
+            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return DeviceType.objects.values(*self.columns+['id'])
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in qs:
+            dct.update(actions='<a href="/technology/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                        <a href="/technology/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs=list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+               }
+        return ret
+
 
 
 class DeviceTechnologyDetail(DetailView):
@@ -370,6 +580,80 @@ class DeviceVendorList(ListView):
     model = DeviceVendor
     template_name = 'device_vendor/device_vendor_list.html'
 
+    def get_context_data(self, **kwargs):
+            context=super(DeviceVendorList, self).get_context_data(**kwargs)
+            datatable_headers=('name', 'alias','actions')
+            context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
+                                        sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+            return context
+
+class DeviceVendorListingTable(BaseDatatableView):
+    model = DeviceType
+    columns = ['name', 'alias']
+    order_columns = ['name', 'alias']
+
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        ##TODO:Need to optimise with the query making login.
+        if sSearch:
+            query=[]
+            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            for column in self.columns[:-1]:
+                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*"+str(self.columns)+")"
+            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
+            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return DeviceType.objects.values(*self.columns+['id'])
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in qs:
+            dct.update(actions='<a href="/vendor/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                        <a href="/vendor/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs=list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+               }
+        return ret
+
+
+
+
 
 class DeviceVendorDetail(DetailView):
     model = DeviceVendor
@@ -433,6 +717,76 @@ class DeviceModelList(ListView):
     model = DeviceModel
     template_name = 'device_model/device_model_list.html'
 
+    def get_context_data(self, **kwargs):
+        context=super(DeviceModelList, self).get_context_data(**kwargs)
+        datatable_headers=('name', 'alias','actions')
+        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
+                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+        return context
+
+class DeviceModelListingTable(BaseDatatableView):
+    model = DeviceModel
+    columns = ['name', 'alias']
+    order_columns = ['name', 'alias']
+
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        ##TODO:Need to optimise with the query making login.
+        if sSearch:
+            query=[]
+            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            for column in self.columns[:-1]:
+                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*"+str(self.columns)+")"
+            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
+            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return DeviceModel.objects.values(*self.columns+['id'])
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in qs:
+            dct.update(actions='<a href="/model/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                        <a href="/model/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs=list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+               }
+        return ret
 
 class DeviceModelDetail(DetailView):
     model = DeviceModel
@@ -496,35 +850,17 @@ class DeviceTypeList(ListView):
     model = DeviceType
     template_name = 'device_type/device_type_list.html'
 
+    def get_context_data(self, **kwargs):
+        context=super(DeviceTypeList, self).get_context_data(**kwargs)
+        datatable_headers=('name', 'alias','actions')
+        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
+                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+        return context
 
-class DeviceTypeDetail(DetailView):
+class DeviceTypeListingTable(BaseDatatableView):
     model = DeviceType
-    template_name = 'device_type/device_type_detail.html'
-
-
-class DeviceTypeCreate(CreateView):
-    template_name = 'device_type/device_type_new.html'
-    model = DeviceType
-    form_class = DeviceTypeForm
-    success_url = reverse_lazy('device_type_list')
-
-
-class DeviceTypeUpdate(UpdateView):
-    template_name = 'device_type/device_type_update.html'
-    model = DeviceType
-    form_class = DeviceTypeForm
-    success_url = reverse_lazy('device_type_list')
-
-
-class DeviceTypeDelete(DeleteView):
-    model = DeviceType
-    template_name = 'device_type/device_type_delete.html'
-    success_url = reverse_lazy('device_type_list')
-
-class DeviceListingTable(BaseDatatableView):
-    model = Device
-    columns = ['device_name', 'site_instance__name', 'device_group__name', 'ip_address', 'city', 'state']
-    order_columns = ['device_name', 'site_instance__name', 'device_group__name', 'ip_address', 'city', 'state']
+    columns = ['name', 'alias']
+    order_columns = ['name', 'alias']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -546,11 +882,14 @@ class DeviceListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Device.objects.values(*self.columns)
+        return DeviceType.objects.values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in qs:
+            dct.update(actions='<a href="/type/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                        <a href="/type/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -581,3 +920,27 @@ class DeviceListingTable(BaseDatatableView):
                'aaData': aaData
                }
         return ret
+
+class DeviceTypeDetail(DetailView):
+    model = DeviceType
+    template_name = 'device_type/device_type_detail.html'
+
+
+class DeviceTypeCreate(CreateView):
+    template_name = 'device_type/device_type_new.html'
+    model = DeviceType
+    form_class = DeviceTypeForm
+    success_url = reverse_lazy('device_type_list')
+
+class DeviceTypeUpdate(UpdateView):
+    template_name = 'device_type/device_type_update.html'
+    model = DeviceType
+    form_class = DeviceTypeForm
+    success_url = reverse_lazy('device_type_list')
+
+
+class DeviceTypeDelete(DeleteView):
+    model = DeviceType
+    template_name = 'device_type/device_type_delete.html'
+    success_url = reverse_lazy('device_type_list')
+
