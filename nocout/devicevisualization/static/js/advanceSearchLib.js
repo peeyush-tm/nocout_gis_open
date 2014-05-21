@@ -251,7 +251,7 @@ function advanceSearchClass()
 					});
 
 					/*Initialize the select2*/
-					$("select").select2();
+					$(".advanceFiltersContainer select").select2();
 				}
 				else
 				{
