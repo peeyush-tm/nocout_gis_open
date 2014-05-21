@@ -117,6 +117,7 @@ class DeviceStats(View):
             },
             "children": []
         }
+        inventory_list = []
         page_number = kwargs.get('page_number') if kwargs.get('page_number') else 1
         limit = kwargs.get('limit') if kwargs.get('limit') else 10
         device_info_list = []
@@ -127,17 +128,22 @@ class DeviceStats(View):
                 user_profile_id=self.
                 user_id
             ).user_group_id
-            self.dev_gp_id = Organization.objects.get(
+            # One user_group may have associated with more than one device_group
+            self.dev_gp_list = Organization.objects.filter(
                 user_group_id=self.
                 user_gp_id
-            ).device_group_id
-            inventory_list = Inventory.objects.filter(
-                device_group_id=self.
-                dev_gp_id
             ).values()
+
+            for dev_gp in self.dev_gp_list:
+                obj_list = Inventory.objects.filter(
+                    device_group_id=dev_gp.get('device_group_id')
+                ).values()
+                inventory_list.extend(obj_list)
+
             total_count = len(inventory_list)
         except Exception, error:
             print "No Data for this user"
+            print error
             return device_stats_dict
 
         inventory_list, limit = self.slice_object_list(
