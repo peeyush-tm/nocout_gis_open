@@ -7,6 +7,22 @@
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
 {% endblock %}
 
+{% block page_setting_block %}
+    <!-- GIS Page  -->
+    <span class="pull-right">
+        <div class="btn-group">
+            <ul class="list-unstyled list-inline">
+                <li>
+                    <button class="btn btn-success" onclick="showAdvFilters();" title="Click here for advance search">
+                        <i class='fa fa-search'></i> Advance Search
+                    </button>
+                </li>
+            </ul>            
+        </div>
+    </span>
+    <!-- /DATE RANGE PICKER -->
+{% endblock %}
+
 {% block content %}
 <div class='box border lite mapContainerBlock'>
     <div class='box-title'>
@@ -50,19 +66,26 @@
 <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
 <!--OverlappingMarkerSpiderfier Library for marker spiderify effect-->
 <script type="text/javascript" src={% static "js/oms.min.js" %}></script>
-<!-- Our Library-->
+<!-- Our Library to plot the devices on map & performs functionality accordingly-->
 <script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
+<!-- Our Library to plot the devices on map & performs functionality accordingly-->
+<script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
 
 <script type="text/javascript">
 
     var networkMapInstance = "",
         hostIp = "",
-        username = "";
+        username = "",
+        getFilterApi = "",
+        setFilterApi = "";
 
     $(document).ready(function(e) {
 
         hostIp = "{{host_info}}";
         username = "{{username}}";
+        getFilterApi = "{{get_filter_api}}";
+        setFilterApi = "{{set_filter_api}}";
+
         /*Create a instance of networkMapClass*/
         networkMapInstance = new networkMapClass();
         /*Call the function to create map*/
@@ -70,90 +93,48 @@
         /*Call the make network to create the BS-SS network on the google map*/
         networkMapInstance.getDevicesData(hostIp,username);
     });
-    /**
-     * This is the recursive function which calls the plotNetwork function of networkMapClass to plot the  the BS,SS network on the google map & it calls recursive after 150 seconds
-     * @method makeNetwork
-     */
-    function makeNetwork()
-    {
-        
-    }
 
     /*This event trigger when state dropdown value is changes*/
     $("#state").change(function(e) {
 
-        makeFiltersArray();
+        networkMapInstance.makeFiltersArray();
     });
 
     /*This event trigger when city dropdown value is changes*/
     $("#city").change(function(e) {
 
-        makeFiltersArray();
+        networkMapInstance.makeFiltersArray();
     });
 
     /*This event trigger when vendor dropdown value is changes*/
     $("#vendor").change(function(e) {
 
-        makeFiltersArray();
+        networkMapInstance.makeFiltersArray();
     });
 
     /*This event trigger when technology dropdown value is changes*/
     $("#technology").change(function(e) {
 
-        makeFiltersArray();
+        networkMapInstance.makeFiltersArray();
     });
-    /**
-     * This function makes an array from the selected filters
-     * @function makeFiltersArray
-     * @return selectedArray [JSON Array] It is an object array of the selected filters with the keys
-     */
-    function makeFiltersArray()
-    {
-        var selectedTechnology = $("#technology").val(),
-            selectedvendor = $("#vendor").val(),
-            selectedState = $("#state").val(),
-            selectedCity = $("#city").val(),
-            selectedArray = {};
 
-        if(selectedTechnology != "")
-        {
-            selectedArray["technology"] = selectedTechnology;
-        }
-
-        if(selectedvendor != "")
-        {
-            selectedArray["vendor"] = selectedvendor;
-        }
-
-        if(selectedState != "")
-        {
-            selectedArray["state"] = selectedState;
-        }
-
-        if(selectedCity != "")
-        {
-            selectedArray["city"] = selectedCity;
-        }
-        /*Get The Length Of Filter Array*/
-        var filtersLength = Object.keys(selectedArray).length;
-
-        /*If any filter is applied then filter the data*/
-        if(filtersLength > 0)
-        {
-            networkMapInstance.applyFilter(selectedArray);
-        }
-        /*If no filter is applied the load all the devices*/
-        else
-        {
-            networkMapInstance.loadExistingDevices();
-        }
-    }
 
     /*This event triggers when Reset Filter button clicked*/
     $("#resetFilters").click(function(e) {
 
-        makeNetwork();
+        /*Call the make network to create the BS-SS network on the google map*/
+        networkMapInstance.getDevicesData(hostIp,username);
     });
+
+    /**
+     * This function triggers when "Advance Search" button is pressed
+     * @function showAdvFilters
+     */
+    function showAdvFilters()
+    {
+        var advSearch = new advanceSearchClass();
+        advSearch.getFilterInfo("filterInfoModal","Advance Search",getFilterApi,setFilterApi);
+    }
 
 </script>
 {% endblock %}

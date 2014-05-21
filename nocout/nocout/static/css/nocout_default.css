@@ -1,3 +1,6 @@
+.navbar .nav.navbar-nav.pull-right {
+  min-width: 0;
+}
 .topUserInfo li:first-child span
 {
   color: #FFF;
@@ -26,16 +29,10 @@
   vertical-align: text-bottom;
   font-weight: 600;
 }
-.orgTitleBlock li, .topUserInfo li
+.orgTitleBlock, .topUserInfo li
 {
     float:  none; 
     color:  #FFF;
-}
-
-.orgTitleBlock li
-{
-    padding: 8px;
-    line-height: 16px;
 }
 
 /* forms style */
@@ -48,4 +45,18 @@
 
 .errorlist li {
     color: #b94a48;
+}
+
+li.org, li.dept {
+  font-weight: 300; 
+}
+
+li.org {
+  font-size: 24px;
+  margin: 8px;
+}
+
+li.dept {
+  font-size: 18px;
+  margin: 14px 0 0 10px;
 }
