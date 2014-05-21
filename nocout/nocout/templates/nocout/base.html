@@ -289,7 +289,7 @@
                                     <h3 class="content-title pull-left">
                                         {% block content_title %}Dashboard{% endblock %}
                                     </h3>
-                                    {% block date_picker %}
+                                    {% block page_setting_block %}
                                     {% endblock %}
                                 </div>
                                 <div class="description">{% block content_description %}Overview, Statistics and
@@ -333,6 +333,8 @@
 <script type="text/javascript" src={% static "js/jQuery-BlockUI/jquery.blockUI.min.js" %}></script>
 <!-- TYPEHEAD -->
 <script type="text/javascript" src={% static "js/typeahead/typeahead.min.js" %}></script>
+<!-- BOOTBOX -->
+<script type="text/javascript" src={% static "js/bootbox/bootbox.min.js" %}></script>
 <!-- AUTOSIZE -->
 <script type="text/javascript" src={% static "js/autosize/jquery.autosize.min.js" %}></script>
 <!-- COUNTABLE -->
