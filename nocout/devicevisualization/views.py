@@ -13,7 +13,9 @@ def locate_devices(request):
                 request.META['SERVER_PORT'] + "/"
 
     c.update({"host_info": host_info,
-                "username": username
+                "username": username,
+                "get_filter_api": host_info + "gis/get_filters/",
+                "set_filter_api": host_info + "gis/set_filters/"
         })
 
     return render_to_response('devicevisualization/locate_devices.html', c)
