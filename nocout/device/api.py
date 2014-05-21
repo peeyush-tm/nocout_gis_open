@@ -18,7 +18,7 @@ class DeviceStatsApi(View):
     
     def get(self, request):
         """
-        Handling http POST method for device data
+        Handling http GET method for device data
 
         Args:
             request (WSGIRequest): The request object.
@@ -32,7 +32,7 @@ class DeviceStatsApi(View):
                         'total_count': <total_count>,
                         'limit': <limit>
                     }
-                    'objects': <device_objects>
+                    'objects': <device_objects_list>
             }
 
         """
@@ -118,7 +118,7 @@ class DeviceStats(View):
             "children": []
         }
         page_number = kwargs.get('page_number') if kwargs.get('page_number') else 1
-        limit = kwargs.get('limit') if kwargs.get('limit') else 4
+        limit = kwargs.get('limit') if kwargs.get('limit') else 10
         device_info_list = []
         device_object_list = []
         try:
@@ -140,7 +140,7 @@ class DeviceStats(View):
             print "No Data for this user"
             return device_stats_dict
 
-        inventory_list = self.slice_object_list(
+        inventory_list, limit = self.slice_object_list(
             inventory_list,
             page_number=page_number,
             limit=limit
@@ -275,7 +275,7 @@ class DeviceStats(View):
         if int(kwargs.get('limit')) is not 0:
             limit = int(kwargs.get('limit'))
         else:
-            limit = 4
+            limit = 10
         if int(kwargs.get('page_number')) is not 0:
             page_number = int(kwargs.get('page_number'))
         else:
@@ -283,4 +283,4 @@ class DeviceStats(View):
         start = limit * (page_number-1)
         end = limit * (page_number)
         inventory_list = inventory_list[start:end]
-        return inventory_list
+        return inventory_list, limit
