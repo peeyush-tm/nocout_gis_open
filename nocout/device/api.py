@@ -48,17 +48,14 @@ class DeviceStatsApi(View):
         }
         req_params = request.GET
         
-        if 'username' in req_params:
-            #Get username from query string, if passed
-            username = req_params.get('username')
-        else:
-            #Retreive username from active session
-            username = request.user.username
+        #Retreive username from active session
+        username = request.user.username
+
         page_number = req_params.get('page_number')
         limit = req_params.get('limit')
         
         #Get the host machine IP address
-        host_ip = request.get_host().split(':')[0]
+        host_ip = request.META['SERVER_NAME']
         
         #Show link between master-slave device pairs
         show_link = 1
