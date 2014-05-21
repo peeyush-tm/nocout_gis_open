@@ -15,33 +15,10 @@ class DeviceGroupList(ListView):
 
     def get_context_data(self, **kwargs):
         context=super(DeviceGroupList, self).get_context_data(**kwargs)
-        datatable_headers=('name', 'alias', 'parent__name', 'location','address')
-        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title()) for key in datatable_headers ])
+        datatable_headers=('name', 'alias', 'parent__name', 'location','address','actions')
+        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle= key.replace('_',' ').title(),
+                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
         return context
-
-class DeviceGroupDetail(DetailView):
-    model = DeviceGroup
-    template_name = 'device_group/dg_detail.html'
-
-
-class DeviceGroupCreate(CreateView):
-    template_name = 'device_group/dg_new.html'
-    model = DeviceGroup
-    form_class = DeviceGroupForm
-    success_url = reverse_lazy('dg_list')
-
-
-class DeviceGroupUpdate(UpdateView):
-    template_name = 'device_group/dg_update.html'
-    model = DeviceGroup
-    form_class = DeviceGroupForm
-    success_url = reverse_lazy('dg_list')
-
-
-class DeviceGroupDelete(DeleteView):
-    model = DeviceGroup
-    template_name = 'device_group/dg_delete.html'
-    success_url = reverse_lazy('dg_list')
 
 class DeviceGroupListingTable(BaseDatatableView):
     model = DeviceGroup
@@ -68,11 +45,14 @@ class DeviceGroupListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return DeviceGroup.objects.values(*self.columns)
+        return DeviceGroup.objects.values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in qs:
+            dct.update(actions='<a href="/device_group/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/device_group/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -103,6 +83,33 @@ class DeviceGroupListingTable(BaseDatatableView):
                'aaData': aaData
                }
         return ret
+
+
+class DeviceGroupDetail(DetailView):
+    model = DeviceGroup
+    template_name = 'device_group/dg_detail.html'
+
+
+class DeviceGroupCreate(CreateView):
+    template_name = 'device_group/dg_new.html'
+    model = DeviceGroup
+    form_class = DeviceGroupForm
+    success_url = reverse_lazy('dg_list')
+
+
+class DeviceGroupUpdate(UpdateView):
+    template_name = 'device_group/dg_update.html'
+    model = DeviceGroup
+    form_class = DeviceGroupForm
+    success_url = reverse_lazy('dg_list')
+
+
+class DeviceGroupDelete(DeleteView):
+    model = DeviceGroup
+    template_name = 'device_group/dg_delete.html'
+    success_url = reverse_lazy('dg_list')
+
+
 
 
 

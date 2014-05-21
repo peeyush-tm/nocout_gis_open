@@ -8,4 +8,6 @@ urlpatterns = patterns('',
   url(r'^new/$', views.DeviceTypeFieldsCreate.as_view(), name='device_extra_field_new'),
   url(r'^edit/(?P<pk>\d+)$', views.DeviceTypeFieldsUpdate.as_view(), name='device_extra_field_edit'),
   url(r'^delete/(?P<pk>\d+)$', views.DeviceTypeFieldsDelete.as_view(), name='device_extra_field_delete'),
+  url(r'^devicetypefieldslist/', views.DeviceTypeFieldsListingTable.as_view(), name='DeviceTypeFieldsListingTable'),
+
 )

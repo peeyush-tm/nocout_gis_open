@@ -8,9 +8,9 @@
 {% block content_description %}List of device vendors ....{% endblock %}
 {% block content %}
     <p><a href="/vendor/new"><i class="fa fa-plus">&nbsp;</i> Create Device Vendor</a></p>
-    <div class="box">
+    <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i>DEVICE VENDOR</h4>
+            <h4><i class="fa fa-table"></i>DEVICE VENDOR LISTING</h4>
             <div class="tools hidden-xs">
                 <a href="#box-config" data-toggle="modal" class="config">
                     <i class="fa fa-cog"></i>
@@ -28,23 +28,40 @@
         </div>
 
         <div id="tableContainer" class="box-body">
-            
-            <div id="device">
-                <table>
-                    <tr>
-                        <td><strong>Vendor</strong></td>
-                        <td><strong>Edit</strong></td>
-                        <td><strong>Delete</strong></td>
-                    </tr>
-                    {% for vendor in object_list %}
-                        <tr>
-                            <td><a href="/vendor/{{ vendor.id }}">{{ vendor.name }}</a></td>
-                            <td><a href="/vendor/edit/{{ vendor.id }}">Edit</a></td>
-                            <td><a href="/vendor/delete/{{ vendor.id }}">Delete</a></td>
-                        </tr>
-                    {% endfor %}
-                </table>
+                    <table cellpadding="0" cellspacing="0" border="0"
+                           class="datatable table table-striped table-bordered table-hover" id="DeviceVendorListingTable">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
             </div>
-        </div>
     </div>
+{% endblock %}
+
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript">
+
+        $(document).ready(function (e) {
+            /*Make a instance of ourDataTableWidget class */
+            var dataTableInstance = new ourDataTableWidget();
+
+            /*Call createDataTable function of ourDataTableWidget class*/
+            var tableObject = $.parseJSON('{{ datatable_headers|safe }}');
+            var ajax_url = '{% url "DeviceVendorListingTable" %}';
+            dataTableInstance.createDataTable("DeviceVendorListingTable", tableObject, ajax_url);
+
+            $('.datatable').each(function () {
+                var datatable = $(this);
+                // SEARCH - Add the placeholder for Search and Turn this into in-line form control
+                var search_input = datatable.closest('.dataTables_wrapper').find('div[id$=_filter] input');
+                search_input.attr('placeholder', 'Search');
+                search_input.addClass('form-control input-sm');
+                // LENGTH - Inline-Form control
+                var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
+                length_sel.addClass('form-control input-sm');
+            });
+        });
+
+    </script>
+
 {% endblock %}
