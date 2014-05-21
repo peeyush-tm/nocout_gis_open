@@ -73,9 +73,7 @@ $(document).ready(function(e)
                             Dajaxice.device_group.device_group_soft_delete(Dajax.process, {'device_group_id': $('#id_device_group').val(),
                                                                                            'new_parent_id': $('#id_parent').val()});
                         }
-                    }
-                },
-                danger: {
+                    },danger: {
                     label: "No!",
                     className: "btn-danger",
                     callback: function () {
@@ -85,6 +83,8 @@ $(document).ready(function(e)
 
                     }
                 }
+                }
+
             });
         }
     </script>
