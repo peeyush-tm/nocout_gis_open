@@ -5,13 +5,18 @@ from django.template import RequestContext
 
 
 def locate_devices(request):
-
-    username = request.user.username
-    
     template_data = { 'host_info' : 
                         request.META['SERVER_NAME'] + ":" + \
                         request.META['SERVER_PORT'] + "/",
-                    'username' : request.user.username
+                    'username' : request.user.username,
+                    'get_filter_api': 
+                        request.META['SERVER_NAME'] + ":" + \
+                        request.META['SERVER_PORT'] + "/" + \
+                        "gis/get_filters/",
+                    'set_filter_api':
+                        request.META['SERVER_NAME'] + ":" + \
+                        request.META['SERVER_PORT'] + "/" + \
+                        "gis/set_filters/",
                     }
 
     return render_to_response('devicevisualization/locate_devices.html', 

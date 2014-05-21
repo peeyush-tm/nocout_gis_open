@@ -43,7 +43,7 @@ class DeviceListingTable(BaseDatatableView):
                 query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns)+")"
+            exec_query += ").values(*"+str(self.columns+['id'])+")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -361,7 +361,7 @@ class DeviceTypeFieldsListingTable(BaseDatatableView):
                 query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns)+")"
+            exec_query += ").values(*"+str(self.columns+['id'])+")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -467,7 +467,7 @@ class DeviceTechnologyListingTable(BaseDatatableView):
                 query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns)+")"
+            exec_query += ").values(*"+str(self.columns+['id'])+")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -602,7 +602,7 @@ class DeviceVendorListingTable(BaseDatatableView):
                 query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns)+")"
+            exec_query += ").values(*"+str(self.columns+['id'])+")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -739,7 +739,7 @@ class DeviceModelListingTable(BaseDatatableView):
                 query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns)+")"
+            exec_query += ").values(*"+str(self.columns+['id'])+")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -872,7 +872,7 @@ class DeviceTypeListingTable(BaseDatatableView):
                 query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns)+")"
+            exec_query += ").values(*"+str(self.columns+['id'])+")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
