@@ -113,8 +113,7 @@ TEMPLATE_LOADERS = (
 
 TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
     'django.core.context_processors.request',
-    'nocout.context_processors_profile.user_profile_atts.user_department',
-    'nocout.context_processors_profile.user_profile_atts.user_organization',
+    'nocout.context_processors_profile.user_profile_atts.user_dept_org',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -163,6 +162,7 @@ INSTALLED_APPS = (
     'site_instance',
     'home',
     'devicevisualization',
+    'sitesearch',
     'dajaxice',
     'dajax',
     'django.contrib.admin',

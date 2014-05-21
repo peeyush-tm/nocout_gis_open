@@ -12,4 +12,5 @@ urlpatterns = patterns('',
   url(r'^new/$', views.ServiceParametersCreate.as_view(), name='service_parameter_new'),
   url(r'^edit/(?P<pk>\d+)$', views.ServiceParametersUpdate.as_view(), name='service_parameter_edit'),
   url(r'^delete/(?P<pk>\d+)$', views.ServiceParametersDelete.as_view(), name='service_parameter_delete'),
+  url(r'^servicelistingtable/', views.ServiceListingTable.as_view(), name='ServiceListingTable'),
 )

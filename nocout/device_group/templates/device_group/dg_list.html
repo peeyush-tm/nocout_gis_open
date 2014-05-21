@@ -5,15 +5,9 @@
 {% block content_description %}List of device groups ....{% endblock %}
 {% block content %}
     <p><a href="/device_group/new"><i class="fa fa-plus">&nbsp;</i> Create Device Group</a></p>
-    <button class="btn btn-xs btn-danger"
-            onclick="Dajaxice.device_group.device_group_soft_delete_form(get_soft_delete_form, {'value': 5})">Delete
-        Device Group
-    </button>
-    <br/><br/>
-    <div class="box">
+    <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i>DEVICE GROUP</h4>
-
+            <h4><i class="fa fa-table"></i>DEVICE GROUP LISTING</h4>
             <div class="tools hidden-xs">
                 <a href="#box-config" data-toggle="modal" class="config">
                     <i class="fa fa-cog"></i>
@@ -40,22 +34,19 @@
     </div>
 {% endblock %}
 {% block jquery %}
-    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
-    <script type="text/javascript">
-        $(document).ready(function (e) {
-                    var tableObject = {};
-                    var table_headers = $.parseJSON('{{ object_list_headers|safe }}');
-                    var table_data = $.parseJSON('{{ object_list|safe }}');
+<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %} ></script>
+<script type="text/javascript" >
 
-                    tableObject["tableData"] = table_data;
-                    tableObject["tableColumn"] = table_headers;
-                    tableObject["sPaginationType"] = "bs_full";
+$(document).ready(function(e)
 
-                    /*Make a instance of ourDataTableWidget class */
-                    var dataTableInstance = new ourDataTableWidget();
+	{
+        /*Make a instance of ourDataTableWidget class */
+        var dataTableInstance = new ourDataTableWidget();
 
-                    /*Call createDataTable function of ourDataTableWidget class*/
-                    dataTableInstance.createDataTable("DeviceGroupTable", tableObject);
+        /*Call createDataTable function of ourDataTableWidget class*/
+		var tableObject = $.parseJSON('{{ datatable_headers|safe }}');
+        var ajax_url = '{% url "DeviceGroupListingTable" %}'
+        dataTableInstance.createDataTable("DeviceGroupTable", tableObject, ajax_url);
 
                     $('.datatable').each(function () {
                         var datatable = $(this);

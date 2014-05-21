@@ -90,8 +90,8 @@ function networkMapClass()
 			/*Ajax call to the API*/
 			$.ajax({
 				crossDomain: true,
-				url : "http://"+hostIp+":8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
-				// url : "http://192.168.0.109:8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
+				url : "//" + hostIp + "device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
+				// url : "http://127.0.0.1:8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
@@ -195,6 +195,10 @@ function networkMapClass()
 							/*Populate the city & state dropdown filters*/
 							that.populateFilters(cityArray,stateArray,vendorArray,techArray);
 						}
+						else
+						{
+							that.recallServer();
+						}
 						/*Calculate the total number of pages from limit & total count*/
 						totalCalls = Math.ceil(result.data.meta.total_count/result.data.meta.limit);
 						/*Call the function after 3 sec.*/
@@ -205,46 +209,20 @@ function networkMapClass()
 					}
 					else
 					{
-				
+						that.recallServer();
 					}
 				},
 				/*If data not fetched*/
 				error : function(err)
 				{
-					console.log(err.success());
+					that.recallServer();
+					console.log(err.statusText);
 				}
 			});
 		}
 		else
 		{
-			/*Hide The loading Icon*/
-			$("#loadingIcon").hide();
-
-			setTimeout(function() {
-				/*Reset The Filters*/
-				$("#technology").html("<option value=''>Select Technology</option>");
-				$("#vendor").html("<option value=''>Select Vendor</option>");
-				$("#state").html("<option value=''>Select State</option>");
-				$("#city").html("<option value=''>Select City</option>");
-				/*Reset All The Variables*/				
-				hitCounter = 1;
-				showLimit = 0;
-				remainingDevices = 0;
-				counter = 0;
-				totalCalls = 1;
-				devicesObject = {};
-				devices = [];
-				cityArray = [];
-				stateArray = [];
-				vendorArray = [];
-				techArray = [];
-				
-				/*Reselt markers, polyline & filters*/
-				that.resetAllElements();
-				/*Recall the API*/
-				that.getDevicesData(hostIp,username);
-
-			},120000);
+			that.recallServer();
 		}
 
 		counter = counter + 1;
@@ -695,5 +673,88 @@ function networkMapClass()
 				pathLineArray[j].setMap(null);
 			}
 		}
-	}
+	};
+
+	/**
+     * This function makes an array from the selected filters
+     * @function makeFiltersArray
+     * @return selectedArray [JSON Array] It is an object array of the selected filters with the keys
+     */
+    this.makeFiltersArray = function()
+    {
+        var selectedTechnology = $("#technology").val(),
+            selectedvendor = $("#vendor").val(),
+            selectedState = $("#state").val(),
+            selectedCity = $("#city").val(),
+            selectedArray = {};
+
+        if(selectedTechnology != "")
+        {
+            selectedArray["technology"] = selectedTechnology;
+        }
+
+        if(selectedvendor != "")
+        {
+            selectedArray["vendor"] = selectedvendor;
+        }
+
+        if(selectedState != "")
+        {
+            selectedArray["state"] = selectedState;
+        }
+
+        if(selectedCity != "")
+        {
+            selectedArray["city"] = selectedCity;
+        }
+        /*Get The Length Of Filter Array*/
+        var filtersLength = Object.keys(selectedArray).length;
+
+        /*If any filter is applied then filter the data*/
+        if(filtersLength > 0)
+        {
+            that.applyFilter(selectedArray);
+        }
+        /*If no filter is applied the load all the devices*/
+        else
+        {
+            that.loadExistingDevices();
+        }
+    };
+    /**
+     * This function resets the global variables & again call the api calling function after given timeout
+     * @class devicePlottingLib
+     * @method recallServer
+     */
+    this.recallServer = function()
+    {
+    	/*Hide The loading Icon*/
+		$("#loadingIcon").hide();
+
+    	setTimeout(function() {
+			/*Reset The Filters*/
+			$("#technology").html("<option value=''>Select Technology</option>");
+			$("#vendor").html("<option value=''>Select Vendor</option>");
+			$("#state").html("<option value=''>Select State</option>");
+			$("#city").html("<option value=''>Select City</option>");
+			/*Reset All The Variables*/
+			hitCounter = 1;
+			showLimit = 0;
+			remainingDevices = 0;
+			counter = 0;
+			totalCalls = 1;
+			devicesObject = {};
+			devices = [];
+			cityArray = [];
+			stateArray = [];
+			vendorArray = [];
+			techArray = [];
+			
+			/*Reselt markers, polyline & filters*/
+			that.resetAllElements();
+			/*Recall the API*/
+			that.getDevicesData(hostIp,username);
+
+		},120000);
+    };
 }
