@@ -17,34 +17,10 @@ class OrganizationList(ListView):
 
     def get_context_data(self, **kwargs):
         context=super(OrganizationList, self).get_context_data(**kwargs)
-        datatable_headers= ('name', 'description', 'user_group__name', 'device_group__name')
-        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title()) for key in datatable_headers ])
+        datatable_headers= ('name', 'description', 'user_group__name', 'device_group__name','actions')
+        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
+                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
         return context
-
-class OrganizationDetail(DetailView):
-    model = Organization
-    template_name = 'organization/organization_detail.html'
-
-
-class OrganizationCreate(CreateView):
-    template_name = 'organization/organization_new.html'
-    model = Organization
-    form_class = OrganizationForm
-    success_url = reverse_lazy('organization_list')
-
-
-class OrganizationUpdate(UpdateView):
-    template_name = 'organization/organization_update.html'
-    model = Organization
-    form_class = OrganizationForm
-    success_url = reverse_lazy('organization_list')
-
-
-class OrganizationDelete(DeleteView):
-    model = Organization
-    template_name = 'organization/organization_delete.html'
-    success_url = reverse_lazy('organization_list')
-
 
 class OrganizationListingTable(BaseDatatableView):
     model = Organization
@@ -71,11 +47,14 @@ class OrganizationListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Organization.objects.values(*self.columns)
+        return Organization.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in qs:
+            dct.update(actions='<a href="/organization/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/organization/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -106,3 +85,30 @@ class OrganizationListingTable(BaseDatatableView):
                'aaData': aaData
                }
         return ret
+
+class OrganizationDetail(DetailView):
+    model = Organization
+    template_name = 'organization/organization_detail.html'
+
+
+class OrganizationCreate(CreateView):
+    template_name = 'organization/organization_new.html'
+    model = Organization
+    form_class = OrganizationForm
+    success_url = reverse_lazy('organization_list')
+
+
+class OrganizationUpdate(UpdateView):
+    template_name = 'organization/organization_update.html'
+    model = Organization
+    form_class = OrganizationForm
+    success_url = reverse_lazy('organization_list')
+
+
+class OrganizationDelete(DeleteView):
+    model = Organization
+    template_name = 'organization/organization_delete.html'
+    success_url = reverse_lazy('organization_list')
+
+
+
