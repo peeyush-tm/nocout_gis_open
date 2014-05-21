@@ -8,9 +8,9 @@
 {% block content_description %}List of device extra fields ....{% endblock %}
 {% block content %}
     <p><a href="/device_fields/new"><i class="fa fa-plus">&nbsp;</i> Create Device Field</a></p>
-    <div class="box">
+    <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i>DEVICE FIELDS</h4>
+            <h4><i class="fa fa-table"></i>DEVICE FIELDS LISTING</h4>
             <div class="tools hidden-xs">
                 <a href="#box-config" data-toggle="modal" class="config">
                     <i class="fa fa-cog"></i>
@@ -26,26 +26,42 @@
                 </a>
             </div>
         </div>
-
         <div id="tableContainer" class="box-body">
-            <div id="device">
-                <table>
-                    <tr>
-                        <td><strong>Device Field</strong></td>
-                        <td><strong>Device Type</strong></td>
-                        <td><strong>Edit</strong></td>
-                        <td><strong>Delete</strong></td>
-                    </tr>
-                    {% for device_field in object_list %}
-                        <tr>
-                            <td><a href="/device_fields/{{ device_field.id }}">{{ device_field.field_name }}</a></td>
-                            <td>{{ device_field.device_type }}</td>
-                            <td><a href="/device_fields/edit/{{ device_field.id }}">Edit</a></td>
-                            <td><a href="/device_fields/delete/{{ device_field.id }}">Delete</a></td>
-                        </tr>
-                    {% endfor %}
-                </table>
-            </div>
+            <table cellpadding="0" cellspacing="0" border="0"
+                   class="datatable table table-striped table-bordered table-hover" id="DeviceTypeFieldsListingTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
         </div>
     </div>
+{% endblock %}
+
+
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript">
+
+        $(document).ready(function (e) {
+            /*Make a instance of ourDataTableWidget class */
+            var dataTableInstance = new ourDataTableWidget();
+
+            /*Call createDataTable function of ourDataTableWidget class*/
+            var tableObject = $.parseJSON('{{ datatable_headers|safe }}');
+            var ajax_url = '{% url "DeviceTypeFieldsListingTable" %}';
+            dataTableInstance.createDataTable("DeviceTypeFieldsListingTable", tableObject, ajax_url);
+
+            $('.datatable').each(function () {
+                var datatable = $(this);
+                // SEARCH - Add the placeholder for Search and Turn this into in-line form control
+                var search_input = datatable.closest('.dataTables_wrapper').find('div[id$=_filter] input');
+                search_input.attr('placeholder', 'Search');
+                search_input.addClass('form-control input-sm');
+                // LENGTH - Inline-Form control
+                var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
+                length_sel.addClass('form-control input-sm');
+            });
+        });
+
+    </script>
+
 {% endblock %}

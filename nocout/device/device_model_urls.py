@@ -7,4 +7,5 @@ urlpatterns = patterns('',
   url(r'^new/$', views.DeviceModelCreate.as_view(), name='device_model_new'),
   url(r'^edit/(?P<pk>\d+)$', views.DeviceModelUpdate.as_view(), name='device_model_edit'),
   url(r'^delete/(?P<pk>\d+)$', views.DeviceModelDelete.as_view(), name='device_model_delete'),
+  url(r'^devicemodellistingtable/', views.DeviceModelListingTable.as_view(), name='DeviceModelListingTable'),
 )
