@@ -41,21 +41,15 @@
 $(document).ready(function(e)
 
 	{
-        var tableObject = {};
-        var table_headers = $.parseJSON('{{ object_list_headers|safe }}');
-        var table_data    = $.parseJSON('{{ object_list|safe }}');
-
-        tableObject["tableData"] = table_data;
-        tableObject["tableColumn"] = table_headers;
-        tableObject["sPaginationType"] = "bs_full";
-
         /*Make a instance of ourDataTableWidget class */
         var dataTableInstance = new ourDataTableWidget();
 
-        /*Call createDataTable function of ourDataTableWidget class*/
-		dataTableInstance.createDataTable("UserGroupTable", tableObject);
+        var tableObject = $.parseJSON('{{ datatable_headers|safe }}');
+        var ajax_url = '{% url "UserGroupListingTable" %}';
+        dataTableInstance.createDataTable("UserGroupTable", tableObject, ajax_url);
 
-        $('.datatable').each(function(){
+         /*Call createDataTable function of ourDataTableWidget class*/
+		$('.datatable').each(function(){
 			var datatable = $(this);
 			// SEARCH - Add the placeholder for Search and Turn this into in-line form control
 			var search_input = datatable.closest('.dataTables_wrapper').find('div[id$=_filter] input');

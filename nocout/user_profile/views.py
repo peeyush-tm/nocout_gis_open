@@ -1,4 +1,5 @@
 from django.db.models import Q
+from django.db.models.query import ValuesQuerySet
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
@@ -15,7 +16,6 @@ import json
 class UserList(ListView):
     model = UserProfile
     template_name = 'user_profile/users_list.html'
-
 
     def get_context_data(self, **kwargs):
         context=super(UserList, self).get_context_data(**kwargs)
@@ -164,5 +164,30 @@ class UserListingTable(BaseDatatableView):
         return qs
 
     def get_context_data(self, *args, **kwargs):
-        context = super(UserListingTable, self).get_context_data(*args, **kwargs)
-        return context
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs=list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+               }
+        return ret
