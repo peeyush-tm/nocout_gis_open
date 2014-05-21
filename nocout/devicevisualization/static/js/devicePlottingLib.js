@@ -90,7 +90,7 @@ function networkMapClass()
 			/*Ajax call to the API*/
 			$.ajax({
 				crossDomain: true,
-				url : "http://"+hostIp+":8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
+				url : "//" + hostIp + "device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
 				// url : "http://192.168.0.109:8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
 				type : "GET",
 				dataType : "json",
