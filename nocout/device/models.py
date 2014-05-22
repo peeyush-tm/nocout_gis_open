@@ -90,6 +90,7 @@ class Device(MPTTModel, models.Model):
     city = models.CharField('City', max_length=100, null=True, blank=True)
     state = models.CharField('State', max_length=100, null=True, blank=True)
     description = models.TextField('Description')
+    is_deleted = models.IntegerField('Is Deleted', max_length=1, default=0)
 
     def __unicode__(self):
         return self.device_name

@@ -52,6 +52,7 @@ class DeviceForm(forms.ModelForm):
 
     class Meta:
         model = Device
+        exclude = ['is_deleted']
         widgets = {
             'device_group': MultipleToSingleSelectionWidget,
         }
