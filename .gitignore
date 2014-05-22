@@ -17,4 +17,4 @@ nocout/venv
 ^media/*
 ^nocout/static/*
 ^nocout/media/*
-^migrations
+^migrations/*
