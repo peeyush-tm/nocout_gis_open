@@ -8,6 +8,7 @@
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>DEVICE GROUP LISTING</h4>
+
             <div class="tools hidden-xs">
                 <a href="#box-config" data-toggle="modal" class="config">
                     <i class="fa fa-cog"></i>
@@ -34,19 +35,17 @@
     </div>
 {% endblock %}
 {% block jquery %}
-<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %} ></script>
-<script type="text/javascript" >
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript">
 
-$(document).ready(function(e)
+        $(document).ready(function (e) {
+                    /*Make a instance of ourDataTableWidget class */
+                    var dataTableInstance = new ourDataTableWidget();
 
-	{
-        /*Make a instance of ourDataTableWidget class */
-        var dataTableInstance = new ourDataTableWidget();
-
-        /*Call createDataTable function of ourDataTableWidget class*/
-		var tableObject = $.parseJSON('{{ datatable_headers|safe }}');
-        var ajax_url = '{% url "DeviceGroupListingTable" %}'
-        dataTableInstance.createDataTable("DeviceGroupTable", tableObject, ajax_url);
+                    /*Call createDataTable function of ourDataTableWidget class*/
+                    var tableObject = $.parseJSON('{{ datatable_headers|safe }}');
+                    var ajax_url = '{% url "DeviceGroupListingTable" %}'
+                    dataTableInstance.createDataTable("DeviceGroupTable", tableObject, ajax_url);
 
                     $('.datatable').each(function () {
                         var datatable = $(this);
@@ -70,21 +69,21 @@ $(document).ready(function(e)
                         label: "Yes!",
                         className: "btn-success",
                         callback: function () {
-                            Dajaxice.device_group.device_group_soft_delete(Dajax.process, {'device_group_id': $('#id_device_group').val(),
-                                                                                           'new_parent_id': $('#id_parent').val()});
+                            Dajaxice.device_group.device_group_soft_delete(Dajax.process, {
+                                'device_group_id': $('#id_device_group').val(),
+                                'new_parent_id': $('#id_parent').val()});
                         }
-                    },danger: {
-                    label: "No!",
-                    className: "btn-danger",
-                    callback: function () {
-                        bootbox.alert("Oops, we're sorry to hear that!", function () {
-                            $(".bootbox").modal("hide");
-                        });
-
+                    },
+                    danger: {
+                        label: "No!",
+                        className: "btn-danger",
+                        callback: function () {
+                            bootbox.alert("Ok! You choose to not delete this device group right now.", function () {
+                                $(".bootbox").modal("hide");
+                            });
+                        }
                     }
                 }
-                }
-
             });
         }
     </script>
