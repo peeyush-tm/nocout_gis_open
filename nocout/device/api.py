@@ -58,6 +58,7 @@ class DeviceStatsApi(View):
         
         #Get the host machine IP address
         host_ip = request.META['SERVER_NAME']
+        host_port = request.META['SERVER_PORT']
         
         #Show link between master-slave device pairs
         show_link = 1
@@ -67,6 +68,7 @@ class DeviceStatsApi(View):
             cls,
             username,
             host_ip=host_ip,
+            host_port=host_port,
             show_link=show_link,
             page_number=page_number,
             limit=limit
@@ -216,8 +218,9 @@ class DeviceStats(View):
                     "parent_id": obj.parent_id,
                     "lat": obj.latitude,
                     "lon": obj.longitude,
-                    "markerUrl": "http://%s:8000/static/img/marker/slave03.png"
-                    % kwargs.get('host_ip'), "perf": "75%",
+                    "markerUrl": "//%s:%s/static/img/marker/slave03.png"
+                    % (kwargs.get('host_ip'), kwargs.get('host_port')),
+                    "perf": "75%",
                     "ip": obj.ip_address,
                     "otherDetail": "No Detail",
                     "city": obj.city,
