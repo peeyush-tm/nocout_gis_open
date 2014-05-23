@@ -5,7 +5,8 @@ var that = "",
 	formElements = "",
 	elementsArray = [],
 	resultantObject = {},
-	resultantObjectArray = [];
+	resultantObjectArray = [],
+	searchParameters = "";
 
 /**
  * This class is used to create th filter form by calling the get_filter API & the call the set_filter API with the selected filters
@@ -24,24 +25,32 @@ function advanceSearchClass()
 	 * @class advanceSearchClass
 	 * @param domElement "String" It is dom element.
 	 * @param windowTitle "String" It is title of the popup
+	 * @param buttonId "String" It is the dom selector or ID of the clicked button.
 	 * @param getApiUrl "String" It is the url of the get_filter API
 	 * @param setApiUrl "String" It is the url of the set_filter API
 	 */
-	this.getFilterInfo = function(domElemet,windowTitle,getApiUrl,setApiUrl)
+	this.getFilterInfo = function(domElemet,windowTitle,buttonId,getApiUrl,setApiUrl)
 	{
+		/*Change the text of the button to "Please Wait..." & disable the button*/
+		$("#"+buttonId).button("loading");
+		
 		/*To Enable The Cross Domain Request*/
 		$.support.cors = true;
 
-		// $.getJSON(getApiUrl,function(result) {
 		$.ajax({
 
 			crossDomain: true,
 			url : getApiUrl,
+			// url : "http://192.168.0.19:8000/gis/get_filters/",
 			type : "GET",
 			dataType : "json",
 			/*If data fetched successful*/
 			success : function(result)
 			{
+				/*Revert the button to the initial state*/
+				$("#"+buttonId).button("complete");
+
+				/*If data fetch successfully*/
 				if(result.success == 1)
 				{
 					templateData = "";
@@ -62,6 +71,7 @@ function advanceSearchClass()
 							formElements += filtersInfoArray[i].title;
 							formElements += '</label><div class="col-sm-8">';
 
+							var currentKey = $.trim(filtersInfoArray[i].key);
 							var elementType = $.trim(filtersInfoArray[i].element_type);
 							/*Check Element Type*/
 							if(elementType == "multiselect")
@@ -69,18 +79,35 @@ function advanceSearchClass()
 								var filterValues = filtersInfoArray[i].values;
 								if(filterValues.length > 0)
 								{
-									formElements += '<select multiple class="multiSelectBox col-md-12" id="'+filtersInfoArray[i].key+'">';
+									formElements += '<select multiple class="multiSelectBox col-md-12" id="filter_'+filtersInfoArray[i].key+'">';
 
-									for(var j=0;j<filterValues.length;j++)
+									/*Condition for mapped tables to pass the ID in the values else pass the value*/
+									if(currentKey == "device_group" || currentKey == "device_type" || currentKey == "device_technology" || currentKey == "device_vendor")
 									{
-										formElements += '<option value="'+filterValues[j].id+'">'+filterValues[j].value+'</option>';
+										for(var j=0;j<filterValues.length;j++)
+										{
+											if(($.trim(filterValues[j].id) != null && $.trim(filterValues[j].value) != null) && ($.trim(filterValues[j].id) != "" && $.trim(filterValues[j].value) != ""))
+											{
+												formElements += '<option value="'+filterValues[j].id+'">'+filterValues[j].value+'</option>';
+											}
+										}	
+									}
+									else
+									{
+										for(var j=0;j<filterValues.length;j++)
+										{
+											if(($.trim(filterValues[j].id) != null && $.trim(filterValues[j].value) != null) && ($.trim(filterValues[j].id) != "" && $.trim(filterValues[j].value) != ""))
+											{
+												formElements += '<option value="'+filterValues[j].value+'">'+filterValues[j].value+'</option>';
+											}											
+										}
 									}
 
 									formElements += '</select>';
 								}
 								else
 								{
-									formElements += '<input type="text" id="'+filtersInfoArray[i].key+'" name="'+filtersInfoArray[i].key+'"  class="form-control"/>';
+									formElements += '<input type="text" id="filter_'+filtersInfoArray[i].key+'" name="'+filtersInfoArray[i].key+'"  class="form-control"/>';
 								}
 							}
 							else if(elementType == "select")
@@ -88,7 +115,7 @@ function advanceSearchClass()
 								var filterValues = filtersInfoArray[i].values;
 								if(filterValues.length > 0)
 								{
-									formElements += '<select class="multiSelectBox col-md-12" id="'+filtersInfoArray[i].key+'">';
+									formElements += '<select class="multiSelectBox col-md-12" id="filter_'+filtersInfoArray[i].key+'">';
 
 									for(var j=0;j<filterValues.length;j++)
 									{
@@ -99,7 +126,7 @@ function advanceSearchClass()
 								}
 								else
 								{
-									formElements += '<input type="text" id="'+filtersInfoArray[i].key+'" name="'+filtersInfoArray[i].key+'"  class="form-control"/>';
+									formElements += '<input type="text" id="filter_'+filtersInfoArray[i].key+'" name="'+filtersInfoArray[i].key+'"  class="form-control"/>';
 								}
 							}
 							else if(elementType == "radio")
@@ -114,7 +141,7 @@ function advanceSearchClass()
 								}
 								else
 								{
-									formElements += '<input type="text" id="'+filtersInfoArray[i].key+'" name="'+filtersInfoArray[i].key+'"  class="form-control"/>';
+									formElements += '<input type="text" id="filter_'+filtersInfoArray[i].key+'" name="'+filtersInfoArray[i].key+'"  class="form-control"/>';
 								}
 
 							}
@@ -130,13 +157,13 @@ function advanceSearchClass()
 								}
 								else
 								{
-									formElements += '<input type="text" id="'+filtersInfoArray[i].key+'" name="'+filtersInfoArray[i].key+'"  class="form-control"/>';
+									formElements += '<input type="text" id="filter_'+filtersInfoArray[i].key+'" name="'+filtersInfoArray[i].key+'"  class="form-control"/>';
 								}
 
 							}
 							else
 							{
-								formElements += '<input type="text" id="'+filtersInfoArray[i].key+'" name="'+filtersInfoArray[i].key+'"  class="form-control"/>';
+								formElements += '<input type="text" id="filter_'+filtersInfoArray[i].key+'" name="'+filtersInfoArray[i].key+'"  class="form-control"/>';
 							}
 
 							formElements += '</div></div>';
@@ -152,7 +179,7 @@ function advanceSearchClass()
 					/*Call the bootbox to show the popup with the fetched filters*/
 					bootbox.dialog({
 						message: templateData,
-						title: '<i class="fa fa-search">&nbsp;</i> '+windowTitle,
+						title: '<i class="fa fa-filter">&nbsp;</i> '+windowTitle,
 						buttons: {
 							success: {
 								label: "Search",
@@ -169,20 +196,20 @@ function advanceSearchClass()
 										/*Check Element Type*/
 										if(elementType == "multiselect")
 										{
-											var val = $("#"+selectId).select2("val");
+											var val = $("#filter_"+selectId).select2("val");
 											if(val.length > 0)
 											{
 												resultantObject["field"] = selectId;
-												resultantObject["values"] = $("#"+selectId).select2("val");
+												resultantObject["value"] = val;
 											}
 										}
 										else if(elementType == "select")
 										{
-											var selectedVal = $("#"+selectId).select2("val");
+											var selectedVal = $("#filter_"+selectId).select2("val");
 											if(selectedVal.length > 0)
 											{
 												resultantObject["field"] = selectId;
-												resultantObject["values"] = selectedVal;
+												resultantObject["value"] = selectedVal;
 											}
 										}
 										else if(elementType == "checkbox")
@@ -200,7 +227,7 @@ function advanceSearchClass()
 											if(checkboxArray.length > 0)
 											{
 												resultantObject["field"] = filtersInfoArray[j].key;
-												resultantObject["values"] = checkboxArray;
+												resultantObject["value"] = checkboxArray;
 											}
 										}
 										else if(elementType == "radio")
@@ -218,16 +245,16 @@ function advanceSearchClass()
 											if(radioArray.length > 0)
 											{
 												resultantObject["field"] = filtersInfoArray[j].key;
-												resultantObject["values"] = radioArray;
+												resultantObject["value"] = radioArray;
 											}
 										}
 										else
 										{
-											var typedText = $("#"+selectId).val();
+											var typedText = $("#filter_"+selectId).val();
 											if(typedText.length > 0)
 											{
 												resultantObject["field"] = selectId;
-												resultantObject["values"] = typedText;
+												resultantObject["value"] = typedText;
 											}
 										}
 
@@ -236,15 +263,22 @@ function advanceSearchClass()
 											resultantObjectArray.push(resultantObject);
 										}									
 									}
+									/*Stringify the object array to pass it in the query parameters for in set filter API*/
+									searchParameters = JSON.stringify(resultantObjectArray);
 
-									console.log(resultantObjectArray);
+									that.setFilters(searchParameters,setApiUrl);
+
+									/*Call the reset function*/
+									that.resetVariables();
 								}
 							},
 							danger: {
 								label: "Cancel",
 								className: "btn-warning",
 								callback: function() {
-									console.log("Cancel")
+									
+									/*Call the reset function*/
+									that.resetVariables();
 								}
 							}
 						}
@@ -253,16 +287,89 @@ function advanceSearchClass()
 					/*Initialize the select2*/
 					$(".advanceFiltersContainer select").select2();
 				}
+				/*If data not fetched*/
 				else
 				{
 					console.log(result.message);
 				}
 			},
-			/*If data not fetched*/
+			/*If there is a problem in calling server*/
+			error : function(err)
+			{
+				$("#"+buttonId).button("complete");
+				console.log(err.statusText);
+			}
+		});		
+	};
+
+	/**
+	 * This function call the set filter api & as the response pass the devices to the devicePlottingLib
+	 * @class advanceSearchLib
+	 * @method setFilters
+	 * @param searchString "String" It is the query string passed to the API
+	 * @param setFilterApi "String" It is the URL of the set filter API
+	 */
+	this.setFilters = function(searchString,setFilterApi)
+	{
+		/*To Enable The Cross Domain Request*/
+		$.support.cors = true;
+
+		$.ajax({
+			crossDomain: true,
+			url : setFilterApi+"?search_text='"+searchString+"'",
+			// url : "http://192.168.0.19:8000/gis/set_filters/?search_text='"+searchString+"'",
+			type : "GET",
+			dataType : "json",
+			/*If data fetched successful*/
+			success : function(result)
+			{
+				/*If data fetch successfully*/
+				if(result.success == 1)
+				{
+					if(result.data.objects != null)
+					{
+						/*Create a instance of networkMapClass*/
+						var networkMapInstance = new networkMapClass();
+
+						/*Reset markers, polyline & filters*/
+				        networkMapInstance.clearMapElements();
+
+				        /*Reset Global Variables & Filters*/
+				        networkMapInstance.resetVariables();
+
+				        /*Call the getDevicesFilter function to seperate the filter values from the object array*/
+						networkMapInstance.getDevicesFilter(result.data.objects.children);
+
+				        /*Call the make network to create the BS-SS network on the google map*/
+				        networkMapInstance.populateNetwork(result.data.objects.children);
+					}
+				}
+				else
+				{
+					console.log(result.message);
+				}
+			},
 			error : function(err)
 			{
 				console.log(err.statusText);
 			}
-		});		
+		});
+	};
+
+	/**
+	 * This function reset all variable used in the process
+	 * @class advanceSearchLib
+	 * @method resetVariables
+	 */
+	this.resetVariables = function()
+	{
+		/*Reset the variable*/
+		filtersInfoArray = [];
+		templateData = "";
+		formElements = "";
+		elementsArray = [];
+		resultantObject = {};
+		resultantObjectArray = [];
+		searchParameters = "";
 	}
 }

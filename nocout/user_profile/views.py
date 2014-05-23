@@ -1,7 +1,7 @@
 from django.db.models import Q
 from django.db.models.query import ValuesQuerySet
 from django.views.generic import ListView, DetailView
-from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin, BaseUpdateView
 from django.core.urlresolvers import reverse_lazy
 from nocout.utils.jquery_datatable_generation import Datatable_Generation
 from user_profile.models import UserProfile, Department, Roles
@@ -42,7 +42,7 @@ class UserListingTable(BaseDatatableView):
                 query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns)+")"
+            exec_query += ").values(*"+str(self.columns+['id'])+")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -149,6 +149,15 @@ class UserUpdate(UpdateView):
     form_class = UserForm
     success_url = reverse_lazy('user_list')
 
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments for instantiating the form.
+        """
+        kwargs = super(ModelFormMixin, self).get_form_kwargs()
+        kwargs.update({'instance': self.object})
+        kwargs.update({'request':self.request.user })
+        return kwargs
+
     def form_valid(self, form):
         self.object.username = form.cleaned_data['username']
         self.object.first_name = form.cleaned_data['first_name']
@@ -195,4 +204,32 @@ class UserDelete(DeleteView):
     model = UserProfile
     template_name = 'user_profile/user_delete.html'
     success_url = reverse_lazy('user_list')
+
+class CurrentUserProfileUpdate(UpdateView):
+    model = UserProfile
+    template_name = 'user_profile/user_myprofile.html'
+    form_class = UserForm
+    success_url = reverse_lazy('current_user_profile_update')
+
+    def get_form_kwargs(self):
+        kwargs = super(ModelFormMixin, self).get_form_kwargs()
+        kwargs.update({'instance': self.object})
+        kwargs.update({'request':self.request.user })
+        return kwargs
+
+    def get_object(self, queryset=None):
+        return self.model._default_manager.get(pk=self.request.user.id)
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        kwargs=dict(first_name=self.object.first_name,
+            last_name=self.object.last_name, email=self.object.email, phone_number=self.object.phone_number,
+            company=self.object.company, designation=self.object.designation, address=self.object.address)
+
+        if 'password2' in form.cleaned_data:
+            kwargs.update({'password': make_password(form.cleaned_data['password2'])})
+
+        UserProfile.objects.filter(id=self.object.id).update(**kwargs)
+
+        return super(ModelFormMixin, self).form_valid(form)
 
