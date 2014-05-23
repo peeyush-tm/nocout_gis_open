@@ -9,11 +9,13 @@ def locate_devices(request):
                         request.META['SERVER_NAME'] + ":" + \
                         request.META['SERVER_PORT'] + "/",
                     'username' : request.user.username,
-                    'get_filter_api': 
+                    'get_filter_api':
+                        "http://" + \
                         request.META['SERVER_NAME'] + ":" + \
                         request.META['SERVER_PORT'] + "/" + \
                         "gis/get_filters/",
                     'set_filter_api':
+                        "http://" + \
                         request.META['SERVER_NAME'] + ":" + \
                         request.META['SERVER_PORT'] + "/" + \
                         "gis/set_filters/",
