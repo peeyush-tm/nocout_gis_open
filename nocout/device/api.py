@@ -50,6 +50,8 @@ class DeviceStatsApi(View):
         
         #Retreive username from active session
         username = request.user.username
+        if username == '':
+            username = req_params.get('username')
 
         page_number = req_params.get('page_number')
         limit = req_params.get('limit')
@@ -214,7 +216,7 @@ class DeviceStats(View):
                     "parent_id": obj.parent_id,
                     "lat": obj.latitude,
                     "lon": obj.longitude,
-                    "markerUrl": "http://%s:8000/static/img/marker/marker3.png"
+                    "markerUrl": "http://%s:8000/static/img/marker/slave03.png"
                     % kwargs.get('host_ip'), "perf": "75%",
                     "ip": obj.ip_address,
                     "otherDetail": "No Detail",
