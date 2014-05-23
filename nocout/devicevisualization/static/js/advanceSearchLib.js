@@ -1,5 +1,5 @@
 /*Global Variables*/
-var that = "",
+var self = "",
     filtersInfoArray = [],
     templateData = "",
     formElements = "",
@@ -17,7 +17,7 @@ var that = "",
 function advanceSearchClass() {
 
 	/*Store the reference of current pointer in a global variable*/
-	that = this;
+	self = this; // Name of current pointer referencing element in all files should be different otherwise conflicts occurs
 
 	/**
 	 * This function first get the filters object from the server, create the filters HTML struction & then populate the HTML in the popup
@@ -32,7 +32,7 @@ function advanceSearchClass() {
 	this.getFilterInfo = function(domElemet,windowTitle,buttonId,getApiUrl,setApiUrl) {
 
 		/*Store the reference of current pointer in a global variable*/
-		that = this;
+		self = this;
 
 		/*Change the text of the button to "Please Wait..." & disable the button*/
 		$("#"+buttonId).button("loading");
@@ -257,10 +257,10 @@ function advanceSearchClass() {
 									searchParameters = JSON.stringify(resultantObjectArray);
 
 									/*call the setFilters function with the searchparamerts & setFilters API url*/
-									that.setFilters(searchParameters,setApiUrl);
+									self.setFilters(searchParameters,setApiUrl);
 
 									/*Call the reset function*/
-									that.resetVariables();
+									self.resetVariables();
 								}
 							},
 							danger: {
@@ -269,7 +269,7 @@ function advanceSearchClass() {
 								callback: function() {
 									
 									/*Call the reset function*/
-									that.resetVariables();
+									self.resetVariables();
 								}
 							}
 						}
