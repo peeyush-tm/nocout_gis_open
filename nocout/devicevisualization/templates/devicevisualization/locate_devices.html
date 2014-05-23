@@ -13,8 +13,8 @@
         <div class="btn-group">
             <ul class="list-unstyled list-inline">
                 <li>
-                    <button class="btn btn-success" onclick="showAdvFilters();" title="Click here for advance search">
-                        <i class='fa fa-search'></i> Advance Search
+                    <button id="advFilterBtn" class="btn btn-success" onclick="showAdvFilters();" data-complete-text="<i class='fa fa-filter'></i> Advance Filters" data-loading-text="Please Wait...">
+                        <i class='fa fa-filter'></i> Advance Filters
                     </button>
                 </li>
             </ul>            
@@ -26,29 +26,41 @@
 {% block content %}
 <div class='box border lite mapContainerBlock'>
     <div class='box-title'>
-        <h4 class="col-md-1"><i class='fa fa-map-marker'></i>GIS <i class="fa fa-spinner fa fa-spin" id="loadingIcon">&nbsp;</i></h4>
+        <h4 class="col-md-3"><i class='fa fa-map-marker'></i>GIS <i class="fa fa-spinner fa fa-spin" id="loadingIcon">&nbsp;</i></h4>
         <!--Filters Block Start-->
-        <div class="tools col-md-11" style="margin-top:-25px;">
-            <!--Reset Button-->
-            <button class="btn btn-xs btn-inverse" id="resetFilters">
-                <i class="fa fa-refresh">&nbsp;</i> Refresh
-            </button>
-            <!--City Filter-->
-            <select name="city" id="city" class="form-control col-xs-1">
-                <option value="">Select City</option>
-            </select>
-            <!--State Filter-->
-            <select name="state" id="state" class="form-control col-xs-1">
-                <option value="">Select State</option>
-            </select>
-            <!--vendor Filter-->
-            <select name="vendor" id="vendor" class="form-control col-xs-1">
-                <option value="">Select Vendor</option>
-            </select>
-            <!--technology Filter-->
-            <select name="technology" id="technology" class="form-control col-xs-1">
-                <option value="">Select Technology</option>
-            </select>                           
+        <div class="col-md-9">
+            <ul class="list-unstyled list-inline pull-right">
+                <li>
+                    <!--technology Filter-->
+                    <select name="technology" id="technology" class="form-control col-xs-1 input-sm">
+                        <option value="">Select Technology</option>
+                    </select>   
+                </li>
+                <li>
+                    <!--vendor Filter-->
+                    <select name="vendor" id="vendor" class="form-control col-xs-1 input-sm">
+                        <option value="">Select Vendor</option>
+                    </select>
+                </li>
+                <li>
+                    <!--State Filter-->
+                    <select name="state" id="state" class="form-control col-xs-1 input-sm">
+                        <option value="">Select State</option>
+                    </select>
+                </li>
+                <li>
+                    <!--City Filter-->
+                    <select name="city" id="city" class="form-control col-xs-1 input-sm">
+                        <option value="">Select City</option>
+                    </select>   
+                </li>
+                <li>
+                    <!--Reset Button-->
+                    <button class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters" data-complete-text="<i class='fa fa-refresh'></i> Refresh" data-loading-text="Please Wait...">
+                        <i class="fa fa-refresh">&nbsp;</i> Refresh
+                    </button>
+                </li>
+            </ul>
         </div>
         <!--Filters Block End-->
         <div class="clear"></div>
@@ -122,18 +134,25 @@
     /*This event triggers when Reset Filter button clicked*/
     $("#resetFilters").click(function(e) {
 
+        $("#resetFilters").button("loading");
+        /*Reset markers, polyline & filters*/
+        networkMapInstance.clearMapElements();
+
+        /*Reset Global Variables & Filters*/
+        networkMapInstance.resetVariables();
+
         /*Call the make network to create the BS-SS network on the google map*/
         networkMapInstance.getDevicesData(hostIp,username);
     });
 
     /**
-     * This function triggers when "Advance Search" button is pressed
+     * This function triggers when "Advance Filters" button is pressed
      * @function showAdvFilters
      */
     function showAdvFilters()
     {
         var advSearch = new advanceSearchClass();
-        advSearch.getFilterInfo("filterInfoModal","Advance Search",getFilterApi,setFilterApi);
+        advSearch.getFilterInfo("filterInfoModal","Advance Filters","advFilterBtn",getFilterApi,setFilterApi);
     }
 
 </script>

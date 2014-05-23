@@ -46,8 +46,8 @@ function networkMapClass()
 		currentDomElement = domElement;
 
 		var mapObject = {
-			center    : new google.maps.LatLng(21.0000,78.0000),
-			zoom      : 1
+			center    : new google.maps.LatLng(21.1500,79.0900),
+			zoom      : 2
 		};    
 		/*Create Map Type Object*/
 		mapInstance = new google.maps.Map(document.getElementById(domElement),mapObject);
@@ -85,13 +85,20 @@ function networkMapClass()
 	{
 		if(counter < totalCalls)
 		{
+			/*Show The loading Icon*/
+			$("#loadingIcon").show();
+
+			/*Disable the refresh button*/
+			$("#resetFilters").button("loading");
+
 			/*To Enable The Cross Domain Request*/
 			$.support.cors = true;
+			
 			/*Ajax call to the API*/
 			$.ajax({
 				crossDomain: true,
 				url : "//" + hostIp + "device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
-				// url : "http://127.0.0.1:8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
+				// url : "http://192.168.0.19:8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
@@ -99,9 +106,6 @@ function networkMapClass()
 				{
 					if(result.data.objects != null)
 					{
-						/*Show The loading Icon*/
-						$("#loadingIcon").show();
-
 						hitCounter = hitCounter + 1;
 						/*First call case*/
 						if(devicesObject.data == undefined)
@@ -137,63 +141,10 @@ function networkMapClass()
 						{
 							/*Call the populateNetwork to show the markers on the map*/
 							that.populateNetwork(devices);
+							
+							/*Call the getDevicesFilter function to seperate the filter values from the object array*/
+							that.getDevicesFilter(devices);
 
-							/*Make an array of master & slave cities as well as states*/
-							for(var i=0;i<devices.length;i++)
-							{
-								/*Total number of slave for particular master*/
-								var slaveCount = devices[i].children.length;
-
-								/*Loop for the slaves*/
-								for(var j=0;j<slaveCount;j++)
-								{
-									/*Push master city in cityArray array*/
-									if(cityArray.indexOf($.trim(devices[i].data.city)) == -1)
-									{
-										cityArray.push($.trim(devices[i].data.city));
-									}
-									/*Push slave city in cityArray array*/
-									if(cityArray.indexOf($.trim(devices[i].children[j].data.city)) == -1)
-									{
-										cityArray.push($.trim(devices[i].children[j].data.city));
-									}
-
-									/*Push master states in stateArray array*/
-									if(stateArray.indexOf($.trim(devices[i].data.state)) == -1)
-									{
-										stateArray.push($.trim(devices[i].data.state));
-									}
-									/*Push slave states in stateArray array*/
-									if(stateArray.indexOf($.trim(devices[i].children[j].data.state)) == -1)
-									{
-										stateArray.push($.trim(devices[i].children[j].data.state));
-									}
-
-									/*Push master vendors in masterVendorArray array*/
-									if(vendorArray.indexOf($.trim(devices[i].data.vendor)) == -1)
-									{
-										vendorArray.push($.trim(devices[i].data.vendor));
-									}
-									/*Push slave vendors in slaveVendorArray array*/
-									if(vendorArray.indexOf($.trim(devices[i].children[j].data.vendor)) == -1)
-									{
-										vendorArray.push($.trim(devices[i].children[j].data.vendor));
-									}
-
-									/*Push master technology in techArray array*/
-									if(techArray.indexOf($.trim(devices[i].data.technology)) == -1)
-									{
-										techArray.push($.trim(devices[i].data.technology));
-									}
-									/*Push slave technology in techArray array*/
-									if(techArray.indexOf($.trim(devices[i].children[j].data.technology)) == -1)
-									{
-										techArray.push($.trim(devices[i].children[j].data.technology));
-									}
-								}
-							}
-							/*Populate the city & state dropdown filters*/
-							that.populateFilters(cityArray,stateArray,vendorArray,techArray);
 						}
 						else
 						{
@@ -222,9 +173,10 @@ function networkMapClass()
 		}
 		else
 		{
+			/*Recall the server after the defined time*/
 			that.recallServer();
 		}
-
+		
 		counter = counter + 1;
 	};
 
@@ -619,7 +571,7 @@ function networkMapClass()
 	 		else
 	 		{
 				/*Reset the markers, polyline & filters*/
-	 			that.resetAllElements();
+	 			that.clearMapElements();
 
 	 			/*Clear the marker array of OverlappingMarkerSpiderfier*/
 				oms.clearMarkers();
@@ -640,39 +592,6 @@ function networkMapClass()
 	this.loadExistingDevices = function()
 	{
 		that.populateNetwork(devices);
-	};
-
-	/**
-	 * This function removes all the devices from the map
-	 * @class devicePlottingLib
-	 * @method resetAllElements
-	 */
-	this.resetAllElements = function()
-	{
-		if(masterMarkersObj.length > 0)
-		{
-			/*Remove All Master Markers*/
-			for(var i=0;i<masterMarkersObj.length;i++)
-			{
-				masterMarkersObj[i].setMap(null);
-			}
-		}
-		if(slaveMarkersObj.length > 0)
-		{
-			/*Remove All Slave Markers*/
-			for(var j=0;j<slaveMarkersObj.length;j++)
-			{
-				slaveMarkersObj[j].setMap(null);
-			}
-		}
-		if(pathLineArray.length > 0)
-		{
-			/*Remove all link line between devices*/
-			for(var j=0;j<pathLineArray.length;j++)
-			{
-				pathLineArray[j].setMap(null);
-			}
-		}
 	};
 
 	/**
@@ -721,6 +640,74 @@ function networkMapClass()
             that.loadExistingDevices();
         }
     };
+		
+	/**
+	 * This function get the filters values from divices array object & then call other function to populate the filters dropdown
+	 * @class devicePlottingLib
+	 * @method getDevicesFilter
+	 * @param devices [Object Array] It is the fetched devices array object
+	 */
+	this.getDevicesFilter = function(devices)
+	{
+		/*Make an array of master & slave cities as well as states*/
+		for(var i=0;i<devices.length;i++)
+		{
+			/*Total number of slave for particular master*/
+			var slaveCount = devices[i].children.length;
+
+			/*Loop for the slaves*/
+			for(var j=0;j<slaveCount;j++)
+			{
+				/*Push master city in cityArray array*/
+				if(cityArray.indexOf($.trim(devices[i].data.city)) == -1)
+				{
+					cityArray.push($.trim(devices[i].data.city));
+				}
+				/*Push slave city in cityArray array*/
+				if(cityArray.indexOf($.trim(devices[i].children[j].data.city)) == -1)
+				{
+					cityArray.push($.trim(devices[i].children[j].data.city));
+				}
+
+				/*Push master states in stateArray array*/
+				if(stateArray.indexOf($.trim(devices[i].data.state)) == -1)
+				{
+					stateArray.push($.trim(devices[i].data.state));
+				}
+				/*Push slave states in stateArray array*/
+				if(stateArray.indexOf($.trim(devices[i].children[j].data.state)) == -1)
+				{
+					stateArray.push($.trim(devices[i].children[j].data.state));
+				}
+
+				/*Push master vendors in masterVendorArray array*/
+				if(vendorArray.indexOf($.trim(devices[i].data.vendor)) == -1)
+				{
+					vendorArray.push($.trim(devices[i].data.vendor));
+				}
+				/*Push slave vendors in slaveVendorArray array*/
+				if(vendorArray.indexOf($.trim(devices[i].children[j].data.vendor)) == -1)
+				{
+					vendorArray.push($.trim(devices[i].children[j].data.vendor));
+				}
+
+				/*Push master technology in techArray array*/
+				if(techArray.indexOf($.trim(devices[i].data.technology)) == -1)
+				{
+					techArray.push($.trim(devices[i].data.technology));
+				}
+				/*Push slave technology in techArray array*/
+				if(techArray.indexOf($.trim(devices[i].children[j].data.technology)) == -1)
+				{
+					techArray.push($.trim(devices[i].children[j].data.technology));
+				}
+			}
+		}
+		
+		/*Populate the city & state dropdown filters*/
+		that.populateFilters(cityArray,stateArray,vendorArray,techArray);
+	};
+
     /**
      * This function resets the global variables & again call the api calling function after given timeout
      * @class devicePlottingLib
@@ -731,30 +718,84 @@ function networkMapClass()
     	/*Hide The loading Icon*/
 		$("#loadingIcon").hide();
 
+		/*Enable the refresh button*/
+		$("#resetFilters").button("complete");
+
     	setTimeout(function() {
-			/*Reset The Filters*/
-			$("#technology").html("<option value=''>Select Technology</option>");
-			$("#vendor").html("<option value=''>Select Vendor</option>");
-			$("#state").html("<option value=''>Select State</option>");
-			$("#city").html("<option value=''>Select City</option>");
-			/*Reset All The Variables*/
-			hitCounter = 1;
-			showLimit = 0;
-			remainingDevices = 0;
-			counter = 0;
-			totalCalls = 1;
-			devicesObject = {};
-			devices = [];
-			cityArray = [];
-			stateArray = [];
-			vendorArray = [];
-			techArray = [];
 			
-			/*Reselt markers, polyline & filters*/
-			that.resetAllElements();
+			/*Hide The loading Icon*/
+			$("#loadingIcon").show();
+
+			/*Enable the refresh button*/
+			$("#resetFilters").button("loading");
+
+			/*Reset markers & polyline*/
+			that.clearMapElements();
+
+			/*Reset Global Variables & Filters*/
+			that.resetVariables();	
+			
 			/*Recall the API*/
 			that.getDevicesData(hostIp,username);
 
 		},120000);
     };
+
+    /**
+	 * This function removes all the elements from the map
+	 * @class devicePlottingLib
+	 * @method clearMapElements
+	 */
+	this.clearMapElements = function()
+	{
+		if(masterMarkersObj.length > 0)
+		{
+			/*Remove All Master Markers*/
+			for(var i=0;i<masterMarkersObj.length;i++)
+			{
+				masterMarkersObj[i].setMap(null);
+			}
+		}
+		if(slaveMarkersObj.length > 0)
+		{
+			/*Remove All Slave Markers*/
+			for(var j=0;j<slaveMarkersObj.length;j++)
+			{
+				slaveMarkersObj[j].setMap(null);
+			}
+		}
+		if(pathLineArray.length > 0)
+		{
+			/*Remove all link line between devices*/
+			for(var j=0;j<pathLineArray.length;j++)
+			{
+				pathLineArray[j].setMap(null);
+			}
+		}
+	};
+
+	/**
+	 * This function reset all global variable used in the process
+	 * @class devicePlottingLib
+	 * @method resetVariables
+	 */
+	this.resetVariables = function()
+	{
+		$("#technology").html("<option value=''>Select Technology</option>");
+		$("#vendor").html("<option value=''>Select Vendor</option>");
+		$("#state").html("<option value=''>Select State</option>");
+		$("#city").html("<option value=''>Select City</option>");
+		/*Reset All The Variables*/
+		hitCounter = 1;
+		showLimit = 0;
+		remainingDevices = 0;
+		counter = 0;
+		totalCalls = 1;
+		devicesObject = {};
+		devices = [];
+		cityArray = [];
+		stateArray = [];
+		vendorArray = [];
+		techArray = [];
+	};
 }
