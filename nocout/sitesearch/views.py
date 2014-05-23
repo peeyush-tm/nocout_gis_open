@@ -217,6 +217,7 @@ class DeviceSetFilters(View):
         req_params = request.GET
         #Get the host-ip
         host_ip = request.META['SERVER_NAME']
+        host_port = request.META['SERVER_PORT']
         filters = {}
         device_attribs = {}
         device_object_list = []
@@ -287,7 +288,8 @@ class DeviceSetFilters(View):
         device_m_s_info = self.get_master_slave_pairs(
             device_object_list,
             show_link=1,
-            host_ip=host_ip
+            host_ip=host_ip,
+            host_port=host_port
         )
 
         if len(device_m_s_info.get('children')):
@@ -420,7 +422,8 @@ class DeviceSetFilters(View):
                         "parent_id": obj.parent_id,
                         "lat": obj.latitude,
                         "lon": obj.longitude,
-                        "markerUrl": "http://192.168.0.19:8000/static/img/marker/slave03.png",
+                        "markerUrl": "//%s:%s/static/img/marker/slave03.png"
+                        % (kwargs.get('host_ip'), kwargs.get('host_port')),
                         "perf": "75%",
                         "ip": obj.ip_address,
                         "otherDetail": "No Detail",

@@ -9,18 +9,23 @@ def locate_devices(request):
                         request.META['SERVER_NAME'] + ":" + \
                         request.META['SERVER_PORT'] + "/",
                     'username' : request.user.username,
-                    'get_filter_api':
-                        "http://" + \
-                        request.META['SERVER_NAME'] + ":" + \
-                        request.META['SERVER_PORT'] + "/" + \
-                        "gis/get_filters/",
-                    'set_filter_api':
-                        "http://" + \
-                        request.META['SERVER_NAME'] + ":" + \
-                        request.META['SERVER_PORT'] + "/" + \
-                        "gis/set_filters/",
+                    'get_filter_api': get_url(request, 'GET'),
+                    'set_filter_api': get_url(request, 'POST')
                     }
+    print "-- template_data --"
+    print template_data
 
     return render_to_response('devicevisualization/locate_devices.html', 
                                 template_data, 
                                 context_instance=RequestContext(request))
+
+def get_url(req, method):
+    url = None
+    if method == 'GET':
+        url = "//" + req.META['SERVER_NAME'] + ":" + \
+            req.META['SERVER_PORT'] + "/gis/get_filters/"
+    elif method == 'POST':
+        url = "//" + req.META['SERVER_NAME'] + ":" + \
+            req.META['SERVER_PORT'] + "/gis/set_filters/"
+
+    return url
