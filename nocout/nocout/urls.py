@@ -11,7 +11,7 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
     url(r'^$',RedirectView.as_view(url='login/')),
-    url(r'^home/', 'home.views.home'),
+    url(r'^home/', 'home.views.home', name='home'),
     url(r'^user/', include('user_profile.urls')),
     url(r'^user_group/', include('user_group.urls')),
     url(r'^device/', include('device.urls')),
