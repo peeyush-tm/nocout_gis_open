@@ -83,6 +83,9 @@ function networkMapClass()
 	 */
 	this.getDevicesData = function(hostIp,username)
 	{
+		/*Store the reference of current pointer in a global variable*/
+		that = this;
+
 		if(counter < totalCalls)
 		{
 			/*Show The loading Icon*/
@@ -476,6 +479,9 @@ function networkMapClass()
 	 */
 	this.applyFilter = function(filtersArray) {
 
+		/*Store the reference of current pointer in a global variable*/
+		that = this;
+
 		var filterKey = [],
 			filteredData = [],
 			masterIds = [],
@@ -715,6 +721,9 @@ function networkMapClass()
      */
     this.recallServer = function()
     {
+    	/*Store the reference of current pointer in a global variable*/
+    	that = this;
+
     	/*Hide The loading Icon*/
 		$("#loadingIcon").hide();
 
