@@ -151,8 +151,8 @@ def device_soft_delete_form(request, value):
     result['data']['objects'] = {}
     result['data']['objects']['device_id'] = device.id
     result['data']['objects']['device_name'] = device.device_name
-    # child_device_groups: these are the device groups which are associated with
-    # the device group which needs to be deleted in parent-child relationship
+    # child_devices: these are the devices which are associated with
+    # the device which needs to be deleted in parent-child relationship
     child_devices = Device.objects.filter(parent_id=value, is_deleted=0)
     result['data']['objects']['child_devices'] = []
     # future device parent is needs to find out only if our device is
@@ -201,7 +201,7 @@ def device_soft_delete(request, device_id, new_parent_id=1):
         # new_parent: new parent device for associated devices
         new_parent = Device.objects.get(id=new_parent_id)
     except:
-        print "No new device group parent exist."
+        print "No new device parent exist."
     try:
         child_devices = Device.objects.filter(parent_id=device_id)
     except:
