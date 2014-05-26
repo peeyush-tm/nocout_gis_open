@@ -18,7 +18,7 @@ var mapInstance = "",
 	devices = [],
 	masterMarkersObj = [],
 	slaveMarkersObj = [],
-	pathLineArray = []
+	pathLineArray = [],
 	counter = 0,
 	totalCalls = 1;
 
@@ -29,8 +29,8 @@ var mapInstance = "",
  * @uses Google Maps
  * Coded By :- Yogender Purohit
  */
-function networkMapClass()
-{
+function networkMapClass() {
+
 	/*Store the reference of current pointer in a global variable*/
 	that = this;
 
@@ -40,8 +40,11 @@ function networkMapClass()
 	 * @class networkMap
 	 * @param domElement "String" It the the dom element on which the map is to be create
 	 */
-	this.createMap = function(domElement)
-	{
+	this.createMap = function(domElement) {
+
+		/*Store the reference of current pointer in a global variable*/
+		that = this;
+
 		/*Save the dom element in the global variable*/
 		currentDomElement = domElement;
 
@@ -81,8 +84,11 @@ function networkMapClass()
 	 * @function getDevicesData
 	 * @class networkMap
 	 */
-	this.getDevicesData = function(hostIp,username)
-	{
+	this.getDevicesData = function(hostIp,username) {
+
+		/*Store the reference of current pointer in a global variable*/
+		that = this;
+
 		if(counter < totalCalls)
 		{
 			/*Show The loading Icon*/
@@ -98,25 +104,24 @@ function networkMapClass()
 			$.ajax({
 				crossDomain: true,
 				url : "//" + hostIp + "device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
-				// url : "http://192.168.0.19:8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
+				// url : "http://127.0.0.1:8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
-				success : function(result)
-				{
-					if(result.data.objects != null)
-					{
+				success : function(result) {
+
+					if(result.data.objects != null) {
+
 						hitCounter = hitCounter + 1;
 						/*First call case*/
-						if(devicesObject.data == undefined)
-						{
+						if(devicesObject.data == undefined) {
+
 							/*Save the result json to the global variable for global access*/
 							devicesObject = result;
 							/**/
 							devices = devicesObject.data.objects.children;
-						}
-						else
-						{
+						} else {
+
 							devices = devices.concat(result.data.objects.children);
 						}
 
@@ -127,52 +132,48 @@ function networkMapClass()
 						/*Update the device count with the received data*/
 						showLimit = devicesObject.data.meta.limit;
 
-						if(remainingDevices == 0)
-						{
+						if(remainingDevices == 0) {
+
 							showLimit = devicesObject.data.meta.limit;
 							remainingDevices = devicesCount - devicesObject.data.meta.limit;
-						}
-						else
-						{
+						} else {
+
 							remainingDevices = remainingDevices - devicesObject.data.meta.limit;
 						}
 						
-						if(devicesObject.success == 1)
-						{
+						if(devicesObject.success == 1) {
+
 							/*Call the populateNetwork to show the markers on the map*/
 							that.populateNetwork(devices);
 							
 							/*Call the getDevicesFilter function to seperate the filter values from the object array*/
 							that.getDevicesFilter(devices);
 
-						}
-						else
-						{
+						} else {
+
 							that.recallServer();
 						}
 						/*Calculate the total number of pages from limit & total count*/
 						totalCalls = Math.ceil(result.data.meta.total_count/result.data.meta.limit);
 						/*Call the function after 3 sec.*/
-						setTimeout(function(){
+						setTimeout(function() {
 								
 							that.getDevicesData(hostIp,username);
 						},3000);
-					}
-					else
-					{
+					} else {
+
 						that.recallServer();
 					}
 				},
 				/*If data not fetched*/
-				error : function(err)
-				{
+				error : function(err) {
+
 					that.recallServer();
 					console.log(err.statusText);
 				}
 			});
-		}
-		else
-		{
+		} else {
+
 			/*Recall the server after the defined time*/
 			that.recallServer();
 		}
@@ -186,10 +187,16 @@ function networkMapClass()
      * @method populateNetwork
      * @param resultantMarkers [JSON Objet Array] It is the devies object array
 	 */
-	this.populateNetwork = function(resultantMarkers)
-	{
-		for(var i=0;i<resultantMarkers.length;i++)
-		{
+	this.populateNetwork = function(resultantMarkers) {
+
+		/*Store the reference of current pointer in a global variable*/
+		that = this;
+
+		/*Assign the potting devices to the 'devices' global variables*/
+		devices = resultantMarkers;
+
+		for(var i=0;i<resultantMarkers.length;i++) {
+
 			/*Create Master Marker Object*/
 			var masterMarkerObject = {
 		    	position  	: new google.maps.LatLng(resultantMarkers[i].data.lat,resultantMarkers[i].data.lon),
@@ -218,8 +225,8 @@ function networkMapClass()
 		    /*Loop for the number of slave & their links with the master*/
 		    var slaveCount = resultantMarkers[i].children.length;
 
-		    for(var j=0;j<slaveCount;j++)
-		 	{
+		    for(var j=0;j<slaveCount;j++) {
+
 		    	/*Create Slave Marker Object*/
 			    var slaveMarkerObject = {
 			    	position  	: new google.maps.LatLng(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon),
@@ -249,8 +256,8 @@ function networkMapClass()
 			    oms.addMarker(masterMarker);
 				oms.addMarker(slaveMarker);
 
-				if(resultantMarkers[i].data.showLink == 1)
-				{
+				if(resultantMarkers[i].data.showLink == 1) {
+
 					/*Create object for Link Line Between Master & Slave*/
 					var pathDataObject = [
 						new google.maps.LatLng(resultantMarkers[i].data.lat,resultantMarkers[i].data.lon),
@@ -328,16 +335,19 @@ function networkMapClass()
 	 * @param contentObject {JSON Object} It contains the current pointer(this) information
 	 * @return windowContent "String" It contains the content to be shown on info window
 	 */
-	this.makeWindowContent = function(contentObject,event)
-	{
+	this.makeWindowContent = function(contentObject,event) {
+
+		/*Store the reference of current pointer in a global variable*/
+		that = this;
+
 		var windowContent = "",
 			infoTable =  "",
 			perfContent = "",
 			clickedType = $.trim(contentObject.pointType);
 
 		/*True,if clicked on the link line*/
-		if(clickedType == "path")
-		{
+		if(clickedType == "path") {
+
 			var pathPositions = pathConnector.getPath().j;
 
 			perfContent = "";
@@ -389,9 +399,8 @@ function networkMapClass()
 			infoTable += "</tbody></table>";
 			/*Final infowindow content string*/
 			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  Master-Slave Link</h4></div><div class='box-body'><div>"+infoTable+"</div><div class='clear'></div></div></div></div>";
-		}		
-		else
-		{
+		} else {
+
 			perfContent = "";
 			infoTable = "";
 
@@ -428,6 +437,9 @@ function networkMapClass()
 	 */
 	this.populateFilters = function(cityArray,stateArray,vendorArray,technologyArray) {
 		
+		/*Store the reference of current pointer in a global variable*/
+		that = this;
+
 		var stateOptions = "<option value=''>Select State</option>",
 	 		cityOptions = "<option value=''>Select City</option>",
 	 		vendorOptions = "<option value=''>Select Vendor</option>",
@@ -435,26 +447,26 @@ function networkMapClass()
 
 
  		/*Loop for the state array*/
-	 	for(var i=0;i<stateArray.length;i++)
-	 	{
+	 	for(var i=0;i<stateArray.length;i++) {
+
 	 		stateOptions += '<option value="'+stateArray[i]+'">'+stateArray[i]+'</option>';
 	 	}
 
 	 	/*Loop for the city array*/
-	 	for(var j=0;j<cityArray.length;j++)
-	 	{
+	 	for(var j=0;j<cityArray.length;j++) {
+
 	 		cityOptions += '<option value="'+cityArray[j]+'">'+cityArray[j]+'</option>';
 	 	}
 
 	 	/*Loop for the vendor array*/
-	 	for(var k=0;k<vendorArray.length;k++)
-	 	{
+	 	for(var k=0;k<vendorArray.length;k++) {
+
 	 		vendorOptions += '<option value="'+vendorArray[k]+'">'+vendorArray[k]+'</option>';
 	 	}	 	
 
 	 	/*Loop for the technology array*/
-	 	for(var l=0;l<technologyArray.length;l++)
-	 	{
+	 	for(var l=0;l<technologyArray.length;l++) {
+
 	 		technologyOptions += '<option value="'+technologyArray[l]+'">'+technologyArray[l]+'</option>';
 	 	}
 
@@ -476,6 +488,9 @@ function networkMapClass()
 	 */
 	this.applyFilter = function(filtersArray) {
 
+		/*Store the reference of current pointer in a global variable*/
+		that = this;
+
 		var filterKey = [],
 			filteredData = [],
 			masterIds = [],
@@ -487,27 +502,27 @@ function networkMapClass()
 		    filterKey.push(key);
 		});
 		
-	 	if(devices.length > 0)
-	 	{
+	 	if(devices.length > 0) {
+
 	 		filteredData = [];
-	 		for(var i=0;i<devices.length;i++)
-	 		{
+	 		for(var i=0;i<devices.length;i++) {
+
 	 			/*Total Slaves Count*/
 	 			var slaveLength = devices[i].children.length;
 	 			/*Loop For Slaves*/
-	 			for(var j=0;j<slaveLength;j++)
-	 			{
+	 			for(var j=0;j<slaveLength;j++) {
+
 	 				var master = devices[i];
 		 			var slave = devices[i].children[j];
 		 				
 		 			/*Conditions as per the number of filters*/
-		 			if(filterKey.length == 1)
-		 			{
-	 					if(master.data[filterKey[0]] == filtersArray[filterKey[0]] || slave.data[filterKey[0]] == filtersArray[filterKey[0]])
-		 				{
+		 			if(filterKey.length == 1) {
+
+	 					if(master.data[filterKey[0]] == filtersArray[filterKey[0]] || slave.data[filterKey[0]] == filtersArray[filterKey[0]]) {
+
 		 					/*Check For The Duplicacy*/
-		 					if(masterIds.indexOf(master.id) == -1 && slaveIds.indexOf(slave.id) == -1)
-		 					{
+		 					if(masterIds.indexOf(master.id) == -1 && slaveIds.indexOf(slave.id) == -1) {
+
 		 						/*Save the master & slave ids to array to remove duplicacy*/
 		 						masterIds.push(master.id);
 		 						slaveIds.push(slave.id);
@@ -516,14 +531,13 @@ function networkMapClass()
 		 					}
 		 				}
 
-		 			}
-		 			else if(filterKey.length == 2)
-		 			{
-	 					if((master.data[filterKey[0]] == filtersArray[filterKey[0]] || slave.data[filterKey[0]] == filtersArray[filterKey[0]]) && (master.data[filterKey[1]] == filtersArray[filterKey[1]] || slave.data[filterKey[1]] == filtersArray[filterKey[1]]))
-		 				{	 					
+		 			} else if(filterKey.length == 2) {
+
+	 					if((master.data[filterKey[0]] == filtersArray[filterKey[0]] || slave.data[filterKey[0]] == filtersArray[filterKey[0]]) && (master.data[filterKey[1]] == filtersArray[filterKey[1]] || slave.data[filterKey[1]] == filtersArray[filterKey[1]])) {
+
 		 					/*Check For The Duplicacy*/
-		 					if(masterIds.indexOf(master.id) == -1 && slaveIds.indexOf(slave.id) == -1)
-		 					{
+		 					if(masterIds.indexOf(master.id) == -1 && slaveIds.indexOf(slave.id) == -1) {
+
 		 						/*Save the master & slave ids to array to remove duplicacy*/
 		 						masterIds.push(master.id);
 		 						slaveIds.push(slave.id);
@@ -531,14 +545,13 @@ function networkMapClass()
 		 						filteredData.push(devices[i]);
 		 					}
 		 				}
-		 			}
-		 			else if(filterKey.length == 3)
-		 			{
-		 				if((master.data[filterKey[0]] == filtersArray[filterKey[0]] || slave.data[filterKey[0]] == filtersArray[filterKey[0]]) && (master.data[filterKey[1]] == filtersArray[filterKey[1]] || slave.data[filterKey[1]] == filtersArray[filterKey[1]]) && (master.data[filterKey[2]] == filtersArray[filterKey[2]] || slave.data[filterKey[2]] == filtersArray[filterKey[2]]))
-		 				{	 					
+		 			} else if(filterKey.length == 3) {
+
+		 				if((master.data[filterKey[0]] == filtersArray[filterKey[0]] || slave.data[filterKey[0]] == filtersArray[filterKey[0]]) && (master.data[filterKey[1]] == filtersArray[filterKey[1]] || slave.data[filterKey[1]] == filtersArray[filterKey[1]]) && (master.data[filterKey[2]] == filtersArray[filterKey[2]] || slave.data[filterKey[2]] == filtersArray[filterKey[2]])) {
+
 		 					/*Check For The Duplicacy*/
-		 					if(masterIds.indexOf(master.id) == -1 && slaveIds.indexOf(slave.id) == -1)
-		 					{
+		 					if(masterIds.indexOf(master.id) == -1 && slaveIds.indexOf(slave.id) == -1) {
+
 		 						/*Save the master & slave ids to array to remove duplicacy*/
 		 						masterIds.push(master.id);
 		 						slaveIds.push(slave.id);
@@ -546,14 +559,13 @@ function networkMapClass()
 		 						filteredData.push(devices[i]);
 		 					}
 		 				}
-		 			}
-		 			else if(filterKey.length == 4)
-		 			{
-		 				if((master.data[filterKey[0]] == filtersArray[filterKey[0]] || slave.data[filterKey[0]] == filtersArray[filterKey[0]]) && (master.data[filterKey[1]] == filtersArray[filterKey[1]] || slave.data[filterKey[1]] == filtersArray[filterKey[1]]) && (master.data[filterKey[2]] == filtersArray[filterKey[2]] || slave.data[filterKey[2]] == filtersArray[filterKey[2]]) && (master.data[filterKey[3]] == filtersArray[filterKey[3]] || slave.data[filterKey[3]] == filtersArray[filterKey[3]]))
-		 				{	 					
+		 			} else if(filterKey.length == 4) {
+
+		 				if((master.data[filterKey[0]] == filtersArray[filterKey[0]] || slave.data[filterKey[0]] == filtersArray[filterKey[0]]) && (master.data[filterKey[1]] == filtersArray[filterKey[1]] || slave.data[filterKey[1]] == filtersArray[filterKey[1]]) && (master.data[filterKey[2]] == filtersArray[filterKey[2]] || slave.data[filterKey[2]] == filtersArray[filterKey[2]]) && (master.data[filterKey[3]] == filtersArray[filterKey[3]] || slave.data[filterKey[3]] == filtersArray[filterKey[3]])) {
+
 		 					/*Check For The Duplicacy*/
-		 					if(masterIds.indexOf(master.id) == -1 && slaveIds.indexOf(slave.id) == -1)
-		 					{
+		 					if(masterIds.indexOf(master.id) == -1 && slaveIds.indexOf(slave.id) == -1) {
+
 		 						/*Save the master & slave ids to array to remove duplicacy*/
 		 						masterIds.push(master.id);
 		 						slaveIds.push(slave.id);
@@ -564,23 +576,22 @@ function networkMapClass()
 		 			}
 	 			}
 	 		}
-	 		if(filteredData.length === 0)
-	 		{
-	 			alert("User Don't Have Any Devies For Selected Filters");
-	 		}
-	 		else
-	 		{
+	 		/*Check that after applying filters any data exist or not*/
+	 		if(filteredData.length === 0) {
+
+	 			bootbox.alert("User Don't Have Any Devies For Selected Filters");
+
+	 		} else {
+
 				/*Reset the markers, polyline & filters*/
 	 			that.clearMapElements();
 
-	 			/*Clear the marker array of OverlappingMarkerSpiderfier*/
-				oms.clearMarkers();
 				masterMarkersObj = [];
 				slaveMarkersObj = [];
-	 		}
-	 	
-	 		/*Populate the map with the filtered markers*/
-	 		that.populateNetwork(filteredData);
+
+				/*Populate the map with the filtered markers*/
+	 			that.populateNetwork(filteredData);
+	 		}	 		
 	 	}	
 	};
 
@@ -589,8 +600,11 @@ function networkMapClass()
 	 * @class devicePlottingLib
 	 * @method loadExistingDevices
 	 */
-	this.loadExistingDevices = function()
-	{
+	this.loadExistingDevices = function() {
+
+		/*Store the reference of current pointer in a global variable*/
+		that = this;
+
 		that.populateNetwork(devices);
 	};
 
@@ -599,44 +613,47 @@ function networkMapClass()
      * @function makeFiltersArray
      * @return selectedArray [JSON Array] It is an object array of the selected filters with the keys
      */
-    this.makeFiltersArray = function()
-    {
+    this.makeFiltersArray = function() {
+
+    	/*Store the reference of current pointer in a global variable*/
+		that = this;
+
         var selectedTechnology = $("#technology").val(),
             selectedvendor = $("#vendor").val(),
             selectedState = $("#state").val(),
             selectedCity = $("#city").val(),
             selectedArray = {};
 
-        if(selectedTechnology != "")
-        {
+        if(selectedTechnology != "") {
+
             selectedArray["technology"] = selectedTechnology;
         }
 
-        if(selectedvendor != "")
-        {
+        if(selectedvendor != "") {
+
             selectedArray["vendor"] = selectedvendor;
         }
 
-        if(selectedState != "")
-        {
+        if(selectedState != "") {
+
             selectedArray["state"] = selectedState;
         }
 
-        if(selectedCity != "")
-        {
+        if(selectedCity != "") {
+
             selectedArray["city"] = selectedCity;
         }
         /*Get The Length Of Filter Array*/
         var filtersLength = Object.keys(selectedArray).length;
 
         /*If any filter is applied then filter the data*/
-        if(filtersLength > 0)
-        {
+        if(filtersLength > 0) {
+
             that.applyFilter(selectedArray);
         }
         /*If no filter is applied the load all the devices*/
-        else
-        {
+        else {
+
             that.loadExistingDevices();
         }
     };
@@ -647,58 +664,61 @@ function networkMapClass()
 	 * @method getDevicesFilter
 	 * @param devices [Object Array] It is the fetched devices array object
 	 */
-	this.getDevicesFilter = function(devices)
-	{
+	this.getDevicesFilter = function(devices) {
+
+		/*Store the reference of current pointer in a global variable*/
+		that = this;
+
 		/*Make an array of master & slave cities as well as states*/
-		for(var i=0;i<devices.length;i++)
-		{
+		for(var i=0;i<devices.length;i++) {
+
 			/*Total number of slave for particular master*/
 			var slaveCount = devices[i].children.length;
 
 			/*Loop for the slaves*/
-			for(var j=0;j<slaveCount;j++)
-			{
+			for(var j=0;j<slaveCount;j++) {
+
 				/*Push master city in cityArray array*/
-				if(cityArray.indexOf($.trim(devices[i].data.city)) == -1)
-				{
+				if(cityArray.indexOf($.trim(devices[i].data.city)) == -1) {
+
 					cityArray.push($.trim(devices[i].data.city));
 				}
 				/*Push slave city in cityArray array*/
-				if(cityArray.indexOf($.trim(devices[i].children[j].data.city)) == -1)
-				{
+				if(cityArray.indexOf($.trim(devices[i].children[j].data.city)) == -1) {
+
 					cityArray.push($.trim(devices[i].children[j].data.city));
 				}
 
 				/*Push master states in stateArray array*/
-				if(stateArray.indexOf($.trim(devices[i].data.state)) == -1)
-				{
+				if(stateArray.indexOf($.trim(devices[i].data.state)) == -1) {
+
 					stateArray.push($.trim(devices[i].data.state));
 				}
 				/*Push slave states in stateArray array*/
-				if(stateArray.indexOf($.trim(devices[i].children[j].data.state)) == -1)
-				{
+				if(stateArray.indexOf($.trim(devices[i].children[j].data.state)) == -1) {
+
 					stateArray.push($.trim(devices[i].children[j].data.state));
 				}
 
 				/*Push master vendors in masterVendorArray array*/
-				if(vendorArray.indexOf($.trim(devices[i].data.vendor)) == -1)
-				{
+				if(vendorArray.indexOf($.trim(devices[i].data.vendor)) == -1) {
+
 					vendorArray.push($.trim(devices[i].data.vendor));
 				}
 				/*Push slave vendors in slaveVendorArray array*/
-				if(vendorArray.indexOf($.trim(devices[i].children[j].data.vendor)) == -1)
-				{
+				if(vendorArray.indexOf($.trim(devices[i].children[j].data.vendor)) == -1) {
+
 					vendorArray.push($.trim(devices[i].children[j].data.vendor));
 				}
 
 				/*Push master technology in techArray array*/
-				if(techArray.indexOf($.trim(devices[i].data.technology)) == -1)
-				{
+				if(techArray.indexOf($.trim(devices[i].data.technology)) == -1) {
+
 					techArray.push($.trim(devices[i].data.technology));
 				}
 				/*Push slave technology in techArray array*/
-				if(techArray.indexOf($.trim(devices[i].children[j].data.technology)) == -1)
-				{
+				if(techArray.indexOf($.trim(devices[i].children[j].data.technology)) == -1) {
+
 					techArray.push($.trim(devices[i].children[j].data.technology));
 				}
 			}
@@ -713,13 +733,17 @@ function networkMapClass()
      * @class devicePlottingLib
      * @method recallServer
      */
-    this.recallServer = function()
-    {
+    this.recallServer = function() {
+
+    	/*Store the reference of current pointer in a global variable*/
+    	that = this;
+
     	/*Hide The loading Icon*/
 		$("#loadingIcon").hide();
 
 		/*Enable the refresh button*/
 		$("#resetFilters").button("complete");
+		
 
     	setTimeout(function() {
 			
@@ -746,29 +770,46 @@ function networkMapClass()
 	 * @class devicePlottingLib
 	 * @method clearMapElements
 	 */
-	this.clearMapElements = function()
-	{
-		if(masterMarkersObj.length > 0)
-		{
+	this.clearMapElements = function() {
+
+		/*Store the reference of current pointer in a global variable*/
+		that = this;
+
+		/*Clear the marker array of OverlappingMarkerSpiderfier*/
+		oms.clearMarkers();
+
+		/*Hide The loading Icon*/
+		$("#loadingIcon").hide();
+
+		/*Enable the refresh button*/
+		$("#resetFilters").button("complete");
+
+		/*If any master devices exists*/
+		if(masterMarkersObj.length > 0) {
+
 			/*Remove All Master Markers*/
-			for(var i=0;i<masterMarkersObj.length;i++)
-			{
+			for(var i=0;i<masterMarkersObj.length;i++) {
+
 				masterMarkersObj[i].setMap(null);
 			}
 		}
-		if(slaveMarkersObj.length > 0)
-		{
+
+		/*If any slave devices exists*/
+		if(slaveMarkersObj.length > 0) {
+
 			/*Remove All Slave Markers*/
-			for(var j=0;j<slaveMarkersObj.length;j++)
-			{
+			for(var j=0;j<slaveMarkersObj.length;j++) {
+
 				slaveMarkersObj[j].setMap(null);
 			}
 		}
-		if(pathLineArray.length > 0)
-		{
+
+		/*If any link between devices exists*/
+		if(pathLineArray.length > 0) {
+
 			/*Remove all link line between devices*/
-			for(var j=0;j<pathLineArray.length;j++)
-			{
+			for(var j=0;j<pathLineArray.length;j++) {
+
 				pathLineArray[j].setMap(null);
 			}
 		}
@@ -779,8 +820,11 @@ function networkMapClass()
 	 * @class devicePlottingLib
 	 * @method resetVariables
 	 */
-	this.resetVariables = function()
-	{
+	this.resetVariables = function() {
+
+		/*Store the reference of current pointer in a global variable*/
+		that = this;
+
 		$("#technology").html("<option value=''>Select Technology</option>");
 		$("#vendor").html("<option value=''>Select Vendor</option>");
 		$("#state").html("<option value=''>Select State</option>");

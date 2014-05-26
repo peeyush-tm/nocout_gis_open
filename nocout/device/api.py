@@ -1,5 +1,7 @@
+import operator
 import json
 import copy
+from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
 from django.views.generic.base import View
 from django.http import HttpResponse
@@ -50,12 +52,15 @@ class DeviceStatsApi(View):
         
         #Retreive username from active session
         username = request.user.username
+        if username == '':
+            username = req_params.get('username')
 
         page_number = req_params.get('page_number')
         limit = req_params.get('limit')
         
         #Get the host machine IP address
         host_ip = request.META['SERVER_NAME']
+        host_port = request.META['SERVER_PORT']
         
         #Show link between master-slave device pairs
         show_link = 1
@@ -65,6 +70,7 @@ class DeviceStatsApi(View):
             cls,
             username,
             host_ip=host_ip,
+            host_port=host_port,
             show_link=show_link,
             page_number=page_number,
             limit=limit
@@ -105,19 +111,10 @@ class DeviceStats(View):
         
         """
 
-        #Prototype for device dict
-        device_stats_dict = {
-            "id": "root node",
-            "name": "Root Site Instance",
-            "data": {
-                "$type": "none"
-            },
-            "children": []
-        }
+        device_stats_dict = {}
         inventory_list = []
         page_number = kwargs.get('page_number') if kwargs.get('page_number') else 1
         limit = kwargs.get('limit') if kwargs.get('limit') else 10
-        device_info_list = []
         device_object_list = []
         try:
             self.user_id = User.objects.get(username=user).id
@@ -167,65 +164,101 @@ class DeviceStats(View):
                 print e
                 continue
 
-        for obj in device_object_list:
-            try:
-                device_type_object = DeviceType.objects.get(
-                    id=obj.device_type
-                )
-                device_type = device_type_object.name
-            except ObjectDoesNotExist:
-                print "No DeviceType found"
-                device_type = None
-            try:
-                device_vendor_object = DeviceVendor.objects.get(
-                    id=obj.device_vendor
-                )
-                device_vendor = device_vendor_object.name
-            except ObjectDoesNotExist:
-                print "No DeviceVendor found"
-                device_vendor = None
-            try:
-                device_model_object = DeviceModel.objects.get(
-                    id=obj.device_model
-                )
-                device_model = device_model_object.name
-            except ObjectDoesNotExist:
-                print "No DeviceModel found"
-                device_model = None
-            try:
-                device_technology_object = DeviceTechnology.objects.get(
-                    id=obj.device_technology
-                )
-                device_technology = device_technology_object.name
-            except ObjectDoesNotExist:
-                print "No DeviceTechnology found"
-                device_technology = None
-            try:
+        device_stats_dict = self.get_master_slave_pairs(
+            device_object_list,
+            host_ip=kwargs.get('host_ip'),
+            host_port=kwargs.get('host_port')
+        )
+
+        return device_stats_dict
+
+    def get_model_queryset(self, model_class, field_name, **kwargs):
+        q_list = []
+        obj_attr_list = []
+        f = operator.attrgetter(field_name)
+        if kwargs.get('field_list') is not None:
+            for attr in kwargs.get('field_list'):
+                q_list.append(Q(pk=attr))
+            obj_list = model_class.objects.filter(reduce(operator.or_, q_list))
+            for o in obj_list:
+                obj_attr_list.append(f(o))
+        else:
+            obj_attr_list = model_class.objects.all().values('id', 'name')
+
+        return obj_attr_list
+
+    def get_master_slave_pairs(self, device_object_list, **kwargs):
+        device_technology_info = {}
+        device_vendor_info = {}
+        device_model_info = {}
+        device_type_info = {}
+        device_info = {}
+        device_info_list = []
+        #Prototype for device dict
+        device_stats_dict = {
+            "id": "root node",
+            "name": "Root Site Instance",
+            "data": {
+                "$type": "none"
+            },
+            "children": []
+        }
+
+        device_technology_info = self.get_model_queryset(
+            DeviceTechnology,
+            'name'
+        )
+        device_technology_info = {x.get('id'): x.get('name') \
+                                for x in device_technology_info}
+
+        device_vendor_info = self.get_model_queryset(
+            DeviceVendor,
+            'name'
+        )
+        device_vendor_info = {x.get('id'): x.get('name') \
+                                for x in device_vendor_info}
+
+        device_model_info = self.get_model_queryset(
+            DeviceModel,
+            'name'
+        )
+        device_model_info = {x.get('id'): x.get('name') \
+                                for x in device_model_info}
+
+        device_type_info = self.get_model_queryset(
+            DeviceType,
+            'name'
+        )
+        device_type_info = {x.get('id'): x.get('name') \
+                                for x in device_type_info}
+        try:
+            for obj in device_object_list:
                 device_info = {
-                    "id": obj.id,
-                    "name": obj.device_name,
-                    "alias": obj.device_alias,
-                    "device_type": device_type,
-                    "mac": obj.mac_address,
-                    "current_state": obj.host_state,
-                    "vendor": device_vendor,
-                    "model": device_model,
-                    "technology": device_technology,
-                    "parent_id": obj.parent_id,
-                    "lat": obj.latitude,
-                    "lon": obj.longitude,
-                    "markerUrl": "http://%s:8000/static/img/marker/marker3.png"
-                    % kwargs.get('host_ip'), "perf": "75%",
-                    "ip": obj.ip_address,
-                    "otherDetail": "No Detail",
-                    "city": obj.city,
-                    "state": obj.state
-                }
+                        "id": obj.id,
+                        "name": obj.device_name,
+                        "alias": obj.device_alias,
+                        "device_type": device_type_info.get(obj.device_type),
+                        "mac": obj.mac_address,
+                        "current_state": obj.host_state,
+                        "vendor": device_vendor_info.get(obj.device_vendor),
+                        "model": device_model_info.get(obj.device_model),
+                        "technology": device_technology_info.get(obj.device_technology),
+                        "parent_id": obj.parent_id,
+                        "lat": obj.latitude,
+                        "lon": obj.longitude,
+                        "markerUrl": "//%s:%s/static/img/marker/slave03.png"
+                        % (kwargs.get('host_ip'), kwargs.get('host_port')),
+                        "perf": "75%",
+                        "ip": obj.ip_address,
+                        "otherDetail": "No Detail",
+                        "city": obj.city,
+                        "state": obj.state
+                    }
                 device_info_list.append(device_info)
-            except AttributeError, error:
-                print "Device Info key error"
-                print error
-        
+        except AttributeError, error:
+            print "Device Info Key Error"
+            print error.message
+            raise
 
         #Master-slave pairs based on `parent_id` and `device_id`
         for outer in device_info_list:
@@ -267,12 +300,11 @@ class DeviceStats(View):
                     device_stats_dict.get('children').append(master)
         device_stats_dict.update({
             "meta": {
-                "total_count": total_count,
-                "limit": limit
+                "total_count": None,
+                "limit": None
             }
         })
         return device_stats_dict
-
 
     def slice_object_list(self, inventory_list, **kwargs):
         if int(kwargs.get('limit')) is not 0:
