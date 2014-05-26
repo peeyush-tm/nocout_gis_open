@@ -72,12 +72,7 @@
                      width="120">
             </a>
             <!-- /COMPANY LOGO -->
-            <!-- TEAM STATUS FOR MOBILE -->
-            <div class="visible-xs">
-                <a href="#" class="team-status-toggle switcher btn dropdown-toggle">
-                    <i class="fa fa-users"></i>
-                </a>
-            </div>
+            
             <!-- /TEAM STATUS FOR MOBILE -->
             <!-- SIDEBAR COLLAPSE -->
             <div id="sidebar-collapse" class="sidebar-collapse btn">
@@ -89,10 +84,13 @@
         </div>
         <!-- NAVBAR LEFT -->
 
-        <ul class="nav navbar-nav pull-left hidden-xs orgTitleBlock col-md-6">
-            <li class="org">{{ user_organization }}</li>
+        <ul class="nav navbar-nav pull-left orgTitleBlock">
+            <li class="org">
+                {{ user_organization }}  / <span class="dept">{{ user_department }}</span>
+            </li>
+            <!-- <li class="org">{{ user_organization }}</li>
             <li class="org">/</li>
-            <li class="dept">{{ user_department }}</li>
+            <li class="dept">{{ user_department }}</li> -->
         </ul>
 
         <!-- /NAVBAR LEFT -->
