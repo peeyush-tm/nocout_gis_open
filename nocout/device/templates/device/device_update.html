@@ -16,7 +16,7 @@
                             <br/>
                             <form action="" method="post" class="form-horizontal" role="form">{% csrf_token %}
                                 <div class="col-md-12">
-                                    <div class="col-md-5">
+                                    <div class="col-md-6">
                                         {% for field in form %}
                                             {% if field.field.widget.attrs.class == 'form-control' %}
                                                 <div class="form-group">
