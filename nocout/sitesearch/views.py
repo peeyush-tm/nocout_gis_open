@@ -234,6 +234,34 @@ class DeviceSetFilters(View):
                 'device_model'
             )
 
+        if 'device_name' in filters.iterkeys():
+            device_attribs = self.add_filters(
+                filters,
+                device_attribs,
+                'device_name'
+            )
+
+        if 'device_alias' in filters.iterkeys():
+            device_attribs = self.add_filters(
+                filters,
+                device_attribs,
+                'device_alias'
+            )
+
+        if 'mac_address' in filters.iterkeys():
+            device_attribs = self.add_filters(
+                filters,
+                device_attribs,
+                'mac_address'
+            )
+
+        if 'ip_address' in filters.iterkeys():
+            device_attribs = self.add_filters(
+                filters,
+                device_attribs,
+                'ip_address'
+            )
+
         if 'city' in filters.iterkeys():
             device_attribs = self.add_filters(
                 filters,
@@ -303,11 +331,17 @@ class DeviceSetFilters(View):
         final_predicate_list = []
         obj_attr_list = []
         obj_list = []
+
         f = operator.attrgetter(field_name)
+
         device_id_list = kwargs.get('field_attribs').get('device_id_list', [])
         device_technology = kwargs.get('field_attribs').get('device_technology', [])
         device_vendor = kwargs.get('field_attribs').get('device_vendor', [])
         device_model = kwargs.get('field_attribs').get('device_model', [])
+        device_name = kwargs.get('field_attribs').get('device_name', [])
+        device_alias = kwargs.get('field_attribs').get('device_alias', [])
+        mac_address = kwargs.get('field_attribs').get('mac_address', [])
+        ip_address = kwargs.get('field_attribs').get('ip_address', [])
         city_list = kwargs.get('field_attribs').get('city', [])
         state_list = kwargs.get('field_attribs').get('state', [])
 
@@ -323,6 +357,18 @@ class DeviceSetFilters(View):
         if len(device_model):
             for _id in device_model:
                 q_list.append(Q(device_model=_id))
+        if len(device_name):
+            for _name in device_name:
+                q_list.append(Q(device_name=_name))
+        if len(device_alias):
+            for _alias in device_alias:
+                q_list.append(Q(device_alias=_alias))
+        if len(ip_address):
+            for _ip in ip_address:
+                q_list.append(Q(ip_address=_ip))
+        if len(mac_address):
+            for _mac in mac_address:
+                q_list.append(Q(mac_address=_mac))
         if len(city_list):
             for city in city_list:
                 q_list.append(Q(city=city.strip()))
