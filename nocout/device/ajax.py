@@ -120,6 +120,7 @@ def device_extra_fields_update(request, device_type, device_name):
 # generate content for soft delete popup form
 @dajaxice_register
 def device_soft_delete_form(request, value):
+    data = {}
     # device which needs to be deleted
     device = Device.objects.get(id=value)
     # child_device_groups: these are the device groups which are associated with
@@ -131,12 +132,33 @@ def device_soft_delete_form(request, value):
         # eligible_devices: these are the devices which are not associated with
         # the device which needs to be deleted in any way, & are eligible to be the
         # parent of devices in child_devices
+        #{
+        #  "success": 1,     # 0 - fail, 1 - success, 2 - exception
+        #  "message": "Success/Fail message.",
+        #  "data": {
+        #     "meta": {},
+        #     "objects": {
+        #          "device_name": <name>,
+        #          "child_devices": [
+        #                   {
+        #                       "id': <id>,
+        #                       "value": <value>,
+        #                   },
+        #                   {
+        #                       "id': <id>,
+        #                       "value": <value>,
+        #                   }
+        #           ]
+        #}
         selected_devices = Device.objects.exclude(parent_id=value)
         eligible_devices = []
         for dv in selected_devices:
             if dv.device_group.all()[0] != device.device_group.all()[0]: continue
             eligible_devices.append(dv)
         basic_html = "<h5 class='text-warning'>This device ({}) is parent of following devices:</h5>".format(device.device_name)
+        data['objects'] = {}
+        data['objects']['device_name'] = device.device_name
+        data['objects']['child_devices'] = child_devices
         count = 1
         for device in child_devices:
             basic_html += "<span class='text-warning'>{}: {}</span><br />".format(count, device.device_alias)
