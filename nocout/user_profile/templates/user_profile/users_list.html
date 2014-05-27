@@ -29,11 +29,11 @@
             </div>
         </div>
         <div id="tableContainer" class="box-body">
-                <table cellpadding="0" cellspacing="0" border="0"
-                       class="datatable table table-striped table-bordered table-hover" id="UserTable">
-                    <thead></thead>
-                    <tbody></tbody>
-                </table>
+            <table cellpadding="0" cellspacing="0" border="0"
+                   class="datatable table table-striped table-bordered table-hover" id="UserTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
         </div>
     </div>
 {% endblock %}
@@ -62,6 +62,59 @@
                 length_sel.addClass('form-control input-sm');
             });
         });
+        function get_soft_delete_form(content) {
+            // soft_delete_html: contains html for soft delete form
+            var soft_delete_html;
+            if (!(typeof content.result.data.objects.child_users === 'undefined') && !(Object.keys(content.result.data.objects.child_users).length === 0)) {
+                soft_delete_html = '<h5 class="text-warning">This user (' + content.result.data.objects.user_name + ') is parent of following users:</h5>';
+                for (var i = 0, l = content.result.data.objects.child_users.length; i < l; i++) {
+                    soft_delete_html += '<span class="text-warning">' + (i + 1) + ' : ' + content.result.data.objects.child_users[i].value + ' </span><br />';
+                }
+                if (!(typeof content.result.data.objects.eligible_users === 'undefined')) {
+                    soft_delete_html += '<h5 class="text-danger">Please first choose future parent of these users from below choices:</h5>';
+                    soft_delete_html += '<input type="hidden" id="id_user" name="user" value="' + content.result.data.objects.user_id + '" />';
+                    soft_delete_html += '<select class="form-control" id="id_parent" name="parent">';
+                    soft_delete_html += '<option value="">Select User</option>';
+                    for (var i = 0, l = content.result.data.objects.eligible_users.length; i < l; i++) {
+                        soft_delete_html += '<option value="' + content.result.data.objects.eligible_users[i].key + '">' + content.result.data.objects.eligible_users[i].value + '</option>';
+                    }
+                    soft_delete_html += '</select>';
+                }
+            }
+            else {
+                soft_delete_html = '<h5 class="text-warning">This user is not associated with any other user. So click on Yes! if you want to delete it.</h5>';
+                soft_delete_html += '<input type="hidden" id="id_user" name="user" value="' + content.result.data.objects.user_id + '" />';
+                soft_delete_html += '<input type="hidden" id="id_parent" name="parent" value="" />'
+            }
+            bootbox.dialog({
+                message: soft_delete_html,
+                title: "<span class='text-danger'><i class='fa fa-times'></i> Delete User</span>",
+                buttons: {
+                    success: {
+                        label: "Yes!",
+                        className: "btn-success",
+                        callback: function () {
+                            Dajaxice.user_profile.user_soft_delete(test, {
+                                'user_id': $('#id_user').val(),
+                                'new_parent_id': $('#id_parent').val()});
+
+                        }
+                    },
+                    danger: {
+                        label: "No!",
+                        className: "btn-danger",
+                        callback: function () {
+                            bootbox.alert("Ok! You choose to not delete this user right now.", function () {
+                                $(".bootbox").modal("hide");
+                            });
+                        }
+                    }
+                }
+            });
+        }
+        function test(responseResult) {
+            bootbox.alert(responseResult.result.message);
+        }
 
     </script>
 

@@ -94,6 +94,7 @@ def device_parent_choices_selected(request, option):
     dajax.assign("#id_parent", 'innerHTML', ''.join(out))
     return dajax.json()
 
+
 # generate device extra device fields during device update
 @dajaxice_register
 def device_extra_fields_update(request, device_type, device_name):
@@ -103,7 +104,7 @@ def device_extra_fields_update(request, device_type, device_name):
     device_extra_fields = device_type.devicetypefields_set.all()
     out = []
     for extra_field in device_extra_fields:
-        field_value=""
+        field_value = ""
         try:
             dtfv = DeviceTypeFieldsValue.objects.get(device_type_field=extra_field.id, device_id=device.id)
             field_value = dtfv.field_value
@@ -117,14 +118,43 @@ def device_extra_fields_update(request, device_type, device_name):
     dajax.assign('#extra_fields', 'innerHTML', ''.join(out))
     return dajax.json()
 
+
 # generate content for soft delete popup form
 @dajaxice_register
 def device_soft_delete_form(request, value):
     # device which needs to be deleted
     device = Device.objects.get(id=value)
-    # child_device_groups: these are the device groups which are associated with
-    # the device group which needs to be deleted in parent-child relationship
+    # result: data dictionary send in ajax response
+    #{
+    #  "success": 1,     # 0 - fail, 1 - success, 2 - exception
+    #  "message": "Success/Fail message.",
+    #  "data": {
+    #     "meta": {},
+    #     "objects": {
+    #          "device_name": <name>,
+    #          "child_devices": [
+    #                   {
+    #                       "id': <id>,
+    #                       "value": <value>,
+    #                   },
+    #                   {
+    #                       "id': <id>,
+    #                       "value": <value>,
+    #                   }
+    #           ]
+    #}
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = "Failed to render form correctly."
+    result['data']['meta'] = ''
+    result['data']['objects'] = {}
+    result['data']['objects']['device_id'] = device.id
+    result['data']['objects']['device_name'] = device.device_name
+    # child_devices: these are the devices which are associated with
+    # the device which needs to be deleted in parent-child relationship
     child_devices = Device.objects.filter(parent_id=value, is_deleted=0)
+    result['data']['objects']['child_devices'] = []
     # future device parent is needs to find out only if our device is
     # associated with any other device i.e if child_devices.count() > 0
     if child_devices.count() > 0:
@@ -132,30 +162,23 @@ def device_soft_delete_form(request, value):
         # the device which needs to be deleted in any way, & are eligible to be the
         # parent of devices in child_devices
         selected_devices = Device.objects.exclude(parent_id=value)
-        eligible_devices = []
-        for dv in selected_devices:
-            if dv.device_group.all()[0] != device.device_group.all()[0]: continue
-            eligible_devices.append(dv)
-        basic_html = "<h5 class='text-warning'>This device ({}) is parent of following devices:</h5>".format(device.device_name)
-        count = 1
-        for device in child_devices:
-            basic_html += "<span class='text-warning'>{}: {}</span><br />".format(count, device.device_alias)
-            count += 1
-        basic_html += "<h5 class='text-danger'>Please first choose future parent of these devices from below choices:</h5>"
-        basic_html += "<input type='hidden' id='id_device' name='device' value='{}' />".format(value)
-        basic_html += "<select class='form-control' id='id_parent' name='parent'>"
-        basic_html += "<option value=''>Select Device</option>"
-        for device in eligible_devices:
-            if device.id==value: continue
-            if device.is_deleted==1: continue
-            basic_html += "<option value='{}'>{}</option>".format(device.id, device.device_name)
-        basic_html += "</select"
-    else:
-        basic_html = "<h5 class='text-warning'>This device ({}) is not associated with any other device. So click on Yes! if you want to delete it.</h5>".format(device.device_name)
-        basic_html += "<input type='hidden' id='id_device' name='device' value='{}' />".format(value)
-        basic_html += "<input type='hidden' id='id_parent' name='parent' value='' />"
-
-    return json.dumps({'message':basic_html})
+        result['data']['objects']['eligible_devices'] = []
+        for e_dv in selected_devices:
+            e_dict = dict()
+            e_dict['key'] = e_dv.id
+            e_dict['value'] = e_dv.device_name
+            if e_dv.id == device.id: continue
+            if e_dv.is_deleted == 1: continue
+            if set(e_dv.device_group.all()) != set(device.device_group.all()): continue
+            result['data']['objects']['eligible_devices'].append(e_dict)
+        for c_dv in child_devices:
+            c_dict = {}
+            c_dict['key'] = c_dv.id
+            c_dict['value'] = c_dv.device_name
+            result['data']['objects']['child_devices'].append(c_dict)
+    result['success'] = 1
+    result['message'] = "Successfully render form."
+    return json.dumps({'result': result})
 
 
 # soft delete device i.e. not deleting device from database, it just set
@@ -165,11 +188,20 @@ def device_soft_delete_form(request, value):
 def device_soft_delete(request, device_id, new_parent_id=1):
     # device: device which needs to be deleted
     device = Device.objects.get(id=device_id)
+    # result: data dictionary send in ajax response
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = "No data exists."
+    result['data']['meta'] = ''
+    result['data']['objects'] = {}
+    result['data']['objects']['device_id'] = device_id
+    result['data']['objects']['device_name'] = device.device_name
     try:
         # new_parent: new parent device for associated devices
         new_parent = Device.objects.get(id=new_parent_id)
     except:
-        print "No new device group parent exist."
+        print "No new device parent exist."
     try:
         child_devices = Device.objects.filter(parent_id=device_id)
     except:
@@ -178,5 +210,12 @@ def device_soft_delete(request, device_id, new_parent_id=1):
         for dv in child_devices:
             dv.parent = new_parent
             dv.save()
-    device.is_deleted = 1
-    device.save()
+    if device.is_deleted == 0:
+        device.is_deleted = 1
+        device.save()
+        result['success'] = 1
+        result['message'] = "Successfully deleted."
+    else:
+        result['success'] = 0
+        result['message'] = "Already soft deleted."
+    return json.dumps({'result': result})
