@@ -185,7 +185,7 @@ def device_soft_delete_form(request, value):
 # it's is_deleted field value to 1 & remove it's relationship with any other device
 # & make some other device parent of associated device
 @dajaxice_register
-def device_soft_delete(request, device_id, new_parent_id=1):
+def device_soft_delete(request, device_id, new_parent_id):
     # device: device which needs to be deleted
     device = Device.objects.get(id=device_id)
     # result: data dictionary send in ajax response
