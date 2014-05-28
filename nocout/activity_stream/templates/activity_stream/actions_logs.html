@@ -1,0 +1,67 @@
+{% extends "department/department.html" %}
+{% load staticfiles %}
+{% block css %}
+    {#    <link rel="stylesheet" type="text/css" href={% static "user_profile/css/user_profile.css" %}>#}
+{% endblock %}
+{% block breadcrumb_page_title %} > ACTIONS {% endblock %}
+{% block content_title %}ACTION LOGS{% endblock %}
+{% block content %}
+
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>ACTION LISTING</h4>
+
+            <div class="tools hidden-xs">
+                <a href="#box-config" data-toggle="modal" class="config">
+                    <i class="fa fa-cog"></i>
+                </a>
+                <a href="javascript:;" class="reload">
+                    <i class="fa fa-refresh"></i>
+                </a>
+                <a href="javascript:;" class="collapse">
+                    <i class="fa fa-chevron-up"></i>
+                </a>
+                <a href="javascript:;" class="remove">
+                    <i class="fa fa-times"></i>
+                </a>
+
+            </div>
+        </div>
+        <div id="tableContainer" class="box-body">
+                <table cellpadding="0" cellspacing="0" border="0"
+                       class="datatable table table-striped table-bordered table-hover" id="ActionListingTable">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript">
+
+        $(document).ready(function (e) {
+            /*Make a instance of ourDataTableWidget class */
+            var dataTableInstance = new ourDataTableWidget();
+
+            /*Call createDataTable function of ourDataTableWidget class*/
+            var tableObject = $.parseJSON('{{ datatable_headers|safe }}');
+            var ajax_url = '{% url "actionlistingtable" %}'
+            dataTableInstance.createDataTable("ActionListingTable", tableObject, ajax_url);
+
+            $('.datatable').each(function () {
+                var datatable = $(this);
+                // SEARCH - Add the placeholder for Search and Turn this into in-line form control
+                var search_input = datatable.closest('.dataTables_wrapper').find('div[id$=_filter] input');
+                search_input.attr('placeholder', 'Search');
+                search_input.addClass('form-control input-sm');
+                // LENGTH - Inline-Form control
+                var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
+                length_sel.addClass('form-control input-sm');
+            });
+        });
+
+    </script>
+
+{% endblock %}
