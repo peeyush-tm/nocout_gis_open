@@ -34,24 +34,40 @@ def user_soft_delete_form(request, value):
     result['data']['objects'] = {}
     result['data']['objects']['user_id'] = user.id
     result['data']['objects']['user_name'] = user.username
+
     # child_users: these are the users which are associated with
     # the user which needs to be deleted in parent-child relationship
     child_users = UserProfile.objects.filter(parent_id=value, is_deleted=0)
+
+    # child_user_descendants: set of all child users descendants (needs for
+    # filtering new parent users choice)
+    child_user_descendants = []
+    for child_user in child_users:
+        user_descendant = child_user.get_descendants()
+        for cu in user_descendant:
+            child_user_descendants.append(cu)
+
     result['data']['objects']['child_users'] = []
+
     # future users parent is needs to find out only if our user is
     # associated with any other user i.e if child_users.count() > 0
     if child_users.count() > 0:
         # eligible_users: these are the users which are not associated with
         # the user which needs to be deleted in any way, & are eligible to be the
         # parent of users in child_users
-        selected_users = UserProfile.objects.exclude(parent_id=value)
+        remaining_users = UserProfile.objects.exclude(parent_id=value)
+        selected_users = set(remaining_users) - set(child_user_descendants)
         result['data']['objects']['eligible_users'] = []
         for e_user in selected_users:
             e_dict = dict()
             e_dict['key'] = e_user.id
             e_dict['value'] = e_user.username
+            # for excluding 'user' which we are deleting from eligible
+            # user choices
             if e_user.id == user.id: continue
             if e_user.is_deleted == 1: continue
+            # for excluding users from eligible user choices those are not from
+            # same user_group as the user which we are deleting
             if set(e_user.user_group.all()) != set(user.user_group.all()): continue
             result['data']['objects']['eligible_users'].append(e_dict)
         for c_user in child_users:
@@ -68,7 +84,10 @@ def user_soft_delete_form(request, value):
 # it's is_deleted field value to 1 & remove it's relationship with any other user
 # & make some other user parent of associated user
 @dajaxice_register
-def user_soft_delete(request, user_id, new_parent_id=1):
+def user_soft_delete(request, user_id, new_parent_id):
+    # if new_parent is not available than make it default (id=2)
+    if not new_parent_id:
+        new_parent_id = 2
     # user: user which needs to be deleted
     user = UserProfile.objects.get(id=user_id)
     # result: data dictionary send in ajax response
@@ -80,19 +99,27 @@ def user_soft_delete(request, user_id, new_parent_id=1):
     result['data']['objects'] = {}
     result['data']['objects']['user_id'] = user_id
     result['data']['objects']['user_name'] = user.username
+
+    # setting new parent user
     try:
         # new_parent: new parent user for associated users
         new_parent = UserProfile.objects.get(id=new_parent_id)
     except:
         print "No new user parent exist."
+
+    # fetching all child users of user which needs to be deleted
     try:
         child_users = UserProfile.objects.filter(parent_id=user_id)
     except:
         print "No child user exists."
+
+    # assign new parent user to all child users
     if child_users.count() > 0:
         for c_user in child_users:
             c_user.parent = new_parent
             c_user.save()
+
+    # setting 'is_deleted' bit of user to 1 which means user is soft deleted
     if user.is_deleted == 0:
         user.is_deleted = 1
         user.save()

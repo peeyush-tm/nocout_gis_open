@@ -151,24 +151,40 @@ def device_soft_delete_form(request, value):
     result['data']['objects'] = {}
     result['data']['objects']['device_id'] = device.id
     result['data']['objects']['device_name'] = device.device_name
+
     # child_devices: these are the devices which are associated with
     # the device which needs to be deleted in parent-child relationship
     child_devices = Device.objects.filter(parent_id=value, is_deleted=0)
+
+    # child_device_descendants: set of all child devices descendants (needs for
+    # filtering new parent devices choice)
+    child_device_descendants = []
+    for child_device in child_devices:
+        device_descendant = child_device.get_descendants()
+        for cd in device_descendant:
+            child_device_descendants.append(cd)
+
     result['data']['objects']['child_devices'] = []
+
     # future device parent is needs to find out only if our device is
     # associated with any other device i.e if child_devices.count() > 0
     if child_devices.count() > 0:
         # eligible_devices: these are the devices which are not associated with
         # the device which needs to be deleted in any way, & are eligible to be the
         # parent of devices in child_devices
-        selected_devices = Device.objects.exclude(parent_id=value)
+        remaining_devices = Device.objects.exclude(parent_id=value)
+        selected_devices = set(remaining_devices) - set(child_device_descendants)
         result['data']['objects']['eligible_devices'] = []
         for e_dv in selected_devices:
             e_dict = dict()
             e_dict['key'] = e_dv.id
             e_dict['value'] = e_dv.device_name
+            # for excluding 'device' which we are deleting from eligible
+            # device choices
             if e_dv.id == device.id: continue
             if e_dv.is_deleted == 1: continue
+            # for excluding devices from eligible device choices those are not from
+            # same device_group as the device which we are deleting
             if set(e_dv.device_group.all()) != set(device.device_group.all()): continue
             result['data']['objects']['eligible_devices'].append(e_dict)
         for c_dv in child_devices:
@@ -197,19 +213,26 @@ def device_soft_delete(request, device_id, new_parent_id):
     result['data']['objects'] = {}
     result['data']['objects']['device_id'] = device_id
     result['data']['objects']['device_name'] = device.device_name
+    # setting new parent device
     try:
         # new_parent: new parent device for associated devices
         new_parent = Device.objects.get(id=new_parent_id)
     except:
         print "No new device parent exist."
+
+    # fetching all child devices of device which needs to be deleted
     try:
         child_devices = Device.objects.filter(parent_id=device_id)
     except:
         print "No child device exists."
+
+    # assign new parent device to all child devices
     if child_devices.count() > 0:
         for dv in child_devices:
             dv.parent = new_parent
             dv.save()
+
+    # setting 'is_deleted' bit of device to 1 which means device is soft deleted
     if device.is_deleted == 0:
         device.is_deleted = 1
         device.save()

@@ -52,13 +52,13 @@ def device_group_soft_delete_form(request, value):
         except:
             print "Some device group from 'child device groups parent set' had no parent."
 
-    # child_device_descendants: set of all child device groups descendants (needs for
+    # child_device_group_descendants: set of all child device groups descendants (needs for
     # filtering new parent device groups choice)
-    child_device_descendants = []
-    for child_device in child_device_groups:
-        device_descendent = child_device.get_descendants()
-        for cdv in device_descendent:
-            child_device_descendants.append(cdv)
+    child_device_group_descendants = []
+    for child_device_group in child_device_groups:
+        device_group_descendant = child_device_group.get_descendants()
+        for cdv in device_group_descendant:
+            child_device_group_descendants.append(cdv)
 
     result['data']['objects']['child_device_groups'] = []
     # future device group parent needs to find out only if our device group is
@@ -68,7 +68,7 @@ def device_group_soft_delete_form(request, value):
         # the device group which needs to be deleted in any way, & are eligible to be the
         # parent of device groups in child_device_groups
         remaining_devices = DeviceGroup.objects.exclude(parent_id=value)
-        selected_device_groups = set(remaining_devices) - set(child_device_descendants)
+        selected_device_groups = set(remaining_devices) - set(child_device_group_descendants)
         result['data']['objects']['eligible_device_groups'] = []
         for e_dvg in selected_device_groups:
             e_dict = dict()
@@ -78,12 +78,6 @@ def device_group_soft_delete_form(request, value):
             # device group choices
             if e_dvg.id == device_group.id: continue
             if e_dvg.is_deleted == 1: continue
-            # for excluding all device groups those are parent of any of child
-            # device group of 'device_group' which we are deleting
-            try:
-                if e_dvg.parent.id in child_device_groups_parent_set: continue
-            except:
-                print "One of eligible device group has no parent."
             result['data']['objects']['eligible_device_groups'].append(e_dict)
         for c_dvg in child_device_groups:
             c_dict = {}
@@ -168,4 +162,3 @@ def device_group_soft_delete(request, device_group_id, new_parent_id):
         result['success'] = 0
         result['message'] = "Already soft deleted."
     return json.dumps({'result': result})
-
