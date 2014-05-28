@@ -37,6 +37,8 @@ urlpatterns = patterns('',
     url(dajaxice_config.dajaxice_url, include('dajaxice.urls')),
     url(r'session_security/', include('session_security.urls')),
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^logs/', include('activity_stream.urls')),
+
 )
 
 if settings.DEBUG:
