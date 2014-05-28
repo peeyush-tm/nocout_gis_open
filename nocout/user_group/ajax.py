@@ -42,15 +42,6 @@ def user_group_soft_delete_form(request, value):
     # child_user_groups: list of user groups which are associated with the
     # user group which we are deleting
     child_user_groups = UserGroup.objects.filter(parent_id=value, is_deleted=0)
-    if child_user_groups.count > 0:
-        try:
-            # child_user_groups_parent_set: set which contains parents of all
-            # child user groups of 'user_group' which we are deleting
-            child_user_groups_parent_set = []
-            for child_ug in child_user_groups:
-                child_user_groups_parent_set.append(child_ug.id)
-        except:
-            print "Some user group from 'child user groups parent set' had no parent."
 
     # child_user_group_descendants: set of all child user groups descendants (needs for
     # filtering new parent user groups choice)
