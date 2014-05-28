@@ -60,16 +60,39 @@
                 }
         );
 
-        function get_soft_delete_form(data) {
+        function get_soft_delete_form(content) {
+            // soft_delete_html: contains html for soft delete form
+            var soft_delete_html;
+            if (!(typeof content.result.data.objects.child_device_groups === 'undefined') && !(Object.keys(content.result.data.objects.child_device_groups).length === 0)) {
+                soft_delete_html = '<h5 class="text-warning">This device group (' + content.result.data.objects.device_group_name + ') is parent of following device groups:</h5>';
+                for (var i = 0, l = content.result.data.objects.child_device_groups.length; i < l; i++) {
+                    soft_delete_html += '<span class="text-warning">' + (i + 1) + ' : ' + content.result.data.objects.child_device_groups[i].value + ' </span><br />';
+                }
+                if (!(typeof content.result.data.objects.eligible_device_groups === 'undefined')) {
+                    soft_delete_html += '<h5 class="text-danger">Please first choose future parent of these device groups from below choices:</h5>';
+                    soft_delete_html += '<input type="hidden" id="id_device_group" name="device_group" value="' + content.result.data.objects.device_group_id + '" />';
+                    soft_delete_html += '<select class="form-control" id="id_parent" name="parent">';
+                    soft_delete_html += '<option value="">Select Device Group</option>';
+                    for (var i = 0, l = content.result.data.objects.eligible_device_groups.length; i < l; i++) {
+                        soft_delete_html += '<option value="' + content.result.data.objects.eligible_device_groups[i].key + '">' + content.result.data.objects.eligible_device_groups[i].value + '</option>';
+                    }
+                    soft_delete_html += '</select>';
+                }
+            }
+            else {
+                soft_delete_html = '<h5 class="text-warning">This device group (' + content.result.data.objects.device_group_name + ') is not associated with any other device group. So click on Yes! if you want to delete it.</h5>';
+                soft_delete_html += '<input type="hidden" id="id_device_group" name="device_group" value="' + content.result.data.objects.device_group_id + '" />';
+                soft_delete_html += '<input type="hidden" id="id_parent" name="parent" value="" />'
+            }
             bootbox.dialog({
-                message: data.message,
+                message: soft_delete_html,
                 title: "<span class='text-danger'><i class='fa fa-times'></i> Delete Device Group</span>",
                 buttons: {
                     success: {
                         label: "Yes!",
                         className: "btn-success",
                         callback: function () {
-                            Dajaxice.device_group.device_group_soft_delete(Dajax.process, {
+                            Dajaxice.device_group.device_group_soft_delete(test, {
                                 'device_group_id': $('#id_device_group').val(),
                                 'new_parent_id': $('#id_parent').val()});
                         }
@@ -85,6 +108,10 @@
                     }
                 }
             });
+        }
+        function test(responseResult)
+        {
+            bootbox.alert(responseResult.result.message);
         }
     </script>
 {% endblock %}
