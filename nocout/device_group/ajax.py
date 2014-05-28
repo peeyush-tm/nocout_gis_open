@@ -52,7 +52,7 @@ def device_group_soft_delete_form(request, value):
         except:
             print "Some device group from 'child device groups parent set' had no parent."
 
-    # child_device_descendants: set of all child device groups descendants (needs for
+    # child_device_group_descendants: set of all child device groups descendants (needs for
     # filtering new parent device groups choice)
     child_device_group_descendants = []
     for child_device_group in child_device_groups:

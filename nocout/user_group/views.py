@@ -52,7 +52,7 @@ class UserGroupListingTable(BaseDatatableView):
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
             dct.update(actions='<a href="/user_group/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/user_group/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                <a href="#" onclick="Dajaxice.user_group.user_group_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):
