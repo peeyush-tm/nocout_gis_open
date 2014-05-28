@@ -31,7 +31,7 @@ from django.contrib import admin
 #             return _('%(actor)s %(verb)s %(action_object)s %(action_object_class)s %(timesince)s ago') % ctx
 #         return _('%(actor)s %(verb)s %(timesince)s ago') % ctx
 
-def myunicode(self):
+def altered_unicode(self):
     ctx = {
         'verb': self.verb,
         'action_object': self.action_object,
@@ -50,7 +50,7 @@ def myunicode(self):
         return _('%(verb)s %(action_object)s (%(action_object_class)s) %(timesince)s ago') % ctx
     return _('%(verb)s %(timesince)s ago') % ctx
 
-def mystr(self):
+def altered_mystr(self):
     ctx = {
         'actor': self.actor,
         'verb': self.verb,
@@ -71,8 +71,8 @@ def mystr(self):
     return _('%(actor)s %(verb)s %(timesince)s ago') % ctx
 
 
-Action.__unicode__ = myunicode
-Action.__str__ = mystr
+Action.__unicode__ = altered_unicode
+Action.__str__ = altered_mystr
 
 admin.site.unregister(Action)
 admin.site.register(Action)
