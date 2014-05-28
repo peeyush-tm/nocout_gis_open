@@ -1,4 +1,4 @@
-from django.db.models import Q
+import json
 from django.db.models.query import ValuesQuerySet
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin, BaseUpdateView
@@ -10,7 +10,8 @@ from django.http.response import HttpResponseRedirect
 from django.contrib.auth.hashers import make_password
 from collections import OrderedDict
 from django_datatables_view.base_datatable_view import BaseDatatableView
-import json
+from actstream import action
+from django.db.models import Q
 
 
 class UserList(ListView):
@@ -106,6 +107,12 @@ class UserCreate(CreateView):
     form_class = UserForm
     success_url = reverse_lazy('user_list')
 
+    def get_form_kwargs(self):
+        kwargs = super(ModelFormMixin, self).get_form_kwargs()
+        kwargs.update({'instance': self.object})
+        kwargs.update({'request':self.request.user })
+        return kwargs
+
     def form_valid(self, form):
         user_profile = UserProfile()
         user_profile.username = form.cleaned_data['username']
@@ -119,7 +126,9 @@ class UserCreate(CreateView):
         user_profile.address = form.cleaned_data['address']
         user_profile.comment = form.cleaned_data['comment']
         user_profile.save()
-
+        action.send(self.request.user, verb=u'created', action_object=user_profile,
+            )
+        parent_user=None
         # saving parent --> FK Relation
         try:
             parent_user = UserProfile.objects.get(username=form.cleaned_data['parent'])
@@ -127,6 +136,10 @@ class UserCreate(CreateView):
             user_profile.save()
         except:
             print "User has no parent."
+
+        action.send(self.request.user, verb=u'assign', action_object=parent_user,
+            target=user_profile)
+
 
         # creating roles  --> M2M Relation (Model: Roles)
         for role in form.cleaned_data['role']:
@@ -140,6 +153,7 @@ class UserCreate(CreateView):
             department.user_profile = user_profile
             department.user_group = ug
             department.save()
+
         return HttpResponseRedirect(UserCreate.success_url)
 
 
