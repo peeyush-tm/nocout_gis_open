@@ -66,6 +66,8 @@ def user_soft_delete_form(request, value):
             # user choices
             if e_user.id == user.id: continue
             if e_user.is_deleted == 1: continue
+            # for excluding users from eligible user choices those are not from
+            # same user_group as the user which we are deleting
             if set(e_user.user_group.all()) != set(user.user_group.all()): continue
             result['data']['objects']['eligible_users'].append(e_dict)
         for c_user in child_users:
@@ -83,10 +85,9 @@ def user_soft_delete_form(request, value):
 # & make some other user parent of associated user
 @dajaxice_register
 def user_soft_delete(request, user_id, new_parent_id):
-    # if new_parent is not available than make it default (id=1)
+    # if new_parent is not available than make it default (id=2)
     if not new_parent_id:
-        new_parent_id = 1
-
+        new_parent_id = 2
     # user: user which needs to be deleted
     user = UserProfile.objects.get(id=user_id)
     # result: data dictionary send in ajax response
