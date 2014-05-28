@@ -82,7 +82,7 @@
                 }
             }
             else {
-                soft_delete_html = '<h5 class="text-warning">This user is not associated with any other user. So click on Yes! if you want to delete it.</h5>';
+                soft_delete_html = '<h5 class="text-warning">This user (' + content.result.data.objects.user_name + ') is not associated with any other user. So click on Yes! if you want to delete it.</h5>';
                 soft_delete_html += '<input type="hidden" id="id_user" name="user" value="' + content.result.data.objects.user_id + '" />';
                 soft_delete_html += '<input type="hidden" id="id_parent" name="parent" value="" />'
             }
