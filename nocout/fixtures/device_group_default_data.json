@@ -4,11 +4,12 @@
   "model": "device_group.devicegroup", 
   "fields": {
     "rght": 2, 
-    "name": "Default", 
+    "is_deleted": 0, 
+    "name": "default", 
     "parent": null, 
-    "alias": "Default", 
-    "tree_id": 1, 
     "lft": 1, 
+    "tree_id": 1, 
+    "alias": "Default", 
     "location": "", 
     "address": "", 
     "level": 0
