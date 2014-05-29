@@ -18,3 +18,9 @@ nocout/venv
 ^nocout/static/*
 ^nocout/media/*
 ^migrations/*
+
+##newrelic conf file
+newrelic.ini
+
+##uwsgi touch reload file
+true
