@@ -1,0 +1,912 @@
+[
+{
+  "pk": 1, 
+  "model": "command.command", 
+  "fields": {
+    "command_line": "/omd/sites/nocout/lib/nagios/plugins/check_ping", 
+    "command_name": "ping"
+  }
+},
+{
+  "pk": 1, 
+  "model": "service.serviceparameters", 
+  "fields": {
+    "check_period": "24x7", 
+    "notification_interval": 30, 
+    "notification_period": "24x7", 
+    "retry_interval": 3, 
+    "check_interval": 5, 
+    "max_check_attempts": 5, 
+    "parameter_description": "default"
+  }
+},
+{
+  "pk": 1, 
+  "model": "service.service", 
+  "fields": {
+    "service_name": "default", 
+    "command": 1, 
+    "description": "It's a default (ping) service.", 
+    "parameters": [
+      1
+    ], 
+    "alias": "Default"
+  }
+},
+{
+  "pk": 1, 
+  "model": "site_instance.siteinstance", 
+  "fields": {
+    "site_ip": "127.0.0.1", 
+    "live_status_tcp_port": 6557, 
+    "name": "default", 
+    "agent_port": 6556, 
+    "description": "Default"
+  }
+},
+{
+  "pk": 1, 
+  "model": "device_group.devicegroup", 
+  "fields": {
+    "rght": 2, 
+    "is_deleted": 0, 
+    "name": "default", 
+    "parent": null, 
+    "lft": 1, 
+    "tree_id": 1, 
+    "alias": "Default", 
+    "location": "", 
+    "address": "", 
+    "level": 0
+  }
+},
+{
+  "pk": 1, 
+  "model": "device.devicetype", 
+  "fields": {
+    "alias": "Default", 
+    "name": "Default"
+  }
+},
+{
+  "pk": 2, 
+  "model": "device.devicetype", 
+  "fields": {
+    "alias": "Radwin2KSS", 
+    "name": "Radwin2KSS"
+  }
+},
+{
+  "pk": 3, 
+  "model": "device.devicetype", 
+  "fields": {
+    "alias": "Radwin2KBS", 
+    "name": "Radwin2KBS"
+  }
+},
+{
+  "pk": 4, 
+  "model": "device.devicetype", 
+  "fields": {
+    "alias": "StarmaxIDU", 
+    "name": "StarmaxIDU"
+  }
+},
+{
+  "pk": 5, 
+  "model": "device.devicetype", 
+  "fields": {
+    "alias": "StarmaxSS", 
+    "name": "StarmaxSS"
+  }
+},
+{
+  "pk": 6, 
+  "model": "device.devicetype", 
+  "fields": {
+    "alias": "CanopyPM100AP", 
+    "name": "CanopyPM100AP"
+  }
+},
+{
+  "pk": 7, 
+  "model": "device.devicetype", 
+  "fields": {
+    "alias": "CanopyPM100SS", 
+    "name": "CanopyPM100SS"
+  }
+},
+{
+  "pk": 8, 
+  "model": "device.devicetype", 
+  "fields": {
+    "alias": "CanopySM100AP", 
+    "name": "CanopySM100AP"
+  }
+},
+{
+  "pk": 9, 
+  "model": "device.devicetype", 
+  "fields": {
+    "alias": "CanopySM100SS", 
+    "name": "CanopySM100SS"
+  }
+},
+{
+  "pk": 1, 
+  "model": "device.devicemodel", 
+  "fields": {
+    "alias": "Default", 
+    "name": "Default"
+  }
+},
+{
+  "pk": 2, 
+  "model": "device.devicemodel", 
+  "fields": {
+    "alias": "Radwin2K", 
+    "name": "Radwin2K"
+  }
+},
+{
+  "pk": 3, 
+  "model": "device.devicemodel", 
+  "fields": {
+    "alias": "Starmax", 
+    "name": "Starmax"
+  }
+},
+{
+  "pk": 4, 
+  "model": "device.devicemodel", 
+  "fields": {
+    "alias": "CanopyPM100", 
+    "name": "CanopyPM100"
+  }
+},
+{
+  "pk": 5, 
+  "model": "device.devicemodel", 
+  "fields": {
+    "alias": "CanopySM100", 
+    "name": "CanopySM100"
+  }
+},
+{
+  "pk": 1, 
+  "model": "device.devicevendor", 
+  "fields": {
+    "alias": "Default", 
+    "name": "Default"
+  }
+},
+{
+  "pk": 2, 
+  "model": "device.devicevendor", 
+  "fields": {
+    "alias": "Radwin", 
+    "name": "Radwin"
+  }
+},
+{
+  "pk": 3, 
+  "model": "device.devicevendor", 
+  "fields": {
+    "alias": "Telisma", 
+    "name": "Telisma"
+  }
+},
+{
+  "pk": 4, 
+  "model": "device.devicevendor", 
+  "fields": {
+    "alias": "Cambium", 
+    "name": "Cambium"
+  }
+},
+{
+  "pk": 1, 
+  "model": "device.devicetechnology", 
+  "fields": {
+    "alias": "Default", 
+    "name": "Default"
+  }
+},
+{
+  "pk": 2, 
+  "model": "device.devicetechnology", 
+  "fields": {
+    "alias": "P2P", 
+    "name": "P2P"
+  }
+},
+{
+  "pk": 3, 
+  "model": "device.devicetechnology", 
+  "fields": {
+    "alias": "WiMAX", 
+    "name": "WiMAX"
+  }
+},
+{
+  "pk": 4, 
+  "model": "device.devicetechnology", 
+  "fields": {
+    "alias": "PMP", 
+    "name": "PMP"
+  }
+},
+{
+  "pk": 1, 
+  "model": "device.device", 
+  "fields": {
+    "site_instance": 1, 
+    "rght": 2, 
+    "lft": 1, 
+    "device_type": 1, 
+    "timezone": "Asia/Kolkata", 
+    "gateway": "", 
+    "device_technology": 1, 
+    "city": "", 
+    "service": [
+      1
+    ], 
+    "host_priority": "Normal", 
+    "device_alias": "Default", 
+    "state": "", 
+    "mac_address": "0:0:0:0:0:0", 
+    "latitude": "", 
+    "device_vendor": 1, 
+    "host_state": "Enable", 
+    "description": "It's default (localhost) device.", 
+    "parent": null, 
+    "tree_id": 1, 
+    "netmask": "255.255.255.0", 
+    "address": "", 
+    "ip_address": "127.0.0.1", 
+    "is_deleted": 0, 
+    "dhcp_state": "Disable", 
+    "level": 0, 
+    "device_model": 1, 
+    "longitude": "", 
+    "device_name": "default"
+  }
+},
+{
+  "pk": 1, 
+  "model": "device.modeltype", 
+  "fields": {
+    "model": 1, 
+    "type": 1, 
+    "service": []
+  }
+},
+{
+  "pk": 2, 
+  "model": "device.modeltype", 
+  "fields": {
+    "model": 2, 
+    "type": 2, 
+    "service": []
+  }
+},
+{
+  "pk": 3, 
+  "model": "device.modeltype", 
+  "fields": {
+    "model": 2, 
+    "type": 3, 
+    "service": []
+  }
+},
+{
+  "pk": 4, 
+  "model": "device.modeltype", 
+  "fields": {
+    "model": 3, 
+    "type": 4, 
+    "service": []
+  }
+},
+{
+  "pk": 5, 
+  "model": "device.modeltype", 
+  "fields": {
+    "model": 3, 
+    "type": 5, 
+    "service": []
+  }
+},
+{
+  "pk": 6, 
+  "model": "device.modeltype", 
+  "fields": {
+    "model": 4, 
+    "type": 6, 
+    "service": []
+  }
+},
+{
+  "pk": 7, 
+  "model": "device.modeltype", 
+  "fields": {
+    "model": 4, 
+    "type": 7, 
+    "service": []
+  }
+},
+{
+  "pk": 8, 
+  "model": "device.modeltype", 
+  "fields": {
+    "model": 5, 
+    "type": 8, 
+    "service": []
+  }
+},
+{
+  "pk": 9, 
+  "model": "device.modeltype", 
+  "fields": {
+    "model": 5, 
+    "type": 9, 
+    "service": []
+  }
+},
+{
+  "pk": 1, 
+  "model": "device.vendormodel", 
+  "fields": {
+    "model": 1, 
+    "vendor": 1
+  }
+},
+{
+  "pk": 2, 
+  "model": "device.vendormodel", 
+  "fields": {
+    "model": 2, 
+    "vendor": 2
+  }
+},
+{
+  "pk": 3, 
+  "model": "device.vendormodel", 
+  "fields": {
+    "model": 3, 
+    "vendor": 3
+  }
+},
+{
+  "pk": 4, 
+  "model": "device.vendormodel", 
+  "fields": {
+    "model": 4, 
+    "vendor": 4
+  }
+},
+{
+  "pk": 5, 
+  "model": "device.vendormodel", 
+  "fields": {
+    "model": 5, 
+    "vendor": 4
+  }
+},
+{
+  "pk": 1, 
+  "model": "device.technologyvendor", 
+  "fields": {
+    "vendor": 1, 
+    "technology": 1
+  }
+},
+{
+  "pk": 2, 
+  "model": "device.technologyvendor", 
+  "fields": {
+    "vendor": 2, 
+    "technology": 2
+  }
+},
+{
+  "pk": 3, 
+  "model": "device.technologyvendor", 
+  "fields": {
+    "vendor": 3, 
+    "technology": 3
+  }
+},
+{
+  "pk": 4, 
+  "model": "device.technologyvendor", 
+  "fields": {
+    "vendor": 4, 
+    "technology": 4
+  }
+},
+{
+  "pk": 1, 
+  "model": "device.inventory", 
+  "fields": {
+    "device": 1, 
+    "device_group": 1
+  }
+},
+{
+  "pk": 1, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Customer Name", 
+    "field_name": "customer_name", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 2, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Ckt ID", 
+    "field_name": "ckt_id", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 3, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Qos(BW)", 
+    "field_name": "qos_bw", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 6, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Antenna Height", 
+    "field_name": "antenna_height", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 7, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Polarization", 
+    "field_name": "polarisation", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 8, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Antenna Type", 
+    "field_name": "antenna_type", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 9, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Antenna Mount Type", 
+    "field_name": "antenna_mount_type", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 10, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Ethernet Extender", 
+    "field_name": "ethernet_extender", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 11, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Building Height", 
+    "field_name": "building_height", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 12, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Tower Height", 
+    "field_name": "tower_height", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 13, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Cable Length", 
+    "field_name": "cable_length", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 14, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "RSSI During Acceptance", 
+    "field_name": "rssi_during_acceptance", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 15, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Customer Address", 
+    "field_name": "customer_address", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 16, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Throughput During Acceptance", 
+    "field_name": "throughput_during_acceptance", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 17, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Date Of Acceptance", 
+    "field_name": "date_of_acceptance", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 18, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "BH BSO", 
+    "field_name": "bh_bso", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 19, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Service Type", 
+    "field_name": "service_type", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 20, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Product Type", 
+    "field_name": "product_type", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 21, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Frequency At The Time Of Acceptance", 
+    "field_name": "frequency_at_time_of_acceptance", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 22, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "CBW At The Time Of Acceptance", 
+    "field_name": "cbw_at_the_time_of_acceptance", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 23, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Customer Name", 
+    "field_name": "customer_name", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 24, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Ckt ID", 
+    "field_name": "ckt_id", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 25, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Qos(BW)", 
+    "field_name": "qos_bw", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 28, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Antenna Height", 
+    "field_name": "antenna_height", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 29, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Polarisation", 
+    "field_name": "polarisation", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 30, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Antenna Type", 
+    "field_name": "antenna_type", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 31, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Antenna Mount Type", 
+    "field_name": "antenna_mount_type", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 32, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Ethernet Extender", 
+    "field_name": "ethernet_extender", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 33, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Building Height", 
+    "field_name": "building_height", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 34, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Tower Height", 
+    "field_name": "tower_height", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 35, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Cable Length", 
+    "field_name": "cable_length", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 36, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "RSSI During Acceptance", 
+    "field_name": "rssi_during_acceptance", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 37, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Customer Address", 
+    "field_name": "customer_address", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 38, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "throughput_during_accetpance", 
+    "field_name": "throughput_during_acceptance", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 39, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Date Of Acceptance", 
+    "field_name": "date_of_acceptance", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 40, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "BH BSO", 
+    "field_name": "bh_bso", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 41, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Service Type", 
+    "field_name": "service_type", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 42, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Product Type", 
+    "field_name": "product_type", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 43, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Frequency At The Time Of Acceptance", 
+    "field_name": "frequency_at_time_of_acceptance", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 44, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "CBW At The Time Of Acceptance", 
+    "field_name": "cbw_at_the_time_of_acceptance", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 1, 
+  "model": "user_group.usergroup", 
+  "fields": {
+    "rght": 2, 
+    "is_deleted": 0, 
+    "name": "default", 
+    "parent": null, 
+    "lft": 1, 
+    "tree_id": 1, 
+    "alias": "Default", 
+    "location": "", 
+    "address": "", 
+    "level": 0
+  }
+},
+{
+  "pk": 1, 
+  "model": "user_group.organization", 
+  "fields": {
+    "user_group": 1, 
+    "name": "default", 
+    "device_group": 1, 
+    "description": "Default organizatio"
+  }
+},
+{
+  "pk": 1, 
+  "model": "auth.user", 
+  "fields": {
+    "username": "nocout", 
+    "first_name": "", 
+    "last_name": "", 
+    "is_active": true, 
+    "is_superuser": true, 
+    "is_staff": true, 
+    "last_login": "2014-05-28T15:08:00Z", 
+    "groups": [], 
+    "user_permissions": [], 
+    "password": "pbkdf2_sha256$12000$SPMzXFDtqufn$cDLdftWoFOfUe0TniGNqg1nnodLYxOqQ8+Wp/75w9vk=", 
+    "email": "admin@nocout.com", 
+    "date_joined": "2014-05-28T14:09:12Z"
+  }
+},
+{
+  "pk": 2, 
+  "model": "auth.user", 
+  "fields": {
+    "username": "gisadmin", 
+    "first_name": "GIS Admin", 
+    "last_name": "", 
+    "is_active": true, 
+    "is_superuser": false, 
+    "is_staff": false, 
+    "last_login": "2014-05-28T17:00:59Z", 
+    "groups": [], 
+    "user_permissions": [], 
+    "password": "pbkdf2_sha256$12000$pzM0PoqRCIxZ$tKHiDncSZKXGyZUbqOkNy/86KnkbpOoDKlbV6D8M+bs=", 
+    "email": "default@nocout.com", 
+    "date_joined": "2014-05-28T15:05:51Z"
+  }
+},
+{
+  "pk": 2, 
+  "model": "user_profile.userprofile", 
+  "fields": {
+    "phone_number": "", 
+    "comment": null, 
+    "is_deleted": 0, 
+    "parent": null, 
+    "designation": "", 
+    "rght": 2, 
+    "company": "", 
+    "tree_id": 1, 
+    "lft": 1, 
+    "role": [
+      1
+    ], 
+    "groups": [], 
+    "address": "", 
+    "user_permissions": [], 
+    "level": 0
+  }
+},
+{
+  "pk": 1, 
+  "model": "user_profile.roles", 
+  "fields": {
+    "role_name": "admin", 
+    "role_description": "Admin"
+  }
+},
+{
+  "pk": 2, 
+  "model": "user_profile.roles", 
+  "fields": {
+    "role_name": "operator", 
+    "role_description": "Operator"
+  }
+},
+{
+  "pk": 3, 
+  "model": "user_profile.roles", 
+  "fields": {
+    "role_name": "viewer", 
+    "role_description": "Viewer"
+  }
+},
+{
+  "pk": 1, 
+  "model": "user_profile.department", 
+  "fields": {
+    "user_group": 1, 
+    "user_profile": 2
+  }
+}
+]
