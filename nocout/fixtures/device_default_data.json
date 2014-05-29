@@ -3,72 +3,72 @@
   "pk": 1, 
   "model": "device.devicetype", 
   "fields": {
-    "name": "Default", 
-    "alias": "Default"
+    "alias": "Default", 
+    "name": "Default"
   }
 },
 {
   "pk": 2, 
   "model": "device.devicetype", 
   "fields": {
-    "name": "Radwin2KSS", 
-    "alias": "Radwin2KSS"
+    "alias": "Radwin2KSS", 
+    "name": "Radwin2KSS"
   }
 },
 {
   "pk": 3, 
   "model": "device.devicetype", 
   "fields": {
-    "name": "Radwin2KBS", 
-    "alias": "Radwin2KBS"
+    "alias": "Radwin2KBS", 
+    "name": "Radwin2KBS"
   }
 },
 {
   "pk": 4, 
   "model": "device.devicetype", 
   "fields": {
-    "name": "StarmaxIDU", 
-    "alias": "StarmaxIDU"
+    "alias": "StarmaxIDU", 
+    "name": "StarmaxIDU"
   }
 },
 {
   "pk": 5, 
   "model": "device.devicetype", 
   "fields": {
-    "name": "StarmaxSS", 
-    "alias": "StarmaxSS"
+    "alias": "StarmaxSS", 
+    "name": "StarmaxSS"
   }
 },
 {
   "pk": 6, 
   "model": "device.devicetype", 
   "fields": {
-    "name": "CanopyPM100AP", 
-    "alias": "CanopyPM100AP"
+    "alias": "CanopyPM100AP", 
+    "name": "CanopyPM100AP"
   }
 },
 {
   "pk": 7, 
   "model": "device.devicetype", 
   "fields": {
-    "name": "CanopyPM100SS", 
-    "alias": "CanopyPM100SS"
+    "alias": "CanopyPM100SS", 
+    "name": "CanopyPM100SS"
   }
 },
 {
   "pk": 8, 
   "model": "device.devicetype", 
   "fields": {
-    "name": "CanopySM100AP", 
-    "alias": "CanopySM100AP"
+    "alias": "CanopySM100AP", 
+    "name": "CanopySM100AP"
   }
 },
 {
   "pk": 9, 
   "model": "device.devicetype", 
   "fields": {
-    "name": "CanopySM100SS", 
-    "alias": "CanopySM100SS"
+    "alias": "CanopySM100SS", 
+    "name": "CanopySM100SS"
   }
 },
 {
@@ -179,6 +179,7 @@
   "pk": 1, 
   "model": "device.device", 
   "fields": {
+    "site_instance": 1, 
     "rght": 2, 
     "lft": 1, 
     "device_type": 1, 
@@ -190,24 +191,24 @@
       1
     ], 
     "host_priority": "Normal", 
-    "device_alias": "Localhost", 
-    "site_instance": 1, 
+    "device_alias": "Default", 
     "state": "", 
     "mac_address": "0:0:0:0:0:0", 
     "latitude": "", 
     "device_vendor": 1, 
     "host_state": "Enable", 
-    "description": "It's localhost.", 
+    "description": "It's default (localhost) device.", 
     "parent": null, 
     "tree_id": 1, 
-    "netmask": "", 
+    "netmask": "255.255.255.0", 
     "address": "", 
     "ip_address": "127.0.0.1", 
+    "is_deleted": 0, 
     "dhcp_state": "Disable", 
     "level": 0, 
     "device_model": 1, 
     "longitude": "", 
-    "device_name": "localhost"
+    "device_name": "default"
   }
 },
 {
@@ -399,24 +400,6 @@
   }
 },
 {
-  "pk": 4, 
-  "model": "device.devicetypefields", 
-  "fields": {
-    "field_display_name": "Latitude", 
-    "field_name": "latitude", 
-    "device_type": 2
-  }
-},
-{
-  "pk": 5, 
-  "model": "device.devicetypefields", 
-  "fields": {
-    "field_display_name": "Longitude", 
-    "field_name": "longitude", 
-    "device_type": 2
-  }
-},
-{
   "pk": 6, 
   "model": "device.devicetypefields", 
   "fields": {
@@ -593,24 +576,6 @@
   "fields": {
     "field_display_name": "Qos(BW)", 
     "field_name": "qos_bw", 
-    "device_type": 3
-  }
-},
-{
-  "pk": 26, 
-  "model": "device.devicetypefields", 
-  "fields": {
-    "field_display_name": "Latitude", 
-    "field_name": "latitude", 
-    "device_type": 3
-  }
-},
-{
-  "pk": 27, 
-  "model": "device.devicetypefields", 
-  "fields": {
-    "field_display_name": "Longitude", 
-    "field_name": "longitude", 
     "device_type": 3
   }
 },

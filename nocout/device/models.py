@@ -81,7 +81,7 @@ class Device(MPTTModel, models.Model):
     netmask = models.IPAddressField('Netmask', null=True, blank=True)
     gateway = models.IPAddressField('Gateway', null=True, blank=True)
     dhcp_state = models.CharField('DHCP State', max_length=200, choices=DHCP_STATE, default=disable)
-    host_priority = models.CharField('Host Priority', max_length=200, choices=HOST_STATE, default=normal)
+    host_priority = models.CharField('Host Priority', max_length=200, choices=PRIORITY, default=normal)
     host_state = models.CharField('Host State', max_length=200, choices=HOST_STATE, default=enable)
     timezone = models.CharField('Timezone', max_length=100)
     latitude = models.CharField('Latitude', max_length=20, null=True, blank=True)
