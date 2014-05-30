@@ -1,12 +1,14 @@
 /*Global Variables*/
 var self = "",
+	nmInstance = "",
     filtersInfoArray = [],
     templateData = "",
     formElements = "",
     elementsArray = [],
     resultantObject = {},
     resultantObjectArray = [],
-    searchParameters = "";
+    searchParameters = "",
+    lastSelectedValues = [];
 
 /**
  * This class is used to create th filter form by calling the get_filter API & the call the set_filter API with the selected filters
@@ -31,6 +33,10 @@ function advanceSearchClass() {
 	 */
 	this.getFilterInfo = function(domElemet,windowTitle,buttonId,getApiUrl,setApiUrl) {
 
+		/*If any filter is applied before then save the last filter array in other variable*/
+		if(resultantObjectArray.length != 0) {
+			lastSelectedValues = resultantObjectArray;
+		}		
 		/*Store the reference of current pointer in a global variable*/
 		self = this;
 
@@ -64,6 +70,8 @@ function advanceSearchClass() {
 					templateData += '<form id="'+domElemet+'_form"><div class="form-group form-horizontal">';
 
 					formElements = "";
+					/*Reset the resultantObjectArray*/
+					resultantObjectArray = [];
 
 					for(var i=0;i<filtersInfoArray.length;i++) {
 
@@ -134,7 +142,7 @@ function advanceSearchClass() {
 
 									for(var j=0;j<filterValues.length;j++) {
 
-										formElements += '<label class="radio-inline"><input type="radio" id="'+filterValues[j].id+'" value="'+filterValues[j].id+'" name="'+filtersInfoArray[i].key+'"> '+filterValues[j].value+'</label>';
+										formElements += '<label class="radio-inline"><input type="radio" id="radio_'+filterValues[j].id+'" class="radioField" value="'+filterValues[j].id+'" name="'+filtersInfoArray[i].key+'"> '+filterValues[j].value+'</label>';
 									}
 								} else {
 
@@ -147,7 +155,7 @@ function advanceSearchClass() {
 
 									for(var j=0;j<filterValues.length;j++) {
 
-										formElements += '<label class="checkbox-inline"><input type="checkbox" id="'+filterValues[j].id+'" value="'+filterValues[j].id+'" name="'+filterValues[j].id+'"> '+filterValues[j].value+'</label>';
+										formElements += '<label class="checkbox-inline"><input type="checkbox" class="checkboxField" id="checkbox_'+filterValues[j].id+'" value="'+filterValues[j].id+'" name="'+filterValues[j].id+'"> '+filterValues[j].value+'</label>';
 									}
 								} else {
 
@@ -166,7 +174,7 @@ function advanceSearchClass() {
 
 					templateData += elementsArray.join('');
 					templateData += '</div><div class="clearfix"></div></form>';
-					templateData += '<div class="clearfix"></div></div>';
+					templateData += '<div class="clearfix"></div></div>';					
 
 					/*Call the bootbox to show the popup with the fetched filters*/
 					bootbox.dialog({
@@ -209,9 +217,9 @@ function advanceSearchClass() {
 
 											for(var k=0;k<filtersInfoArray[j].values.length;k++) {
 
-												if($("#"+filtersInfoArray[j].values[k].id)[0].checked == true) {
+												if($("#checkbox_"+filtersInfoArray[j].values[k].id)[0].checked == true) {
 
-													checkboxArray.push($("#"+filtersInfoArray[j].values[k].id)[0].value);
+													checkboxArray.push($("#checkbox_"+filtersInfoArray[j].values[k].id)[0].value);
 												}
 											}
 
@@ -226,9 +234,9 @@ function advanceSearchClass() {
 
 											for(var k=0;k<filtersInfoArray[j].values.length;k++) {
 
-												if($("#"+filtersInfoArray[j].values[k].id)[0].checked == true) {
+												if($("#radio_"+filtersInfoArray[j].values[k].id)[0].checked == true) {
 
-													radioArray.push($("#"+filtersInfoArray[j].values[k].id)[0].value)												
+													radioArray.push($("#radio_"+filtersInfoArray[j].values[k].id)[0].value)												
 												}
 											}
 
@@ -265,7 +273,7 @@ function advanceSearchClass() {
 							},
 							danger: {
 								label: "Cancel",
-								className: "btn-warning",
+								className: "btn-danger",
 								callback: function() {
 									
 									/*Call the reset function*/
@@ -274,9 +282,50 @@ function advanceSearchClass() {
 							}
 						}
 					});
-
+						
 					/*Initialize the select2*/
 					$(".advanceFiltersContainer select").select2();
+
+					/*loop to show the last selected values*/
+					for(var k=0;k<lastSelectedValues.length;k++) {
+
+						var multiselect = $("#filter_"+lastSelectedValues[k].field),
+							radio = $("#radio_"+lastSelectedValues[k].value[0]),
+							checkbox = $("#checkbox_"+lastSelectedValues[k].value[0])
+							multiselectClasses = "",
+							radioClasses = "",
+							checkboxClasses = "";
+
+						if(multiselect.length > 0) {
+							multiselectClasses = $("#filter_"+lastSelectedValues[k].field)[0].className;
+						}
+						if(radio.length > 0) {
+							radioClasses = $("#radio_"+lastSelectedValues[k].value[0])[0].className;
+						}
+						if(checkbox.length > 0) {
+							checkboxClasses = $("#checkbox_"+lastSelectedValues[k].value[0])[0].className;
+						}
+
+						/*Conditions for different types of feilds*/
+						if(multiselectClasses.indexOf("multiSelectBox") != -1) {
+						
+							$("#filter_"+lastSelectedValues[k].field).select2("val",lastSelectedValues[k].value);
+						
+						} else if(radioClasses.indexOf("radioField") != -1) {								
+							$("#radio_"+lastSelectedValues[k].value[0])[0].checked = true;
+
+						} else if(checkboxClasses.indexOf("checkboxField") != -1) {
+
+							for(var l=0;l<lastSelectedValues[k].value.length;l++) {
+
+								$("#checkbox_"+lastSelectedValues[k].value[l])[0].checked = true;
+							}
+						}
+						else {
+							$("#filter_"+lastSelectedValues[k].field).val(lastSelectedValues[k].value);
+						}
+					}
+
 				}
 				/*If data not fetched*/
 				else {
@@ -305,6 +354,11 @@ function advanceSearchClass() {
 		/*To Enable The Cross Domain Request*/
 		$.support.cors = true;
 
+		/*Show Remove Filters button*/
+		if($("#removeFilterBtn").hasClass("hide")) {
+			$("#removeFilterBtn").removeClass("hide");
+		}
+
 		$.ajax({
 			crossDomain: true,
 			url : setFilterApi+"?filters="+searchString,
@@ -320,19 +374,19 @@ function advanceSearchClass() {
 					if(result.data.objects != null) {
 
 						/*Create a instance of networkMapClass*/
-						var networkMapInstance = new networkMapClass();
+						nmInstance = new networkMapClass();
 
 						/*Reset markers, polyline & filters*/
-				        networkMapInstance.clearMapElements();
+				        nmInstance.clearMapElements();
 
 				        /*Reset Global Variables & Filters*/
-				        networkMapInstance.resetVariables();
+				        nmInstance.resetVariables();
 
 				        /*Call the getDevicesFilter function to seperate the filter values from the object array*/
-						networkMapInstance.getDevicesFilter(result.data.objects.children);
+						nmInstance.getDevicesFilter(result.data.objects.children);
 
 				        /*Call the make network to create the BS-SS network on the google map*/
-				        networkMapInstance.populateNetwork(result.data.objects.children);
+				        nmInstance.populateNetwork(result.data.objects.children);
 					}
 				} else {
 
@@ -347,6 +401,29 @@ function advanceSearchClass() {
 	};
 
 	/**
+	 * This function remove the applied filter n show default or un-filtered values	 
+	 * @class advanceSearchLib
+	 * @method removeFilters
+	 */
+	this.removeFilters = function() {
+
+		/*Reset filter data array*/
+		lastSelectedValues = [];
+		resultantObjectArray = []
+			
+		/*Hide Remove Filters button*/
+		if(!$("#removeFilterBtn").hasClass("hide")) {
+			$("#removeFilterBtn").addClass("hide");
+		}
+
+		/*Call the resetVariables function to reset all global variables*/
+		self.resetVariables();
+		
+		/*Click The Refresh Button*/
+		$("#resetFilters").click();		
+	};
+
+	/**
 	 * This function reset all variable used in the process
 	 * @class advanceSearchLib
 	 * @method resetVariables
@@ -358,8 +435,7 @@ function advanceSearchClass() {
 		templateData = "";
 		formElements = "";
 		elementsArray = [];
-		resultantObject = {};
-		resultantObjectArray = [];
+		resultantObject = {};		
 		searchParameters = "";
 	};
 }

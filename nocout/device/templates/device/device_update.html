@@ -16,6 +16,7 @@
                             <br/>
                             <form action="" method="post" class="form-horizontal" role="form">{% csrf_token %}
                                 <div class="col-md-12">
+                                    <!--Form 1-->
                                     <div class="col-md-6">
                                         {% for field in form %}
                                             {% if field.field.widget.attrs.class == 'form-control' %}
@@ -28,15 +29,10 @@
                                                 </div>
                                             {% endif %}
                                         {% endfor %}
-                                        <div class="form-group">
-                                            <div class="col-sm-offset-5 col-sm-7">
-                                                <button type="submit" class="btn btn-success"><i class="fa fa-refresh"></i> Update</button>
-                                                &nbsp;
-                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/device/')"><i class="fa fa-times"></i> Cancel</button>
-                                            </div>
-                                        </div>
                                     </div>
-                                    <div class="col-md-5">
+                                    <!--Form 1 End-->
+                                    <!--Form 2-->
+                                    <div class="col-md-6">
                                         <span id="extra_fields">
                                             {% for field in form %}
                                                 {% if field.field.widget.attrs.class == 'extra form-control' %}
@@ -51,6 +47,19 @@
                                             {% endfor %}
                                         </span>
                                     </div>
+                                    <!--Form 2 End-->
+                                    <div class="clearfix"></div>
+                                    <!-- Buttons Block-->
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-5 col-sm-7">
+                                                <button type="submit" class="btn btn-success"><i class="fa fa-refresh"></i> Update</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/device/')"><i class="fa fa-times"></i> Cancel</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Buttons Block End-->
                                     <div class="clearfix"></div>
                                 </div>
                             </form>
