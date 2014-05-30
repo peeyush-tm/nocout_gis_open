@@ -13,6 +13,13 @@ from site_instance.models import SiteInstance
 from django.http.response import HttpResponseRedirect
 from service.models import Service
 
+#BEGIN: import django settings
+#we need DEBUG varaible for collecting the logs
+from django.conf import settings
+#END: import django settings
+if settings.DEBUG:
+    import logging
+    logger = logging.getLogger(__name__)
 
 # ***************************************** Device Views ********************************************
 
@@ -48,10 +55,18 @@ class DeviceListingTable(BaseDatatableView):
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
 
+        if settings.DEBUG:
+            logger.debug(qs, exc_info=True, extra={'stack': True, 'request': self.request})
+
         return qs
 
     def get_initial_queryset(self):
         if not self.model:
+            
+            if settings.DEBUG:
+                logger.error("Need to provide a model or implement get_initial_queryset!",
+                                 extra={'stack': True, 'request': self.request})
+
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         return Device.objects.values(*self.columns+['id'])
 
@@ -99,10 +114,11 @@ class DeviceDetail(DetailView):
     template_name = 'device/device_detail.html'
 
     def get_context_data(self, **kwargs):
-        print "*********************************************************************************"
-        print self.object
-        print "*********************************************************************************"
-        print kwargs
+        
+        if settings.DEBUG:
+            logger.debug(self.object, extra={'stack': True, 'request': self.request})
+            logger.debug(kwargs, extra={'stack': True, 'request': self.request})
+
         context = super(DeviceDetail, self).get_context_data(**kwargs)
         return context
 
@@ -264,8 +280,13 @@ class DeviceUpdate(UpdateView):
         try:
             self.object.site_instance = SiteInstance.objects.get(name=form.cleaned_data['site_instance'])
             self.object.save()
-        except:
-            print "No instance to add."
+        except Exception as site_exception:
+            if settings.Debug:
+                logger.critical("Instance(site) information missing : %s" % (site_exception),
+                                exc_info=True, 
+                                extra={'stack': True, 'request': self.request}
+                                )
+            pass
 
         # deleting old services of device
         self.object.service.clear()
@@ -281,22 +302,37 @@ class DeviceUpdate(UpdateView):
             parent_device = Device.objects.get(device_name=form.cleaned_data['parent'])
             self.object.parent = parent_device
             self.object.save()
-        except:
-            print "Device has no parent."
+        except Exception as device_parent_exception:
+            if settings.Debug:
+                logger.critical("Device Parent information missing : %s" % (device_parent_exception),
+                                exc_info=True, 
+                                extra={'stack': True, 'request': self.request}
+                                )
+            pass
 
         # deleting old device extra field values
         try:
             DeviceTypeFieldsValue.objects.filter(device_id=self.object.id).delete()
-        except:
-            print "No device extra fields to delete."
+        except Exception as device_extra_exception:
+            if settings.Debug:
+                logger.critical("Device Extra information missing : %s" % (device_extra_exception),
+                                exc_info=True, 
+                                extra={'stack': True, 'request': self.request}
+                                )
+            pass
 
         # fetching device extra fields associated with 'device type'
         try:
             device_type = DeviceType.objects.get(id=int(self.request.POST.get('device_type')))
             # it gives all device fields associated with device_type object
             device_type.devicetypefields_set.all()
-        except:
-            print "No device type exists."
+        except Exception as device_type_exception:
+            if settings.Debug:
+                logger.critical("Device Type information missing : %s" % (device_type_exception),
+                                exc_info=True, 
+                                extra={'stack': True, 'request': self.request}
+                                )
+            pass
 
         # saving eav relation data i.e. device extra fields those depends on device type
         for field in all_non_empty_post_fields:
