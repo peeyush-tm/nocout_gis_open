@@ -453,7 +453,7 @@ class DeviceTechnologyList(ListView):
         return context
 
 class DeviceTechnologyListingTable(BaseDatatableView):
-    model = DeviceType
+    model = DeviceTechnology
     columns = ['name', 'alias']
     order_columns = ['name', 'alias']
 
@@ -477,7 +477,7 @@ class DeviceTechnologyListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return DeviceType.objects.values(*self.columns+['id'])
+        return DeviceTechnology.objects.values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         if qs:
@@ -588,7 +588,7 @@ class DeviceVendorList(ListView):
             return context
 
 class DeviceVendorListingTable(BaseDatatableView):
-    model = DeviceType
+    model = DeviceVendor
     columns = ['name', 'alias']
     order_columns = ['name', 'alias']
 
@@ -612,7 +612,7 @@ class DeviceVendorListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return DeviceType.objects.values(*self.columns+['id'])
+        return DeviceVendor.objects.values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         if qs:
