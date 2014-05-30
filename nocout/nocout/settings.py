@@ -163,6 +163,7 @@ INSTALLED_APPS = (
     'home',
     'devicevisualization',
     'sitesearch',
+    'performance',
     'dajaxice',
     'dajax',
     'django.contrib.admin',
