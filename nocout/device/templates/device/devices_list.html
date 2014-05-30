@@ -84,7 +84,7 @@
                 }
             }
             else {
-                soft_delete_html = '<h5 class="text-warning">This device is not associated with any other device. So click on Yes! if you want to delete it.</h5>';
+                soft_delete_html = '<h5 class="text-warning">This device (' + content.result.data.objects.device_name + ') is not associated with any other device. So click on Yes! if you want to delete it.</h5>';
                 soft_delete_html += '<input type="hidden" id="id_device" name="device" value="' + content.result.data.objects.device_id + '" />';
                 soft_delete_html += '<input type="hidden" id="id_parent" name="parent" value="" />'
             }

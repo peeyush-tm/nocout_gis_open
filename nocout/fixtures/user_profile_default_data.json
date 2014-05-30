@@ -1,0 +1,56 @@
+[
+{
+  "pk": 2, 
+  "model": "user_profile.userprofile", 
+  "fields": {
+    "phone_number": "", 
+    "comment": null, 
+    "is_deleted": 0, 
+    "parent": null, 
+    "designation": "", 
+    "rght": 2, 
+    "company": "", 
+    "tree_id": 1, 
+    "lft": 1, 
+    "role": [
+      1
+    ], 
+    "groups": [], 
+    "address": "", 
+    "user_permissions": [], 
+    "level": 0
+  }
+},
+{
+  "pk": 1, 
+  "model": "user_profile.roles", 
+  "fields": {
+    "role_name": "admin", 
+    "role_description": "Admin"
+  }
+},
+{
+  "pk": 2, 
+  "model": "user_profile.roles", 
+  "fields": {
+    "role_name": "operator", 
+    "role_description": "Operator"
+  }
+},
+{
+  "pk": 3, 
+  "model": "user_profile.roles", 
+  "fields": {
+    "role_name": "viewer", 
+    "role_description": "Viewer"
+  }
+},
+{
+  "pk": 1, 
+  "model": "user_profile.department", 
+  "fields": {
+    "user_group": 1, 
+    "user_profile": 2
+  }
+}
+]

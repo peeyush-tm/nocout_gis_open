@@ -2,6 +2,7 @@ from django import forms
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
 from device.models import DeviceTypeFields
+from django.core.exceptions import ValidationError
 
 
 # *************************************** Device Form ***********************************************
@@ -9,13 +10,13 @@ from device.models import DeviceTypeFields
 
 class DeviceForm(forms.ModelForm):
     device_technology = IntReturnModelChoiceField(queryset=DeviceTechnology.objects.all(),
-                                                  required=False)
+                                                  required=False, validators=[validate_empty_selection])
     device_vendor = IntReturnModelChoiceField(queryset=DeviceVendor.objects.all(),
-                                              required=False)
+                                              required=False, validators=[validate_empty_selection])
     device_model = IntReturnModelChoiceField(queryset=DeviceModel.objects.all(),
-                                             required=False)
+                                             required=False, validators=[validate_empty_selection])
     device_type = IntReturnModelChoiceField(queryset=DeviceType.objects.all(),
-                                            required=False)
+                                            required=False, validators=[validate_empty_selection])
 
     def __init__(self, *args, **kwargs):
         # setting foreign keys field label
@@ -56,6 +57,10 @@ class DeviceForm(forms.ModelForm):
         widgets = {
             'device_group': MultipleToSingleSelectionWidget,
         }
+
+def validate_empty_selection(value):
+    if value == "":
+        raise ValidationError('%s must not be empty.' % value)
 
 
 # ********************************** Device Extra Fields Form ***************************************
