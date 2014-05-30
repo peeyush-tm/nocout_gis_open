@@ -48,8 +48,8 @@ function advanceSearchClass() {
 
 		$.ajax({
 			crossDomain: true,
-			// url : getApiUrl,
-			url : "http://127.0.0.1:8000/gis/get_filters/",
+			url : getApiUrl,
+			// url : "http://127.0.0.1:8000/gis/get_filters/",
 			type : "GET",
 			dataType : "json",
 			/*If data fetched successful*/
@@ -361,8 +361,8 @@ function advanceSearchClass() {
 
 		$.ajax({
 			crossDomain: true,
-			// url : setFilterApi+"?filters="+searchString,
-			url : "http://127.0.0.1:8000/gis/set_filters/?filters="+searchString,
+			url : setFilterApi+"?filters="+searchString,
+			// url : "http://127.0.0.1:8000/gis/set_filters/?filters="+searchString,
 			type : "GET",
 			dataType : "json",
 			/*If data fetched successful*/
