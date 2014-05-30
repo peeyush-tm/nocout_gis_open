@@ -5,10 +5,23 @@ from service.models import Service
 from mptt.models import MPTTModel, TreeForeignKey
 
 
+# table for device frequencies color coding
+class DeviceFrequency(models.Model):
+    frequency_name = models.CharField(max_length=100)
+    frequency_value = models.CharField(max_length=50)
+    color_hex_value = models.CharField(max_length=10)
+
+    def __unicode__(self):
+        return self.frequency_name
+
+
 # device types info table
 class DeviceType(models.Model):
     name = models.CharField('Device Type', max_length=200, unique=True)
     alias = models.CharField('Device Description', max_length=200, null=True, blank=True)
+    device_icon = models.CharField('Device GMap Icon', max_length=200, null=True, blank=True)
+    device_gmap_icon = models.CharField('Device GMap Icon', max_length=200, null=True, blank=True)
+    frequency = models.ManyToManyField(DeviceFrequency, null=True, blank=True)
 
     def __unicode__(self):
         return self.name
@@ -131,8 +144,9 @@ class DeviceTypeFields(models.Model):
         return self.field_display_name
 
 
-# table for device extra fields values    
+# table for device extra fields values
 class DeviceTypeFieldsValue(models.Model):
     device_type_field = models.ForeignKey(DeviceTypeFields)
     field_value = models.CharField(max_length=250)
     device_id = models.IntegerField()
+
