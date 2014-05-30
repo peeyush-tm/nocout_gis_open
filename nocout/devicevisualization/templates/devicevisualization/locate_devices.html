@@ -13,9 +13,16 @@
         <div class="btn-group">
             <ul class="list-unstyled list-inline">
                 <li>
-                    <button id="advFilterBtn" class="btn btn-success" onclick="showAdvFilters();" data-complete-text="<i class='fa fa-filter'></i> Advance Filters" data-loading-text="Please Wait...">
+                    <button id="advFilterBtn" class="btn btn-info" onclick="showAdvFilters();" data-complete-text="<i class='fa fa-filter'></i> Advance Filters" data-loading-text="Please Wait...">
                         <i class='fa fa-filter'></i> Advance Filters
                     </button>
+                    <button id="removeFilterBtn" class="btn btn-danger hide" onclick="removeAdvFilters();" style="margin-left:10px;">
+                        <i class='fa fa-times'></i> Remove Filters
+                    </button>
+                </li>
+                <li>
+                    <button class="btn btn-info" id="createPolygonBtn"  data-complete-text="<i class='fa fa-location-arrow'></i> Select Devices" data-loading-text="Please Wait..."><i class="fa fa-location-arrow"></i> Select Devices</button>
+                    <button class="btn btn-xs btn-danger hide" id="clearPolygonBtn"><i class="fa fa-times"></i> Clear Selection</button>
                 </li>
             </ul>            
         </div>
@@ -57,7 +64,7 @@
                 <li>
                     <!--Reset Button-->
                     <button class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters" data-complete-text="<i class='fa fa-refresh'></i> Refresh" data-loading-text="Please Wait...">
-                        <i class="fa fa-refresh">&nbsp;</i> Refresh
+                        <i class="fa fa-refresh">&nbsp;</i> Reset
                     </button>
                 </li>
             </ul>
@@ -65,23 +72,41 @@
         <!--Filters Block End-->
         <div class="clear"></div>
     </div>
-    <div class='box-body'>
+    <div class='box-body' style="position:relative">
         <!--div on which the map is to be plot-->
 
         <!--Map Container Start-->
         <div id="deviceMap"></div>
         <!--Map Container End-->
+        <div id="sideInfoContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#sideInfo">Selected Devices</a>
+                        </h3>
+                    </div>
+                    <div id="sideInfo" class="panel-collapse in">
+                        <div class="panel-body">Sorry, No device selected.</div>
+                    </div>
+                </div>
+        </div>
     </div>
 </div>
 
 <!-- Google Map Library-->
-<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
+<!--This library is used to create marker with labels-->
+<script type="text/javascript" src={% static "js/markerwithlabel.js" %}></script>
+<!--This library is used for marker clustering-->
+<script type="text/javascript" src={% static "js/markerclusterer.js" %}></script>
 <!--OverlappingMarkerSpiderfier Library for marker spiderify effect-->
 <script type="text/javascript" src={% static "js/oms.min.js" %}></script>
 <!-- Our Library to plot the devices on map & performs functionality accordingly-->
 <script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
 <!-- Our Library to plot the devices on map & performs functionality accordingly-->
 <script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
+<!-- SPARKLINES -->
+<script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
 
 <script type="text/javascript">
 
@@ -89,7 +114,8 @@
         hostIp = "",
         username = "",
         getFilterApi = "",
-        setFilterApi = "";
+        setFilterApi = "",
+        advSearch = "";
 
     $(document).ready(function(e) {
 
@@ -147,19 +173,45 @@
 
     /**
      * This function triggers when "Advance Filters" button is pressed
-     * @function showAdvFilters
+     * @method showAdvFilters
      */
-    function showAdvFilters()
-    {
-        var advSearch = new advanceSearchClass();
+    function showAdvFilters() {
+
+        advSearch = new advanceSearchClass();
         advSearch.getFilterInfo("filterInfoModal","Advance Filters","advFilterBtn",getFilterApi,setFilterApi);
     }
+    
+    /**
+     * This function triggers when remove filters button is clicked
+     * @method removeAdvFilters
+     */
+    function removeAdvFilters() {
 
+        advSearch.removeFilters();
+    }
+
+    /*Trigers when "Create Polygon" button is clicked*/
+    $("#createPolygonBtn").click(function(e) {
+
+        $("#createPolygonBtn").button("loading");
+        $("#advFilterBtn").button("loading");
+        $("#resetFilters").button("loading");
+
+        networkMapInstance.createPolygon();
+    });
+
+    /*triggers when clear selection button is clicked*/
+    $("#clearPolygonBtn").click(function(e) {
+
+        networkMapInstance.clearPolygon();
+    });
+     
 </script>
 {% endblock %}
 
 {% block load_js %}
 <!-- /JAVASCRIPTS -->
+
 <script>
     jQuery(document).ready(function () {
         App.setPage("");  //Set current page
