@@ -75,7 +75,54 @@
 {
     width:auto;
 }
+.markerLabels
+{
+    position: relative;
+}
+.markerLabels .topLabel
+{
+    margin-bottom: 40px;
+}
+.markerLabels .topLabel , .markerLabels .bottomLabel
+{
+    color: #FF0000;
+    background-color: #FFF;
+    font-size: 11px;
+    font-weight: bold;
+    text-align: center;
+    min-width: 50px;
+    min-height: 18px;
+    border: 2px solid black;
+    white-space: nowrap;
+}
+.sideInfoContainer {
+    max-height: 300px;
+    overflow-y: auto;
+    position:absolute;
+    padding: 0px;
+    right:10px;
+    top:10px;
+    background:#FFF;
+    border:1px solid #000; 
+}
+.sideInfoContainer .panel {
 
+    margin-bottom: 0px;
+}
+.deviceWellContainer {
+    position: relative;
+    overflow: hidden;
+}
+.deviceWellContainer .well h5 {
+    margin-bottom: 5px;
+}
+.sparklineContainer
+{
+    width: 100%;
+    border: 1px solid blue;
+    padding: 2px;
+    overflow: hidden;
+}
 /*Advance Search Filters CSS*/
 .advanceFiltersContainer
 {

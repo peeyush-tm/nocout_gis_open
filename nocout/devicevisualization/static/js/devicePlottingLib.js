@@ -20,7 +20,18 @@ var mapInstance = "",
 	slaveMarkersObj = [],
 	pathLineArray = [],
 	counter = 0,
-	totalCalls = 1;
+	totalCalls = 1,
+	clusterIcon = "",
+	masterClusterInstance = "",
+	slaveClusterInstance = "",
+	polygonSelectedDevices = [],
+	pathArray = [],
+	polygon = "",
+	pointsArray = [],
+	currentPolygon = {},
+	drawingManager = "",
+	dataArray = [],
+	leftMargin = 0;
 
 /**
  * This class is used to plot the BS & SS on the google maps & show information on click
@@ -56,26 +67,40 @@ function networkMapClass() {
 		mapInstance = new google.maps.Map(document.getElementById(domElement),mapObject);
 
 		/*Create a instance of OverlappingMarkerSpiderfier*/
-		oms = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true});
+		oms = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true});		
 
 		/*Create a instance of google map info window*/
 		infowindow = new google.maps.InfoWindow();		
 
 		oms.addListener('click', function(marker,e) {
 			
+			var windowPosition = new google.maps.LatLng(marker.position.k,marker.position.A);
 			/*Call the function to create info window content*/
 			var content = that.makeWindowContent(marker,e);
 			/*Set the content for infowindow*/
 			infowindow.setContent(content);
 			/*Set The Position for InfoWindow*/
-			infowindow.setPosition(e.latLng);
+			infowindow.setPosition(windowPosition);
 			/*Open the info window*/
 			infowindow.open(mapInstance);
 		});
-		
-		oms.addListener('spiderfy', function(markers) {
+		/*Event when the markers cluster expands or spiderify*/
+		oms.addListener('spiderfy', function(e,markers) {
+
+			/*Change the markers icon from cluster icon to thrie own icon*/
+			for(var i=0;i<e.length;i++) {
+				e[i].setOptions({"icon":e[i].oldIcon});
+			}
 
 			infowindow.close();
+		});
+		/*Event when markers cluster is collapsed or unspiderify*/
+		oms.addListener('unspiderfy', function(e,markers) {
+
+			/*Reset the marker icon to cluster icon*/
+			for(var i=0;i<e.length;i++) {
+				e[i].setOptions({"icon":clusterIcon});
+			}
 		});
 	};
 
@@ -103,8 +128,8 @@ function networkMapClass() {
 			/*Ajax call to the API*/
 			$.ajax({
 				crossDomain: true,
-				url : "//" + hostIp + "device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
-				// url : "http://127.0.0.1:8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
+				// url : "//" + hostIp + "device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
+				url : "http://127.0.0.1:8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
@@ -142,6 +167,13 @@ function networkMapClass() {
 						}
 						
 						if(devicesObject.success == 1) {
+
+							/*If cluster icon exist then save it to global variable else make the global variable blank*/
+							if(devicesObject.data.objects.data.cluster_icon == undefined) {
+								clusterIcon = "";	
+							} else {
+								clusterIcon = devicesObject.data.objects.data.cluster_icon;
+							}
 
 							/*Call the populateNetwork to show the markers on the map*/
 							that.populateNetwork(devices);
@@ -195,13 +227,15 @@ function networkMapClass() {
 		/*Assign the potting devices to the 'devices' global variables*/
 		devices = resultantMarkers;
 
-		for(var i=0;i<resultantMarkers.length;i++) {
+		for(var i=0;i<resultantMarkers.length;i++) {			
 
+			var master_label_content = "<div class='labelContainer'><div class='topLabel'>Perf : "+resultantMarkers[i].data.perf+"</div><div class='bottomLabel'>Model : "+resultantMarkers[i].data.model+"</div></div>";
 			/*Create Master Marker Object*/
 			var masterMarkerObject = {
 		    	position  	: new google.maps.LatLng(resultantMarkers[i].data.lat,resultantMarkers[i].data.lon),
 		    	map       	: mapInstance,
-		    	icon 	  	: resultantMarkers[i].data.markerUrl,
+		    	icon 	  	: resultantMarkers[i].data.markerUrl,//"https://chart.googleapis.com/chart?chst=d_map_pin_letter&chld=|fcfcfc|",
+		    	oldIcon 	: resultantMarkers[i].data.markerUrl,
 		    	title     	: resultantMarkers[i].data.alias,
 		    	pointType	: "Master",
 		    	pointPerf	: resultantMarkers[i].data.perf,
@@ -216,22 +250,31 @@ function networkMapClass() {
 		    	currentState: resultantMarkers[i].data.current_state,
 		    	pointIp  	: resultantMarkers[i].data.ip,
 		    	pointMac  	: resultantMarkers[i].data.mac,
-		    	pointDetail : resultantMarkers[i].data.otherDetail
+		    	pointDetail : resultantMarkers[i].data.otherDetail,
+		    	labelContent: master_label_content,
+				labelAnchor : new google.maps.Point(0, 62),
+				labelClass  : "markerLabels",
+				labelStyle	: {opacity: 0.85}
 			};
 			/*Create Master Marker*/
-		    var masterMarker = new google.maps.Marker(masterMarkerObject);
+		    // var masterMarker = new google.maps.Marker(masterMarkerObject);
+		    var masterMarker = new MarkerWithLabel(masterMarkerObject);
 		    /*Add the master marker to the global master markers array*/
 		    masterMarkersObj.push(masterMarker);
+		    /*Add parent markers to the OverlappingMarkerSpiderfier*/
+		    oms.addMarker(masterMarker);
+	    	
+		    var slaveCount = resultantMarkers[i].children.length;  
 		    /*Loop for the number of slave & their links with the master*/
-		    var slaveCount = resultantMarkers[i].children.length;
-
 		    for(var j=0;j<slaveCount;j++) {
-
+		    	
+		    	var slave_label_content = "<div class='labelContainer'><div class='topLabel'>Perf : "+resultantMarkers[i].children[j].data.perf+"</div><div class='bottomLabel'>Model : "+resultantMarkers[i].children[j].data.model+"</div></div>";
 		    	/*Create Slave Marker Object*/
 			    var slaveMarkerObject = {
 			    	position  	: new google.maps.LatLng(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon),
 			    	map       	: mapInstance,
 			    	icon 	  	: resultantMarkers[i].children[j].data.markerUrl,
+			    	oldIcon 	: resultantMarkers[i].children[j].data.markerUrl,
 			    	title     	: resultantMarkers[i].children[j].data.alias,
 			    	pointType	: "Slave",
 			    	pointPerf	: resultantMarkers[i].children[j].data.perf,
@@ -246,17 +289,21 @@ function networkMapClass() {
 			    	currentState: resultantMarkers[i].children[j].data.current_state,
 			    	pointIp  	: resultantMarkers[i].children[j].data.ip,
 			    	pointMac  	: resultantMarkers[i].children[j].data.mac,
-			    	pointDetail : resultantMarkers[i].children[j].data.otherDetail
+			    	pointDetail : resultantMarkers[i].children[j].data.otherDetail,
+			    	labelContent: slave_label_content,
+					labelAnchor : new google.maps.Point(0, 62),
+					labelClass  : "markerLabels",
+					labelStyle	: {opacity: 0.85}
 				};
 				/*Create Slave Marker*/
-			    var slaveMarker = new google.maps.Marker(slaveMarkerObject);				    				    
+			    // var slaveMarker = new google.maps.Marker(slaveMarkerObject);
+			    var slaveMarker = new MarkerWithLabel(slaveMarkerObject);
 			    /*Add the slave marker to the global slave array*/
 		    	slaveMarkersObj.push(slaveMarker);
-			    /*Add BS & SS markers to the OverlappingMarkerSpiderfier*/
-			    oms.addMarker(masterMarker);
+			    /*Add child markers to the OverlappingMarkerSpiderfier*/
 				oms.addMarker(slaveMarker);
 
-				if(resultantMarkers[i].data.showLink == 1) {
+				if(resultantMarkers[i].data.showLink != 1) {
 
 					/*Create object for Link Line Between Master & Slave*/
 					var pathDataObject = [
@@ -315,7 +362,7 @@ function networkMapClass() {
 					google.maps.event.addListener(pathConnector, 'click', function(e) {
 						
 						/*Call the function to create info window content*/
-						var content = that.makeWindowContent(this);
+						var content = that.makeWindowContent(this,e);
 						/*Set the content for infowindow*/
 						infowindow.setContent(content);
 						/*Set The Position for InfoWindow*/
@@ -326,6 +373,25 @@ function networkMapClass() {
 				}
 			}
 		}
+		
+		/*Loop to change the icon for same location markers(to cluster icon)*/
+		for(var k=0;k<masterMarkersObj.length;k++) {
+			for(var l=0;l<slaveMarkersObj.length;l++) {
+				if(masterMarkersObj[k].position.A == slaveMarkersObj[l].position.A && masterMarkersObj[k].position.k == slaveMarkersObj[l].position.k) {
+					/*Set the master marker icon to cluster icon*/
+					masterMarkersObj[k].setOptions({"icon" : clusterIcon});
+					/*Set the slave marker icon to cluster icon*/
+					slaveMarkersObj[l].setOptions({"icon" : clusterIcon});
+				}
+			}
+		}
+
+		/*Cluster options object*/
+		var clusterOptions = {gridSize: 70, maxZoom: 8};
+		/*Add the master markers to the cluster MarkerCluster object*/
+		masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
+		/*Add the slave markers to the cluster MarkerCluster object*/
+		slaveClusterInstance = new MarkerClusterer(mapInstance, slaveMarkersObj, clusterOptions);
 	};
 
 	/**
@@ -415,7 +481,7 @@ function networkMapClass() {
 			infoTable += "<tr><td>Device Type</td><td>"+contentObject.deviceType+"</td></tr>";
 			infoTable += "<tr><td>State</td><td>"+contentObject.state+"</td></tr>";
 			infoTable += "<tr><td>City</td><td>"+contentObject.city+"</td></tr>";
-			infoTable += "<tr><td>Lat, Long</td><td>"+event.latLng.k+", "+event.latLng.A+"</td></tr>";
+			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.position.k+", "+contentObject.position.A+"</td></tr>";
 			infoTable += "</tbody></table>";
 
 			perfContent += "<h1><i class='fa fa-signal'></i>  "+contentObject.pointPerf+"</h1>";
@@ -728,6 +794,225 @@ function networkMapClass() {
 		that.populateFilters(cityArray,stateArray,vendorArray,techArray);
 	};
 
+	/**
+	 * This function creates enable the polygon drawing tool & draw the polygon
+	 * @class devicePlottingLib
+	 * @method createPolygon
+	 */
+
+	this.createPolygon = function() {
+
+		/*Store the reference of current pointer in a global variable*/
+    	that = this;
+    	
+    	selectedCount = polygonSelectedDevices.length;
+
+    	if(selectedCount == 0) {
+
+    		drawingManager = new google.maps.drawing.DrawingManager({
+				drawingMode: google.maps.drawing.OverlayType.POLYGON,
+				drawingControl: false,
+				drawingControlOptions: {
+					position: google.maps.ControlPosition.TOP_CENTER,
+					drawingModes: [
+						google.maps.drawing.OverlayType.POLYGON,
+					]
+				},
+				map : mapInstance
+			});
+			
+			drawingManager.setMap(mapInstance);
+
+			google.maps.event.addListener(drawingManager, 'overlaycomplete', function(e) {
+
+				pathArray = e.overlay.getPath().getArray();
+				polygon = new google.maps.Polygon({"path" : pathArray});
+				pointsArray = masterMarkersObj.concat(slaveMarkersObj);
+				currentPolygon = e.overlay;
+				currentPolygon.type = e.type;
+				
+				for(var k=0;k<pointsArray.length;k++) {
+					
+					var point = pointsArray[k].position;
+
+					if (google.maps.geometry.poly.containsLocation(point, polygon)) {
+						polygonSelectedDevices.push(pointsArray[k]);
+					}
+				}
+				selectedCount = polygonSelectedDevices.length;
+				if(selectedCount == 0) {
+					
+					bootbox.alert("No devices are under the selected area.Please re-select");
+					/*Remove current polygon from map*/
+					that.clearPolygon();
+
+				} else if(selectedCount > 200) {
+					
+					bootbox.alert("Max. limit for selecting devices is 200.Please re-select");
+					/*Remove current polygon from map*/
+					that.clearPolygon();
+
+				} else {
+
+					var devicesTemplate = "";
+					
+					devicesTemplate = "<div class='deviceWellContainer'>";
+					for(var i=0;i<selectedCount;i++) {
+
+						devicesTemplate += '<div class="well well-sm"><h5>'+polygonSelectedDevices[i].title+'('+polygonSelectedDevices[i].pointIp+')</h5><ul class="list-unstyled list-inline">';
+						devicesTemplate += '<li><button id="play_'+i+'" onClick="that.startMonitoring('+i+')" class="btn btn-default btn-xs"><i class="fa fa-play"></i></button></li>';
+						devicesTemplate += '<li><button id="pause_'+i+'" onClick="that.pauseMonitoring('+i+')" class="btn btn-default btn-xs"><i class="fa fa-pause"></i></button></li>';
+						devicesTemplate += '<li><button id="stop_'+i+'" onClick="that.stopMonitoring('+i+')" class="btn btn-default btn-xs"><i class="fa fa-stop"></i></button></li>';
+						devicesTemplate += '</ul><div class="sparklineContainer"><span class="sparkline" id="sparkline_'+i+'">Loading...</span></div></div>';
+					}
+					devicesTemplate += "</div>";
+
+					$("#sideInfo > .panel-body").html(devicesTemplate);					
+
+					if($("#sideInfoContainer").hasClass("hide")) {
+						$("#sideInfoContainer").removeClass("hide");
+					}
+					if(!$("#createPolygonBtn").hasClass("hide")) {
+						$("#createPolygonBtn").addClass("hide");
+					}
+
+					if($("#clearPolygonBtn").hasClass("hide")) {
+						$("#clearPolygonBtn").removeClass("hide");
+					}
+
+					drawingManager.setDrawingMode(null);
+				}
+
+				$("#createPolygonBtn").button("complete");
+				$("#advFilterBtn").button("complete");
+				$("#resetFilters").button("complete");
+			});
+    	} else {
+
+    		bootbox.alert("Please clear the current selection.");
+    		$("#clearPolygonBtn").removeClass("hide");
+    		$("#createPolygonBtn").button("complete");
+			$("#advFilterBtn").button("complete");
+			$("#resetFilters").button("complete");
+    	}
+	};
+
+	/**
+	 * This function clear the polygon selection from the map
+	 * @class devicePlottingLib
+	 * @method clearPolygon
+	 */
+	this.clearPolygon = function() {
+
+		/*Update the html of accordian body*/
+		$("#sideInfo > .panel-body").html("No device selected.");
+		/*Collapse the selected devices accordian*/
+		if(!$("#sideInfoContainer").hasClass("hide")) {
+			$("#sideInfoContainer").addClass("hide");
+		}		
+		/*Show Select Devices button*/
+		if($("#createPolygonBtn").hasClass("hide")) {
+			$("#createPolygonBtn").removeClass("hide");
+		}
+		/*Hide the clear selection button*/
+		if(!$("#clearPolygonBtn").hasClass("hide")) {
+			$("#clearPolygonBtn").addClass("hide");
+		}
+		/*Remove the current polygon from the map*/
+		currentPolygon.setMap(null);
+		/*Reset the variables*/
+		polygonSelectedDevices = [];		
+		pathArray = [];
+		polygon = "";
+		pointsArray = [];
+		// currentPolygon = {};
+	};
+
+	/**
+	 * This function creates the line chart for the monitoring of selected devices
+	 * @class devicePlottingLib
+	 * @method makeMonitoringChart
+	 * @param id 'Integer'
+	 */
+	this.makeMonitoringChart = function(id) {
+
+		var startClassNames = $("#play_"+id)[0].className;
+		var stopClassNames = $("#stop_"+id)[0].className;
+
+		if(startClassNames.indexOf("active") != -1) {
+			
+			var num = Math.floor((Math.random() * 20) + 1)
+			var oldLength = dataArray.length;
+			for(var i=0;i<num;i++) {
+
+				dataArray.push(Math.floor(Math.random() * 80));
+			}
+
+			var margin = oldLength * 5;
+			
+			$("#sparkline_"+id).sparkline(dataArray, {
+		        type: "line",
+		        lineColor: "blue",
+		        spotColor : "orange",
+		        defaultPixelsPerValue : 5
+		    });
+
+		    setTimeout(function() {
+				$("#sparkline_"+id).css("margin-left","-"+leftMargin+"px");
+				/*Decrement the margin-left value*/
+				leftMargin = margin;
+				/*Recursive calling*/
+				that.makeMonitoringChart(id);
+			},1500);
+
+		} else if(stopClassNames.indexOf("active") != -1) {
+
+				$("#sparkline_"+id).sparkline("", {
+			        type: "line",
+			        lineColor: "blue",
+			        spotColor : "orange",
+			        zeroAxis: false
+			    });
+		}
+	};
+
+	this.startMonitoring = function(id) {
+
+		$("#play_"+id).addClass("active");
+        if($("#pause_"+id).hasClass("active")) {
+            $("#pause_"+id).removeClass("active");
+        }
+        if($("#stop_"+id).hasClass("active")) {
+            $("#stop_"+id).removeClass("active");
+        }
+
+        that.makeMonitoringChart(id);
+	};
+
+	this.pauseMonitoring = function(id) {
+		
+		$("#pause_"+id).addClass("active");
+        if($("#play_"+id).hasClass("active")) {
+            $("#play_"+id).removeClass("active");
+        }
+        if($("#stop_"+id).hasClass("active")) {
+            $("#stop_"+id).removeClass("active");
+        }
+        that.makeMonitoringChart(id);
+	};
+
+	this.stopMonitoring = function(id) {
+		
+		$("#stop_"+id).addClass("active");
+        if($("#play_"+id).hasClass("active")) {
+            $("#play_"+id).removeClass("active");
+        }
+        if($("#pause_"+id).hasClass("active")) {
+            $("#pause_"+id).removeClass("active");
+        }
+        that.makeMonitoringChart(id);
+	};
+	
     /**
      * This function resets the global variables & again call the api calling function after given timeout
      * @class devicePlottingLib
@@ -778,11 +1063,21 @@ function networkMapClass() {
 		/*Clear the marker array of OverlappingMarkerSpiderfier*/
 		oms.clearMarkers();
 
+		/*Clear master marker cluster objects*/
+		if(masterClusterInstance != "") {
+			masterClusterInstance.clearMarkers();
+		}
+		
+		/*Clear slave marker cluster objects*/
+		if(slaveClusterInstance != "") {
+			slaveClusterInstance.clearMarkers();
+		}
+
 		/*Hide The loading Icon*/
 		$("#loadingIcon").hide();
 
 		/*Enable the refresh button*/
-		$("#resetFilters").button("complete");
+		$("#resetFilters").button("complete");		
 
 		/*If any master devices exists*/
 		if(masterMarkersObj.length > 0) {
@@ -812,7 +1107,7 @@ function networkMapClass() {
 
 				pathLineArray[j].setMap(null);
 			}
-		}
+		}		
 	};
 
 	/**
@@ -841,5 +1136,8 @@ function networkMapClass() {
 		stateArray = [];
 		vendorArray = [];
 		techArray = [];
+		masterMarkersObj = [];
+		slaveMarkersObj = [];
+		clusterIcon = "";
 	};
 }
