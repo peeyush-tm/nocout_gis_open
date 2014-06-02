@@ -1,11 +1,14 @@
 import json
+from actstream import action
 from django.db.models.query import ValuesQuerySet
+from django.http import HttpResponseRedirect
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from models import Service, ServiceParameters
 from .forms import ServiceForm, ServiceParametersForm
+from nocout.utils.util import DictDiffer
 
 
 class ServiceList(ListView):
@@ -94,6 +97,11 @@ class ServiceCreate(CreateView):
     form_class = ServiceForm
     success_url = reverse_lazy('services_list')
 
+    def form_valid(self, form):
+        self.object=form.save()
+        action.send(self.request.user, verb='Created', action_object = self.object)
+        return HttpResponseRedirect(ServiceCreate.success_url)
+
 
 class ServiceUpdate(UpdateView):
     template_name = 'service/service_update.html'
@@ -101,6 +109,27 @@ class ServiceUpdate(UpdateView):
     form_class = ServiceForm
     success_url = reverse_lazy('services_list')
 
+
+    def form_valid(self, form):
+        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
+
+        cleaned_data_field_dict = { field : map(lambda obj: obj.pk, form.cleaned_data[field])
+        if field in ('parameters') and  form.cleaned_data[field] else form.cleaned_data[field] for field in form.cleaned_data.keys() }
+
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        if changed_fields_dict:
+            initial_field_dict['parameters'] = ', '.join([ServiceParameters.objects.get(pk=paramter).parameter_description
+                                               for paramter in initial_field_dict['parameters']])
+            cleaned_data_field_dict['parameters'] = ', '.join([ServiceParameters.objects.get(pk=paramter).parameter_description
+                                                     for paramter in cleaned_data_field_dict['parameters']])
+
+            verb_string = 'Changed values of Service : %s from initial values '%(self.object.service_name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
+                               for k in changed_fields_dict])+\
+                               ' to '+\
+                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            self.object=form.save()
+            action.send( self.request.user, verb=verb_string )
+        return HttpResponseRedirect( ServiceUpdate.success_url )
 
 class ServiceDelete(DeleteView):
     model = Service
@@ -197,12 +226,33 @@ class ServiceParametersCreate(CreateView):
     form_class = ServiceParametersForm
     success_url = reverse_lazy('services_parameter_list')
 
+    def form_valid(self, form):
+        self.object=form.save()
+        action.send(self.request.user, verb='Created', action_object = self.object)
+        return HttpResponseRedirect(ServiceParametersCreate.success_url)
 
 class ServiceParametersUpdate(UpdateView):
     template_name = 'service_parameter/service_parameter_update.html'
     model = ServiceParameters
     form_class = ServiceParametersForm
     success_url = reverse_lazy('services_parameter_list')
+
+    def form_valid(self, form):
+        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
+
+        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        if changed_fields_dict:
+
+            verb_string = 'Changed values of Service Paramters: %s from initial values '%(self.object.parameter_description)\
+                          + ', '.join(['%s: %s' %(k, initial_field_dict[k]) for k in changed_fields_dict])\
+                          +  ' to '\
+                          + ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            self.object=form.save()
+            action.send( self.request.user, verb=verb_string )
+        return HttpResponseRedirect( ServiceParametersUpdate.success_url )
+
 
 
 class ServiceParametersDelete(DeleteView):
