@@ -169,6 +169,7 @@ INSTALLED_APPS = (
     'debug_toolbar',
     'preventconcurrentlogins',
     'corsheaders',
+    'actstream',
 
 )
 
