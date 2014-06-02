@@ -166,6 +166,7 @@ INSTALLED_APPS = (
     'dajaxice',
     'dajax',
     'django.contrib.admin',
+    'actstream'
     'debug_toolbar',
     'preventconcurrentlogins',
     'corsheaders',
