@@ -1,4 +1,5 @@
 import json
+from actstream import action
 from django.db.models import Q
 from django.db.models.query import ValuesQuerySet
 from django.views.generic import ListView, DetailView
@@ -7,8 +8,10 @@ from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, Inventory, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue, DeviceTechnology, \
     TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType
+from device_group.models import DeviceGroup
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
     DeviceVendorForm, DeviceModelForm, DeviceTypeForm
+from nocout.utils.util import DictDiffer
 from site_instance.models import SiteInstance
 from django.http.response import HttpResponseRedirect
 from service.models import Service
@@ -22,6 +25,7 @@ if settings.DEBUG:
     logger = logging.getLogger(__name__)
 
 # ***************************************** Device Views ********************************************
+from user_group.models import UserGroup
 
 
 class DeviceList(ListView):
@@ -223,7 +227,9 @@ class DeviceCreate(CreateView):
             inventory.device = device
             inventory.device_group = dg
             inventory.save()
-        return HttpResponseRedirect(DeviceCreate.success_url)
+
+        action.send( self.request.user, verb='Created', action_object=device )
+        return HttpResponseRedirect( DeviceCreate.success_url )
 
 
 class DeviceUpdate(UpdateView):
@@ -358,6 +364,45 @@ class DeviceUpdate(UpdateView):
             inventory.device = self.object
             inventory.device_group = dg
             inventory.save()
+
+        initial_field_dict = { field : [ form.initial[field] ] if field in ('site_instance','parent','device_group') and
+                               form.initial[field] else form.initial[field] for field in form.initial.keys() }
+        def cleaned_data_field():
+            cleaned_data_field_dict={}
+            for field in form.cleaned_data.keys():
+                if field in ('device_group', 'service'):
+                    cleaned_data_field_dict[field]=map(lambda obj: obj.pk, form.cleaned_data[field])
+                elif field in ('parent', 'site_instance'):
+                    cleaned_data_field_dict[field]=[form.cleaned_data[field].pk] if form.cleaned_data[field] else None
+                elif field in ('device_model', 'device_type', 'device_vendor', 'device_technology'):
+                    cleaned_data_field_dict[field]=int(form.cleaned_data[field])
+                else:
+                    cleaned_data_field_dict[field]=form.cleaned_data[field]
+
+            return cleaned_data_field_dict
+
+        cleaned_data_field_dict=cleaned_data_field()
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        if changed_fields_dict:
+            initial_field_dict['parent'] = UserGroup.objects.get(pk=initial_field_dict['parent'][0]).name if initial_field_dict['parent'] else str(None)
+            initial_field_dict['site_instance'] = SiteInstance.objects.get(pk=initial_field_dict['site_instance'][0]).name if initial_field_dict['site_instance'] else str(None)
+            initial_field_dict['device_group'] = DeviceGroup.objects.get(pk=initial_field_dict['device_group'][0]).name
+            initial_field_dict['service'] = ', '.join([Service.objects.get(pk=service).service_name for service in initial_field_dict['service']])
+
+            cleaned_data_field_dict['parent'] = UserGroup.objects.get(pk=cleaned_data_field_dict['parent'][0]).name if cleaned_data_field_dict['parent'] else str(None)
+            cleaned_data_field_dict['site_instance'] = SiteInstance.objects.get(pk=cleaned_data_field_dict['site_instance'][0]).name if cleaned_data_field_dict['site_instance'] else str(None)
+            cleaned_data_field_dict['device_group'] = DeviceGroup.objects.get(pk=cleaned_data_field_dict['device_group'][0]).name
+            cleaned_data_field_dict['service'] = ', '.join([Service.objects.get(pk=service).service_name for service in cleaned_data_field_dict['service']])
+
+            verb_string = 'Changed values of Device %s from initial values '%(self.object.device_name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
+                               for k in changed_fields_dict])+\
+                               ' to '+\
+                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
+
+            action.send(self.request.user, verb=verb_string)
+
         return HttpResponseRedirect(DeviceCreate.success_url)
 
 
@@ -366,6 +411,11 @@ class DeviceDelete(DeleteView):
 
     template_name = 'device/device_delete.html'
     success_url = reverse_lazy('device_list')
+
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting device: %s'%(self.object.device_name))
+        super(DeviceDelete, self).delete(self, request, *args, **kwargs)
+
 
 
 # ******************************** Device Type Form Fields Views ************************************
@@ -460,6 +510,10 @@ class DeviceTypeFieldsCreate(CreateView):
     form_class = DeviceTypeFieldsForm
     success_url = reverse_lazy('device_extra_field_list')
 
+    def form_valid(self, form):
+        self.object=form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
+        return HttpResponseRedirect(DeviceTypeFieldsCreate.success_url)
 
 class DeviceTypeFieldsUpdate(UpdateView):
     template_name = 'device_extra_fields/device_extra_field_update.html'
@@ -467,11 +521,40 @@ class DeviceTypeFieldsUpdate(UpdateView):
     form_class = DeviceTypeFieldsUpdateForm
     success_url = reverse_lazy('device_extra_field_list')
 
+    def form_valid(self, form):
+
+        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
+
+        cleaned_data_field_dict = { field : form.cleaned_data[field].pk
+        if field in ('device_type') and  form.cleaned_data[field] else form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        if changed_fields_dict:
+            initial_field_dict['device_type'] = DeviceType.objects.get( pk= initial_field_dict['device_type']).name if initial_field_dict['device_type'] else str(None)
+            cleaned_data_field_dict['device_type'] = DeviceType.objects.get( pk=cleaned_data_field_dict['device_type']).name if cleaned_data_field_dict['device_type'] else str(None)
+
+            verb_string = 'Changed values of Device Fields: %s from initial values '%(self.object.field_name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
+                               for k in changed_fields_dict])+\
+                               ' to '+\
+                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
+
+            self.object=form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(DeviceTypeFieldsCreate.success_url)
+
+
 
 class DeviceTypeFieldsDelete(DeleteView):
     model = DeviceTypeFields
     template_name = 'device_extra_fields/device_extra_field_delete.html'
     success_url = reverse_lazy('device_extra_field_list')
+
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting user: %s'%(self.object.field_name))
+        super(DeviceTypeFieldsDelete, self).delete(self, request, *args, **kwargs)
+
 
 
 # **************************************** Device Technology ****************************************
@@ -577,6 +660,8 @@ class DeviceTechnologyCreate(CreateView):
             tv.technology = device_technology
             tv.vendor = device_vendor
             tv.save()
+
+        action.send(self.request.user, verb='Created', action_object = device_technology)
         return HttpResponseRedirect(DeviceTechnologyCreate.success_url)
 
 
@@ -600,6 +685,27 @@ class DeviceTechnologyUpdate(UpdateView):
             tv.technology = self.object
             tv.vendor = device_vendor
             tv.save()
+
+        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
+
+        cleaned_data_field_dict = { field : map(lambda obj: obj.pk, form.cleaned_data[field])
+        if field in ('device_vendors') and  form.cleaned_data[field] else form.cleaned_data[field] for field in form.cleaned_data.keys() }
+
+
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        if changed_fields_dict:
+            initial_field_dict['device_vendors'] = ', '.join([DeviceVendor.objects.get(pk=vendor).name for vendor in initial_field_dict['device_vendors']])
+            cleaned_data_field_dict['device_vendors'] = ', '.join([DeviceVendor.objects.get(pk=vendor).name for vendor in cleaned_data_field_dict['device_vendors']])
+
+            verb_string ='Changed values of Device Technology : %s from initial values '%(self.object.name) \
+                          + ', '.join(['%s: %s' %(k, initial_field_dict[k]) for k in changed_fields_dict])\
+                          +' to '+\
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
+
+            action.send(self.request.user, verb=verb_string)
+
         return HttpResponseRedirect(DeviceTechnologyUpdate.success_url)
 
 
@@ -608,6 +714,10 @@ class DeviceTechnologyDelete(DeleteView):
     template_name = 'device_technology/device_technology_delete.html'
     success_url = reverse_lazy('device_technology_list')
 
+
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting device technology: %s'%(self.object.field_name))
+        super(DeviceTechnologyDelete, self).delete(self, request, *args, **kwargs)
 
 # ************************************* Device Vendor ***********************************************
 
@@ -714,6 +824,8 @@ class DeviceVendorCreate(CreateView):
             vm.vendor = device_vendor
             vm.model = device_model
             vm.save()
+
+        action.send(self.request.user, verb='Created', action_object = device_vendor)
         return HttpResponseRedirect(DeviceVendorCreate.success_url)
 
 
@@ -737,6 +849,27 @@ class DeviceVendorUpdate(UpdateView):
             vm.vendor = self.object
             vm.model = device_model
             vm.save()
+        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
+
+        cleaned_data_field_dict = { field : map(lambda obj: obj.pk, form.cleaned_data[field])
+        if field in ('device_models') and  form.cleaned_data[field] else form.cleaned_data[field]
+        for field in form.cleaned_data.keys() }
+
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        if changed_fields_dict:
+            initial_field_dict['device_models'] = ', '.join([DeviceModel.objects.get(pk=vendor).name for vendor in initial_field_dict['device_models']])
+            cleaned_data_field_dict['device_models'] = ', '.join([DeviceModel.objects.get(pk=vendor).name for vendor in cleaned_data_field_dict['device_models']])
+
+            verb_string ='Changed values of Device Vendor : %s from initial values '%(self.object.name) \
+                          + ', '.join(['%s: %s' %(k, initial_field_dict[k]) for k in changed_fields_dict])\
+                          +' to '+\
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
+
+            action.send(self.request.user, verb=verb_string)
+
         return HttpResponseRedirect(DeviceVendorUpdate.success_url)
 
 
@@ -744,6 +877,10 @@ class DeviceVendorDelete(DeleteView):
     model = DeviceVendor
     template_name = 'device_vendor/device_vendor_delete.html'
     success_url = reverse_lazy('device_vendor_list')
+
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting device vendor: %s'%(self.object.name))
+        super(DeviceVendorDelete, self).delete(self, request, *args, **kwargs)
 
 
 # ****************************************** Device Model *******************************************
@@ -847,6 +984,8 @@ class DeviceModelCreate(CreateView):
             mt.model = device_model
             mt.type = device_type
             mt.save()
+
+        action.send(self.request.user, verb='Created', action_object = device_model)
         return HttpResponseRedirect(DeviceModelCreate.success_url)
 
 
@@ -870,6 +1009,29 @@ class DeviceModelUpdate(UpdateView):
             mt.model = self.object
             mt.type = device_type
             mt.save()
+
+        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
+
+        cleaned_data_field_dict = { field : map(lambda obj: obj.pk, form.cleaned_data[field])
+        if field in ('device_types') and  form.cleaned_data[field] else form.cleaned_data[field]
+        for field in form.cleaned_data.keys() }
+
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        if changed_fields_dict:
+            initial_field_dict['device_types'] = ', '.join([DeviceType.objects.get(pk=vendor).name for vendor in initial_field_dict['device_types']])
+            cleaned_data_field_dict['device_types'] = ', '.join([DeviceType.objects.get(pk=vendor).name for vendor in cleaned_data_field_dict['device_types']])
+
+            verb_string ='Changed values of Device Models : %s from initial values '%(self.object.name) \
+                          + ', '.join(['%s: %s' %(k, initial_field_dict[k]) for k in changed_fields_dict])\
+                          +' to '+\
+                          ', '.join(['%s: %s' %(k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
+
+            action.send(self.request.user, verb=verb_string)
+
+
         return HttpResponseRedirect(DeviceModelUpdate.success_url)
 
 
@@ -878,6 +1040,9 @@ class DeviceModelDelete(DeleteView):
     template_name = 'device_model/device_model_delete.html'
     success_url = reverse_lazy('device_model_list')
 
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting device vendor: %s'%(self.object.name))
+        super(DeviceModelDelete, self).delete(self, request, *args, **kwargs)
 
 # ****************************************** Device Type *******************************************
 
@@ -968,15 +1133,45 @@ class DeviceTypeCreate(CreateView):
     form_class = DeviceTypeForm
     success_url = reverse_lazy('device_type_list')
 
+    def form_valid(self, form):
+        self.object=form.save()
+        action.send(self.request.user, verb='Created', action_object = self.object)
+        return HttpResponseRedirect(DeviceTypeCreate.success_url)
+
+
 class DeviceTypeUpdate(UpdateView):
     template_name = 'device_type/device_type_update.html'
     model = DeviceType
     form_class = DeviceTypeForm
     success_url = reverse_lazy('device_type_list')
 
+    def form_valid(self, form):
+        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
+
+        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        if changed_fields_dict:
+
+            verb_string = 'Changed values of Device Type: %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
+                               for k in changed_fields_dict])+\
+                               ' to '+\
+                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            self.object=form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(DeviceTypeUpdate.success_url)
 
 class DeviceTypeDelete(DeleteView):
     model = DeviceType
     template_name = 'device_type/device_type_delete.html'
     success_url = reverse_lazy('device_type_list')
+
+
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting device type: %s'%(self.object.name))
+        super(DeviceTypeDelete, self).delete(self, request, *args, **kwargs)
+
+
+
+
 

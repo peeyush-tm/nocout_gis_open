@@ -4,7 +4,10 @@ from nocout.widgets import MultipleToSingleSelectionWidget
 
 
 class UserGroupForm(forms.ModelForm):
+
     def __init__(self, *args, **kwargs):
+        initial = kwargs.setdefault('initial',{})
+        initial['device_group'] = kwargs['instance'].device_group.values_list('pk', flat=True)[0] if kwargs['instance'] else []
         super(UserGroupForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
