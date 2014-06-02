@@ -8,20 +8,20 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Adding model 'DevicePerf'
-        db.create_table(u'performance_deviceperf', (
+        # Adding model 'PerformanceMetric'
+        db.create_table(u'performance_performancemetric', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('device', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device.Device'], null=True, blank=True)),
             ('service', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['service.Service'], null=True, blank=True)),
             ('timestamp', self.gf('django.db.models.fields.DateTimeField')(null=True, blank=True)),
             ('value', self.gf('django.db.models.fields.CharField')(max_length=500, null=True, blank=True)),
         ))
-        db.send_create_signal(u'performance', ['DevicePerf'])
+        db.send_create_signal(u'performance', ['PerformanceMetric'])
 
 
     def backwards(self, orm):
-        # Deleting model 'DevicePerf'
-        db.delete_table(u'performance_deviceperf')
+        # Deleting model 'PerformanceMetric'
+        db.delete_table(u'performance_performancemetric')
 
 
     models = {
@@ -84,8 +84,8 @@ class Migration(SchemaMigration):
             u'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             u'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'})
         },
-        u'performance.deviceperf': {
-            'Meta': {'object_name': 'DevicePerf'},
+        u'performance.performancemetric': {
+            'Meta': {'object_name': 'PerformanceMetric'},
             'device': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.Device']", 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'service': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['service.Service']", 'null': 'True', 'blank': 'True'}),
