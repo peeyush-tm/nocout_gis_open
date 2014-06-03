@@ -1,0 +1,63 @@
+{% extends "inventory/inventory.html" %}
+{% block breadcrumb_page_title %} > Device > Tree View {% endblock %}
+{% block content_title %}Device Management{% endblock %}
+{% block content_description %}Tree view of devices. {% endblock %}
+{% load staticfiles %}
+
+{% block content %}
+
+    <p><a href="/device/new"><i class="fa fa-plus">&nbsp;</i> Create Device</a></p>
+    <p><a href="/device"><i class="fa fa-table">&nbsp;</i> Devices List View</a></p>
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-sitemap"></i>DEVICES TREE</h4>
+
+            <div class="tools hidden-xs">
+                <a href="#box-config" data-toggle="modal" class="config">
+                    <i class="fa fa-cog"></i>
+                </a>
+                <a href="javascript:;" class="reload">
+                    <i class="fa fa-refresh"></i>
+                </a>
+                <a href="javascript:;" class="collapse">
+                    <i class="fa fa-chevron-up"></i>
+                </a>
+                <a href="javascript:;" class="remove">
+                    <i class="fa fa-times"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="box-body">
+            <div id="waitContainer">
+                <i class="fa fa-spinner fa-2x fa-spin"></i> Please Wait...
+            </div>
+            <div id="devicesTree" class="tree">
+                
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+
+{% endblock %}
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/fuelux-tree/fuelux.tree.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/loadTreeLib.js" %}></script>
+    <script type="text/javascript">
+
+        $(document).ready(function(e) {
+
+            var infoObject = {};
+            infoObject["domElement"] = "devicesTree";
+            infoObject["username"] = "{{ username }}";
+            infoObject["hostip"] = "{{ hostIp }}";
+
+            /*Make a instance of deviceTreeInstance */
+            var deviceTreeInstance = new loadDeviceTreeLib();
+            deviceTreeInstance.getDevices(infoObject);
+                       
+        });
+
+    </script>
+
+{% endblock %}
