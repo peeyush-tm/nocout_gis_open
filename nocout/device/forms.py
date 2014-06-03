@@ -6,6 +6,9 @@ from django.core.exceptions import ValidationError
 
 
 # *************************************** Device Form ***********************************************
+def validate_empty_selection(value):
+    if value == "":
+        raise ValidationError('%s must not be empty.' % value)
 
 
 class DeviceForm(forms.ModelForm):
@@ -26,6 +29,8 @@ class DeviceForm(forms.ModelForm):
         self.base_fields['device_vendor'].label = 'Device Vendor'
         self.base_fields['device_model'].label = 'Device Model'
         self.base_fields['device_type'].label = 'Device Type'
+        initial = kwargs.setdefault('initial',{})
+        initial['device_group'] = kwargs['instance'].device_group.values_list('pk', flat=True)[0] if kwargs['instance'] else []
 
         super(DeviceForm, self).__init__(*args, **kwargs)
 
@@ -58,11 +63,6 @@ class DeviceForm(forms.ModelForm):
             'device_group': MultipleToSingleSelectionWidget,
         }
 
-def validate_empty_selection(value):
-    if value == "":
-        raise ValidationError('%s must not be empty.' % value)
-
-
 # ********************************** Device Extra Fields Form ***************************************
 
 
@@ -89,7 +89,7 @@ class DeviceTypeFieldsUpdateForm(forms.ModelForm):
                 field.widget.attrs.update({'class':'form-control'})
     class Meta:
         model = DeviceTypeFields
-        fields = ('field_name', 'field_display_name')
+        fields = ('field_name', 'field_display_name','device_type')
 
 
 # **************************************** Device Technology ****************************************

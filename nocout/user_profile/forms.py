@@ -9,27 +9,26 @@ class UserForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.request=kwargs.pop('request', None)
-        super(UserForm, self).__init__(*args, **kwargs)
-        instance = getattr(self, 'instance', None)
+        initial = kwargs.setdefault('initial',{})
 
-        if instance and instance.pk==self.request.pk:
-            self.fields['username'].widget.attrs['readonly'] = True
-            self.fields['parent'].widget.attrs['disabled'] = 'disabled'
-            self.fields['role'].widget.attrs['disabled'] = 'disabled'
-            self.fields['parent'].label='Manager'
-            self.fields.pop('comment')
-            self.fields.pop('user_group')
+        initial['role'] = kwargs['instance'].role.values_list('pk', flat=True)[0] if kwargs['instance'] else []
+        initial['user_group'] = kwargs['instance'].user_group.values_list('pk', flat=True)[0] if kwargs['instance'] else []
+        initial['parent'] = kwargs['instance'].parent if kwargs['instance'] else None
+
+        super(UserForm, self).__init__(*args, **kwargs)
+
+        if self.instance.pk:
             self.fields['password1'].required = False
             self.fields['password2'].required = False
-
-            if 'password1' in self.errors:
-                if 'This field is required.' == self.errors['password1'][0]:
-                    del self.errors['password1']
-            if 'password2' in self.errors:
-                if (('This field is required.' == self.errors['password2'][0]) and (self.cleaned_data['password1'])):
-                        del self.errors['password2'][0]
-                elif 'This field is required.' == self.errors['password2'][0]:
-                        del self.errors['password2'][0]
+            self.fields['role'].initial = self.instance.role.all()[0].pk
+            # self.base_fields['role']=self.instance.role.all()[0].pk
+            if self.instance.pk == self.request.pk:
+                self.fields['username'].widget.attrs['readonly'] = True
+                self.fields['parent'].widget.attrs['disabled'] = 'disabled'
+                self.fields['role'].widget.attrs['disabled'] = 'disabled'
+                self.fields['parent'].label='Manager'
+                self.fields.pop('comment')
+                self.fields.pop('user_group')
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -54,10 +53,6 @@ class UserForm(forms.ModelForm):
             }),
         )
 
-    def clean(self):
-         super(UserForm, self).clean()
-         return self.cleaned_data
-
     def clean_password2(self):
         # Check that the two password entries match
         password2 = self.cleaned_data.get("password2")
@@ -65,27 +60,3 @@ class UserForm(forms.ModelForm):
         if (password1 or password2) and password1 != password2:
             raise forms.ValidationError("Passwords don't match")
         return password2
-
-    def clean_username(self):
-        if self.instance.pk==self.request.pk:
-            return self.instance.username
-        else:
-            return self.cleaned_data['username']
-
-    def clean_parent(self):
-        if self.instance.pk==self.request.pk:
-            return self.instance.parent
-        else:
-            return self.cleaned_data['parent']
-
-    def clean_role(self):
-        if self.instance.pk==self.request.pk:
-            return self.instance.role
-        else:
-            return self.cleaned_data['role']
-
-    def clean_user_group(self):
-        if self.instance.pk==self.request.pk:
-            return self.instance.user_group
-        else:
-            return self.cleaned_data['user_group']

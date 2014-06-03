@@ -1,8 +1,9 @@
+from actstream import action
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.contrib import auth
 from django.views.decorators.csrf import csrf_protect
-
+from django.contrib.auth.models import User
 
 @csrf_protect
 def login(request):
@@ -18,8 +19,13 @@ def auth_view(request):
     if user is not None:
         # if you have an authenticated user you want to attach to the current session
         auth.login(request, user)
+        action.send(request.user, verb=u'username : %s loggedin from server name: %s, server port: %s'\
+                                       %( username, request.META.get('SERVER_NAME'), request.META.get('SERVER_PORT')))
         return HttpResponseRedirect('/loggedin/')
     else:
+        action.send(User.objects.get(pk=1),
+        verb=u'invalid loggedin using username : %s from server name: %s, server port: %s' %( username,
+                                                    request.META.get('SERVER_NAME'), request.META.get('SERVER_PORT')))
         return HttpResponseRedirect('/invalid/')
 
 

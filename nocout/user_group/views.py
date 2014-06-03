@@ -1,3 +1,4 @@
+from actstream import action
 from django.db.models import Q
 import json
 from django.db.models.query import ValuesQuerySet
@@ -5,6 +6,8 @@ from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
+from device_group.models import DeviceGroup
+from nocout.utils.util import DictDiffer
 from user_group.models import UserGroup, Organization
 from forms import UserGroupForm
 
@@ -100,10 +103,10 @@ class UserGroupCreate(CreateView):
         # if not self.object.parent:
         #     self.object.parent=Default_group
         self.object.save()
+        action.send(self.request.user, verb=u'created', action_object=self.object)
 
         for dg in form.cleaned_data['device_group']:
             Organization.objects.create(user_group=self.object, device_group=dg)
-
         return super(ModelFormMixin, self).form_valid(form)
 
 class UserGroupUpdate(UpdateView):
@@ -124,6 +127,41 @@ class UserGroupUpdate(UpdateView):
 
         UserGroup.objects.filter(name=self.object.name).update( alias=self.object.alias, address=self.object.address,
                                                       location=self.object.location, parent=self.object.parent )
+
+        initial_field_dict = { field : [form.initial[field]]  if field in ('device_group') else form.initial[field]
+                               for field in form.initial.keys() }
+
+        def cleaned_data_field():
+            cleaned_data_field_dict={}
+            for field in form.cleaned_data.keys():
+                if field in ('device_group'):
+                    cleaned_data_field_dict[field]=map( lambda obj: obj.pk, form.cleaned_data[field])
+                elif field in ('parent'):
+                    cleaned_data_field_dict[field]=form.cleaned_data[field].pk if form.cleaned_data[field] else None
+                else:
+                    cleaned_data_field_dict[field]=form.cleaned_data[field]
+
+            return cleaned_data_field_dict
+
+        cleaned_data_field_dict=cleaned_data_field()
+
+
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        if changed_fields_dict:
+            initial_field_dict['parent'] = UserGroup.objects.get(pk=initial_field_dict['parent']).name if initial_field_dict['parent'] else str(None)
+            initial_field_dict['device_group'] = DeviceGroup.objects.get(pk=initial_field_dict['device_group'][0]).name
+            cleaned_data_field_dict['parent'] = UserGroup.objects.get(pk=cleaned_data_field_dict['parent']).name if cleaned_data_field_dict['parent'] else str(None)
+            cleaned_data_field_dict['device_group'] = DeviceGroup.objects.get(pk=cleaned_data_field_dict['device_group'][0]).name
+
+            verb_string = 'Changed values of User Group %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
+                               for k in changed_fields_dict])+\
+                               ' to '+\
+                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
+
+            action.send(self.request.user, verb=verb_string)
+
         return super(ModelFormMixin, self).form_valid(form)
 
 
@@ -133,4 +171,7 @@ class UserGroupDelete(DeleteView):
     template_name = 'user_group/ug_delete.html'
     success_url = reverse_lazy('ug_list')
 
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting user group: %s'%(self.object.name))
+        super(UserGroupDelete, self).delete(self, request, *args, **kwargs)
 

@@ -169,6 +169,7 @@ INSTALLED_APPS = (
     'debug_toolbar',
     'preventconcurrentlogins',
     'corsheaders',
+    'actstream',
 
 )
 
@@ -225,7 +226,10 @@ except ImportError:
     pass
 
 ACTSTREAM_SETTINGS = {
-    'MODELS': ('auth.user', 'auth.group', 'sites.site', 'comments.comment','user_profile.userprofile'),
+    'MODELS': ('auth.user', 'auth.group', 'sites.site', 'comments.comment','user_profile.userprofile', 'user_group.usergroup',
+                'device.device','device_group.devicegroup','device.devicetypefields','device.devicetechnology',
+                'device.devicevendor','device.devicemodel','device.devicetype','site_instance.siteinstance','service.service',
+                'service.serviceparameters','command.command','organization.organization'),
     'MANAGER': 'actstream.managers.ActionManager',
     'FETCH_RELATIONS': True,
     'USE_PREFETCH': True,

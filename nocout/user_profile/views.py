@@ -4,6 +4,7 @@ from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin, BaseUpdateView
 from django.core.urlresolvers import reverse_lazy
 from nocout.utils.jquery_datatable_generation import Datatable_Generation
+from user_group.models import UserGroup
 from user_profile.models import UserProfile, Department, Roles
 from forms import UserForm
 from django.http.response import HttpResponseRedirect
@@ -11,6 +12,7 @@ from django.contrib.auth.hashers import make_password
 from collections import OrderedDict
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from actstream import action
+from nocout.utils.util import DictDiffer
 from django.db.models import Q
 
 
@@ -108,8 +110,7 @@ class UserCreate(CreateView):
     success_url = reverse_lazy('user_list')
 
     def get_form_kwargs(self):
-        kwargs = super(ModelFormMixin, self).get_form_kwargs()
-        kwargs.update({'instance': self.object})
+        kwargs = super(UserCreate, self).get_form_kwargs()
         kwargs.update({'request':self.request.user })
         return kwargs
 
@@ -126,8 +127,7 @@ class UserCreate(CreateView):
         user_profile.address = form.cleaned_data['address']
         user_profile.comment = form.cleaned_data['comment']
         user_profile.save()
-        action.send(self.request.user, verb=u'created', action_object=user_profile,
-            )
+        action.send(self.request.user, verb=u'created', action_object=user_profile)
         parent_user=None
         # saving parent --> FK Relation
         try:
@@ -136,10 +136,6 @@ class UserCreate(CreateView):
             user_profile.save()
         except:
             print "User has no parent."
-
-        action.send(self.request.user, verb=u'assign', action_object=parent_user,
-            target=user_profile)
-
 
         # creating roles  --> M2M Relation (Model: Roles)
         for role in form.cleaned_data['role']:
@@ -165,10 +161,9 @@ class UserUpdate(UpdateView):
 
     def get_form_kwargs(self):
         """
-        Returns the keyword arguments for instantiating the form.
+        Returns the keyword arguments with the request object for instantiating the form.
         """
-        kwargs = super(ModelFormMixin, self).get_form_kwargs()
-        kwargs.update({'instance': self.object})
+        kwargs = super(UserUpdate, self).get_form_kwargs()
         kwargs.update({'request':self.request.user })
         return kwargs
 
@@ -211,6 +206,33 @@ class UserUpdate(UpdateView):
             department.user_profile = self.object
             department.user_group = ug
             department.save()
+
+
+        initial_field_dict = { field : [ form.initial[field] ] if field in ('role','user_group') else form.initial[field]
+                               for field in form.initial.keys() }
+        cleaned_data_field_dict = { field : ( map( lambda obj: obj.pk, form.cleaned_data[field])
+        if field in ('role','user_group') else form.cleaned_data[field] ) for field in form.cleaned_data.keys() }
+
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+
+        if cleaned_data_field_dict['password2']:
+            action.send(self.request.user, verb='Password changed for the user: %s !'%(self.object.username))
+
+        if changed_fields_dict:
+
+            initial_field_dict['role'] = Roles.objects.get(pk=initial_field_dict['role'][0]).role_name
+            initial_field_dict['user_group'] = UserGroup.objects.get(pk=initial_field_dict['user_group'][0]).name
+            cleaned_data_field_dict['role'] = Roles.objects.get(pk=cleaned_data_field_dict['role'][0]).role_name
+            cleaned_data_field_dict['user_group'] = UserGroup.objects.get(pk=cleaned_data_field_dict['user_group'][0]).name
+
+            verb_string = 'Changed values of user %s from initial values '%(self.object.username) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
+                           for k in changed_fields_dict])+\
+                           ' to '+\
+                           ', '.join(['%s: %s' % (k,cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
+
+            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(UserCreate.success_url)
 
 
@@ -219,6 +241,10 @@ class UserDelete(DeleteView):
     template_name = 'user_profile/user_delete.html'
     success_url = reverse_lazy('user_list')
 
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting user: %s'%(self.object.username))
+        super(UserDelete, self).delete(self, request, *args, **kwargs)
+
 class CurrentUserProfileUpdate(UpdateView):
     model = UserProfile
     template_name = 'user_profile/user_myprofile.html'
@@ -226,8 +252,7 @@ class CurrentUserProfileUpdate(UpdateView):
     success_url = reverse_lazy('current_user_profile_update')
 
     def get_form_kwargs(self):
-        kwargs = super(ModelFormMixin, self).get_form_kwargs()
-        kwargs.update({'instance': self.object})
+        kwargs = super(CurrentUserProfileUpdate, self).get_form_kwargs()
         kwargs.update({'request':self.request.user })
         return kwargs
 
@@ -235,15 +260,30 @@ class CurrentUserProfileUpdate(UpdateView):
         return self.model._default_manager.get(pk=self.request.user.id)
 
     def form_valid(self, form):
+
         self.object = form.save(commit=False)
         kwargs=dict(first_name=self.object.first_name,
             last_name=self.object.last_name, email=self.object.email, phone_number=self.object.phone_number,
             company=self.object.company, designation=self.object.designation, address=self.object.address)
 
-        if 'password2' in form.cleaned_data:
+            #Adding the user log for the password change
+        if  form.cleaned_data['password2']:
             kwargs.update({'password': make_password(form.cleaned_data['password2'])})
+            action.send(self.request.user, verb='Changed Password !')
+
+        changed_fields=DictDiffer(form.cleaned_data, form.initial).changed() - set(['role','username','user_group'])
+        if changed_fields:
+
+            initial_field_dict = { field : form.initial[field] for field in changed_fields }
+            changed_field_dict = { field : form.cleaned_data[field] for field in changed_fields }
+
+            verb_string = 'Changed values from initial values ' + ', '.join(['%s: %s' %(k,v) for k,v in initial_field_dict.iteritems()])+\
+                          ' to '+', '.join(['%s: %s' %(k,v) for k,v in changed_field_dict.iteritems()])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
+            #Adding the user log for the number of fileds and with the values changed.
+            action.send(self.request.user, verb=verb_string)
 
         UserProfile.objects.filter(id=self.object.id).update(**kwargs)
-
         return super(ModelFormMixin, self).form_valid(form)
 

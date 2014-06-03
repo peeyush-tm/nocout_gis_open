@@ -5,6 +5,10 @@ from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from models import SiteInstance
 from forms import SiteInstanceForm
+from django.http.response import HttpResponseRedirect
+from nocout.utils.util import DictDiffer
+from actstream import action
+
 import json
 
 class SiteInstanceList(ListView):
@@ -96,12 +100,31 @@ class SiteInstanceCreate(CreateView):
     form_class = SiteInstanceForm
     success_url = reverse_lazy('site_instance_list')
 
+    def form_valid(self, form):
+        self.object=form.save()
+        action.send(self.request.user, verb='Created', action_object = self.object)
+        return HttpResponseRedirect(SiteInstanceCreate.success_url)
 
 class SiteInstanceUpdate(UpdateView):
     template_name = 'site_instance/site_instance_update.html'
     model = SiteInstance
     form_class = SiteInstanceForm
     success_url = reverse_lazy('site_instance_list')
+
+    def form_valid(self, form):
+        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
+        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+        changed_fields_dict = DictDiffer( initial_field_dict, cleaned_data_field_dict ).changed()
+
+        if changed_fields_dict:
+
+            verb_string = 'Changed values of Site Instance: %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
+                               for k in changed_fields_dict])+\
+                               ' to '+\
+                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            self.object=form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(SiteInstanceUpdate.success_url)
 
 
 class SiteInstanceDelete(DeleteView):
