@@ -39,11 +39,10 @@ urlpatterns = patterns('',
     url(r'session_security/', include('session_security.urls')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^logs/', include('activity_stream.urls')),
-
 )
 
-if settings.DEBUG:
-    import debug_toolbar
-    urlpatterns += patterns('',
-        url(r'^__debug__/', include(debug_toolbar.urls)),
-    )
+# if settings.DEBUG:
+#     import debug_toolbar
+#     urlpatterns += patterns('',
+#         url(r'^__debug__/', include(debug_toolbar.urls)),
+#     )

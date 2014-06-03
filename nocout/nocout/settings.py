@@ -168,10 +168,12 @@ INSTALLED_APPS = (
     'dajaxice',
     'dajax',
     'django.contrib.admin',
+    'actstream',
     'debug_toolbar',
     'preventconcurrentlogins',
     'corsheaders',
-
+    'actstream',
+    'activity_stream',
 )
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -185,26 +187,54 @@ SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 # more details on how to customize your logging configuration.
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
-    'filters': {
-        'require_debug_false': {
-            '()': 'django.utils.log.RequireDebugFalse'
-        }
+    'disable_existing_loggers': True,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s',
+            'datefmt' : "%d/%b/%Y %H:%M:%S"
+        },
     },
     'handlers': {
-        'mail_admins': {
-            'level': 'ERROR',
-            'filters': ['require_debug_false'],
-            'class': 'django.utils.log.AdminEmailHandler'
-        }
+        'sentry': {
+            'level': 'DEBUG',
+            'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
+        'logfile': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join( BASE_DIR,'nocout_main.log' ),
+            'maxBytes': 1000000000,
+            'backupCount':10,
+            'formatter': 'verbose',
+        },
+
     },
     'loggers': {
-        'django.request': {
-            'handlers': ['mail_admins'],
+        'django.db.backends': {
             'level': 'ERROR',
-            'propagate': True,
+            'handlers': ['console'],
+            'propagate': False,
         },
-    }
+        'raven': {
+            'level': 'DEBUG',
+            'handlers': ['console', 'sentry'],
+            'propagate': False,
+        },
+        'sentry.errors': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        '':{
+            'handlers': ['console','logfile','sentry'],
+            'level': 'DEBUG',
+        },
+    },
 }
 
 SESSION_SECURITY_WARN_AFTER = 540
@@ -227,7 +257,10 @@ except ImportError:
     pass
 
 ACTSTREAM_SETTINGS = {
-    'MODELS': ('auth.user', 'auth.group', 'sites.site', 'comments.comment','user_profile.userprofile'),
+    'MODELS': ('auth.user', 'auth.group', 'sites.site', 'comments.comment','user_profile.userprofile', 'user_group.usergroup',
+                'device.device','device_group.devicegroup','device.devicetypefields','device.devicetechnology',
+                'device.devicevendor','device.devicemodel','device.devicetype','site_instance.siteinstance','service.service',
+                'service.serviceparameters','command.command','user_profile.organization',),
     'MANAGER': 'actstream.managers.ActionManager',
     'FETCH_RELATIONS': True,
     'USE_PREFETCH': True,

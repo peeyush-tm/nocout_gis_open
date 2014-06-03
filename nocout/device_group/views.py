@@ -1,5 +1,7 @@
 import json
+from actstream import action
 from django.db.models.query import ValuesQuerySet
+from django.http.response import HttpResponseRedirect
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
@@ -7,6 +9,8 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from device_group.models import DeviceGroup
 from forms import DeviceGroupForm
 from django.db.models import Q
+from nocout.utils.util import DictDiffer
+from user_group.models import UserGroup
 
 
 class DeviceGroupList(ListView):
@@ -96,6 +100,11 @@ class DeviceGroupCreate(CreateView):
     form_class = DeviceGroupForm
     success_url = reverse_lazy('dg_list')
 
+    def form_valid( self, form ):
+        self.object=form.save()
+        action.send(self.request.user, verb='Created', action_object = self.object)
+        return HttpResponseRedirect( DeviceGroupCreate.success_url )
+
 
 class DeviceGroupUpdate(UpdateView):
     template_name = 'device_group/dg_update.html'
@@ -103,12 +112,42 @@ class DeviceGroupUpdate(UpdateView):
     form_class = DeviceGroupForm
     success_url = reverse_lazy('dg_list')
 
+    def form_valid( self, form ):
+
+        initial_field_dict = { field : [ form.initial[field] ]  if field in ('parent') else form.initial[field]
+                               for field in form.initial.keys() }
+
+        cleaned_data_field_dict = { field : [form.cleaned_data[field].pk]
+        if field in ('parent') and  form.cleaned_data[field] else form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+
+        if changed_fields_dict:
+            initial_field_dict['parent'] = DeviceGroup.objects.get(pk=initial_field_dict['parent'][0]).name if initial_field_dict['parent'][0] else str(None)
+            cleaned_data_field_dict['parent']=DeviceGroup.objects.get(pk=cleaned_data_field_dict['parent'][0]).name if cleaned_data_field_dict['parent'] else str(None)
+
+            verb_string = 'Changed values of Device Group: %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
+                               for k in changed_fields_dict])+\
+                               ' to '+\
+                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
+
+            action.send(self.request.user, verb=verb_string)
+            self.object=form.save()
+
+        return HttpResponseRedirect( DeviceGroupCreate.success_url )
+
+
 
 class DeviceGroupDelete(DeleteView):
     model = DeviceGroup
     template_name = 'device_group/dg_delete.html'
     success_url = reverse_lazy('dg_list')
 
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting device group: %s'%(self.object.name))
+        super(DeviceGroupDelete, self).delete(self, request, *args, **kwargs)
 
 
 
