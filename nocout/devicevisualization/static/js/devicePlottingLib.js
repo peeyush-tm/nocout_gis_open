@@ -19,7 +19,7 @@ var mapInstance = "",
 	masterMarkersObj = [],
 	slaveMarkersObj = [],
 	pathLineArray = [],
-	counter = 0,
+	counter = -999,
 	totalCalls = 1,
 	clusterIcon = "",
 	masterClusterInstance = "",
@@ -114,8 +114,7 @@ function networkMapClass() {
 		/*Store the reference of current pointer in a global variable*/
 		that = this;
 
-		if(counter < totalCalls)
-		{
+		if(counter > 0 || counter == -999) {
 			/*Show The loading Icon*/
 			$("#loadingIcon").show();
 
@@ -128,8 +127,8 @@ function networkMapClass() {
 			/*Ajax call to the API*/
 			$.ajax({
 				crossDomain: true,
-				url : "//" + hostIp + "device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
-				// url : "http://127.0.0.1:8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
+				// url : "//" + hostIp + "device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
+				url : "http://127.0.0.1:8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
@@ -157,13 +156,8 @@ function networkMapClass() {
 						/*Update the device count with the received data*/
 						showLimit = devicesObject.data.meta.limit;
 
-						if(remainingDevices == 0) {
-
-							showLimit = devicesObject.data.meta.limit;
-							remainingDevices = devicesCount - devicesObject.data.meta.limit;
-						} else {
-
-							remainingDevices = remainingDevices - devicesObject.data.meta.limit;
+						if(counter == -999) {
+							counter = Math.round(devicesCount/showLimit);
 						}
 						
 						if(devicesObject.success == 1) {
@@ -181,17 +175,19 @@ function networkMapClass() {
 							/*Call the getDevicesFilter function to seperate the filter values from the object array*/
 							that.getDevicesFilter(devices);
 
+							/*Call the function after 3 sec.*/
+							setTimeout(function() {
+									
+								that.getDevicesData(hostIp,username);
+							},3000);
+
 						} else {
 
 							that.recallServer();
 						}
-						/*Calculate the total number of pages from limit & total count*/
-						totalCalls = Math.ceil(result.data.meta.total_count/result.data.meta.limit);
-						/*Call the function after 3 sec.*/
-						setTimeout(function() {
-								
-							that.getDevicesData(hostIp,username);
-						},3000);
+						/*Decrement the counter*/
+						counter = counter - 1;
+
 					} else {
 
 						that.recallServer();
@@ -209,8 +205,6 @@ function networkMapClass() {
 			/*Recall the server after the defined time*/
 			that.recallServer();
 		}
-		
-		counter = counter + 1;
 	};
 
 	/**
@@ -303,7 +297,7 @@ function networkMapClass() {
 			    /*Add child markers to the OverlappingMarkerSpiderfier*/
 				oms.addMarker(slaveMarker);
 
-				if(resultantMarkers[i].data.showLink != 1) {
+				if(resultantMarkers[i].data.showLink == 1) {
 
 					/*Create object for Link Line Between Master & Slave*/
 					var pathDataObject = [
@@ -1128,7 +1122,7 @@ function networkMapClass() {
 		hitCounter = 1;
 		showLimit = 0;
 		remainingDevices = 0;
-		counter = 0;
+		counter = -999;
 		totalCalls = 1;
 		devicesObject = {};
 		devices = [];
