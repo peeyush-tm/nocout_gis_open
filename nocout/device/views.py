@@ -15,6 +15,8 @@ from nocout.utils.util import DictDiffer
 from site_instance.models import SiteInstance
 from django.http.response import HttpResponseRedirect
 from service.models import Service
+from django.shortcuts import render_to_response
+from django.template import RequestContext
 
 #BEGIN: import django settings
 #we need DEBUG varaible for collecting the logs
@@ -38,6 +40,19 @@ class DeviceList(ListView):
         context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
                                     sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
         return context
+
+
+def create_device_tree(request):
+
+    templateData = {
+        'username' : request.user.username,
+        'hostIp' : request.META["SERVER_NAME"] +":"+request.META["SERVER_PORT"]
+    }
+    
+    return render_to_response('device/devices_tree_view.html',templateData,context_instance=RequestContext(request))
+
+
+        
 
 class DeviceListingTable(BaseDatatableView):
     model = Device

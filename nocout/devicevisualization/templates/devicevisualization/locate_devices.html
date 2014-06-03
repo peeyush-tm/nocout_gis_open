@@ -115,7 +115,8 @@
         username = "",
         getFilterApi = "",
         setFilterApi = "",
-        advSearch = "";
+        advSearch = "",
+        deviceName = "";
 
     $(document).ready(function(e) {
 
@@ -123,13 +124,32 @@
         username = "{{username}}";
         getFilterApi = "{{get_filter_api}}";
         setFilterApi = "{{set_filter_api}}";
-
+        deviceName = "{{ device_name }}";
+        
         /*Create a instance of networkMapClass*/
         networkMapInstance = new networkMapClass();
+
+        /*Create a instance of advanceSearchClass*/
+        advSearch = new advanceSearchClass();
+
         /*Call the function to create map*/
         networkMapInstance.createMap("deviceMap");
-        /*Call the make network to create the BS-SS network on the google map*/
-        networkMapInstance.getDevicesData(hostIp,username);
+
+        if($.trim(deviceName) == "default_device_name") {
+            
+            /*Call the make network to create the BS-SS network on the google map*/
+            networkMapInstance.getDevicesData(hostIp,username);
+
+        } else {
+
+            var searchString = JSON.stringify([{"field":"device_name","value":[deviceName]}]);
+            advSearch.setFilters(searchString,setFilterApi);
+
+            /*Hide Remove Filters button*/
+            if(!$("#removeFilterBtn").hasClass("hide")) {
+                $("#removeFilterBtn").addClass("hide");
+            }
+        }
     });
 
     /*This event trigger when state dropdown value is changes*/
@@ -177,7 +197,6 @@
      */
     function showAdvFilters() {
 
-        advSearch = new advanceSearchClass();
         advSearch.getFilterInfo("filterInfoModal","Advance Filters","advFilterBtn",getFilterApi,setFilterApi);
     }
     
