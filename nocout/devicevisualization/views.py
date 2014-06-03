@@ -4,16 +4,20 @@ from user_group.models import Organization
 from django.template import RequestContext
 
 
-def locate_devices(request):
+def locate_devices(request , device_name = "default_device_name"):
     template_data = { 'host_info' : 
                         request.META['SERVER_NAME'] + ":" + \
                         request.META['SERVER_PORT'] + "/",
                     'username' : request.user.username,
+                    'device_name' : device_name,
                     'get_filter_api': get_url(request, 'GET'),
                     'set_filter_api': get_url(request, 'POST')
                     }
     print "-- template_data --"
     print template_data
+
+    print "*******************device_name*******************"
+    print device_name
 
     return render_to_response('devicevisualization/locate_devices.html', 
                                 template_data, 
