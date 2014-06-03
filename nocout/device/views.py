@@ -302,7 +302,7 @@ class DeviceUpdate(UpdateView):
             self.object.site_instance = SiteInstance.objects.get(name=form.cleaned_data['site_instance'])
             self.object.save()
         except Exception as site_exception:
-            if settings.Debug:
+            if settings.DEBUG:
                 logger.critical("Instance(site) information missing : %s" % (site_exception),
                                 exc_info=True, 
                                 extra={'stack': True, 'request': self.request}
@@ -324,7 +324,7 @@ class DeviceUpdate(UpdateView):
             self.object.parent = parent_device
             self.object.save()
         except Exception as device_parent_exception:
-            if settings.Debug:
+            if settings.DEBUG:
                 logger.critical("Device Parent information missing : %s" % (device_parent_exception),
                                 exc_info=True, 
                                 extra={'stack': True, 'request': self.request}
@@ -335,7 +335,7 @@ class DeviceUpdate(UpdateView):
         try:
             DeviceTypeFieldsValue.objects.filter(device_id=self.object.id).delete()
         except Exception as device_extra_exception:
-            if settings.Debug:
+            if settings.DEBUG:
                 logger.critical("Device Extra information missing : %s" % (device_extra_exception),
                                 exc_info=True, 
                                 extra={'stack': True, 'request': self.request}
@@ -348,7 +348,7 @@ class DeviceUpdate(UpdateView):
             # it gives all device fields associated with device_type object
             device_type.devicetypefields_set.all()
         except Exception as device_type_exception:
-            if settings.Debug:
+            if settings.DEBUG:
                 logger.critical("Device Type information missing : %s" % (device_type_exception),
                                 exc_info=True, 
                                 extra={'stack': True, 'request': self.request}
