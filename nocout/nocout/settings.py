@@ -160,6 +160,7 @@ INSTALLED_APPS = (
     'service_group',
     'command',
     'site_instance',
+    'machine',
     'home',
     'devicevisualization',
     'sitesearch',
