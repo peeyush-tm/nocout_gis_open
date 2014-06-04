@@ -1,0 +1,242 @@
+[
+{
+  "pk": 1, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Andhra Pradesh"
+  }
+},
+{
+  "pk": 2, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Arunachal Pradesh"
+  }
+},
+{
+  "pk": 3, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Assam"
+  }
+},
+{
+  "pk": 4, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Bihar"
+  }
+},
+{
+  "pk": 5, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Chhattisgarh"
+  }
+},
+{
+  "pk": 6, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Delhi"
+  }
+},
+{
+  "pk": 7, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Goa"
+  }
+},
+{
+  "pk": 8, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Gujarat"
+  }
+},
+{
+  "pk": 9, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Haryana"
+  }
+},
+{
+  "pk": 10, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Himachal Pradesh"
+  }
+},
+{
+  "pk": 11, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Jammu and Kashmir"
+  }
+},
+{
+  "pk": 12, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Jharkhand"
+  }
+},
+{
+  "pk": 13, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Karnataka"
+  }
+},
+{
+  "pk": 14, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Kerala"
+  }
+},
+{
+  "pk": 15, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Madhya Pradesh"
+  }
+},
+{
+  "pk": 16, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Maharashtra"
+  }
+},
+{
+  "pk": 17, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Manipur"
+  }
+},
+{
+  "pk": 18, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Meghalaya"
+  }
+},
+{
+  "pk": 19, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Mizoram"
+  }
+},
+{
+  "pk": 20, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Nagaland"
+  }
+},
+{
+  "pk": 21, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Orissa"
+  }
+},
+{
+  "pk": 22, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Punjab"
+  }
+},
+{
+  "pk": 23, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Rajasthan"
+  }
+},
+{
+  "pk": 24, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Sikkim"
+  }
+},
+{
+  "pk": 25, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Tamil Nadu"
+  }
+},
+{
+  "pk": 26, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Tripura"
+  }
+},
+{
+  "pk": 27, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Uttarakhand"
+  }
+},
+{
+  "pk": 28, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Uttar Pradesh"
+  }
+},
+{
+  "pk": 29, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "West Bengal"
+  }
+},
+{
+  "pk": 30, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Andaman and Nicobar Islands"
+  }
+}
+]
