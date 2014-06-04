@@ -7,3 +7,6 @@ class Machine(models.Model):
     machine_ip = models.IPAddressField('Machine IP', null=True, blank=True)
     agent_port = models.IntegerField('Agent Port', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
+
+    def __unicode__(self):
+        return self.name
