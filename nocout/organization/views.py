@@ -21,9 +21,14 @@ class OrganizationList(ListView):
 
     def get_context_data(self, **kwargs):
         context=super(OrganizationList, self).get_context_data(**kwargs)
-        datatable_headers= ('name', 'description', 'user_group__name', 'device_group__name','actions')
-        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
-                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+        datatable_headers = [
+            {'mData':'name',                'sTitle' : 'Name',          'sWidth':'null',  },
+            {'mData':'description',         'sTitle' : 'Description',   'sWidth':'null',  },
+            {'mData':'user_group__name',    'sTitle' : 'User Group',    'sWidth':'null',  },
+            {'mData':'device_group__name',  'sTitle' : 'Device Group',  'sWidth':'null',  },
+            {'mData':'actions',             'sTitle' : 'Actions',       'sWidth':'10%',   },
+            ]
+        context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class OrganizationListingTable(BaseDatatableView):

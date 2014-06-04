@@ -17,10 +17,15 @@ class SiteInstanceList(ListView):
 
     def get_context_data(self, **kwargs):
         context=super(SiteInstanceList, self).get_context_data(**kwargs)
-        datatable_headers=('name', 'description', 'site_ip', 'agent_port', 'live_status_tcp_port'
-                           ,'actions')
-        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
-                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+        datatable_headers = [
+            {'mData':'name',                   'sTitle' : 'Name',                'sWidth':'null',},
+            {'mData':'description',            'sTitle' : 'Description',         'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'site_ip',                'sTitle' : 'Site IP',             'sWidth':'null',},
+            {'mData':'agent_port',             'sTitle' : 'Agent Port',          'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'live_status_tcp_port',   'sTitle' : 'Live Status TCP PORT','sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'actions',                'sTitle' : 'Actions',             'sWidth':'5%' ,}
+            ,]
+        context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class SiteInstanceListingTable(BaseDatatableView):
