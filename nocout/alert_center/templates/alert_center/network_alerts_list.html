@@ -1,0 +1,129 @@
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}Alert Center &gt; Network Alerts{% endblock %}
+{% block content_title %}Network Alerts{% endblock %}
+{% block content_description %}Network Alerts List{% endblock %}
+{% load staticfiles %}
+
+{% block content %}
+
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-bell"></i>NETWORK ALERT</h4>
+
+            <div class="tools hidden-xs">
+                <a href="#box-config" data-toggle="modal" class="config">
+                    <i class="fa fa-cog"></i>
+                </a>
+                <a href="javascript:;" class="reload">
+                    <i class="fa fa-refresh"></i>
+                </a>
+                <a href="javascript:;" class="collapse">
+                    <i class="fa fa-chevron-up"></i>
+                </a>
+                <a href="javascript:;" class="remove">
+                    <i class="fa fa-times"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="box-body">
+            <div id="networkAlertContainer">
+            <div class="container">
+                <div>
+                    <div class="col-md-6">
+                        <h4><span class="label label-info">Down</span></h4>
+                        <div class="divide-10"></div>
+
+                        <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
+                            <thead>
+                                <th>Severity</th>
+                                <th>IP</th>
+                                <th>BS Name</th>
+                                <th>City</th>
+                                <th>Time</th>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+
+                    </div>
+                    <div class="col-md-6">
+                        <h4><span class="label label-info">Service Impact Alerts</span></h4>
+                        <div class="divide-10"></div>
+
+                        <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
+                            <thead>
+                                <th>Severity</th>
+                                <th>IP</th>
+                                <th>BS Name</th>
+                                <th>City</th>
+                                <th>Alert Name</th>
+                                <th>Time</th>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+                <div>
+                    <div class="col-md-6">
+                        <h4><span class="label label-info">Packet Drop</span></h4>
+                        <div class="divide-10"></div>
+
+                        <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
+                            <thead>
+                                <th>Severity</th>
+                                <th>IP</th>
+                                <th>BS Name</th>
+                                <th>City</th>
+                                <th>% Loss</th>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+
+                    </div>
+                    <div class="col-md-6">
+                        <h4><span class="label label-info">Latency</span></h4>
+                        <div class="divide-10"></div>
+
+                        <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
+                            <thead>
+                                <th>Severity</th>
+                                <th>IP</th>
+                                <th>BS Name</th>
+                                <th>City</th>
+                                <th>Max</th>
+                                <th>Average</th>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+            </div>
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block jquery %}
+<script type="text/javascript">
+    /*This is a temporary code which is replace when data for data table is provided*/
+    $(".datatable").DataTable();
+
+</script>
+{% endblock %}
+
+{% block load_js %}
+<!-- /JAVASCRIPTS -->
+
+<script>
+    jQuery(document).ready(function () {
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+    });
+</script>
+{% endblock %}
