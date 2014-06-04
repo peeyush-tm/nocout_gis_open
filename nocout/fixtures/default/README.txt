@@ -3,12 +3,13 @@
 Order in which we need to run fixtures:
 1. command_default_data.json
 2. service_default_data.json
-3. site_default_data.json
-4. device_group_default_data.json
-5. device_default_data.json
-6. user_group_default_data.json
-7. auth_user_default_data.json
-8. user_profile_default_data.json
+3. machine_default_data.json
+4. site_default_data.json
+5. device_group_default_data.json
+6. device_default_data.json
+7. user_group_default_data.json
+8. auth_user_default_data.json
+9. user_profile_default_data.json
 
 Command to run fixture:
 >>> python manage.py loaddata <file_name>
