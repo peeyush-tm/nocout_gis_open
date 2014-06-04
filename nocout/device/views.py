@@ -36,9 +36,16 @@ class DeviceList(ListView):
 
     def get_context_data(self, **kwargs):
         context=super(DeviceList, self).get_context_data(**kwargs)
-        datatable_headers=('device_name', 'site_instance__name', 'device_group__name', 'ip_address', 'city', 'state', 'actions')
-        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
-                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+        datatable_headers = [
+            {'mData':'device_name',         'sTitle' : 'Device Name',   'sWidth':'null',},
+            {'mData':'site_instance__name', 'sTitle' : 'Site Instance', 'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'device_group__name',  'sTitle' : 'Device Group',  'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'ip_address',          'sTitle' : 'IP Address',    'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'city',                'sTitle' : 'City',          'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'state',               'sTitle' : 'State',         'sWidth':'10%' ,'sClass':'hidden-xs'},
+            {'mData':'actions',             'sTitle' : 'Actions',       'sWidth':'5%' ,}
+            ,]
+        context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
@@ -302,7 +309,7 @@ class DeviceUpdate(UpdateView):
             self.object.site_instance = SiteInstance.objects.get(name=form.cleaned_data['site_instance'])
             self.object.save()
         except Exception as site_exception:
-            if settings.Debug:
+            if settings.DEBUG:
                 logger.critical("Instance(site) information missing : %s" % (site_exception),
                                 exc_info=True, 
                                 extra={'stack': True, 'request': self.request}
@@ -324,7 +331,7 @@ class DeviceUpdate(UpdateView):
             self.object.parent = parent_device
             self.object.save()
         except Exception as device_parent_exception:
-            if settings.Debug:
+            if settings.DEBUG:
                 logger.critical("Device Parent information missing : %s" % (device_parent_exception),
                                 exc_info=True, 
                                 extra={'stack': True, 'request': self.request}
@@ -335,7 +342,7 @@ class DeviceUpdate(UpdateView):
         try:
             DeviceTypeFieldsValue.objects.filter(device_id=self.object.id).delete()
         except Exception as device_extra_exception:
-            if settings.Debug:
+            if settings.DEBUG:
                 logger.critical("Device Extra information missing : %s" % (device_extra_exception),
                                 exc_info=True, 
                                 extra={'stack': True, 'request': self.request}
@@ -348,7 +355,7 @@ class DeviceUpdate(UpdateView):
             # it gives all device fields associated with device_type object
             device_type.devicetypefields_set.all()
         except Exception as device_type_exception:
-            if settings.Debug:
+            if settings.DEBUG:
                 logger.critical("Device Type information missing : %s" % (device_type_exception),
                                 exc_info=True, 
                                 extra={'stack': True, 'request': self.request}
@@ -442,9 +449,13 @@ class DeviceTypeFieldsList(ListView):
 
     def get_context_data(self, **kwargs):
         context=super(DeviceTypeFieldsList, self).get_context_data(**kwargs)
-        datatable_headers=('field_name', 'field_display_name','device_type__name','actions')
-        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
-                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+        datatable_headers = [
+            {'mData':'field_name',         'sTitle' : 'Name',    'sWidth':'null',},
+            {'mData':'field_display_name', 'sTitle' : 'Field Display Name',   'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'device_type__name',  'sTitle' : 'Device Type',  'sWidth':'null'},
+            {'mData':'actions',            'sTitle' : 'Actions', 'sWidth':'10%' ,}
+            ,]
+        context['datatable_headers'] = json.dumps( datatable_headers )
         return context
 
 class DeviceTypeFieldsListingTable(BaseDatatableView):
@@ -581,9 +592,12 @@ class DeviceTechnologyList(ListView):
 
     def get_context_data(self, **kwargs):
         context=super(DeviceTechnologyList, self).get_context_data(**kwargs)
-        datatable_headers=('name', 'alias','actions')
-        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
-                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+        datatable_headers = [
+            {'mData':'name',       'sTitle' : 'Name',       'sWidth':'null'},
+            {'mData':'alias',      'sTitle' : 'Alias',      'sWidth':'null'},
+            {'mData':'actions',    'sTitle' : 'Actions',    'sWidth':'10%' ,},
+            ]
+        context['datatable_headers'] = json.dumps( datatable_headers )
         return context
 
 class DeviceTechnologyListingTable(BaseDatatableView):
@@ -743,9 +757,12 @@ class DeviceVendorList(ListView):
 
     def get_context_data(self, **kwargs):
             context=super(DeviceVendorList, self).get_context_data(**kwargs)
-            datatable_headers=('name', 'alias','actions')
-            context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
-                                        sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+            datatable_headers = [
+            {'mData':'name',                   'sTitle' : 'Name',       'sWidth':'null',},
+            {'mData':'alias',                  'sTitle' : 'Alias',      'sWidth':'null',},
+            {'mData':'actions',                'sTitle' : 'Actions',    'sWidth':'10%' ,}
+            ]
+            context['datatable_headers'] = json.dumps(datatable_headers)
             return context
 
 class DeviceVendorListingTable(BaseDatatableView):
@@ -907,9 +924,12 @@ class DeviceModelList(ListView):
 
     def get_context_data(self, **kwargs):
         context=super(DeviceModelList, self).get_context_data(**kwargs)
-        datatable_headers=('name', 'alias','actions')
-        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
-                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+        datatable_headers = [
+            {'mData':'name',       'sTitle' : 'Name',       'sWidth':'null',},
+            {'mData':'alias',      'sTitle' : 'Alias',      'sWidth':'null',},
+            {'mData':'actions',    'sTitle' : 'Actions',    'sWidth':'10%' ,}
+            ]
+        context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class DeviceModelListingTable(BaseDatatableView):
@@ -1068,9 +1088,12 @@ class DeviceTypeList(ListView):
 
     def get_context_data(self, **kwargs):
         context=super(DeviceTypeList, self).get_context_data(**kwargs)
-        datatable_headers=('name', 'alias','actions')
-        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
-                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+        datatable_headers = [
+            {'mData':'name',                   'sTitle' : 'Name',       'sWidth':'null',},
+            {'mData':'alias',                  'sTitle' : 'Alias',      'sWidth':'null',},
+            {'mData':'actions',                'sTitle' : 'Actions',    'sWidth':'10%' ,}
+            ]
+        context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class DeviceTypeListingTable(BaseDatatableView):

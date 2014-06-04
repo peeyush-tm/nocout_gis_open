@@ -2,24 +2,20 @@ from django import forms
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
 from device.models import DeviceTypeFields
-from django.core.exceptions import ValidationError
 
 
 # *************************************** Device Form ***********************************************
-def validate_empty_selection(value):
-    if value == "":
-        raise ValidationError('%s must not be empty.' % value)
 
 
 class DeviceForm(forms.ModelForm):
     device_technology = IntReturnModelChoiceField(queryset=DeviceTechnology.objects.all(),
-                                                  required=False, validators=[validate_empty_selection])
+                                                  required=False)
     device_vendor = IntReturnModelChoiceField(queryset=DeviceVendor.objects.all(),
-                                              required=False, validators=[validate_empty_selection])
+                                              required=False)
     device_model = IntReturnModelChoiceField(queryset=DeviceModel.objects.all(),
-                                             required=False, validators=[validate_empty_selection])
+                                             required=False)
     device_type = IntReturnModelChoiceField(queryset=DeviceType.objects.all(),
-                                            required=False, validators=[validate_empty_selection])
+                                            required=False)
 
     def __init__(self, *args, **kwargs):
         # setting foreign keys field label
