@@ -11,5 +11,7 @@ class PerformanceMetric(models.Model):
     min_value = models.CharField('Min Value', max_length=20, default=0)
     max_value = models.CharField('Max Value', max_length=20, default=0)
     avg_value = models.CharField('Avg Value', max_length=20, default=0)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, default=0)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, default=0)
     sys_timestamp = models.DateTimeField(default=datetime.now, null=True)
     check_timestamp = models.DateTimeField(default=datetime.now, null=True)
