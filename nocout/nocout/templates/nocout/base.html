@@ -29,8 +29,8 @@
     <!-- TODO -->
     <link rel="stylesheet" type="text/css" href={% static "js/jquery-todo/css/styles.css" %} />
     <link rel="stylesheet" type="text/css" href={% static "js/datatables/media/css/jquery.dataTables.min.css" %} />
-	<link rel="stylesheet" type="text/css" href={% static "js/datatables/media/assets/css/datatables.min.css" %} />
-	<link rel="stylesheet" type="text/css" href={% static "js/datatables/extras/TableTools/media/css/TableTools.min.css" %} />
+    <link rel="stylesheet" type="text/css" href={% static "js/datatables/media/assets/css/datatables.min.css" %} />
+    <link rel="stylesheet" type="text/css" href={% static "js/datatables/extras/TableTools/media/css/TableTools.min.css" %} />
     <!-- FULL CALENDAR -->
     <link rel="stylesheet" type="text/css" href={% static "js/fullcalendar/fullcalendar.min.css" %} />
     <!-- GRITTER -->
@@ -42,8 +42,8 @@
 
     <!-- JQUERY -->
     <script src={% static "js/jquery/jquery-1.11.1.min.js" %}></script>
-	<!-- blueimp Gallery styles -->
-	<link rel="stylesheet" href={% static "js/blueimp/gallery/blueimp-gallery.min.css" %} />
+    <!-- blueimp Gallery styles -->
+    <link rel="stylesheet" href={% static "js/blueimp/gallery/blueimp-gallery.min.css" %} />
     <!-- TYPEAHEAD -->
     <link rel="stylesheet" type="text/css" href={% static "js/typeahead/typeahead.css" %} />
     <!-- FILE UPLOAD -->
@@ -139,9 +139,90 @@
                         <span class="selected"></span>
                     </a>
                 </li>
-                <li>
-                    <a class="" href="/organization/"><i class="fa fa-sitemap"></i> <span
-                            class="menu-text">Organization</span></a>
+                <li class="has-sub">
+                    <a href="javascript:;" class="">
+                        <i class="fa fa-map-marker"></i> <span class="menu-text">Network Maps</span>
+                        <span class="arrow"></span>
+                    </a>
+                    <ul class="sub">
+                        <li><a class="" href="/devicevisualization/"><span class="sub-menu-text">Google Map</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Google Earth</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">White Background</span></a></li>
+                    </ul>
+                </li>
+                <li class="has-sub">
+                    <a href="javascript:;" class="">
+                        <i class="fa fa-bell"></i> <span class="menu-text">Alert Center</span>
+                        <span class="arrow"></span>
+                    </a>
+                    <ul class="sub">
+                        <li><a class="" href="/alert_center/network/"><span class="sub-menu-text">Network Alert Center</span></a></li>
+                        <li><a class="" href="/alert_center/customer/"><span class="sub-menu-text">Customer Alert Center</span></a></li>
+                        <li class="has-sub-sub">
+                            <a class="" href="javascript:;">
+                                <span class="sub-menu-text">Alert Detail</span>
+                                <span class="arrow"></span>
+                            </a>
+                            <ul class="sub-sub">
+                                <li><a class="" href="/alert_center/detail/network_detail/"><span class="sub-menu-text">Network Details</span></a></li>
+                                <li><a class="" href="/alert_center/detail/customer_detail/"><span class="sub-menu-text">Customer Details</span></a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li class="has-sub">
+                    <a href="javascript:;" class="">
+                        <i class="fa fa-exchange"></i> <span class="menu-text">Capacity Management</span>
+                        <span class="arrow"></span>
+                    </a>
+                    <ul class="sub">
+                        <li class="has-sub-sub">
+                            <a class="" href="javascript:;">
+                                <span class="sub-menu-text">Daily Alerts</span>
+                                <span class="arrow"></span>
+                            </a>
+                            <ul class="sub-sub">
+                                <li><a class="" href="/capacity_management/daily_alert/sector/"><span class="sub-menu-text">Sector Augmentation</span></a></li>
+                                <li><a class="" href="/capacity_management/daily_alert/backhaul/"><span class="sub-menu-text">Backhaul Augmentation</span></a></li>
+                            </ul>
+                        </li>
+                        <li class="has-sub-sub">
+                            <a class="" href="javascript:;">
+                                <span class="sub-menu-text">Utilization Status</span>
+                                <span class="arrow"></span>
+                            </a>
+                            <ul class="sub-sub">
+                                <li><a class="" href="/capacity_management/status/sector/"><span class="sub-menu-text">Sector Status</span></a></li>
+                                <li><a class="" href="/capacity_management/status/backhaul/"><span class="sub-menu-text">Backhaul Status</span></a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li class="has-sub">
+                    <a href="javascript:;" class="">
+                        <i class="fa fa-file-text"></i> <span class="menu-text">Performance Reports</span>
+                        <span class="arrow"></span>
+                    </a>
+                    <ul class="sub">
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Customer Live</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Network Live</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Other</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Performance Dashboard</span></a></li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Sector Dashboard</span></a></li>
+                    </ul>
+                </li>
+                <li class="has-sub">
+                    <a href="javascript:;" class="">
+                        <i class="fa fa-download"></i> <span class="menu-text">Download Center</span>
+                        <span class="arrow"></span>
+                    </a>
+                    <ul class="sub">
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Host & Service Events</span></a>
+                        </li>
+                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Search Global Logfile</span></a>
+                        </li>
+                        <li><a class="" href="/logs/actions/"><span class="sub-menu-text">User Logs</span></a></li>
+                    </ul>
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
@@ -166,61 +247,14 @@
                 </li>
                 <li class="has-sub">
                     <a href="javascript:;" class="">
-                        <i class="fa fa-user"></i> <span class="menu-text">Department</span>
+                        <i class="fa fa-user"></i> <span class="menu-text">User Management</span>
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
                         <li><a class="" href="/user/"><span class="sub-menu-text">Manage User</span></a></li>
                         <li><a class="" href="/user_group/"><span class="sub-menu-text">Manage Group</span></a></li>
                         <li><a class="" href="javascript:;"><span class="sub-menu-text">Manage Session</span></a></li>
-                    </ul>
-                </li>
-                <li class="has-sub">
-                    <a href="javascript:;" class="">
-                        <i class="fa fa-map-marker"></i> <span class="menu-text">Network Maps</span>
-                        <span class="arrow"></span>
-                    </a>
-                    <ul class="sub">
-                        <li><a class="" href="/devicevisualization/"><span class="sub-menu-text">Geographical Map</span></a>
-                        </li>
-                    </ul>
-                </li>
-                <li class="has-sub">
-                    <a href="javascript:;" class="">
-                        <i class="fa fa-bell"></i> <span class="menu-text">Alarms</span>
-                        <span class="arrow"></span>
-                    </a>
-                    <ul class="sub">
-                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Event Details</span></a></li>
-                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Alarm Masking</span></a></li>
-                    </ul>
-                </li>
-                <li class="has-sub">
-                    <a href="javascript:;" class="">
-                        <i class="fa fa-file-text"></i> <span class="menu-text">Reports</span>
-                        <span class="arrow"></span>
-                    </a>
-                    <ul class="sub">
-                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Report</span></a></li>
-                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Analyzed Report</span></a></li>
-                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Inventory Report</span></a></li>
-                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Event</span></a></li>
-                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Access Point Report</span></a>
-                        </li>
-                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Backup & Restore</span></a></li>
-                    </ul>
-                </li>
-                <li class="has-sub">
-                    <a href="javascript:;" class="">
-                        <i class="fa fa-bar-chart-o"></i> <span class="menu-text">Logs</span>
-                        <span class="arrow"></span>
-                    </a>
-                    <ul class="sub">
-                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Host & Service Events</span></a>
-                        </li>
-                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Search Global Logfile</span></a>
-                        </li>
-                        <li><a class="" href="/logs/actions/"><span class="sub-menu-text">User Logs</span></a></li>
+                        <li><a class="" href="/organization/"><span class="sub-menu-text">Organization</span></a></li>
                     </ul>
                 </li>
                 <li>
@@ -364,11 +398,16 @@
     /*All Sidebar anchor tags*/
     var sideMenu = $("#sidebar ul li a");
     /*Current router url text*/
-    var currentRouter = $.trim(window.location.href.split("/")[3]);
+    var currentRouterString = $.trim(window.location.href.split("/").slice(3,-1));
+
+    var currentRouter = $.trim(currentRouterString.replace(/,/g,"/"));
 
     for (var i = 0; i < sideMenu.length; i++) {
         /*Anchor tags hiperlink text*/
-        var menuLink = $.trim(sideMenu[i].href.split("/")[3]);
+        var slashCount = sideMenu[i].href.split("/").length;
+
+        var menuLinkString = $.trim(sideMenu[i].href.split("/").slice(3,-1));
+        var menuLink = $.trim(menuLinkString.replace(/,/g,"/"));        
         /*Parent Element(li) Classname*/
         var activeClass = $.trim(sideMenu[i].parentElement.className);
         /*If there is active class on the parent then remove it*/
@@ -377,23 +416,73 @@
         }
         /*If the routertext matches the hiperlink text then add the active & current classes at the desired element*/
         if (menuLink == currentRouter) {
-            var superParentClass = $.trim(sideMenu[i].parentElement.parentElement.parentElement.className);
-            if (superParentClass.indexOf("has-sub") == -1) {
-                var parent = sideMenu[i].parentElement;
-                parent.className = "active";
-            }
-            else {
-                /*Add open class to the arrow*/
-                var arrowClass = sideMenu[i].parentElement.parentElement.parentElement.children[0].children[2];
-                arrowClass.className = arrowClass.className + " open";
+            if(slashCount == 5) {
 
-                /*Add current class to the parent li*/
-                var parent = sideMenu[i].parentElement;
-                parent.className = "current";
+                var superParentClass = $.trim(sideMenu[i].parentElement.parentElement.parentElement.className);
 
-                /*Add active class to the super parent li*/
-                var superParent = sideMenu[i].parentElement.parentElement.parentElement;
-                superParent.className = superParent.className + " active";
+                if (superParentClass.indexOf("has-sub") == -1) {
+                    var parent = sideMenu[i].parentElement;
+                    parent.className = "active";
+                } else {
+                    /*Add open class to the arrow*/
+                    var arrowClass = sideMenu[i].parentElement.parentElement.parentElement.children[0].children[2];
+                    arrowClass.className = arrowClass.className + " open";
+
+                    /*Add current class to the parent li*/
+                    var parent = sideMenu[i].parentElement;
+                    parent.className = "current";
+
+                    /*Add active class to the super parent li*/
+                    var superParent = sideMenu[i].parentElement.parentElement.parentElement;
+                    superParent.className = superParent.className + " active";
+                }
+
+            } else if(slashCount == 6) {
+
+                var superParentClass = $.trim(sideMenu[i].parentElement.parentElement.parentElement.className);
+                var superSuperParentClass = $.trim(sideMenu[i].parentElement.parentElement.parentElement.className);
+
+                if (superSuperParentClass.indexOf("has-sub") == -1) {
+                    var parent = sideMenu[i].parentElement;
+                    parent.className = "active";
+                } else {
+                    sideMenu[i].parentElement.parentElement.parentElement.parentElement.className = superSuperParentClass + " active";
+                    /*Add open class to the arrow*/
+                    var arrowClass = sideMenu[i].parentElement.parentElement.parentElement.children[0].children[1];
+                    arrowClass.className = arrowClass.className + " open";
+
+                    /*Add current class to the parent li*/
+                    var parent = sideMenu[i].parentElement;
+                    parent.className = "current";
+
+                    /*Add active class to the super parent li*/
+                    var superParent = sideMenu[i].parentElement.parentElement.parentElement;
+                    superParent.className = superParent.className + " active";
+                }
+                
+            } else if(slashCount == 7) {
+
+                var superParentClass = $.trim(sideMenu[i].parentElement.parentElement.parentElement.className);
+                var superSuperParentClass = $.trim(sideMenu[i].parentElement.parentElement.parentElement.parentElement.className);
+                var topParentClass = $.trim(sideMenu[i].parentElement.parentElement.parentElement.parentElement.parentElement.className);
+                
+                if (topParentClass.indexOf("has-sub") == -1) {
+                    var parent = sideMenu[i].parentElement;
+                    parent.className = "active";
+                } else {
+                    sideMenu[i].parentElement.parentElement.parentElement.parentElement.parentElement.className = topParentClass + " active";
+                    /*Add open class to the arrow*/
+                    var arrowClass = sideMenu[i].parentElement.parentElement.parentElement.children[0].children[1];
+                    arrowClass.className = arrowClass.className + " open";
+
+                    /*Add current class to the parent li*/
+                    var parent = sideMenu[i].parentElement;
+                    parent.className = "current";
+
+                    /*Add active class to the super parent li*/
+                    var superParent = sideMenu[i].parentElement.parentElement.parentElement;
+                    superParent.className = superParent.className + " active";
+                }
             }
         }
     }
