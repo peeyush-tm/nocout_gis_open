@@ -4,11 +4,57 @@ from site_instance.models import SiteInstance
 from service.models import Service
 from mptt.models import MPTTModel, TreeForeignKey
 
+# table for countries
+
+class Country(models.Model):
+    country_name = models.CharField(max_length=200, null=True, blank=True)
+
+    def __unicode__(self):
+        return self.country_name
+
+
+# table for states
+class State(models.Model):
+    state_name = models.CharField(max_length=200, null=True, blank=True)
+    country = models.ForeignKey(Country, null=True, blank=True)
+
+    def __unicode__(self):
+        return self.state_name
+
+
+# table for cities
+class City(models.Model):
+    city_name = models.CharField(max_length=250, null=True, blank=True)
+    state = models.ForeignKey(State, null=True, blank=True)
+
+    def __unicode__(self):
+        return self.city_name
+
+
+# table for state latitude & longitude
+class StateGeoInfo(models.Model):
+    latitude = models.CharField(max_length=250, null=True, blank=True)
+    longitude = models.CharField(max_length=250, null=True, blank=True)
+    state = models.ForeignKey(State, null=True, blank=True)
+
+
+# table for device frequencies color coding
+class DeviceFrequency(models.Model):
+    frequency_name = models.CharField(max_length=100)
+    frequency_value = models.CharField(max_length=50)
+    color_hex_value = models.CharField(max_length=10)
+
+    def __unicode__(self):
+        return self.frequency_name
+
 
 # device types info table
 class DeviceType(models.Model):
     name = models.CharField('Device Type', max_length=200, unique=True)
     alias = models.CharField('Device Description', max_length=200, null=True, blank=True)
+    device_icon = models.CharField('Device GMap Icon', max_length=200, null=True, blank=True)
+    device_gmap_icon = models.CharField('Device GMap Icon', max_length=200, null=True, blank=True)
+    frequency = models.ManyToManyField(DeviceFrequency, null=True, blank=True)
 
     def __unicode__(self):
         return self.name
@@ -71,10 +117,10 @@ class Device(MPTTModel, models.Model):
     site_instance = models.ForeignKey(SiteInstance, null=True, blank=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='device_children')
     device_group = models.ManyToManyField(DeviceGroup, through='Inventory', blank=True, null=True)
-    device_technology = models.IntegerField('Device Technology', max_length=200, null=True, blank=True)
-    device_vendor = models.IntegerField('Device Vendor', max_length=200, null=True, blank=True)
-    device_model = models.IntegerField('Device Model', max_length=200, null=True, blank=True)
-    device_type = models.IntegerField('Device Type', max_length=200, null=True, blank=True)
+    device_technology = models.IntegerField('Device Technology', null=True, blank=True)
+    device_vendor = models.IntegerField('Device Vendor', null=True, blank=True)
+    device_model = models.IntegerField('Device Model', null=True, blank=True)
+    device_type = models.IntegerField('Device Type', null=True, blank=True)
     service = models.ManyToManyField(Service, null=True, blank=True)
     ip_address = models.IPAddressField('IP Address', unique=True)
     mac_address = models.CharField('MAC Address', max_length=100, )
@@ -87,8 +133,9 @@ class Device(MPTTModel, models.Model):
     latitude = models.CharField('Latitude', max_length=20, null=True, blank=True)
     longitude = models.CharField('Longitude', max_length=20, null=True, blank=True)
     address = models.TextField('Address', null=True, blank=True)
-    city = models.CharField('City', max_length=100, null=True, blank=True)
-    state = models.CharField('State', max_length=100, null=True, blank=True)
+    country = models.IntegerField('Country', null=True, blank=True)
+    state = models.IntegerField('State', null=True, blank=True)
+    city = models.IntegerField('City', null=True, blank=True)
     description = models.TextField('Description')
     is_deleted = models.IntegerField('Is Deleted', max_length=1, default=0)
 
@@ -131,8 +178,9 @@ class DeviceTypeFields(models.Model):
         return self.field_display_name
 
 
-# table for device extra fields values    
+# table for device extra fields values
 class DeviceTypeFieldsValue(models.Model):
     device_type_field = models.ForeignKey(DeviceTypeFields)
     field_value = models.CharField(max_length=250)
     device_id = models.IntegerField()
+
