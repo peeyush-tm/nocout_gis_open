@@ -230,7 +230,7 @@
                         <span class="arrow"></span>
                     </a>
                     <ul class="sub">
-                        <li><a class="" href="/device"><span class="sub-menu-text">Devices</span></a></li>
+                        <li><a class="" href="/device/"><span class="sub-menu-text">Devices</span></a></li>
                         <li><a class="" href="/device_group/"><span class="sub-menu-text">Device Group</span></a></li>
                         <li><a class="" href="/device_fields/"><span class="sub-menu-text">Device Fields</span></a></li>
                         <li><a class="" href="/technology/"><span class="sub-menu-text">Device Technology</span></a>
@@ -394,19 +394,27 @@
 {% endblock %}
 <script>
     /*This script add & remove the current and active classes for the side hiperlinks as per the router to show the currently selected sidebar item.*/
-
+    var currentRouterString = "";
     /*All Sidebar anchor tags*/
     var sideMenu = $("#sidebar ul li a");
-    /*Current router url text*/
-    var currentRouterString = $.trim(window.location.href.split("/").slice(3,-1));
+    var routerArray = window.location.href.split("/");
+    var checkValue = $.trim(routerArray[routerArray.length-2]);
+    if(checkValue == "new" || checkValue == "update") {
+        /*Current router url text*/
+        currentRouterString = $.trim(window.location.href.split("/").slice(3,routerArray.length-2));
+    } else {
+        /*Current router url text*/
+        currentRouterString = $.trim(window.location.href.split("/").slice(3,-1));
+    }
 
-    var currentRouter = $.trim(currentRouterString.replace(/,/g,"/"));
+    var currentRouter = $.trim(currentRouterString.replace(/,/g,"/"));    
 
     for (var i = 0; i < sideMenu.length; i++) {
         /*Anchor tags hiperlink text*/
         var slashCount = sideMenu[i].href.split("/").length;
 
         var menuLinkString = $.trim(sideMenu[i].href.split("/").slice(3,-1));
+        console.log(sideMenu[i].href.split("/"));
         var menuLink = $.trim(menuLinkString.replace(/,/g,"/"));        
         /*Parent Element(li) Classname*/
         var activeClass = $.trim(sideMenu[i].parentElement.className);
@@ -416,6 +424,8 @@
         }
         /*If the routertext matches the hiperlink text then add the active & current classes at the desired element*/
         if (menuLink == currentRouter) {
+            console.log(currentRouter);
+            console.log(slashCount);
             if(slashCount == 5) {
 
                 var superParentClass = $.trim(sideMenu[i].parentElement.parentElement.parentElement.className);
