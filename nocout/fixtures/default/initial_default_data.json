@@ -320,6 +320,14 @@
   }
 },
 {
+  "pk": 31, 
+  "model": "device.state", 
+  "fields": {
+    "country": 1, 
+    "state_name": "Lakshadweep"
+  }
+},
+{
   "pk": 1, 
   "model": "device.city", 
   "fields": {
@@ -5788,7 +5796,7 @@
   "model": "device.city", 
   "fields": {
     "city_name": "Kavaratti", 
-    "state": 0
+    "state": 31
   }
 },
 {
@@ -34825,7 +34833,7 @@
     "user_group": 1, 
     "name": "default", 
     "device_group": 1, 
-    "description": "Default organizatio"
+    "description": "Default"
   }
 },
 {
@@ -34838,7 +34846,7 @@
     "is_active": true, 
     "is_superuser": true, 
     "is_staff": true, 
-    "last_login": "2014-05-29T09:06:15Z", 
+    "last_login": "2014-05-28T15:08:00Z", 
     "groups": [], 
     "user_permissions": [], 
     "password": "pbkdf2_sha256$12000$SPMzXFDtqufn$cDLdftWoFOfUe0TniGNqg1nnodLYxOqQ8+Wp/75w9vk=", 
@@ -34856,30 +34864,12 @@
     "is_active": true, 
     "is_superuser": false, 
     "is_staff": false, 
-    "last_login": "2014-06-04T12:38:38Z", 
+    "last_login": "2014-06-04T13:41:55Z", 
     "groups": [], 
     "user_permissions": [], 
     "password": "pbkdf2_sha256$12000$pzM0PoqRCIxZ$tKHiDncSZKXGyZUbqOkNy/86KnkbpOoDKlbV6D8M+bs=", 
     "email": "default@nocout.com", 
     "date_joined": "2014-05-28T15:05:51Z"
-  }
-},
-{
-  "pk": 3, 
-  "model": "auth.user", 
-  "fields": {
-    "username": "john", 
-    "first_name": "John", 
-    "last_name": "Smith", 
-    "is_active": true, 
-    "is_superuser": false, 
-    "is_staff": false, 
-    "last_login": "2014-05-30T10:56:59Z", 
-    "groups": [], 
-    "user_permissions": [], 
-    "password": "pbkdf2_sha256$12000$N6gVbo6MDWf9$3uhnjBpGX9EhtttvTXylpuC1Osfh1Wef6cks8d26huw=", 
-    "email": "johnsmith@demo.com", 
-    "date_joined": "2014-05-30T10:56:59Z"
   }
 },
 {
@@ -34891,7 +34881,7 @@
     "is_deleted": 0, 
     "parent": null, 
     "designation": "", 
-    "rght": 4, 
+    "rght": 2, 
     "company": "", 
     "tree_id": 1, 
     "lft": 1, 
@@ -34902,28 +34892,6 @@
     "address": "", 
     "user_permissions": [], 
     "level": 0
-  }
-},
-{
-  "pk": 3, 
-  "model": "user_profile.userprofile", 
-  "fields": {
-    "phone_number": "98451616546", 
-    "comment": "It's John Smith!", 
-    "is_deleted": 0, 
-    "parent": 2, 
-    "designation": "CEO", 
-    "rght": 3, 
-    "company": "Demo Pvt Ltd.", 
-    "tree_id": 1, 
-    "lft": 2, 
-    "role": [
-      3
-    ], 
-    "groups": [], 
-    "address": "CA", 
-    "user_permissions": [], 
-    "level": 1
   }
 },
 {
@@ -34956,14 +34924,6 @@
   "fields": {
     "user_group": 1, 
     "user_profile": 2
-  }
-},
-{
-  "pk": 3, 
-  "model": "user_profile.department", 
-  "fields": {
-    "user_group": 1, 
-    "user_profile": 3
   }
 }
 ]
