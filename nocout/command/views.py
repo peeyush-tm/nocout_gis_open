@@ -17,9 +17,12 @@ class CommandList(ListView):
 
     def get_context_data(self, **kwargs):
         context=super(CommandList, self).get_context_data(**kwargs)
-        datatable_headers=('command_name', 'command_line','actions')
-        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
-                sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+        datatable_headers = [
+            {'mData':'command_name',     'sTitle' : 'Command Name',  'sWidth':'null', },
+            {'mData':'command_line',     'sTitle' : 'Command Line',  'sWidth':'null', },
+            {'mData':'actions',          'sTitle' : 'Actions',       'sWidth':'10%',  },
+            ]
+        context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 

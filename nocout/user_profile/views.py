@@ -22,10 +22,18 @@ class UserList(ListView):
 
     def get_context_data(self, **kwargs):
         context=super(UserList, self).get_context_data(**kwargs)
-        datatable_headers=('username', 'full_name', 'email', 'role__role_name', 'user_group__name', 'manager_name',
-                       'phone_number', 'last_login','actions')
-        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
-                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers])
+        datatable_headers=[
+            {'mData':'username',         'sTitle' : 'Username',     'sWidth':'null',},
+            {'mData':'full_name',        'sTitle' : 'Full Name',    'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'email',            'sTitle' : 'Email',        'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'role__role_name',  'sTitle' : 'Role',         'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'user_group__name', 'sTitle' : 'User Group',   'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'manager_name',     'sTitle' : 'Manager',      'sWidth':'10%' ,'sClass':'hidden-xs'},
+            {'mData':'phone_number',     'sTitle' : 'Phone Number', 'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'last_login',       'sTitle' : 'Last Login',   'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'actions',          'sTitle' : 'Actions',      'sWidth':'5%' ,},]
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class UserListingTable(BaseDatatableView):

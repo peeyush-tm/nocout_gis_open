@@ -17,10 +17,18 @@ class UserGroupList(ListView):
 
     def get_context_data(self, **kwargs):
         context=super(UserGroupList, self).get_context_data(**kwargs)
-        datatable_headers= ('name', 'alias', 'address', 'location', 'parent__name', 'device_group__name',
-                            'device_group__location','actions')
-        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
-                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+        datatable_headers=[
+            {'mData':'name',                   'sTitle' : 'Name',                  'sWidth':'null',},
+            {'mData':'alias',                  'sTitle' : 'Alias',                 'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'address',                'sTitle' : 'Addres',                'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'location',               'sTitle' : 'Location',              'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'parent__name',           'sTitle' : 'Parent Name',           'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'device_group__name',     'sTitle' : 'Device Group',          'sWidth':'10%' ,'sClass':'hidden-xs'},
+            {'mData':'device_group__location', 'sTitle' : 'Device Group Location', 'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'actions',                'sTitle' : 'Actions',               'sWidth':'5%' ,}
+            ,]
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class UserGroupListingTable(BaseDatatableView):
