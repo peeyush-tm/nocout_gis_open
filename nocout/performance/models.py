@@ -15,3 +15,7 @@ class PerformanceMetric(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, default=0)
     sys_timestamp = models.DateTimeField(default=datetime.now, null=True)
     check_timestamp = models.DateTimeField(default=datetime.now, null=True)
+
+    def __unicode__(self):
+        return self.device_name
+
