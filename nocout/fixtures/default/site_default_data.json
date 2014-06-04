@@ -3,11 +3,12 @@
   "pk": 1, 
   "model": "site_instance.siteinstance", 
   "fields": {
-    "site_ip": "127.0.0.1", 
-    "live_status_tcp_port": 6557, 
     "name": "default", 
-    "agent_port": 6556, 
-    "description": "Default"
+    "machine": 1, 
+    "alias": "Default", 
+    "live_status_tcp_port": 6557, 
+    "site_ip": "127.0.0.1", 
+    "description": "This is nocout's default site."
   }
 }
 ]
