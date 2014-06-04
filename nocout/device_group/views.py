@@ -19,9 +19,15 @@ class DeviceGroupList(ListView):
 
     def get_context_data(self, **kwargs):
         context=super(DeviceGroupList, self).get_context_data(**kwargs)
-        datatable_headers=('name', 'alias', 'parent__name', 'location','address','actions')
-        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle= key.replace('_',' ').title(),
-                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+        datatable_headers = [
+            {'mData':'name',                   'sTitle' : 'Name',              'sWidth':'null',},
+            {'mData':'alias',                  'sTitle' : 'Alias',             'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'parent__name',           'sTitle' : 'Parent Name',       'sWidth':'null',},
+            {'mData':'location',               'sTitle' : 'Location',          'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'address',                'sTitle' : 'Address',           'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'actions',                'sTitle' : 'Actions',           'sWidth':'5%' ,}
+            ,]
+        context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class DeviceGroupListingTable(BaseDatatableView):

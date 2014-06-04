@@ -17,9 +17,14 @@ class ServiceList(ListView):
 
     def get_context_data(self, **kwargs):
         context=super(ServiceList, self).get_context_data(**kwargs)
-        datatable_headers=('service_name', 'alias', 'command', 'description','actions')
-        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
-                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+        datatable_headers = [
+            {'mData':'service_name',     'sTitle' : 'Service',       'sWidth':'null',},
+            {'mData':'alias',            'sTitle' : 'Alias',         'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'command',          'sTitle' : 'Command',       'sWidth':'null',},
+            {'mData':'description',      'sTitle' : 'Description',   'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'actions',          'sTitle' : 'Actions',       'sWidth':'10%' ,}
+            ]
+        context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class ServiceListingTable(BaseDatatableView):
@@ -143,10 +148,17 @@ class ServiceParametersList(ListView):
 
     def get_context_data(self, **kwargs):
         context=super(ServiceParametersList, self).get_context_data(**kwargs)
-        datatable_headers=('parameter_description', 'max_check_attempts', 'check_interval', 'retry_interval','check_period',
-                            'notification_interval','notification_period','actions')
-        context['datatable_headers'] = json.dumps([ dict(mData=key, sTitle = key.replace('_',' ').title(),
-                                    sWidth='10%' if key=='actions' else 'null') for key in datatable_headers ])
+        datatable_headers = [
+            {'mData':'parameter_description',     'sTitle' : 'Parameter Description', 'sWidth':'null',},
+            {'mData':'max_check_attempts',        'sTitle' : 'Max Check Attempts',    'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'check_interval',            'sTitle' : 'Check Intervals',       'sWidth':'null',},
+            {'mData':'retry_interval',            'sTitle' : 'Retry Interval',        'sWidth':'null',},
+            {'mData':'check_period',              'sTitle' : 'Check Period',          'sWidth':'null',},
+            {'mData':'notification_interval',     'sTitle' : 'Notification Interval', 'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'notification_period',       'sTitle' : 'Notification Period',   'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'actions',                   'sTitle' : 'Actions',               'sWidth':'5%' ,}
+            ]
+        context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class ServiceParametersListingTable(BaseDatatableView):
