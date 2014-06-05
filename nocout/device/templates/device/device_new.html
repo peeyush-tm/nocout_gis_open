@@ -14,7 +14,9 @@
                         </div>
                         <div class="box-body">
                             <br/>
-                            <form action="/device/new/" method="post" class="form-horizontal" role="form">{% csrf_token %}
+
+                            <form action="/device/new/" method="post" class="form-horizontal"
+                                  role="form">{% csrf_token %}
                                 <div class="col-md-12">
                                     <!--Form 1-->
                                     <div class="col-md-6">
@@ -23,6 +25,7 @@
                                                 <div class="form-group">
                                                     <label for="{{ field.id_for_label }}"
                                                            class="col-sm-5 control-label">{{ field.label }}</label>
+
                                                     <div class="col-sm-7">
                                                         {{ field }} {{ field.errors }}
                                                     </div>
@@ -39,6 +42,7 @@
                                                     <div class="form-group">
                                                         <label for="{{ field.id_for_label }}"
                                                                class="col-sm-5 control-label">{{ field.label }}</label>
+
                                                         <div class="col-sm-7">
                                                             {{ field }} {{ field.errors }}
                                                         </div>
@@ -53,13 +57,18 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <div class="col-sm-offset-5 col-sm-7">
-                                            <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i> Create</button>
-                                            &nbsp;
-                                            <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i> Reset
-                                            </button>
-                                            &nbsp;
-                                            <button type="reset" class="btn btn-danger" onclick="window.location.replace('/device/')"><i class="fa fa-times"></i> Cancel
-                                            </button>
+                                                <button type="submit" class="btn btn-success"><i
+                                                        class="fa fa-pencil"></i> Create
+                                                </button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-warning" onclick="resetForm();"><i
+                                                        class="fa fa-refresh"></i> Reset
+                                                </button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-danger"
+                                                        onclick="window.location.replace('/device/')"><i
+                                                        class="fa fa-times"></i> Cancel
+                                                </button>
                                             </div>
                                         </div>
                                         <div class="clearfix"></div>
@@ -78,6 +87,7 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
     {% endblock %}
     <script>
+        // behaviour after wrong validation of form
         $(document).ready(function () {
             // update 'device parent' select options
             if ($('#id_parent').val()) {
@@ -91,7 +101,7 @@
 
             // update 'device technology' if it is already selected
             // i.e. after validation if form is invalid
-            if ($('#id_device_technology')) {
+            if ($('#id_device_technology').val()) {
                 Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
             }
 
@@ -122,16 +132,34 @@
                 $("#id_device_type").empty();
             }
 
+            if ($("#id_country").val() == "") {
+                $("#id_state").empty();
+                $("#id_city").empty();
+            }
+            else {
+                Dajaxice.device.update_states_after_invalid_form(Dajax.process, {'option': $("#id_country").val(), 'state_id': $("#id_state").val()});
+            }
+
+            if (!$("#id_state").val()) {
+                $("#id_city").empty();
+            }
+            else {
+                Dajaxice.device.update_cities_after_invalid_form(Dajax.process, {'option': $("#id_state").val(), 'city_id': $("#id_city").val()});
+            }
+
         });
 
         // update 'device vendor' on selecting 'device technology'
         $("#id_device_technology").change(function () {
             Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
+            $("#id_device_model").empty();
+            $("#id_device_type").empty();
         });
 
         // update 'device model' on selecting 'device vendor'
         $("#id_device_vendor").change(function () {
             Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});
+            $("#id_device_type").empty();
         }).click(function () {
             if ($("#id_device_vendor").length == 1) {
                 Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});
@@ -155,6 +183,23 @@
             if ($("#id_device_type").length == 1) {
                 Dajaxice.device.device_type_extra_fields(Dajax.process, {'option': $('#id_device_type').val()});
             }
+        });
+
+        // update 'states' on selecting 'country'
+        $("#id_country").change(function () {
+            if ($("#id_country").val() != "") {
+                Dajaxice.device.update_states(Dajax.process, {'option': $("#id_country").val()});
+                $("#id_city").empty();
+            }
+            else {
+                $("#id_state").empty();
+                $("#id_city").empty();
+            }
+        });
+
+        // update 'cities' on selecting 'state'
+        $("#id_state").change(function () {
+            Dajaxice.device.update_cities(Dajax.process, {'option': $("#id_state").val()});
         });
     </script>
 {% endblock %}
