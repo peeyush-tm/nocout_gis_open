@@ -132,6 +132,8 @@
                 $("#id_device_type").empty();
             }
 
+            // if none of the value from 'country' is selected than empty 'state' & 'city' selection too.
+            // or update value of 'state' corresponding to the selected 'country'
             if ($("#id_country").val() == "") {
                 $("#id_state").empty();
                 $("#id_city").empty();
@@ -140,26 +142,37 @@
                 Dajaxice.device.update_states_after_invalid_form(Dajax.process, {'option': $("#id_country").val(), 'state_id': $("#id_state").val()});
             }
 
+            // if 'state' has no value than empty 'city' seletion menu
+            // or update 'city' corresponding to selected 'state'
             if (!$("#id_state").val()) {
                 $("#id_city").empty();
             }
             else {
                 Dajaxice.device.update_cities_after_invalid_form(Dajax.process, {'option': $("#id_state").val(), 'city_id': $("#id_city").val()});
             }
-
         });
 
         // update 'device vendor' on selecting 'device technology'
         $("#id_device_technology").change(function () {
-            Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
-            $("#id_device_model").empty();
-            $("#id_device_type").empty();
+            if ($("#id_device_technology").val()) {
+                Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
+                $("#id_device_model").empty();
+                $("#id_device_type").empty();
+                $("#extra_fields").empty();
+            }
+            else{
+                $("#id_device_vendor").empty();
+                $("#id_device_model").empty();
+                $("#id_device_type").empty();
+                $("#extra_fields").empty();
+            }
         });
 
         // update 'device model' on selecting 'device vendor'
         $("#id_device_vendor").change(function () {
             Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});
             $("#id_device_type").empty();
+            $("#extra_fields").empty();
         }).click(function () {
             if ($("#id_device_vendor").length == 1) {
                 Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});

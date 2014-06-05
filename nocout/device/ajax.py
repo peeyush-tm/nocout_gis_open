@@ -246,7 +246,7 @@ def device_soft_delete(request, device_id, new_parent_id):
 def update_states(request, option):
     dajax = Dajax()
     country = Country.objects.get(pk=int(option))
-    states = country.state_set.all()
+    states = country.state_set.all().order_by('state_name')
     out = []
     out = ["<option value=''>Select State....</option>"]
     for state in states:
@@ -260,7 +260,7 @@ def update_states(request, option):
 def update_cities(request, option):
     dajax = Dajax()
     state = State.objects.get(pk=int(option))
-    cities = state.city_set.all()
+    cities = state.city_set.all().order_by('city_name')
     out = []
     out = ["<option value=''>Select City....</option>"]
     for city in cities:
@@ -275,7 +275,7 @@ def update_cities(request, option):
 def update_states_after_invalid_form(request, option, state_id):
     dajax = Dajax()
     country = Country.objects.get(pk=int(option))
-    states = country.state_set.all()
+    states = country.state_set.all().order_by('state_name')
     out = []
     out = ["<option value=''>Select State....</option>"]
     for state in states:
@@ -292,7 +292,7 @@ def update_states_after_invalid_form(request, option, state_id):
 def update_cities_after_invalid_form(request, option, city_id):
     dajax = Dajax()
     state = State.objects.get(pk=int(option))
-    cities = state.city_set.all()
+    cities = state.city_set.all().order_by('city_name')
     out = []
     out = ["<option value=''>Select City....</option>"]
     for city in cities:
