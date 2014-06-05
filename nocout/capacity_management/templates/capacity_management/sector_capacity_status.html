@@ -1,0 +1,137 @@
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+    <li>Capacity Management</li>
+    <li>Utilization Status</li>
+    <li>Sector Status</li>
+{% endblock %}
+{% block content_title %}Sector Status{% endblock %}
+{% block content_description %}Sector Status List {% endblock %}
+{% load staticfiles %}
+
+
+{% block content %}
+
+    <div class="box border lite">
+        <div class="box-title">
+            <h4><i class="fa fa-exchange"></i>SECTOR STATUS</h4>
+
+            <div class="tools hidden-xs">
+                <a href="#box-config" data-toggle="modal" class="config">
+                    <i class="fa fa-cog"></i>
+                </a>
+                <a href="javascript:;" class="reload">
+                    <i class="fa fa-refresh"></i>
+                </a>
+                <a href="javascript:;" class="collapse">
+                    <i class="fa fa-chevron-up"></i>
+                </a>
+                <a href="javascript:;" class="remove">
+                    <i class="fa fa-times"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="box-body">
+            <!-- sector_capacity_status_container Start-->
+            <div id="sector_capacity_status_container">
+                
+                <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th colspan="5" style="text-align: center;">IN</th>
+                            <th colspan="4" style="text-align: center;">OUT</th>
+                        </tr>
+                        <tr>                        
+                            <th>City</th>
+                            <th>BS IP</th>
+                            <th>BS Name</th>
+                            <th>BS Type</th>
+                            <th>Sector ID</th>
+                            <th>Sector Capacity</th>
+                            <th>Current Utilization(% &amp; Value Mbps)</th>
+                            <th>Peak in a Day(% &amp; Value Mbps)</th>
+                            <th></th>
+                            <th>Peak Time</th>
+                            <th>Average(% &amp; Value Mbps)</th>
+                            <th>Current Utilization(% &amp; Value Mbps)</th>
+                            <th>Peak in a Day(% &amp; Value Mbps)</th>
+                            <th>Peak Time</th>
+                            <th>Average(% &amp; Value Mbps)</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+            </div>
+            <!-- sector_capacity_status_container End-->
+            <div class="clearfix"></div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block jquery %}
+<script type="text/javascript">
+    /*This is a temporary code which is replace when data for data table is provided*/
+    $(".datatable").DataTable();
+    
+    function nw_alert_showFilters() {
+
+        if($("#removeNwDetailFilterBtn").hasClass("hide")) {
+
+            $("#removeNwDetailFilterBtn").removeClass("hide");
+        }
+
+        bootbox.dialog({
+            message: "Advance Filters Block",
+            title: '<i class="fa fa-filter">&nbsp;</i> Advance Filters',
+            buttons: {
+                success: {
+                    label: "Search",
+                    className: "btn-success",
+                    callback: function() {
+
+                    }
+                },
+                danger: {
+                    label: "Cancel",
+                    className: "btn-danger",
+                    callback: function() {
+                        
+                    }
+                }            
+            }
+        });
+                
+    }
+
+    function nw_alert_removeFilters() {
+
+        if($("#removeNwDetailFilterBtn").hasClass("hide")) {
+
+            $("#removeNwDetailFilterBtn").removeClass("hide");
+        } else {
+
+            $("#removeNwDetailFilterBtn").addClass("hide");
+        }
+    }
+
+</script>
+{% endblock %}
+
+{% block load_js %}
+<!-- /JAVASCRIPTS -->
+
+<script>
+    jQuery(document).ready(function () {
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+    });
+</script>
+{% endblock %}

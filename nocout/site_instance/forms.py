@@ -12,4 +12,5 @@ class SiteInstanceForm(forms.ModelForm):
                 field.widget.attrs.update({'class':'form-control'})
     class Meta:
         model = SiteInstance
-        fields = ('name', 'site_ip', 'live_status_tcp_port', 'description')
+        fields = ('name', 'alias', 'machine', 'site_ip', 'live_status_tcp_port', 'description')
+
