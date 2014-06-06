@@ -33,8 +33,8 @@ class City(models.Model):
 
 # table for state latitude & longitude
 class StateGeoInfo(models.Model):
-    latitude = models.CharField(max_length=250, null=True, blank=True)
-    longitude = models.CharField(max_length=250, null=True, blank=True)
+    latitude = models.FloatField('Latitude', null=True, blank=True)
+    longitude = models.FloatField('Longitude', null=True, blank=True)
     state = models.ForeignKey(State, null=True, blank=True)
 
 
@@ -130,12 +130,12 @@ class Device(MPTTModel, models.Model):
     host_priority = models.CharField('Host Priority', max_length=200, choices=PRIORITY, default=normal)
     host_state = models.CharField('Host State', max_length=200, choices=HOST_STATE, default=enable)
     timezone = models.CharField('Timezone', max_length=100)
-    latitude = models.CharField('Latitude', max_length=20, null=True, blank=True)
-    longitude = models.CharField('Longitude', max_length=20, null=True, blank=True)
     address = models.TextField('Address', null=True, blank=True)
     country = models.IntegerField('Country', null=True, blank=True)
     state = models.IntegerField('State', null=True, blank=True)
     city = models.IntegerField('City', null=True, blank=True)
+    latitude = models.FloatField('Latitude', null=True, blank=True)
+    longitude = models.FloatField('Longitude', null=True, blank=True)
     description = models.TextField('Description')
     is_deleted = models.IntegerField('Is Deleted', max_length=1, default=0)
 
