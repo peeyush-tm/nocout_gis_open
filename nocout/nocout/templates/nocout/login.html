@@ -1,4 +1,5 @@
 {% load staticfiles %}
+{% load dajaxice_templatetags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -51,7 +52,7 @@
 							<div class="login-box-plain">
 								<h2 class="bigintro">Sign In</h2>
 								<div class="divide-40"></div>
-								<form role="form" action="/auth/" method="post">{% csrf_token %}
+								<form id='login_form' role="form" action="/auth/" method="post">{% csrf_token %}
 								  <div class="form-group">
 									<label for="username">Username</label>
 									<i class="fa fa-envelope"></i>
@@ -63,8 +64,7 @@
 									<input type="password" class="form-control" name="password">
 								  </div>
 								  <div class="form-actions">
-									<label class="checkbox"> <input type="checkbox" class="uniform" value=""> Remember me</label>
-									<button type="submit" class="btn btn-danger">Submit</button>
+									<button type="button" class="btn btn-danger">Submit</button>
 								  </div>
 								</form>
 							</div>
@@ -83,17 +83,106 @@
 	<script src={% static "js/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.min.js" %}></script>
 	<!-- BOOTSTRAP -->
 	<script src={% static "bootstrap-dist/js/bootstrap.min.js" %}></script>
-	
-	
 	<!-- UNIFORM -->
 	<script type="text/javascript" src={% static "js/uniform/jquery.uniform.min.js" %}></script>
 	<!-- CUSTOM SCRIPT -->
 	<script src={% static "js/script.js" %}></script>
 	<script>
-		jQuery(document).ready(function() {		
+		jQuery(document).ready(function() {
 			App.setPage("login");  //Set current page
 			App.init(); //Initialise plugins and elements
 		});
+
+ $(document).ajaxSend(function(event, xhr, settings) {
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie != '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = jQuery.trim(cookies[i]);
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    function sameOrigin(url) {
+        // url could be relative or scheme relative or absolute
+        var host = document.location.host; // host + port
+        var protocol = document.location.protocol;
+        var sr_origin = '//' + host;
+        var origin = protocol + sr_origin;
+        // Allow absolute or scheme relative URLs to same origin
+        return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
+            (url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
+            // or any other URL that isn't scheme relative or absolute i.e relative.
+            !(/^(\/\/|http:|https:).*/.test(url));
+    }
+    function safeMethod(method) {
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+
+    if (!safeMethod(settings.type) && sameOrigin(settings.url)) {
+        xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+    }
+});
+
+ $("button").click(function(){
+        $.ajax({url:"/auth/",
+                type:"POST",
+                data:$("#login_form").serialize(true),
+                dataType:"json",
+                success:function(data){
+                        if(data.data.objects.dialog){
+                            bootbox.dialog({
+                              message: "You are Looged on from a different computer, " +
+                                      "Press continue login to delete your previous session or Press Cancel.",
+                              title:"Login Alert",
+                              buttons: {
+                                            success: {
+                                                label: "Continue Login!",
+                                                className: "btn-success",
+                                                callback: function(){
+                                                            $.ajax({
+                                                                    url:"/sm/dialog_action/",
+                                                                    type:"POST",
+                                                                    data:{action:'continue'},
+                                                                    dataType:"json",
+                                                                    success:function(data){
+                                                                           window.location.replace(data.data.objects.url)
+                                                                    }//success
+                                                            });//ajax
+                                                         }//callback function
+                                                    },//buttonsuccess
+
+                                            danger: {
+                                                label: "Cancel!",
+                                                className: "btn-danger",
+                                                callback: function(){
+                                                            $.ajax({
+                                                                    url:"/sm/dialog_action/",
+                                                                    type:"POST",
+                                                                    data:{ action:'logout'},
+                                                                    dataType:"json",
+                                                                    success:function(data){
+                                                                           window.location.replace(data.data.objects.url)
+                                                                    }//success
+                                                            });//ajax
+                                                         }//callback function
+                                                    }//buttonsuccess
+                                        } //button
+                            });//button dialog
+
+                        }//if end
+                        else if(data.data.objects.url){
+                                    window.location.replace(data.data.objects.url)
+                        }//else if end
+                        }//success
+        });//Ajax
+            });//onclick
 	</script>
 	<!-- /JAVASCRIPTS -->
 </body>

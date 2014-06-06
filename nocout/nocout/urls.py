@@ -28,9 +28,7 @@ urlpatterns = patterns('',
     url(r'^type/', include('device.device_type_urls')),
     url(r'^login/$', 'nocout.views.login'),
     url(r'^auth/$', 'nocout.views.auth_view'),
-    url(r'^loggedin/$', 'nocout.views.loggedin'),
     url(r'^logout/$', 'nocout.views.logout'),
-    url(r'^invalid/$', 'nocout.views.invalid_login'),
     url(r'^site/', include('site_instance.urls')),
     url(r'^devicevisualization/', include('devicevisualization.urls')),
     url(r'^gis/', include('sitesearch.urls')),
@@ -41,10 +39,11 @@ urlpatterns = patterns('',
     url(r'session_security/', include('session_security.urls')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^logs/', include('activity_stream.urls')),
+    url(r'^sm/', include('session_management.urls'))
 )
 
-# if settings.DEBUG:
-#     import debug_toolbar
-#     urlpatterns += patterns('',
-#         url(r'^__debug__/', include(debug_toolbar.urls)),
-#     )
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += patterns('',
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    )
