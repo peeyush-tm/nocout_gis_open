@@ -140,13 +140,15 @@ yourlabs.SessionSecurity.prototype = {
         } else if (idleFor >= this.warnAfter) {
 
             this.showWarning();
-            nextPing = this.expireAfter - idleFor;
+            nextPing = 5; //this.expireAfter - idleFor;
+            timer = this.expireAfter - idleFor;
         } else if(keyVal == 'logoutClicked')
         {
             return this.expire();
         } else {
             // this.hideWarning();
             nextPing = this.warnAfter - idleFor;
+            timer = this.expireAfter - nextPing;
         }
 
         this.timeout = setTimeout($.proxy(this.ping, this), nextPing * 1000);
@@ -194,9 +196,9 @@ yourlabs.SessionSecurity.prototype = {
             /*Time out of 1 sec*/
             setTimeout(function() {
 
-                timer = timer - 1;
+//                timer = timer - 1;
                 /*Recursive Calling*/
-                current.startCountdown(timer);
+//                current.startCountdown(timer);
             },1000);
         }
         else
