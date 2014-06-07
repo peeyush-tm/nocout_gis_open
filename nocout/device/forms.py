@@ -1,7 +1,12 @@
 from django import forms
-from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, Country, State, City
+from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
+    Country, State, City, StateGeoInfo
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
 from device.models import DeviceTypeFields
+import pyproj
+from shapely.geometry import Polygon, Point
+from shapely.ops import transform
+from functools import partial
 
 
 # *************************************** Device Form ***********************************************
@@ -84,6 +89,47 @@ class DeviceForm(forms.ModelForm):
         widgets = {
             'device_group': MultipleToSingleSelectionWidget,
         }
+
+
+    def clean(self):
+        cleaned_data = super(DeviceForm, self).clean()
+        latitude = self.cleaned_data.get('latitude')
+        longitude = self.cleaned_data.get('longitude')
+        state = self.cleaned_data.get('state')
+        print "***********************************"
+        print "Latitude: ", latitude
+        print "Longitude: ", longitude
+        print "State: ", state
+
+        if latitude and longitude and state:
+            project = partial(
+            pyproj.transform,
+            pyproj.Proj(init='epsg:4326'),
+            pyproj.Proj('+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'))
+            print "project", project
+
+            state_geo_info = StateGeoInfo.objects.filter(state_id=state)
+            print "sgi", state_geo_info
+            state_lat_longs = []
+            for geo_info in state_geo_info:
+                temp_lat_longs = []
+                temp_lat_longs.append(float(geo_info.longitude))
+                temp_lat_longs.append(float(geo_info.latitude))
+                state_lat_longs.append(temp_lat_longs)
+
+            print "sll:", state_lat_longs
+            poly = Polygon(tuple(state_lat_longs))
+            print "poly:", poly
+            point = Point(longitude, latitude)
+            print "point:", point
+
+            # Translate to spherical Mercator or Google projection
+            poly_g = transform(project, poly)
+            p1_g = transform(project, point)
+            print "poly_g.contains(p1_g)", poly_g.contains(p1_g)
+            if poly_g.contains(p1_g):
+                raise forms.ValidationError("Latitude, longitude specified doesn't exist within selected state.")
+            return self.cleaned_data
 
 
 # ********************************** Device Extra Fields Form ***************************************
