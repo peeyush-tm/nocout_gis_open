@@ -68,7 +68,7 @@
                                 <input type="password" class="form-control" name="password">
                             </div>
                             <div class="form-actions">
-                                <button type="button" class="btn btn-danger">Submit</button>
+                                <button type="submit" class="btn btn-danger">Submit</button>
                             </div>
                         </form>
                     </div>
@@ -136,7 +136,7 @@
             }
         });
 
-        $("button").on("click", function () {
+        $("#login_form").on("submit", function (event) {
             $.ajax({url: "/auth/",
                        type: "POST",
                        data: $("#login_form").serialize(true),
@@ -145,7 +145,7 @@
                            if (data.data.objects.dialog) {
                                bootbox.dialog({
                                                   message: "This account is active on a different computer, " +
-                                                           "Press continue login with another account or kill all other sessions and continue with this machine",
+                                                           "Press continue login with another account or kill all other sessions and continue with this login",
                                                   title: "Login Alert",
                                                   buttons: {
                                                       success: {
@@ -188,6 +188,7 @@
                            }//else if end
                        }//success
                    });//Ajax
+            return false;
         });//onclick
     });
 </script>

@@ -22,7 +22,7 @@ def dialog_action(request):
         return HttpResponse(json.dumps(result), mimetype='application/json')
 
     elif request.POST.get('action') == 'logout':
-        auth.logout(request, request.user)
+        auth.logout(request)
         result={
                 "success": 1,     # 0 - fail, 1 - success, 2 - exception
                 "message": "Success/Fail message.",

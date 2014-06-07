@@ -14,5 +14,3 @@ class LoginRequiredMiddleware:
             path = request.path_info.lstrip('/')
             if not(path in settings.LOGIN_EXEMPT_URLS):
                 return HttpResponseRedirect(settings.LOGIN_URL)
-
-

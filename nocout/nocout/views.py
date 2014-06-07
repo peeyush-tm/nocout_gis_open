@@ -94,5 +94,5 @@ def auth_view(request):
 
 def logout(request):
     auth.logout(request)
-    return render(request,'nocout/login.html')
+    return HttpResponseRedirect(settings.LOGIN_URL)#render(request,'nocout/login.html')
 
