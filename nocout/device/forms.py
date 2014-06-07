@@ -7,6 +7,7 @@ import pyproj
 from shapely.geometry import Polygon, Point
 from shapely.ops import transform
 from functools import partial
+from django.forms.util import ErrorList
 
 
 # *************************************** Device Form ***********************************************
@@ -90,9 +91,19 @@ class DeviceForm(forms.ModelForm):
             'device_group': MultipleToSingleSelectionWidget,
         }
 
+    def clean_latitude(self):
+        latitude = self.data['latitude']
+        if latitude[2] != '.':
+            raise forms.ValidationError("Latitude must be a float value.")
+        return self.cleaned_data.get('latitude')
+
+    def clean_longitude(self):
+        longitude = self.data['longitude']
+        if longitude[2] != '.':
+            raise forms.ValidationError("Longitude must be a float value.")
+        return self.cleaned_data.get('longitude')
 
     def clean(self):
-        cleaned_data = super(DeviceForm, self).clean()
         latitude = self.cleaned_data.get('latitude')
         longitude = self.cleaned_data.get('longitude')
         state = self.cleaned_data.get('state')
@@ -113,8 +124,8 @@ class DeviceForm(forms.ModelForm):
             state_lat_longs = []
             for geo_info in state_geo_info:
                 temp_lat_longs = []
-                temp_lat_longs.append(float(geo_info.longitude))
-                temp_lat_longs.append(float(geo_info.latitude))
+                temp_lat_longs.append(geo_info.longitude)
+                temp_lat_longs.append(geo_info.latitude)
                 state_lat_longs.append(temp_lat_longs)
 
             print "sll:", state_lat_longs
@@ -127,9 +138,9 @@ class DeviceForm(forms.ModelForm):
             poly_g = transform(project, poly)
             p1_g = transform(project, point)
             print "poly_g.contains(p1_g)", poly_g.contains(p1_g)
-            if poly_g.contains(p1_g):
-                raise forms.ValidationError("Latitude, longitude specified doesn't exist within selected state.")
-            return self.cleaned_data
+            if not poly_g.contains(p1_g):
+                self._errors["latitude"] = ErrorList([u"Latitude, longitude specified doesn't exist within selected state."])
+        return self.cleaned_data
 
 
 # ********************************** Device Extra Fields Form ***************************************
