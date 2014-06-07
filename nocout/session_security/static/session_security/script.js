@@ -16,8 +16,8 @@ if (window.yourlabs == undefined) window.yourlabs = {};
 //   leave a page with unsaved form data. Setting this will enable an
 //   onbeforeunload handler that doesn't block expire().
 // - events: a list of event types to watch for activity updates.
-yourlabs.SessionSecurity = function(options) {
-    
+yourlabs.SessionSecurity = function (options) {
+
     var that = this;
     /*Assign the default value to the timer*/
     timer = 10;
@@ -31,28 +31,28 @@ yourlabs.SessionSecurity = function(options) {
 
     // Events that would trigger an activity
     this.events = ['mousemove', 'scroll', 'keyup', 'click'];
-   
+
     // Merge the options dict here.
     $.extend(this, options);
 
     /*Bind the click event on 'Continue' button.*/
-    $("#sessionContinue").click(function(e) {
+    $("#sessionContinue").click(function (e) {
 
         that.continueFunction(e);
     });
     /*Bind the click event on 'logoutFunction' button.*/
-    $("#sessionLogout").click(function(e) {
+    $("#sessionLogout").click(function (e) {
 
         that.logoutFunction(e);
     });
 
     // Bind activity events to update this.lastActivity.
-    for(var i=0; i<this.events.length; i++) {
+    for (var i = 0; i < this.events.length; i++) {
         $(document)[this.events[i]]($.proxy(this.activity, this))
     }
-   
+
     // Initialize timers.
-    this.apply("")
+    this.apply("");
 
     if (this.confirmFormDiscard) {
         window.onbeforeunload = $.proxy(this.onbeforeunload, this);
@@ -64,22 +64,27 @@ yourlabs.SessionSecurity = function(options) {
 yourlabs.SessionSecurity.prototype = {
     // Called when there has been no activity for more than expireAfter
     // seconds.
-    expire: function() {
+    expire: function () {
         this.expired = true;
-        window.location.reload();
+        setTimeout(window.location.reload(), 1000);
     },
-    
+
     // Called when there has been no activity for more than warnAfter
     // seconds.
-    showWarning: function() {
+    showWarning: function (countdown) {
 
         this.$warning.fadeIn('slow');
-        this.startCountdown(timer);
+        if (countdown) {
+            this.startCountdown(timer);
+        }
+        else {
+            this.startCountdown(0);
+        }
     },
-    
+
     // Called to hide the warning, for example if there has been activity on
     // the server side - in another browser tab.
-    hideWarning: function() {
+    hideWarning: function () {
 
         /*Reset the timer counter to initial value*/
         timer = 10;
@@ -89,12 +94,11 @@ yourlabs.SessionSecurity.prototype = {
     },
 
     // Called by click, scroll, mousemove, keyup.
-    activity: function() {
+    activity: function () {
 
 
         var isVisible = $("#session_security_warning").attr("style");
-        if(isVisible != undefined)
-        {
+        if (isVisible != undefined) {
             this.lastActivity = new Date();
             if (this.$warning.is(':visible')) {
                 // Inform the server that the user came back manually, this should
@@ -102,12 +106,12 @@ yourlabs.SessionSecurity.prototype = {
                 this.ping();
             }
             // this.hideWarning();
-        }        
+        }
     },
 
     // Hit the PingView with the number of seconds since last activity.
-    ping: function() {
-        var idleFor = Math.floor((new Date() - this.lastActivity) / 1000);        
+    ping: function () {
+        var idleFor = Math.floor((new Date() - this.lastActivity) / 1000);
         $.ajax(this.pingUrl, {
             data: {idleFor: idleFor},
             cache: false,
@@ -121,7 +125,7 @@ yourlabs.SessionSecurity.prototype = {
     },
 
     // Callback to process PingView response.
-    pong: function(data) {
+    pong: function (data) {
         if (data == 'logout') return this.expire();
 
         this.lastActivity = new Date();
@@ -130,20 +134,26 @@ yourlabs.SessionSecurity.prototype = {
     },
 
     // Apply warning or expiry, setup next ping
-    apply: function(keyVal) {
+    apply: function (keyVal) {
+        //we have single user single session
+        // this change ensures that if somebidy else logs in
+        // the user is logged off and redirected
+
+        if (keyVal.statusText === "error") {
+            this.showWarning(false);
+        }
+
         // Cancel timeout if any, since we're going to make our own
-        clearTimeout(this.timeout);        
+        clearTimeout(this.timeout);
         var idleFor = Math.floor((new Date() - this.lastActivity) / 1000);
 
         if (idleFor >= this.expireAfter) {
             return this.expire();
         } else if (idleFor >= this.warnAfter) {
-
-            this.showWarning();
             nextPing = 5; //this.expireAfter - idleFor;
             timer = this.expireAfter - idleFor;
-        } else if(keyVal == 'logoutClicked')
-        {
+            this.showWarning(true);
+        } else if (keyVal == 'logoutClicked') {
             return this.expire();
         } else {
             // this.hideWarning();
@@ -155,55 +165,53 @@ yourlabs.SessionSecurity.prototype = {
     },
 
     // onbeforeunload handler.
-    onbeforeunload: function(e) {
+    onbeforeunload: function (e) {
         if ($('form[data-dirty]').length && !this.expired) {
             return this.confirmFormDiscard;
         }
     },
 
     // When an input change, set data-dirty attribute on its form.
-    formChange: function(e) {
+    formChange: function (e) {
         $(e.target).closest('form').attr('data-dirty', true);
     },
 
     // When a form is submited, unset data-dirty attribute.
-    formSubmit: function(e) {
+    formSubmit: function (e) {
         $(e.target).removeAttr('data-dirty');
     },
     /*Triggers when 'Continue' button is clicked*/
-    continueFunction: function(e) {
-        
+    continueFunction: function (e) {
+
         this.apply("");
         this.hideWarning();
     },
     /*Triggers when 'Logout' button is clicked*/
-    logoutFunction: function(e) {
+    logoutFunction: function (e) {
 
         var currentUrl = window.location.href.split("/");
         currentUrl[3] = "logout";
-        
+
         window.location.href = currentUrl.join("/");
     },
     /*To show the countdown on the dialog*/
-    startCountdown : function(timer)
-    {
-        if(timer > 0)
-        {
-            $("#counterVal > h1").html(timer+' <i class="fa fa-clock-o">&nbsp;</i>');
+    startCountdown: function (timer) {
+        if (timer > 0) {
+            $("#counterVal > h1").html(timer + ' <i class="fa fa-clock-o">&nbsp;</i>');
 
             /*Save the current point reference for further use*/
             var current = this;
             /*Time out of 1 sec*/
-            setTimeout(function() {
+            setTimeout(function () {
 
 //                timer = timer - 1;
                 /*Recursive Calling*/
 //                current.startCountdown(timer);
-            },1000);
+            }, 1000);
         }
-        else
-        {
-            return;
+        else {
+            $("#counterVal > h1").html("Session has expired, due to inactivity or this account has been logged in from a new location.");
+            this.expire();
         }
     }
-}
+};
