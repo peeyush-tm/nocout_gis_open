@@ -1,10 +1,11 @@
 import json
 from actstream import action
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.contrib import auth
 from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.models import User
+from nocout import settings
 from nocout.settings import MAX_USER_LOGIN_LIMIT
 from session_management.models import Visitor
 
@@ -31,7 +32,8 @@ def auth_view(request):
         password = request.POST.get('password', '')
         user = auth.authenticate(username=username, password=password)
 
-        if user is not None:
+        if user is not None and user.is_active:
+
             auth.login(request, user)
 
             key_from_cookie = request.session.session_key
