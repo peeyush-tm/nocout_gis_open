@@ -13,3 +13,4 @@ class SiteInstanceForm(forms.ModelForm):
     class Meta:
         model = SiteInstance
         fields = ('name', 'alias', 'machine', 'site_ip', 'live_status_tcp_port', 'description')
+

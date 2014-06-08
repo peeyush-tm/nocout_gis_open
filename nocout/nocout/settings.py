@@ -127,7 +127,6 @@ MIDDLEWARE_CLASSES = (
     'session_security.middleware.SessionSecurityMiddleware',
     'nocout.middlewares.LoginRequiredMiddleware.LoginRequiredMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
-    'preventconcurrentlogins.middleware.PreventConcurrentLoginsMiddleware',
     #'audit_log.middleware.UserLoggingMiddleware',
     #'audit_log.middleware.AuditlogMiddleware',
     # Uncomment the next line for simple clickjacking protection:
@@ -173,7 +172,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'actstream',
     'debug_toolbar',
-    'preventconcurrentlogins',
+    'session_management',
     'corsheaders',
     'actstream',
     'activity_stream',

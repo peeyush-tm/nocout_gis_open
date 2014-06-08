@@ -15,10 +15,10 @@ It provides sensible defaults so you could start with just::
 {% if request.user.is_authenticated %}
 
     {# The modal dialog stylesheet, it's pretty light so it should be easy to hack #}
-    <link rel="stylesheet" type="text/css" href="{% static 'session_security/style.css' %}"></link>
+    <link rel="stylesheet" type="text/css" href="{% static 'session_security/style.css' %}" />
 
     {# Include the template that actually contains the modal dialog #}
-    {% include 'session_security/dialog.html' %}
+    {#{% include 'session_security/dialog.html' %}#}
 
     {# Load SessionSecurity javascript 'class', jquery should be loaded - by you - at this point #}
     <script type="text/javascript" src="{% static 'session_security/script.js' %}"></script>
