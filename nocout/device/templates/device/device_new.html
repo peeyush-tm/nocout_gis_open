@@ -216,3 +216,11 @@
         });
     </script>
 {% endblock %}
+{% block load_js %}
+<script>
+    jQuery(document).ready(function () {
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+    });
+</script>
+{% endblock %}

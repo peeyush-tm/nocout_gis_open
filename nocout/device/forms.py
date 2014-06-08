@@ -28,6 +28,8 @@ class DeviceForm(forms.ModelForm):
                                       required=False)
     city = IntReturnModelChoiceField(queryset=City.objects.all(),
                                      required=False)
+    #latitude = forms.CharField( widget=forms.TextInput(attrs={'type':'text'}))
+    #longitude = forms.CharField( widget=forms.TextInput(attrs={'type':'text'}))
 
     def __init__(self, *args, **kwargs):
         # setting foreign keys field label
@@ -61,6 +63,8 @@ class DeviceForm(forms.ModelForm):
         self.fields['state'].widget.choices = self.fields['state'].choices
         self.fields['city'].empty_label = "Select City...."
         self.fields['city'].widget.choices = self.fields['city'].choices
+        #self.fields['latitude'].widget.attrs['data-mask'] = '99.99999999999999999999'
+        #self.fields['longitude'].widget.attrs['data-mask'] = '99.99999999999999999999'
 
         # to redisplay the extra fields form with already filled values we follow these steps:
         # 1. check that device type exist in 'kwargs' or not
@@ -94,33 +98,27 @@ class DeviceForm(forms.ModelForm):
     def clean_latitude(self):
         latitude = self.data['latitude']
         if latitude[2] != '.':
-            raise forms.ValidationError("Latitude must be a float value.")
+            raise forms.ValidationError("Please enter correct value for latitude.")
         return self.cleaned_data.get('latitude')
 
     def clean_longitude(self):
         longitude = self.data['longitude']
         if longitude[2] != '.':
-            raise forms.ValidationError("Longitude must be a float value.")
+            raise forms.ValidationError("Please enter correct value for longitude.")
         return self.cleaned_data.get('longitude')
 
     def clean(self):
         latitude = self.cleaned_data.get('latitude')
         longitude = self.cleaned_data.get('longitude')
         state = self.cleaned_data.get('state')
-        print "***********************************"
-        print "Latitude: ", latitude
-        print "Longitude: ", longitude
-        print "State: ", state
 
         if latitude and longitude and state:
             project = partial(
             pyproj.transform,
             pyproj.Proj(init='epsg:4326'),
             pyproj.Proj('+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'))
-            print "project", project
 
             state_geo_info = StateGeoInfo.objects.filter(state_id=state)
-            print "sgi", state_geo_info
             state_lat_longs = []
             for geo_info in state_geo_info:
                 temp_lat_longs = []
@@ -128,16 +126,12 @@ class DeviceForm(forms.ModelForm):
                 temp_lat_longs.append(geo_info.latitude)
                 state_lat_longs.append(temp_lat_longs)
 
-            print "sll:", state_lat_longs
             poly = Polygon(tuple(state_lat_longs))
-            print "poly:", poly
             point = Point(longitude, latitude)
-            print "point:", point
 
             # Translate to spherical Mercator or Google projection
             poly_g = transform(project, poly)
             p1_g = transform(project, point)
-            print "poly_g.contains(p1_g)", poly_g.contains(p1_g)
             if not poly_g.contains(p1_g):
                 self._errors["latitude"] = ErrorList([u"Latitude, longitude specified doesn't exist within selected state."])
         return self.cleaned_data
