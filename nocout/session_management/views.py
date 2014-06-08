@@ -22,7 +22,14 @@ def dialog_action(request):
         return HttpResponse(json.dumps(result), mimetype='application/json')
 
     elif request.POST.get('action') == 'logout':
-        auth.logout(request, request.user)
+        #since we are having auto-logoff functionality with us as well
+        #we need to check for session parameter _session_security
+        #_session_security is used by session security to judge the
+        #auto logoff of the user
+        if '_session_security' in request.session:
+            del request.session["_session_security"]
+
+        auth.logout(request)
         result={
                 "success": 1,     # 0 - fail, 1 - success, 2 - exception
                 "message": "Success/Fail message.",
