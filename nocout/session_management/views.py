@@ -1,4 +1,5 @@
 import json
+from django.contrib.auth import logout
 from django.contrib.sessions.models import Session
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponse
@@ -151,3 +152,39 @@ def change_user_status(request):
                 }
 
     return HttpResponse(json.dumps(result), mimetype='application/json')
+
+
+def dialog_for_page_refresh(request):
+
+    dialog_confirmation=False
+    if not request.user.is_active: dialog_confirmation=True
+    result={
+            "success": 1,     # 0 - fail, 1 - success, 2 - exception
+            "message": "Success/Fail message.",
+            "data": {
+                "meta": {},
+                "objects": {
+                     'dialog':dialog_confirmation
+                            }
+                    }
+            }
+
+    return HttpResponse(json.dumps(result), mimetype='application/json')
+
+
+def dialog_expired_logout_user(request):
+
+    logout(request)
+    result={
+            "success": 1,     # 0 - fail, 1 - success, 2 - exception
+            "message": "Success/Fail message.",
+            "data": {
+                "meta": {},
+                "objects": {
+                     'refresh':True
+                            }
+                    }
+            }
+
+    return HttpResponse(json.dumps(result), mimetype='application/json')
+
