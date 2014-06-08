@@ -97,13 +97,13 @@ class DeviceForm(forms.ModelForm):
 
     def clean_latitude(self):
         latitude = self.data['latitude']
-        if latitude[2] != '.':
+        if latitude!='' and latitude[2] != '.':
             raise forms.ValidationError("Please enter correct value for latitude.")
         return self.cleaned_data.get('latitude')
 
     def clean_longitude(self):
         longitude = self.data['longitude']
-        if longitude[2] != '.':
+        if longitude!='' and longitude[2] != '.':
             raise forms.ValidationError("Please enter correct value for longitude.")
         return self.cleaned_data.get('longitude')
 
