@@ -12,14 +12,15 @@ Installation Steps:
 2. Python Virtualenv (sudo aptitude install python-virtualenv)
 3. OMDdistro
 4. Install MariaDB or MySQL
-    1. If the installation is with mysql : sudo aptitude install mysqlclient-dev mysqlclient-dev
+    1. If the installation is with mysql : sudo aptitude install mysqlclient-dev libmysqlclient-dev
     2. If the installation is with mariadb : sudo aptitude install mariadbclient-dev libmariadbclient-dev
 5. Install python-dev - sudo aptitude install python-dev 
 6. Install phpmyadmin
 7. Create a database named : nocout_dev
 8. Install graphviz -  sudo aptitude install graphviz
-9. Install Python Wrapper to graphwiz - sudo aptitude install python-pygraphviz
-10. Install Shared liberaries graphviz & python -  sudo aptitude install libgraphviz-dev
+9. Install Python Wrapper to graphviz - sudo aptitude install python-pygraphviz
+10. Install Shared libraries graphviz & python -  sudo aptitude install libgraphviz-dev
+12. Install Geometry Engine, Open Source libraries - sudo aptitude install libgeos-dev
 
 **Setup Enviornment**
 
@@ -38,4 +39,3 @@ Installation Steps:
 2. Run syncdb : python manage.py syncdb --noinput
 3. Run migrations : python manage.py migrate
 4. Run the data loading fixtures : Load Commands :  python manage.py loaddata fixtures/<FIXTURE NAME>.json
-

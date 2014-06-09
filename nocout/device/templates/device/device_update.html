@@ -14,6 +14,7 @@
                         </div>
                         <div class="box-body">
                             <br/>
+
                             <form action="" method="post" class="form-horizontal" role="form">{% csrf_token %}
                                 <div class="col-md-12">
                                     <!--Form 1-->
@@ -23,6 +24,7 @@
                                                 <div class="form-group">
                                                     <label for="{{ field.id_for_label }}"
                                                            class="col-sm-5 control-label">{{ field.label }}</label>
+
                                                     <div class="col-sm-7">
                                                         {{ field }} {{ field.errors }}
                                                     </div>
@@ -39,6 +41,7 @@
                                                     <div class="form-group">
                                                         <label for="{{ field.id_for_label }}"
                                                                class="col-sm-5 control-label">{{ field.label }}</label>
+
                                                         <div class="col-sm-7">
                                                             {{ field }} {{ field.errors }}
                                                         </div>
@@ -53,9 +56,14 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <div class="col-sm-offset-5 col-sm-7">
-                                                <button type="submit" class="btn btn-success"><i class="fa fa-refresh"></i> Update</button>
+                                                <button type="submit" class="btn btn-success"><i
+                                                        class="fa fa-refresh"></i> Update
+                                                </button>
                                                 &nbsp;
-                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/device/')"><i class="fa fa-times"></i> Cancel</button>
+                                                <button type="reset" class="btn btn-danger"
+                                                        onclick="window.location.replace('/device/')"><i
+                                                        class="fa fa-times"></i> Cancel
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -88,22 +96,86 @@
             // 1. When update form is loaded first time
             // 2. When device type choice is modified and again changed to previous one, so to pop up previous
             //    field values form database
-            if ($("#extra_fields div").length == 0){
-                if ($('#id_device_type').val()){
+            if ($("#extra_fields div").length == 0) {
+                if ($('#id_device_type').val()) {
                     Dajaxice.device.device_extra_fields_update(Dajax.process, {'device_type': $('#id_device_type').val(), 'device_name': $('#id_device_name').val()});
                 }
             }
 
+            // update 'device technology' if it is already selected
+            // i.e. after validation if form is invalid
+            if ($('#id_device_technology').val()) {
+                Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
+            }
+
+            // update 'device vendor' if it is already selected corresponding to 'device technology'
+            // i.e. after validation if form is invalid
+            // or just empty the selection menu
+            if (!$('#id_device_vendor').val()) {
+                $("#id_device_vendor").empty();
+            }
+            else {
+                Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});
+            }
+
+            // update 'device model' if it is already selected corresponding to 'device vendor'
+            // i.e. after validation if form is invalid
+            // or just empty the selection menu
+            if (!$('#id_device_model').val()) {
+                $("#id_device_model").empty();
+            }
+            else {
+                Dajaxice.device.update_type(Dajax.process, {'option': $('#id_device_model').val()});
+            }
+
+            // update 'device type' if it is already selected corresponding to 'device model'
+            // i.e. after validation if form is invalid
+            // or just empty the selection menu
+            if (!$('#id_device_type').val()) {
+                $("#id_device_type").empty();
+            }
+
+            // if none of the value from 'country' is selected than empty 'state' & 'city' selection too.
+            // or update value of 'state' corresponding to the selected 'country'
+            if ($("#id_country").val() == "") {
+                $("#id_state").empty();
+                $("#id_city").empty();
+            }
+            else {
+                Dajaxice.device.update_states_after_invalid_form(Dajax.process, {'option': $("#id_country").val(), 'state_id': $("#id_state").val()});
+            }
+
+            // if 'state' has no value than empty 'city' seletion menu
+            // or update 'city' corresponding to selected 'state'
+            if (!$("#id_state").val()) {
+                $("#id_city").empty();
+            }
+            else {
+                Dajaxice.device.update_cities_after_invalid_form(Dajax.process, {'option': $("#id_state").val(), 'city_id': $("#id_city").val()});
+            }
         });
 
         // update 'device vendor' on selecting 'device technology'
         $("#id_device_technology").change(function () {
-            Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
+            if ($("#id_device_technology").val()) {
+                Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
+                $("#id_device_model").empty();
+                $("#id_device_type").empty();
+                $("#extra_fields").empty();
+            }
+            else {
+                $("#id_device_vendor").empty();
+                $("#id_device_model").empty();
+                $("#id_device_type").empty();
+                $("#extra_fields").empty();
+            }
         });
 
         // update 'device model' on selecting 'device vendor'
         $("#id_device_vendor").change(function () {
             Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});
+            $("#id_device_type").empty();
+            $("#extra_fields").empty();
         }).click(function () {
             if ($("#id_device_vendor").length == 1) {
                 Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});
@@ -126,6 +198,23 @@
             if ($("#id_device_type").length == 1) {
                 Dajaxice.device.device_extra_fields_update(Dajax.process, {'device_type': $('#id_device_type').val(), 'device_name': $('#id_device_name').val()});
             }
+        });
+
+        // update 'states' on selecting 'country'
+        $("#id_country").change(function () {
+            if ($("#id_country").val() != "") {
+                Dajaxice.device.update_states(Dajax.process, {'option': $("#id_country").val()});
+                $("#id_city").empty();
+            }
+            else {
+                $("#id_state").empty();
+                $("#id_city").empty();
+            }
+        });
+
+        // update 'cities' on selecting 'state'
+        $("#id_state").change(function () {
+            Dajaxice.device.update_cities(Dajax.process, {'option': $("#id_state").val()});
         });
     </script>
 {% endblock %}

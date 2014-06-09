@@ -1,7 +1,13 @@
 from django import forms
-from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType
+from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
+    Country, State, City, StateGeoInfo
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
 from device.models import DeviceTypeFields
+import pyproj
+from shapely.geometry import Polygon, Point
+from shapely.ops import transform
+from functools import partial
+from django.forms.util import ErrorList
 
 
 # *************************************** Device Form ***********************************************
@@ -16,6 +22,14 @@ class DeviceForm(forms.ModelForm):
                                              required=False)
     device_type = IntReturnModelChoiceField(queryset=DeviceType.objects.all(),
                                             required=False)
+    country = IntReturnModelChoiceField(queryset=Country.objects.all(),
+                                        required=False)
+    state = IntReturnModelChoiceField(queryset=State.objects.all(),
+                                      required=False)
+    city = IntReturnModelChoiceField(queryset=City.objects.all(),
+                                     required=False)
+    #latitude = forms.CharField( widget=forms.TextInput(attrs={'type':'text'}))
+    #longitude = forms.CharField( widget=forms.TextInput(attrs={'type':'text'}))
 
     def __init__(self, *args, **kwargs):
         # setting foreign keys field label
@@ -25,10 +39,32 @@ class DeviceForm(forms.ModelForm):
         self.base_fields['device_vendor'].label = 'Device Vendor'
         self.base_fields['device_model'].label = 'Device Model'
         self.base_fields['device_type'].label = 'Device Type'
-        initial = kwargs.setdefault('initial',{})
-        initial['device_group'] = kwargs['instance'].device_group.values_list('pk', flat=True)[0] if kwargs['instance'] else []
+
+        initial = kwargs.setdefault('initial', {})
+        initial['device_group'] = kwargs['instance'].device_group.values_list('pk', flat=True)[0] if kwargs[
+            'instance'] else []
 
         super(DeviceForm, self).__init__(*args, **kwargs)
+
+        # setting select menus default values which is by default '---------'
+        self.fields['site_instance'].empty_label = "Select Site Instance...."
+        self.fields['site_instance'].widget.choices = self.fields['site_instance'].choices
+        self.fields['device_technology'].empty_label = "Select Device Technology...."
+        self.fields['device_technology'].widget.choices = self.fields['device_technology'].choices
+        self.fields['device_vendor'].empty_label = "Select Device Vendor...."
+        self.fields['device_vendor'].widget.choices = self.fields['device_vendor'].choices
+        self.fields['device_model'].empty_label = "Select Device Model...."
+        self.fields['device_model'].widget.choices = self.fields['device_model'].choices
+        self.fields['device_type'].empty_label = "Select Device Type...."
+        self.fields['device_type'].widget.choices = self.fields['device_type'].choices
+        self.fields['country'].empty_label = "Select Country...."
+        self.fields['country'].widget.choices = self.fields['country'].choices
+        self.fields['state'].empty_label = "Select State...."
+        self.fields['state'].widget.choices = self.fields['state'].choices
+        self.fields['city'].empty_label = "Select City...."
+        self.fields['city'].widget.choices = self.fields['city'].choices
+        #self.fields['latitude'].widget.attrs['data-mask'] = '99.99999999999999999999'
+        #self.fields['longitude'].widget.attrs['data-mask'] = '99.99999999999999999999'
 
         # to redisplay the extra fields form with already filled values we follow these steps:
         # 1. check that device type exist in 'kwargs' or not
@@ -50,7 +86,7 @@ class DeviceForm(forms.ModelForm):
             if field.widget.attrs.has_key('class'):
                 field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
         model = Device
@@ -58,6 +94,48 @@ class DeviceForm(forms.ModelForm):
         widgets = {
             'device_group': MultipleToSingleSelectionWidget,
         }
+
+    def clean_latitude(self):
+        latitude = self.data['latitude']
+        if latitude!='' and len(latitude)>2 and latitude[2] != '.':
+            raise forms.ValidationError("Please enter correct value for latitude.")
+        return self.cleaned_data.get('latitude')
+
+    def clean_longitude(self):
+        longitude = self.data['longitude']
+        if longitude!='' and len(longitude)>2 and longitude[2] != '.':
+            raise forms.ValidationError("Please enter correct value for longitude.")
+        return self.cleaned_data.get('longitude')
+
+    def clean(self):
+        latitude = self.cleaned_data.get('latitude')
+        longitude = self.cleaned_data.get('longitude')
+        state = self.cleaned_data.get('state')
+
+        if latitude and longitude and state:
+            project = partial(
+            pyproj.transform,
+            pyproj.Proj(init='epsg:4326'),
+            pyproj.Proj('+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'))
+
+            state_geo_info = StateGeoInfo.objects.filter(state_id=state)
+            state_lat_longs = []
+            for geo_info in state_geo_info:
+                temp_lat_longs = []
+                temp_lat_longs.append(geo_info.longitude)
+                temp_lat_longs.append(geo_info.latitude)
+                state_lat_longs.append(temp_lat_longs)
+
+            poly = Polygon(tuple(state_lat_longs))
+            point = Point(longitude, latitude)
+
+            # Translate to spherical Mercator or Google projection
+            poly_g = transform(project, poly)
+            p1_g = transform(project, point)
+            if not poly_g.contains(p1_g):
+                self._errors["latitude"] = ErrorList([u"Latitude, longitude specified doesn't exist within selected state."])
+        return self.cleaned_data
+
 
 # ********************************** Device Extra Fields Form ***************************************
 
@@ -69,7 +147,8 @@ class DeviceTypeFieldsForm(forms.ModelForm):
             if field.widget.attrs.has_key('class'):
                 field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         model = DeviceTypeFields
         fields = ('field_name', 'field_display_name', 'device_type')
@@ -82,10 +161,11 @@ class DeviceTypeFieldsUpdateForm(forms.ModelForm):
             if field.widget.attrs.has_key('class'):
                 field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         model = DeviceTypeFields
-        fields = ('field_name', 'field_display_name','device_type')
+        fields = ('field_name', 'field_display_name', 'device_type')
 
 
 # **************************************** Device Technology ****************************************
@@ -98,7 +178,8 @@ class DeviceTechnologyForm(forms.ModelForm):
             if field.widget.attrs.has_key('class'):
                 field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         model = DeviceTechnology
         fields = ('name', 'alias', 'device_vendors')
@@ -114,7 +195,7 @@ class DeviceVendorForm(forms.ModelForm):
             if field.widget.attrs.has_key('class'):
                 field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
         model = DeviceVendor
@@ -131,7 +212,8 @@ class DeviceModelForm(forms.ModelForm):
             if field.widget.attrs.has_key('class'):
                 field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         model = DeviceModel
         fields = ('name', 'alias', 'device_types')
@@ -147,7 +229,8 @@ class DeviceTypeForm(forms.ModelForm):
             if field.widget.attrs.has_key('class'):
                 field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         model = DeviceType
         fields = ('name', 'alias')
