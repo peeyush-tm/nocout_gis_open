@@ -68,3 +68,8 @@ span.dept {
   font-size: 18px;
   margin: 14px 0 0 10px;
 }
+
+/*CSS for Tabs on the widget header (To show the widget setting menu icons)*/
+.box .header-tabs .nav-tabs {
+  margin-right: 35px;
+}
