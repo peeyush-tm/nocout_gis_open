@@ -78,7 +78,7 @@ def auth_view(request):
             }
         }
 
-    elif not user.is_active:
+    elif user is not None and not user.is_active:
         action.send(User.objects.get(pk=1), verb=u'a locked user is loggedin using username : %s from server name: %s, '
                      u'server port: %s' %(username, request.META.get('SERVER_NAME'), request.META.get('SERVER_PORT')))
 
