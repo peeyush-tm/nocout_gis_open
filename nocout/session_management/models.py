@@ -21,7 +21,6 @@ class Visitor(models.Model):
 
 def session_handler(sender, **kwargs):
     Visitor.objects.filter(session_key = kwargs.get('instance').session_key ).delete()
-    logger.info("Deleted session_key %s from the Visitor table"%( kwargs.get('instance').session_key ))
 
 
 pre_delete.connect(session_handler, sender=Session)

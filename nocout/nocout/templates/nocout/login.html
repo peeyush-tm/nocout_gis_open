@@ -19,6 +19,8 @@
     <link rel="stylesheet" type="text/css" href={% static "css/animatecss/animate.min.css" %} />
     <!-- FONTS -->
     <link rel="stylesheet" type="text/css" href={% static "css/theme_fonts.css" %} />
+    <!-- Gritter Notification -->
+    <link rel="stylesheet" type="text/css" href={% static "js/gritter/css/jquery.gritter.css" %} />
     <!--JQUERY-->
     <script src={% static "js/jquery/jquery-1.11.1.min.js" %}></script>
 </head>
@@ -90,6 +92,9 @@
 <script type="text/javascript" src={% static "js/uniform/jquery.uniform.min.js" %}></script>
 <!-- BOOTBOX -->
 <script type="text/javascript" src={% static "js/bootbox/bootbox.min.js" %}></script>
+<!-- Gritter Notification -->
+<script type="text/javascript" src={% static "js/gritter/js/jquery.gritter.min.js" %}></script>
+
 <!-- CUSTOM SCRIPT -->
 <script type="text/javascript" src={% static "js/ajax_csrf.js" %}></script>
 <!-- AJAX CSRF -->
@@ -100,16 +105,17 @@
         App.init(); //Initialise plugins and elements
     });
 
-        $("#login_form").on("submit", function (event) {
-            $.ajax({url: "/auth/",
-                       type: "POST",
-                       data: $("#login_form").serialize(true),
-                       dataType: "json",
-                       success: function (data) {
+    $("#login_form").on("submit", function (event) {
+        $.ajax({url: "/auth/",
+                   type: "POST",
+                   data: $("#login_form").serialize(true),
+                   dataType: "json",
+                   success: function (data) {
+                       if (data.success == 1) {
                            if (data.data.objects.dialog) {
                                bootbox.dialog({
                                                   message: "This account is active on a different computer, " +
-                                                           "Press continue login with another account or kill all other sessions and continue with this login",
+                                                          "Press continue login with another account or kill all other sessions and continue with this login",
                                                   title: "Login Alert",
                                                   buttons: {
                                                       success: {
@@ -146,15 +152,28 @@
                                                       }//buttonsuccess
                                                   } //button
                                               });//button dialog
-
-                           }//if end
-                           else if (data.data.objects.url) {
-                               window.location.replace(data.data.objects.url)
-                           }//else if end
-                       }//success
-                   });//Ajax
-            return false;
-        });//onclick
+                           }// if end for data dialogue
+                           else {
+                               window.location.replace(data.data.objects.url);
+                           }
+                       }//if end
+                       else if (data.success == 0) {
+                           var unique_gritter = $.gritter.add({
+                                                                  title: "Invalid Login Credentials",
+                                                                  text: data.message,
+                                                                  sticky: true,
+                                                                  after_close: function () {
+                                                                      $.gritter.removeAll();
+                                                                  }
+                                                              });
+                       }//else if end
+                       else {
+                           window.location.replace(data.data.objects.url);
+                       }
+                   }//success
+               });//Ajax
+        return false;
+    });//onclick
 
 </script>
 <!-- /JAVASCRIPTS -->

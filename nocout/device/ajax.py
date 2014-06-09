@@ -2,20 +2,20 @@ import json
 from dajax.core import Dajax
 from dajaxice.decorators import dajaxice_register
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
-    DeviceTypeFieldsValue
+    DeviceTypeFieldsValue, Country, State, City
+import logging
+logger=logging.getLogger(__name__)
 
 
 # updating vendor corresponding to the selected technology
 @dajaxice_register
 def update_vendor(request, option):
     dajax = Dajax()
-    tech = DeviceTechnology.objects.filter(id=option)[0]
+    tech = DeviceTechnology.objects.get(pk=int(option))
     vendors = tech.device_vendors.all()
     out = []
     for vendor in vendors:
-        out.append("<option value='%d'>%s - %d</option>"
-                   % (int(vendor.id), vendor.name, int(vendor.id)))
-
+        out.append("<option value='%d'>%s</option>" % (vendor.id, vendor.name))
     dajax.assign('#id_device_vendor', 'innerHTML', ''.join(out))
     return dajax.json()
 
@@ -24,12 +24,11 @@ def update_vendor(request, option):
 @dajaxice_register
 def update_model(request, option):
     dajax = Dajax()
-    vendor = DeviceVendor.objects.filter(id=option)[0]
+    vendor = DeviceVendor.objects.get(pk=int(option))
     models = vendor.device_models.all()
     out = []
     for model in models:
-        out.append("<option value='%d'>%s - %d</option>"
-                   % (int(model.id), model.name, int(model.id)))
+        out.append("<option value='%d'>%s</option>" % (model.id, model.name))
 
     dajax.assign('#id_device_model', 'innerHTML', ''.join(out))
     return dajax.json()
@@ -39,13 +38,11 @@ def update_model(request, option):
 @dajaxice_register
 def update_type(request, option):
     dajax = Dajax()
-    model = DeviceModel.objects.filter(id=option)[0]
+    model = DeviceModel.objects.get(pk=int(option))
     types = model.device_types.all()
     out = []
     for dtype in types:
-        out.append("<option value='%d'>%s - %d</option>"
-                   % (int(dtype.id), dtype.name, int(dtype.id)))
-
+        out.append("<option value='%d'>%s</option>" % (dtype.id, dtype.name))
     dajax.assign('#id_device_type', 'innerHTML', ''.join(out))
     return dajax.json()
 
@@ -54,7 +51,7 @@ def update_type(request, option):
 @dajaxice_register
 def device_type_extra_fields(request, option):
     dajax = Dajax()
-    device_type = DeviceType.objects.filter(id=option)[0]
+    device_type = DeviceType.objects.get(pk=int(option))
     device_extra_fields = device_type.devicetypefields_set.all()
     out = []
     for extra_field in device_extra_fields:
@@ -71,7 +68,7 @@ def device_type_extra_fields(request, option):
 @dajaxice_register
 def device_parent_choices_initial(request):
     dajax = Dajax()
-    out = ["<option value=''>Select......</option>"]
+    out = ["<option value=''>Select Parent Device......</option>"]
     for device in Device.objects.all():
         out.append("<option value='%d'>%s - (%s)</option>"
                    % (int(device.id), device.device_alias, device.ip_address))
@@ -83,7 +80,7 @@ def device_parent_choices_initial(request):
 @dajaxice_register
 def device_parent_choices_selected(request, option):
     dajax = Dajax()
-    out = ["<option value=''>Select......</option>"]
+    out = ["<option value=''>Select Parent Device......</option>"]
     for device in Device.objects.all():
         if device.id == int(option):
             out.append("<option value='%d' selected='selected'>%s - (%s)</option>"
@@ -242,3 +239,66 @@ def device_soft_delete(request, device_id, new_parent_id):
         result['success'] = 0
         result['message'] = "Already soft deleted."
     return json.dumps({'result': result})
+
+
+# updating states corresponding to the selected country
+@dajaxice_register
+def update_states(request, option):
+    dajax = Dajax()
+    country = Country.objects.get(pk=int(option))
+    states = country.state_set.all().order_by('state_name')
+    out = []
+    out = ["<option value=''>Select State....</option>"]
+    for state in states:
+        out.append("<option value='%d'>%s</option>" % (state.id, state.state_name))
+    dajax.assign('#id_state', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+# updating cities corresponding to the selected state
+@dajaxice_register
+def update_cities(request, option):
+    dajax = Dajax()
+    state = State.objects.get(pk=int(option))
+    cities = state.city_set.all().order_by('city_name')
+    out = []
+    out = ["<option value=''>Select City....</option>"]
+    for city in cities:
+        out.append("<option value='%d'>%s</option>" % (city.id, city.city_name))
+    dajax.assign('#id_city', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+# after invalid form submission
+# updating states corresponding to the selected country
+@dajaxice_register
+def update_states_after_invalid_form(request, option, state_id):
+    dajax = Dajax()
+    country = Country.objects.get(pk=int(option))
+    states = country.state_set.all().order_by('state_name')
+    out = []
+    out = ["<option value=''>Select State....</option>"]
+    for state in states:
+        if state.id == int(state_id):
+            out.append("<option value='%d' selected='selected'>%s</option>" % (state.id, state.state_name))
+        else:
+            out.append("<option value='%d'>%s</option>" % (state.id, state.state_name))
+    dajax.assign('#id_state', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+# updating cities corresponding to the selected state
+@dajaxice_register
+def update_cities_after_invalid_form(request, option, city_id):
+    dajax = Dajax()
+    state = State.objects.get(pk=int(option))
+    cities = state.city_set.all().order_by('city_name')
+    out = []
+    out = ["<option value=''>Select City....</option>"]
+    for city in cities:
+        if city.id == int(city_id):
+            out.append("<option value='%d' selected='selected'>%s</option>" % (city.id, city.city_name))
+        else:
+            out.append("<option value='%d'>%s</option>" % (city.id, city.city_name))
+    dajax.assign('#id_city', 'innerHTML', ''.join(out))
+    return dajax.json()
