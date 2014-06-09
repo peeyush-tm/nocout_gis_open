@@ -8,9 +8,12 @@ def getNetworkAlert(request):
 
 	return render_to_response('alert_center/network_alerts_list.html',context_instance=RequestContext(request))
 
-def getCustomerAlert(request):
+def getCustomerAlert(request, page_type = "default_device_name"):
 
-	return render_to_response('alert_center/customer_alerts_list.html',context_instance=RequestContext(request))
+	if(page_type == "latency"):
+		return render_to_response('alert_center/customer_latency_alerts_list.html',context_instance=RequestContext(request))
+	else:
+		return render_to_response('alert_center/customer_packet_alerts_list.html',context_instance=RequestContext(request))
 
 def getCustomerAlertDetail(request):
 
