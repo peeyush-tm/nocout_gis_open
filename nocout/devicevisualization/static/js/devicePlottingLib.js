@@ -109,7 +109,7 @@ function networkMapClass() {
 	 * @function getDevicesData
 	 * @class networkMap
 	 */
-	this.getDevicesData = function(hostIp,username) {
+	this.getDevicesData = function(username) {
 
 		/*Store the reference of current pointer in a global variable*/
 		that = this;
@@ -127,8 +127,8 @@ function networkMapClass() {
 			/*Ajax call to the API*/
 			$.ajax({
 				crossDomain: true,
-				url : "//" + hostIp + "device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
-				// url : "http://127.0.0.1:8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
+				url : "../device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
+				// url : "//" + hostIp + "device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
@@ -178,7 +178,7 @@ function networkMapClass() {
 							/*Call the function after 3 sec.*/
 							setTimeout(function() {
 									
-								that.getDevicesData(hostIp,username);
+								that.getDevicesData(username);
 							},3000);
 
 						} else {
@@ -1039,7 +1039,7 @@ function networkMapClass() {
 			that.resetVariables();	
 			
 			/*Recall the API*/
-			that.getDevicesData(hostIp,username);
+			that.getDevicesData(username);
 
 		},120000);
     };

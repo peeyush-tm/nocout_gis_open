@@ -111,7 +111,6 @@
 <script type="text/javascript">
 
     var networkMapInstance = "",
-        hostIp = "",
         username = "",
         getFilterApi = "",
         setFilterApi = "",
@@ -120,7 +119,6 @@
 
     $(document).ready(function(e) {
 
-        hostIp = "{{host_info}}";
         username = "{{username}}";
         getFilterApi = "{{get_filter_api}}";
         setFilterApi = "{{set_filter_api}}";
@@ -138,7 +136,7 @@
         if($.trim(deviceName) == "default_device_name") {
             
             /*Call the make network to create the BS-SS network on the google map*/
-            networkMapInstance.getDevicesData(hostIp,username);
+            networkMapInstance.getDevicesData(username);
 
         } else {
 
@@ -188,7 +186,7 @@
         networkMapInstance.resetVariables();
 
         /*Call the make network to create the BS-SS network on the google map*/
-        networkMapInstance.getDevicesData(hostIp,username);
+        networkMapInstance.getDevicesData(username);
     });
 
     /**
