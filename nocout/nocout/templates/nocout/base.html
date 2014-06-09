@@ -250,7 +250,7 @@
                     <ul class="sub">
                         <li><a class="" href="/user/"><span class="sub-menu-text">Manage User</span></a></li>
                         <li><a class="" href="/user_group/"><span class="sub-menu-text">Manage Group</span></a></li>
-                        <li><a class="" href="javascript:;"><span class="sub-menu-text">Manage Session</span></a></li>
+                        <li><a class="" href="/sm/"><span class="sub-menu-text">Manage Session</span></a></li>
                         <li><a class="" href="/organization/"><span class="sub-menu-text">Organization</span></a></li>
                     </ul>
                 </li>
@@ -382,7 +382,8 @@
 <script type="text/javascript" src={% static "js/uniform/jquery.uniform.min.js" %}></script>
 <!-- BOOTBOX -->
 <script type="text/javascript" src={% static "js/bootbox/bootbox.min.js" %}></script>
-
+<script type="text/javascript" src={% static "js/ajax_csrf.js" %}></script>
+<!-- AJAX CSRF -->
 <!-- session_security script files -->
 {% include "session_security/all.html" %}
 <!-- session_security script files -->
@@ -503,6 +504,49 @@
             }
         }
     }
+    jQuery(document).ready(function(){
+    setInterval( session_not_active_page_refresh ,10000 );
+    function session_not_active_page_refresh(){
+            $.ajax({
+                url:"/sm/dialog_for_page_refresh/",
+                type:"POST",
+                dataType:"json",
+                success:function(data){
+                    if(data.data.objects.dialog){
+                        bootbox.dialog({
+                          message: "Your session is expired.Please refresh the page!<div id='SecondsRemaining'>10</div>",
+                          title:"Session Expired"
+                        });//bootbox ends
+                        (function (){
+                            var remaining = 10; // Number of seconds
+                            var obj = document.getElementById("SecondsRemaining");
+                            var timeout = window.setInterval(function(){
+                                remaining--;
+                                if(remaining==0){
+                                    // Time is up, stop the timer and hide the bootbox and make an ajax call to logout the user.
+                                    window.clearInterval(timeout);
+                                    bootbox.hideAll();
+                                    $.ajax({
+                                    url:"/sm/dialog_expired_logout_user/",
+                                    type:"POST",
+                                    dataType:"json",
+                                        success:function(data){
+                                            if(data.data.objects.refresh){
+                                                location.replace('/login/')
+                                            }
+                                        }
+                                    });
+                                    return;
+                                }
+                                obj.innerHTML = remaining; // Update the value displayed
+                        }, 1000); // Function is called every seconds which updates the div required to display the timing.
+                        })//Anonymous function
+                        ();//function call
+                    }//if ends
+            }//success ends
+            });//ajax ends
+        }//function ends
+    });
 </script>
 
 </body>
