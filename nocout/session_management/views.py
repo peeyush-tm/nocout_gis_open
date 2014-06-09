@@ -91,21 +91,22 @@ class UserStatusTable(BaseDatatableView):
                }
         return ret
 
+
 def dialog_action(request):
-    if request.POST.get('action')=='continue':
-        session_key=request.session.session_key
+    if request.POST.get('action') == 'continue':
+        session_key = request.session.session_key
         Session.objects.filter(session_key=request.user.visitor.session_key).delete()
         Visitor.objects.create(session_key=session_key, user=request.user)
-        result={
-                "success": 1,     # 0 - fail, 1 - success, 2 - exception
-                "message": "Success/Fail message.",
-                "data": {
-                    "meta": {},
-                    "objects": {
-                         'url':'/home/'
-                                }
-                        }
+        result = {
+            "success": 1,  # 0 - fail, 1 - success, 2 - exception
+            "message": "Success/Fail message.",
+            "data": {
+                "meta": {},
+                "objects": {
+                    'url': '/home/'
                 }
+            }
+        }
         return HttpResponse(json.dumps(result), mimetype='application/json')
 
     elif request.POST.get('action') == 'logout':
@@ -117,74 +118,74 @@ def dialog_action(request):
             del request.session["_session_security"]
 
         auth.logout(request)
-        result={
-                "success": 1,     # 0 - fail, 1 - success, 2 - exception
-                "message": "Success/Fail message.",
-                "data": {
-                    "meta": {},
-                    "objects": {
-                         'url':'/login/'
-                                }
-                        }
+        result = {
+            "success": 1,  # 0 - fail, 1 - success, 2 - exception
+            "message": "Success/Fail message.",
+            "data": {
+                "meta": {},
+                "objects": {
+                    'url': '/login/'
                 }
+            }
+        }
         return HttpResponse(json.dumps(result), mimetype='application/json')
 
 
 def change_user_status(request):
     user_name = request.POST.get('user_name')
-    user=UserProfile.objects.filter(username=user_name)
+    user = UserProfile.objects.filter(username=user_name)
     if user[0].is_active:
-        status=False
+        status = False
     else:
-        status=True
+        status = True
 
     user.update(is_active=status)
 
-    result={
-                "success": 1,     # 0 - fail, 1 - success, 2 - exception
-                "message": "Success/Fail message.",
-                "data": {
-                    "meta": {},
-                    "objects": {
-                         'status':status,
-                                }
-                        }
+    result = {
+        "success": 1,  # 0 - fail, 1 - success, 2 - exception
+        "message": "Success/Fail message.",
+        "data": {
+            "meta": {},
+            "objects": {
+                'status': status,
                 }
+        }
+    }
 
     return HttpResponse(json.dumps(result), mimetype='application/json')
 
 
 def dialog_for_page_refresh(request):
+    dialog_confirmation = False
+    if not request.user.is_active:
+        dialog_confirmation = True
 
-    dialog_confirmation=False
-    if not request.user.is_active: dialog_confirmation=True
-    result={
-            "success": 1,     # 0 - fail, 1 - success, 2 - exception
-            "message": "Success/Fail message.",
-            "data": {
-                "meta": {},
-                "objects": {
-                     'dialog':dialog_confirmation
-                            }
-                    }
+    result = {
+        "success": 1,  # 0 - fail, 1 - success, 2 - exception
+        "message": "Success/Fail message.",
+        "data": {
+            "meta": {},
+            "objects": {
+                'dialog': dialog_confirmation
             }
+        }
+    }
 
     return HttpResponse(json.dumps(result), mimetype='application/json')
 
 
 def dialog_expired_logout_user(request):
-
     logout(request)
-    result={
-            "success": 1,     # 0 - fail, 1 - success, 2 - exception
-            "message": "Success/Fail message.",
-            "data": {
-                "meta": {},
-                "objects": {
-                     'refresh':True
-                            }
-                    }
+    result = {
+        "success": 1,  # 0 - fail, 1 - success, 2 - exception
+        "message": "Success/Fail message.",
+        "data": {
+            "meta": {},
+            "objects": {
+                'refresh': True
             }
+        }
+    }
 
     return HttpResponse(json.dumps(result), mimetype='application/json')
 
