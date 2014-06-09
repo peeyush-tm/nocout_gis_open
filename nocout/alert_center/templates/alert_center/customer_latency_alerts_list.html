@@ -1,14 +1,13 @@
 {% extends "nocout/base.html" %}
-{% block breadcrumb_title %}Alert Center &gt; Network Alerts{% endblock %}
-{% block content_title %}Network Alerts{% endblock %}
-{% block content_description %}Network Alerts List{% endblock %}
+{% block breadcrumb_title %}Alert Center &gt; Customer Alerts &gt; Latency{% endblock %}
+{% block content_title %}Customer Alerts{% endblock %}
+{% block content_description %}Customer Alerts List{% endblock %}
 {% load staticfiles %}
 
 {% block content %}
-
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-bell"></i>NETWORK ALERT</h4>
+            <h4><i class="fa fa-bell"></i>CUSTOMER ALERT - LATENCY</h4>
 
             <div class="tools hidden-xs">
                 <a href="#box-config" data-toggle="modal" class="config">
@@ -21,74 +20,78 @@
         </div>
 
         <div class="box-body">
-            <div id="networkAlertContainer">
+            <div id="customerAlertContainer">
                 
                 <div class="tabbable header-tabs">
                     <ul class="nav nav-tabs">
-                        <li><a href="#network_alert_latency" data-toggle="tab"><span class="hidden-inline-mobile">Latency</span></a></li>
-                        <li><a href="#network_alert_packet" data-toggle="tab"><span class="hidden-inline-mobile">Packet Drop</span></a></li>
-                        <li><a href="#network_alert_service" data-toggle="tab"><span class="hidden-inline-mobile">Service Impack Alerts</span></a></li>
-                        <li class="active"><a href="#network_alert_down" data-toggle="tab"><span class="hidden-inline-mobile">Down</span></a></li>
+                        <li><a href="#customer_ptp_block" data-toggle="tab"><span class="hidden-inline-mobile">PTP</span></a></li>
+                        <li><a href="#customer_pmp_block" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
+                        <li class="active"><a href="#customer_wimax_block" data-toggle="tab"><span class="hidden-inline-mobile">Wimax</span></a></li>
                     </ul>
                     <div class="tab-content">
-                        <div class="tab-pane fade" id="network_alert_latency">
+                        <div class="tab-pane fade" id="customer_ptp_block">
                             <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
                                 <thead>
                                     <th>Severity</th>
-                                    <th>IP</th>
-                                    <th>BS Name</th>
                                     <th>City</th>
-                                    <th>Max</th>
-                                    <th>Average</th>
+                                    <th>Technology</th>
+                                    <th>Circuit ID</th>
+                                    <th>BS Name</th>
+                                    <th>IDU IP</th>
+                                    <th>Sector ID</th>
+                                    <th>% Drop</th>
+                                    <th>&nbsp;</th>
+                                    <th>&nbsp;</th>
                                 </thead>
                                 <tbody></tbody>
                             </table>
+
                         </div>
-                        <div class="tab-pane fade" id="network_alert_packet">
+                        <div class="tab-pane fade" id="customer_pmp_block">
                             <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
                                 <thead>
                                     <th>Severity</th>
-                                    <th>IP</th>
-                                    <th>BS Name</th>
                                     <th>City</th>
-                                    <th>% Loss</th>
+                                    <th>Technology</th>
+                                    <th>Circuit ID</th>
+                                    <th>BS Name</th>
+                                    <th>IDU IP</th>
+                                    <th>Sector ID</th>
+                                    <th>% Drop</th>
+                                    <th>&nbsp;</th>
+                                    <th>&nbsp;</th>
                                 </thead>
                                 <tbody></tbody>
                             </table>
+
                         </div>
-                        <div class="tab-pane fade" id="network_alert_service">
+                        <div class="tab-pane fade in active" id="customer_wimax_block">
                             <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
                                 <thead>
                                     <th>Severity</th>
-                                    <th>IP</th>
-                                    <th>BS Name</th>
                                     <th>City</th>
-                                    <th>Alert Name</th>
-                                    <th>Time</th>
+                                    <th>Technology</th>
+                                    <th>Circuit ID</th>
+                                    <th>BS Name</th>
+                                    <th>IDU IP</th>
+                                    <th>Sector ID</th>
+                                    <th>% Drop</th>
+                                    <th>&nbsp;</th>
+                                    <th>&nbsp;</th>
                                 </thead>
                                 <tbody></tbody>
                             </table>
-                        </div>
-                        <div class="tab-pane fade in active" id="network_alert_down">
-                            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
-                                <thead>
-                                    <th>Severity</th>
-                                    <th>IP</th>
-                                    <th>BS Name</th>
-                                    <th>City</th>
-                                    <th>Time</th>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
+
                         </div>
                     </div>
                 </div>
+
             </div>
             <div class="clearfix"></div>
         </div>
     </div>
-
 {% endblock %}
+
 
 {% block jquery %}
 <script type="text/javascript">

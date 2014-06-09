@@ -55,7 +55,6 @@ function loadDeviceTreeLib() {
 	this.getDevices = function(infoObject) {
 
 		var username = infoObject.username;
-		var hostIp = infoObject.hostip;
 
 		if(counter > 0 || counter == -999) {
 
@@ -69,7 +68,7 @@ function loadDeviceTreeLib() {
 			/*Ajax call to the API*/
 			$.ajax({
 				crossDomain: true,
-				url : "//" + hostIp + "device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
+				url : "../../device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
 				// url : "http://127.0.0.1:8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
 				type : "GET",
 				dataType : "json",
