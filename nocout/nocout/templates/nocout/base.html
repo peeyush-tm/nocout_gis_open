@@ -433,6 +433,8 @@
 <script type="text/javascript" src={% static "js/ajax_csrf.js" %}></script>
 <!-- GRITTER -->
 <script type="text/javascript" src={% static "js/gritter/js/jquery.gritter.min.js" %}></script>
+<!-- SELECTED SIDE MENU-->
+<script type="text/javascript" src={% static "js/nocout/selected_side_menu.js" %}></script>
 
 <!-- session_security script files -->
 {% include "session_security/all.html" %}
@@ -444,171 +446,70 @@
 <!-- CUSTOM JAVASCRIPTS IMPORT BLOCK -->
 {% block load_js %}
     <script>
-        jQuery(document).ready(function () {
+        $(document).ready(function () {
             App.setPage("index");  //Set current page
             App.init(); //Initialise plugins and elements
         });
     </script>
 {% endblock %}
 <script>
-    /*This script add & remove the current and active classes for the side hiperlinks as per the router to show the currently selected sidebar item.*/
-    var currentRouterString = "";
-    /*All Sidebar anchor tags*/
-    var sideMenu = $("#sidebar ul li a");
-    var routerArray = window.location.href.split("/");
-    var checkValue = $.trim(routerArray[routerArray.length-2]);
-    if(checkValue == "new" || checkValue == "update" || checkValue == "treeview") {
-        /*Current router url text*/
-        currentRouterString = $.trim(window.location.href.split("/").slice(3,routerArray.length-2));
-    } else {
-        /*Current router url text*/
-        currentRouterString = $.trim(window.location.href.split("/").slice(3,-1));
-    }
+    
+    $(document).ready(function() {
+        
+        var checkInterval = 2000,
+            do_session_check = true;
 
-    var currentRouter = $.trim(currentRouterString.replace(/,/g,"/"));
-    for (var i = 0; i < sideMenu.length; i++) {
-        /*Anchor tags hiperlink text*/
-        var slashCount = sideMenu[i].href.split("/").length;
+        function session_check(do_session_check){
+            if (do_session_check) {
+                $.ajax({
+                    url:"/sm/dialog_for_page_refresh/",
+                    type:"POST",
+                    dataType:"json",
+                    success:function(data){
 
-        var menuLinkString = $.trim(sideMenu[i].href.split("/").slice(3,-1));
-        var menuLink = $.trim(menuLinkString.replace(/,/g,"/"));        
-        /*Parent Element(li) Classname*/
-        var activeClass = $.trim(sideMenu[i].parentElement.className);
-        /*If there is active class on the parent then remove it*/
-        if (activeClass === "active") {
-            sideMenu[i].parentElement.className = "";
-        }
-        /*If the routertext matches the hiperlink text then add the active & current classes at the desired element*/
-        if (menuLink == currentRouter) {
-            if(slashCount == 5) {
+                        if (data.success == 1){
 
-                var superParentClass = $.trim(sideMenu[i].parentElement.parentElement.parentElement.className);
+                            do_session_check = false;
 
-                if (superParentClass.indexOf("has-sub") == -1) {
-                    var parent = sideMenu[i].parentElement;
-                    parent.className = "active";
-                } else {
-                    /*Add open class to the arrow*/
-                    var arrowClass = sideMenu[i].parentElement.parentElement.parentElement.children[0].children[2];
-                    arrowClass.className = arrowClass.className + " open";
-
-                    /*Add current class to the parent li*/
-                    var parent = sideMenu[i].parentElement;
-                    parent.className = "current";
-
-                    /*Add active class to the super parent li*/
-                    var superParent = sideMenu[i].parentElement.parentElement.parentElement;
-                    superParent.className = superParent.className + " active";
-                }
-
-            } else if(slashCount == 6) {
-
-                var superParentClass = $.trim(sideMenu[i].parentElement.parentElement.parentElement.className);
-                var superSuperParentClass = $.trim(sideMenu[i].parentElement.parentElement.parentElement.className);
-
-                if (superSuperParentClass.indexOf("has-sub") == -1) {
-                    var parent = sideMenu[i].parentElement;
-                    parent.className = "active";
-                } else {
-                    sideMenu[i].parentElement.parentElement.parentElement.parentElement.className = superSuperParentClass + " active";
-                    /*Add open class to the arrow*/
-                    var arrowClass = sideMenu[i].parentElement.parentElement.parentElement.children[0].children[2];
-                    arrowClass.className = arrowClass.className + " open";
-
-                    /*Add current class to the parent li*/
-                    var parent = sideMenu[i].parentElement;
-                    parent.className = "current";
-
-                    /*Add active class to the super parent li*/
-                    var superParent = sideMenu[i].parentElement.parentElement.parentElement;
-                    superParent.className = superParent.className + " active";
-                }
-                
-            } else if(slashCount == 7) {
-
-                var superParentClass = $.trim(sideMenu[i].parentElement.parentElement.parentElement.className);
-                var superSuperParentClass = $.trim(sideMenu[i].parentElement.parentElement.parentElement.parentElement.className);
-                var topParentClass = $.trim(sideMenu[i].parentElement.parentElement.parentElement.parentElement.parentElement.className);
-                
-                if (topParentClass.indexOf("has-sub") == -1) {
-                    var parent = sideMenu[i].parentElement;
-                    parent.className = "active";
-                } else {
-                    sideMenu[i].parentElement.parentElement.parentElement.parentElement.parentElement.className = topParentClass + " active";
-                    /*Add open class to the arrow*/
-                    var arrowClass = sideMenu[i].parentElement.parentElement.parentElement.parentElement.parentElement.children[0].children[2];
-                    arrowClass.className = arrowClass.className + " open";
-
-                    /*Add current class to the parent li*/
-                    var parent = sideMenu[i].parentElement;
-                    parent.className = "current";
-
-                    /*Add active class to the super parent li*/
-                    var superParent = sideMenu[i].parentElement.parentElement.parentElement;
-                    superParent.className = superParent.className + " active";
-                }
-            }
-        }
-    }
-    jQuery(document).ready(function(){
-
-
-    var checkInterval = 2000;
-    do_session_check = true;
-
-
-
-    function session_check(do_session_check){
-        if (do_session_check) {
-            $.ajax({
-                url:"/sm/dialog_for_page_refresh/",
-                type:"POST",
-                dataType:"json",
-                success:function(data){
-
-                    if (data.success == 1){
-
-                        do_session_check = false;
-
-                        if(data.data.objects.dialog){
-                                bootbox.dialog({
-                                message: "Your session has been ended by the administrator & your account has been locked." +
-                                         "You will be redirected to login page",
-                                title: "Session Expired",
-                                buttons: {
-                                    main: {
-                                        label: "Ok",
-                                        className: "btn-primary",
-                                        callback: function() {
-                                            $.ajax({
-                                                url:"/sm/dialog_expired_logout_user/",
-                                                type:"POST",
-                                                dataType:"json",
-                                                success:function(data){
-                                                    if(data.data.objects.refresh){
-                                                        location.replace('/logout/')
+                            if(data.data.objects.dialog){
+                                    bootbox.dialog({
+                                    message: "Your session has been ended by the administrator & your account has been locked." +
+                                             "You will be redirected to login page",
+                                    title: "Session Expired",
+                                    buttons: {
+                                        main: {
+                                            label: "Ok",
+                                            className: "btn-primary",
+                                            callback: function() {
+                                                $.ajax({
+                                                    url:"/sm/dialog_expired_logout_user/",
+                                                    type:"POST",
+                                                    dataType:"json",
+                                                    success:function(data){
+                                                        if(data.data.objects.refresh){
+                                                            location.replace('/logout/')
+                                                        }
                                                     }
-                                                }
-                                            });
+                                                });
+                                            }
                                         }
                                     }
-                                }
 
-                            }, window.clearInterval(session_in_check));//bootbox ends
+                                }, window.clearInterval(session_in_check));//bootbox ends
+                            }
                         }
-                    }
-                }//success ends
-            });
-            //ajax ends
-        }
-        else {
-            window.clearInterval(session_in_check);
-        }
-    }//function ends
+                    }//success ends
+                });
+                //ajax ends
+            }
+            else {
+                window.clearInterval(session_in_check);
+            }
+        }//function ends
 
-    session_in_check = setInterval(function(){session_check(do_session_check)}, checkInterval);
+        session_in_check = setInterval(function(){session_check(do_session_check)}, checkInterval);
 
-});
+    });
 </script>
 
 </body>
