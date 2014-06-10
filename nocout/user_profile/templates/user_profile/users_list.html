@@ -21,14 +21,29 @@
                 </a>
             </div>
         </div>
-        <div id="tableContainer" class="box-body">
-            <table cellpadding="0" cellspacing="0" border="0"
-                   class="datatable table table-striped table-bordered table-hover" id="UserTable">
-                <thead></thead>
-                <tbody></tbody>
-            </table>
+    <div class="box-body">
+        <div class="tabbable header-tabs">
+                    <ul class="nav nav-tabs">
+                        <li><a href="#UserArchivedListing" data-toggle="tab"><span class="hidden-inline-mobile">Archiver User Listing</span></a></li>
+                        <li class="active"><a href="#UserListing" data-toggle="tab"><span class="hidden-inline-mobile">User Listing</span></a></li>
+
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane fade in active" id="UserListing">
+                        <table id="UserListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                         </div>
+                        <div class="tab-pane fade" id="UserArchivedListing">
+                        <table id="UserArchivedListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                        </div>
+                    </div>
         </div>
-    </div>
+        </div>
 {% endblock %}
 
 {% block jquery %}
@@ -41,8 +56,11 @@
 
             /*Call createDataTable function of ourDataTableWidget class*/
             var tableObject = $.parseJSON('{{ datatable_headers|safe }}');
-            var ajax_url = '{% url "UserListingTable" %}'
-            dataTableInstance.createDataTable("UserTable", tableObject, ajax_url);
+            var ajax_url_user_listing = '{% url "UserListingTable" %}';
+            var ajax_url_user_archived_listing = '{% url "UserArchivedListingTable" %}';
+
+            dataTableInstance.createDataTable("UserListingTable", tableObject, ajax_url_user_listing);
+            dataTableInstance.createDataTable("UserArchivedListingTable", tableObject, ajax_url_user_archived_listing);
 
             $('.datatable').each(function () {
                 var datatable = $(this);
