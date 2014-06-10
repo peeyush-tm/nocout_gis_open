@@ -58,7 +58,6 @@
 
 
     function change_user_status(ele){
-            console.log(ele);
             username=$(ele).closest('tr').children('td').first().text();
             $.ajax({
                 url:"change_user_status/",
@@ -67,18 +66,32 @@
                 dataType:"json",
                 success: function(data){
                         if(data.data.objects.status){
-                            $(ele).closest('tr').children('td:nth-child(2)').html("<img src=/static/session_management/img/icon-True.gif alt='yes/no_image'>")
-                            $(ele).closest('td').html('<button type="button" onclick="change_user_status(this);">LOCK</button>')
+{#                            $(ele).closest('tr').children('td:nth-child(5)').text("YES");#}
+                            $(ele).closest('td').html('<h3 class="fa fa-lock text-danger" onclick="change_user_status(this);"> &nbsp;</h3>')
                            }
                         else{
-                            $(ele).closest('tr').children('td:nth-child(2)').html("<img src=/static/session_management/img/icon-False.gif alt='yes/no_image'>")
-                            $(ele).closest('td').html('<button type="button" onclick="change_user_status(this);">UNLOCK</button>')
+{#                            $(ele).closest('tr').children('td:nth-child(5)').text("NO");#}
+                            $(ele).closest('td').html('<h3 class="fa fa-unlock text-success" onclick="change_user_status(this);"> &nbsp;</h3>')
                         }
-
                         }//success ends
                 });//ajax ends
         }//function ends
 
+    function logout_user(ele){
+        username=$(ele).closest('tr').children('td').first().text();
+        $.ajax({
+                url:"/sm/logout_user/",
+                type:"POST",
+                data:{ user_name: username },
+                dataType:"json",
+                success: function(data){
+                        if(data.success){
+                            $(ele).closest('tr').children('td:nth-child(5)').text("NO");
+                            $(ele).closest('td').children('h3:nth-child(2)').removeClass('fa-sign-out')
+                           }
+                        }//success ends
+                });//ajax ends
+    }
     </script>
 
 {% endblock %}
