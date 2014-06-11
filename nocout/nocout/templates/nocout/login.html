@@ -106,9 +106,9 @@
     });
 
     $("#login_form").on("submit", function (event) {
-        $.ajax({url: "/auth/",
+        $.ajax({   url: "/auth/",
                    type: "POST",
-                   data: $("#login_form").serialize(true),
+                   data: $("#login_form").serialize(true) + location.search.replace('?','&'),
                    dataType: "json",
                    success: function (data) {
                        if (data.success == 1) {
@@ -125,7 +125,7 @@
                                                               $.ajax({
                                                                          url: "/sm/dialog_action/",
                                                                          type: "POST",
-                                                                         data: {action: 'continue'},
+                                                                         data: { action: 'continue', url:data.data.objects.url },
                                                                          dataType: "json",
                                                                          success: function (data) {
                                                                              window.location.replace(data.data.objects.url)
