@@ -13,4 +13,4 @@ class LoginRequiredMiddleware:
         if not request.user.is_authenticated():
             path = request.path_info.lstrip('/')
             if not(path in settings.LOGIN_EXEMPT_URLS):
-                return HttpResponseRedirect(settings.LOGIN_URL)
+                return HttpResponseRedirect( settings.LOGIN_URL + '?next=%s'%path )
