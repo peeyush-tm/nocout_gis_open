@@ -1,11 +1,12 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block css %}
-    <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
+{% block breadcrumb_title %}
+    <li>Inventory</li>
+    <li>Device Fields</li>
+    <li>Edit</li>
 {% endblock %}
-{% block breadcrumb_page_title %} > Device Extra Fields {% endblock %}
-{% block content_title %}Device Extra Fields Management{% endblock %}
-{% block content_description %}Update a device extra field ....{% endblock %}
+{% block content_title %}Edit Device Fields{% endblock %}
+{% block content_description %}Edit device field{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
@@ -13,7 +14,7 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i>Device Extra Field : {{ object.field_name }}</h4>
+                            <h4><i class="fa fa-bars"></i> DEVICE FIELD : {{ object.field_name }}</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-6"><br />

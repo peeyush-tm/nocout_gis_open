@@ -1,7 +1,11 @@
 {% extends "department/department.html" %}
-{% block breadcrumb_page_title %} > User Group {% endblock %}
-{% block content_title %}User Groups Management{% endblock %}
-{% block content_description %}Delete a user group ....{% endblock %}
+{% block breadcrumb_title %}
+	<li>User Management</li>
+    <li>User Groups</li>
+    <li>Delete</li>
+{% endblock %}
+{% block content_title %}Delete User Group{% endblock %}
+{% block content_description %}Delete user group{% endblock %}
 {% block content %}
     <form action="" method="post">{% csrf_token %}
         <p>Are you sure you want to delete "{{ object }}" ?</p>

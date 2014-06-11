@@ -3,9 +3,13 @@
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/user_group.css" %}>
 {% endblock %}
-{% block breadcrumb_page_title %} > User Group {% endblock %}
-{% block content_title %}User Groups Management{% endblock %}
-{% block content_description %}Detail of user group ....{% endblock %}
+{% block breadcrumb_title %}
+    <li>User Management</li>
+    <li>User Groups</li>
+    <li>Detail</li>
+{% endblock %}
+{% block content_title %}User Group Detail{% endblock %}
+{% block content_description %}Detail of user group{% endblock %}
 {% block content %}
     <h1>{{ object.name }}</h1>
     <div id="user_group">

@@ -1,16 +1,20 @@
 {% extends "inventory/inventory.html" %}
-{% block breadcrumb_page_title %} > Device > Tree View {% endblock %}
-{% block content_title %}Device Management{% endblock %}
-{% block content_description %}Tree view of devices. {% endblock %}
+{% block breadcrumb_title %}
+    <li>Inventory</li>
+    <li>Device</li>
+    <li>Tree View</li>
+{% endblock %}
+{% block content_title %}Device Tree View{% endblock %}
+{% block content_description %}Tree view of devices.{% endblock %}
 {% load staticfiles %}
 
 {% block content %}
 
-    <p><a href="/device/new"><i class="fa fa-plus">&nbsp;</i> Create Device</a></p>
-    <p><a href="/device"><i class="fa fa-table">&nbsp;</i> Devices List View</a></p>
+    <p><a href="/device/new"><i class="fa fa-plus"></i> Create Device</a></p>
+    <p><a href="/device"><i class="fa fa-table"></i> Devices List View</a></p>
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-sitemap"></i>DEVICES TREE</h4>
+            <h4><i class="fa fa-sitemap"></i>DEVICES TREE VIEW</h4>
 
             <div class="tools hidden-xs">
                 <a href="#box-config" data-toggle="modal" class="config">
