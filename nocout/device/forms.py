@@ -47,6 +47,8 @@ class DeviceForm(forms.ModelForm):
         super(DeviceForm, self).__init__(*args, **kwargs)
 
         # setting select menus default values which is by default '---------'
+        self.fields['parent'].empty_label = "Select Parent Device..."
+        self.fields['parent'].widget.choices = self.fields['parent'].choices
         self.fields['site_instance'].empty_label = "Select Site Instance...."
         self.fields['site_instance'].widget.choices = self.fields['site_instance'].choices
         self.fields['device_technology'].empty_label = "Select Device Technology...."
@@ -84,9 +86,17 @@ class DeviceForm(forms.ModelForm):
             pass
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class': 'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
 
     class Meta:
         model = Device
