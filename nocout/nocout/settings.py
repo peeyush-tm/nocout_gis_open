@@ -167,6 +167,7 @@ INSTALLED_APPS = (
     'capacity_management',
     'download_center',
     'performance',
+    'scheduling_management',
     'dajaxice',
     'dajax',
     'django.contrib.admin',
