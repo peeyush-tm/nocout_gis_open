@@ -32,8 +32,10 @@ def user_soft_delete_form(request, value):
     result['message'] = "Failed to render form correctly."
     result['data']['meta'] = ''
     result['data']['objects'] = {}
-    result['data']['objects']['user_id'] = user.id
-    result['data']['objects']['user_name'] = user.username
+    result['data']['objects']['form_type'] = 'user'
+    result['data']['objects']['form_title'] = 'user'
+    result['data']['objects']['id'] = user.id
+    result['data']['objects']['name'] = user.username
 
     # child_users: these are the users which are associated with
     # the user which needs to be deleted in parent-child relationship
@@ -47,7 +49,7 @@ def user_soft_delete_form(request, value):
         for cu in user_descendant:
             child_user_descendants.append(cu)
 
-    result['data']['objects']['child_users'] = []
+    result['data']['objects']['childs'] = []
 
     # future users parent is needs to find out only if our user is
     # associated with any other user i.e if child_users.count() > 0
@@ -57,7 +59,7 @@ def user_soft_delete_form(request, value):
         # parent of users in child_users
         remaining_users = UserProfile.objects.exclude(parent_id=value)
         selected_users = set(remaining_users) - set(child_user_descendants)
-        result['data']['objects']['eligible_users'] = []
+        result['data']['objects']['eligible'] = []
         for e_user in selected_users:
             e_dict = dict()
             e_dict['key'] = e_user.id
@@ -69,12 +71,12 @@ def user_soft_delete_form(request, value):
             # for excluding users from eligible user choices those are not from
             # same user_group as the user which we are deleting
             if set(e_user.user_group.all()) != set(user.user_group.all()): continue
-            result['data']['objects']['eligible_users'].append(e_dict)
+            result['data']['objects']['eligible'].append(e_dict)
         for c_user in child_users:
             c_dict = {}
             c_dict['key'] = c_user.id
             c_dict['value'] = c_user.username
-            result['data']['objects']['child_users'].append(c_dict)
+            result['data']['objects']['childs'].append(c_dict)
     result['success'] = 1
     result['message'] = "Successfully render form."
     return json.dumps({'result': result})

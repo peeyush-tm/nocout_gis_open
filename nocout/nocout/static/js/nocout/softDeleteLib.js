@@ -44,10 +44,17 @@ function get_soft_delete_form(content) {
                         
                         Dajaxice.device.device_soft_delete(show_response_message, {'device_id': $('#id_device').val(),'new_parent_id': $('#id_parent').val()});
 
-                    } else {
+                    } else if($.trim(content.result.data.objects.form_type) == 'device_group') {
 
                         Dajaxice.device_group.device_group_soft_delete(show_response_message, {'device_group_id': $('#id_device_group').val(),'new_parent_id': $('#id_parent').val()});
 
+                    } else if($.trim(content.result.data.objects.form_type) == 'user_group') {
+
+                        Dajaxice.user_group.user_group_soft_delete(show_response_message, {'user_group_id': $('#id_user_group').val(),'new_parent_id': $('#id_parent').val()});
+                    
+                    } else if($.trim(content.result.data.objects.form_type) == 'user') {
+
+                        Dajaxice.user_profile.user_soft_delete(show_response_message, {'user_id': $('#id_user').val(),'new_parent_id': $('#id_parent').val()});
                     }
                 }
             },
