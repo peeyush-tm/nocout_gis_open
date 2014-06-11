@@ -14,7 +14,7 @@ def update_vendor(request, option):
     tech = DeviceTechnology.objects.get(pk=int(option))
     vendors = tech.device_vendors.all()
     out = []
-    out.append("<option value='' selected>Select Vendor....</option>")
+    out.append("<option value=''>Select Vendor....</option>")
     for vendor in vendors:
         out.append("<option value='%d'>%s</option>" % (vendor.id, vendor.name))
     dajax.assign('#id_device_vendor', 'innerHTML', ''.join(out))
