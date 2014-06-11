@@ -1,7 +1,10 @@
 {% extends "nocout/base.html" %}
-{% block breadcrumb_title %}Network Maps &gt; Geographical Maps{% endblock %}
-{% block content_title %}Geographical Maps{% endblock %}
-{% block content_description %}Device visualization on gmaps{% endblock %}
+{% block breadcrumb_title %}
+    <li>Network Maps</li>
+    <li>Google Maps</li>
+{% endblock %}
+{% block content_title %}Google Maps{% endblock %}
+{% block content_description %}Location wise devices distribution{% endblock %}
 {% load staticfiles %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
@@ -33,7 +36,7 @@
 {% block content %}
 <div class='box border lite mapContainerBlock'>
     <div class='box-title'>
-        <h4><i class='fa fa-map-marker'></i>GIS <i class="fa fa-spinner fa fa-spin" id="loadingIcon">&nbsp;</i></h4>
+        <h4><i class='fa fa-map-marker'></i> GOOGLE MAPS <i class="fa fa-spinner fa fa-spin" id="loadingIcon">&nbsp;</i></h4>
         <!--Filters Block Start-->
         <div class="pull-right">
             <ul class="list-unstyled list-inline">
@@ -107,7 +110,8 @@
 <script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
 <!-- SPARKLINES -->
 <script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
-
+<!-- Custon Script for this template-->
+<script type="text/javascript" src={% static "js/devicevisualization.js" %}></script>
 <script type="text/javascript">
 
     var networkMapInstance = "",
@@ -149,80 +153,6 @@
             }
         }
     });
-
-    /*This event trigger when state dropdown value is changes*/
-    $("#state").change(function(e) {
-
-        networkMapInstance.makeFiltersArray();
-    });
-
-    /*This event trigger when city dropdown value is changes*/
-    $("#city").change(function(e) {
-
-        networkMapInstance.makeFiltersArray();
-    });
-
-    /*This event trigger when vendor dropdown value is changes*/
-    $("#vendor").change(function(e) {
-
-        networkMapInstance.makeFiltersArray();
-    });
-
-    /*This event trigger when technology dropdown value is changes*/
-    $("#technology").change(function(e) {
-
-        networkMapInstance.makeFiltersArray();
-    });
-
-
-    /*This event triggers when Reset Filter button clicked*/
-    $("#resetFilters").click(function(e) {
-
-        $("#resetFilters").button("loading");
-        /*Reset markers, polyline & filters*/
-        networkMapInstance.clearMapElements();
-
-        /*Reset Global Variables & Filters*/
-        networkMapInstance.resetVariables();
-
-        /*Call the make network to create the BS-SS network on the google map*/
-        networkMapInstance.getDevicesData(username);
-    });
-
-    /**
-     * This function triggers when "Advance Filters" button is pressed
-     * @method showAdvFilters
-     */
-    function showAdvFilters() {
-
-        advSearch.getFilterInfo("filterInfoModal","Advance Filters","advFilterBtn",getFilterApi,setFilterApi);
-    }
-    
-    /**
-     * This function triggers when remove filters button is clicked
-     * @method removeAdvFilters
-     */
-    function removeAdvFilters() {
-
-        advSearch.removeFilters();
-    }
-
-    /*Trigers when "Create Polygon" button is clicked*/
-    $("#createPolygonBtn").click(function(e) {
-
-        $("#createPolygonBtn").button("loading");
-        $("#advFilterBtn").button("loading");
-        $("#resetFilters").button("loading");
-
-        networkMapInstance.createPolygon();
-    });
-
-    /*triggers when clear selection button is clicked*/
-    $("#clearPolygonBtn").click(function(e) {
-
-        networkMapInstance.clearPolygon();
-    });
-     
 </script>
 {% endblock %}
 
@@ -236,4 +166,3 @@
     });
 </script>
 {% endblock %}
-
