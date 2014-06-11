@@ -1,8 +1,12 @@
 {% extends "department/department.html" %}
 {% load staticfiles %}
-{% block breadcrumb_page_title %} > User Group {% endblock %}
-{% block content_title %}User Groups Management{% endblock %}
-{% block content_description %}Update a user group ....{% endblock %}
+{% block breadcrumb_title %}
+    <li>User Management</li>
+    <li>User Groups</li>
+    <li>Edit</li>
+{% endblock %}
+{% block content_title %}Edit User Group{% endblock %}
+{% block content_description %}Edit user group{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
@@ -10,7 +14,7 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i>User Group : {{ object.name }}</h4>
+                            <h4><i class="fa fa-bars"></i> EDIT USER GROUP : {{ object.name }}</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-6"><br />

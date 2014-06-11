@@ -1,16 +1,16 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block css %}
-    <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
+{% block breadcrumb_title %}
+    <li>Inventory</li>
+    <li>Device Fields</li>
 {% endblock %}
-{% block breadcrumb_page_title %} > Device Extra Fields {% endblock %}
-{% block content_title %}Device Extra Fields Management{% endblock %}
-{% block content_description %}List of device extra fields ....{% endblock %}
+{% block content_title %}Device Fields Management{% endblock %}
+{% block content_description %}List of device fields ....{% endblock %}
 {% block content %}
     <p><a href="/device_fields/new"><i class="fa fa-plus">&nbsp;</i> Create Device Field</a></p>
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i>DEVICE FIELDS LISTING</h4>
+            <h4><i class="fa fa-table"></i> DEVICE FIELDS LISTING</h4>
             <div class="tools hidden-xs">
                 <a href="#box-config" data-toggle="modal" class="config">
                     <i class="fa fa-cog"></i>
@@ -38,22 +38,12 @@
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
             var dataTableInstance = new ourDataTableWidget();
-
-            /*Call createDataTable function of ourDataTableWidget class*/
-            var tableObject = $.parseJSON('{{ datatable_headers|safe }}');
+            /*Grid headers object*/
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            /*Ajax url to get grid data*/
             var ajax_url = '{% url "DeviceTypeFieldsListingTable" %}';
-            dataTableInstance.createDataTable("DeviceTypeFieldsListingTable", tableObject, ajax_url);
-
-            $('.datatable').each(function () {
-                var datatable = $(this);
-                // SEARCH - Add the placeholder for Search and Turn this into in-line form control
-                var search_input = datatable.closest('.dataTables_wrapper').find('div[id$=_filter] input');
-                search_input.attr('placeholder', 'Search');
-                search_input.addClass('form-control input-sm');
-                // LENGTH - Inline-Form control
-                var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
-                length_sel.addClass('form-control input-sm');
-            });
+            /*Call createDataTable function of ourDataTableWidget class*/
+            dataTableInstance.createDataTable("DeviceTypeFieldsListingTable", gridHeadersObj, ajax_url);
         });
 
     </script>

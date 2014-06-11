@@ -1,14 +1,15 @@
 {% extends "department/department.html" %}
 {% load staticfiles %}
-{% block css %}
-    {#    <link rel="stylesheet" type="text/css" href={% static "user_profile/css/user_profile.css" %}>#}
+{% block breadcrumb_title %}
+    <li>User Management</li>
+    <li>User Session</li>
 {% endblock %}
-{% block breadcrumb_page_title %} > User {% endblock %}
-{% block content_title %}Users Status Management{% endblock %}
+{% block content_title %}User Session{% endblock %}
+{% block content_description %}User session of loggedin users{% endblock %}
 {% block content %}
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i>USER STATUS</h4>
+            <h4><i class="fa fa-table"></i> MANAGE SESSION</h4>
 
             <div class="tools hidden-xs">
                 <a href="#box-config" data-toggle="modal" class="config">
@@ -20,8 +21,7 @@
             </div>
         </div>
         <div id="tableContainer" class="box-body">
-            <table cellpadding="0" cellspacing="0" border="0"
-                   class="datatable table table-striped table-bordered table-hover" id="UserStatusList">
+            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="UserStatusList">
                 <thead></thead>
                 <tbody></tbody>
             </table>
@@ -34,108 +34,90 @@
     <!-- AJAX CSRF -->
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <script type="text/javascript">
-
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
             var dataTableInstance = new ourDataTableWidget();
-
-            /*Call createDataTable function of ourDataTableWidget class*/
-            var tableObject = $.parseJSON('{{ datatable_headers|safe }}');
+            /*Grid headers object*/
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            /*Ajax url to get grid data*/
             var ajax_url = '{% url "UserStatusTable" %}';
-            dataTableInstance.createDataTable("UserStatusList", tableObject, ajax_url);
-
-            $('.datatable').each(function () {
-                var datatable = $(this);
-                // SEARCH - Add the placeholder for Search and Turn this into in-line form control
-                var search_input = datatable.closest('.dataTables_wrapper').find('div[id$=_filter] input');
-                search_input.attr('placeholder', 'Search');
-                search_input.addClass('form-control input-sm');
-                // LENGTH - Inline-Form control
-                var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
-                length_sel.addClass('form-control input-sm');
-            });
+            /*Call createDataTable function of ourDataTableWidget class*/            
+            dataTableInstance.createDataTable("UserStatusList", gridHeadersObj, ajax_url);
         });
-
-
-    function change_user_status(ele){
-
+        /**
+         * This function change the status of loggedin user from unlock to lock and viceversa
+         * @method change_user_status
+         */
+        function change_user_status(ele) {
             bootbox.dialog({
-                             message: "Are you sure you want to lock the user",
-                             title: "Locking User",
-                             buttons: {
-                                success: {
-                                    label: "YES",
-                                    className: "btn-primary",
-                                    callback: function() {
-                                        username=$(ele).closest('tr').children('td').first().text();
-                                        $.ajax({
-                                            url:"change_user_status/",
-                                            type:"POST",
-                                            data:{ user_name: username },
-                                            dataType:"json",
-                                            success: function(data){
-                                                    if(data.data.objects.status){
-                                                        $(ele).closest('td').html('<h3 class="fa fa-lock text-danger" onclick="change_user_status(this);"> &nbsp;</h3>')
-                                                       }
-                                                    else{
-                                                        $(ele).closest('td').html('<h3 class="fa fa-unlock text-success" onclick="change_user_status(this);"> &nbsp;</h3>')
-                                                    }
-                                                    }//success ends
-                                            });//ajax ends
+                message: "Are you sure you want to lock the user",
+                title: "Locking User",
+                buttons: {
+                    success: {
+                        label: "YES",
+                        className: "btn-primary",
+                        callback: function() {
+                            username=$(ele).closest('tr').children('td').first().text();
+                            $.ajax({
+                                url:"change_user_status/",
+                                type:"POST",
+                                data:{ user_name: username },
+                                dataType:"json",
+                                success: function(data){
+                                    if(data.data.objects.status) {
+                                        $(ele).closest('td').html('<h3 class="fa fa-lock text-danger" onclick="change_user_status(this);"> &nbsp;</h3>')
+                                    } else {
+                                        $(ele).closest('td').html('<h3 class="fa fa-unlock text-success" onclick="change_user_status(this);"> &nbsp;</h3>')
                                     }
-                                },//success ends
-                                danger: {
-                                    label: "No!",
-                                    className: "btn-danger",
-                                    callback: function (){
-                                            $(".bootbox").modal("hide");
-
-                                }
-                            }//danger button ends
-
-                            }//buttons ends
-                            });//bootbox ends
+                                }//success ends
+                            });//ajax ends
+                        }
+                    },//success ends
+                    danger: {
+                        label: "No!",
+                        className: "btn-danger",
+                        callback: function (){
+                            $(".bootbox").modal("hide");
+                        }
+                    }//danger button ends
+                }//buttons ends
+            });//bootbox ends
         }//function ends
 
-    function logout_user(ele){
-        bootbox.dialog({
-                             message: "Are you sure you want to log-off the user",
-                             title: "Log-off User",
-                             buttons: {
-                                success: {
-                                    label: "YES",
-                                    className: "btn-primary",
-                                    callback: function() {
-                                        username=$(ele).closest('tr').children('td').first().text();
-                                        $.ajax({
-                                                url:"/sm/logout_user/",
-                                                type:"POST",
-                                                data:{ user_name: username },
-                                                dataType:"json",
-                                                success: function(data){
-                                                        if(data.success){
-                                                            $(ele).closest('tr').children('td:nth-child(5)').text("NO");
-                                                            $(ele).closest('td').children('h3:nth-child(2)').removeClass('fa-sign-out')
-                                                           }
-                                                        }//success ends
-                                                });//ajax ends
-
+        function logout_user(ele){
+            bootbox.dialog({
+                message: "Are you sure you want to log-off the user",
+                title: "Log-off User",
+                buttons: {
+                    success: {
+                        label: "YES",
+                        className: "btn-primary",
+                        callback: function() {
+                            username=$(ele).closest('tr').children('td').first().text();
+                            $.ajax({
+                                url:"/sm/logout_user/",
+                                type:"POST",
+                                data:{ user_name: username },
+                                dataType:"json",
+                                success: function(data){
+                                    if(data.success) {
+                                        $(ele).closest('tr').children('td:nth-child(5)').text("NO");
+                                        $(ele).closest('td').children('h3:nth-child(2)').removeClass('fa-sign-out')
                                     }
-                                },//success ends
-                                danger: {
-                                    label: "No!",
-                                    className: "btn-danger",
-                                    callback: function (){
-                                            $(".bootbox").modal("hide");
+                                }//success ends
+                            });//ajax ends
 
-                                }
-                             }//danger ends
-                             }//buttons ends
-        });//bootbox ends
-    }
+                        }
+                    },//success ends
+                    danger: {
+                        label: "No!",
+                        className: "btn-danger",
+                        callback: function () {
+                            $(".bootbox").modal("hide");
+                        }
+                    }//danger ends
+                }//buttons ends
+            });//bootbox ends
+        }
     </script>
-
 {% endblock %}
-
-
-

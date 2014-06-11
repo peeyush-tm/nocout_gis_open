@@ -1,7 +1,11 @@
 {% extends "inventory/inventory.html" %}
-{% block breadcrumb_page_title %} > Site Instance {% endblock %}
-{% block content_title %}Site Instances Management{% endblock %}
-{% block content_description %}Delete a site instance ....{% endblock %}
+{% block breadcrumb_title %}
+	<li>Inventory</li>
+    <li>Site Instance</li>
+    <li>Delete</li>
+{% endblock %}
+{% block content_title %}Delete Site Instance{% endblock %}
+{% block content_description %}Delete site instance{% endblock %}
 {% block content %}
     <form action="" method="post">{% csrf_token %}
         <p>Are you sure you want to delete "{{ object }}" ?</p>

@@ -1,0 +1,65 @@
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+    <li>Scheduling</li>
+{% endblock %}
+{% block content_title %}Scheduling{% endblock %}
+{% block content_description %} {% endblock %}
+{% load staticfiles %}
+
+{% block content %}
+
+	<div class="box border lite">
+        <div class="box-title">
+            <h4><i class="fa fa-calendar"></i>SCHEDULING</h4>
+
+            <div class="tools hidden-xs">
+                <a href="#box-config" data-toggle="modal" class="config">
+                    <i class="fa fa-cog"></i>
+                </a>
+                <a href="javascript:;" class="reload">
+                    <i class="fa fa-refresh"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="box-body">
+            <!-- scheduling_container Start-->
+            <div id="scheduling_container">
+            	<div>
+            		<div class="divide-20"></div>
+            		<div class="col-md-6 box border">
+            			<div id="scheduling_calendar"></div>
+            		</div>
+            		<div class="col-md-6">
+            			<table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
+		                    <thead>
+		                        <th>Time</th>
+		                        <th>Device</th>
+		                        <th>Status</th>
+		                    </thead>
+		                    <tbody></tbody>
+		                </table>
+            		</div>
+        			<div class="clearfix"></div>
+            	</div>
+            </div>
+            <!-- scheduling_container End-->
+            <div class="clearfix"></div>
+        </div>
+    </div>
+
+{% endblock %}
+
+
+{% block load_js %}
+	<!-- FULL CALENDAR -->
+	<script type="text/javascript" src={% static "js/fullcalendar/fullcalendar.min.js" %}></script>
+	<!-- Custom Script-->
+	<script type="text/javascript" src={% static "js/nocout_scheduling.js" %}></script>
+	<script>
+	    $(document).ready(function () {
+	        App.setPage("");  //Set current page
+	        App.init(); //Initialise plugins and elements
+	    });
+	</script>
+{% endblock %}

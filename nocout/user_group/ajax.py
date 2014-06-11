@@ -36,8 +36,10 @@ def user_group_soft_delete_form(request, value):
     result['message'] = "Failed to render form correctly."
     result['data']['meta'] = ''
     result['data']['objects'] = {}
-    result['data']['objects']['user_group_id'] = user_group.id
-    result['data']['objects']['user_group_name'] = user_group.name
+    result['data']['objects']['form_type'] = 'user_group'
+    result['data']['objects']['form_title'] = 'user group'
+    result['data']['objects']['id'] = user_group.id
+    result['data']['objects']['name'] = user_group.name
 
     # child_user_groups: list of user groups which are associated with the
     # user group which we are deleting
@@ -51,16 +53,16 @@ def user_group_soft_delete_form(request, value):
         for cug in user_group_descendant:
             child_user_group_descendants.append(cug)
 
-    result['data']['objects']['child_user_groups'] = []
+    result['data']['objects']['childs'] = []
     # future user group parent needs to find out only if our user group is
     # associated with any other user group i.e if child_user_groups.count() > 0
     if child_user_groups.count() > 0:
-        # eligible_user_groups: these are the user groups which are not associated with
+        # eligible: these are the user groups which are not associated with
         # the user group which needs to be deleted in any way, & are eligible to be the
         # parent of user groups in child_user_groups
         remaining_user_groups = UserGroup.objects.exclude(parent_id=value)
         selected_user_groups = set(remaining_user_groups) - set(child_user_group_descendants)
-        result['data']['objects']['eligible_user_groups'] = []
+        result['data']['objects']['eligible'] = []
         for e_ug in selected_user_groups:
             e_dict = dict()
             e_dict['key'] = e_ug.id
@@ -69,12 +71,12 @@ def user_group_soft_delete_form(request, value):
             # user group choices
             if e_ug.id == user_group.id: continue
             if e_ug.is_deleted == 1: continue
-            result['data']['objects']['eligible_user_groups'].append(e_dict)
+            result['data']['objects']['eligible'].append(e_dict)
         for c_ug in child_user_groups:
             c_dict = {}
             c_dict['key'] = c_ug.id
             c_dict['value'] = c_ug.name
-            result['data']['objects']['child_user_groups'].append(c_dict)
+            result['data']['objects']['childs'].append(c_dict)
     result['success'] = 1
     result['message'] = "Successfully render form."
     return json.dumps({'result': result})

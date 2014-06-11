@@ -1,17 +1,17 @@
 {% extends "department/department.html" %}
 {% load staticfiles %}
-{% block css %}
-    {#    <link rel="stylesheet" type="text/css" href={% static "css/user_group.css" %}>#}
+{% block breadcrumb_title %}
+    <li>User Management</li>
+    <li>User Groups</li>
 {% endblock %}
-{% block breadcrumb_page_title %} > User Group {% endblock %}
-{% block content_title %}User Groups Management{% endblock %}
-{% block content_description %}List of user groups ....{% endblock %}
+{% block content_title %}User Group Management{% endblock %}
+{% block content_description %}List of user groups{% endblock %}
 {% block content %}
     <p><a href="/user_group/new"><i class="fa fa-plus">&nbsp;</i> Create User Group</a></p>
 
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i>USER GROUP LISTING</h4>
+            <h4><i class="fa fa-table"></i> USER GROUP LISTING</h4>
 
             <div class="tools hidden-xs">
                 <a href="#box-config" data-toggle="modal" class="config">
@@ -24,8 +24,7 @@
         </div>
 
         <div id="tableContainer" class="box-body">
-            <table cellpadding="0" cellspacing="0" border="0"
-                   class="datatable table table-striped table-bordered table-hover" id="UserGroupTable">
+            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="UserGroupTable">
                 <thead></thead>
                 <tbody></tbody>
             </table>
@@ -34,81 +33,20 @@
 {% endblock %}
 
 {% block jquery %}
+    <!-- Custom script for data table-->
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Custom Script for soft delete-->
+    <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
     <script type="text/javascript">
-
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
             var dataTableInstance = new ourDataTableWidget();
-
-            var tableObject = $.parseJSON('{{ datatable_headers|safe }}');
+            /*Grid headers object*/
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            /*Ajax url to get grid data*/
             var ajax_url = '{% url "UserGroupListingTable" %}';
-            dataTableInstance.createDataTable("UserGroupTable", tableObject, ajax_url);
-
             /*Call createDataTable function of ourDataTableWidget class*/
-            $('.datatable').each(function () {
-                var datatable = $(this);
-                // SEARCH - Add the placeholder for Search and Turn this into in-line form control
-                var search_input = datatable.closest('.dataTables_wrapper').find('div[id$=_filter] input');
-                search_input.attr('placeholder', 'Search');
-                search_input.addClass('form-control input-sm');
-                // LENGTH - Inline-Form control
-                var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
-                length_sel.addClass('form-control input-sm');
-            });
+            dataTableInstance.createDataTable("UserGroupTable", gridHeadersObj, ajax_url);
         });
-
-        function get_soft_delete_form(content) {
-            // soft_delete_html: contains html for soft delete form
-            var soft_delete_html;
-            if (!(typeof content.result.data.objects.child_user_groups === 'undefined') && !(Object.keys(content.result.data.objects.child_user_groups).length === 0)) {
-                soft_delete_html = '<h5 class="text-warning">This user group (' + content.result.data.objects.user_group_name + ') is parent of following user groups:</h5>';
-                for (var i = 0, l = content.result.data.objects.child_user_groups.length; i < l; i++) {
-                    soft_delete_html += '<span class="text-warning">' + (i + 1) + ' : ' + content.result.data.objects.child_user_groups[i].value + ' </span><br />';
-                }
-                if (!(typeof content.result.data.objects.eligible_user_groups === 'undefined')) {
-                    soft_delete_html += '<h5 class="text-danger">Please first choose future parent of these user groups from below choices:</h5>';
-                    soft_delete_html += '<input type="hidden" id="id_user_group" name="user_group" value="' + content.result.data.objects.user_group_id + '" />';
-                    soft_delete_html += '<select class="form-control" id="id_parent" name="parent">';
-                    soft_delete_html += '<option value="">Select User Group</option>';
-                    for (var i = 0, l = content.result.data.objects.eligible_user_groups.length; i < l; i++) {
-                        soft_delete_html += '<option value="' + content.result.data.objects.eligible_user_groups[i].key + '">' + content.result.data.objects.eligible_user_groups[i].value + '</option>';
-                    }
-                    soft_delete_html += '</select>';
-                }
-            }
-            else {
-                soft_delete_html = '<h5 class="text-warning">This user group (' + content.result.data.objects.user_group_name + ') is not associated with any other user group. So click on Yes! if you want to delete it.</h5>';
-                soft_delete_html += '<input type="hidden" id="id_user_group" name="user_group" value="' + content.result.data.objects.user_group_id + '" />';
-                soft_delete_html += '<input type="hidden" id="id_parent" name="parent" value="" />'
-            }
-            bootbox.dialog({
-                message: soft_delete_html,
-                title: "<span class='text-danger'><i class='fa fa-times'></i> Delete User Group</span>",
-                buttons: {
-                    success: {
-                        label: "Yes!",
-                        className: "btn-success",
-                        callback: function () {
-                            Dajaxice.user_group.user_group_soft_delete(test, {
-                                'user_group_id': $('#id_user_group').val(),
-                                'new_parent_id': $('#id_parent').val()});
-                        }
-                    },
-                    danger: {
-                        label: "No!",
-                        className: "btn-danger",
-                        callback: function () {
-                            bootbox.alert("Ok! You choose to not delete this user group right now.");
-                        }
-                    }
-                }
-            });
-        }
-        function test(responseResult) {
-            bootbox.alert(responseResult.result.message);
-        }
-
     </script>
-
 {% endblock %}

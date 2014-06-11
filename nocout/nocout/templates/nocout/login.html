@@ -4,17 +4,17 @@
 <head>
     <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
     <meta charset="utf-8"/>
-    <title> Cloud Admin | Login </title>
+    <title> Nocout </title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no"/>
     <meta name="description" content=""/>
-    <meta name="author" content="Priyesh"/>
+    <meta name="author" content="Teramatrix"/>
     <!-- STYLESHEETS -->
     <!--[if lt IE 9]><script src="js/flot/excanvas.min.js"></script><script src={% static "html5/html5.js" %}></script><script src={% static "media-ie/css3-mediaqueries.js" %}></script>
     <![endif]-->
+    <!-- CLOUD ADMIN STYLE-->
     <link rel="stylesheet" type="text/css" href={% static "css/cloud-admin.css" %} />
+    <!-- FONT AWESOME STYLE-->
     <link href={% static "font-awesome/css/font-awesome.min.css" %} rel="stylesheet" />
-    <!-- UNIFORM -->
-    <link rel="stylesheet" type="text/css" href={% static "js/uniform/css/uniform.default.min.css" %} />
     <!-- ANIMATE -->
     <link rel="stylesheet" type="text/css" href={% static "css/animatecss/animate.min.css" %} />
     <!-- FONTS -->
@@ -61,12 +61,12 @@
                             <div class="form-group">
                                 <label for="username">Username</label>
                                 <i class="fa fa-envelope"></i>
-                                <input type="text" class="form-control" name="username" value=""/>
+                                <input type="text" class="form-control" id="username" name="username" value=""/>
                             </div>
                             <div class="form-group">
                                 <label for="exampleInputPassword1">Password</label>
                                 <i class="fa fa-lock"></i>
-                                <input type="password" class="form-control" name="password">
+                                <input type="password" class="form-control" id="password" name="password">
                             </div>
                             <div class="form-actions">
                                 <button type="submit" class="btn btn-danger">Submit</button>
@@ -78,104 +78,112 @@
         </div>
     </section>
     <!--/LOGIN -->
-</section>
-<!--/PAGE -->
-<!-- JAVASCRIPTS -->
-<!-- Placed at the end of the document so the pages load faster -->
-<!-- JQUERY -->
-<script src={% static "js/jquery/jquery-2.0.3.min.js" %}></script>
-<!-- JQUERY UI-->
-<script src={% static "js/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.min.js" %}></script>
-<!-- BOOTSTRAP -->
-<script src={% static "bootstrap-dist/js/bootstrap.min.js" %}></script>
-<!-- UNIFORM -->
-<script type="text/javascript" src={% static "js/uniform/jquery.uniform.min.js" %}></script>
-<!-- BOOTBOX -->
-<script type="text/javascript" src={% static "js/bootbox/bootbox.min.js" %}></script>
-<!-- Gritter Notification -->
-<script type="text/javascript" src={% static "js/gritter/js/jquery.gritter.min.js" %}></script>
+  </section>
+  <!--/PAGE -->
+  <!-- JAVASCRIPTS -->
+  <!-- Placed at the end of the document so the pages load faster -->
+  <!-- BOOTSTRAP -->
+  <script src={% static "bootstrap-dist/js/bootstrap.min.js" %}></script>
+  <!-- BOOTBOX -->
+  <script type="text/javascript" src={% static "js/bootbox/bootbox.min.js" %}></script>
+  <!-- Gritter Notification -->
+  <script type="text/javascript" src={% static "js/gritter/js/jquery.gritter.min.js" %}></script>
+  <!-- AJAX CSRF -->
+  <script type="text/javascript" src={% static "js/ajax_csrf.js" %}></script>
 
-<!-- CUSTOM SCRIPT -->
-<script type="text/javascript" src={% static "js/ajax_csrf.js" %}></script>
-<!-- AJAX CSRF -->
-<script src={% static "js/script.js" %}></script>
-<script>
-    jQuery(document).ready(function () {
-        App.setPage("login");  //Set current page
-        App.init(); //Initialise plugins and elements
-    });
+  <script>
+      /*Triggers when login form is submitted*/
+      $("#login_form").on("submit", function (event) {
 
-    $("#login_form").on("submit", function (event) {
-        $.ajax({   url: "/auth/",
-                   type: "POST",
-                   data: $("#login_form").serialize(true) + location.search.replace('?','&'),
-                   dataType: "json",
-                   success: function (data) {
-                       if (data.success == 1) {
-                           if (data.data.objects.dialog) {
-                               bootbox.dialog({
-                                                  message: "This account is active on a different computer, " +
-                                                          "Press continue login with another account or kill all other sessions and continue with this login",
-                                                  title: "Login Alert",
-                                                  buttons: {
-                                                      success: {
-                                                          label: "Logoff all other sessions & Login",
-                                                          className: "btn-success",
-                                                          callback: function () {
-                                                              $.ajax({
-                                                                         url: "/sm/dialog_action/",
-                                                                         type: "POST",
-                                                                         data: { action: 'continue', url:data.data.objects.url },
-                                                                         dataType: "json",
-                                                                         success: function (data) {
-                                                                             window.location.replace(data.data.objects.url)
-                                                                         }//success
-                                                                     });//ajax
-                                                          }//callback function
-                                                      },//buttonsuccess
+        var username = $.trim($("#username").val()),
+            pass = $("#password").val();
+        /*If username or password field is blank*/
+        if(username.length == 0 || pass.length == 0) {
+          /*Error Message*/
+          var blank_field_msg = "Username & Password are required for login.";
+          /*Call gritter.add() to show the gritter popup*/
+          var mandatory_gritter = $.gritter.add({
+            title: "Mandatory Fields",
+            text: blank_field_msg,
+            sticky: true,
+            after_close: function () {
+              $.gritter.remove(mandatory_gritter);
+            }
+          });
+        } else {
+          /*Make ajax call to the server*/
+          $.ajax({   
+            url: "/auth/",
+            type: "POST",
+            data: $("#login_form").serialize(true) + location.search.replace('?','&'),
+            dataType: "json",
+            success: function (data) {
+              if (data.success == 1) {
+                if (data.data.objects.dialog) {
+                  bootbox.dialog({
+                    message: "This account is active on a different computer, " +
+                            "Press continue login with another account or kill all other sessions and continue with this login",
+                    title: "Login Alert",
+                    buttons: {
+                        success: {
+                            label: "Logoff all other sessions & Login",
+                            className: "btn-success",
+                            callback: function () {
+                                $.ajax({
+                                           url: "/sm/dialog_action/",
+                                           type: "POST",
+                                           data: { action: 'continue', url:data.data.objects.url },
+                                           dataType: "json",
+                                           success: function (data) {
+                                               window.location.replace(data.data.objects.url)
+                                           }//success
+                                       });//ajax
+                            }//callback function
+                        },//buttonsuccess
 
 
-                                                      danger: {
-                                                          label: "Cancel and login with a separate account",
-                                                          className: "btn-danger",
-                                                          callback: function () {
-                                                              $.ajax({
-                                                                         url: "/sm/dialog_action/",
-                                                                         type: "POST",
-                                                                         data: { action: 'logout'},
-                                                                         dataType: "json",
-                                                                         success: function (data) {
-                                                                             window.location.replace(data.data.objects.url)
-                                                                         }//success
-                                                                     });//ajax
-                                                          }//callback function
-                                                      }//buttonsuccess
-                                                  } //button
-                                              });//button dialog
-                           }// if end for data dialogue
-                           else {
-                               window.location.replace(data.data.objects.url);
-                           }
-                       }//if end
-                       else if (data.success == 0) {
-                           var unique_gritter = $.gritter.add({
-                                                                  title: "Invalid Login Credentials",
-                                                                  text: data.message,
-                                                                  sticky: true,
-                                                                  after_close: function () {
-                                                                      $.gritter.removeAll();
-                                                                  }
-                                                              });
-                       }//else if end
-                       else {
-                           window.location.replace(data.data.objects.url);
-                       }
-                   }//success
-               });//Ajax
+                        danger: {
+                            label: "Cancel and login with a separate account",
+                            className: "btn-danger",
+                            callback: function () {
+                                $.ajax({
+                                           url: "/sm/dialog_action/",
+                                           type: "POST",
+                                           data: { action: 'logout'},
+                                           dataType: "json",
+                                           success: function (data) {
+                                               window.location.replace(data.data.objects.url)
+                                           }//success
+                                       });//ajax
+                            }//callback function
+                        }//buttonsuccess
+                      } //button
+                  });//bootbox end
+                }// if end for data dialogue
+                else {
+                  window.location.replace(data.data.objects.url);
+                }
+              }//if end
+              else if (data.success == 0) {
+                var unique_gritter = $.gritter.add({
+                  title: "Invalid Login Credentials",
+                  text: data.message,
+                  sticky: true,
+                  after_close: function () {
+                      $.gritter.removeAll();
+                  }
+                });
+              }//else if end
+              else {
+                window.location.replace(data.data.objects.url);
+              }
+            }//success
+          });//Ajax
+        }
         return false;
-    });//onclick
+      });//onclick
 
-</script>
+  </script>
 <!-- /JAVASCRIPTS -->
 </body>
 </html>

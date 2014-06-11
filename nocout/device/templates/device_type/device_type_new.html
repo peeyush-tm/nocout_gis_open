@@ -1,8 +1,12 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block breadcrumb_page_title %} > Device Type {% endblock %}
-{% block content_title %}Device Types Management{% endblock %}
-{% block content_description %}Create a device type ....{% endblock %}
+{% block breadcrumb_title %}
+    <li>Inventory</li>
+    <li>Device Type</li>
+    <li>New</li>
+{% endblock %}
+{% block content_title %}Add Device Type{% endblock %}
+{% block content_description %}Add device type{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
@@ -10,38 +14,38 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i>Device Type</h4>
+                            <h4><i class="fa fa-bars"></i> ADD DEVICE TYPE</h4>
                         </div>
-                            <div class="box-body">
-                                <div class="col-md-6"><br />
-                                    <form action="/type/new/" method="post" class="form-horizontal"
-                                          role="form">{% csrf_token %}
-                                        <div class="form-group">
-                                            {% for field in form %}
-                                                <div class="form-group">
-                                                    <label for="{{ field.id_for_label }}"
-                                                           class="col-sm-5 control-label">{{ field.label|title }}</label>
-                                                    <div class="col-sm-7">
-                                                        {{ field }} {{ field.errors }}
-                                                    </div>
+                        <div class="box-body">
+                            <div class="col-md-6"><br />
+                                <form action="/type/new/" method="post" class="form-horizontal"
+                                      role="form">{% csrf_token %}
+                                    <div class="form-group">
+                                        {% for field in form %}
+                                            <div class="form-group">
+                                                <label for="{{ field.id_for_label }}"
+                                                       class="col-sm-5 control-label">{{ field.label|title }}</label>
+                                                <div class="col-sm-7">
+                                                    {{ field }} {{ field.errors }}
                                                 </div>
-                                        {% endfor %}
-                                        </div>
-                                        <div class="form-group">
-                                            <div class="col-sm-offset-5 col-sm-7">
-                                            <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i> Create</button>
-                                            &nbsp;
-                                            <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i> Reset
-                                            </button>
-                                            &nbsp;
-                                            <button type="reset" class="btn btn-danger" onclick="window.location.replace('/type/')"><i class="fa fa-times"></i> Cancel
-                                            </button>
                                             </div>
+                                    {% endfor %}
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="col-sm-offset-5 col-sm-7">
+                                        <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i> Create</button>
+                                        &nbsp;
+                                        <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i> Reset
+                                        </button>
+                                        &nbsp;
+                                        <button type="reset" class="btn btn-danger" onclick="window.location.replace('/type/')"><i class="fa fa-times"></i> Cancel
+                                        </button>
                                         </div>
-                                    </form>
-                                </div>
-                                <div class="clearfix"></div>
+                                    </div>
+                                </form>
                             </div>
+                            <div class="clearfix"></div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -1,0 +1,127 @@
+{% load staticfiles %}
+
+<!-- Header Block Start-->
+{% block header_block %}
+    Header Block
+{% endblock %}
+<!-- Header Block End-->
+
+{% block footer_block %}
+    <!-- JAVASCRIPTS -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <!-- CUSTOM SCRIPT -->
+    <script src={% static "js/script.js" %}></script>
+    <!-- JQUERY UI-->
+    <script src={% static "js/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.min.js" %}></script>
+    <!-- BOOTSTRAP -->
+    <script src={% static "bootstrap-dist/js/bootstrap.min.js" %}></script>
+    <!-- DATA TABLES -->
+    <script type="text/javascript" src={% static "js/datatables/media/js/jquery.dataTables.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/datatables/media/assets/js/datatables.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/datatables/extras/TableTools/media/js/TableTools.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/datatables/extras/TableTools/media/js/ZeroClipboard.min.js" %}></script>
+    <!-- BLOCK UI -->
+    <script type="text/javascript" src={% static "js/jQuery-BlockUI/jquery.blockUI.min.js" %}></script>
+    <!-- TYPEHEAD -->
+    <script type="text/javascript" src={% static "js/typeahead/typeahead.min.js" %}></script>
+    <!-- AUTOSIZE -->
+    <script type="text/javascript" src={% static "js/autosize/jquery.autosize.min.js" %}></script>
+    <!-- COUNTABLE -->
+    <script type="text/javascript" src={% static "js/countable/jquery.simplyCountable.min.js" %}></script>
+    <!-- INPUT MASK -->
+    <script type="text/javascript" src={% static "js/bootstrap-inputmask/bootstrap-inputmask.min.js" %}></script>
+    <!-- FILE UPLOAD -->
+    <script type="text/javascript" src={% static "js/bootstrap-fileupload/bootstrap-fileupload.min.js" %}></script>
+    <!-- SELECT2 -->
+    <script type="text/javascript" src={% static "js/select2/select2.min.js" %}></script>
+    <!-- UNIFORM -->
+    <script type="text/javascript" src={% static "js/uniform/jquery.uniform.min.js" %}></script>
+    <!-- BOOTBOX -->
+    <script type="text/javascript" src={% static "js/bootbox/bootbox.min.js" %}></script>
+    <!-- AJAX CSRF -->
+    <script type="text/javascript" src={% static "js/ajax_csrf.js" %}></script>
+    <!-- GRITTER -->
+    <script type="text/javascript" src={% static "js/gritter/js/jquery.gritter.min.js" %}></script>
+    <!-- SELECTED SIDE MENU-->
+    <script type="text/javascript" src={% static "js/nocout/selected_side_menu.js" %}></script>
+
+    <!-- session_security script files -->
+    {% include "session_security/all.html" %}
+    <!-- session_security script files -->
+
+
+    <!-- CUSTOM SCRIPT -->
+    {% block jquery %}{% endblock %}
+    <!-- CUSTOM JAVASCRIPTS IMPORT BLOCK -->
+    {% block load_js %}
+        <script>
+            $(document).ready(function () {
+                App.setPage("");  //Set current page
+                App.init(); //Initialise plugins and elements
+            });
+        </script>
+    {% endblock %}
+    <script>
+        
+        $(document).ready(function() {
+            
+            var checkInterval = 2000,
+                do_session_check = true;
+
+            function session_check(do_session_check){
+                if (do_session_check) {
+                    $.ajax({
+                        url:"/sm/dialog_for_page_refresh/",
+                        type:"POST",
+                        dataType:"json",
+                        success:function(data){
+
+                            if (data.success == 1){
+
+                                do_session_check = false;
+
+                                if(data.data.objects.dialog){
+                                        bootbox.dialog({
+                                        message: "Your session has been ended by the administrator & your account has been locked." +
+                                                 "You will be redirected to login page",
+                                        title: "Session Expired",
+                                        buttons: {
+                                            main: {
+                                                label: "Ok",
+                                                className: "btn-primary",
+                                                callback: function() {
+                                                    $.ajax({
+                                                        url:"/sm/dialog_expired_logout_user/",
+                                                        type:"POST",
+                                                        dataType:"json",
+                                                        success:function(data){
+                                                            if(data.data.objects.refresh){
+                                                                location.replace('/logout/')
+                                                            }
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        }
+
+                                    }, window.clearInterval(session_in_check));//bootbox ends
+                                }
+                            }
+                        }//success ends
+                    });
+                    //ajax ends
+                }
+                else {
+                    window.clearInterval(session_in_check);
+                }
+            }//function ends
+
+            session_in_check = setInterval(function(){session_check(do_session_check)}, checkInterval);
+
+        });
+    </script>
+
+    </body>
+    </html>
+
+{% endblock %}

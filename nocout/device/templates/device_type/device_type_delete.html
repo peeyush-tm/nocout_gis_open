@@ -1,7 +1,11 @@
 {% extends "inventory/inventory.html" %}
-{% block breadcrumb_page_title %} > Device Type {% endblock %}
-{% block content_title %}Device Types Management{% endblock %}
-{% block content_description %}Delete a device type ....{% endblock %}
+{% block breadcrumb_title %}
+	<li>Inventory</li>
+    <li>Device Type</li>
+    <li>Delete</li>
+{% endblock %}
+{% block content_title %}Delete Device Type{% endblock %}
+{% block content_description %}Delete device type{% endblock %}
 {% block content %}
     <form action="" method="post">{% csrf_token %}
         <p>Are you sure you want to delete "{{ object }}" ?</p>
