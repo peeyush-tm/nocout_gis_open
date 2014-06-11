@@ -14,9 +14,11 @@ def update_vendor(request, option):
     tech = DeviceTechnology.objects.get(pk=int(option))
     vendors = tech.device_vendors.all()
     out = []
+    out.append("<option value='' selected>Select Vendor....</option>")
     for vendor in vendors:
         out.append("<option value='%d'>%s</option>" % (vendor.id, vendor.name))
     dajax.assign('#id_device_vendor', 'innerHTML', ''.join(out))
+    print dajax.json()
     return dajax.json()
 
 
@@ -27,10 +29,12 @@ def update_model(request, option):
     vendor = DeviceVendor.objects.get(pk=int(option))
     models = vendor.device_models.all()
     out = []
+    out.append("<option value=''>Select Model....</option>")
     for model in models:
         out.append("<option value='%d'>%s</option>" % (model.id, model.name))
 
     dajax.assign('#id_device_model', 'innerHTML', ''.join(out))
+    print dajax.json()
     return dajax.json()
 
 
@@ -41,9 +45,11 @@ def update_type(request, option):
     model = DeviceModel.objects.get(pk=int(option))
     types = model.device_types.all()
     out = []
+    out.append("<option value=''>Select Type....</option>")
     for dtype in types:
         out.append("<option value='%d'>%s</option>" % (dtype.id, dtype.name))
     dajax.assign('#id_device_type', 'innerHTML', ''.join(out))
+    print dajax.json()
     return dajax.json()
 
 
