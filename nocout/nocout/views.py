@@ -11,6 +11,10 @@ from session_management.models import Visitor
 
 @csrf_protect
 def login(request):
+
+    if not request.user.is_anonymous():
+        return HttpResponseRedirect('/home/')
+
     return render(request, 'nocout/login.html')
 
 
@@ -33,7 +37,7 @@ def auth_view(request):
             "message": "Success/Fail message.",
             "data": {
                 "meta": {},
-                "objects": {'user_limit_exceed': True}
+                "objects": {'user_limit_exceed': True }
             }
         }
 
@@ -48,26 +52,26 @@ def auth_view(request):
     if user is not None and user.is_active:
 
         auth.login(request, user)
-
+        next_url= '/'+ request.POST.get('next','home/')
         key_from_cookie = request.session.session_key
         if hasattr(request.user, 'visitor'):
             session_key_in_visitor_db = request.user.visitor.session_key
 
             if session_key_in_visitor_db != key_from_cookie:
-                objects_values=dict(dialog=True)
+                objects_values= dict(dialog=True, url=next_url)
 
             else:
                 #User Log Activity
                 action.send(request.user, verb=u'username : %s loggedin from server name: %s, server port: %s'\
                                  %( username, request.META.get('SERVER_NAME'), request.META.get('SERVER_PORT')))
-                objects_values=dict(url='/home/')
+                objects_values=dict(url=next_url)
 
         else:
             Visitor.objects.create( user=request.user, session_key=key_from_cookie )
             #User Log Activity
             action.send(request.user, verb=u'username : %s loggedin from server name: %s, server port: %s'\
                             %( username, request.META.get('SERVER_NAME'), request.META.get('SERVER_PORT')))
-            objects_values=dict(url='/home/')
+            objects_values=dict(url=next_url)
 
         result = {
             "success": 1,  # 0 - fail, 1 - success, 2 - exception
