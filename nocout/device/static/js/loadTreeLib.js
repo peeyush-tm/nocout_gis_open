@@ -146,7 +146,7 @@ function loadDeviceTreeLib() {
 			var slaveCount = devicesData[i].children.length;
 			var child  = {};			
 			for(var j=0;j<slaveCount;j++) {					
-				child[devicesData[i].children[j].name] = { "name" : "<a href='/devicevisualization/"+devicesData[i].children[j].name+"'><i class='fa fa-arrow-circle-right'></i> "+devicesData[i].children[j].data.alias+" ("+devicesData[i].children[j].name+" / "+devicesData[i].children[j].data.ip+" / "+devicesData[i].children[j].data.mac+")</a>" , "type" : "item" };
+				child[devicesData[i].children[j].name] = { "name" : "<a href='/network_maps/gis/"+devicesData[i].children[j].name+"'><i class='fa fa-arrow-circle-right'></i> "+devicesData[i].children[j].data.alias+" ("+devicesData[i].children[j].name+" / "+devicesData[i].children[j].data.ip+" / "+devicesData[i].children[j].data.mac+")</a>" , "type" : "item" };
 				treeDataObject[devicesData[i].name]["additionalParameters"]["children"] = child;
 			}
 		}
