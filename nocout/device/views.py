@@ -12,7 +12,7 @@ from device_group.models import DeviceGroup
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
     DeviceVendorForm, DeviceModelForm, DeviceTypeForm
 from nocout.utils.util import DictDiffer
-from site_instance.models import SiteInstance
+# from site_instance.models import SiteInstance
 from django.http.response import HttpResponseRedirect
 from service.models import Service
 from django.shortcuts import render_to_response
@@ -22,12 +22,13 @@ from django.template import RequestContext
 #we need DEBUG varaible for collecting the logs
 from django.conf import settings
 #END: import django settings
+from site_instance.models import SiteInstance
+
 if settings.DEBUG:
     import logging
     logger = logging.getLogger(__name__)
 
 # ***************************************** Device Views ********************************************
-from user_group.models import UserGroup
 
 
 class DeviceList(ListView):
@@ -408,12 +409,12 @@ class DeviceUpdate(UpdateView):
         cleaned_data_field_dict=cleaned_data_field()
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            initial_field_dict['parent'] = UserGroup.objects.get(pk=initial_field_dict['parent'][0]).name if initial_field_dict['parent'] else str(None)
+            initial_field_dict['parent'] = Device.objects.get(pk=initial_field_dict['parent'][0]).device_name if initial_field_dict['parent'] else str(None)
             initial_field_dict['site_instance'] = SiteInstance.objects.get(pk=initial_field_dict['site_instance'][0]).name if initial_field_dict['site_instance'] else str(None)
             initial_field_dict['device_group'] = DeviceGroup.objects.get(pk=initial_field_dict['device_group'][0]).name
             initial_field_dict['service'] = ', '.join([Service.objects.get(pk=service).service_name for service in initial_field_dict['service']])
 
-            cleaned_data_field_dict['parent'] = UserGroup.objects.get(pk=cleaned_data_field_dict['parent'][0]).name if cleaned_data_field_dict['parent'] else str(None)
+            cleaned_data_field_dict['parent'] = Device.objects.get(pk=cleaned_data_field_dict['parent'][0]).device_name if cleaned_data_field_dict['parent'] else str(None)
             cleaned_data_field_dict['site_instance'] = SiteInstance.objects.get(pk=cleaned_data_field_dict['site_instance'][0]).name if cleaned_data_field_dict['site_instance'] else str(None)
             cleaned_data_field_dict['device_group'] = DeviceGroup.objects.get(pk=cleaned_data_field_dict['device_group'][0]).name
             cleaned_data_field_dict['service'] = ', '.join([Service.objects.get(pk=service).service_name for service in cleaned_data_field_dict['service']])
