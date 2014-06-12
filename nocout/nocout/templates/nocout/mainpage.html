@@ -66,18 +66,19 @@
         $(document).ready(function() {
             
             var checkInterval = 2000,
-                do_session_check = true;
+            do_session_check = true;
 
             function session_check(do_session_check){
                 if (do_session_check) {
                     $.ajax({
                         url:"/sm/dialog_for_page_refresh/",
-                        type:"POST",
+                        type:"GET",
                         dataType:"json",
                         success:function(data){
 
                             if (data.success == 1){
 
+                                bootbox.hideAll();
                                 do_session_check = false;
 
                                 if(data.data.objects.dialog){
@@ -85,6 +86,7 @@
                                         message: "Your session has been ended by the administrator & your account has been locked." +
                                                  "You will be redirected to login page",
                                         title: "Session Expired",
+                                        closeButton: false,
                                         buttons: {
                                             main: {
                                                 label: "Ok",
@@ -92,7 +94,7 @@
                                                 callback: function() {
                                                     $.ajax({
                                                         url:"/sm/dialog_expired_logout_user/",
-                                                        type:"POST",
+                                                        type:"GET",
                                                         dataType:"json",
                                                         success:function(data){
                                                             if(data.data.objects.refresh){

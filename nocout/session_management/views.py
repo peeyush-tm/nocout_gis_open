@@ -12,20 +12,21 @@ from django.contrib import auth
 from user_profile.models import UserProfile
 from django.db.models import Q
 
+
 class UserStatusList(ListView):
     model = UserProfile
     template_name = 'session_management/users_status_list.html'
 
     def get_context_data(self, **kwargs):
-        context=super(UserStatusList, self).get_context_data(**kwargs)
-        datatable_headers=[
-            {'mData':'username',         'sTitle' : 'Username',     'sWidth':'null',},
-            {'mData':'full_name',        'sTitle' : 'Full Name',    'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'user_group__name', 'sTitle' : 'User Group',   'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'role__role_name',  'sTitle' : 'Role',         'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'logged_in_status',         'sTitle' : 'Logged in',     'sWidth':'null',},
-            {'mData':'actions',          'sTitle' : 'Actions',      'sWidth':'8%' ,},
-            ]
+        context = super(UserStatusList, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'username', 'sTitle': 'Username', 'sWidth': 'null', },
+            {'mData': 'full_name', 'sTitle': 'Full Name', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'user_group__name', 'sTitle': 'User Group', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'role__role_name', 'sTitle': 'Role', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'logged_in_status', 'sTitle': 'Logged in', 'sWidth': 'null', },
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '8%', },
+        ]
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -33,20 +34,20 @@ class UserStatusList(ListView):
 
 class UserStatusTable(BaseDatatableView):
     model = UserProfile
-    columns = ['username', 'first_name', 'last_name', 'user_group__name', 'role__role_name','is_active']
-    order_columns = ['username', 'first_name', 'last_name', 'user_group__name', 'role__role_name','is_active']
+    columns = ['username', 'first_name', 'last_name', 'user_group__name', 'role__role_name', 'is_active']
+    order_columns = ['username', 'first_name', 'last_name', 'user_group__name', 'role__role_name', 'is_active']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
         ##TODO:Need to optimise with the query making login.
         if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -56,20 +57,21 @@ class UserStatusTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return UserProfile.objects.values(*self.columns+['id'])
+        return UserProfile.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         if qs:
-            sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' })]
-            qs, qs_headers = Datatable_Generation( qs, sanity_dicts_list ).main()
-            logged_in_users_ids=[ visitor.user_id for visitor in Visitor.objects.all() ]
+            sanity_dicts_list = [
+                OrderedDict({'dict_final_key': 'full_name', 'dict_key1': 'first_name', 'dict_key2': 'last_name'})]
+            qs, qs_headers = Datatable_Generation(qs, sanity_dicts_list).main()
+            logged_in_users_ids = [visitor.user_id for visitor in Visitor.objects.all()]
             for dct in qs:
-                dct.update( actions='<h3 class="fa fa-lock text-danger" onclick="change_user_status(this);"> &nbsp;</h3>'
-                            if dct.get('is_active') else '<h3 class="fa fa-unlock text-success" \
+                dct.update(actions='<h3 class="fa fa-lock text-danger" onclick="change_user_status(this);"> &nbsp;</h3>'
+                if dct.get('is_active') else '<h3 class="fa fa-unlock text-success" \
                             onclick="change_user_status(this);"> &nbsp;</h3>', logged_in_status='NO')
                 if dct.pop('id') in logged_in_users_ids:
-                   dct['actions']+='<h3 class="fa fa-sign-out text-danger" onclick="logout_user(this);"> &nbsp;</h3>'
-                   dct['logged_in_status']='YES'
+                    dct['actions'] += '<h3 class="fa fa-sign-out text-danger" onclick="logout_user(this);"> &nbsp;</h3>'
+                    dct['logged_in_status'] = 'YES'
 
         return qs
 
@@ -91,7 +93,7 @@ class UserStatusTable(BaseDatatableView):
         qs = self.paging(qs)
         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
+            qs = list(qs)
 
         # prepare output data
         aaData = self.prepare_results(qs)
@@ -99,12 +101,12 @@ class UserStatusTable(BaseDatatableView):
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
                'aaData': aaData
-               }
+        }
         return ret
 
 
 def dialog_action(request):
-    url=request.POST.get('url','/home/')
+    url = request.POST.get('url', '/home/')
     if request.POST.get('action') == 'continue':
         session_key = request.session.session_key
         Session.objects.filter(session_key=request.user.visitor.session_key).delete()
@@ -144,6 +146,11 @@ def dialog_action(request):
 
 
 def change_user_status(request):
+    """
+
+    :param request:the django request
+    :return: the response for user lock down, with success 1 as successful
+    """
     user_name = request.POST.get('user_name')
     user = UserProfile.objects.filter(username=user_name)
     if user[0].is_active:
@@ -160,7 +167,7 @@ def change_user_status(request):
             "meta": {},
             "objects": {
                 'status': status,
-                }
+            }
         }
     }
 
@@ -199,6 +206,7 @@ def dialog_expired_logout_user(request):
         }
     }
     return HttpResponse(json.dumps(result), mimetype='application/json')
+
 
 def logout_user(request):
     user_name = request.POST.get('user_name')

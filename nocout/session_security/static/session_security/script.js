@@ -200,14 +200,14 @@ yourlabs.SessionSecurity.prototype = {
             $("#counterVal > h1").html(timer + ' <i class="fa fa-clock-o">&nbsp;</i>');
 
             /*Save the current point reference for further use*/
-            var current = this;
+//            var current = this;
             /*Time out of 1 sec*/
-            setTimeout(function () {
-
+//            setTimeout(function () {
+//
 //                timer = timer - 1;
                 /*Recursive Calling*/
 //                current.startCountdown(timer);
-            }, 1000);
+//            }, 1000);
         }
         else {
             $("#counterVal > h1").html("Session has expired, due to inactivity or this account has been logged in from a new location.");
