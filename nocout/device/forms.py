@@ -144,6 +144,7 @@ class DeviceForm(forms.ModelForm):
             p1_g = transform(project, point)
             if not poly_g.contains(p1_g):
                 self._errors["latitude"] = ErrorList([u"Latitude, longitude specified doesn't exist within selected state."])
+        print self.cleaned_data
         return self.cleaned_data
 
 
