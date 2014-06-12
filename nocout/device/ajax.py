@@ -14,11 +14,12 @@ def update_vendor(request, option):
     tech = DeviceTechnology.objects.get(pk=int(option))
     vendors = tech.device_vendors.all()
     out = []
+    out.append("<option value='' selected>Select Vendor....</option>")
     for vendor in vendors:
         out.append("<option value='%d'>%s</option>" % (vendor.id, vendor.name))
     dajax.assign('#id_device_vendor', 'innerHTML', ''.join(out))
+    print dajax.json()
     return dajax.json()
-
 
 # updating model corresponding to the selected vendor
 @dajaxice_register
@@ -27,10 +28,12 @@ def update_model(request, option):
     vendor = DeviceVendor.objects.get(pk=int(option))
     models = vendor.device_models.all()
     out = []
+    out.append("<option value=''>Select Model....</option>")
     for model in models:
         out.append("<option value='%d'>%s</option>" % (model.id, model.name))
 
     dajax.assign('#id_device_model', 'innerHTML', ''.join(out))
+    print dajax.json()
     return dajax.json()
 
 
@@ -41,11 +44,67 @@ def update_type(request, option):
     model = DeviceModel.objects.get(pk=int(option))
     types = model.device_types.all()
     out = []
+    out.append("<option value=''>Select Type....</option>")
     for dtype in types:
         out.append("<option value='%d'>%s</option>" % (dtype.id, dtype.name))
     dajax.assign('#id_device_type', 'innerHTML', ''.join(out))
+    print dajax.json()
     return dajax.json()
 
+# to get vendor as during device update
+@dajaxice_register
+def after_update_vendor(request, option, selected=''):
+    dajax = Dajax()
+    tech = DeviceTechnology.objects.get(pk=int(option))
+    vendors = tech.device_vendors.all()
+    out = []
+    out.append("<option value=''>Select Vendor....</option>")
+    for vendor in vendors:
+        if vendor.id==int(selected):
+            out.append("<option value='%d' selected>%s</option>" % (vendor.id, vendor.name))
+        else:
+            out.append("<option value='%d'>%s</option>" % (vendor.id, vendor.name))
+    dajax.assign('#id_device_vendor', 'innerHTML', ''.join(out))
+    print dajax.json()
+    return dajax.json()
+
+# updating model corresponding to the selected vendor
+@dajaxice_register
+def after_update_model(request, option, selected=''):
+
+    dajax = Dajax()
+    vendor = DeviceVendor.objects.get(pk=int(option))
+    models = vendor.device_models.all()
+    out = []
+    out.append("<option value=''>Select Model....</option>")
+    for model in models:
+        if model.id==int(selected):
+            out.append("<option value='%d' selected>%s</option>" % (model.id, model.name))
+        else:
+            out.append("<option value='%d'>%s</option>" % (model.id, model.name))
+
+    dajax.assign('#id_device_model', 'innerHTML', ''.join(out))
+    print dajax.json()
+    return dajax.json()
+
+
+# updating type corresponding to the selected model
+@dajaxice_register
+def after_update_type(request, option, selected=''):
+    print 'type', selected
+    dajax = Dajax()
+    model = DeviceModel.objects.get(pk=int(option))
+    types = model.device_types.all()
+    out = []
+    out.append("<option value=''>Select Type....</option>")
+    for dtype in types:
+        if dtype.id==int(selected):
+            out.append("<option value='%d' selected>%s</option>" % (dtype.id, dtype.name))
+        else:
+            out.append("<option value='%d'>%s</option>" % (dtype.id, dtype.name))
+    dajax.assign('#id_device_type', 'innerHTML', ''.join(out))
+    print dajax.json()
+    return dajax.json()
 
 # pop up device 'extra fields' corresponding to the selected 'device type'
 @dajaxice_register

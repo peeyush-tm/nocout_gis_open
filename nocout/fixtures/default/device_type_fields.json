@@ -1,0 +1,560 @@
+[
+{
+  "pk": 1, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Customer Name", 
+    "field_name": "customer_name", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 2, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Ckt ID", 
+    "field_name": "ckt_id", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 3, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Ckt. Type", 
+    "field_name": "ckt_type", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 4, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "MIMO/Diversity", 
+    "field_name": "mimo", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 5, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Qos(BW)", 
+    "field_name": "qos_bw", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 6, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Polarization", 
+    "field_name": "polarisation", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 7, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Antenna Height", 
+    "field_name": "antenna_height", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 8, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Antenna Type", 
+    "field_name": "antenna_type", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 9, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Antenna Gain", 
+    "field_name": "antenna_gain", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 10, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Antenna Mount Type", 
+    "field_name": "antenna_mount_type", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 11, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Ethernet Extender", 
+    "field_name": "ethernet_extender", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 12, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Building Height", 
+    "field_name": "building_height", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 13, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Tower Height", 
+    "field_name": "tower_height", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 14, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Cable Length", 
+    "field_name": "cable_length", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 15, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "RSSI During Acceptance", 
+    "field_name": "rssi_during_acceptance", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 16, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Customer Address", 
+    "field_name": "customer_address", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 17, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Throughput During Acceptance", 
+    "field_name": "throughput_during_acceptance", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 18, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Date Of Acceptance", 
+    "field_name": "date_of_acceptance", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 19, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Switch/Converter Port", 
+    "field_name": "switch_converter_port", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 20, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "HSSU Used", 
+    "field_name": "hssu_used", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 21, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Product Type", 
+    "field_name": "product_type", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 22, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "BS Switch IP", 
+    "field_name": "bs_switch_ip", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 23, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "BS Converter IP", 
+    "field_name": "bs_converter_ip", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 24, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Aggregated Switch", 
+    "field_name": "aggregated_switch", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 25, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Aggregated Switch Port", 
+    "field_name": "aggregated_switch_port", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 26, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "POP Converter IP", 
+    "field_name": "pop_converter_ip", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 27, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Converter Type", 
+    "field_name": "converter_type", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 28, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "PE Hostname", 
+    "field_name": "pe_hostname", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 29, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "PE IP", 
+    "field_name": "pe_ip", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 30, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "TTSL Ckt. ID", 
+    "field_name": "ttsl_ckt_id", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 31, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Backhaul Type", 
+    "field_name": "backhaul_type", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 32, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "BH BSO", 
+    "field_name": "bh_bso", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 33, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "BH Ckt. ID", 
+    "field_name": "bh_ckt_id", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 34, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "BH Capacity", 
+    "field_name": "bh_capacity", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 35, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "BH Offnet/Onnet", 
+    "field_name": "bh_offnet_onnet", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 36, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "BH Configured On Switch/Converter", 
+    "field_name": "bh_configured_on_switch", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 37, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Frequency At The Time Of Acceptance", 
+    "field_name": "frequency_at_time_of_acceptance", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 38, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "CBW At The Time Of Acceptance", 
+    "field_name": "cbw_at_the_time_of_acceptance", 
+    "device_type": 2
+  }
+},
+{
+  "pk": 39, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Customer Name", 
+    "field_name": "customer_name", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 40, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Customer Address", 
+    "field_name": "customer_address", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 41, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "BS Name", 
+    "field_name": "bs_name", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 42, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Ckt ID", 
+    "field_name": "ckt_id", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 43, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Qos(BW)", 
+    "field_name": "qos_bw", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 44, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "MIMO/Diversity", 
+    "field_name": "mimo", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 45, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Ethernet Extender", 
+    "field_name": "ethernet_extender", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 46, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Antenna Height", 
+    "field_name": "antenna_height", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 47, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Polarisation", 
+    "field_name": "polarisation", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 48, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Antenna Type", 
+    "field_name": "antenna_type", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 49, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Antenna Mount Type", 
+    "field_name": "antenna_mount_type", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 50, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Antenna Gain", 
+    "field_name": "antenna_gain", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 51, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Building Height", 
+    "field_name": "building_height", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 52, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Tower Height", 
+    "field_name": "tower_height", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 53, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Cable Length", 
+    "field_name": "cable_length", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 54, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "RSSI During Acceptance", 
+    "field_name": "rssi_during_acceptance", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 55, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Customer Address", 
+    "field_name": "customer_address", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 56, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Throughput During Acceptance", 
+    "field_name": "throughput_during_acceptance", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 57, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Date Of Acceptance", 
+    "field_name": "date_of_acceptance", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 58, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "BH BSO", 
+    "field_name": "bh_bso", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 59, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Service Type", 
+    "field_name": "service_type", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 60, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Product Type", 
+    "field_name": "product_type", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 61, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "Frequency At The Time Of Acceptance", 
+    "field_name": "frequency_at_time_of_acceptance", 
+    "device_type": 3
+  }
+},
+{
+  "pk": 62, 
+  "model": "device.devicetypefields", 
+  "fields": {
+    "field_display_name": "CBW At The Time Of Acceptance", 
+    "field_name": "cbw_at_the_time_of_acceptance", 
+    "device_type": 3
+  }
+}
+]
