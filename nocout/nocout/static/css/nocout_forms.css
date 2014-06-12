@@ -33,6 +33,7 @@
     overflow: hidden;
     padding: 0;
     position: relative;
+    padding-top: 3px;
 }
 
 .select2-container-multi .select2-choices {
