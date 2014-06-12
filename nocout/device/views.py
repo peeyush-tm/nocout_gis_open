@@ -53,8 +53,7 @@ class DeviceList(ListView):
 def create_device_tree(request):
 
     templateData = {
-        'username' : request.user.username,
-        'hostIp' : request.META["SERVER_NAME"] +":"+request.META["SERVER_PORT"]
+        'username' : request.user.username
     }
     
     return render_to_response('device/devices_tree_view.html',templateData,context_instance=RequestContext(request))

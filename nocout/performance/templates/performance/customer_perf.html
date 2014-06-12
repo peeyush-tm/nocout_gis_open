@@ -1,0 +1,26 @@
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+	<li>Performance Reports</li>
+	<li>Customer Live</li>
+{% endblock %}
+{% block content_title %}Customer Live{% endblock %}
+{% block content_description %} {% endblock %}
+{% load staticfiles %}
+
+{% block content %}
+
+	
+
+{% endblock %}
+
+
+{% block load_js %}
+<!-- /JAVASCRIPTS -->
+
+<script>
+    jQuery(document).ready(function () {
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+    });
+</script>
+{% endblock %}

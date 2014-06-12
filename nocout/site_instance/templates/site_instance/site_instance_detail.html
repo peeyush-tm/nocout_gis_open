@@ -3,9 +3,13 @@
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/site_instance.css" %}>
 {% endblock %}
-{% block breadcrumb_page_title %} > Site Instance {% endblock %}
-{% block content_title %}Site Instances Management{% endblock %}
-{% block content_description %}Detail of site instance ....{% endblock %}
+{% block breadcrumb_title %}
+    <li>Inventory</li>
+    <li>Site Instance</li>
+    <li>Detail</li>
+{% endblock %}
+{% block content_title %}Site Instance Detial{% endblock %}
+{% block content_description %}Detail of site instance{% endblock %}
 {% block content %}
     <h1>{{ object.name }}</h1>
     <div id="site_instance">

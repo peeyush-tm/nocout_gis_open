@@ -1,8 +1,12 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block breadcrumb_page_title %} > Service Parameter {% endblock %}
-{% block content_title %}Service Parameters Management{% endblock %}
-{% block content_description %}Update a service parameter ....{% endblock %}
+{% block breadcrumb_title %}
+    <li>Inventory</li>
+    <li>Service Parameters</li>
+    <li>Edit</li>
+{% endblock %}
+{% block content_title %}Edit Service Parameter{% endblock %}
+{% block content_description %}Edit service parameter{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
@@ -10,7 +14,7 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i>Service Parameter : {{ object.parameter_description }}</h4>
+                            <h4><i class="fa fa-bars"></i> EDIT SERVICE PARAMETER : {{ object.parameter_description }}</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-6"><br />

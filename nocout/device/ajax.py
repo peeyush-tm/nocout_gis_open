@@ -205,8 +205,10 @@ def device_soft_delete_form(request, value):
     result['message'] = "Failed to render form correctly."
     result['data']['meta'] = ''
     result['data']['objects'] = {}
-    result['data']['objects']['device_id'] = device.id
-    result['data']['objects']['device_name'] = device.device_name
+    result['data']['objects']['form_type'] = 'device'
+    result['data']['objects']['form_title'] = 'device'
+    result['data']['objects']['id'] = device.id
+    result['data']['objects']['name'] = device.device_name
 
     # child_devices: these are the devices which are associated with
     # the device which needs to be deleted in parent-child relationship
@@ -220,8 +222,7 @@ def device_soft_delete_form(request, value):
         for cd in device_descendant:
             child_device_descendants.append(cd)
 
-    result['data']['objects']['child_devices'] = []
-
+    result['data']['objects']['childs'] = []    
     # future device parent is needs to find out only if our device is
     # associated with any other device i.e if child_devices.count() > 0
     if child_devices.count() > 0:
@@ -230,7 +231,7 @@ def device_soft_delete_form(request, value):
         # parent of devices in child_devices
         remaining_devices = Device.objects.exclude(parent_id=value)
         selected_devices = set(remaining_devices) - set(child_device_descendants)
-        result['data']['objects']['eligible_devices'] = []
+        result['data']['objects']['eligible'] = []
         for e_dv in selected_devices:
             e_dict = dict()
             e_dict['key'] = e_dv.id
@@ -242,12 +243,12 @@ def device_soft_delete_form(request, value):
             # for excluding devices from eligible device choices those are not from
             # same device_group as the device which we are deleting
             if set(e_dv.device_group.all()) != set(device.device_group.all()): continue
-            result['data']['objects']['eligible_devices'].append(e_dict)
+            result['data']['objects']['eligible'].append(e_dict)
         for c_dv in child_devices:
             c_dict = {}
             c_dict['key'] = c_dv.id
             c_dict['value'] = c_dv.device_name
-            result['data']['objects']['child_devices'].append(c_dict)
+            result['data']['objects']['childs'].append(c_dict)
     result['success'] = 1
     result['message'] = "Successfully render form."
     return json.dumps({'result': result})

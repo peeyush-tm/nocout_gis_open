@@ -1,19 +1,19 @@
 {% extends "inventory/inventory.html" %}
-{% block breadcrumb_page_title %} > Device {% endblock %}
-{% block content_title %}Device Management{% endblock %}
-{% block content_description %}List of devices ....{% endblock %}
-{% load staticfiles %}
-{% block css %}
-    {#    <link rel="stylesheet" type="text/css" href={% static "device/css/device.css" %} />#}
+{% block breadcrumb_title %}
+    <li>Inventory</li>
+    <li>Device</li>
 {% endblock %}
+{% block content_title %}Device Management{% endblock %}
+{% block content_description %}List of devices{% endblock %}
+{% load staticfiles %}
 {% block content %}
 
-    <p><a href="/device/new"><i class="fa fa-plus">&nbsp;</i> Create Device</a></p>
-    <p><a href="/device/treeview"><i class="fa fa-sitemap">&nbsp;</i> Devices Tree View</a></p>
+    <p><a href="/device/new"><i class="fa fa-plus"></i> Create Device</a></p>
+    <p><a href="/device/treeview"><i class="fa fa-sitemap"></i> Devices Tree View</a></p>
+
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>DEVICE LISTING</h4>
-
             <div class="tools hidden-xs">
                 <a href="#box-config" data-toggle="modal" class="config">
                     <i class="fa fa-cog"></i>
@@ -21,18 +21,11 @@
                 <a href="javascript:;" class="reload">
                     <i class="fa fa-refresh"></i>
                 </a>
-                <a href="javascript:;" class="collapse">
-                    <i class="fa fa-chevron-up"></i>
-                </a>
-                <a href="javascript:;" class="remove">
-                    <i class="fa fa-times"></i>
-                </a>
             </div>
         </div>
 
         <div id="tableContainer" class="box-body">
-            <table cellpadding="0" cellspacing="0" border="0"
-                   class="datatable table table-striped table-bordered table-hover" id="DeviceTable">
+            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="DeviceTable">
                 <thead></thead>
                 <tbody></tbody>
             </table>
@@ -41,84 +34,20 @@
 
 {% endblock %}
 {% block jquery %}
+    <!-- Custom Data Table script-->
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Custom Script for soft delete-->
+    <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
     <script type="text/javascript">
-
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
             var dataTableInstance = new ourDataTableWidget();
-
-            /*Call createDataTable function of ourDataTableWidget class*/
-            var tableObject = $.parseJSON('{{ datatable_headers|safe }}');
+            /*Grid headers object*/            
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            /*Ajax url to get grid data*/
             var ajax_url = '{% url "DeviceListingTable" %}';
-            dataTableInstance.createDataTable("DeviceTable", tableObject, ajax_url);
-
-            $('.datatable').each(function () {
-                var datatable = $(this);
-                // SEARCH - Add the placeholder for Search and Turn this into in-line form control
-                var search_input = datatable.closest('.dataTables_wrapper').find('div[id$=_filter] input');
-                search_input.attr('placeholder', 'Search');
-                search_input.addClass('form-control input-sm');
-                // LENGTH - Inline-Form control
-                var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
-                length_sel.addClass('form-control input-sm');
-            });
+            /*Call createDataTable function of ourDataTableWidget class*/
+            dataTableInstance.createDataTable("DeviceTable", gridHeadersObj, ajax_url);
         });
-
-        function get_soft_delete_form(content) {
-            // soft_delete_html: contains html for soft delete form
-            var soft_delete_html;
-            if (!(typeof content.result.data.objects.child_devices === 'undefined') && !(Object.keys(content.result.data.objects.child_devices).length === 0)) {
-                soft_delete_html = '<h5 class="text-warning">This device (' + content.result.data.objects.device_name + ') is parent of following devices:</h5>';
-                for (var i = 0, l = content.result.data.objects.child_devices.length; i < l; i++) {
-                    soft_delete_html += '<span class="text-warning">' + (i + 1) + ' : ' + content.result.data.objects.child_devices[i].value + ' </span><br />';
-                }
-                if (!(typeof content.result.data.objects.eligible_devices === 'undefined')) {
-                    soft_delete_html += '<h5 class="text-danger">Please first choose future parent of these devices from below choices:</h5>';
-                    soft_delete_html += '<input type="hidden" id="id_device" name="device" value="' + content.result.data.objects.device_id + '" />';
-                    soft_delete_html += '<select class="form-control" id="id_parent" name="parent">';
-                    soft_delete_html += '<option value="">Select Device</option>';
-                    for (var i = 0, l = content.result.data.objects.eligible_devices.length; i < l; i++) {
-                        soft_delete_html += '<option value="' + content.result.data.objects.eligible_devices[i].key + '">' + content.result.data.objects.eligible_devices[i].value + '</option>';
-                    }
-                    soft_delete_html += '</select>';
-                }
-            }
-            else {
-                soft_delete_html = '<h5 class="text-warning">This device (' + content.result.data.objects.device_name + ') is not associated with any other device. So click on Yes! if you want to delete it.</h5>';
-                soft_delete_html += '<input type="hidden" id="id_device" name="device" value="' + content.result.data.objects.device_id + '" />';
-                soft_delete_html += '<input type="hidden" id="id_parent" name="parent" value="" />'
-            }
-            bootbox.dialog({
-                message: soft_delete_html,
-                title: "<span class='text-danger'><i class='fa fa-times'></i> Delete Device</span>",
-                buttons: {
-                    success: {
-                        label: "Yes!",
-                        className: "btn-success",
-                        callback: function () {
-                            Dajaxice.device.device_soft_delete(test, {
-                                'device_id': $('#id_device').val(),
-                                'new_parent_id': $('#id_parent').val()});
-                        }
-                    },
-                    danger: {
-                        label: "No!",
-                        className: "btn-danger",
-                        callback: function () {
-                            bootbox.alert("Ok! You choose to not delete this device right now.", function () {
-                                $(".bootbox").modal("hide");
-                            });
-                        }
-                    }
-                }
-            });
-        }
-        function test(responseResult)
-        {
-            bootbox.alert(responseResult.result.message);
-        }
-
     </script>
-
 {% endblock %}

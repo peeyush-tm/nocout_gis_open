@@ -17,7 +17,7 @@ class Datatable_Generation:
 
     def main(self):
 
-        self.object_list = [ { key: val if val else "" for key, val in dct.items() } for dct in self.object_list ]
+        self.object_list = [ { key: "" if val==None else val for key, val in dct.items() } for dct in self.object_list ]
         if self.sanity_dicts_list:
             self.sanity_of_object_dict_list()
         object_list_headers = [ dict(mData=key, sTitle = key.replace('_',' ').title()) for key in self.object_list[0].keys() ]

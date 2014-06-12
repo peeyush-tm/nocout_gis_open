@@ -167,6 +167,7 @@ INSTALLED_APPS = (
     'capacity_management',
     'download_center',
     'performance',
+    'scheduling_management',
     'dajaxice',
     'dajax',
     'django.contrib.admin',
@@ -243,7 +244,7 @@ SESSION_SECURITY_WARN_AFTER = 540
 SESSION_SECURITY_EXPIRE_AFTER = 600
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-MAX_USER_LOGIN_LIMIT=5
+MAX_USER_LOGIN_LIMIT=100
 ################################################################################
 #### TO : REMOVE ####
 

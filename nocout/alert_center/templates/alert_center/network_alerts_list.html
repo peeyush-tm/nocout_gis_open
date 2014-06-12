@@ -1,5 +1,8 @@
 {% extends "nocout/base.html" %}
-{% block breadcrumb_title %}Alert Center &gt; Network Alerts{% endblock %}
+{% block breadcrumb_title %}
+    <li>Alert Center</li>
+    <li>Network Alerts</li>
+{% endblock %}
 {% block content_title %}Network Alerts{% endblock %}
 {% block content_description %}Network Alerts List{% endblock %}
 {% load staticfiles %}
@@ -17,91 +20,72 @@
                 <a href="javascript:;" class="reload">
                     <i class="fa fa-refresh"></i>
                 </a>
-                <a href="javascript:;" class="collapse">
-                    <i class="fa fa-chevron-up"></i>
-                </a>
-                <a href="javascript:;" class="remove">
-                    <i class="fa fa-times"></i>
-                </a>
             </div>
         </div>
 
         <div class="box-body">
             <div id="networkAlertContainer">
-            <div class="container">
-                <div>
-                    <div class="col-md-6">
-                        <h4><span class="label label-info">Down</span></h4>
-                        <div class="divide-10"></div>
-
-                        <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
-                            <thead>
-                                <th>Severity</th>
-                                <th>IP</th>
-                                <th>BS Name</th>
-                                <th>City</th>
-                                <th>Time</th>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-
+                
+                <div class="tabbable header-tabs">
+                    <ul class="nav nav-tabs">
+                        <li><a href="#network_alert_latency" data-toggle="tab"><span class="hidden-inline-mobile">Latency</span></a></li>
+                        <li><a href="#network_alert_packet" data-toggle="tab"><span class="hidden-inline-mobile">Packet Drop</span></a></li>
+                        <li><a href="#network_alert_service" data-toggle="tab"><span class="hidden-inline-mobile">Service Impack Alerts</span></a></li>
+                        <li class="active"><a href="#network_alert_down" data-toggle="tab"><span class="hidden-inline-mobile">Down</span></a></li>
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane fade" id="network_alert_latency">
+                            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
+                                <thead>
+                                    <th>Severity</th>
+                                    <th>IP</th>
+                                    <th>BS Name</th>
+                                    <th>City</th>
+                                    <th>Max</th>
+                                    <th>Average</th>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane fade" id="network_alert_packet">
+                            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
+                                <thead>
+                                    <th>Severity</th>
+                                    <th>IP</th>
+                                    <th>BS Name</th>
+                                    <th>City</th>
+                                    <th>% Loss</th>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane fade" id="network_alert_service">
+                            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
+                                <thead>
+                                    <th>Severity</th>
+                                    <th>IP</th>
+                                    <th>BS Name</th>
+                                    <th>City</th>
+                                    <th>Alert Name</th>
+                                    <th>Time</th>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane fade in active" id="network_alert_down">
+                            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
+                                <thead>
+                                    <th>Severity</th>
+                                    <th>IP</th>
+                                    <th>BS Name</th>
+                                    <th>City</th>
+                                    <th>Time</th>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <h4><span class="label label-info">Service Impact Alerts</span></h4>
-                        <div class="divide-10"></div>
-
-                        <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
-                            <thead>
-                                <th>Severity</th>
-                                <th>IP</th>
-                                <th>BS Name</th>
-                                <th>City</th>
-                                <th>Alert Name</th>
-                                <th>Time</th>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-
-                    </div>
-                    <div class="clearfix"></div>
                 </div>
-                <div>
-                    <div class="col-md-6">
-                        <h4><span class="label label-info">Packet Drop</span></h4>
-                        <div class="divide-10"></div>
-
-                        <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
-                            <thead>
-                                <th>Severity</th>
-                                <th>IP</th>
-                                <th>BS Name</th>
-                                <th>City</th>
-                                <th>% Loss</th>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-
-                    </div>
-                    <div class="col-md-6">
-                        <h4><span class="label label-info">Latency</span></h4>
-                        <div class="divide-10"></div>
-
-                        <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
-                            <thead>
-                                <th>Severity</th>
-                                <th>IP</th>
-                                <th>BS Name</th>
-                                <th>City</th>
-                                <th>Max</th>
-                                <th>Average</th>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-
-                    </div>
-                    <div class="clearfix"></div>
-                </div>
-            </div>
             </div>
             <div class="clearfix"></div>
         </div>

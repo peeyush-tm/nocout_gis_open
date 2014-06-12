@@ -9,4 +9,5 @@ urlpatterns = patterns('',
                        url(r'^change_user_status/$', change_user_status),
                        url(r'^dialog_for_page_refresh/$', dialog_for_page_refresh),
                        url(r'^dialog_expired_logout_user/$', dialog_expired_logout_user),
+                       url(r'^logout_user/$', logout_user),
                        )

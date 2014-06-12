@@ -1,8 +1,12 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block breadcrumb_page_title %} > Device Extra Fields {% endblock %}
-{% block content_title %}Device Extra Fields Management{% endblock %}
-{% block content_description %}Create a device extra field ....{% endblock %}
+{% block breadcrumb_title %}
+    <li>Inventory</li>
+    <li>Device Fields</li>
+    <li>New</li>
+{% endblock %}
+{% block content_title %}Add Device Fields{% endblock %}
+{% block content_description %}Add device field{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
@@ -10,7 +14,7 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i>Device Extra Field</h4>
+                            <h4><i class="fa fa-bars"></i> ADD DEVICE FIELD</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-6"><br />
