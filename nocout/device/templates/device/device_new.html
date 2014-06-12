@@ -164,7 +164,7 @@
         $("#id_device_technology").change(function () {
 
             if ($("#id_device_technology").val()) {
-                $("#id_device_vendor").select2("val","");
+                $("#id_device_type").select2("val","");
                 Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
                 $("#id_device_model").select2("val","");
                 $("#id_device_model").empty();
