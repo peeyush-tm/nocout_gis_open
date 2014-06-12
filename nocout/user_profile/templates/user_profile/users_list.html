@@ -62,8 +62,8 @@
             var ajax_url_user_listing = '{% url "UserListingTable" %}';
             var ajax_url_user_archived_listing = '{% url "UserArchivedListingTable" %}';
             /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable("UserListingTable", tableObject, ajax_url_user_listing);
-            dataTableInstance.createDataTable("UserArchivedListingTable", tableObject, ajax_url_user_archived_listing);
+            dataTableInstance.createDataTable("UserListingTable", gridHeadersObj, ajax_url_user_listing);
+            dataTableInstance.createDataTable("UserArchivedListingTable", gridHeadersObj, ajax_url_user_archived_listing);
         });
     </script>
 {% endblock %}

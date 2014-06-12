@@ -9,15 +9,22 @@ var currentRouterString = "";
 var sideMenu = $("#sidebar ul li a");
 var routerArray = window.location.href.split("/");
 var checkValue = $.trim(routerArray[routerArray.length-2]);
-if(checkValue == "new" || checkValue == "update" || checkValue == "treeview") {
-    /*Current router url text*/
-    currentRouterString = $.trim(window.location.href.split("/").slice(3,routerArray.length-2));
+var typeCheck = (+checkValue) + 1;
+
+if(checkValue == "new" || checkValue == "update" || checkValue == "treeview" || $.trim(typeCheck) != "NaN" || checkValue == "edit") {
+    if($.trim(typeCheck) != "NaN") {
+        /*Current router url text*/
+        currentRouterString = $.trim(window.location.href.split("/").slice(3,routerArray.length-3));
+    } else {
+        /*Current router url text*/
+        currentRouterString = $.trim(window.location.href.split("/").slice(3,routerArray.length-2));
+    }
 } else {
     /*Current router url text*/
     currentRouterString = $.trim(window.location.href.split("/").slice(3,-1));
 }
-
 var currentRouter = $.trim(currentRouterString.replace(/,/g,"/"));
+
 for (var i = 0; i < sideMenu.length; i++) {
     /*Anchor tags hiperlink text*/
     var slashCount = sideMenu[i].href.split("/").length;
