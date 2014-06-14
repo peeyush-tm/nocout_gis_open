@@ -138,6 +138,7 @@ class Device(MPTTModel, models.Model):
     description = models.TextField('Description')
     address = models.TextField('Address', null=True, blank=True)
     is_deleted = models.IntegerField('Is Deleted', max_length=1, default=0)
+    agent_tag = models.CharField('Agent Tag', max_length=100, default='check_mk')
 
     def __unicode__(self):
         return self.device_name
