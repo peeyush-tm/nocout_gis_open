@@ -12,7 +12,7 @@ class ServiceForm(forms.ModelForm):
                 field.widget.attrs.update({'class':'form-control'})
     class Meta:
         model = Service
-        fields = ('service_name', 'alias', 'parameters', 'command', 'description')
+        fields = ('service_name', 'alias', 'parameters', 'service_data_sources', 'command', 'description')
 
 
 class ServiceParametersForm(forms.ModelForm):
