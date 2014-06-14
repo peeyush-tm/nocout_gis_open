@@ -48,13 +48,23 @@ class DeviceFrequency(models.Model):
         return self.frequency_name
 
 
+# device ports
+class DevicePort(models.Model):
+    port_name = models.CharField('Port Name', max_length=100)
+    port_value = models.IntegerField('Port Value', default=0)
+
+    def __unicode__(self):
+        return self.port_name
+
+
 # device types info table
 class DeviceType(models.Model):
     name = models.CharField('Device Type', max_length=200, unique=True)
     alias = models.CharField('Device Description', max_length=200, null=True, blank=True)
-    device_icon = models.CharField('Device GMap Icon', max_length=200, null=True, blank=True)
+    device_icon = models.CharField('Device Icon', max_length=200, null=True, blank=True)
     device_gmap_icon = models.CharField('Device GMap Icon', max_length=200, null=True, blank=True)
     frequency = models.ManyToManyField(DeviceFrequency, null=True, blank=True)
+    device_port = models.ManyToManyField(DevicePort, null=True, blank=True)
 
     def __unicode__(self):
         return self.name
