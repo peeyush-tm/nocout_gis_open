@@ -11,7 +11,7 @@ from device.models import Device, Inventory, DeviceType, DeviceTypeFields, Devic
 from device_group.models import DeviceGroup
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
     DeviceVendorForm, DeviceModelForm, DeviceTypeForm
-from nocout.utils.util import DictDiffer
+from nocout.utils.util import DictDiffer, Logged_In_User_Devices
 # from site_instance.models import SiteInstance
 from django.http.response import HttpResponseRedirect
 from service.models import Service
@@ -59,7 +59,7 @@ def create_device_tree(request):
     return render_to_response('device/devices_tree_view.html',templateData,context_instance=RequestContext(request))
 
 
-        
+
 
 class DeviceListingTable(BaseDatatableView):
     model = Device
@@ -94,7 +94,7 @@ class DeviceListingTable(BaseDatatableView):
                                  extra={'stack': True, 'request': self.request})
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Device.objects.values(*self.columns+['id'])
+        return Logged_In_User_Devices(self.request, self.columns+['id']).logged_in_user_devices_query()
 
     def prepare_results(self, qs):
         if qs:
