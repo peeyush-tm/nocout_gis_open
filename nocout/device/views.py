@@ -1,7 +1,9 @@
 import json
 from actstream import action
+from django.contrib.auth.decorators import permission_required
 from django.db.models import Q
 from django.db.models.query import ValuesQuerySet
+from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.core.urlresolvers import reverse_lazy
@@ -12,17 +14,13 @@ from device_group.models import DeviceGroup
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
     DeviceVendorForm, DeviceModelForm, DeviceTypeForm
 from nocout.utils.util import DictDiffer, Logged_In_User_Devices
-# from site_instance.models import SiteInstance
 from django.http.response import HttpResponseRedirect
 from service.models import Service
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-
-#BEGIN: import django settings
-#we need DEBUG varaible for collecting the logs
-from django.conf import settings
-#END: import django settings
+from django.conf import settings #Importing settings for logger
 from site_instance.models import SiteInstance
+from user_group.models import UserGroup
 
 if settings.DEBUG:
     import logging
@@ -59,8 +57,6 @@ def create_device_tree(request):
     return render_to_response('device/devices_tree_view.html',templateData,context_instance=RequestContext(request))
 
 
-
-
 class DeviceListingTable(BaseDatatableView):
     model = Device
     columns = ['device_name', 'site_instance__name', 'device_group__name', 'ip_address', 'city', 'state']
@@ -94,6 +90,7 @@ class DeviceListingTable(BaseDatatableView):
                                  extra={'stack': True, 'request': self.request})
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
         return Logged_In_User_Devices(self.request, self.columns+['id']).logged_in_user_devices_query()
 
     def prepare_results(self, qs):
@@ -154,6 +151,11 @@ class DeviceCreate(CreateView):
     model = Device
     form_class = DeviceForm
     success_url = reverse_lazy('device_list')
+
+
+    @method_decorator(permission_required('device.add_device', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceCreate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         """
@@ -261,6 +263,10 @@ class DeviceUpdate(UpdateView):
     form_class = DeviceForm
     success_url = reverse_lazy('device_list')
 
+
+    @method_decorator(permission_required('device.change_device', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         """
@@ -435,6 +441,11 @@ class DeviceDelete(DeleteView):
 
     template_name = 'device/device_delete.html'
     success_url = reverse_lazy('device_list')
+
+    @method_decorator(permission_required('device.delete_device', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceDelete, self).dispatch(*args, **kwargs)
+
 
     def delete(self, request, *args, **kwargs):
         action.send(request.user, verb='deleting device: %s'%(self.object.device_name))

@@ -1,7 +1,9 @@
 from actstream import action
+from django.contrib.auth.decorators import permission_required
 from django.db.models import Q
 import json
 from django.db.models.query import ValuesQuerySet
+from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin
 from django.core.urlresolvers import reverse_lazy
@@ -56,7 +58,7 @@ class UserGroupListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return UserGroup.objects.values(*self.columns+['id'])
+        return UserGroup.objects.filter( pk__in=self.request.user.userprofile.user_group.values_list('id', flat=True)).values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         if qs:
@@ -105,6 +107,10 @@ class UserGroupCreate(CreateView):
     form_class = UserGroupForm
     success_url = reverse_lazy('ug_list')
 
+    @method_decorator(permission_required('user_group.add_usergroup', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(UserGroupCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         self.object = form.save(commit=False)
         #Add the default group if the parent field is None
@@ -122,6 +128,11 @@ class UserGroupUpdate(UpdateView):
     model = UserGroup
     form_class = UserGroupForm
     success_url = reverse_lazy('ug_list')
+
+
+    @method_decorator(permission_required('user_group.change_usergroup', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(UserGroupUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         #IntegrityError: (1062, "Duplicate entry 'test_group4' for key 'name'")
@@ -178,6 +189,11 @@ class UserGroupDelete(DeleteView):
     model = UserGroup
     template_name = 'user_group/ug_delete.html'
     success_url = reverse_lazy('ug_list')
+
+    @method_decorator(permission_required('user_group.delete_usergroup', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(UserGroupDelete, self).dispatch(*args, **kwargs)
+
 
     def delete(self, request, *args, **kwargs):
         action.send(request.user, verb='deleting user group: %s'%(self.object.name))

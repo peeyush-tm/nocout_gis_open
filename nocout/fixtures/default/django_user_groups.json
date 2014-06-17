@@ -1,0 +1,44 @@
+[
+  {
+    "pk": 1,
+    "model": "auth.group",
+    "fields": {
+      "name": "group_admin",
+      "permissions": [
+        52,
+        53,
+        54,
+        73,
+        74,
+        75,
+        34,
+        35,
+        36,
+        25,
+        26,
+        27
+      ]
+    }
+  },
+  {
+    "pk": 2,
+    "model": "auth.group",
+    "fields": {
+      "name": "group_operator",
+      "permissions": [
+        52,
+        53
+      ]
+    }
+  },
+  {
+    "pk": 3,
+    "model": "auth.group",
+    "fields": {
+      "name": "group_viewer",
+      "permissions": [
+        
+      ]
+    }
+  }
+]

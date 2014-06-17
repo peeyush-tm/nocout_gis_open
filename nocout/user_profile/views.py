@@ -1,5 +1,6 @@
 import json
 from django.db.models.query import ValuesQuerySet
+from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin, BaseUpdateView
 from django.core.urlresolvers import reverse_lazy
@@ -13,6 +14,7 @@ from collections import OrderedDict
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from actstream import action
 from nocout.utils.util import DictDiffer
+from django.contrib.auth.decorators import permission_required
 from django.db.models import Q
 
 
@@ -30,8 +32,11 @@ class UserList(ListView):
             {'mData':'user_group__name', 'sTitle' : 'User Group',   'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'manager_name',     'sTitle' : 'Manager',      'sWidth':'10%' ,'sClass':'hidden-xs'},
             {'mData':'phone_number',     'sTitle' : 'Phone Number', 'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'last_login',       'sTitle' : 'Last Login',   'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',          'sTitle' : 'Actions',      'sWidth':'5%' ,},]
+            {'mData':'last_login',       'sTitle' : 'Last Login',   'sWidth':'null','sClass':'hidden-xs'},]
+
+        #if the user role is Admin then the action column will appear on the datatable
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%' ,})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -63,7 +68,8 @@ class UserListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return UserProfile.objects.filter(is_deleted=0).values(*self.columns+['id'])
+        return UserProfile.objects.filter(user_group__in = self.request.user.userprofile.user_group.values_list('id', flat=True),
+                                          is_deleted=0).values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         if qs:
@@ -71,9 +77,11 @@ class UserListingTable(BaseDatatableView):
             sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
             OrderedDict({'dict_final_key':'manager_name', 'dict_key1':'parent__first_name', 'dict_key2':'parent__last_name'})]
             qs, qs_headers = Datatable_Generation( qs, sanity_dicts_list ).main()
-        for dct in qs:
-            dct.update(actions='<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                        <a href="#" onclick="Dajaxice.user_profile.user_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        #if the user role is Admin then the action column_values will appear on the datatable
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            for dct in qs:
+                dct.update(actions='<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                            <a href="#" onclick="Dajaxice.user_profile.user_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -132,7 +140,8 @@ class UserArchivedListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return UserProfile.objects.filter(is_deleted=1).values(*self.columns+['id'])
+        return UserProfile.objects.filter(user_group__in = self.request.user.userprofile.user_group.values_list('id', flat=True),
+                                          is_deleted=1).values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         if qs:
@@ -140,9 +149,12 @@ class UserArchivedListingTable(BaseDatatableView):
             sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
             OrderedDict({'dict_final_key':'manager_name', 'dict_key1':'parent__first_name', 'dict_key2':'parent__last_name'})]
             qs, qs_headers = Datatable_Generation( qs, sanity_dicts_list ).main()
-        for dct in qs:
-            dct.update(actions='<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                        <a href="#" onclick="Dajaxice.user_profile.user_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+
+        #if the user role is Admin then the action column_values will appear on the datatable
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            for dct in qs:
+                dct.update(actions='<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                            <a href="#" onclick="Dajaxice.user_profile.user_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -184,6 +196,10 @@ class UserCreate(CreateView):
     model = UserProfile
     form_class = UserForm
     success_url = reverse_lazy('user_list')
+
+    @method_decorator(permission_required('user_profile.add_userprofile', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(UserCreate, self).dispatch(*args, **kwargs)
 
     def get_form_kwargs(self):
         kwargs = super(UserCreate, self).get_form_kwargs()
@@ -234,6 +250,11 @@ class UserUpdate(UpdateView):
     model = UserProfile
     form_class = UserForm
     success_url = reverse_lazy('user_list')
+
+
+    @method_decorator(permission_required('user_profile.change_userprofile', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(UserUpdate, self).dispatch(*args, **kwargs)
 
     def get_form_kwargs(self):
         """
@@ -316,6 +337,11 @@ class UserDelete(DeleteView):
     model = UserProfile
     template_name = 'user_profile/user_delete.html'
     success_url = reverse_lazy('user_list')
+
+    @method_decorator(permission_required('user_profile.delete_userprofile', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(UserDelete, self).dispatch(*args, **kwargs)
+
 
     def delete(self, request, *args, **kwargs):
         action.send(request.user, verb='deleting user: %s'%(self.object.username))

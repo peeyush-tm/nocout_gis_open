@@ -1,7 +1,9 @@
 import json
 from actstream import action
+from django.contrib.auth.decorators import permission_required
 from django.db.models.query import ValuesQuerySet
 from django.http.response import HttpResponseRedirect
+from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
@@ -55,7 +57,8 @@ class DeviceGroupListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return DeviceGroup.objects.values(*self.columns+['id'])
+        user_group = UserGroup.objects.get( pk__in = self.request.user.userprofile.user_group.values_list('id', flat=True))
+        return DeviceGroup.objects.filter( pk__in = user_group.device_group.values_list('id', flat=True)).values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         if qs:
@@ -106,6 +109,10 @@ class DeviceGroupCreate(CreateView):
     form_class = DeviceGroupForm
     success_url = reverse_lazy('dg_list')
 
+    @method_decorator(permission_required('device_group.add_devicegroup', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceGroupCreate, self).dispatch(*args, **kwargs)
+
     def form_valid( self, form ):
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
@@ -117,6 +124,10 @@ class DeviceGroupUpdate(UpdateView):
     model = DeviceGroup
     form_class = DeviceGroupForm
     success_url = reverse_lazy('dg_list')
+
+    @method_decorator(permission_required('device_group.change_devicegroup', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceGroupUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid( self, form ):
 
@@ -150,6 +161,10 @@ class DeviceGroupDelete(DeleteView):
     model = DeviceGroup
     template_name = 'device_group/dg_delete.html'
     success_url = reverse_lazy('dg_list')
+
+    @method_decorator(permission_required('device_group.delete_devicegroup', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceGroupDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         action.send(request.user, verb='deleting device group: %s'%(self.object.name))
