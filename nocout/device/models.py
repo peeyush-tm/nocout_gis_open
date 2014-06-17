@@ -4,8 +4,9 @@ from site_instance.models import SiteInstance
 from service.models import Service
 from mptt.models import MPTTModel, TreeForeignKey
 
-# table for countries
 
+#************************************ Device Inventory**************************************
+# table for countries
 class Country(models.Model):
     country_name = models.CharField(max_length=200, null=True, blank=True)
 
@@ -148,7 +149,7 @@ class Device(MPTTModel, models.Model):
     description = models.TextField('Description')
     address = models.TextField('Address', null=True, blank=True)
     is_deleted = models.IntegerField('Is Deleted', max_length=1, default=0)
-    agent_tag = models.CharField('Agent Tag', max_length=100, default='check_mk')
+    agent_tag = models.CharField('Agent Tag', max_length=100, default='ping')
 
     def __unicode__(self):
         return self.device_name
@@ -195,3 +196,5 @@ class DeviceTypeFieldsValue(models.Model):
     field_value = models.CharField(max_length=250)
     device_id = models.IntegerField()
 
+
+#************************************ GIS Inventory**************************************
