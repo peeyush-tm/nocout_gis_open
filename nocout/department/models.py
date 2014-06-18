@@ -1,3 +1,4 @@
+import datetime
 from django.db import models
 from user_profile.models import UserProfile
 from user_group.models import UserGroup
@@ -16,3 +17,16 @@ class Department(models.Model):
     modified_by = models.IntegerField()
     created_at = models.DateTimeField()
     modified_at = models.DateTimeField()
+
+
+    # saving created_at & modified_at here
+    def save(self, *args, **kwargs):
+        today = datetime.datetime.today()
+        if not self.id:
+            if not self.created:
+                self.created = today
+            if not self.modified:
+                self.modified = today
+        else:
+            self.modified = today
+        super(Department, self).save(*args, **kwargs)
