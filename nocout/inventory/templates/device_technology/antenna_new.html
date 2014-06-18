@@ -5,8 +5,8 @@
     <li>Device Technology</li>
     <li>New</li>
 {% endblock %}
-{% block content_title %}Add Device Technology{% endblock %}
-{% block content_description %}Add device technology{% endblock %}
+{% block content_title %}Add Antenna{% endblock %}
+{% block content_description %}Add antenna{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
@@ -14,11 +14,11 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> ADD DEVICE TECHNOLOGY</h4>
+                            <h4><i class="fa fa-bars"></i> ADD ANTENNA</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-6"><br />
-                                    <form action="/technology/new/" method="post" class="form-horizontal"
+                                    <form action="/antenna/new/" method="post" class="form-horizontal"
                                           role="form">{% csrf_token %}
                                         <div class="form-group">
                                             {% for field in form %}
@@ -38,7 +38,7 @@
                                             <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i> Reset
                                             </button>
                                             &nbsp;
-                                            <button type="reset" class="btn btn-danger" onclick="window.location.replace('/technology/')"><i class="fa fa-times"></i> Cancel
+                                            <button type="reset" class="btn btn-danger" onclick="window.location.replace('/antenna/')"><i class="fa fa-times"></i> Cancel
                                             </button>
                                             </div>
                                         </div>

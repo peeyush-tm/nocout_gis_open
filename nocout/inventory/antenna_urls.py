@@ -1,11 +1,11 @@
 from django.conf.urls import patterns, url
-from device import views
+from inventory import views
 
 urlpatterns = patterns('',
-  url(r'^$', views.DeviceTechnologyList.as_view(), name='device_technology_list'),
-  url(r'^(?P<pk>\d+)$', views.DeviceTechnologyDetail.as_view(), name='device_technology_detail'),
-  url(r'^new/$', views.DeviceTechnologyCreate.as_view(), name='device_technology_new'),
-  url(r'^edit/(?P<pk>\d+)$', views.DeviceTechnologyUpdate.as_view(), name='device_technology_edit'),
-  url(r'^delete/(?P<pk>\d+)$', views.DeviceTechnologyDelete.as_view(), name='device_technology_delete'),
-  url(r'^devicetechnologylistingtable/', views.DeviceTechnologyListingTable.as_view(), name='DeviceTechnologyListingTable'),
+    url(r'^$', views.AntennaList.as_view(), name='antenna_list'),
+    url(r'^(?P<pk>\d+)$', views.Antenna.as_view(), name='antenna_detail'),
+    url(r'^new/$', views.AntennaCreate.as_view(), name='antenna_new'),
+    url(r'^edit/(?P<pk>\d+)$', views.AntennaUpdate.as_view(), name='antenna_edit'),
+    url(r'^delete/(?P<pk>\d+)$', views.AntennaDelete.as_view(), name='antenna_delete'),
+    url(r'^antennalistingtable/', views.AntennaListingTable.as_view(), name='AntennaListingTable'),
 )
