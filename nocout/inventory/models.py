@@ -1,5 +1,21 @@
 from django.db import models
 from device.models import Device
+from device_group.models import DeviceGroup
+
+
+# inventory model --> mapper of device & device groups
+class Inventory(models.Model):
+    name = models.CharField('Name', max_length=200)
+    device_group = models.ForeignKey(DeviceGroup)
+    devices = models.ManyToManyField(Device)
+    city = models.CharField('City', max_length=200, null=True, blank=True)
+    state = models.CharField('State', max_length=200, null=True, blank=True)
+    country = models.CharField('Country', max_length=200, null=True, blank=True)
+    description = models.TextField('Description', null=True, blank=True)
+    created_by = models.IntegerField()
+    modified_by = models.IntegerField()
+    created_at = models.DateTimeField()
+    modified_at = models.DateTimeField()
 
 
 # gis antenna model
