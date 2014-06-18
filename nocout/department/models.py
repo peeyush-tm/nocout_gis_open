@@ -6,6 +6,7 @@ from user_group.models import UserGroup
 # department model --> mapper of user & user_group
 class Department(models.Model):
     name = models.CharField('Name', max_length=200)
+    user_group = models.ForeignKey(UserGroup)
     users = models.ManyToManyField(UserProfile)
     city = models.CharField('City', max_length=200, null=True, blank=True)
     state = models.CharField('State', max_length=200, null=True, blank=True)
