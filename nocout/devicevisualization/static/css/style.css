@@ -6,8 +6,9 @@
 .windowContainer
 {
     min-width: 500px;
-    height: 300px;
-    overflow-y: scroll;
+    max-height: 300px;
+    min-height: 30px;
+    overflow-y: auto;
     /*padding: 8px;
     border-radius: 10px;*/
 }
