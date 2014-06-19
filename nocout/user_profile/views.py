@@ -1,4 +1,5 @@
 import json
+from django.contrib.auth.models import Group
 from django.db.models.query import ValuesQuerySet
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
@@ -13,7 +14,7 @@ from django.contrib.auth.hashers import make_password
 from collections import OrderedDict
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from actstream import action
-from nocout.utils.util import DictDiffer
+from nocout.utils.util import DictDiffer, django_group_role_dict_mapper
 from django.contrib.auth.decorators import permission_required
 from django.db.models import Q
 
@@ -291,6 +292,9 @@ class UserUpdate(UpdateView):
         # updating roles  --> M2M Relation (Model: Roles)
         for role in form.cleaned_data['role']:
             user_role = Roles.objects.get(role_name=role)
+            django_group_name=django_group_role_dict_mapper[role.role_name]
+            django_group=Group.objects.get(name=django_group_name)
+            self.object.groups.add(django_group)
             self.object.role.add(user_role)
             self.object.save()
 

@@ -43,3 +43,9 @@ class Logged_In_User_Devices:
         user_group = UserGroup.objects.get( pk__in = self.request.user.userprofile.user_group.values_list('id', flat=True))
         device_group_list = DeviceGroup.objects.filter( pk__in = user_group.device_group.values_list('id', flat=True))
         return Device.objects.filter(device_group__in = device_group_list ).values(*self.columns)
+
+django_group_role_dict_mapper={
+    'admin':'group_admin',
+    'operator':'group_operator',
+    'viewer':'group_viewer',
+}
