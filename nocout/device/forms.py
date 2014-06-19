@@ -244,4 +244,4 @@ class DeviceTypeForm(forms.ModelForm):
 
     class Meta:
         model = DeviceType
-        fields = ('name', 'alias')
+        fields = ('name', 'alias', 'device_icon', 'device_gmap_icon', 'device_port', 'frequency')

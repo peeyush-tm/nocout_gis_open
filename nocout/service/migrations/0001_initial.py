@@ -8,6 +8,16 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
+        # Adding model 'ServiceDataSource'
+        db.create_table(u'service_servicedatasource', (
+            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('data_source_name', self.gf('django.db.models.fields.CharField')(max_length=100)),
+            ('data_source_alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
+            ('warning', self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True)),
+            ('critical', self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True)),
+        ))
+        db.send_create_signal(u'service', ['ServiceDataSource'])
+
         # Adding model 'ServiceParameters'
         db.create_table(u'service_serviceparameters', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
@@ -40,8 +50,20 @@ class Migration(SchemaMigration):
         ))
         db.create_unique(m2m_table_name, ['service_id', 'serviceparameters_id'])
 
+        # Adding M2M table for field service_data_sources on 'Service'
+        m2m_table_name = db.shorten_name(u'service_service_service_data_sources')
+        db.create_table(m2m_table_name, (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('service', models.ForeignKey(orm[u'service.service'], null=False)),
+            ('servicedatasource', models.ForeignKey(orm[u'service.servicedatasource'], null=False))
+        ))
+        db.create_unique(m2m_table_name, ['service_id', 'servicedatasource_id'])
+
 
     def backwards(self, orm):
+        # Deleting model 'ServiceDataSource'
+        db.delete_table(u'service_servicedatasource')
+
         # Deleting model 'ServiceParameters'
         db.delete_table(u'service_serviceparameters')
 
@@ -50,6 +72,9 @@ class Migration(SchemaMigration):
 
         # Removing M2M table for field parameters on 'Service'
         db.delete_table(db.shorten_name(u'service_service_parameters'))
+
+        # Removing M2M table for field service_data_sources on 'Service'
+        db.delete_table(db.shorten_name(u'service_service_service_data_sources'))
 
 
     models = {
@@ -66,7 +91,16 @@ class Migration(SchemaMigration):
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'parameters': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['service.ServiceParameters']", 'null': 'True', 'blank': 'True'}),
+            'service_data_sources': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['service.ServiceDataSource']", 'null': 'True', 'blank': 'True'}),
             'service_name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
+        },
+        u'service.servicedatasource': {
+            'Meta': {'object_name': 'ServiceDataSource'},
+            'critical': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
+            'data_source_alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
+            'data_source_name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'warning': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'})
         },
         u'service.serviceparameters': {
             'Meta': {'object_name': 'ServiceParameters'},
