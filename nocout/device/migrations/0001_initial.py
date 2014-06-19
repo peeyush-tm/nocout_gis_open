@@ -34,8 +34,8 @@ class Migration(SchemaMigration):
         # Adding model 'StateGeoInfo'
         db.create_table(u'device_stategeoinfo', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('latitude', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('longitude', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
+            ('latitude', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
+            ('longitude', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
             ('state', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device.State'], null=True, blank=True)),
         ))
         db.send_create_signal(u'device', ['StateGeoInfo'])
@@ -48,6 +48,14 @@ class Migration(SchemaMigration):
             ('color_hex_value', self.gf('django.db.models.fields.CharField')(max_length=10)),
         ))
         db.send_create_signal(u'device', ['DeviceFrequency'])
+
+        # Adding model 'DevicePort'
+        db.create_table(u'device_deviceport', (
+            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('port_name', self.gf('django.db.models.fields.CharField')(max_length=100)),
+            ('port_value', self.gf('django.db.models.fields.IntegerField')(default=0)),
+        ))
+        db.send_create_signal(u'device', ['DevicePort'])
 
         # Adding model 'DeviceType'
         db.create_table(u'device_devicetype', (
@@ -67,6 +75,15 @@ class Migration(SchemaMigration):
             ('devicefrequency', models.ForeignKey(orm[u'device.devicefrequency'], null=False))
         ))
         db.create_unique(m2m_table_name, ['devicetype_id', 'devicefrequency_id'])
+
+        # Adding M2M table for field device_port on 'DeviceType'
+        m2m_table_name = db.shorten_name(u'device_devicetype_device_port')
+        db.create_table(m2m_table_name, (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('devicetype', models.ForeignKey(orm[u'device.devicetype'], null=False)),
+            ('deviceport', models.ForeignKey(orm[u'device.deviceport'], null=False))
+        ))
+        db.create_unique(m2m_table_name, ['devicetype_id', 'deviceport_id'])
 
         # Adding model 'DeviceModel'
         db.create_table(u'device_devicemodel', (
@@ -99,6 +116,7 @@ class Migration(SchemaMigration):
             ('device_alias', self.gf('django.db.models.fields.CharField')(max_length=200)),
             ('site_instance', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['site_instance.SiteInstance'], null=True, blank=True)),
             ('parent', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='device_children', null=True, to=orm['device.Device'])),
+            ('organization', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['organization.Organization'])),
             ('device_technology', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
             ('device_vendor', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
             ('device_model', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
@@ -110,15 +128,16 @@ class Migration(SchemaMigration):
             ('dhcp_state', self.gf('django.db.models.fields.CharField')(default='Disable', max_length=200)),
             ('host_priority', self.gf('django.db.models.fields.CharField')(default='Normal', max_length=200)),
             ('host_state', self.gf('django.db.models.fields.CharField')(default='Enable', max_length=200)),
-            ('timezone', self.gf('django.db.models.fields.CharField')(max_length=100)),
-            ('latitude', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('longitude', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('address', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
             ('country', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
             ('state', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
             ('city', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
+            ('latitude', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
+            ('longitude', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
+            ('timezone', self.gf('django.db.models.fields.CharField')(default='Asia/Kolkata', max_length=100)),
             ('description', self.gf('django.db.models.fields.TextField')()),
+            ('address', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
             ('is_deleted', self.gf('django.db.models.fields.IntegerField')(default=0, max_length=1)),
+            ('agent_tag', self.gf('django.db.models.fields.CharField')(default='ping', max_length=100)),
             (u'lft', self.gf('django.db.models.fields.PositiveIntegerField')(db_index=True)),
             (u'rght', self.gf('django.db.models.fields.PositiveIntegerField')(db_index=True)),
             (u'tree_id', self.gf('django.db.models.fields.PositiveIntegerField')(db_index=True)),
@@ -168,14 +187,6 @@ class Migration(SchemaMigration):
         ))
         db.send_create_signal(u'device', ['TechnologyVendor'])
 
-        # Adding model 'Inventory'
-        db.create_table(u'device_inventory', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('device', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device.Device'])),
-            ('device_group', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device_group.DeviceGroup'])),
-        ))
-        db.send_create_signal(u'device', ['Inventory'])
-
         # Adding model 'DeviceTypeFields'
         db.create_table(u'device_devicetypefields', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
@@ -211,11 +222,17 @@ class Migration(SchemaMigration):
         # Deleting model 'DeviceFrequency'
         db.delete_table(u'device_devicefrequency')
 
+        # Deleting model 'DevicePort'
+        db.delete_table(u'device_deviceport')
+
         # Deleting model 'DeviceType'
         db.delete_table(u'device_devicetype')
 
         # Removing M2M table for field frequency on 'DeviceType'
         db.delete_table(db.shorten_name(u'device_devicetype_frequency'))
+
+        # Removing M2M table for field device_port on 'DeviceType'
+        db.delete_table(db.shorten_name(u'device_devicetype_device_port'))
 
         # Deleting model 'DeviceModel'
         db.delete_table(u'device_devicemodel')
@@ -243,9 +260,6 @@ class Migration(SchemaMigration):
 
         # Deleting model 'TechnologyVendor'
         db.delete_table(u'device_technologyvendor')
-
-        # Deleting model 'Inventory'
-        db.delete_table(u'device_inventory')
 
         # Deleting model 'DeviceTypeFields'
         db.delete_table(u'device_devicetypefields')
@@ -275,11 +289,11 @@ class Migration(SchemaMigration):
         u'device.device': {
             'Meta': {'object_name': 'Device'},
             'address': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'agent_tag': ('django.db.models.fields.CharField', [], {'default': "'ping'", 'max_length': '100'}),
             'city': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'country': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'description': ('django.db.models.fields.TextField', [], {}),
             'device_alias': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            'device_group': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['device_group.DeviceGroup']", 'null': 'True', 'through': u"orm['device.Inventory']", 'blank': 'True'}),
             'device_model': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'device_name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '200'}),
             'device_technology': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
@@ -292,18 +306,19 @@ class Migration(SchemaMigration):
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'ip_address': ('django.db.models.fields.IPAddressField', [], {'unique': 'True', 'max_length': '15'}),
             'is_deleted': ('django.db.models.fields.IntegerField', [], {'default': '0', 'max_length': '1'}),
-            'latitude': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'latitude': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
             u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'longitude': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'longitude': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
             'mac_address': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'netmask': ('django.db.models.fields.IPAddressField', [], {'max_length': '15', 'null': 'True', 'blank': 'True'}),
+            'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
             'parent': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'device_children'", 'null': 'True', 'to': u"orm['device.Device']"}),
             u'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'service': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['service.Service']", 'null': 'True', 'blank': 'True'}),
             'site_instance': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['site_instance.SiteInstance']", 'null': 'True', 'blank': 'True'}),
             'state': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'timezone': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
+            'timezone': ('django.db.models.fields.CharField', [], {'default': "'Asia/Kolkata'", 'max_length': '100'}),
             u'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'})
         },
         u'device.devicefrequency': {
@@ -320,6 +335,12 @@ class Migration(SchemaMigration):
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'})
         },
+        u'device.deviceport': {
+            'Meta': {'object_name': 'DevicePort'},
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'port_name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
+            'port_value': ('django.db.models.fields.IntegerField', [], {'default': '0'})
+        },
         u'device.devicetechnology': {
             'Meta': {'object_name': 'DeviceTechnology'},
             'alias': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
@@ -332,6 +353,7 @@ class Migration(SchemaMigration):
             'alias': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'device_gmap_icon': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'device_icon': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
+            'device_port': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['device.DevicePort']", 'null': 'True', 'blank': 'True'}),
             'frequency': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['device.DeviceFrequency']", 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '200'})
@@ -357,12 +379,6 @@ class Migration(SchemaMigration):
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'})
         },
-        u'device.inventory': {
-            'Meta': {'object_name': 'Inventory'},
-            'device': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.Device']"}),
-            'device_group': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device_group.DeviceGroup']"}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
-        },
         u'device.modeltype': {
             'Meta': {'object_name': 'ModelType'},
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -379,8 +395,8 @@ class Migration(SchemaMigration):
         u'device.stategeoinfo': {
             'Meta': {'object_name': 'StateGeoInfo'},
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'latitude': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
-            'longitude': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
+            'latitude': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
+            'longitude': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
             'state': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.State']", 'null': 'True', 'blank': 'True'})
         },
         u'device.technologyvendor': {
@@ -395,20 +411,6 @@ class Migration(SchemaMigration):
             'model': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceModel']"}),
             'vendor': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceVendor']"})
         },
-        u'device_group.devicegroup': {
-            'Meta': {'object_name': 'DeviceGroup'},
-            'address': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_deleted': ('django.db.models.fields.IntegerField', [], {'default': '0', 'max_length': '1'}),
-            u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'location': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50'}),
-            'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "'devicegroup_children'", 'null': 'True', 'to': u"orm['device_group.DeviceGroup']"}),
-            u'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            u'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'})
-        },
         u'machine.machine': {
             'Meta': {'object_name': 'Machine'},
             'agent_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
@@ -418,6 +420,19 @@ class Migration(SchemaMigration):
             'machine_ip': ('django.db.models.fields.IPAddressField', [], {'max_length': '15', 'null': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'})
         },
+        u'organization.organization': {
+            'Meta': {'object_name': 'Organization'},
+            'city': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
+            'country': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
+            'created_at': ('django.db.models.fields.DateTimeField', [], {}),
+            'created_by': ('django.db.models.fields.IntegerField', [], {}),
+            'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'modified_at': ('django.db.models.fields.DateTimeField', [], {}),
+            'modified_by': ('django.db.models.fields.IntegerField', [], {}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
+            'state': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'})
+        },
         u'service.service': {
             'Meta': {'object_name': 'Service'},
             'alias': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
@@ -425,7 +440,16 @@ class Migration(SchemaMigration):
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'parameters': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['service.ServiceParameters']", 'null': 'True', 'blank': 'True'}),
+            'service_data_sources': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['service.ServiceDataSource']", 'null': 'True', 'blank': 'True'}),
             'service_name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
+        },
+        u'service.servicedatasource': {
+            'Meta': {'object_name': 'ServiceDataSource'},
+            'critical': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
+            'data_source_alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
+            'data_source_name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'warning': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'})
         },
         u'service.serviceparameters': {
             'Meta': {'object_name': 'ServiceParameters'},

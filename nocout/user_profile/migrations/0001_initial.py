@@ -12,6 +12,7 @@ class Migration(SchemaMigration):
         db.create_table(u'user_profile_userprofile', (
             (u'user_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['auth.User'], unique=True, primary_key=True)),
             ('parent', self.gf('mptt.fields.TreeForeignKey')(blank=True, related_name='user_children', null=True, to=orm['user_profile.UserProfile'])),
+            ('organization', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['organization.Organization'])),
             ('phone_number', self.gf('django.db.models.fields.CharField')(max_length=15, null=True, blank=True)),
             ('company', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
             ('designation', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
@@ -42,14 +43,6 @@ class Migration(SchemaMigration):
         ))
         db.send_create_signal(u'user_profile', ['Roles'])
 
-        # Adding model 'Department'
-        db.create_table(u'user_profile_department', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('user_profile', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['user_profile.UserProfile'])),
-            ('user_group', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['user_group.UserGroup'])),
-        ))
-        db.send_create_signal(u'user_profile', ['Department'])
-
 
     def backwards(self, orm):
         # Deleting model 'UserProfile'
@@ -60,9 +53,6 @@ class Migration(SchemaMigration):
 
         # Deleting model 'Roles'
         db.delete_table(u'user_profile_roles')
-
-        # Deleting model 'Department'
-        db.delete_table(u'user_profile_department')
 
 
     models = {
@@ -102,48 +92,18 @@ class Migration(SchemaMigration):
             'model': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
         },
-        u'device_group.devicegroup': {
-            'Meta': {'object_name': 'DeviceGroup'},
-            'address': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_deleted': ('django.db.models.fields.IntegerField', [], {'default': '0', 'max_length': '1'}),
-            u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'location': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50'}),
-            'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "'devicegroup_children'", 'null': 'True', 'to': u"orm['device_group.DeviceGroup']"}),
-            u'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            u'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'})
-        },
-        u'user_group.organization': {
+        u'organization.organization': {
             'Meta': {'object_name': 'Organization'},
+            'city': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
+            'country': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
+            'created_at': ('django.db.models.fields.DateTimeField', [], {}),
+            'created_by': ('django.db.models.fields.IntegerField', [], {}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'device_group': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device_group.DeviceGroup']"}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'unique': 'True', 'null': 'True', 'blank': '-1'}),
-            'user_group': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['user_group.UserGroup']"})
-        },
-        u'user_group.usergroup': {
-            'Meta': {'object_name': 'UserGroup'},
-            'address': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
-            'device_group': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['device_group.DeviceGroup']", 'null': 'True', 'through': u"orm['user_group.Organization']", 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_deleted': ('django.db.models.fields.IntegerField', [], {'default': '0', 'max_length': '1'}),
-            u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'location': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50'}),
-            'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "'usergroup_children'", 'null': 'True', 'to': u"orm['user_group.UserGroup']"}),
-            u'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            u'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'})
-        },
-        u'user_profile.department': {
-            'Meta': {'object_name': 'Department'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'user_group': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['user_group.UserGroup']"}),
-            'user_profile': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['user_profile.UserProfile']"})
+            'modified_at': ('django.db.models.fields.DateTimeField', [], {}),
+            'modified_by': ('django.db.models.fields.IntegerField', [], {}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
+            'state': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'})
         },
         u'user_profile.roles': {
             'Meta': {'object_name': 'Roles'},
@@ -160,12 +120,12 @@ class Migration(SchemaMigration):
             'is_deleted': ('django.db.models.fields.IntegerField', [], {'default': '0', 'max_length': '1'}),
             u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
+            'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
             'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "'user_children'", 'null': 'True', 'to': u"orm['user_profile.UserProfile']"}),
             'phone_number': ('django.db.models.fields.CharField', [], {'max_length': '15', 'null': 'True', 'blank': 'True'}),
             u'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'role': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['user_profile.Roles']", 'null': 'True', 'blank': 'True'}),
             u'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'user_group': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['user_group.UserGroup']", 'null': 'True', 'through': u"orm['user_profile.Department']", 'blank': 'True'}),
             u'user_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': u"orm['auth.User']", 'unique': 'True', 'primary_key': 'True'})
         }
     }

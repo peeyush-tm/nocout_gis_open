@@ -1,11 +1,12 @@
 from django.db import models
-from device_group.models import DeviceGroup
+from organization.models import Organization
 from site_instance.models import SiteInstance
 from service.models import Service
 from mptt.models import MPTTModel, TreeForeignKey
 
-# table for countries
 
+#************************************ Device Inventory**************************************
+# table for countries
 class Country(models.Model):
     country_name = models.CharField(max_length=200, null=True, blank=True)
 
@@ -48,13 +49,23 @@ class DeviceFrequency(models.Model):
         return self.frequency_name
 
 
+# device ports
+class DevicePort(models.Model):
+    port_name = models.CharField('Port Name', max_length=100)
+    port_value = models.IntegerField('Port Value', default=0)
+
+    def __unicode__(self):
+        return self.port_name
+
+
 # device types info table
 class DeviceType(models.Model):
     name = models.CharField('Device Type', max_length=200, unique=True)
     alias = models.CharField('Device Description', max_length=200, null=True, blank=True)
-    device_icon = models.CharField('Device GMap Icon', max_length=200, null=True, blank=True)
+    device_icon = models.CharField('Device Icon', max_length=200, null=True, blank=True)
     device_gmap_icon = models.CharField('Device GMap Icon', max_length=200, null=True, blank=True)
     frequency = models.ManyToManyField(DeviceFrequency, null=True, blank=True)
+    device_port = models.ManyToManyField(DevicePort, null=True, blank=True)
 
     def __unicode__(self):
         return self.name
@@ -116,7 +127,7 @@ class Device(MPTTModel, models.Model):
     device_alias = models.CharField('Device Alias', max_length=200)
     site_instance = models.ForeignKey(SiteInstance, null=True, blank=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='device_children')
-    device_group = models.ManyToManyField(DeviceGroup, through='Inventory', blank=True, null=True)
+    organization = models.ForeignKey(Organization)
     device_technology = models.IntegerField('Device Technology', null=True, blank=True)
     device_vendor = models.IntegerField('Device Vendor', null=True, blank=True)
     device_model = models.IntegerField('Device Model', null=True, blank=True)
@@ -138,6 +149,7 @@ class Device(MPTTModel, models.Model):
     description = models.TextField('Description')
     address = models.TextField('Address', null=True, blank=True)
     is_deleted = models.IntegerField('Is Deleted', max_length=1, default=0)
+    agent_tag = models.CharField('Agent Tag', max_length=100, default='ping')
 
     def __unicode__(self):
         return self.device_name
@@ -162,12 +174,6 @@ class TechnologyVendor(models.Model):
     vendor = models.ForeignKey(DeviceVendor)
 
 
-# inventory mapper table
-class Inventory(models.Model):
-    device = models.ForeignKey(Device)
-    device_group = models.ForeignKey(DeviceGroup)
-
-
 # table for extra fields of device (depends upon device type)
 class DeviceTypeFields(models.Model):
     device_type = models.ForeignKey(DeviceType, null=True, blank=True)
@@ -184,3 +190,5 @@ class DeviceTypeFieldsValue(models.Model):
     field_value = models.CharField(max_length=250)
     device_id = models.IntegerField()
 
+
+#************************************ GIS Inventory**************************************

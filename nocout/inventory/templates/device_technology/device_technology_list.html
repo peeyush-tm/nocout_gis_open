@@ -1,19 +1,17 @@
 {% extends "inventory/inventory.html" %}
+{% load staticfiles %}
 {% block breadcrumb_title %}
     <li>Inventory</li>
-    <li>Device</li>
+    <li>Device Technology</li>
 {% endblock %}
-{% block content_title %}Device Management{% endblock %}
-{% block content_description %}List of devices{% endblock %}
-{% load staticfiles %}
+{% block content_title %}Device Technology Management{% endblock %}
+{% block content_description %}List of device technologies{% endblock %}
 {% block content %}
-
-    <p><a href="/device/new"><i class="fa fa-plus"></i> Create Device</a></p>
-    <p><a href="/device/treeview"><i class="fa fa-sitemap"></i> Devices Tree View</a></p>
-
+    <p><a href="/technology/new"><i class="fa fa-plus">&nbsp;</i> Create Device Technology</a></p>
+    
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i>DEVICE LISTING</h4>
+            <h4><i class="fa fa-table"></i>DEVICE TECHNOLOGY LISTING</h4>
             <div class="tools hidden-xs">
                 <a href="#box-config" data-toggle="modal" class="config">
                     <i class="fa fa-cog"></i>
@@ -23,34 +21,27 @@
                 </a>
             </div>
         </div>
-
         <div id="tableContainer" class="box-body">
-            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="DeviceTable">
+            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="DeviceTechnologyListingTable">
                 <thead></thead>
                 <tbody></tbody>
             </table>
         </div>
     </div>
-
 {% endblock %}
+
 {% block jquery %}
-    <!-- Custom Data Table script-->
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
-    <!-- Custom Script for soft delete-->
-    <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
     <script type="text/javascript">
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
             var dataTableInstance = new ourDataTableWidget();
-            /*Grid headers object*/            
+            /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/
-            var ajax_url = '{% url "DeviceListingTable" %}';
+            var ajax_url = '{% url "DeviceTechnologyListingTable" %}';
             /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable("DeviceTable", gridHeadersObj, ajax_url);
+            dataTableInstance.createDataTable("DeviceTechnologyListingTable", gridHeadersObj, ajax_url);
         });
-    function device_monitor_status(){
-        alert("Successfully monitored.");
-    }
     </script>
 {% endblock %}
