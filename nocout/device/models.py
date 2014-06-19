@@ -129,14 +129,14 @@ class Device(MPTTModel, models.Model):
     dhcp_state = models.CharField('DHCP State', max_length=200, choices=DHCP_STATE, default=disable)
     host_priority = models.CharField('Host Priority', max_length=200, choices=PRIORITY, default=normal)
     host_state = models.CharField('Host State', max_length=200, choices=HOST_STATE, default=enable)
-    timezone = models.CharField('Timezone', max_length=100)
-    address = models.TextField('Address', null=True, blank=True)
     country = models.IntegerField('Country', null=True, blank=True)
     state = models.IntegerField('State', null=True, blank=True)
     city = models.IntegerField('City', null=True, blank=True)
     latitude = models.FloatField('Latitude', null=True, blank=True)
     longitude = models.FloatField('Longitude', null=True, blank=True)
+    timezone = models.CharField('Timezone', max_length=100, default="Asia/Kolkata")
     description = models.TextField('Description')
+    address = models.TextField('Address', null=True, blank=True)
     is_deleted = models.IntegerField('Is Deleted', max_length=1, default=0)
 
     def __unicode__(self):

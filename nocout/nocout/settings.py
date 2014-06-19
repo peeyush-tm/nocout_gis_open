@@ -243,6 +243,7 @@ LOGGING = {
 SESSION_SECURITY_WARN_AFTER = 540
 SESSION_SECURITY_EXPIRE_AFTER = 600
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SECURITY_PASSIVE_URLS = ['dialog_for_page_refresh']
 
 MAX_USER_LOGIN_LIMIT=100
 ################################################################################

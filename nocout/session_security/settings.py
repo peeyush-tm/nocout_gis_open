@@ -32,7 +32,15 @@ EXPIRE_AFTER = getattr(settings, 'SESSION_SECURITY_EXPIRE_AFTER', 600)
 
 WARN_AFTER = getattr(settings, 'SESSION_SECURITY_WARN_AFTER', 540)
 
-PASSIVE_URLS = getattr(settings, 'SESSION_SECURITY_PASSIVE_URLS', [])
+SETTINGS_PASSIVE_URLS = getattr(settings, 'SESSION_SECURITY_PASSIVE_URLS', [])
+
+PASSIVE_URLS = []
+
+for passive_url in SETTINGS_PASSIVE_URLS:
+    PASSIVE_URLS += [
+        urlresolvers.reverse(passive_url),
+    ]
+
 PASSIVE_URLS += [
     urlresolvers.reverse('session_security_ping'),
 ]
