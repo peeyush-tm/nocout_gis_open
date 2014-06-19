@@ -1,4 +1,5 @@
 from django.db import models
+from organization.models import Organization
 from site_instance.models import SiteInstance
 from service.models import Service
 from mptt.models import MPTTModel, TreeForeignKey
@@ -126,6 +127,7 @@ class Device(MPTTModel, models.Model):
     device_alias = models.CharField('Device Alias', max_length=200)
     site_instance = models.ForeignKey(SiteInstance, null=True, blank=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='device_children')
+    organization = models.ForeignKey(Organization)
     device_technology = models.IntegerField('Device Technology', null=True, blank=True)
     device_vendor = models.IntegerField('Device Vendor', null=True, blank=True)
     device_model = models.IntegerField('Device Model', null=True, blank=True)
