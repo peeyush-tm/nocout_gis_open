@@ -31,7 +31,23 @@ var mapInstance = "",
 	currentPolygon = {},
 	drawingManager = "",
 	dataArray = [],
-	leftMargin = 0;
+	leftMargin = 0,
+	sectorArray = [],
+	circleArray = [],
+	arrayCounter = 0,
+	latLongArray = [],
+	depthStep = 6,
+	fr = 900, //MHZ
+	sol = 299792458,
+	HEIGHT_CHANGED = false,
+	clear_factor = 100,
+	antenaHight1 = 40.0,
+	antenaHight2 = 45.0,
+	pinPointsColor = 'rgb(170,102,102)',
+	altitudeColor = '#EDC240',
+	losColor = 'rgb(203,75,75)',
+	fresnel1Color = 'rgba(82, 172, 82, 0.99)',
+	fresnel2Color = 'rgb(148,64,237)';
 
 /**
  * This class is used to plot the BS & SS on the google maps & show information on click
@@ -61,10 +77,36 @@ function networkMapClass() {
 
 		var mapObject = {
 			center    : new google.maps.LatLng(21.1500,79.0900),
-			zoom      : 2
+			zoom      : 5
 		};    
 		/*Create Map Type Object*/
 		mapInstance = new google.maps.Map(document.getElementById(domElement),mapObject);
+
+		/*Search text box object*/
+		var searchTxt = document.getElementById('searchTxt');
+
+		/*google search object for search text box*/
+		var searchBox = new google.maps.places.SearchBox(searchTxt);
+
+		/*Event listener for search text box*/
+		google.maps.event.addListener(new google.maps.places.SearchBox(searchTxt), 'places_changed', function() {
+			/*place object returned from map API*/
+    		var places = searchBox.getPlaces();
+    		/*initialize bounds object*/
+    		var bounds = new google.maps.LatLngBounds();
+    		/*point bounds to the place location*/
+    		bounds.extend(places[0].geometry.location);
+    		/*call fitbounts for the mapInstance with the place location bounds object*/
+    		mapInstance.fitBounds(bounds)
+    		/*Listener to reset zoom level if it exceeds to particular value*/
+    		var listener = google.maps.event.addListener(mapInstance, "idle", function() { 
+    			/*check for current zoom level*/
+				if (mapInstance.getZoom() > 8) {
+					mapInstance.setZoom(8);
+				}
+				google.maps.event.removeListener(listener);
+			});
+		});
 
 		/*Create a instance of OverlappingMarkerSpiderfier*/
 		oms = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true});		
@@ -76,7 +118,7 @@ function networkMapClass() {
 			
 			var windowPosition = new google.maps.LatLng(marker.position.k,marker.position.A);
 			/*Call the function to create info window content*/
-			var content = that.makeWindowContent(marker,e);
+			var content = that.makeWindowContent(marker);
 			/*Set the content for infowindow*/
 			infowindow.setContent(content);
 			/*Set The Position for InfoWindow*/
@@ -127,8 +169,8 @@ function networkMapClass() {
 			/*Ajax call to the API*/
 			$.ajax({
 				crossDomain: true,
-				url : "../../device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
-				// url : "//" + hostIp + "device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
+				// url : "../../device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
+				url : "../../static/new_format.json",
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
@@ -149,7 +191,6 @@ function networkMapClass() {
 							devices = devices.concat(result.data.objects.children);
 						}
 
-
 						/*Update the device count with the received data*/
 						devicesCount = devicesObject.data.meta.total_count;
 
@@ -163,17 +204,17 @@ function networkMapClass() {
 						if(devicesObject.success == 1) {
 
 							/*If cluster icon exist then save it to global variable else make the global variable blank*/
-							if(devicesObject.data.objects.data.cluster_icon == undefined) {
-								clusterIcon = "";	
+							if(devicesObject.data.objects.data.unspiderfy_icon == undefined) {
+								clusterIcon = "";
 							} else {
-								clusterIcon = devicesObject.data.objects.data.cluster_icon;
+								clusterIcon = "../../"+devicesObject.data.objects.data.unspiderfy_icon;
 							}
 
 							/*Call the populateNetwork to show the markers on the map*/
 							that.populateNetwork(devices);
 							
 							/*Call the getDevicesFilter function to seperate the filter values from the object array*/
-							that.getDevicesFilter(devices);
+							//that.getDevicesFilter(devices);
 
 							/*Call the function after 3 sec.*/
 							setTimeout(function() {
@@ -195,7 +236,7 @@ function networkMapClass() {
 				},
 				/*If data not fetched*/
 				error : function(err) {
-
+					console.log(err.responseText);
 					that.recallServer();
 					console.log(err.statusText);
 				}
@@ -221,35 +262,41 @@ function networkMapClass() {
 		/*Assign the potting devices to the 'devices' global variables*/
 		devices = resultantMarkers;
 
-		for(var i=0;i<resultantMarkers.length;i++) {			
+		for(var i=0;i<resultantMarkers.length;i++) {
 
-			var master_label_content = "<div class='labelContainer'><div class='topLabel'>Perf : "+resultantMarkers[i].data.perf+"</div><div class='bottomLabel'>Model : "+resultantMarkers[i].data.model+"</div></div>";
+			var master_label_content = "";
+			master_label_content = "<div class='labelContainer'>";
+
+			for(var lbl=0;lbl<resultantMarkers[i].data.labels.length;lbl++) {
+
+				if(resultantMarkers[i].data.labels[lbl].show == 1) {
+
+					if($.trim(resultantMarkers[i].data.labels[lbl].position) == "up") {
+						console.log(resultantMarkers[i].data.labels[lbl].show);
+						master_label_content += "<div class='topLabel'>"+resultantMarkers[i].data.labels[lbl].name+" : "+resultantMarkers[i].data.labels[lbl].value+"</div>";
+					} else if($.trim(resultantMarkers[i].data.labels[lbl].position) == "down") {
+						master_label_content += "<div class='bottomLabel'>"+resultantMarkers[i].data.labels[lbl].name+" : "+resultantMarkers[i].data.labels[lbl].value+"</div>";
+					}
+				}
+			}
+			master_label_content += "</div>";
+
 			/*Create Master Marker Object*/
 			var masterMarkerObject = {
-		    	position  	: new google.maps.LatLng(resultantMarkers[i].data.lat,resultantMarkers[i].data.lon),
-		    	map       	: mapInstance,
-		    	icon 	  	: resultantMarkers[i].data.markerUrl,//"https://chart.googleapis.com/chart?chst=d_map_pin_letter&chld=|fcfcfc|",
-		    	oldIcon 	: resultantMarkers[i].data.markerUrl,
-		    	title     	: resultantMarkers[i].data.alias,
-		    	pointType	: "Master",
-		    	pointPerf	: resultantMarkers[i].data.perf,
-		    	vendor 		: resultantMarkers[i].data.vendor,
-		    	technology	: resultantMarkers[i].data.technology,
-		    	model 		: resultantMarkers[i].data.model,
-		    	city 		: resultantMarkers[i].data.city,
-		    	state 		: resultantMarkers[i].data.state,
-		    	pointName   : resultantMarkers[i].name,
-		    	pointAlias  : resultantMarkers[i].data.alias,
-		    	deviceType  : resultantMarkers[i].data.decive_type,
-		    	currentState: resultantMarkers[i].data.current_state,
-		    	pointIp  	: resultantMarkers[i].data.ip,
-		    	pointMac  	: resultantMarkers[i].data.mac,
-		    	pointDetail : resultantMarkers[i].data.otherDetail,
-		    	labelContent: master_label_content,
-				labelAnchor : new google.maps.Point(0, 62),
-				labelClass  : "markerLabels",
-				labelStyle	: {opacity: 0.85}
+		    	position  	  : new google.maps.LatLng(resultantMarkers[i].data.lat,resultantMarkers[i].data.lon),
+		    	map       	  : mapInstance,
+		    	icon 	  	  : "../../"+resultantMarkers[i].data.markerUrl,//"https://chart.googleapis.com/chart?chst=d_map_pin_letter&chld=|fcfcfc|",
+		    	oldIcon 	  : "../../"+resultantMarkers[i].data.markerUrl,
+		    	pointType	  : "bs",
+		    	labelContent  : master_label_content,
+				labelAnchor   : new google.maps.Point(0, 62),
+				labelClass    : "markerLabels",
+				labelStyle	  : {opacity: 0.85},
+				perf 		  : resultantMarkers[i].data.perf,
+				dataset 	  : resultantMarkers[i].data.param.base_station,
+				antena_height : resultantMarkers[i].data.antena_height
 			};
+
 			/*Create Master Marker*/
 		    // var masterMarker = new google.maps.Marker(masterMarkerObject);
 		    var masterMarker = new MarkerWithLabel(masterMarkerObject);
@@ -257,38 +304,46 @@ function networkMapClass() {
 		    masterMarkersObj.push(masterMarker);
 		    /*Add parent markers to the OverlappingMarkerSpiderfier*/
 		    oms.addMarker(masterMarker);
-	    	
+
+		    /*Call createCircle function to create backhual circle around BS & SS pt.*/
+	    	that.createCircle(resultantMarkers[i].data.lat,resultantMarkers[i].data.lon,resultantMarkers[i].data.circle_radius,resultantMarkers[i].data.circle_color,"backhual","bs",resultantMarkers[i].data.param.backhual);
+
 		    var slaveCount = resultantMarkers[i].children.length;  
 		    /*Loop for the number of slave & their links with the master*/
 		    for(var j=0;j<slaveCount;j++) {
-		    	
-		    	var slave_label_content = "<div class='labelContainer'><div class='topLabel'>Perf : "+resultantMarkers[i].children[j].data.perf+"</div><div class='bottomLabel'>Model : "+resultantMarkers[i].children[j].data.model+"</div></div>";
+
+		    	var slave_label_content = "";
+				slave_label_content = "<div class='labelContainer'>";
+
+				for(var lbl=0;lbl<resultantMarkers[i].children[j].data.labels.length;lbl++) {
+
+					if(resultantMarkers[i].children[j].data.labels[lbl].show == 1) {
+
+						if($.trim(resultantMarkers[i].children[j].data.labels[lbl].position) == "up") {
+							slave_label_content += "<div class='topLabel'>"+resultantMarkers[i].children[j].data.labels[lbl].name+" : "+resultantMarkers[i].children[j].data.labels[lbl].value+"</div>";
+						} else if($.trim(resultantMarkers[i].children[j].data.labels[lbl].position) == "down") {
+							slave_label_content += "<div class='bottomLabel'>"+resultantMarkers[i].children[j].data.labels[lbl].name+" : "+resultantMarkers[i].children[j].data.labels[lbl].value+"</div>";
+						}
+					}
+				}
+				slave_label_content += "</div>";
+
 		    	/*Create Slave Marker Object*/
 			    var slaveMarkerObject = {
-			    	position  	: new google.maps.LatLng(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon),
-			    	map       	: mapInstance,
-			    	icon 	  	: resultantMarkers[i].children[j].data.markerUrl,
-			    	oldIcon 	: resultantMarkers[i].children[j].data.markerUrl,
-			    	title     	: resultantMarkers[i].children[j].data.alias,
-			    	pointType	: "Slave",
-			    	pointPerf	: resultantMarkers[i].children[j].data.perf,
-			    	vendor 		: resultantMarkers[i].children[j].data.vendor,
-			    	technology	: resultantMarkers[i].children[j].data.technology,
-			    	model 		: resultantMarkers[i].children[j].data.model,
-			    	city 		: resultantMarkers[i].children[j].data.city,
-			    	state 		: resultantMarkers[i].children[j].data.state,
-			    	pointName   : resultantMarkers[i].children[j].name,
-			    	pointAlias  : resultantMarkers[i].children[j].data.alias,
-			    	deviceType  : resultantMarkers[i].children[j].data.device_type,
-			    	currentState: resultantMarkers[i].children[j].data.current_state,
-			    	pointIp  	: resultantMarkers[i].children[j].data.ip,
-			    	pointMac  	: resultantMarkers[i].children[j].data.mac,
-			    	pointDetail : resultantMarkers[i].children[j].data.otherDetail,
-			    	labelContent: slave_label_content,
-					labelAnchor : new google.maps.Point(0, 62),
-					labelClass  : "markerLabels",
-					labelStyle	: {opacity: 0.85}
+			    	position  	  : new google.maps.LatLng(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon),
+			    	map       	  : mapInstance,
+			    	icon 	  	  : "../../"+resultantMarkers[i].children[j].data.markerUrl,
+			    	oldIcon 	  : "../../"+resultantMarkers[i].children[j].data.markerUrl,
+			    	pointType	  : "ss",
+			    	labelContent  : slave_label_content,
+					labelAnchor   : new google.maps.Point(0, 62),
+					labelClass    : "markerLabels",
+					labelStyle	  : {opacity: 0.85},
+					perf 		  : resultantMarkers[i].data.perf,
+					dataset  	  : resultantMarkers[i].children[j].data.param.sub_station,
+					antena_height : resultantMarkers[i].children[j].data.antena_height
 				};
+
 				/*Create Slave Marker*/
 			    // var slaveMarker = new google.maps.Marker(slaveMarkerObject);
 			    var slaveMarker = new MarkerWithLabel(slaveMarkerObject);
@@ -297,56 +352,69 @@ function networkMapClass() {
 			    /*Add child markers to the OverlappingMarkerSpiderfier*/
 				oms.addMarker(slaveMarker);
 
-				if(resultantMarkers[i].data.showLink == 1) {
+				/*Call createCircle function to create frequency circle around BS & SS pt.*/
+	    		that.createCircle(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon,resultantMarkers[i].children[j].data.circle_radius,resultantMarkers[i].children[j].data.circle_color,"frequency","ss",resultantMarkers[i].children[j].data.param.backhual);
 
+				/*Call createCircle function to create the circle aroung BS & SS pt.*/
+	    		that.createCircle(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon,resultantMarkers[i].children[j].data.circle_radius,resultantMarkers[i].children[j].data.circle_color,"backhual","ss",resultantMarkers[i].children[j].data.param.backhual);
+
+				var pathDataObject = [];
+				/*If device are of P2P type*/
+				if(resultantMarkers[i].type == "P2P") {
 					/*Create object for Link Line Between Master & Slave*/
-					var pathDataObject = [
+					pathDataObject = [
 						new google.maps.LatLng(resultantMarkers[i].data.lat,resultantMarkers[i].data.lon),
 						new google.maps.LatLng(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon)
-					];					
+					];
+				} else {
+					var lat = resultantMarkers[i].data.lat;
+					var lon = resultantMarkers[i].data.lon;
+					var rad = resultantMarkers[i].children[j].data.radius;
+					var azimuth = resultantMarkers[i].children[j].data.azimuth_angle;
+					var beam_width = resultantMarkers[i].children[j].data.beam_width;
+					var sector_color = resultantMarkers[i].children[j].data.sector_color;
+					var sectorDataset = resultantMarkers[i].children[j].data.param.sector_info;
+					/*Call create sector function to plot the section.*/
+					that.createSector(lat,lon,rad,azimuth,beam_width,sector_color,sectorDataset,function(sectorObj) {
 
-					pathConnector = new google.maps.Polyline({
+						var halfPt = Math.floor(sectorObj.length / (+2));
+						/*Create object for Link Line Between Master & Slave*/
+						pathDataObject = [
+							new google.maps.LatLng(sectorObj[halfPt].k,sectorObj[halfPt].A),
+							new google.maps.LatLng(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon)
+						];
+					});
+				}
 
-						path 				: pathDataObject,						
-						strokeColor			: resultantMarkers[i].children[j].data.linkColor,
+				if(resultantMarkers[i].children[j].data.show_link == 1) {
+
+					var linkObject = {};
+
+					linkObject = {
+						path 				: pathDataObject,
+						strokeColor			: resultantMarkers[i].children[j].data.link_color,
 						strokeOpacity		: 1.0,
 						strokeWeight		: 2,
 						pointType 			: "path",
-						/*Master Information*/
-						masterLat 			: resultantMarkers[i].data.lat,
-						masterLong 			: resultantMarkers[i].data.lon,
-						masterPerf 			: resultantMarkers[i].data.perf,
-						masterVendor 		: resultantMarkers[i].data.vendor,
-				    	masterTechnology	: resultantMarkers[i].data.technology,
-				    	masterModel 		: resultantMarkers[i].data.model,
-						masterName  		: resultantMarkers[i].name,
-						masterAlias  		: resultantMarkers[i].data.alias,
-						masterCity  		: resultantMarkers[i].data.city,
-						masterState  		: resultantMarkers[i].data.state,
-				    	masterDeviceType	: resultantMarkers[i].data.device_type,
-				    	masterCurrentState  : resultantMarkers[i].data.current_state,
-				    	masterIp  			: resultantMarkers[i].data.ip,
-				    	masterMac  			: resultantMarkers[i].data.mac,
-				    	masterDetail  		: resultantMarkers[i].data.otherDetail,
-				    	/*Slave Information*/
-						slaveLat 			: resultantMarkers[i].children[j].data.lat,
-						slaveLong 			: resultantMarkers[i].children[j].data.lon,
-						slavePerf 			: resultantMarkers[i].children[j].data.perf,
-						slaveVendor 		: resultantMarkers[i].children[j].data.vendor,
-				    	slaveTechnology		: resultantMarkers[i].children[j].data.technology,
-				    	slaveModel 			: resultantMarkers[i].children[j].data.model,
-						slaveName  			: resultantMarkers[i].children[j].name,
-						slaveAlias  		: resultantMarkers[i].children[j].data.alias,
-						slaveCity  			: resultantMarkers[i].children[j].data.city,
-						slaveState  		: resultantMarkers[i].children[j].data.state,
-				    	slaveDeviceType 	: resultantMarkers[i].children[j].data.device_type,
-				    	slaveCurrentState  	: resultantMarkers[i].children[j].data.current_state,
-				    	slaveIp  			: resultantMarkers[i].children[j].data.ip,
-				    	slaveMac  			: resultantMarkers[i].children[j].data.mac,
-				    	slaveDetail  		: resultantMarkers[i].children[j].data.otherDetail,
-				    	/*Geodesic*/
-				    	geodesic			: true
-					});
+						geodesic			: true,
+						ss_info				: resultantMarkers[i].children[j].data.param.sub_station,
+						ss_lat 				: resultantMarkers[i].children[j].data.lat,
+						ss_lon 				: resultantMarkers[i].children[j].data.lon,						
+						ss_perf 			: resultantMarkers[i].children[j].data.perf,
+						ss_height 			: resultantMarkers[i].children[j].data.antena_height,
+						bs_lat 				: resultantMarkers[i].data.lat,
+						bs_lon 				: resultantMarkers[i].data.lon,
+						bs_perf 			: resultantMarkers[i].data.perf,
+						bs_height 			: resultantMarkers[i].data.antena_height
+					};
+
+					if($.trim(resultantMarkers[i].type) == "P2P") {
+						linkObject["bs_info"] = resultantMarkers[i].data.param.base_station;
+					} else {
+						linkObject["bs_info"] = resultantMarkers[i].children[j].data.param.sector_info;
+					}
+
+					pathConnector = new google.maps.Polyline(linkObject);
 					/*Plot the link line between master & slave*/
 					pathConnector.setMap(mapInstance);
 
@@ -354,28 +422,61 @@ function networkMapClass() {
 
 					/*Bind Click Event on Link Path Between Master & Slave*/
 					google.maps.event.addListener(pathConnector, 'click', function(e) {
-						
+
 						/*Call the function to create info window content*/
-						var content = that.makeWindowContent(this,e);
+						var content = that.makeWindowContent(this);
 						/*Set the content for infowindow*/
 						infowindow.setContent(content);
 						/*Set The Position for InfoWindow*/
 						infowindow.setPosition(e.latLng);
 						/*Open the info window*/
 						infowindow.open(mapInstance);
-					});					
-				}
+					});
+				}/*SHOW_LINK condition ends*/
 			}
 		}
 		
+		var bsLatArray = [],
+			bsLonArray = [],
+			ssLatArray = [],
+			ssLonArray = [];
+
+		/*Get All BS Lat & Lon*/
+		$.grep(masterMarkersObj,function(bs) {
+			bsLatArray.push(bs.position.A);
+			bsLonArray.push(bs.position.k);
+		});
+
+		/*Get All SS Lat & Lon*/
+		$.grep(slaveMarkersObj,function(ss) {
+			ssLatArray.push(ss.position.A);
+			ssLonArray.push(ss.position.k);
+		});
+
 		/*Loop to change the icon for same location markers(to cluster icon)*/
 		for(var k=0;k<masterMarkersObj.length;k++) {
+			
+			/*if two BS on same position*/
+			var bsLatOccurence = $.grep(bsLatArray, function (elem) {return elem === masterMarkersObj[k].position.A;}).length;
+			var bsLonOccurence = $.grep(bsLonArray, function (elem) {return elem === masterMarkersObj[k].position.k;}).length;
+			if(bsLatOccurence > 1 && bsLonOccurence > 1) {
+				masterMarkersObj[k].setOptions({"icon" : clusterIcon});
+			}
+
 			for(var l=0;l<slaveMarkersObj.length;l++) {
-				if(masterMarkersObj[k].position.A == slaveMarkersObj[l].position.A && masterMarkersObj[k].position.k == slaveMarkersObj[l].position.k) {
-					/*Set the master marker icon to cluster icon*/
-					masterMarkersObj[k].setOptions({"icon" : clusterIcon});
-					/*Set the slave marker icon to cluster icon*/
+				
+				/*if two BS on same position*/
+				var ssLatOccurence = $.grep(ssLatArray, function (elem) {return elem === slaveMarkersObj[l].position.A;}).length;
+				var ssLonOccurence = $.grep(ssLonArray, function (elem) {return elem === slaveMarkersObj[l].position.k;}).length;
+				if(ssLatOccurence > 1 && ssLonOccurence > 1) {
 					slaveMarkersObj[l].setOptions({"icon" : clusterIcon});
+				}
+
+				/*if some BS & SS are on same position*/
+				var BS_SS_location = masterMarkersObj[k].position.A == slaveMarkersObj[l].position.A && masterMarkersObj[k].position.k == slaveMarkersObj[l].position.k;
+				if(BS_SS_location) {
+					slaveMarkersObj[l].setOptions({"icon" : clusterIcon});	
+					masterMarkersObj[k].setOptions({"icon" : clusterIcon});
 				}
 			}
 		}
@@ -388,14 +489,165 @@ function networkMapClass() {
 		slaveClusterInstance = new MarkerClusterer(mapInstance, slaveMarkersObj, clusterOptions);
 	};
 
+
+	/**
+	 * This function creates sectors on google maps.
+	 * @class networkMapClass.
+	 * @method createSector.
+	 * @param Lat "Number", It contains lattitude of any point.
+	 * @param Lng "Number", It contains longitude of any point.
+	 * @param radius "Number", It contains radius for sector.
+	 * @param azimuth "Number", It contains azimuth angle for sector.
+	 * @param beamwidth "Number", It contains width for the sector.
+	 * @param sectorData {JSON Object}, It contains sector info json object.
+	 */
+	this.createSector = function(lat,lng,radius,azimuth,beamWidth,bgColor,sectorData,callback) {
+
+		// Degrees to radians
+        var d2r = Math.PI / 180;
+        //  Radians to degrees
+        var r2d = 180 / Math.PI;
+		
+        var centerPoint = new google.maps.LatLng((+lat),(+lng));
+
+        var PRlat = (radius/3963) * r2d; // using 3963 miles as earth's radius
+        var PRlng = PRlat/Math.cos(lat*d2r);
+
+        var PGpoints = [];
+        // PGpoints.push(centerPoint);
+        with(Math) {
+
+			lat1 = (+lat) + (PRlat * cos( d2r * (azimuth - beamWidth/2 )));
+			lon1 = (+lng) + (PRlng * sin( d2r * (azimuth - beamWidth/2 )));
+			
+			PGpoints.push( new google.maps.LatLng(lat1,lon1));
+
+			lat2 = (+lat) + (PRlat * cos( d2r * (azimuth + beamWidth/2 )));
+			lon2 = (+lng) + (PRlng * sin( d2r * (azimuth + beamWidth/2 )));
+			
+			var theta = 0;
+			var gamma = d2r * (azimuth + beamWidth/2 );
+
+			for (var a = 1; theta < gamma ; a++ ) {
+				theta = d2r * (azimuth - beamWidth/2 +a);
+				PGlon = (+lng) + (PRlng * sin( theta ));
+				PGlat = (+lat) + (PRlat * cos( theta ));				
+				PGpoints.push(new google.maps.LatLng($.trim(PGlat),$.trim(PGlon)));				
+			}
+
+			PGpoints.push( new google.maps.LatLng(lat2,lon2));
+			PGpoints.push(centerPoint);
+		}
+		var poly = new google.maps.Polygon({
+			map 		  : mapInstance,
+			path 		  : PGpoints,
+			strokeColor   : bgColor,
+			fillColor 	  : bgColor,
+			pointType	  : "sector",
+			strokeOpacity : 0.5,
+			strokeWeight  : 1,
+			dataset 	  : sectorData
+        });
+        /*Push polygon to an array*/
+		sectorArray.push(poly);
+
+        poly.setMap(mapInstance);
+
+        /*listener for click event of sector*/
+		google.maps.event.addListener(poly,'click',function(p) {
+			
+			var windowPosition = new google.maps.LatLng(lat,lng);
+			/*Call the function to create info window content*/
+			var content = that.makeWindowContent(poly);
+			/*Set the content for infowindow*/
+			infowindow.setContent(content);
+			/*Set The Position for InfoWindow*/
+			infowindow.setPosition(windowPosition);
+			/*Open the info window*/
+			infowindow.open(mapInstance);
+		});
+
+        callback(PGpoints);
+	};
+
+	/**
+	 * This function creates circle on the given lat lon of given radius
+	 * @class networkMapClass.
+	 * @method createCircle.
+	 * @param Lat "Number", It contains lattitude of any point.
+	 * @param Lng "Number", It contains longitude of any point.
+	 * @param radius "Number", It contains radius for sector.
+	 * @param bgColor "String", It contains bg color for circle.
+	 * @param pType "String", It contains info about circle is plot for BH or frequency.
+	 * @param dType "String", It contains info about circle is plot for SS or BS.
+	 * @param bhData {JSON Object}, It contains JSON object of BH info data.
+	 */
+	this.createCircle = function(lat,lng,radius,bgColor,pType,dType,bhData) {
+
+		var rad = 0,
+			fOpacity = 0,
+			sColor = "";
+		if($.trim(pType) == "frequency") {
+			rad = radius * 2;
+			fOpacity = 0.7;
+			sColor = bgColor;
+		} else if($.trim(dType) == "ss") {
+			rad = radius;
+			fOpacity = 0.95;
+			sColor = '000000';
+		} else {
+			rad = radius;
+			fOpacity = 0.7;
+			sColor = bgColor;
+		}
+		/*Make circle data object for devices*/
+		var devicesCircleOptions = {
+			strokeColor		: "#"+sColor,
+			strokeOpacity	: 1.0,
+			clickable		: true,
+			strokeWeight	: 1,
+			fillColor		: "#"+bgColor,
+			fillOpacity		: fOpacity,
+			pointType		: pType,
+			map 			: mapInstance,
+			center 			: new google.maps.LatLng(lat,lng),
+			radius 			: rad,
+			dataset 		: bhData
+		};
+
+		/*Make the circle on the device marker*/
+		var deviceCircle = new google.maps.Circle(devicesCircleOptions);
+
+		/*Add circle object to an array*/
+		circleArray.push(deviceCircle);
+		rad = 0;
+		fOpacity = 0;
+		sColor = "";
+		if($.trim(pType) == "backhual") {
+			/*listener for click event of circle*/
+			google.maps.event.addListener(deviceCircle,'click',function(e) {
+				
+				var windowPosition = new google.maps.LatLng(lat,lng);
+				/*Call the function to create info window content*/
+				var content = that.makeWindowContent(deviceCircle);
+				/*Set the content for infowindow*/
+				infowindow.setContent(content);
+				/*Set The Position for InfoWindow*/
+				infowindow.setPosition(windowPosition);
+				/*Open the info window*/
+				infowindow.open(mapInstance);
+			});
+		}
+	};
+
 	/**
 	 * This function creates the info window content for BS,SS & link path 
 	 * @class networkMap
 	 * @method makeWindowContent
-	 * @param contentObject {JSON Object} It contains the current pointer(this) information
-	 * @return windowContent "String" It contains the content to be shown on info window
+	 * @param contentObject {JSON Object} It contains current pointer(this) information
+	 * @return windowContent "String" It contains content to be shown on info window
 	 */
-	this.makeWindowContent = function(contentObject,event) {
+	this.makeWindowContent = function(contentObject) {
 
 		/*Store the reference of current pointer in a global variable*/
 		that = this;
@@ -408,136 +660,397 @@ function networkMapClass() {
 		/*True,if clicked on the link line*/
 		if(clickedType == "path") {
 
-			var pathPositions = pathConnector.getPath().j;
-
-			perfContent = "";
-			infoTable = "";
-
-			infoTable += "<table class='table table-bordered'><thead><th>Master Info</th><th>Master Perf</th><th>Slave Info</th><th>Slave Perf</th></thead><tbody>";
+			infoTable += "<table class='table table-bordered'><thead><th>BS-Sector Info</th><th>BS-Sector Perf</th><th>SS Info</th><th>SS Perf</th></thead><tbody>";
 			infoTable += "<tr>";
-			/*Master Info Start*/
+			/*BS-Sector Info Start*/
 			infoTable += "<td>";	
 			infoTable += "<table class='table table-hover innerTable'><tbody>";
-			infoTable += "<tr><td>Alias Name</td><td>"+contentObject.masterAlias+"</td></tr>";
-			infoTable += "<tr><td>Current State</td><td>"+contentObject.masterCurrentState+"</td></tr>";
-			infoTable += "<tr><td>Model</td><td>"+contentObject.masterModel+"</td></tr>";
-			infoTable += "<tr><td>Vendor</td><td>"+contentObject.masterVendor+"</td></tr>";
-			infoTable += "<tr><td>Technology</td><td>"+contentObject.masterTechnology+"</td></tr>";			
-			infoTable += "<tr><td>IP Address</td><td>"+contentObject.masterIp+"</td></tr>";
-			infoTable += "<tr><td>MAC Address</td><td>"+contentObject.masterMac+"</td></tr>";
-			infoTable += "<tr><td>Device Type</td><td>"+contentObject.masterDeviceType+"</td></tr>";
-			infoTable += "<tr><td>State</td><td>"+contentObject.masterState+"</td></tr>";
-			infoTable += "<tr><td>City</td><td>"+contentObject.masterCity+"</td></tr>";
-			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.masterLat+", "+contentObject.masterLong+"</td></tr>";
+			/*Loop for ss info object array*/
+			for(var i=0;i<contentObject.ss_info.length;i++) {
+
+				if(contentObject.ss_info[i].show == 1) {
+					infoTable += "<tr><td>"+contentObject.ss_info[i].title+"</td><td>"+contentObject.ss_info[i].value+"</td></tr>";
+				}
+			}
+
+			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.bs_lat+", "+contentObject.bs_lon+"</td></tr>";
 			infoTable += "</tbody></table>";			
 			infoTable += "</td>";
-			/*Master Info End*/
-			/*Master Performance Start*/
-			infoTable += "<td style='vertical-align:middle;text-align: center;'><h1><i class='fa fa-signal'></i>  "+contentObject.masterPerf+"</h1></td>";
-			/*Master Performance End*/
-			/*Slave Info Start*/
+			/*BS-Sector Info End*/
+			/*BS-Sector Performance Start*/
+			infoTable += "<td style='vertical-align:middle;text-align: center;'><h1><i class='fa fa-signal'></i>  "+contentObject.bs_perf+"</h1></td>";
+			/*BS-Sector Performance End*/
+			/*SS Info Start*/
 			infoTable += "<td>";			
 			infoTable += "<table class='table table-hover innerTable'><tbody>";
-			infoTable += "<tr><td>Alias Name</td><td>"+contentObject.slaveAlias+"</td></tr>";
-			infoTable += "<tr><td>Current State</td><td>"+contentObject.slaveCurrentState+"</td></tr>";
-			infoTable += "<tr><td>Model</td><td>"+contentObject.slaveModel+"</td></tr>";
-			infoTable += "<tr><td>Vendor</td><td>"+contentObject.slaveVendor+"</td></tr>";
-			infoTable += "<tr><td>Technology</td><td>"+contentObject.slaveTechnology+"</td></tr>";			
-			infoTable += "<tr><td>IP Address</td><td>"+contentObject.slaveIp+"</td></tr>";
-			infoTable += "<tr><td>MAC Address</td><td>"+contentObject.slaveMac+"</td></tr>";
-			infoTable += "<tr><td>Device Type</td><td>"+contentObject.slaveDeviceType+"</td></tr>";
-			infoTable += "<tr><td>State</td><td>"+contentObject.slaveState+"</td></tr>";
-			infoTable += "<tr><td>City</td><td>"+contentObject.slaveCity+"</td></tr>";
-			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.slaveLat+", "+contentObject.slaveLong+"</td></tr>";
+			/*Loop for BS or Sector info object array*/
+			for(var i=0;i<contentObject.bs_info.length;i++) {
+
+				if(contentObject.bs_info[i].show == 1) {
+					infoTable += "<tr><td>"+contentObject.bs_info[i].title+"</td><td>"+contentObject.bs_info[i].value+"</td></tr>";
+				}
+			}
+
+			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ss_lat+", "+contentObject.ss_lon+"</td></tr>";
 			infoTable += "</tbody></table>";		
 			infoTable += "</td>";
-			/*Slave Info End*/
-			/*Slave Performance Start*/
-			infoTable += "<td style='vertical-align:middle;text-align: center;'><h1><i class='fa fa-signal'></i>  "+contentObject.slavePerf+"</h1></td>";
-			/*Slave Performance End*/
+			/*SS Info End*/
+			/*SS Performance Start*/
+			infoTable += "<td style='vertical-align:middle;text-align: center;'><h1><i class='fa fa-signal'></i>  "+contentObject.ss_perf+"</h1></td>";
+			/*SS Performance End*/
 			infoTable += "</tr>";
 			infoTable += "</tbody></table>";
-			/*Final infowindow content string*/
-			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  Master-Slave Link</h4></div><div class='box-body'><div>"+infoTable+"</div><div class='clear'></div></div></div></div>";
+			
+			/*Concat infowindow content*/
+			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='that.claculateFresnelZone("+contentObject.bs_lat+","+contentObject.bs_lon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+");'>Fresnel Zone</button></li></ul></div></div></div>";
+
 		} else {
 
-			perfContent = "";
-			infoTable = "";
-
 			infoTable += "<table class='table table-bordered'><tbody>";
-			infoTable += "<tr><td>Alias Name</td><td>"+contentObject.pointAlias+"</td></tr>";
-			infoTable += "<tr><td>Current State</td><td>"+contentObject.currentState+"</td></tr>";
-			infoTable += "<tr><td>Model</td><td>"+contentObject.model+"</td></tr>";
-			infoTable += "<tr><td>Vendor</td><td>"+contentObject.vendor+"</td></tr>";
-			infoTable += "<tr><td>Technology</td><td>"+contentObject.technology+"</td></tr>";			
-			infoTable += "<tr><td>IP Address</td><td>"+contentObject.pointIp+"</td></tr>";
-			infoTable += "<tr><td>MAC Address</td><td>"+contentObject.pointMac+"</td></tr>";
-			infoTable += "<tr><td>Device Type</td><td>"+contentObject.deviceType+"</td></tr>";
-			infoTable += "<tr><td>State</td><td>"+contentObject.state+"</td></tr>";
-			infoTable += "<tr><td>City</td><td>"+contentObject.city+"</td></tr>";
-			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.position.k+", "+contentObject.position.A+"</td></tr>";
+
+			for(var i=0;i<contentObject.dataset.length;i++) {
+
+				if(contentObject.dataset[i].show == 1) {
+					infoTable += "<tr><td>"+contentObject.dataset[i].title+"</td><td>"+contentObject.dataset[i].value+"</td></tr>";
+				}
+			}
+			
+			if(contentObject.position != undefined) {
+				infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.position.k+", "+contentObject.position.A+"</td></tr>";
+			} else if(contentObject.center != undefined) {
+				infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.center.k+", "+contentObject.center.A+"</td></tr>";
+			}
+
 			infoTable += "</tbody></table>";
 
-			perfContent += "<h1><i class='fa fa-signal'></i>  "+contentObject.pointPerf+"</h1>";
+			if(contentObject.perf != undefined) {
+				perfContent += "<h1><i class='fa fa-signal'></i>  "+contentObject.perf+"</h1>";
+			}			
 			/*Final infowindow content string*/
-			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+contentObject.pointType+"</h4></div><div class='box-body'><div class='windowInfo'>"+infoTable+"</div><div class='perf'>"+perfContent+"</div><div class='clear'></div></div></div></div>";
+			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+contentObject.pointType.toUpperCase()+"</h4></div><div class='box-body'><div class='windowInfo' align='center'>"+infoTable+"</div><div class='perf'>"+perfContent+"</div><div class='clearfix'></div></div></div></div>";
 		}
 		/*Return the info window content*/
 		return windowContent;
 	};
 
 	/**
-	 * This function is used to populate the filers(City & State) dropdown with the available data
+	 * This function calculates the fresnel zone
 	 * @class networkMap
-	 * @method populateFilters
-	 * @params cityArray [String Array] Contains the available city list
-	 * @params stateArray [String Array] Contains the available state list
-	 * @params vendorArray [String Array] Contains the available vendor list
-	 * @params technologyArray [String Array] Contains the available technology list
+	 * @method claculateFresnelZone
+	 * @param lat1 "Int", It contains lattitude of first point
+	 * @param lon1 "Int", It contains longitude of first point
+	 * @param lat2 "Int", It contains lattitude of second point
+	 * @param lon2 "Int", It contains longitude of second point
+	 * @param height1 "Int", It contains antina height of first point
+	 * @param height2 "Int", It contains antina height of second point
 	 */
-	this.populateFilters = function(cityArray,stateArray,vendorArray,technologyArray) {
+	this.claculateFresnelZone = function(lat1,lon1,lat2,lon2,height1,height2) {
+
+		/** Converts numeric degrees to radians */
+		Number.prototype.toRad = function() {
+		   return this * Math.PI / 180;
+		}
+		/** Converts numeric radians to degrees */
+		Number.prototype.toDeg = function() {
+		   return this * 180 / Math.PI;
+		}
+
+		/*Set the antina height to the available heights*/
+		if(height1 == 0 || height1 == undefined) {
+			antenaHight1 = antenaHight1;			
+		} else {
+			antenaHight1 = height1;
+		}
+
+		if(height2 == 0 || height2 == undefined) {
+			antenaHight2 = antenaHight2;			
+		} else {
+			antenaHight2 = height2;
+		}
+
+		/*Reset global variables*/
+		latLongArray = [];
+		arrayCounter = 0;
+
+		/*Google maps elevation object*/
+		var elevator = new google.maps.ElevationService();
+
+	    /*Two points distance calculation*/
+	    /*earth's mean radius in km*/
+	    var earthRadius = 6371;
+	    var radian_lat1 = lat1.toRad();
+	    var radian_lat2 = lat2.toRad();
+	    var decimal_Lat = (lat2 - lat1).toRad();
+	    var decimal_Lon = (lon2 - lon1).toRad();
+	    /*Distance params calculation*/
+	    var distance_param1 = Math.sin(decimal_Lat / 2) * Math.sin(decimal_Lat / 2) + Math.cos(radian_lat1) * Math.cos(radian_lat2) * Math.sin(decimal_Lon / 2) * Math.sin(decimal_Lon / 2);
+	    var distance_param2 = 2 * Math.atan2(Math.sqrt(distance_param1), Math.sqrt(1 - distance_param1));
+	    /*Distance between two points*/
+	    var distance_between_sites = earthRadius * distance_param2;
+	    
+	    /*Stores one end or BS lat lon info to latLongArray*/
+	    latLongArray[arrayCounter] = new Array();
+	    latLongArray[arrayCounter][0] = lat1;
+	    latLongArray[arrayCounter++][1] = lon1;
+	    /*Call the getFresnelPath function to generate the data for */
+	    that.getFresnelPath(lat1.toRad(), lon1.toRad(), lat2.toRad(), lon2.toRad(), depthStep);
+
+	    /* ----  It stores the destination BTS cordinaties ------*/
+	    latLongArray[arrayCounter] = new Array();
+	    latLongArray[arrayCounter][0] = lat2;
+	    latLongArray[arrayCounter++][1] = lon2;
+
+	    var locations = [];
+	    for (var abc = 0; abc < arrayCounter; abc++) {
+	        locations.push(new google.maps.LatLng(latLongArray[abc][0], latLongArray[abc][1]));
+	    }
+	    var positionalRequest = { 'locations': locations };
+	    var elevationArray = [];
+
+	    elevator.getElevationForLocations(positionalRequest, function (results, status) {
+	        if (status == google.maps.ElevationStatus.OK) {
+	            for (var x = 0; x < results.length; x++) {
+	                elevationArray.push(results[x].elevation);
+	            }
+	            that.getFresnelChartData(elevationArray, distance_between_sites);
+	        }
+	    });
+	};
+
+	/**
+	 * This function generate fresnel point data.
+	 * @class networkMap
+	 * @method getFresnelPath
+	 * @param lat1 "Int", It contains lattitude of first point
+	 * @param lon1 "Int", It contains longitude of first point
+	 * @param lat2 "Int", It contains lattitude of second point
+	 * @param lon2 "Int", It contains longitude of second point
+	 * @param depth "Int", It contains accuracy or depth value for which lat-lons path has to be calculated
+	 */
+	this.getFresnelPath = function(lat1, lon1, lat2, lon2, depth) {
+
+	    var mlat = that.getMidPT_Lat(lat1, lon1, lat2, lon2);
+	    var mlon = that.getMidPT_Lon(lat1, lon1, lat2, lon2);
+	    
+	    if (depth > 0) {
+	        that.getFresnelPath(lat1, lon1, mlat, mlon, depth - 1);
+	        latLongArray[arrayCounter] = new Array();
+	        latLongArray[arrayCounter][0] = mlat.toDeg();
+	        latLongArray[arrayCounter++][1] = mlon.toDeg();
+
+	        that.getFresnelPath(mlat, mlon, lat2, lon2, depth - 1);
+	    }
+	    else {
+	        latLongArray[arrayCounter] = new Array();
+	        latLongArray[arrayCounter][0] = mlat.toDeg();
+	        latLongArray[arrayCounter++][1] = mlon.toDeg();
+	    }
+	};
+
+	/**
+	 * This function calculates mid lattitude point for given lat-lons
+	 * @class networkMap
+	 * @method getMidPT_Lat
+	 * @param lat1 "Int", It contains lattitude of first point
+	 * @param lon1 "Int", It contains longitude of first point
+	 * @param lat2 "Int", It contains lattitude of second point
+	 * @param lon2 "Int", It contains longitude of second point
+	 * @return lat3 "Int", It contains mid pt lat value
+	 */
+	this.getMidPT_Lat = function(lat1, lon1, lat2, lon2) {
+	    var decimal_Lon = (lon2.toDeg() - lon1.toDeg()).toRad();
+	    var Bx = Math.cos(lat2) * Math.cos(decimal_Lon);
+	    var By = Math.cos(lat2) * Math.sin(decimal_Lon);
+	    var lat3 = Math.atan2(Math.sin(lat1) + Math.sin(lat2), Math.sqrt((Math.cos(lat1) + Bx) * (Math.cos(lat1) + Bx) + By * By));
+
+	    return lat3;
+	};
+
+	/**
+	 * This function calculates mid longitude point for given lat-lons
+	 * @class networkMap
+	 * @method getMidPT_Lon
+	 * @param lat1 "Int", It contains lattitude of first point
+	 * @param lon1 "Int", It contains longitude of first point
+	 * @param lat2 "Int", It contains lattitude of second point
+	 * @param lon2 "Int", It contains longitude of second point
+	 * @return lon3 "Int", It contains mid pt lon value
+	 */
+	this.getMidPT_Lon = function(lat1, lon1, lat2, lon2) {
+	    var decimal_Lon = (lon2.toDeg() - lon1.toDeg()).toRad();
+	    var Bx = Math.cos(lat2) * Math.cos(decimal_Lon);
+	    var By = Math.cos(lat2) * Math.sin(decimal_Lon);
+
+	    var lon3 = lon1 + Math.atan2(By, Math.cos(lat1) + Bx);
+
+	    return lon3;
+	};
+
+	/**
+	 * This function generates the data for fresnel zone
+	 * @class networkMap
+	 * @method getFresnelChartData
+	 * @param elevationArray [Int Array], It contains elevation values array
+	 * @param pt_distance "Int", It contains distance between two points
+	 */
+	this.getFresnelChartData = function(elevationArray, pt_distance) {
+
+	    var segSize = pt_distance / (arrayCounter - 1);
+
+	    for (var i = 0; i < arrayCounter; i++) {
+	        latLongArray[i][2] = parseFloat(elevationArray[i]);
+	        latLongArray[i][3] = i * segSize;
+	    }
 		
-		/*Store the reference of current pointer in a global variable*/
-		that = this;
+		minYChart=latLongArray[0][2];
+		maxYChart=latLongArray[0][2];
 
-		var stateOptions = "<option value=''>Select State</option>",
-	 		cityOptions = "<option value=''>Select City</option>",
-	 		vendorOptions = "<option value=''>Select Vendor</option>",
-	 		technologyOptions = "<option value=''>Select Technology</option>";
+		for(var j=1;j<arrayCounter;j++){
+			if(minYChart>latLongArray[j][2]){
+				minYChart=latLongArray[j][2];
+			}
+			if(maxYChart<latLongArray[j][2]){
+				maxYChart=latLongArray[j][2];
+			}
+			
+		}
+			
+		minYChart=Math.round(minYChart);
+		minYChart=(minYChart>20)? (minYChart-20):minYChart;
+		mod=minYChart%10;
+		minYChart=minYChart-mod;
 
+	    latLongArray[0][2] += parseFloat(antenaHight1);
+	    latLongArray[arrayCounter - 1][2] += parseFloat(antenaHight2);
+		
+		var startHeight = parseFloat(latLongArray[0][2]);
+	    var endHeight = parseFloat(latLongArray[arrayCounter - 1][2]);
+	    var theta = Math.atan((endHeight - startHeight) / pt_distance);
+		var slant_d = pt_distance / Math.cos(theta);
+		var fr_ghz = fr / 1000;
+		var clr_coff = clear_factor / 100;
 
- 		/*Loop for the state array*/
-	 	for(var i=0;i<stateArray.length;i++) {
+	    for (var k = 0; k < arrayCounter; k++) {
+	        latLongArray[k][4] = startHeight + (((endHeight - startHeight) / pt_distance) * latLongArray[k][3]);
 
-	 		stateOptions += '<option value="'+stateArray[i]+'">'+stateArray[i]+'</option>';
-	 	}
+	        var vS0 = parseFloat(latLongArray[k][3]);
+			var slant_vS0 = vS0 / Math.cos(theta);
+			var vS1 = parseFloat(latLongArray[k][4]);
+			var v1 = 17.314 * Math.sqrt((slant_vS0 * (slant_d - slant_vS0)) / (slant_d * fr_ghz));
+			var v2 = v1 * Math.cos(theta) * clr_coff;
+			
+	        latLongArray[k][5] = (vS1) + v2;
+	        latLongArray[k][7] = (vS1) - v2;
+			
+			/*If height changes -------- For future use, if we add sliders for height variation*/
+			if(!HEIGHT_CHANGED){
+				latLongArray[k][9] = latLongArray[k][2]; // pin points
+			}
+			else{
+				latLongArray[k][9] = latLongArrayCopy[k][9];
+				if(k == (arrayCounter-1)){
+					HEIGHT_CHANGED = false;
+				}
+			}
+	    }
 
-	 	/*Loop for the city array*/
-	 	for(var j=0;j<cityArray.length;j++) {
+		for(var l=0;l<arrayCounter;l++){
+				
+			if(maxYChart<latLongArray[l][5]){
+				maxYChart=latLongArray[l][5];
+			}
+		}
 
-	 		cityOptions += '<option value="'+cityArray[j]+'">'+cityArray[j]+'</option>';
-	 	}
+		maxYChart=Math.round(maxYChart);
+		maxYChart=maxYChart+30;
+		mod=maxYChart%10;
+		maxYChart=maxYChart-mod;
 
-	 	/*Loop for the vendor array*/
-	 	for(var k=0;k<vendorArray.length;k++) {
+		/*Call 'drawFresnelChart' function to plot Fresnel Chart*/
+	    that.drawFresnelChart();
+	};
 
-	 		vendorOptions += '<option value="'+vendorArray[k]+'">'+vendorArray[k]+'</option>';
-	 	}	 	
+	/**
+	 * This function creates the fresnal zone chart with elevation points using jquery.flot.js
+	 * @class networkMap
+	 * @method drawFresnelChart
+	 * @user jquery.flot.js
+	 * @user bootbox.js
+	 */
+	this.drawFresnelChart = function() {
 
-	 	/*Loop for the technology array*/
-	 	for(var l=0;l<technologyArray.length;l++) {
+		/* init points arrays for the chart */
+		var dataPinpoints = [],
+			dataAltitude = [],
+			dataLOS = [],
+			dataFresnel1 = [],
+			dataFresnel2 = [];
 
-	 		technologyOptions += '<option value="'+technologyArray[l]+'">'+technologyArray[l]+'</option>';
-	 	}
+		/* filling points arrays for the chart */
+		for(i = 0; i < arrayCounter; i++) {
+			dataAltitude.push([parseFloat(latLongArray[i][3]), parseFloat(latLongArray[i][2])]);
+			dataLOS.push([parseFloat(latLongArray[i][3]), parseFloat(latLongArray[i][4])]);
+			dataFresnel1.push([parseFloat(latLongArray[i][3]), parseFloat(latLongArray[i][5])]);
+			dataFresnel2.push([parseFloat(latLongArray[i][3]), parseFloat(latLongArray[i][7])]);
+			dataPinpoints.push([parseFloat(latLongArray[i][3]), parseFloat(latLongArray[i][9])]);
+		}
 
-	 	/*Append the option string to the state dropdown*/
-	 	$("#state").html(stateOptions);
-	 	/*Append the option string to the city dropdown*/
-	 	$("#city").html(cityOptions);
-	 	/*Append the option string to the vendor dropdown*/
-	 	$("#vendor").html(vendorOptions);
-	 	/*Append the option string to the technology dropdown*/
-	 	$("#technology").html(technologyOptions);
+		/*Fresnel template String*/
+		var fresnelTemplate = '<div class="fresnelContainer row" style="height:310px;overflow-y:auto;"><div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal1" class="form-control" value="'+antenaHight1+'"></div><div class="clearfix"></div><div id="antina_height1" style="height:290px;" class="slider slider-blue"></div></div><div class="col-md-8"><div id="chart_div" style="width:600px;max-width:100%;height:320px;"></div></div><div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal2" class="form-control" value="'+antenaHight2+'"></div><div class="clearfix"></div><div id="antina_height2" class="slider slider-blue" style="height:290px;"></div></div></div>';
+
+		/*Call the bootbox to show the popup with Fresnel Zone Graph*/
+		bootbox.dialog({
+			message: fresnelTemplate,
+			title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Fresnel Zone'
+		});
+
+		$("#antina_height1").slider({
+	    	range:"min",
+	    	value:antenaHight1,
+	    	min:1,
+	    	max:100,
+	    	animate:true,
+	    	orientation:"vertical",
+	    	slide:function(a,b){
+    			$("#antinaVal1").val(b.value);
+	    	}
+	    });
+	    $("#antina_height2").slider({
+	    	range:"min",
+	    	value:antenaHight2,
+	    	min:1,
+	    	max:100,
+	    	animate:true,
+	    	orientation:"vertical",
+	    	slide:function(a,b){
+    			$("#antinaVal2").val(b.value);
+	    	}
+	    });
+
+		$(".modal-dialog").css("width","75%");
+
+		/*Plotting chart with points array using jquery.flot.js*/
+		var fresnelChart = $.plot(
+			$("#chart_div"),
+			[ 
+				{ data: dataPinpoints, label: "Pin Points", lines: { show: false}, points: { show: true ,fill: true, radius: 1}, bars: {show:true, lineWidth:1, fill:false, barWidth:0}},
+				{ data: dataAltitude, label: "Altitude",lines: { show: true ,fill: 0.8, fillColor: altitudeColor}},
+				{ data: dataLOS, label: "LOS", lines: { show: true}},
+				{ data: dataFresnel1, label: "Fresnel-1"},
+				{ data: dataFresnel2, label: "Fresnel-2"}
+			],
+			{
+				series: {
+					lines: { show: true},
+					points: { show: false },
+					colors: [{ opacity: 0.8 }, { brightness: 0.6, opacity: 0.8 } ]
+				},
+				grid: { hoverable: true, clickable: true, autoHighlight: true, backgroundColor: { colors: ["#ccc", "#fff"] }},
+				yaxis: { min:minYChart, max:  maxYChart },
+				xaxis: { min: 0, max:  latLongArray[arrayCounter - 1][3]},
+				colors: [pinPointsColor,altitudeColor,losColor,fresnel1Color,fresnel2Color]
+			}
+		);
 	};
 
 	/**
@@ -717,83 +1230,12 @@ function networkMapClass() {
             that.loadExistingDevices();
         }
     };
-		
-	/**
-	 * This function get the filters values from divices array object & then call other function to populate the filters dropdown
-	 * @class devicePlottingLib
-	 * @method getDevicesFilter
-	 * @param devices [Object Array] It is the fetched devices array object
-	 */
-	this.getDevicesFilter = function(devices) {
-
-		/*Store the reference of current pointer in a global variable*/
-		that = this;
-
-		/*Make an array of master & slave cities as well as states*/
-		for(var i=0;i<devices.length;i++) {
-
-			/*Total number of slave for particular master*/
-			var slaveCount = devices[i].children.length;
-
-			/*Loop for the slaves*/
-			for(var j=0;j<slaveCount;j++) {
-
-				/*Push master city in cityArray array*/
-				if(cityArray.indexOf($.trim(devices[i].data.city)) == -1) {
-
-					cityArray.push($.trim(devices[i].data.city));
-				}
-				/*Push slave city in cityArray array*/
-				if(cityArray.indexOf($.trim(devices[i].children[j].data.city)) == -1) {
-
-					cityArray.push($.trim(devices[i].children[j].data.city));
-				}
-
-				/*Push master states in stateArray array*/
-				if(stateArray.indexOf($.trim(devices[i].data.state)) == -1) {
-
-					stateArray.push($.trim(devices[i].data.state));
-				}
-				/*Push slave states in stateArray array*/
-				if(stateArray.indexOf($.trim(devices[i].children[j].data.state)) == -1) {
-
-					stateArray.push($.trim(devices[i].children[j].data.state));
-				}
-
-				/*Push master vendors in masterVendorArray array*/
-				if(vendorArray.indexOf($.trim(devices[i].data.vendor)) == -1) {
-
-					vendorArray.push($.trim(devices[i].data.vendor));
-				}
-				/*Push slave vendors in slaveVendorArray array*/
-				if(vendorArray.indexOf($.trim(devices[i].children[j].data.vendor)) == -1) {
-
-					vendorArray.push($.trim(devices[i].children[j].data.vendor));
-				}
-
-				/*Push master technology in techArray array*/
-				if(techArray.indexOf($.trim(devices[i].data.technology)) == -1) {
-
-					techArray.push($.trim(devices[i].data.technology));
-				}
-				/*Push slave technology in techArray array*/
-				if(techArray.indexOf($.trim(devices[i].children[j].data.technology)) == -1) {
-
-					techArray.push($.trim(devices[i].children[j].data.technology));
-				}
-			}
-		}
-		
-		/*Populate the city & state dropdown filters*/
-		that.populateFilters(cityArray,stateArray,vendorArray,techArray);
-	};
 
 	/**
 	 * This function creates enable the polygon drawing tool & draw the polygon
 	 * @class devicePlottingLib
 	 * @method createPolygon
 	 */
-
 	this.createPolygon = function() {
 
 		/*Store the reference of current pointer in a global variable*/
@@ -821,16 +1263,16 @@ function networkMapClass() {
 
 				pathArray = e.overlay.getPath().getArray();
 				polygon = new google.maps.Polygon({"path" : pathArray});
-				pointsArray = masterMarkersObj.concat(slaveMarkersObj);
+				bs_ss_array = masterMarkersObj.concat(slaveMarkersObj);
 				currentPolygon = e.overlay;
 				currentPolygon.type = e.type;
 				
-				for(var k=0;k<pointsArray.length;k++) {
+				for(var k=0;k<bs_ss_array.length;k++) {
 					
-					var point = pointsArray[k].position;
+					var point = bs_ss_array[k].position;
 
 					if (google.maps.geometry.poly.containsLocation(point, polygon)) {
-						polygonSelectedDevices.push(pointsArray[k]);
+						polygonSelectedDevices.push(bs_ss_array[k]);
 					}
 				}
 				selectedCount = polygonSelectedDevices.length;
@@ -847,12 +1289,18 @@ function networkMapClass() {
 					that.clearPolygon();
 
 				} else {
-
-					var devicesTemplate = "";
+					// var datasetArray = [];
+					// $.each(polygonSelectedDevices,function(key,val) {
+					// 	datasetArray.push(val.dataset);
+					// });
+					// $.each(datasetArray,function(key2,dataval) {
+					// 	if(dataval.name == "title" || dataval.name == "ip") {
+							
+					// 	}
+					// });
 					
-					devicesTemplate = "<div class='deviceWellContainer'>";
+					var devicesTemplate = "<div class='deviceWellContainer'>";
 					for(var i=0;i<selectedCount;i++) {
-
 						devicesTemplate += '<div class="well well-sm"><h5>'+polygonSelectedDevices[i].title+'('+polygonSelectedDevices[i].pointIp+')</h5><ul class="list-unstyled list-inline">';
 						devicesTemplate += '<li><button id="play_'+i+'" onClick="that.startMonitoring('+i+')" class="btn btn-default btn-xs"><i class="fa fa-play"></i></button></li>';
 						devicesTemplate += '<li><button id="pause_'+i+'" onClick="that.pauseMonitoring('+i+')" class="btn btn-default btn-xs"><i class="fa fa-pause"></i></button></li>';
@@ -860,6 +1308,7 @@ function networkMapClass() {
 						devicesTemplate += '</ul><div class="sparklineContainer"><span class="sparkline" id="sparkline_'+i+'">Loading...</span></div></div>';
 					}
 					devicesTemplate += "</div>";
+					
 
 					$("#sideInfo > .panel-body").html(devicesTemplate);					
 
@@ -1075,7 +1524,6 @@ function networkMapClass() {
 
 		/*If any master devices exists*/
 		if(masterMarkersObj.length > 0) {
-
 			/*Remove All Master Markers*/
 			for(var i=0;i<masterMarkersObj.length;i++) {
 
@@ -1085,7 +1533,6 @@ function networkMapClass() {
 
 		/*If any slave devices exists*/
 		if(slaveMarkersObj.length > 0) {
-
 			/*Remove All Slave Markers*/
 			for(var j=0;j<slaveMarkersObj.length;j++) {
 
@@ -1095,13 +1542,30 @@ function networkMapClass() {
 
 		/*If any link between devices exists*/
 		if(pathLineArray.length > 0) {
-
 			/*Remove all link line between devices*/
 			for(var j=0;j<pathLineArray.length;j++) {
 
 				pathLineArray[j].setMap(null);
 			}
-		}		
+		}
+
+		/*If any sector exists*/
+		if(sectorArray.length > 0) {
+			/*Clear the sectors from map*/
+			for(var j=0;j<sectorArray.length;j++) {
+
+				sectorArray[j].setMap(null);
+			}
+		}
+
+		/*If any circle exists*/
+		if(circleArray.length > 0) {
+			/*Clear the sectors from map*/
+			for(var j=0;j<circleArray.length;j++) {
+
+				circleArray[j].setMap(null);
+			}
+		}
 	};
 
 	/**
@@ -1111,13 +1575,6 @@ function networkMapClass() {
 	 */
 	this.resetVariables = function() {
 
-		/*Store the reference of current pointer in a global variable*/
-		that = this;
-
-		$("#technology").html("<option value=''>Select Technology</option>");
-		$("#vendor").html("<option value=''>Select Vendor</option>");
-		$("#state").html("<option value=''>Select State</option>");
-		$("#city").html("<option value=''>Select City</option>");
 		/*Reset All The Variables*/
 		hitCounter = 1;
 		showLimit = 0;
@@ -1126,12 +1583,10 @@ function networkMapClass() {
 		totalCalls = 1;
 		devicesObject = {};
 		devices = [];
-		cityArray = [];
-		stateArray = [];
-		vendorArray = [];
-		techArray = [];
 		masterMarkersObj = [];
 		slaveMarkersObj = [];
 		clusterIcon = "";
+		sectorArray = [];
+		circleArray = [];
 	};
 }
