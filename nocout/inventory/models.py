@@ -1,14 +1,17 @@
 import datetime
 from django.db import models
+from user_group.models import UserGroup
 from device.models import Device
 from device_group.models import DeviceGroup
+from organization.models import Organization
 
 
-# inventory model --> mapper of device & device groups
+# inventory model --> mapper of user_group & device groups
 class Inventory(models.Model):
     name = models.CharField('Name', max_length=200)
-    device_group = models.ForeignKey(DeviceGroup)
-    devices = models.ManyToManyField(Device)
+    user_group = models.ForeignKey(UserGroup)
+    device_groups = models.ManyToManyField(DeviceGroup, null=True, blank=True)
+    organization = models.ForeignKey(Organization)
     city = models.CharField('City', max_length=200, null=True, blank=True)
     state = models.CharField('State', max_length=200, null=True, blank=True)
     country = models.CharField('Country', max_length=200, null=True, blank=True)
