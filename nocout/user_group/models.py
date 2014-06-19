@@ -9,15 +9,8 @@ class UserGroup(MPTTModel, models.Model):
     address = models.CharField('Address', max_length=100, null=True, blank=True)
     location = models.CharField('Location', max_length=100, null=True, blank=True)
     parent = TreeForeignKey('self', null=True, blank=True, related_name='usergroup_children')
-    device_group = models.ManyToManyField(DeviceGroup, through="Organization", null=True, blank=True)
     is_deleted = models.IntegerField('Is Deleted', max_length=1, default=0)
 
     def __unicode__(self):
         return self.name
 
-
-class Organization(models.Model):
-    name = models.CharField(max_length=255, unique=True, null=True, blank=-True)
-    description = models.TextField(null=True, blank=True)
-    user_group = models.ForeignKey(UserGroup)
-    device_group = models.ForeignKey(DeviceGroup)
