@@ -282,7 +282,6 @@ function networkMapClass() {
 				if(resultantMarkers[i].data.labels[lbl].show == 1) {
 
 					if($.trim(resultantMarkers[i].data.labels[lbl].position) == "up") {
-						console.log(resultantMarkers[i].data.labels[lbl].show);
 						master_label_content += "<div class='topLabel'>"+resultantMarkers[i].data.labels[lbl].name+" : "+resultantMarkers[i].data.labels[lbl].value+"</div>";
 					} else if($.trim(resultantMarkers[i].data.labels[lbl].position) == "down") {
 						master_label_content += "<div class='bottomLabel'>"+resultantMarkers[i].data.labels[lbl].name+" : "+resultantMarkers[i].data.labels[lbl].value+"</div>";
@@ -583,7 +582,6 @@ function networkMapClass() {
 
         /*listener for click event of sector*/
 		google.maps.event.addListener(poly,'click',function(p) {
-			console.log(p);			
 			var windowPosition = new google.maps.LatLng(lat,lng);
 			/*Call the function to create info window content*/
 			var content = that.makeWindowContent(poly);
@@ -1158,9 +1156,7 @@ function networkMapClass() {
 		/*Bind 'click' events on fresnel graph*/
 		if(!$("#chart_div").hasClass('readytoclick')) {
 			$("#chart_div").bind("plotclick", function (event, pos, item) {
-				console.log(fresnelChart);
 				if(item) {
-					console.log("item");
 					fresnelChart.highlight(item.series, item.datapoint);
 				} else {
 					fresnelChart.unhighlight();
