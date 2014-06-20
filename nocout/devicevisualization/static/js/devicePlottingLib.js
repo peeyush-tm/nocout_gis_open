@@ -34,15 +34,23 @@ var mapInstance = "",
 	leftMargin = 0,
 	sectorArray = [],
 	circleArray = [],
+	/*Variables used in fresnel zone calculation*/
+	isDialogOpen = true,
+	fresnelLat1 = "",
+	fresnelLon1 = "",
+	fresnelLat2 = "",
+	fresnelLon2 = "",
 	arrayCounter = 0,
 	latLongArray = [],
+	latLongArrayCopy = [],
 	depthStep = 6,
-	fr = 900, //MHZ
-	sol = 299792458,
+	freq_mhz = 900, //MHZ
 	HEIGHT_CHANGED = false,
 	clear_factor = 100,
+	/*Default antina heights*/
 	antenaHight1 = 40.0,
 	antenaHight2 = 45.0,
+	/*Colors for fresnel zone graph*/
 	pinPointsColor = 'rgb(170,102,102)',
 	altitudeColor = '#EDC240',
 	losColor = 'rgb(203,75,75)',
@@ -50,10 +58,13 @@ var mapInstance = "",
 	fresnel2Color = 'rgb(148,64,237)';
 
 /**
- * This class is used to plot the BS & SS on the google maps & show information on click
+ * This class is used to plot the BS & SS on the google maps & performs their functionality.
  * @class networkMap
+ * @method networkMapClass
  * @uses jQuery
  * @uses Google Maps
+ * @uses jQuery Flot
+ * @uses jQuery UI
  * Coded By :- Yogender Purohit
  */
 function networkMapClass() {
@@ -81,7 +92,6 @@ function networkMapClass() {
 		};    
 		/*Create Map Type Object*/
 		mapInstance = new google.maps.Map(document.getElementById(domElement),mapObject);
-
 		/*Search text box object*/
 		var searchTxt = document.getElementById('searchTxt');
 
@@ -89,7 +99,7 @@ function networkMapClass() {
 		var searchBox = new google.maps.places.SearchBox(searchTxt);
 
 		/*Event listener for search text box*/
-		google.maps.event.addListener(new google.maps.places.SearchBox(searchTxt), 'places_changed', function() {
+		google.maps.event.addListener(new google.maps.places.SearchBox(searchTxt), 'places_changed', function() {			
 			/*place object returned from map API*/
     		var places = searchBox.getPlaces();
     		/*initialize bounds object*/
@@ -374,8 +384,9 @@ function networkMapClass() {
 					var beam_width = resultantMarkers[i].children[j].data.beam_width;
 					var sector_color = resultantMarkers[i].children[j].data.sector_color;
 					var sectorDataset = resultantMarkers[i].children[j].data.param.sector_info;
+					var orientation = $.trim(resultantMarkers[i].children[j].data.sector_orientation);
 					/*Call create sector function to plot the section.*/
-					that.createSector(lat,lon,rad,azimuth,beam_width,sector_color,sectorDataset,function(sectorObj) {
+					that.createSector(lat,lon,rad,azimuth,beam_width,sector_color,sectorDataset,orientation,function(sectorObj) {
 
 						var halfPt = Math.floor(sectorObj.length / (+2));
 						/*Create object for Link Line Between Master & Slave*/
@@ -500,9 +511,12 @@ function networkMapClass() {
 	 * @param azimuth "Number", It contains azimuth angle for sector.
 	 * @param beamwidth "Number", It contains width for the sector.
 	 * @param sectorData {JSON Object}, It contains sector info json object.
+	 * @param orientation "String", It contains the orientation type of antena i.e. vertical or horizontal
 	 */
-	this.createSector = function(lat,lng,radius,azimuth,beamWidth,bgColor,sectorData,callback) {
+	this.createSector = function(lat,lng,radius,azimuth,beamWidth,bgColor,sectorData,orientation,callback) {
 
+		var triangle = [],
+			sectorDataArray = [];
 		// Degrees to radians
         var d2r = Math.PI / 180;
         //  Radians to degrees
@@ -514,7 +528,6 @@ function networkMapClass() {
         var PRlng = PRlat/Math.cos(lat*d2r);
 
         var PGpoints = [];
-        // PGpoints.push(centerPoint);
         with(Math) {
 
 			lat1 = (+lat) + (PRlat * cos( d2r * (azimuth - beamWidth/2 )));
@@ -538,16 +551,31 @@ function networkMapClass() {
 			PGpoints.push( new google.maps.LatLng(lat2,lon2));
 			PGpoints.push(centerPoint);
 		}
+		/*Condition for the orientation of sector antina*/
+		if(orientation == "horizontal") {
+
+			var len = PGpoints.length / 3;
+
+			triangle.push(PGpoints[0]);
+			triangle.push(PGpoints[(len * 2) - 1]);
+			triangle.push(PGpoints[(len * 3) - 1]);
+			/*Assign the triangle object array to sectorDataArray for plotting the polygon*/
+			sectorDataArray = triangle;
+		} else {
+			/*Assign the PGpoints object array to sectorDataArray for plotting the polygon*/
+			sectorDataArray = PGpoints;
+		}
+
 		var poly = new google.maps.Polygon({
 			map 		  : mapInstance,
-			path 		  : PGpoints,
+			path 		  : sectorDataArray,
 			strokeColor   : bgColor,
 			fillColor 	  : bgColor,
 			pointType	  : "sector",
 			strokeOpacity : 0.5,
 			strokeWeight  : 1,
 			dataset 	  : sectorData
-        });
+        });        
         /*Push polygon to an array*/
 		sectorArray.push(poly);
 
@@ -555,7 +583,7 @@ function networkMapClass() {
 
         /*listener for click event of sector*/
 		google.maps.event.addListener(poly,'click',function(p) {
-			
+			console.log(p);			
 			var windowPosition = new google.maps.LatLng(lat,lng);
 			/*Call the function to create info window content*/
 			var content = that.makeWindowContent(poly);
@@ -567,7 +595,7 @@ function networkMapClass() {
 			infowindow.open(mapInstance);
 		});
 
-        callback(PGpoints);
+        callback(sectorDataArray);
 	};
 
 	/**
@@ -754,7 +782,11 @@ function networkMapClass() {
 		Number.prototype.toDeg = function() {
 		   return this * 180 / Math.PI;
 		}
-
+		/*Assign lat lons to global variables*/
+		fresnelLat1 = lat1;
+		fresnelLon1 = lon1;
+		fresnelLat2 = lat2;
+		fresnelLon2 = lon2;
 		/*Set the antina height to the available heights*/
 		if(height1 == 0 || height1 == undefined) {
 			antenaHight1 = antenaHight1;			
@@ -771,6 +803,11 @@ function networkMapClass() {
 		/*Reset global variables*/
 		latLongArray = [];
 		arrayCounter = 0;
+
+		/*Set clear_factor for first time dialog open*/
+		if(isDialogOpen) {
+			clear_factor = 100;
+		}
 
 		/*Google maps elevation object*/
 		var elevator = new google.maps.ElevationService();
@@ -927,7 +964,7 @@ function networkMapClass() {
 	    var endHeight = parseFloat(latLongArray[arrayCounter - 1][2]);
 	    var theta = Math.atan((endHeight - startHeight) / pt_distance);
 		var slant_d = pt_distance / Math.cos(theta);
-		var fr_ghz = fr / 1000;
+		var freq_ghz = freq_mhz / 1000;
 		var clr_coff = clear_factor / 100;
 
 	    for (var k = 0; k < arrayCounter; k++) {
@@ -936,19 +973,18 @@ function networkMapClass() {
 	        var vS0 = parseFloat(latLongArray[k][3]);
 			var slant_vS0 = vS0 / Math.cos(theta);
 			var vS1 = parseFloat(latLongArray[k][4]);
-			var v1 = 17.314 * Math.sqrt((slant_vS0 * (slant_d - slant_vS0)) / (slant_d * fr_ghz));
+			var v1 = 17.314 * Math.sqrt((slant_vS0 * (slant_d - slant_vS0)) / (slant_d * freq_ghz));
 			var v2 = v1 * Math.cos(theta) * clr_coff;
 			
 	        latLongArray[k][5] = (vS1) + v2;
 	        latLongArray[k][7] = (vS1) - v2;
 			
-			/*If height changes -------- For future use, if we add sliders for height variation*/
-			if(!HEIGHT_CHANGED){
+			/*If tower height changed*/
+			if(!HEIGHT_CHANGED) {
 				latLongArray[k][9] = latLongArray[k][2]; // pin points
-			}
-			else{
+			} else {
 				latLongArray[k][9] = latLongArrayCopy[k][9];
-				if(k == (arrayCounter-1)){
+				if(k == (arrayCounter-1)) {
 					HEIGHT_CHANGED = false;
 				}
 			}
@@ -995,39 +1031,75 @@ function networkMapClass() {
 			dataPinpoints.push([parseFloat(latLongArray[i][3]), parseFloat(latLongArray[i][9])]);
 		}
 
-		/*Fresnel template String*/
-		var fresnelTemplate = '<div class="fresnelContainer row" style="height:310px;overflow-y:auto;"><div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal1" class="form-control" value="'+antenaHight1+'"></div><div class="clearfix"></div><div id="antina_height1" style="height:290px;" class="slider slider-blue"></div></div><div class="col-md-8"><div id="chart_div" style="width:600px;max-width:100%;height:320px;"></div></div><div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal2" class="form-control" value="'+antenaHight2+'"></div><div class="clearfix"></div><div id="antina_height2" class="slider slider-blue" style="height:290px;"></div></div></div>';
+		if(isDialogOpen) {
+			/*Fresnel template String*/
+			var leftSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal1" class="form-control" value="'+antenaHight1+'"></div><div class="clearfix"></div><div id="antina_height1" style="height:300px;" class="slider slider-blue"></div><div class="col-md-12">BTS-1 Height</div></div>';
+			var chart_detail = '<div id="chart-details"><div><span id="longitude-lbl" class="chart-detail-lbl">Longitude </span> <span id="longitude"></span></div><div><span id="latitude-lbl" class="chart-detail-lbl">Latitude </span> <span id="latitude"></span></div><div><span id="distance-lbl" class="chart-detail-lbl">Distance </span> <span id="distance"></span></div><div><span id="altitude-lbl" class="chart-detail-lbl">Altitude </span> <span id="altitude"></span></div><div><span id="obstacle-lbl" class="chart-detail-lbl">Obstacle </span> <span id="obstacle"></span></div><div><span id="los-lbl" class="chart-detail-lbl">LOS </span> <span id="los"></span></div><div><span id="fresnel1-lbl" class="chart-detail-lbl">Fresnel-1 </span> <span id="fresnel1"></span></div><div><span id="fresnel2-lbl" class="chart-detail-lbl">Fresnel-2 </span> <span id="fresnel2"></span></div><div><span id="fresnel2-altitude-lbl" class="chart-detail-lbl">Clearance </span> <span id="fresnel-altitude"></span></div></div>';
+			var middleBlock = '<div class="col-md-8 mid_fresnel_container"><div align="center"><div class="col-md-12">Clearance Factor</div><div class="col-md-4 col-md-offset-3"><div id="clear-factor" class="slider slider-red"></div></div><div class="col-md-2"><input type="text" id="clear-factor_val" class="form-control" value="'+clear_factor+'"></div><div class="clearfix"></div></div><div id="chart_div" style="width:600px;max-width:100%;height:300px;"></div><div class="clearfix divide-10"></div><div id="pin-points-container" class="col-md-12" align="center"></div></div>';
+			var rightSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal2" class="form-control" value="'+antenaHight2+'"></div><div class="clearfix"></div><div id="antina_height2" class="slider slider-blue" style="height:300px;"></div><div class="col-md-12">BTS-2 Height</div></div>';
 
-		/*Call the bootbox to show the popup with Fresnel Zone Graph*/
-		bootbox.dialog({
-			message: fresnelTemplate,
-			title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Fresnel Zone'
-		});
+			var fresnelTemplate = '<div class="fresnelContainer row" style="height:400px;overflow-y:auto;">'+leftSlider+' '+middleBlock+' '+rightSlider+'</div>'+chart_detail;
 
+			/*Call the bootbox to show the popup with Fresnel Zone Graph*/
+			bootbox.dialog({
+				message: fresnelTemplate,
+				title: '<i class="fa fa-dot-circle-o">&nbsp;</i> Fresnel Zone'
+			});
+
+		} else {
+
+			isDialogOpen = true;
+		}
+
+		/*Initialize antina1 height slider*/
 		$("#antina_height1").slider({
-	    	range:"min",
-	    	value:antenaHight1,
-	    	min:1,
-	    	max:100,
-	    	animate:true,
-	    	orientation:"vertical",
-	    	slide:function(a,b){
+	    	range 		: "min",
+	    	value 		: antenaHight1,
+	    	min 		: 1,
+	    	max 		: 100,
+	    	animate 	: true,
+	    	orientation : "vertical",
+	    	slide : function(a,b){
     			$("#antinaVal1").val(b.value);
-	    	}
-	    });
-	    $("#antina_height2").slider({
-	    	range:"min",
-	    	value:antenaHight2,
-	    	min:1,
-	    	max:100,
-	    	animate:true,
-	    	orientation:"vertical",
-	    	slide:function(a,b){
-    			$("#antinaVal2").val(b.value);
+	    	},
+	    	stop : function(a,b){
+	    		that.heightChanged();
 	    	}
 	    });
 
-		$(".modal-dialog").css("width","75%");
+		/*Initialize antina2 height slider*/
+	    $("#antina_height2").slider({
+	    	range 		: "min",
+	    	value 		: antenaHight2,
+	    	min 		: 1,
+	    	max 		: 100,
+	    	animate 	: true,
+	    	orientation : "vertical",
+	    	slide : function(a,b) {
+    			$("#antinaVal2").val(b.value);
+	    	},
+	    	stop : function(a,b) {
+	    		that.heightChanged();
+	    	}
+	    });
+
+	    /*Initialize clear factor slider*/
+		$("#clear-factor").slider({
+	    	range 		: "min",
+	    	value 		: clear_factor,
+	    	min 		: 1,
+	    	max 		: 100,
+	    	animate 	: true,
+	    	orientation : "horizontal",
+	    	slide : function(a,b){
+    			$("#clear-factor_val").val(b.value);
+	    	},
+	    	stop : function(a,b){
+	    		that.heightChanged();
+	    	}
+	    });
+
+		$(".modal-dialog").css("width","70%");
 
 		/*Plotting chart with points array using jquery.flot.js*/
 		var fresnelChart = $.plot(
@@ -1051,6 +1123,150 @@ function networkMapClass() {
 				colors: [pinPointsColor,altitudeColor,losColor,fresnel1Color,fresnel2Color]
 			}
 		);
+
+		/*Bind 'hover' events on fresnel graph*/
+		var previousPoint = null;
+		if(!$("#chart_div").hasClass('readytoscan')) {
+			$("#chart_div").bind("plothover", function (event, pos, item) {
+				/*Show point detail block*/
+				$('#chart-details').show();
+				that.showScanPointerDetails(pos);
+				// just in case if tooltip functionality need to be disabled we can use this condition
+				if (true) {
+					if (item) {
+						if (previousPoint != item.datapoint) {
+							previousPoint = item.datapoint;
+							var x = item.datapoint[0].toFixed(2),
+							y = item.datapoint[1].toFixed(2);
+						}
+					}
+					else {
+						$("#tooltip").remove();
+						previousPoint = null;            
+					}
+				}
+				$("#chart_div").addClass('readytoscan');
+				
+				$("#chart_div").mouseout(function() {
+					/*Hide point detail block*/
+					$('#chart-details').hide();
+				});
+			});
+		} //endif
+		// end plothover binding
+
+		/*Bind 'click' events on fresnel graph*/
+		if(!$("#chart_div").hasClass('readytoclick')) {
+			$("#chart_div").bind("plotclick", function (event, pos, item) {
+				console.log(fresnelChart);
+				if(item) {
+					console.log("item");
+					fresnelChart.highlight(item.series, item.datapoint);
+				} else {
+					fresnelChart.unhighlight();
+				}
+				that.addPinPoint(that.getNearestPointX(pos.x.toFixed(2)), pos);
+			});
+			$("#chart_div").addClass('readytoclick');
+		}
+
+		/*Graph Click Event End*/
+	};
+
+	/**
+	 * This function show hovering position detail in right side.
+	 * @class networkMap
+	 * @method showScanPointerDetails
+	 * @param pos {JSON Object}, It contains the position object.
+	 */
+	this.showScanPointerDetails = function(pos) {
+		
+		var ptLat = parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][0]);
+		var ptLon = parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][1]);
+
+		// finding parameters on scan line 
+		$('#latitude').text(ptLat.toFixed(10));
+		$('#longitude').text(ptLon.toFixed(10));
+		$('#distance').text(parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][3]).toFixed(2)+' Km');
+		$('#altitude').text(parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][2]).toFixed(2)+' m');
+		$('#obstacle').text(parseFloat((latLongArray[that.getNearestPointX(pos.x.toFixed(2))][9]) - parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][2])).toFixed(2)+' m');
+		$('#los').text(parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][4]).toFixed(2)+' m' );
+		$('#fresnel1').text(parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][5]).toFixed(2)+' m' );
+		$('#fresnel2').text(parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][7]).toFixed(2)+' m' );
+		$('#fresnel-altitude').text((parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][7] ) - parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][9])).toFixed(2)+' m' );
+	};
+
+	/**
+	 * This function returns the nearest point on X-axis
+	 * @class networkMap
+	 * @method getNearestPointX
+	 * @param posx "Int", It contains the current point X-position value
+	 * @return result "Int", It contains the next or nearest point on X-axis
+	 */
+	this.getNearestPointX = function(posx) {
+		var tmp = (parseFloat(latLongArray[0][3]) - posx)*(parseFloat(latLongArray[0][3]) - posx);
+		var result = 0;
+		for (i = 1; i < arrayCounter; i++) {
+			if(((parseFloat(latLongArray[i][3]) - posx)*(parseFloat(latLongArray[i][3]) - posx)) < tmp){
+				tmp = (parseFloat(latLongArray[i][3]) - posx)*(parseFloat(latLongArray[i][3]) - posx);
+				result = i;
+			}
+		}
+		return result;
+	};
+
+	/**
+	 * This function adds pin point info at the bottom of the fresnel graph & bind hover and click event on them.
+	 * @class networkMap
+	 * @method addPinPoint
+	 * @param index "Int", It contains counter value of no. of pin points
+	 * @param pos {JSON Object}, It contains the position object.
+	 */
+	this.addPinPoint = function(index, pos) {
+		if($('#pin-point-'+index+'').length == 0) {
+			$('#pin-points-container').append('<div id="pin-point-'+index+'" class="pin-point col-md-5" pointid="'+ index +'"><span class="pin-point-name">Point '+ index +' - <input name="pinpoint'+ index +'" class="userpinpoint" type="text" size="2" value="0" /> m at <span class="point-distance'+ index +'">'+ parseFloat(latLongArray[index][3]).toFixed(2) +'</span> Km</span>  <span id="pin-point-remove'+index+'" class="pin-point-remove">X</span></div>');
+			
+			$('input[name="pinpoint'+ index +'"]').change(function() {
+				var height =  parseFloat($(this).val());
+				latLongArray[index][9] = height + parseFloat(latLongArray[index][2]);
+				isDialogOpen = false;
+				that.drawFresnelChart();
+			});
+			/*Click event on pinpoint content*/
+			$('#pin-point-remove'+index+'').click(function() {
+				$('#pin-point-'+index+'').remove();
+				latLongArray[index][9] = latLongArray[index][2];
+				isDialogOpen = false;
+				that.drawFresnelChart();
+			});
+			/*Hover event on pinpoint content*/
+			$('#pin-point-'+index+'').hover(function() {
+				isDialogOpen = false;
+				$('#chart-details').show();
+				that.showScanPointerDetails(pos)
+			},function(){
+				$('#chart-details').hide();
+			});
+
+		} else {
+			$('#pin-point-'+index+'').effect('highlight',{},500);
+		}
+	}
+
+	/**
+	 * This function trigger when any antina height slider is changed
+	 * @class networkMap
+	 * @method heightChanged
+	 */
+	this.heightChanged = function() {
+		HEIGHT_CHANGED = true;
+		isDialogOpen = false;
+		latLongArrayCopy = latLongArray;
+		antenaHight1 = $("#antinaVal1").val();
+		antenaHight2 = $("#antinaVal2").val();
+		clear_factor = $("#clear-factor_val").val();
+
+		that.claculateFresnelZone(fresnelLat1,fresnelLon1,fresnelLat2,fresnelLon2,antenaHight1,antenaHight2);
 	};
 
 	/**
