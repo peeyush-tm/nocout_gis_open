@@ -101,7 +101,8 @@
 								"markerUrl" : "static/img/marker/icon4_small.png",
 								"link_color" : "green",
 								"show_link" : 1,
-								"sector_color" : "red",
+								"sector_color" : "#156AAF",
+								"sector_orientation" : "horizontal",
 								"circle_radius" : 3000,
 								"circle_color" : "333333",
 								"antena_height" : 50
@@ -191,6 +192,7 @@
 								"link_color" : "green",
 								"show_link" : 1,
 								"sector_color" : "yellow",
+								"sector_orientation" : "vertical",
 								"circle_radius" : 3000,
 								"circle_color" : "999999",
 								"antena_height" : 60
