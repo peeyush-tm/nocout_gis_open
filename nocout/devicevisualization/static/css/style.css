@@ -124,6 +124,128 @@
     padding: 2px;
     overflow: hidden;
 }
+
+/*Fresnel Chart Detail Style*/
+#chart-details {
+    background: #FFC;
+    display: none;
+    position: fixed;
+    width: 125px;
+    border: 1px solid #000;
+    padding: 8px;
+    bottom: 31px;
+    right: -13%; /*10px;*/
+    z-index: 999999;
+}
+#chart-details div {
+    background: -moz-linear-gradient(10% 90% 90deg, #bdbdbd, #ebebeb);
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#ebebeb), to(#bdbdbd));
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#bdbdbd', endColorstr='#ebebeb');
+    border:1px solid #999;
+    margin:6px 1px;
+    -moz-border-radius:3px;
+    -webkit-border-radius:3px;
+}
+#chart-details span {
+    color: #000;
+    font-size: 11px;
+    margin: 2px;
+    padding: 1px 2px;
+    text-shadow: 0 1px 1px #fff;
+}
+.chart-detail-lbl {
+    background: -moz-linear-gradient(10% 90% 90deg, #bdbdbd, #ebebeb);
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#ebebeb), to(#bdbdbd));
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#bdbdbd', endColorstr='#ebebeb');
+    border:1px solid #CCC;
+    color:#000;
+    display:block;
+    font-size:13px;
+    margin:2px;
+    padding:1px 2px;
+    text-shadow:0 1px 1px #fff;
+    -moz-border-radius:2px;
+    -webkit-border-radius:2px;
+}
+#altitude-lbl {
+    background: -moz-linear-gradient(10% 90% 90deg, #EDC240, #ebebeb);
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#ebebeb), to(#EDC240));
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#EDC240', endColorstr='#ebebeb');
+}
+#obstacle-lbl {
+    background: -moz-linear-gradient(10% 90% 90deg, #aa6666, #ebebeb);
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#ebebeb), to(#aa6666));
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#aa6666', endColorstr='#ebebeb');
+}
+#los-lbl {
+    background: -moz-linear-gradient(10% 90% 90deg, #CB4B4B, #ebebeb);
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#ebebeb), to(#CB4B4B));
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#CB4B4B', endColorstr='#ebebeb');
+}
+#fresnel1-lbl {
+    background: -moz-linear-gradient(10% 90% 90deg, #4DA74D, #ebebeb);
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#ebebeb), to(#4DA74D));
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#4DA74D', endColorstr='#ebebeb');
+}
+#fresnel2-lbl {
+    background: -moz-linear-gradient(10% 90% 90deg, #9440ED, #ebebeb);
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#ebebeb), to(#9440ED));
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#9440ED', endColorstr='#ebebeb');
+}
+
+#fresnel2-altitude-lbl {
+    background: -moz-linear-gradient(10% 90% 90deg, #aa6666, #9440ED);
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#9440ED), to(#aa6666));
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#aa6666', endColorstr='#9440ED');
+}
+
+.pin-point{
+    background: -moz-linear-gradient(10% 90% 90deg, #bdbdbd, #ebebeb);
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#ebebeb), to(#bdbdbd));
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#bdbdbd', endColorstr='#ebebeb');
+    border:2px solid #ddd;
+    /*float:left;*/
+    color:#333;
+    margin:4px;
+    overflow:hidden;
+    padding:2px 36px 2px 6px;
+    position:relative;
+    white-space:nowrap;
+    /*width:220px;*/
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    -moz-box-shadow:0 1px 1px #fff; 
+    -webkit-box-shadow:0 1px 1px #fff; 
+}
+.pin-point input{
+    background:#dddddd;
+    border:1px solid #f1f1f1;
+    padding:2px;
+}
+.pin-point-remove{
+    border:1px solid #aaa;
+    color:#999;
+    cursor:pointer;
+    position:absolute;
+    text-align:center;
+    top:5px;
+    font-size:10px;
+    right:5px;
+    bottom:5px;
+    width:16px;
+    line-height:1.5;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    text-shadow:0 1px 1px #fff;
+    -moz-box-shadow:0 1px 1px #fff; 
+    -webkit-box-shadow:0 1px 1px #fff; 
+}
+.pin-point-remove:hover{
+    border:1px solid #777;
+    color:#555;
+}
+
+
 /*Advance Search Filters CSS*/
 .advanceFiltersContainer
 {
