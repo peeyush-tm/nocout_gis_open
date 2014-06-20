@@ -2,7 +2,7 @@ from django.db import models
 from organization.models import Organization
 from site_instance.models import SiteInstance
 from service.models import Service
-from mptt.models import MPTTModel, TreeForeignKey
+from mptt.models import MPTTModel
 
 
 #************************************ Device Inventory**************************************
@@ -189,6 +189,3 @@ class DeviceTypeFieldsValue(models.Model):
     device_type_field = models.ForeignKey(DeviceTypeFields)
     field_value = models.CharField(max_length=250)
     device_id = models.IntegerField()
-
-
-#************************************ GIS Inventory**************************************
