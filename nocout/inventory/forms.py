@@ -1,5 +1,5 @@
 from django import forms
-from models import Antenna, BaseStation
+from models import Antenna, BaseStation, Backhaul
 
 # antenna form
 class AntennaForm(forms.ModelForm):
@@ -31,7 +31,7 @@ class AntennaForm(forms.ModelForm):
         model = Antenna
 
 
-# antenna form
+# base station form
 class BaseStationForm(forms.ModelForm):
     BS_TYPE = (
         ('', 'Select....'),
@@ -50,3 +50,30 @@ class BaseStationForm(forms.ModelForm):
                 field.widget.attrs.update({'class':'form-control'})
     class Meta:
         model = BaseStation
+
+
+# base station form
+class BackhaulForm(forms.ModelForm):
+    BH_TYPE = (
+        ('', 'Select....'),
+        ('e1', 'E1'),
+        ('ethernet', 'Ethernet')
+    )
+    BH_CONNECTIVITY = (
+        ('', 'Select....'),
+        ('onnet', 'Onnet'),
+        ('offnet', 'Offnet')
+    )
+
+    bh_type = forms.TypedChoiceField(choices=BH_TYPE, required=False)
+    bh_connectivity = forms.TypedChoiceField(choices=BH_CONNECTIVITY, required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(BackhaulForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' form-control'
+            else:
+                field.widget.attrs.update({'class':'form-control'})
+    class Meta:
+        model = Backhaul

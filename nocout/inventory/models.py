@@ -21,26 +21,16 @@ class Antenna(models.Model):
 
 # gis backhaul model
 class Backhaul(models.Model):
-    BH_TYPE = (
-        ('', 'Select....'),
-        ('e1', 'E1'),
-        ('ethernet', 'Ethernet')
-    )
-    BH_CONNECTIVITY = (
-        ('', 'Select....'),
-        ('onnet', 'Onnet'),
-        ('offnet', 'Offnet')
-    )
     bh_configured_on = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul')
     bh_port = models.IntegerField('BH Port', null=True, blank=True)
-    bh_type = models.CharField('BH Type', max_length=250, null=True, blank=True, choices=BH_TYPE)
+    bh_type = models.CharField('BH Type', max_length=250, null=True, blank=True)
     pop = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul_pop')
     pop_port = models.IntegerField('Pop Port', null=True, blank=True)
     aggregator = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul_aggregator')
     aggregator_port = models.IntegerField('Aggregator Port', null=True, blank=True)
     pe_hostname = models.CharField('PE Hostname', max_length=250, null=True, blank=True)
     pe_ip = models.IPAddressField('PE IP Address', null=True, blank=True)
-    bh_connectivity = models.CharField('BH Connectivity', max_length=40, null=True, blank=True, choices=BH_CONNECTIVITY)
+    bh_connectivity = models.CharField('BH Connectivity', max_length=40, null=True, blank=True)
     bh_circuit_id = models.CharField('BH Circuit ID', max_length=250, null=True, blank=True)
     bh_capacity = models.IntegerField('BH Capacity', null=True, blank=True)
     ttsl_circuit_id = models.CharField('TTSL Circuit ID', max_length=250, null=True, blank=True)
