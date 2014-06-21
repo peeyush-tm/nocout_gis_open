@@ -4,26 +4,19 @@ from device.models import Device
 
 # gis antenna model
 class Antenna(models.Model):
-    POLARIZATION = (
-        ('', 'Select....'),
-        ('vertical', 'Vertical'),
-        ('horizontal', 'Horizontal')
-    )
-    SPLITTER_INSTALLED = (
-        ('', 'Select....'),
-        ('yes', 'Yes'),
-        ('no', 'No')
-    )
     name = models.CharField('Antenna Name', max_length=250)
     height = models.IntegerField('Antenna Height', null=True, blank=True)
-    polarization = models.CharField('Polarization', max_length=50, null=True, blank=True, choices=POLARIZATION)
+    polarization = models.CharField('Polarization', max_length=50, null=True, blank=True)
     tilt = models.IntegerField('Tilt', null=True, blank=True)
     beam_width = models.IntegerField('Beam Width', null=True, blank=True)
     azimuth_angle = models.IntegerField('Azimuth Angle', null=True, blank=True)
-    splitter_installed = models.CharField('Splitter Installed', max_length=4, null=True, blank=True, choices=SPLITTER_INSTALLED)
-    sync_splitter_used = models.CharField('Sync Splitter User', max_length=4, null=True, blank=True, choices=SPLITTER_INSTALLED)
+    splitter_installed = models.CharField('Splitter Installed', max_length=4, null=True, blank=True)
+    sync_splitter_used = models.CharField('Sync Splitter User', max_length=4, null=True, blank=True)
     make_of_antenna = models.CharField('Make Of Antenna', max_length=40, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
+
+    def __unicode__(self):
+        return self.name
 
 
 # gis backhaul model

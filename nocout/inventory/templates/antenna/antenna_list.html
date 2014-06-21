@@ -2,16 +2,16 @@
 {% load staticfiles %}
 {% block breadcrumb_title %}
     <li>Inventory</li>
-    <li>Device Technology</li>
+    <li>Antenna</li>
 {% endblock %}
-{% block content_title %}Device Technology Management{% endblock %}
-{% block content_description %}List of device technologies{% endblock %}
+{% block content_title %}Antenna Management{% endblock %}
+{% block content_description %}List of antenna{% endblock %}
 {% block content %}
-    <p><a href="/technology/new"><i class="fa fa-plus">&nbsp;</i> Create Device Technology</a></p>
+    <p><a href="/antenna/new"><i class="fa fa-plus">&nbsp;</i> Create Antenna</a></p>
     
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i>DEVICE TECHNOLOGY LISTING</h4>
+            <h4><i class="fa fa-table"></i>ANTENNA LISTING</h4>
             <div class="tools hidden-xs">
                 <a href="#box-config" data-toggle="modal" class="config">
                     <i class="fa fa-cog"></i>
@@ -22,7 +22,7 @@
             </div>
         </div>
         <div id="tableContainer" class="box-body">
-            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="DeviceTechnologyListingTable">
+            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="AntennaListingTable">
                 <thead></thead>
                 <tbody></tbody>
             </table>
@@ -39,9 +39,9 @@
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/
-            var ajax_url = '{% url "DeviceTechnologyListingTable" %}';
+            var ajax_url = '{% url "AntennaListingTable" %}';
             /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable("DeviceTechnologyListingTable", gridHeadersObj, ajax_url);
+            dataTableInstance.createDataTable("AntennaListingTable", gridHeadersObj, ajax_url);
         });
     </script>
 {% endblock %}
