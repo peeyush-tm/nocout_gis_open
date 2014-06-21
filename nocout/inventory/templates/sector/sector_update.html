@@ -2,11 +2,11 @@
 {% load staticfiles %}
 {% block breadcrumb_title %}
     <li>Inventory</li>
-    <li>Backhaul</li>
-    <li>New</li>
+    <li>Sector</li>
+    <li>Edit</li>
 {% endblock %}
-{% block content_title %}Add Backhaul{% endblock %}
-{% block content_description %}Add backhaul{% endblock %}
+{% block content_title %}Edit Sector{% endblock %}
+{% block content_description %}Edit sector{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
@@ -14,11 +14,11 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> ADD BACKHAUL</h4>
+                            <h4><i class="fa fa-bars"></i> SECTOR : {{ object.name }}</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-6"><br />
-                                    <form action="/backhaul/new/" method="post" class="form-horizontal"
+                                    <form action="" method="post" class="form-horizontal"
                                           role="form">{% csrf_token %}
                                         <div class="form-group">
                                             {% for field in form %}
@@ -33,13 +33,9 @@
                                         </div>
                                         <div class="form-group">
                                             <div class="col-sm-offset-5 col-sm-7">
-                                            <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i> Create</button>
-                                            &nbsp;
-                                            <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i> Reset
-                                            </button>
-                                            &nbsp;
-                                            <button type="reset" class="btn btn-danger" onclick="window.location.replace('/backhaul/')"><i class="fa fa-times"></i> Cancel
-                                            </button>
+                                                <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/sector/')"><i class="fa fa-times"></i> Cancel</button>
                                             </div>
                                         </div>
                                     </form>

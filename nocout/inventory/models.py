@@ -56,11 +56,6 @@ class BaseStation(models.Model):
 
 # gis sector model
 class Sector(models.Model):
-    MRC = (
-        ('', 'Select....'),
-        ('yes', 'Yes'),
-        ('no', 'No')
-    )
     sector_id = models.CharField('Sector ID', max_length=250, null=True, blank=False)
     name = models.CharField('Sector Name', max_length=250)
     base_station = models.ForeignKey(BaseStation, related_name='sector')
@@ -69,7 +64,7 @@ class Sector(models.Model):
     odu = models.ForeignKey(Device, max_length=250, null=True, blank=True, related_name='sector_odu')
     odu_port = models.IntegerField('ODU Port', null=True, blank=True)
     antenna = models.ForeignKey(Antenna, null=True, blank=True, related_name='sector')
-    mrc = models.CharField('MRC', max_length=4, null=True, blank=True, choices=MRC)
+    mrc = models.CharField('MRC', max_length=4, null=True, blank=True)
     tx_power = models.IntegerField('TX Power', null=True, blank=True)
     frequency = models.IntegerField('Frequency', null=True, blank=True)
     frame_length = models.IntegerField('Frame Length', null=True, blank=True)

@@ -1,0 +1,59 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/device.css" %}>
+{% endblock %}
+{% block breadcrumb_title %}
+    <li>Inventory</li>
+    <li>Antenna</li>
+    <li>Detail</li>
+{% endblock %}
+{% block content_title %}Antenna Detail{% endblock %}
+{% block content_description %}Detail of antenna{% endblock %}
+{% block content %}
+    <h1>{{ object.name }}</h1><br/>
+    <div id="device">
+        <table>
+            <tr>
+                <td><strong>Name:</strong></td>
+                <td>{{ object.name }}</td>
+            </tr>
+            <tr>
+                <td><strong>Height:</strong></td>
+                <td>{{ object.height }}</td>
+            </tr>
+            <tr>
+                <td><strong>Polarization:</strong></td>
+                <td>{{ object.polarization }}</td>
+            </tr>
+            <tr>
+                <td><strong>Tilt:</strong></td>
+                <td>{{ object.tilt }}</td>
+            </tr>
+            <tr>
+                <td><strong>Beam Width:</strong></td>
+                <td>{{ object.beam_width }}</td>
+            </tr>
+            <tr>
+                <td><strong>Azimuth Angle:</strong></td>
+                <td>{{ object.azimuth_angle }}</td>
+            </tr>
+            <tr>
+                <td><strong>Splitter Installed:</strong></td>
+                <td>{{ object.splitter_installed }}</td>
+            </tr>
+            <tr>
+                <td><strong>Sync Splitter User:</strong></td>
+                <td>{{ object.sync_splitter_used }}</td>
+            </tr>
+            <tr>
+                <td><strong>Make of Antenna:</strong></td>
+                <td>{{ object.make_of_antenna }}</td>
+            </tr>
+            <tr>
+                <td><strong>Description:</strong></td>
+                <td>{{ object.description }}</td>
+            </tr>
+        </table>
+    </div>
+{% endblock %}

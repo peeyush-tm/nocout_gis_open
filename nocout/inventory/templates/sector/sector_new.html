@@ -2,11 +2,11 @@
 {% load staticfiles %}
 {% block breadcrumb_title %}
     <li>Inventory</li>
-    <li>Backhaul</li>
+    <li>Sector</li>
     <li>New</li>
 {% endblock %}
-{% block content_title %}Add Backhaul{% endblock %}
-{% block content_description %}Add backhaul{% endblock %}
+{% block content_title %}Add Sector{% endblock %}
+{% block content_description %}Add sector{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
@@ -14,11 +14,11 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> ADD BACKHAUL</h4>
+                            <h4><i class="fa fa-bars"></i> ADD SECTOR</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-6"><br />
-                                    <form action="/backhaul/new/" method="post" class="form-horizontal"
+                                    <form action="/sector/new/" method="post" class="form-horizontal"
                                           role="form">{% csrf_token %}
                                         <div class="form-group">
                                             {% for field in form %}
@@ -38,7 +38,7 @@
                                             <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i> Reset
                                             </button>
                                             &nbsp;
-                                            <button type="reset" class="btn btn-danger" onclick="window.location.replace('/backhaul/')"><i class="fa fa-times"></i> Cancel
+                                            <button type="reset" class="btn btn-danger" onclick="window.location.replace('/sector/')"><i class="fa fa-times"></i> Cancel
                                             </button>
                                             </div>
                                         </div>

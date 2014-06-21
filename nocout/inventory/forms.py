@@ -1,5 +1,5 @@
 from django import forms
-from models import Antenna, BaseStation, Backhaul
+from models import Antenna, BaseStation, Backhaul, Sector
 
 # antenna form
 class AntennaForm(forms.ModelForm):
@@ -77,3 +77,24 @@ class BackhaulForm(forms.ModelForm):
                 field.widget.attrs.update({'class':'form-control'})
     class Meta:
         model = Backhaul
+        
+        
+# sector form
+class SectorForm(forms.ModelForm):
+    MRC = (
+        ('', 'Select....'),
+        ('yes', 'Yes'),
+        ('no', 'No')
+    )
+
+    mrc = forms.TypedChoiceField(choices=MRC, required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(SectorForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' form-control'
+            else:
+                field.widget.attrs.update({'class':'form-control'})
+    class Meta:
+        model = Sector
