@@ -50,16 +50,11 @@ class Backhaul(models.Model):
 
 # gis base station model
 class BaseStation(models.Model):
-    BS_TYPE = (
-        ('', 'Select....'),
-        ('master', 'Master'),
-        ('slave', 'Slave')
-    )
     bs_site_id = models.CharField('BS Site ID', max_length=250, null=True, blank=True)
     bs_site_name = models.CharField('BS Site Name', max_length=250, null=True, blank=True)
     bs_switch = models.ForeignKey(Device, null=True, blank=True, related_name='bs_switch')
     backhaul = models.ForeignKey(Backhaul)
-    bs_type = models.CharField('BS Type', max_length=40, null=True, blank=True, choices=BS_TYPE)
+    bs_type = models.CharField('BS Type', max_length=40, null=True, blank=True)
     latitude = models.FloatField('Latitude', null=True, blank=True)
     longitude = models.FloatField('Longitude', null=True, blank=True)
     infra_provider = models.CharField('Infra Provider', max_length=100, null=True, blank=True)
