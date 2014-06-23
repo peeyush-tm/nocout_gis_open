@@ -2,7 +2,7 @@ from django import forms
 from models import Machine
 
 
-# machine form
+#**************************************** Machine *********************************************
 class MachineForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):

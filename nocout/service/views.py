@@ -11,6 +11,7 @@ from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm
 from nocout.utils.util import DictDiffer
 
 
+#**************************************** Service *********************************************
 class ServiceList(ListView):
     model = Service
     template_name = 'service/services_list.html'
@@ -142,6 +143,7 @@ class ServiceDelete(DeleteView):
     success_url = reverse_lazy('services_list')
 
 
+#************************************* Service Parameters *****************************************
 class ServiceParametersList(ListView):
     model = ServiceParameters
     template_name = 'service_parameter/services_parameter_list.html'
@@ -272,7 +274,8 @@ class ServiceParametersDelete(DeleteView):
     template_name = 'service_parameter/service_parameter_delete.html'
     success_url = reverse_lazy('services_parameter_list')
     
-    
+
+#********************************** Service Data Source ***************************************
 class ServiceDataSourceList(ListView):
     model = ServiceDataSource
     template_name = 'service_data_source/service_data_sources_list.html'
@@ -379,13 +382,7 @@ class ServiceDataSourceUpdate(UpdateView):
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-
         cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
-
-        print "************************************************************"
-        print 'initial_field_dict', initial_field_dict
-        print 'cleaned_data_field_dict', cleaned_data_field_dict
-
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
             verb_string = 'Changed values of ServiceDataSource : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \

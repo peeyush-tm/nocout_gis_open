@@ -1,7 +1,8 @@
 from django import forms
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
 
-# antenna form
+
+#*************************************** Antenna **************************************
 class AntennaForm(forms.ModelForm):
 
     POLARIZATION = (
@@ -31,7 +32,7 @@ class AntennaForm(forms.ModelForm):
         model = Antenna
 
 
-# base station form
+#************************************ Base Station ****************************************
 class BaseStationForm(forms.ModelForm):
     BS_TYPE = (
         ('', 'Select....'),
@@ -52,7 +53,7 @@ class BaseStationForm(forms.ModelForm):
         model = BaseStation
 
 
-# base station form
+#************************************* Backhaul ****************************************
 class BackhaulForm(forms.ModelForm):
     BH_TYPE = (
         ('', 'Select....'),
@@ -79,7 +80,7 @@ class BackhaulForm(forms.ModelForm):
         model = Backhaul
         
         
-# sector form
+#************************************* Sector *************************************
 class SectorForm(forms.ModelForm):
     MRC = (
         ('', 'Select....'),
@@ -100,7 +101,7 @@ class SectorForm(forms.ModelForm):
         model = Sector
         
         
-# customer form
+#************************************* Customer ***************************************
 class CustomerForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
@@ -135,7 +136,7 @@ class SubStationForm(forms.ModelForm):
         model = SubStation
         
         
-# circuit form
+#*********************************** Circuit ***************************************
 class CircuitForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):

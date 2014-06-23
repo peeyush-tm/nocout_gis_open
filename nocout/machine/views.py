@@ -11,6 +11,8 @@ from machine.forms import MachineForm
 from models import Machine
 from nocout.utils.util import DictDiffer
 
+
+#************************************** Machine *****************************************
 class MachineList(ListView):
     model = Machine
     template_name = 'machine/machines_list.html'
@@ -118,13 +120,7 @@ class MachineUpdate(UpdateView):
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-
         cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
-
-        print "************************************************************"
-        print 'initial_field_dict', initial_field_dict
-        print 'cleaned_data_field_dict', cleaned_data_field_dict
-
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
             verb_string = 'Changed values of Machine : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \

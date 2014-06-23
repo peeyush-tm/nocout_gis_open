@@ -12,9 +12,12 @@ from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation,
 from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm, CircuitForm
 
 
+#**************************************** Inventory *********************************************
 def inventory(request):
     return render(request,'inventory/inventory.html')
 
+
+#**************************************** Antenna *********************************************
 class AntennaList(ListView):
     model = Antenna
     template_name = 'antenna/antenna_list.html'
@@ -121,13 +124,7 @@ class AntennaUpdate(UpdateView):
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-
         cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
-
-        print "************************************************************"
-        print 'initial_field_dict', initial_field_dict
-        print 'cleaned_data_field_dict', cleaned_data_field_dict
-
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
             verb_string = 'Changed values of Antenna : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
@@ -144,6 +141,7 @@ class AntennaDelete(DeleteView):
     success_url = reverse_lazy('antennas_list')
 
 
+#****************************************** Base Station ********************************************
 class BaseStationList(ListView):
     model = BaseStation
     template_name = 'base_station/base_stations_list.html'
@@ -252,13 +250,7 @@ class BaseStationUpdate(UpdateView):
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-
         cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
-
-        print "************************************************************"
-        print 'initial_field_dict', initial_field_dict
-        print 'cleaned_data_field_dict', cleaned_data_field_dict
-
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
             verb_string = 'Changed values of Base Station : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
@@ -274,7 +266,9 @@ class BaseStationDelete(DeleteView):
     template_name = 'base_station/base_station_delete.html'
     success_url = reverse_lazy('base_stations_list')
     
-    
+
+
+#**************************************** Backhaul *********************************************
 class BackhaulList(ListView):
     model = Backhaul
     template_name = 'backhaul/backhauls_list.html'
@@ -385,12 +379,7 @@ class BackhaulUpdate(UpdateView):
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-
         cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
-
-        print "************************************************************"
-        print 'initial_field_dict', initial_field_dict
-        print 'cleaned_data_field_dict', cleaned_data_field_dict
 
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
@@ -407,7 +396,8 @@ class BackhaulDelete(DeleteView):
     template_name = 'backhaul/backhaul_delete.html'
     success_url = reverse_lazy('backhauls_list')
     
-    
+
+#**************************************** Sector *********************************************
 class SectorList(ListView):
     model = Sector
     template_name = 'sector/sectors_list.html'
@@ -518,13 +508,7 @@ class SectorUpdate(UpdateView):
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-
         cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
-
-        print "************************************************************"
-        print 'initial_field_dict', initial_field_dict
-        print 'cleaned_data_field_dict', cleaned_data_field_dict
-
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
             verb_string = 'Changed values of Sector : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
@@ -540,7 +524,8 @@ class SectorDelete(DeleteView):
     template_name = 'sector/sector_delete.html'
     success_url = reverse_lazy('sectors_list')
     
-    
+
+#**************************************** Customer *********************************************
 class CustomerList(ListView):
     model = Customer
     template_name = 'customer/customers_list.html'
@@ -648,13 +633,7 @@ class CustomerUpdate(UpdateView):
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-
         cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
-
-        print "************************************************************"
-        print 'initial_field_dict', initial_field_dict
-        print 'cleaned_data_field_dict', cleaned_data_field_dict
-
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
             verb_string = 'Changed values of Customer : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
@@ -670,7 +649,8 @@ class CustomerDelete(DeleteView):
     template_name = 'customer/customer_delete.html'
     success_url = reverse_lazy('customers_list')
     
-    
+
+#**************************************** Sub Station *********************************************
 class SubStationList(ListView):
     model = SubStation
     template_name = 'sub_station/sub_stations_list.html'
@@ -783,13 +763,7 @@ class SubStationUpdate(UpdateView):
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-
         cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
-
-        print "************************************************************"
-        print 'initial_field_dict', initial_field_dict
-        print 'cleaned_data_field_dict', cleaned_data_field_dict
-
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
             verb_string = 'Changed values of SubStation : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
@@ -804,8 +778,9 @@ class SubStationDelete(DeleteView):
     model = SubStation
     template_name = 'sub_station/sub_station_delete.html'
     success_url = reverse_lazy('sub_stations_list')
-    
-    
+
+
+#**************************************** Circuit *********************************************
 class CircuitList(ListView):
     model = Circuit
     template_name = 'circuit/circuits_list.html'
@@ -915,13 +890,7 @@ class CircuitUpdate(UpdateView):
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-
         cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
-
-        print "************************************************************"
-        print 'initial_field_dict', initial_field_dict
-        print 'cleaned_data_field_dict', cleaned_data_field_dict
-
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
             verb_string = 'Changed values of Circuit : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \

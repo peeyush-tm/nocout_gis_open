@@ -3,8 +3,8 @@ from command.models import Command
 
 
 class ServiceDataSource(models.Model):
-    data_source_name = models.CharField('Data Source Name', max_length=100)
-    data_source_alias = models.CharField('Data Source Alias', max_length=250)
+    data_source_name = models.CharField('Name', max_length=100)
+    data_source_alias = models.CharField('Alias', max_length=250)
     warning = models.CharField('Warning', max_length=255, null=True, blank=True)
     critical = models.CharField('Critical', max_length=255, null=True, blank=True)
 
