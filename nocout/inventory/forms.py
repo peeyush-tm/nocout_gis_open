@@ -1,5 +1,5 @@
 from django import forms
-from models import Antenna, BaseStation, Backhaul, Sector, Customer
+from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation
 
 # antenna form
 class AntennaForm(forms.ModelForm):
@@ -112,3 +112,24 @@ class CustomerForm(forms.ModelForm):
                 field.widget.attrs.update({'class':'form-control'})
     class Meta:
         model = Customer
+        
+        
+# sub_station form
+class SubStationForm(forms.ModelForm):
+    ETHERNET_EXTENDER = (
+        ('', 'Select....'),
+        ('yes', 'Yes'),
+        ('no', 'No')
+    )
+
+    ethernet_extender = forms.TypedChoiceField(choices=ETHERNET_EXTENDER, required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(SubStationForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' form-control'
+            else:
+                field.widget.attrs.update({'class':'form-control'})
+    class Meta:
+        model = SubStation

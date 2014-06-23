@@ -83,11 +83,6 @@ class Customer(models.Model):
 
 # gis sub-station
 class SubStation(models.Model):
-    ETHERNET_EXTENDER = (
-        ('', 'Select....'),
-        ('yes', 'Yes'),
-        ('no', 'No')
-    )
     name = models.CharField('Name', max_length=250)
     ip = models.IPAddressField('IP Address')
     mac = models.CharField('MAC Address', max_length=250)
