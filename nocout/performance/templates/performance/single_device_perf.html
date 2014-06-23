@@ -1,0 +1,158 @@
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+	<li>Performance Reports</li>
+	<li>{{ page_title }} Live</li>
+{% endblock %}
+{% block content_title %} {{ page_title }} Live{% endblock %}
+{% block content_description %} {% endblock %}
+{% load staticfiles %}
+{% block css %}
+	<!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
+{% endblock %}
+
+{% block content %}
+	<style type="text/css">
+		.perfContainerBlock .box-title .pull-right ul {
+			margin-bottom: 0px;
+		}
+	</style>
+	<div class='box border lite perfContainerBlock'>
+	    <div class='box-title'>
+	        <h4><i class='fa fa-file-text'></i> {{ page_title }} Live - {{ device_id }}</h4>
+	        <!--Filters Block Start-->
+	        <div class="pull-right">
+	            <ul class="list-unstyled list-inline">
+	                <li>
+	                    <!--device_name Filter-->
+	                    <select name="device_name" id="device_name" class="form-control col-xs-1 input-sm">
+	                        <option value="">Select Device</option>
+	                    </select>
+	                </li>
+	                <li>
+	                    <!--start_date Filter-->
+	                    <input class="form-control col-xs-1 input-sm datepicker" type="text" name="start_date" size="10" id="start_date" placeholder="Start Date">
+	                </li>
+	                <li>
+	                	<span class="col-xs-1 input-sm">To</span>
+	                </li>
+	                <li>
+	                    <!--end_date Filter-->
+	                    <input class="form-control col-xs-1 input-sm datepicker" type="text" name="end_date" size="10" id="end_date" placeholder="End Date">
+	                </li>
+	                <li>
+	                    <div class="btn-group dropdown col-xs-1">
+							<button class="btn  btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+								Action
+								<span class="caret"></span>
+							</button>
+							<ul class="dropdown-menu context">
+								<li>
+									<a href="javascript:;">Excel</a>
+								</li>
+								<li>
+									<a href="javascript:;">CSV</a>
+								</li>
+							</ul>
+						</div>
+	                </li>
+	            </ul>
+	        </div>
+	        <!--Filters Block End-->
+	        <div class="clearfix"></div>
+	    </div>
+	    <div class='box-body'>
+	        <div class="col-md-6 col-md-offset-3 well well-sm">
+	        	<table id="status_table" class="table table-bordered">
+					<thead></thead>
+					<tbody></tbody>
+				</table>
+        	</div>
+        	<div class="clearfix"></div>
+        	<div class="panel panel-default">
+	        	<div class="panel-body">
+	        		<div class="tabbable">
+						<ul class="nav nav-tabs">
+						   <li class="active"><a href="#perf_avail_block" id="availability_tab" data-toggle="tab">Availability</a></li>
+						   <li class=""><a href="#perf_packet_block" id="packertDrop_tab" data-toggle="tab">Packet Drop</a></li>
+						   <li class=""><a href="#perf_latency_block" id="latency_tab" data-toggle="tab">Latency</a></li>
+						   <li class=""><a href="#perf_rssi_block" id="rssi_tab" data-toggle="tab">RSSI</a></li>
+						   <li class=""><a href="#perf_cinr_block" id="cinr_tab" data-toggle="tab">CINR</a></li>
+						</ul>
+						<div class="tab-content">
+						   <div class="tab-pane fade active in" id="perf_avail_block">
+								<div class="divide-10"></div>
+								<p> Availability</p>
+						   </div>
+						   <div class="tab-pane fade" id="perf_packet_block">
+								<div class="divide-10"></div>
+								<p>Packey Drop</p>
+						   </div>
+						   <div class="tab-pane fade" id="perf_latency_block">
+								<div class="divide-10"></div>
+								<p>Latency</p>
+						   </div>
+						   <div class="tab-pane fade" id="perf_rssi_block">
+								<div class="divide-10"></div>
+								<p>RSSI</p>
+						   </div>
+						   <div class="tab-pane fade" id="perf_cinr_block">
+								<div class="divide-10"></div>
+								<p>CINR</p>
+						   </div>
+						</div>
+					 </div>
+	        	</div>
+        	</div>
+        	<div class="clearfix"></div>
+	    </div>
+	</div>
+	<!-- JQUERY UI-->
+	<script src={% static "js/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.min.js" %}></script>
+	<!--Our Custom Script-->
+	<script src={% static "js/nocout/nocoutPerfLib.js" %}></script>
+	<!--Dummy Data-->
+	<script src={% static "js/nocout/dummy_data/devices_list.js" %}></script>
+
+	<script type="text/javascript">
+		/*Global Variables*/
+		var perfInstance = "",
+			getDevicesUrl = "",
+			getStatusUrl = "",
+			getServiceUrl = "",
+			getServiceDataUrl = "",
+			current_device = "";
+
+		$(document).ready(function(e) {
+			/*Initialize Datepicker*/
+			$(".datepicker").datepicker();
+
+			getDevicesUrl = "{{ get_devices_url }}";
+			getStatusUrl = "{{ get_status_url }}";
+
+			current_device = "{{ device_id }}";
+			perfInstance = new nocoutPerfLib();
+			
+			/*To Populate the device dropdown*/
+			perfInstance.getAllDevices(getDevicesUrl,current_device);
+
+			/*To populate the status table*/
+			perfInstance.getStatus(getStatusUrl,current_device);
+		});
+
+		$('.nav-tabs a').bind('click', function (e) {
+	        console.log(e.currentTarget.id);
+	    });
+	</script>
+
+{% endblock %}
+
+
+{% block load_js %}
+	<script>
+	    jQuery(document).ready(function () {
+	        App.setPage("");  //Set current page
+	        App.init(); //Initialise plugins and elements
+	    });
+	</script>
+{% endblock %}

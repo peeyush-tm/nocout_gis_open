@@ -11,14 +11,17 @@ var routerArray = window.location.href.split("/");
 var checkValue = $.trim(routerArray[routerArray.length-2]);
 var typeCheck = (+checkValue) + 1;
 
-if(checkValue == "new" || checkValue == "update" || checkValue == "treeview" || $.trim(typeCheck) != "NaN" || checkValue == "edit") {
-    if($.trim(typeCheck) != "NaN") {
+if(checkValue == "new" || checkValue == "update" || checkValue == "treeview" || checkValue == "edit") {
+    if($.trim(typeCheck) != "NaN") {        
         /*Current router url text*/
         currentRouterString = $.trim(window.location.href.split("/").slice(3,routerArray.length-3));
     } else {
         /*Current router url text*/
         currentRouterString = $.trim(window.location.href.split("/").slice(3,routerArray.length-2));
-    }
+    }    
+} else if($.trim(typeCheck) != "NaN"){
+    /*Current router url text*/
+    currentRouterString = $.trim(window.location.href.split("/").slice(3,routerArray.length-2));
 } else {
     /*Current router url text*/
     currentRouterString = $.trim(window.location.href.split("/").slice(3,-1));
