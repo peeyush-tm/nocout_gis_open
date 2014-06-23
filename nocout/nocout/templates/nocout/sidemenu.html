@@ -1,228 +1,243 @@
 <div id="sidebar" class="sidebar">
-    <div class="sidebar-menu nav-collapse">
-        <div class="divide-20"></div>
-        <!-- SEARCH BAR -->
-        <div id="search-bar">
-            <input class="search" type="text" placeholder="Search"><i class="fa fa-search search-icon"></i>
-        </div>
-        <!-- /SEARCH BAR -->
+<div class="sidebar-menu nav-collapse">
+<div class="divide-20"></div>
+<!-- SEARCH BAR -->
+<div id="search-bar">
+    <input class="search" type="text" placeholder="Search"><i class="fa fa-search search-icon"></i>
+</div>
+<!-- /SEARCH BAR -->
 
-        <!-- SIDEBAR QUICK-LAUNCH -->
-        <!-- <div id="quicklaunch">
-        <!-- /SIDEBAR QUICK-LAUNCH -->
+<!-- SIDEBAR QUICK-LAUNCH -->
+<!-- <div id="quicklaunch">
+<!-- /SIDEBAR QUICK-LAUNCH -->
 
-        <!-- SIDEBAR MENU -->
-        <ul>
-            <li class="active">
-                <a href="/home/">
-                    <i class="fa fa-dashboard"></i> <span class="menu-text">Dashboard</span>
-                    <span class="selected"></span>
-                </a>
-            </li>
-            <li class="has-sub">
-                <a href="javascript:;" class="">
-                    <i class="fa fa-map-marker"></i> <span class="menu-text">Network Maps</span>
-                    <span class="arrow"></span>
-                </a>
-                <ul class="sub">
-                    <li><a class="" href="/network_maps/gis/"><span class="sub-menu-text">Google Map</span></a></li>
-                    <li><a class="" href="javascript:;"><span class="sub-menu-text">Google Earth</span></a></li>
-                    <li><a class="" href="javascript:;"><span class="sub-menu-text">White Background</span></a></li>
-                </ul>
-            </li>
-            <li class="has-sub">
-                <a href="javascript:;" class="">
-                    <i class="fa fa-bell"></i> <span class="menu-text">Alert Center</span>
-                    <span class="arrow"></span>
-                </a>
-                <ul class="sub">
-                    <li><a class="" href="/alert_center/network/"><span class="sub-menu-text">Network Alert Center</span></a></li>
-                    <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
-                            <span class="sub-menu-text">Customer Alert Center</span>
-                            <span class="arrow"></span>
-                        </a>
-                        <ul class="sub-sub">
-                            <li><a class="" href="/alert_center/customer/packet_drop/"><span class="sub-menu-text">Packet Drop</span></a></li>
-                            <li><a class="" href="/alert_center/customer/latency/"><span class="sub-menu-text">Latency</span></a></li>
-                        </ul>
-                    </li>
-                    <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
-                            <span class="sub-menu-text">Alert Detail</span>
-                            <span class="arrow"></span>
-                        </a>
-                        <ul class="sub-sub">
-                            <li><a class="" href="/alert_center/detail/network_detail/"><span class="sub-menu-text">Network Details</span></a></li>
-                            <li><a class="" href="/alert_center/detail/customer_detail/"><span class="sub-menu-text">Customer Details</span></a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </li>
-            <li class="has-sub">
-                <a href="javascript:;" class="">
-                    <i class="fa fa-flask"></i> <span class="menu-text">Capacity Management</span>
-                    <span class="arrow"></span>
-                </a>
-                <ul class="sub">
-                    <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
-                            <span class="sub-menu-text">Daily Alerts</span>
-                            <span class="arrow"></span>
-                        </a>
-                        <ul class="sub-sub">
-                            <li><a class="" href="/capacity_management/daily_alert/sector/"><span class="sub-menu-text">Sector Augmentation</span></a></li>
-                            <li><a class="" href="/capacity_management/daily_alert/backhaul/"><span class="sub-menu-text">Backhaul Augmentation</span></a></li>
-                        </ul>
-                    </li>
-                    <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
-                            <span class="sub-menu-text">Utilization Status</span>
-                            <span class="arrow"></span>
-                        </a>
-                        <ul class="sub-sub">
-                            <li><a class="" href="/capacity_management/status/sector/"><span class="sub-menu-text">Sector Status</span></a></li>
-                            <li><a class="" href="/capacity_management/status/backhaul/"><span class="sub-menu-text">Backhaul Status</span></a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </li>
-            <li class="has-sub">
-                <a href="javascript:;" class="">
-                    <i class="fa fa-file-text"></i> <span class="menu-text">Performance Reports</span>
-                    <span class="arrow"></span>
-                </a>
-                <ul class="sub">
-                    <li><a class="" href="/performance/customer_live/"><span class="sub-menu-text">Customer Live</span></a></li>
-                    <li><a class="" href="/performance/network_live/"><span class="sub-menu-text">Network Live</span></a></li>
-                    <li><a class="" href="/performance/other_live/"><span class="sub-menu-text">Other</span></a></li>
-                    <li><a class="" href="/performance/performance_dashboard/"><span class="sub-menu-text">Performance Dashboard</span></a></li>
-                    <li><a class="" href="/performance/sector_dashboard/"><span class="sub-menu-text">Sector Dashboard</span></a></li>
-                </ul>
-            </li>
-            <li class="has-sub">
-                <a href="javascript:;" class="">
-                    <i class="fa fa-download"></i> <span class="menu-text">Download Center</span>
-                    <span class="arrow"></span>
-                </a>
-                <ul class="sub">
-                    <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
-                            <span class="sub-menu-text">Inventory</span>
-                            <span class="arrow"></span>
-                        </a>
-                        <ul class="sub-sub">
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">BS Dump</span></a></li>
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">SS Dump</span></a></li>
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">PTP Dump</span></a></li>
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">Network Synopsis</span></a></li>
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">Daily Updates</span></a></li>
-                        </ul>
-                    </li>
-                    <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
-                            <span class="sub-menu-text">Customer Reports</span>
-                            <span class="arrow"></span>
-                        </a>
-                        <ul class="sub-sub">
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">Customer RF Health</span></a></li>
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">Wimax Modulation CHG Report</span></a></li>
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">Wimax Rectification Segment</span></a></li>
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">PMP Rogue SM</span></a></li>
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">Latency Report</span></a></li>
-                        </ul>
-                    </li>
-                    <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
-                            <span class="sub-menu-text">Network Reports</span>
-                            <span class="arrow"></span>
-                        </a>
-                        <ul class="sub-sub">
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">BS Utilisation(TOT)</span></a></li>
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">Backhaul Utilisation(TOT)</span></a></li>
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">Temperature</span></a></li>
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">Health BH</span></a></li>
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">DFR</span></a></li>
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">MFR</span></a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </li>
-            <li class="has-sub">
-                <a href="javascript:;" class="">
-                    <i class="fa fa-dropbox"></i> <span class="menu-text">Inventory</span>
-                    <span class="arrow"></span>
-                </a>
-                <ul class="sub">
-                    <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
-                            <span class="sub-menu-text">Device Inventory</span>
-                            <span class="arrow"></span>
-                        </a>
-                        <ul class="sub-sub">
-                            <li><a class="" href="/device/"><span class="sub-menu-text">Devices</span></a></li>
-                            <li><a class="" href="/device_group/"><span class="sub-menu-text">Device Group</span></a></li>
-                            <li><a class="" href="/device_fields/"><span class="sub-menu-text">Device Fields</span></a></li>
-                            <li><a class="" href="/technology/"><span class="sub-menu-text">Device Technology</span></a></li>
-                            <li><a class="" href="/vendor/"><span class="sub-menu-text">Device Vendors</span></a></li>
-                            <li><a class="" href="/model/"><span class="sub-menu-text">Device Models</span></a></li>
-                            <li><a class="" href="/type/"><span class="sub-menu-text">Device Types</span></a></li>
-                            <li><a class="" href="/machine/"><span class="sub-menu-text">Machine</span></a></li>
-                            <li><a class="" href="/site/"><span class="sub-menu-text">Site Instance</span></a></li>
-                            <li><a class="" href="javascript:;"><span class="sub-menu-text">Discovery</span></a></li>
-                            <li><a class="" href="/service/"><span class="sub-menu-text">Services</span></a></li>
-                            <li><a class="" href="/service_data_source/"><span class="sub-menu-text">Service Data Sources</span></a></li>
-                            <li><a class="" href="/service_parameter/"><span class="sub-menu-text">Service Parameters</span></a></li>
-                            <li><a class="" href="/command/"><span class="sub-menu-text">Commands</span></a></li>
-                        </ul>
-                    </li>
-                    <li class="has-sub-sub">
-                        <a class="" href="javascript:;">
-                            <span class="sub-menu-text">GIS Inventory</span>
-                            <span class="arrow"></span>
-                        </a>
-                        <ul class="sub-sub">
-                            <li><a class="" href="/antenna/"><span class="sub-menu-text">Antenna</span></a></li>
-                            <li><a class="" href="/backhaul/"><span class="sub-menu-text">Backhaul</span></a></li>
-                            <li><a class="" href="/base_station/"><span class="sub-menu-text">Base Station</span></a></li>
-                            <li><a class="" href="/sector/"><span class="sub-menu-text">Sector</span></a></li>
-                            <li><a class="" href="/sub_station/"><span class="sub-menu-text">Sub Station</span></a></li>
-                            <li><a class="" href="/customer/"><span class="sub-menu-text">Customer</span></a></li>
-                            <li><a class="" href="/circuit/"><span class="sub-menu-text">Circuit</span></a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </li>
-            <li class="has-sub">
-                <a href="javascript:;" class="">
-                    <i class="fa fa-user"></i> <span class="menu-text">User Management</span>
-                    <span class="arrow"></span>
-                </a>
-                <ul class="sub">
-                    <li><a class="" href="/user/"><span class="sub-menu-text">Users</span></a></li>
-                    <li><a class="" href="/user_group/"><span class="sub-menu-text">User Groups</span></a></li>
-                    <li><a class="" href="/sm/"><span class="sub-menu-text">User Session</span></a></li>
-                    <li><a class="" href="/organization/"><span class="sub-menu-text">Organization</span></a></li>
-                    <li><a class="" href="/logs/actions/"><span class="sub-menu-text">User Logs</span></a></li>
-                </ul>
-            </li>
-            <li>
-                <a class="" href="/scheduling/"><i class="fa fa-calendar"></i> <span class="menu-text">Scheduling</span></a>
-            </li>
-            <li class="has-sub">
-                <a href="javascript:;" class="">
-                    <i class="fa fa-cog"></i> <span class="menu-text">Settings</span>
-                    <span class="arrow"></span>
-                </a>
-                <ul class="sub">
-                    <li><a class="" href="javascript:;"><span class="sub-menu-text">Frequency Settings</span></a></li>
-                    <li><a class="" href="javascript:;"><span class="sub-menu-text">Threshold Settings</span></a></li>
-                    <li><a class="" href="javascript:;"><span class="sub-menu-text">Live Polling Settings</span></a></li>
-                    <li><a class="" href="javascript:;"><span class="sub-menu-text">Thematic Settings</span></a></li>
-                </ul>
-            </li>
-        </ul>
+<!-- SIDEBAR MENU -->
+<ul>
+<li class="active">
+    <a href="/home/">
+        <i class="fa fa-dashboard"></i> <span class="menu-text">Dashboard</span>
+        <span class="selected"></span>
+    </a>
+</li>
+<li class="has-sub">
+    <a href="javascript:;" class="">
+        <i class="fa fa-map-marker"></i> <span class="menu-text">Network Maps</span>
+        <span class="arrow"></span>
+    </a>
+    <ul class="sub">
+        <li><a class="" href="/network_maps/gis/"><span class="sub-menu-text">Google Map</span></a></li>
+        <li><a class="" href="javascript:;"><span class="sub-menu-text">Google Earth</span></a></li>
+        <li><a class="" href="javascript:;"><span class="sub-menu-text">White Background</span></a></li>
+    </ul>
+</li>
+<li class="has-sub">
+    <a href="javascript:;" class="">
+        <i class="fa fa-bell"></i> <span class="menu-text">Alert Center</span>
+        <span class="arrow"></span>
+    </a>
+    <ul class="sub">
+        <li><a class="" href="/alert_center/network/"><span class="sub-menu-text">Network Alert Center</span></a></li>
+        <li class="has-sub-sub">
+            <a class="" href="javascript:;">
+                <span class="sub-menu-text">Customer Alert Center</span>
+                <span class="arrow"></span>
+            </a>
+            <ul class="sub-sub">
+                <li><a class="" href="/alert_center/customer/packet_drop/"><span
+                        class="sub-menu-text">Packet Drop</span></a></li>
+                <li><a class="" href="/alert_center/customer/latency/"><span class="sub-menu-text">Latency</span></a>
+                </li>
+            </ul>
+        </li>
+        <li class="has-sub-sub">
+            <a class="" href="javascript:;">
+                <span class="sub-menu-text">Alert Detail</span>
+                <span class="arrow"></span>
+            </a>
+            <ul class="sub-sub">
+                <li><a class="" href="/alert_center/detail/network_detail/"><span
+                        class="sub-menu-text">Network Details</span></a></li>
+                <li><a class="" href="/alert_center/detail/customer_detail/"><span class="sub-menu-text">Customer Details</span></a>
+                </li>
+            </ul>
+        </li>
+    </ul>
+</li>
+<li class="has-sub">
+    <a href="javascript:;" class="">
+        <i class="fa fa-flask"></i> <span class="menu-text">Capacity Management</span>
+        <span class="arrow"></span>
+    </a>
+    <ul class="sub">
+        <li class="has-sub-sub">
+            <a class="" href="javascript:;">
+                <span class="sub-menu-text">Daily Alerts</span>
+                <span class="arrow"></span>
+            </a>
+            <ul class="sub-sub">
+                <li><a class="" href="/capacity_management/daily_alert/sector/"><span class="sub-menu-text">Sector Augmentation</span></a>
+                </li>
+                <li><a class="" href="/capacity_management/daily_alert/backhaul/"><span class="sub-menu-text">Backhaul Augmentation</span></a>
+                </li>
+            </ul>
+        </li>
+        <li class="has-sub-sub">
+            <a class="" href="javascript:;">
+                <span class="sub-menu-text">Utilization Status</span>
+                <span class="arrow"></span>
+            </a>
+            <ul class="sub-sub">
+                <li><a class="" href="/capacity_management/status/sector/"><span
+                        class="sub-menu-text">Sector Status</span></a></li>
+                <li><a class="" href="/capacity_management/status/backhaul/"><span
+                        class="sub-menu-text">Backhaul Status</span></a></li>
+            </ul>
+        </li>
+    </ul>
+</li>
+<li class="has-sub">
+    <a href="javascript:;" class="">
+        <i class="fa fa-file-text"></i> <span class="menu-text">Performance Reports</span>
+        <span class="arrow"></span>
+    </a>
+    <ul class="sub">
+        <li><a class="" href="/performance/customer_live/"><span class="sub-menu-text">Customer Live</span></a></li>
+        <li><a class="" href="/performance/network_live/"><span class="sub-menu-text">Network Live</span></a></li>
+        <li><a class="" href="/performance/other_live/"><span class="sub-menu-text">Other</span></a></li>
+        <li><a class="" href="/performance/performance_dashboard/"><span
+                class="sub-menu-text">Performance Dashboard</span></a></li>
+        <li><a class="" href="/performance/sector_dashboard/"><span class="sub-menu-text">Sector Dashboard</span></a>
+        </li>
+    </ul>
+</li>
+<li class="has-sub">
+    <a href="javascript:;" class="">
+        <i class="fa fa-download"></i> <span class="menu-text">Download Center</span>
+        <span class="arrow"></span>
+    </a>
+    <ul class="sub">
+        <li class="has-sub-sub">
+            <a class="" href="javascript:;">
+                <span class="sub-menu-text">Inventory</span>
+                <span class="arrow"></span>
+            </a>
+            <ul class="sub-sub">
+                <li><a class="" href="javascript:;"><span class="sub-menu-text">BS Dump</span></a></li>
+                <li><a class="" href="javascript:;"><span class="sub-menu-text">SS Dump</span></a></li>
+                <li><a class="" href="javascript:;"><span class="sub-menu-text">PTP Dump</span></a></li>
+                <li><a class="" href="javascript:;"><span class="sub-menu-text">Network Synopsis</span></a></li>
+                <li><a class="" href="javascript:;"><span class="sub-menu-text">Daily Updates</span></a></li>
+            </ul>
+        </li>
+        <li class="has-sub-sub">
+            <a class="" href="javascript:;">
+                <span class="sub-menu-text">Customer Reports</span>
+                <span class="arrow"></span>
+            </a>
+            <ul class="sub-sub">
+                <li><a class="" href="javascript:;"><span class="sub-menu-text">Customer RF Health</span></a></li>
+                <li><a class="" href="javascript:;"><span class="sub-menu-text">Wimax Modulation CHG Report</span></a>
+                </li>
+                <li><a class="" href="javascript:;"><span class="sub-menu-text">Wimax Rectification Segment</span></a>
+                </li>
+                <li><a class="" href="javascript:;"><span class="sub-menu-text">PMP Rogue SM</span></a></li>
+                <li><a class="" href="javascript:;"><span class="sub-menu-text">Latency Report</span></a></li>
+            </ul>
+        </li>
+        <li class="has-sub-sub">
+            <a class="" href="javascript:;">
+                <span class="sub-menu-text">Network Reports</span>
+                <span class="arrow"></span>
+            </a>
+            <ul class="sub-sub">
+                <li><a class="" href="javascript:;"><span class="sub-menu-text">BS Utilisation(TOT)</span></a></li>
+                <li><a class="" href="javascript:;"><span class="sub-menu-text">Backhaul Utilisation(TOT)</span></a>
+                </li>
+                <li><a class="" href="javascript:;"><span class="sub-menu-text">Temperature</span></a></li>
+                <li><a class="" href="javascript:;"><span class="sub-menu-text">Health BH</span></a></li>
+                <li><a class="" href="javascript:;"><span class="sub-menu-text">DFR</span></a></li>
+                <li><a class="" href="javascript:;"><span class="sub-menu-text">MFR</span></a></li>
+            </ul>
+        </li>
+    </ul>
+</li>
+<li class="has-sub">
+    <a href="javascript:;" class="">
+        <i class="fa fa-dropbox"></i> <span class="menu-text">Inventory</span>
+        <span class="arrow"></span>
+    </a>
+    <ul class="sub">
+        <li class="has-sub-sub">
+            <a class="" href="javascript:;">
+                <span class="sub-menu-text">Device Inventory</span>
+                <span class="arrow"></span>
+            </a>
+            <ul class="sub-sub">
+                <li><a class="" href="/device/"><span class="sub-menu-text">Devices</span></a></li>
+                <li><a class="" href="/device_group/"><span class="sub-menu-text">Device Group</span></a></li>
+                <li><a class="" href="/device_fields/"><span class="sub-menu-text">Device Fields</span></a></li>
+                <li><a class="" href="/technology/"><span class="sub-menu-text">Device Technology</span></a></li>
+                <li><a class="" href="/vendor/"><span class="sub-menu-text">Device Vendors</span></a></li>
+                <li><a class="" href="/model/"><span class="sub-menu-text">Device Models</span></a></li>
+                <li><a class="" href="/type/"><span class="sub-menu-text">Device Types</span></a></li>
+                <li><a class="" href="/machine/"><span class="sub-menu-text">Machine</span></a></li>
+                <li><a class="" href="/site/"><span class="sub-menu-text">Site Instance</span></a></li>
+                <li><a class="" href="javascript:;"><span class="sub-menu-text">Discovery</span></a></li>
+                <li><a class="" href="/service/"><span class="sub-menu-text">Services</span></a></li>
+                <li><a class="" href="/service_data_source/"><span class="sub-menu-text">Service Data Sources</span></a>
+                </li>
+                <li><a class="" href="/service_parameter/"><span class="sub-menu-text">Service Parameters</span></a>
+                </li>
+                <li><a class="" href="/command/"><span class="sub-menu-text">Commands</span></a></li>
+            </ul>
+        </li>
+        <li class="has-sub-sub">
+            <a class="" href="javascript:;">
+                <span class="sub-menu-text">GIS Inventory</span>
+                <span class="arrow"></span>
+            </a>
+            <ul class="sub-sub">
+                <li><a class="" href="/antenna/"><span class="sub-menu-text">Antenna</span></a></li>
+                <li><a class="" href="/backhaul/"><span class="sub-menu-text">Backhaul</span></a></li>
+                <li><a class="" href="/base_station/"><span class="sub-menu-text">Base Station</span></a></li>
+                <li><a class="" href="/sector/"><span class="sub-menu-text">Sector</span></a></li>
+                <li><a class="" href="/sub_station/"><span class="sub-menu-text">Sub Station</span></a></li>
+                <li><a class="" href="/customer/"><span class="sub-menu-text">Customer</span></a></li>
+                <li><a class="" href="/circuit/"><span class="sub-menu-text">Circuit</span></a></li>
+            </ul>
+        </li>
+    </ul>
+</li>
+<li class="has-sub">
+    <a href="javascript:;" class="">
+        <i class="fa fa-user"></i> <span class="menu-text">User Management</span>
+        <span class="arrow"></span>
+    </a>
+    <ul class="sub">
+        <li><a class="" href="/user/"><span class="sub-menu-text">Users</span></a></li>
+        <li><a class="" href="/user_group/"><span class="sub-menu-text">User Groups</span></a></li>
+        <li><a class="" href="/sm/"><span class="sub-menu-text">User Session</span></a></li>
+        <li><a class="" href="/organization/"><span class="sub-menu-text">Organization</span></a></li>
+        <li><a class="" href="/logs/actions/"><span class="sub-menu-text">User Logs</span></a></li>
+    </ul>
+</li>
+<li>
+    <a class="" href="/scheduling/"><i class="fa fa-calendar"></i> <span class="menu-text">Scheduling</span></a>
+</li>
+<li class="has-sub">
+    <a href="javascript:;" class="">
+        <i class="fa fa-cog"></i> <span class="menu-text">Settings</span>
+        <span class="arrow"></span>
+    </a>
+    <ul class="sub">
+        <li><a class="" href="javascript:;"><span class="sub-menu-text">Frequency Settings</span></a></li>
+        <li><a class="" href="javascript:;"><span class="sub-menu-text">Threshold Settings</span></a></li>
+        <li><a class="" href="javascript:;"><span class="sub-menu-text">Live Polling Settings</span></a></li>
+        <li><a class="" href="javascript:;"><span class="sub-menu-text">Thematic Settings</span></a></li>
+    </ul>
+</li>
+</ul>
 
-        <!-- /SIDEBAR MENU -->
-    </div>
+<!-- /SIDEBAR MENU -->
+</div>
 </div>
