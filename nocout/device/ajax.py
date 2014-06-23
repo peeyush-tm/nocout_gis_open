@@ -4,6 +4,7 @@ from dajaxice.decorators import dajaxice_register
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
     DeviceTypeFieldsValue, Country, State, City
 import logging
+import requests
 logger=logging.getLogger(__name__)
 
 
@@ -362,3 +363,36 @@ def update_cities_after_invalid_form(request, option, city_id):
             out.append("<option value='%d'>%s</option>" % (city.id, city.city_name))
     dajax.assign('#id_city', 'innerHTML', ''.join(out))
     return dajax.json()
+
+
+# sending device  information for it's monitoring
+@dajaxice_register
+def start_device_monitoring(request, device_id):
+    print "device_id", device_id
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = "Device data monitoring failed."
+    result['data']['meta'] = ''
+    device = Device.objects.get(pk=device_id)
+    device_service = []
+    for service in device.service.all():
+        device_service.append(service.service_name)
+    print device_service
+    device_data = {'device_name': device.device_name,
+                   'device_alias': device.device_alias,
+                   'ip_address':device.ip_address,
+                   'agent_tag': device.agent_tag,
+                   'services': device_service,
+                   'site': device.site_instance.name}
+    print "device_data", device_data
+    r = requests.post('http://omdadmin:omd@192.168.0.166/BT/check_mk/add_host.py', data=device_data)
+    if r:
+        result['data'] = device_data
+        result['success'] = 1
+        result['message'] = "Device monitoring is successfully started."
+    print result
+    print "r.text", r.text
+    print "priyesh"
+    print "json.dumps({'result': result})"
+    return json.dumps({'result': result})
