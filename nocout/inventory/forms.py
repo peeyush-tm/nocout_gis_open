@@ -1,5 +1,5 @@
 from django import forms
-from models import Antenna, BaseStation, Backhaul, Sector
+from models import Antenna, BaseStation, Backhaul, Sector, Customer
 
 # antenna form
 class AntennaForm(forms.ModelForm):
@@ -98,3 +98,17 @@ class SectorForm(forms.ModelForm):
                 field.widget.attrs.update({'class':'form-control'})
     class Meta:
         model = Sector
+        
+        
+# customer form
+class CustomerForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(CustomerForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' form-control'
+            else:
+                field.widget.attrs.update({'class':'form-control'})
+    class Meta:
+        model = Customer
