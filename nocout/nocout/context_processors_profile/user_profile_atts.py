@@ -10,22 +10,6 @@ def user_dept_org(request):
     
     if request.user.is_authenticated():
         result = {'user_department' : 'unknown', 'user_organization' : 'unknown'}
-
-        user_profile = UserProfile.objects.filter(username=request.user)
-        
-        if user_profile:
-            user_department = user_profile[0].department_set.all()
-
-            if user_department:
-                user_dept = user_department[0]
-                user_dept_name = user_dept.user_group.alias
-                result['user_department'] = user_dept_name
-                user_organization = Organization.objects.filter(user_group=user_dept.user_group_id)
-
-                if user_organization:
-                    user_org_name = user_organization[0].name
-
-                    if hasattr(request, 'user'):
-                        result ['user_organization'] = user_org_name
-
+        #TODO: DISPLAY user group and organisation
+        #store in session as well
     return result
