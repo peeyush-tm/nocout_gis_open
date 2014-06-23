@@ -1,0 +1,14 @@
+{% extends "inventory/inventory.html" %}
+{% block breadcrumb_title %}
+	<li>Inventory</li>
+    <li>Antenna</li>
+    <li>Delete</li>
+{% endblock %}
+{% block content_title %}Delete Antenna{% endblock %}
+{% block content_description %}Delete antenna{% endblock %}
+{% block content %}
+    <form action="" method="post">{% csrf_token %}
+        <p>Are you sure you want to delete "{{ object }}" ?</p>
+        <input type="submit" value="Confirm"/>
+    </form>
+{% endblock %}

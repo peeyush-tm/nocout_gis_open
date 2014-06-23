@@ -2,6 +2,16 @@ from django.db import models
 from command.models import Command
 
 
+class ServiceDataSource(models.Model):
+    data_source_name = models.CharField('Name', max_length=100)
+    data_source_alias = models.CharField('Alias', max_length=250)
+    warning = models.CharField('Warning', max_length=255, null=True, blank=True)
+    critical = models.CharField('Critical', max_length=255, null=True, blank=True)
+
+    def __unicode__(self):
+        return  self.data_source_name
+
+
 class ServiceParameters(models.Model):
     parameter_description = models.CharField(max_length=250)
     max_check_attempts = models.IntegerField()
@@ -41,9 +51,10 @@ class ServiceParameters(models.Model):
 
 
 class Service(models.Model):
-    service_name = models.CharField(max_length=100)
-    alias = models.CharField(max_length=100)
+    service_name = models.CharField('Service Name', max_length=100)
+    alias = models.CharField('Service Alias', max_length=100)
     parameters = models.ManyToManyField(ServiceParameters, null=True, blank=True)
+    service_data_sources = models.ManyToManyField(ServiceDataSource, null=True, blank=True)
     command = models.ForeignKey(Command, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
 
