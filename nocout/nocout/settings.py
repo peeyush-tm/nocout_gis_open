@@ -267,7 +267,7 @@ ACTSTREAM_SETTINGS = {
                 'device.devicevendor','device.devicemodel','device.devicetype','site_instance.siteinstance','service.service',
                 'service.serviceparameters','command.command','user_profile.organization','inventory.antenna', 'inventory.basestation',
                 'inventory.sector', 'inventory.backhaul', 'inventory.customer', 'inventory.substation', 'inventory.circuit',
-                'machine.machine'),
+                'machine.machine', 'service.servicedatasource'),
     'MANAGER': 'actstream.managers.ActionManager',
     'FETCH_RELATIONS': True,
     'USE_PREFETCH': True,
