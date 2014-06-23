@@ -36,69 +36,50 @@ class Inventory(models.Model):
 
 # gis antenna model
 class Antenna(models.Model):
-    POLARIZATION = (
-        ('', 'Select....'),
-        ('vertical', 'Vertical'),
-        ('horizontal', 'Horizontal')
-    )
-    SPLITTER_INSTALLED = (
-        ('', 'Select....'),
-        ('yes', 'Yes'),
-        ('no', 'No')
-    )
     name = models.CharField('Antenna Name', max_length=250)
     height = models.IntegerField('Antenna Height', null=True, blank=True)
-    polarization = models.CharField('Polarization', max_length=50, null=True, blank=True, choices=POLARIZATION)
+    polarization = models.CharField('Polarization', max_length=50, null=True, blank=True)
     tilt = models.IntegerField('Tilt', null=True, blank=True)
     beam_width = models.IntegerField('Beam Width', null=True, blank=True)
     azimuth_angle = models.IntegerField('Azimuth Angle', null=True, blank=True)
-    splitter_installed = models.CharField('Splitter Installed', max_length=4, null=True, blank=True, choices=SPLITTER_INSTALLED)
-    sync_splitter_used = models.CharField('Sync Splitter User', max_length=4, null=True, blank=True, choices=SPLITTER_INSTALLED)
+    splitter_installed = models.CharField('Splitter Installed', max_length=4, null=True, blank=True)
+    sync_splitter_used = models.CharField('Sync Splitter User', max_length=4, null=True, blank=True)
     make_of_antenna = models.CharField('Make Of Antenna', max_length=40, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
+
+    def __unicode__(self):
+        return self.name
 
 
 # gis backhaul model
 class Backhaul(models.Model):
-    BH_TYPE = (
-        ('', 'Select....'),
-        ('e1', 'E1'),
-        ('ethernet', 'Ethernet')
-    )
-    BH_CONNECTIVITY = (
-        ('', 'Select....'),
-        ('onnet', 'Onnet'),
-        ('offnet', 'Offnet')
-    )
     bh_configured_on = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul')
     bh_port = models.IntegerField('BH Port', null=True, blank=True)
-    bh_type = models.CharField('BH Type', max_length=250, null=True, blank=True, choices=BH_TYPE)
+    bh_type = models.CharField('BH Type', max_length=250, null=True, blank=True)
     pop = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul_pop')
     pop_port = models.IntegerField('Pop Port', null=True, blank=True)
     aggregator = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul_aggregator')
     aggregator_port = models.IntegerField('Aggregator Port', null=True, blank=True)
     pe_hostname = models.CharField('PE Hostname', max_length=250, null=True, blank=True)
     pe_ip = models.IPAddressField('PE IP Address', null=True, blank=True)
-    bh_connectivity = models.CharField('BH Connectivity', max_length=40, null=True, blank=True, choices=BH_CONNECTIVITY)
+    bh_connectivity = models.CharField('BH Connectivity', max_length=40, null=True, blank=True)
     bh_circuit_id = models.CharField('BH Circuit ID', max_length=250, null=True, blank=True)
     bh_capacity = models.IntegerField('BH Capacity', null=True, blank=True)
     ttsl_circuit_id = models.CharField('TTSL Circuit ID', max_length=250, null=True, blank=True)
     dr_site = models.CharField('DR Site', max_length=150, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
+    def __unicode__(self):
+        return "{} : {} : {}".format(self.description, self.bh_configured_on, self.bh_port)
+
 
 # gis base station model
 class BaseStation(models.Model):
-    BS_TYPE = (
-        ('', 'Select....'),
-        ('master', 'Master'),
-        ('slave', 'Slave')
-    )
     bs_site_id = models.CharField('BS Site ID', max_length=250, null=True, blank=True)
     bs_site_name = models.CharField('BS Site Name', max_length=250, null=True, blank=True)
     bs_switch = models.ForeignKey(Device, null=True, blank=True, related_name='bs_switch')
     backhaul = models.ForeignKey(Backhaul)
-    bs_type = models.CharField('BS Type', max_length=40, null=True, blank=True, choices=BS_TYPE)
+    bs_type = models.CharField('BS Type', max_length=40, null=True, blank=True)
     latitude = models.FloatField('Latitude', null=True, blank=True)
     longitude = models.FloatField('Longitude', null=True, blank=True)
     infra_provider = models.CharField('Infra Provider', max_length=100, null=True, blank=True)
@@ -107,14 +88,11 @@ class BaseStation(models.Model):
     gps_type = models.CharField('GPS Type', max_length=100, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
+    def __unicode__(self):
+        return self.bs_site_name
 
 # gis sector model
 class Sector(models.Model):
-    MRC = (
-        ('', 'Select....'),
-        ('yes', 'Yes'),
-        ('no', 'No')
-    )
     sector_id = models.CharField('Sector ID', max_length=250, null=True, blank=False)
     name = models.CharField('Sector Name', max_length=250)
     base_station = models.ForeignKey(BaseStation, related_name='sector')
@@ -123,13 +101,15 @@ class Sector(models.Model):
     odu = models.ForeignKey(Device, max_length=250, null=True, blank=True, related_name='sector_odu')
     odu_port = models.IntegerField('ODU Port', null=True, blank=True)
     antenna = models.ForeignKey(Antenna, null=True, blank=True, related_name='sector')
-    mrc = models.CharField('MRC', max_length=4, null=True, blank=True, choices=MRC)
+    mrc = models.CharField('MRC', max_length=4, null=True, blank=True)
     tx_power = models.IntegerField('TX Power', null=True, blank=True)
     frequency = models.IntegerField('Frequency', null=True, blank=True)
     frame_length = models.IntegerField('Frame Length', null=True, blank=True)
     cell_radius = models.IntegerField('Cell Radius', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
+    def __unicode__(self):
+        return self.name
 
 # gis customer model
 class Customer(models.Model):
@@ -139,14 +119,11 @@ class Customer(models.Model):
     address = models.CharField('Address', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
+    def __unicode__(self):
+        return self.name
 
 # gis sub-station
 class SubStation(models.Model):
-    ETHERNET_EXTENDER = (
-        ('', 'Select....'),
-        ('yes', 'Yes'),
-        ('no', 'No')
-    )
     name = models.CharField('Name', max_length=250)
     ip = models.IPAddressField('IP Address')
     mac = models.CharField('MAC Address', max_length=250)
@@ -161,6 +138,8 @@ class SubStation(models.Model):
     address = models.CharField('Address', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
+    def __unicode__(self):
+        return self.name
 
 # gis circuit model
 class Circuit(models.Model):
@@ -171,3 +150,6 @@ class Circuit(models.Model):
     sub_station = models.ForeignKey(SubStation)
     date_of_acceptance = models.DateTimeField('Date of Acceptance', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
+
+    def __unicode__(self):
+        return self.name

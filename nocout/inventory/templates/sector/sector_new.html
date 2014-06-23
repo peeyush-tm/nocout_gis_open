@@ -2,11 +2,11 @@
 {% load staticfiles %}
 {% block breadcrumb_title %}
     <li>Inventory</li>
-    <li>Device Technology</li>
-    <li>Edit</li>
+    <li>Sector</li>
+    <li>New</li>
 {% endblock %}
-{% block content_title %}Edit Device Technology{% endblock %}
-{% block content_description %}Edit device technology{% endblock %}
+{% block content_title %}Add Sector{% endblock %}
+{% block content_description %}Add sector{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
@@ -14,11 +14,11 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> DEVICE TECHNOLOGY : {{ object.name }}</h4>
+                            <h4><i class="fa fa-bars"></i> ADD SECTOR</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-6"><br />
-                                    <form action="" method="post" class="form-horizontal"
+                                    <form action="/sector/new/" method="post" class="form-horizontal"
                                           role="form">{% csrf_token %}
                                         <div class="form-group">
                                             {% for field in form %}
@@ -33,9 +33,13 @@
                                         </div>
                                         <div class="form-group">
                                             <div class="col-sm-offset-5 col-sm-7">
-                                                <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
-                                                &nbsp;
-                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/technology/')"><i class="fa fa-times"></i> Cancel</button>
+                                            <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i> Create</button>
+                                            &nbsp;
+                                            <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i> Reset
+                                            </button>
+                                            &nbsp;
+                                            <button type="reset" class="btn btn-danger" onclick="window.location.replace('/sector/')"><i class="fa fa-times"></i> Cancel
+                                            </button>
                                             </div>
                                         </div>
                                     </form>
