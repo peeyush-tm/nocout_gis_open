@@ -8,19 +8,18 @@ from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from device.models import Device, Inventory, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue, DeviceTechnology, \
+from device.models import Device, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue, DeviceTechnology, \
     TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType
-from device_group.models import DeviceGroup
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
     DeviceVendorForm, DeviceModelForm, DeviceTypeForm
-from nocout.utils.util import DictDiffer, Logged_In_User_Devices
+from nocout.utils.util import DictDiffer
 from django.http.response import HttpResponseRedirect
+from organization.models import Organization
 from service.models import Service
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.conf import settings #Importing settings for logger
 from site_instance.models import SiteInstance
-from user_group.models import UserGroup
 
 if settings.DEBUG:
     import logging
@@ -38,12 +37,15 @@ class DeviceList(ListView):
         datatable_headers = [
             {'mData':'device_name',         'sTitle' : 'Device Name',   'sWidth':'null',},
             {'mData':'site_instance__name', 'sTitle' : 'Site Instance', 'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'device_group__name',  'sTitle' : 'Device Group',  'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'organization__name',  'sTitle' : 'Organization',  'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'ip_address',          'sTitle' : 'IP Address',    'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'city',                'sTitle' : 'City',          'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'state',               'sTitle' : 'State',         'sWidth':'10%' ,'sClass':'hidden-xs'},
-            {'mData':'actions',             'sTitle' : 'Actions',       'sWidth':'5%' ,}
-            ,]
+            {'mData':'state',               'sTitle' : 'State',         'sWidth':'10%' ,'sClass':'hidden-xs'},]
+
+        #if the user role is Admin then the action column will appear on the datatable
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%' ,})
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -59,8 +61,8 @@ def create_device_tree(request):
 
 class DeviceListingTable(BaseDatatableView):
     model = Device
-    columns = ['device_name', 'site_instance__name', 'device_group__name', 'ip_address', 'city', 'state']
-    order_columns = ['device_name', 'site_instance__name', 'device_group__name', 'ip_address', 'city', 'state']
+    columns = ['device_name', 'site_instance__name', 'organization__name', 'ip_address', 'city', 'state']
+    order_columns = ['device_name', 'site_instance__name', 'organization__name', 'ip_address', 'city', 'state']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -91,7 +93,8 @@ class DeviceListingTable(BaseDatatableView):
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        return Logged_In_User_Devices(self.request, self.columns+['id']).logged_in_user_devices_query()
+        organization_descendants_ids= self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True)
+        return Device.objects.filter(organization__in = organization_descendants_ids, is_deleted=0).values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         if qs:
@@ -201,6 +204,7 @@ class DeviceCreate(CreateView):
         device.latitude = form.cleaned_data['latitude']
         device.longitude = form.cleaned_data['longitude']
         device.description = form.cleaned_data['description']
+        device.organization_id= form.cleaned_data['organization'].id
         device.save()
 
         # saving site_instance --> FK Relation
@@ -246,13 +250,6 @@ class DeviceCreate(CreateView):
                 dtfv.save()
             except:
                 pass
-
-        # saving device_group --> M2M Relation (Model: Inventory)
-        for dg in form.cleaned_data['device_group']:
-            inventory = Inventory()
-            inventory.device = device
-            inventory.device_group = dg
-            inventory.save()
 
         action.send( self.request.user, verb='Created', action_object=device )
         return HttpResponseRedirect( DeviceCreate.success_url )
@@ -311,6 +308,7 @@ class DeviceUpdate(UpdateView):
         self.object.latitude = form.cleaned_data['latitude']
         self.object.longitude = form.cleaned_data['longitude']
         self.object.description = form.cleaned_data['description']
+        self.object.organization=form.cleaned_data['organization']
         self.object.save()
 
         # saving site_instance --> FK Relation
@@ -320,7 +318,7 @@ class DeviceUpdate(UpdateView):
         except Exception as site_exception:
             if settings.DEBUG:
                 logger.critical("Instance(site) information missing : %s" % (site_exception),
-                                exc_info=True, 
+                                exc_info=True,
                                 extra={'stack': True, 'request': self.request}
                                 )
             pass
@@ -342,7 +340,7 @@ class DeviceUpdate(UpdateView):
         except Exception as device_parent_exception:
             if settings.DEBUG:
                 logger.critical("Device Parent information missing : %s" % (device_parent_exception),
-                                exc_info=True, 
+                                exc_info=True,
                                 extra={'stack': True, 'request': self.request}
                                 )
             pass
@@ -386,26 +384,15 @@ class DeviceUpdate(UpdateView):
             except:
                 pass
 
-        # delete old relationship exist in inventory
-        Inventory.objects.filter(device=self.object).delete()
-
-        # saving device_group --> M2M Relation (Model: Inventory)
-        for dg in form.cleaned_data['device_group']:
-            inventory = Inventory()
-            inventory.device = self.object
-            inventory.device_group = dg
-            inventory.save()
-
-        initial_field_dict = { field : [ form.initial[field] ] if field in ('site_instance','parent','device_group') and
-                               form.initial[field] else form.initial[field] for field in form.initial.keys() }
+        initial_field_dict = form.initial
         def cleaned_data_field():
             cleaned_data_field_dict={}
             for field in form.cleaned_data.keys():
-                if field in ('device_group', 'service'):
+                if field in ('service'):
                     cleaned_data_field_dict[field]=map(lambda obj: obj.pk, form.cleaned_data[field])
-                elif field in ('parent', 'site_instance'):
-                    cleaned_data_field_dict[field]=[form.cleaned_data[field].pk] if form.cleaned_data[field] else None
-                elif field in ('device_model', 'device_type', 'device_vendor', 'device_technology'):
+                elif field in ('parent', 'site_instance','organization'):
+                    cleaned_data_field_dict[field]=form.cleaned_data[field].pk if form.cleaned_data[field] else None
+                elif field in ('device_model', 'device_type', 'device_vendor', 'device_technology') and form.cleaned_data[field]:
                     cleaned_data_field_dict[field]=int(form.cleaned_data[field])
                 else:
                     cleaned_data_field_dict[field]=form.cleaned_data[field]
@@ -415,15 +402,39 @@ class DeviceUpdate(UpdateView):
         cleaned_data_field_dict=cleaned_data_field()
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            initial_field_dict['parent'] = Device.objects.get(pk=initial_field_dict['parent'][0]).device_name if initial_field_dict['parent'] else str(None)
-            initial_field_dict['site_instance'] = SiteInstance.objects.get(pk=initial_field_dict['site_instance'][0]).name if initial_field_dict['site_instance'] else str(None)
-            initial_field_dict['device_group'] = DeviceGroup.objects.get(pk=initial_field_dict['device_group'][0]).name
-            initial_field_dict['service'] = ', '.join([Service.objects.get(pk=service).service_name for service in initial_field_dict['service']])
+            initial_field_dict['parent'] = Device.objects.get(pk=initial_field_dict['parent']).device_name \
+                if initial_field_dict['parent'] else str(None)
+            initial_field_dict['organization'] = Organization.objects.get(pk=initial_field_dict['organization']).name \
+                if initial_field_dict['organization'] else str(None)
+            initial_field_dict['site_instance'] = SiteInstance.objects.get(pk=initial_field_dict['site_instance']).name \
+                if initial_field_dict['site_instance'] else str(None)
+            initial_field_dict['service'] = ', '.join([Service.objects.get(pk=service).service_name for service in initial_field_dict['service']])\
+                if initial_field_dict['service'] else str(None)
+            initial_field_dict['device_model'] = DeviceModel.objects.get(pk=initial_field_dict['device_model']).name \
+                if initial_field_dict['device_model'] else str(None)
+            initial_field_dict['device_type'] = DeviceType.objects.get(pk=initial_field_dict['device_type']).name \
+                if initial_field_dict['device_type'] else str(None)
+            initial_field_dict['device_vendor'] = DeviceVendor.objects.get(pk=initial_field_dict['device_vendor']).name \
+                if initial_field_dict['device_vendor'] else str(None)
+            initial_field_dict['device_technology'] = DeviceTechnology.objects.get(pk=initial_field_dict['device_technology']).name \
+                if initial_field_dict['device_technology'] else str(None)
 
-            cleaned_data_field_dict['parent'] = Device.objects.get(pk=cleaned_data_field_dict['parent'][0]).device_name if cleaned_data_field_dict['parent'] else str(None)
-            cleaned_data_field_dict['site_instance'] = SiteInstance.objects.get(pk=cleaned_data_field_dict['site_instance'][0]).name if cleaned_data_field_dict['site_instance'] else str(None)
-            cleaned_data_field_dict['device_group'] = DeviceGroup.objects.get(pk=cleaned_data_field_dict['device_group'][0]).name
-            cleaned_data_field_dict['service'] = ', '.join([Service.objects.get(pk=service).service_name for service in cleaned_data_field_dict['service']])
+            cleaned_data_field_dict['parent'] = Device.objects.get(pk=cleaned_data_field_dict['parent']).device_name \
+                if cleaned_data_field_dict['parent'] else str(None)
+            cleaned_data_field_dict['organization'] = Organization.objects.get(pk=cleaned_data_field_dict['organization']).name \
+                if cleaned_data_field_dict['organization'] else str(None)
+            cleaned_data_field_dict['site_instance'] = SiteInstance.objects.get(pk=cleaned_data_field_dict['site_instance']).name \
+                if cleaned_data_field_dict['site_instance'] else str(None)
+            cleaned_data_field_dict['service'] = ', '.join([Service.objects.get(pk=service).service_name for service in cleaned_data_field_dict['service'] \
+                if cleaned_data_field_dict['service']])
+            cleaned_data_field_dict['device_model'] = DeviceModel.objects.get(pk=cleaned_data_field_dict['device_model']).name \
+                if cleaned_data_field_dict['device_model'] else str(None)
+            cleaned_data_field_dict['device_type'] = DeviceType.objects.get(pk=cleaned_data_field_dict['device_type']).name \
+                if cleaned_data_field_dict['device_type'] else str(None)
+            cleaned_data_field_dict['device_vendor'] = DeviceVendor.objects.get(pk=cleaned_data_field_dict['device_vendor']).name \
+                if cleaned_data_field_dict['device_vendor'] else str(None)
+            cleaned_data_field_dict['device_technology'] = DeviceTechnology.objects.get(pk=cleaned_data_field_dict['device_technology']).name \
+                if cleaned_data_field_dict['device_technology'] else str(None)
 
             verb_string = 'Changed values of Device %s from initial values '%(self.object.device_name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
                                for k in changed_fields_dict])+\
@@ -433,7 +444,6 @@ class DeviceUpdate(UpdateView):
                 verb_string=verb_string[:250] + '...'
 
             action.send(self.request.user, verb=verb_string)
-
         return HttpResponseRedirect(DeviceCreate.success_url)
 
 
@@ -535,9 +545,6 @@ class DeviceTypeFieldsListingTable(BaseDatatableView):
                'aaData': aaData
                }
         return ret
-
-
-
 
 class DeviceTypeFieldsDetail(DetailView):
     model = DeviceTypeFields

@@ -1,7 +1,7 @@
 import json
 from dajaxice.decorators import dajaxice_register
 from models import UserGroup
-from user_profile.models import Department
+# from user_profile.models import Department
 from user_group.models import Organization
 
 
@@ -121,15 +121,15 @@ def user_group_soft_delete(request, user_group_id, new_parent_id):
         print "No child user group exists."
 
     # replace user group which we are deleting with default user group in 'department'
-    try:
-        print "user_group", user_group
-        department = Department.objects.filter(user_group=user_group)
-        print "department", department
-        for dept in department:
-            dept.user_group = default_user_group
-            dept.save()
-    except:
-        print "User group is not present in department."
+    # try:
+    #     print "user_group", user_group
+    #     department = Department.objects.filter(user_group=user_group)
+    #     print "department", department
+    #     for dept in department:
+    #         dept.user_group = default_user_group
+    #         dept.save()
+    # except:
+    #     print "User group is not present in department."
 
     # replace user group which we are deleting with default user group in 'organization'
     try:

@@ -1,7 +1,7 @@
 import json
 from dajaxice.decorators import dajaxice_register
 from models import DeviceGroup
-from device.models import Inventory
+# from device.models import Inventory
 from user_group.models import Organization
 
 
@@ -130,13 +130,13 @@ def device_group_soft_delete(request, device_group_id, new_parent_id):
         print "No child device group exists."
 
     # replace device group which we are deleting with default device group in 'inventory'
-    try:
-        inventory = Inventory.objects.filter(device_group=device_group)
-        for inv in inventory:
-            inv.device_group = default_device_group
-            inv.save()
-    except:
-        print "Device group is not present in inventory."
+    # try:
+    #     inventory = Inventory.objects.filter(device_group=device_group)
+    #     for inv in inventory:
+    #         inv.device_group = default_device_group
+    #         inv.save()
+    # except:
+    #     print "Device group is not present in inventory."
 
     # replace device group which we are deleting with default device group in 'organization'
     try:

@@ -2,17 +2,18 @@ import json
 from actstream import action
 from django.contrib.auth.decorators import permission_required
 from django.db.models.query import ValuesQuerySet
-from django.http.response import HttpResponseRedirect
+from django.http.response import HttpResponseRedirect, HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
+from device.models import Device
 from device_group.models import DeviceGroup
 from forms import DeviceGroupForm
 from django.db.models import Q
 from nocout.utils.util import DictDiffer
-from user_group.models import UserGroup
+from organization.models import Organization
 
 
 class DeviceGroupList(ListView):
@@ -24,18 +25,22 @@ class DeviceGroupList(ListView):
         datatable_headers = [
             {'mData':'name',                   'sTitle' : 'Name',              'sWidth':'null',},
             {'mData':'alias',                  'sTitle' : 'Alias',             'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'parent__name',           'sTitle' : 'Parent Name',       'sWidth':'null',},
+            {'mData':'parent__name',           'sTitle' : 'Parent ',           'sWidth':'null',},
+            {'mData':'organization__name',     'sTitle' : 'Organization',      'sWidth':'null',},
             {'mData':'location',               'sTitle' : 'Location',          'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'address',                'sTitle' : 'Address',           'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',                'sTitle' : 'Actions',           'sWidth':'5%' ,}
-            ,]
+            {'mData':'address',                'sTitle' : 'Address',           'sWidth':'null','sClass':'hidden-xs'},]
+
+        #if the user role is Admin then the action column will appear on the datatable
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%' ,})
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class DeviceGroupListingTable(BaseDatatableView):
     model = DeviceGroup
-    columns = ['name', 'alias', 'parent__name', 'location','address']
-    order_columns = ['name', 'alias', 'parent__name', 'location','address']
+    columns = ['name', 'alias', 'parent__name','organization__name', 'location','address']
+    order_columns = ['name', 'alias', 'parent__name','organization__name', 'location','address']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -57,8 +62,8 @@ class DeviceGroupListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        user_group = UserGroup.objects.get( pk__in = self.request.user.userprofile.user_group.values_list('id', flat=True))
-        return DeviceGroup.objects.filter( pk__in = user_group.device_group.values_list('id', flat=True)).values(*self.columns+['id'])
+        organization_descendants_ids= self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True)
+        return DeviceGroup.objects.filter(organization__in = organization_descendants_ids, is_deleted=0).values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         if qs:
@@ -97,7 +102,6 @@ class DeviceGroupListingTable(BaseDatatableView):
                }
         return ret
 
-
 class DeviceGroupDetail(DetailView):
     model = DeviceGroup
     template_name = 'device_group/dg_detail.html'
@@ -131,17 +135,33 @@ class DeviceGroupUpdate(UpdateView):
 
     def form_valid( self, form ):
 
-        initial_field_dict = { field : [ form.initial[field] ]  if field in ('parent') else form.initial[field]
-                               for field in form.initial.keys() }
+        initial_field_dict = form.initial
 
-        cleaned_data_field_dict = { field : [form.cleaned_data[field].pk]
-        if field in ('parent') and  form.cleaned_data[field] else form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+        cleaned_data_field_dict={}
+        for field in form.cleaned_data.keys():
+            if field =='devices':
+                cleaned_data_field_dict[field]=map(lambda obj: obj.pk, form.cleaned_data[field])
+            elif field in ('parent','organization'):
+                cleaned_data_field_dict[field]= form.cleaned_data[field].pk if form.cleaned_data[field] else None
+            else:
+                cleaned_data_field_dict[field]= form.cleaned_data[field]
 
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
 
         if changed_fields_dict:
-            initial_field_dict['parent'] = DeviceGroup.objects.get(pk=initial_field_dict['parent'][0]).name if initial_field_dict['parent'][0] else str(None)
-            cleaned_data_field_dict['parent']=DeviceGroup.objects.get(pk=cleaned_data_field_dict['parent'][0]).name if cleaned_data_field_dict['parent'] else str(None)
+            initial_field_dict['parent'] = DeviceGroup.objects.get(pk=initial_field_dict['parent']).name \
+                if initial_field_dict['parent'] else str(None)
+            initial_field_dict['organization'] = Organization.objects.get(pk=initial_field_dict['organization']).name \
+                if initial_field_dict['organization'] else str(None)
+            initial_field_dict['devices'] = ', '.join([Device.objects.get(pk=device).device_name for device in initial_field_dict['devices']])\
+                if initial_field_dict['devices'] else str(None)
+
+            cleaned_data_field_dict['parent']= DeviceGroup.objects.get(pk=cleaned_data_field_dict['parent']).name \
+                if cleaned_data_field_dict['parent'] else str(None)
+            cleaned_data_field_dict['organization']= Organization.objects.get(pk=cleaned_data_field_dict['organization']).name \
+                if cleaned_data_field_dict['organization'] else str(None)
+            cleaned_data_field_dict['devices'] = ', '.join([Device.objects.get(pk=device).device_name for device in cleaned_data_field_dict['devices']])\
+                if cleaned_data_field_dict['devices'] else str(None)
 
             verb_string = 'Changed values of Device Group: %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
                                for k in changed_fields_dict])+\
@@ -170,6 +190,15 @@ class DeviceGroupDelete(DeleteView):
         action.send(request.user, verb='deleting device group: %s'%(self.object.name))
         super(DeviceGroupDelete, self).delete(self, request, *args, **kwargs)
 
+def device_group_devices_wrt_organization(request):
+    organization_id= request.GET['organization']
+    organization_descendants_ids= Organization.objects.get(id= organization_id).get_descendants(include_self=True).values_list('id', flat=True)
+    devices=Device.objects.filter(organization__in = organization_descendants_ids, is_deleted=0).values_list('id','device_name')
+    response_string=''
+    for index in range(len(devices)):
+        response_string+='<option value={0}>{1}</option>'.format(*map(str, devices[index]))
+
+    return HttpResponse(json.dumps({'response': response_string }), mimetype='application/json')
 
 
 

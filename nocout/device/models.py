@@ -2,7 +2,7 @@ from django.db import models
 from organization.models import Organization
 from site_instance.models import SiteInstance
 from service.models import Service
-from mptt.models import MPTTModel, TreeForeignKey
+from mptt.models import MPTTModel
 
 
 #************************************ Device Inventory**************************************

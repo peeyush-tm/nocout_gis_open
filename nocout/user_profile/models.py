@@ -6,13 +6,6 @@ from organization.models import Organization
 
 # user profile class
 class UserProfile(MPTTModel, User):
-    admin = 'Admin'
-    operator = 'Operator'
-    viewer = 'Viewer'
-    ROLES = (
-        (operator, 'Operator'),
-        (viewer, 'Viewer')
-    )
     parent = TreeForeignKey('self', null=True, blank=True, related_name='user_children')
     role = models.ManyToManyField('Roles', null=True, blank=True)
     organization = models.ForeignKey(Organization)
@@ -25,7 +18,6 @@ class UserProfile(MPTTModel, User):
 
     # Use UserManager to get the create_user method, etc.
     objects = UserManager()
-
 
 # user roles class
 class Roles(models.Model):
