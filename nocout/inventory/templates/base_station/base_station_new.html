@@ -2,11 +2,11 @@
 {% load staticfiles %}
 {% block breadcrumb_title %}
     <li>Inventory</li>
-    <li>Device Technology</li>
+    <li>Base Station</li>
     <li>New</li>
 {% endblock %}
-{% block content_title %}Add Antenna{% endblock %}
-{% block content_description %}Add antenna{% endblock %}
+{% block content_title %}Add Base Station{% endblock %}
+{% block content_description %}Add base station{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
@@ -14,11 +14,11 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> ADD ANTENNA</h4>
+                            <h4><i class="fa fa-bars"></i> ADD BASE STATION</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-6"><br />
-                                    <form action="/antenna/new/" method="post" class="form-horizontal"
+                                    <form action="/base_station/new/" method="post" class="form-horizontal"
                                           role="form">{% csrf_token %}
                                         <div class="form-group">
                                             {% for field in form %}
@@ -38,7 +38,7 @@
                                             <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i> Reset
                                             </button>
                                             &nbsp;
-                                            <button type="reset" class="btn btn-danger" onclick="window.location.replace('/antenna/')"><i class="fa fa-times"></i> Cancel
+                                            <button type="reset" class="btn btn-danger" onclick="window.location.replace('/base_station/')"><i class="fa fa-times"></i> Cancel
                                             </button>
                                             </div>
                                         </div>

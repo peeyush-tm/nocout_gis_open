@@ -189,6 +189,3 @@ class DeviceTypeFieldsValue(models.Model):
     device_type_field = models.ForeignKey(DeviceTypeFields)
     field_value = models.CharField(max_length=250)
     device_id = models.IntegerField()
-
-
-#************************************ GIS Inventory**************************************

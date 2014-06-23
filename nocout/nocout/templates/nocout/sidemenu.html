@@ -153,7 +153,7 @@
                     <i class="fa fa-dropbox"></i> <span class="menu-text">Inventory</span>
                     <span class="arrow"></span>
                 </a>
-                <ul class="sub">
+                <ul class="has-sub-sub">
                     <li><a class="" href="/device/"><span class="sub-menu-text">Devices</span></a></li>
                     <li><a class="" href="/device_group/"><span class="sub-menu-text">Device Group</span></a></li>
                     <li><a class="" href="/inventory/inventorylist"><span class="sub-menu-text">Inventory List</span></a></li>
@@ -165,15 +165,34 @@
                             <li><a class="" href="/vendor/"><span class="sub-menu-text">Device Vendors</span></a></li>
                             <li><a class="" href="/model/"><span class="sub-menu-text">Device Models</span></a></li>
                             <li><a class="" href="/type/"><span class="sub-menu-text">Device Types</span></a></li>
+                            <li><a class="" href="/machine/"><span class="sub-menu-text">Machine</span></a></li>
                             <li><a class="" href="/site/"><span class="sub-menu-text">Site Instance</span></a></li>
                             <li><a class="" href="javascript:;"><span class="sub-menu-text">Discovery</span></a></li>
                             <li><a class="" href="/service/"><span class="sub-menu-text">Services</span></a></li>
+                            <li><a class="" href="/service_data_source/"><span class="sub-menu-text">Service Data Sources</span></a></li>
                             <li><a class="" href="/service_parameter/"><span class="sub-menu-text">Service Parameters</span></a></li>
                             <li><a class="" href="/command/"><span class="sub-menu-text">Commands</span></a></li>
-                        {% endif %}
-                    {% endfor %}
                 </ul>
             </li>
+            <li class="has-sub-sub">
+                <a class="" href="javascript:;">
+                    <span class="sub-menu-text">GIS Inventory</span>
+                    <span class="arrow"></span>
+                </a>
+                <ul class="sub-sub">
+                    <li><a class="" href="/antenna/"><span class="sub-menu-text">Antenna</span></a></li>
+                    <li><a class="" href="/backhaul/"><span class="sub-menu-text">Backhaul</span></a></li>
+                    <li><a class="" href="/base_station/"><span class="sub-menu-text">Base Station</span></a></li>
+                    <li><a class="" href="/sector/"><span class="sub-menu-text">Sector</span></a></li>
+                    <li><a class="" href="/sub_station/"><span class="sub-menu-text">Sub Station</span></a></li>
+                    <li><a class="" href="/customer/"><span class="sub-menu-text">Customer</span></a></li>
+                    <li><a class="" href="/circuit/"><span class="sub-menu-text">Circuit</span></a></li>
+                </ul>
+            </li>
+            {% endif %}
+            {% endfor %}
+            </ul>
+
             <li class="has-sub">
                 <a href="javascript:;" class="">
                     <i class="fa fa-user"></i> <span class="menu-text">User Management</span>

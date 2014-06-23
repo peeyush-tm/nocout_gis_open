@@ -27,8 +27,7 @@ class OrganizationList(ListView):
             {'mData':'city',                'sTitle' : 'City',          'sWidth':'null',  },
             {'mData':'state',               'sTitle' : 'State',         'sWidth':'null',  },
             {'mData':'country',             'sTitle' : 'Country',       'sWidth':'null',  },
-            {'mData':'parent',              'sTitle' : 'Parent',       'sWidth':'null',   },
-            ]
+            {'mData':'parent__name',        'sTitle' : 'Parent',  'sWidth':'null',},]
 
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%'})
@@ -38,8 +37,8 @@ class OrganizationList(ListView):
 
 class OrganizationListingTable(BaseDatatableView):
     model = Organization
-    columns = ['name', 'description','city','state','country', 'parent',]
-    order_columns = ['name', 'description', 'state', 'country', 'parent']
+    columns = ['name', 'description','city','state','country', 'parent__name',]
+    order_columns = ['name', 'description', 'state', 'country', 'parent__name']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
