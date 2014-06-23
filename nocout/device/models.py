@@ -1,8 +1,8 @@
 from django.db import models
-from device_group.models import DeviceGroup
+from organization.models import Organization
 from site_instance.models import SiteInstance
 from service.models import Service
-from mptt.models import MPTTModel, TreeForeignKey
+from mptt.models import MPTTModel
 
 
 #************************************ Device Inventory**************************************
@@ -127,7 +127,7 @@ class Device(MPTTModel, models.Model):
     device_alias = models.CharField('Device Alias', max_length=200)
     site_instance = models.ForeignKey(SiteInstance, null=True, blank=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='device_children')
-    device_group = models.ManyToManyField(DeviceGroup, through='Inventory', blank=True, null=True)
+    organization = models.ForeignKey(Organization)
     device_technology = models.IntegerField('Device Technology', null=True, blank=True)
     device_vendor = models.IntegerField('Device Vendor', null=True, blank=True)
     device_model = models.IntegerField('Device Model', null=True, blank=True)
@@ -174,12 +174,6 @@ class TechnologyVendor(models.Model):
     vendor = models.ForeignKey(DeviceVendor)
 
 
-# inventory mapper table
-class Inventory(models.Model):
-    device = models.ForeignKey(Device)
-    device_group = models.ForeignKey(DeviceGroup)
-
-
 # table for extra fields of device (depends upon device type)
 class DeviceTypeFields(models.Model):
     device_type = models.ForeignKey(DeviceType, null=True, blank=True)
@@ -195,6 +189,3 @@ class DeviceTypeFieldsValue(models.Model):
     device_type_field = models.ForeignKey(DeviceTypeFields)
     field_value = models.CharField(max_length=250)
     device_id = models.IntegerField()
-
-
-#************************************ GIS Inventory**************************************

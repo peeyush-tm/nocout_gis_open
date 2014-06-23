@@ -9,6 +9,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from models import Service, ServiceParameters, ServiceDataSource
 from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm
 from nocout.utils.util import DictDiffer
+from django.db.models import Q
 
 
 #**************************************** Service *********************************************
@@ -19,19 +20,22 @@ class ServiceList(ListView):
     def get_context_data(self, **kwargs):
         context=super(ServiceList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'service_name',     'sTitle' : 'Service',       'sWidth':'null',},
-            {'mData':'alias',            'sTitle' : 'Alias',         'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'command',          'sTitle' : 'Command',       'sWidth':'null',},
-            {'mData':'description',      'sTitle' : 'Description',   'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',          'sTitle' : 'Actions',       'sWidth':'10%' ,}
-            ]
+            {'mData':'service_name',             'sTitle' : 'Service',       'sWidth':'null',},
+            {'mData':'alias',                    'sTitle' : 'Alias',         'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'command__command_name',    'sTitle' : 'Command',       'sWidth':'null',},
+            {'mData':'description',              'sTitle' : 'Description',   'sWidth':'null','sClass':'hidden-xs'},]
+
+        #if the user role is Admin then the action column will appear on the datatable
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%' ,})
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class ServiceListingTable(BaseDatatableView):
-    model = ServiceList
-    columns = ['service_name', 'alias', 'command', 'description']
-    order_columns = ['service_name', 'alias', 'command', 'description']
+    model = Service
+    columns = ['service_name', 'alias', 'command__command_name', 'description']
+    order_columns = ['service_name', 'alias', 'command__command_name', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -44,8 +48,6 @@ class ServiceListingTable(BaseDatatableView):
 
             exec_query += " | ".join(query)
             exec_query += ").values(*"+str(self.columns+['id'])+")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
 
         return qs

@@ -1,14 +1,32 @@
 from django import forms
-from user_profile.models import UserGroup
-from nocout.widgets import MultipleToSingleSelectionWidget
+
+from organization.models import Organization
+from user_group.models import UserGroup
+from user_profile.models import UserProfile
 
 
 class UserGroupForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         initial = kwargs.setdefault('initial',{})
-        initial['device_group'] = kwargs['instance'].device_group.values_list('pk', flat=True)[0] if kwargs['instance'] else []
+        if kwargs['instance']:
+            initial['organization']= kwargs['instance'].organization.id
+        elif Organization.objects.all():
+            initial['organization']=Organization.objects.all()[0].id
+        else:
+            initial['organization']=None
+
         super(UserGroupForm, self).__init__(*args, **kwargs)
+        organization_id=None
+        if kwargs['instance']:
+            self.fields['name'].widget.attrs['readonly'] = True
+            organization_id=initial['organization']
+        elif Organization.objects.all():
+            organization_id=Organization.objects.all()[0].id
+        if organization_id:
+            organization_descendants_ids= Organization.objects.get(id= organization_id).get_descendants(include_self=True).values_list('id', flat=True)
+            self.fields['users'].queryset= UserProfile.objects.filter( organization__in = organization_descendants_ids, is_deleted=0)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 field.widget.attrs['class'] += ' form-control'
@@ -17,8 +35,4 @@ class UserGroupForm(forms.ModelForm):
 
     class Meta:
         model = UserGroup
-        fields = ('name', 'alias', 'parent', 'device_group', 'location', 'address')
-
-        widgets = {
-            'device_group': MultipleToSingleSelectionWidget,
-        }
+        fields = ('name', 'alias', 'parent', 'location', 'address', 'organization','users',)

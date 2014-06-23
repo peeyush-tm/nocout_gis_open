@@ -7,8 +7,11 @@
 {% block content_title %}Users Management{% endblock %}
 {% block content_description %}List of users{% endblock %}
 {% block content %}
-    <p><a href="/user/new"><i class="fa fa-plus">&nbsp;</i> Create User</a></p>
-
+    {% for group in user.groups.all %}
+        {% if group.name == 'group_admin' %}
+            <p><a href="/user/new"><i class="fa fa-plus">&nbsp;</i> Create User</a></p>
+        {% endif %}
+    {% endfor %}
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i> USER LISTING</h4>

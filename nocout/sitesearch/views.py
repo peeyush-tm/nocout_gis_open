@@ -8,7 +8,7 @@ from django.views.generic.base import View
 from django.http import HttpResponse
 from django.core.exceptions import ObjectDoesNotExist
 from device.models import Device, DeviceType, DeviceVendor,\
-    DeviceTechnology, DeviceModel, Inventory
+    DeviceTechnology
 from device_group.models import DeviceGroup
 
 class DeviceGetFilters(View):

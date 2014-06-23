@@ -1,12 +1,12 @@
-from django.conf.urls import patterns, url
-from organization import views
-
+from django.conf.urls import patterns, url, include
+from . import views
 urlpatterns = patterns('',
-    url(r'^$', views.OrganizationList.as_view(), name='organization_list'),
-    url(r'^(?P<pk>\d+)$', views.OrganizationDetail.as_view(), name='organization_detail'),
-    url(r'^new/$', views.OrganizationCreate.as_view(), name='organization_new'),
-    url(r'^edit/(?P<pk>\d+)$', views.OrganizationUpdate.as_view(), name='organization_edit'),
-    url(r'^delete/(?P<pk>\d+)$', views.OrganizationDelete.as_view(), name='organization_delete'),
-    url(r'organizationlistingtable/', views.OrganizationListingTable.as_view(), name= 'OrganizationListingTable')
+    url(r'^$', 'inventory.views.inventory', name='inventory_home'),
+    url(r'^new/',views.InventoryCreate.as_view(), name='InventoryCreate'),
+    url(r'^edit/(?P<pk>\d+)$', views.InventoryUpdate.as_view(), name='InvertoryUpdate'),
+    url(r'^antenna/', include('inventory.antenna_urls')),
+    url(r'^inventorylist/',views.InventoryListing.as_view(), name='InventoryList'),
+    url(r'^inventorylistingtable/',views.InventoryListingTable.as_view(), name='InventoryListingTable'),
+    url(r'^inventory_details_wrt_organization/', views.inventory_details_wrt_organization, name='InventoryDetailWRTOrganization'),
 
-    )
+)

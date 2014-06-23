@@ -1,6 +1,21 @@
+import datetime
 from django.db import models
+from user_group.models import UserGroup
 from device.models import Device
+from device_group.models import DeviceGroup
+from organization.models import Organization
 
+
+# inventory model --> mapper of user_group & device groups
+class Inventory(models.Model):
+    name = models.CharField('Name', max_length=200)
+    organization = models.ForeignKey(Organization)
+    user_group = models.ForeignKey(UserGroup)
+    device_groups = models.ManyToManyField(DeviceGroup, null=True, blank=True)
+    city = models.CharField('City', max_length=200, null=True, blank=True)
+    state = models.CharField('State', max_length=200, null=True, blank=True)
+    country = models.CharField('Country', max_length=200, null=True, blank=True)
+    description = models.TextField('Description', null=True, blank=True)
 
 # gis antenna model
 class Antenna(models.Model):

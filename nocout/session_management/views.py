@@ -22,11 +22,12 @@ class UserStatusList(ListView):
         datatable_headers = [
             {'mData': 'username', 'sTitle': 'Username', 'sWidth': 'null', },
             {'mData': 'full_name', 'sTitle': 'Full Name', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'user_group__name', 'sTitle': 'User Group', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             {'mData': 'role__role_name', 'sTitle': 'Role', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'logged_in_status', 'sTitle': 'Logged in', 'sWidth': 'null', },
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '8%', },
-        ]
+            {'mData': 'logged_in_status', 'sTitle': 'Logged in', 'sWidth': 'null', },]
+
+        #if the user role is Admin then the action column will appear on the datatable
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'8%' ,})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -34,8 +35,8 @@ class UserStatusList(ListView):
 
 class UserStatusTable(BaseDatatableView):
     model = UserProfile
-    columns = ['username', 'first_name', 'last_name', 'user_group__name', 'role__role_name', 'is_active']
-    order_columns = ['username', 'first_name', 'last_name', 'user_group__name', 'role__role_name', 'is_active']
+    columns = ['username', 'first_name', 'last_name', 'role__role_name', 'is_active']
+    order_columns = ['username', 'first_name', 'last_name', 'role__role_name', 'is_active']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)

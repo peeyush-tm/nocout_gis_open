@@ -1,6 +1,13 @@
 import datetime
 
 #Used for JsonDatetime Encoding #example# ::json.dumps( json_object, default=date_handler )
+from django.contrib.auth.models import User
+from device.models import Device
+from device_group.models import DeviceGroup
+from organization.models import Organization
+from user_group.models import UserGroup
+from user_profile.models import UserProfile
+
 date_handler = lambda obj: obj.strftime('%Y-%m-%d %H:%M:%S') if isinstance(obj, datetime.datetime) else None
 
 
@@ -25,3 +32,9 @@ class DictDiffer(object):
     def unchanged(self):
         return set(o for o in self.intersect if self.past_dict[o] == self.current_dict[o])
 
+
+project_group_role_dict_mapper={
+    'admin':'group_admin',
+    'operator':'group_operator',
+    'viewer':'group_viewer',
+}

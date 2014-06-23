@@ -49,5 +49,25 @@
     </div>
     {% block content_js %}
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+        <script>
+               $('#id_organization').change(function(){
+                    $.ajax({
+                        url: "device_group/device_group_devices_wrt_organization/",
+                        type: "GET",
+                        data: {'organization': $('#id_organization').val() },
+                        dataType: "json",
+                        success: function (data) {
+                             $('#id_devices').html(data.response)
+
+                        } // success ends
+                    });//ajax ends
+                });
+        </script>
+
+
+
+
+
+
     {% endblock %}
 {% endblock %}

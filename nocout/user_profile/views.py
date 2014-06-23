@@ -1,18 +1,21 @@
 import json
+from django.contrib.auth.models import Group
 from django.db.models.query import ValuesQuerySet
+from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, ModelFormMixin, BaseUpdateView
 from django.core.urlresolvers import reverse_lazy
 from nocout.utils.jquery_datatable_generation import Datatable_Generation
-from user_group.models import UserGroup
-from user_profile.models import UserProfile, Department, Roles
+from user_profile.models import UserProfile, Roles
+from organization.models import Organization
 from forms import UserForm
 from django.http.response import HttpResponseRedirect
 from django.contrib.auth.hashers import make_password
 from collections import OrderedDict
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from actstream import action
-from nocout.utils.util import DictDiffer
+from nocout.utils.util import DictDiffer, project_group_role_dict_mapper
+from django.contrib.auth.decorators import permission_required
 from django.db.models import Q
 
 
@@ -23,25 +26,29 @@ class UserList(ListView):
     def get_context_data(self, **kwargs):
         context=super(UserList, self).get_context_data(**kwargs)
         datatable_headers=[
-            {'mData':'username',         'sTitle' : 'Username',     'sWidth':'null',},
-            {'mData':'full_name',        'sTitle' : 'Full Name',    'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'email',            'sTitle' : 'Email',        'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'role__role_name',  'sTitle' : 'Role',         'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'user_group__name', 'sTitle' : 'User Group',   'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'manager_name',     'sTitle' : 'Manager',      'sWidth':'10%' ,'sClass':'hidden-xs'},
-            {'mData':'phone_number',     'sTitle' : 'Phone Number', 'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'last_login',       'sTitle' : 'Last Login',   'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',          'sTitle' : 'Actions',      'sWidth':'5%' ,},]
+            {'mData':'username',           'sTitle' : 'Username',     'sWidth':'null',},
+            {'mData':'full_name',          'sTitle' : 'Full Name',    'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'email',              'sTitle' : 'Email',        'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'role__role_name',    'sTitle' : 'Role',         'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'manager_name',       'sTitle' : 'Manager',      'sWidth':'10%' ,'sClass':'hidden-xs'},
+            {'mData':'organization__name', 'sTitle' : 'Organization', 'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'phone_number',       'sTitle' : 'Phone Number', 'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'last_login',         'sTitle' : 'Last Login',   'sWidth':'null','sClass':'hidden-xs'},
+            ]
+
+        #if the user role is Admin then the action column will appear on the datatable
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%' ,})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class UserListingTable(BaseDatatableView):
     model = UserProfile
-    columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'user_group__name', 'parent__first_name',
-               'parent__last_name', 'phone_number', 'last_login']
-    order_columns = ['username' , 'first_name', 'last_name', 'email', 'role__role_name', 'user_group__name', 'parent__first_name',
-                     'parent__last_name', 'phone_number', 'last_login']
+    columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
+               'parent__last_name', 'organization__name','phone_number', 'last_login']
+    order_columns = ['username' , 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
+                     'parent__last_name', 'organization__name', 'phone_number', 'last_login']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -57,13 +64,13 @@ class UserListingTable(BaseDatatableView):
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
-
         return qs
 
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return UserProfile.objects.filter(is_deleted=0).values(*self.columns+['id'])
+        organization_descendants_ids= self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True)
+        return UserProfile.objects.filter(organization__in = organization_descendants_ids, is_deleted=0).values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         if qs:
@@ -71,9 +78,11 @@ class UserListingTable(BaseDatatableView):
             sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
             OrderedDict({'dict_final_key':'manager_name', 'dict_key1':'parent__first_name', 'dict_key2':'parent__last_name'})]
             qs, qs_headers = Datatable_Generation( qs, sanity_dicts_list ).main()
-        for dct in qs:
-            dct.update(actions='<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                        <a href="#" onclick="Dajaxice.user_profile.user_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        #if the user role is Admin then the action column_values will appear on the datatable
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            for dct in qs:
+                dct.update(actions='<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                            <a href="#" onclick="Dajaxice.user_profile.user_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -107,10 +116,10 @@ class UserListingTable(BaseDatatableView):
 
 class UserArchivedListingTable(BaseDatatableView):
     model = UserProfile
-    columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'user_group__name', 'parent__first_name',
-               'parent__last_name', 'phone_number', 'last_login']
-    order_columns = ['username' , 'first_name', 'last_name', 'email', 'role__role_name', 'user_group__name', 'parent__first_name',
-                     'parent__last_name', 'phone_number', 'last_login']
+    columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
+               'parent__last_name', 'organization__name','phone_number', 'last_login']
+    order_columns = ['username' , 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
+                     'parent__last_name', 'organization__name','phone_number', 'last_login']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -132,7 +141,8 @@ class UserArchivedListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return UserProfile.objects.filter(is_deleted=1).values(*self.columns+['id'])
+        organization_descendants_ids= self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True)
+        return UserProfile.objects.filter(organization__in = organization_descendants_ids, is_deleted=1).values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         if qs:
@@ -140,9 +150,12 @@ class UserArchivedListingTable(BaseDatatableView):
             sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
             OrderedDict({'dict_final_key':'manager_name', 'dict_key1':'parent__first_name', 'dict_key2':'parent__last_name'})]
             qs, qs_headers = Datatable_Generation( qs, sanity_dicts_list ).main()
-        for dct in qs:
-            dct.update(actions='<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                        <a href="#" onclick="Dajaxice.user_profile.user_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+
+        #if the user role is Admin then the action column_values will appear on the datatable
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            for dct in qs:
+                dct.update(actions='<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="#" onclick="Dajaxice.user_profile.user_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -185,55 +198,29 @@ class UserCreate(CreateView):
     form_class = UserForm
     success_url = reverse_lazy('user_list')
 
+    @method_decorator(permission_required('user_profile.add_userprofile', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(UserCreate, self).dispatch(*args, **kwargs)
+
     def get_form_kwargs(self):
         kwargs = super(UserCreate, self).get_form_kwargs()
         kwargs.update({'request':self.request.user })
         return kwargs
 
     def form_valid(self, form):
-        user_profile = UserProfile()
-        user_profile.username = form.cleaned_data['username']
-        user_profile.first_name = form.cleaned_data['first_name']
-        user_profile.last_name = form.cleaned_data['last_name']
-        user_profile.email = form.cleaned_data['email']
-        user_profile.password = make_password(form.cleaned_data['password1'])
-        user_profile.phone_number = form.cleaned_data['phone_number']
-        user_profile.company = form.cleaned_data['company']
-        user_profile.designation = form.cleaned_data['designation']
-        user_profile.address = form.cleaned_data['address']
-        user_profile.comment = form.cleaned_data['comment']
-        user_profile.save()
-        action.send(self.request.user, verb=u'created', action_object=user_profile)
-        parent_user=None
-        # saving parent --> FK Relation
-        try:
-            parent_user = UserProfile.objects.get(username=form.cleaned_data['parent'])
-            user_profile.parent = parent_user
-            user_profile.save()
-        except:
-            print "User has no parent."
-
-        # creating roles  --> M2M Relation (Model: Roles)
-        for role in form.cleaned_data['role']:
-            user_role = Roles.objects.get(role_name=role)
-            user_profile.role.add(user_role)
-            user_profile.save()
-
-        # saving user_group --> M2M Relation (Model: Department)
-        for ug in form.cleaned_data['user_group']:
-            department = Department()
-            department.user_profile = user_profile
-            department.user_group = ug
-            department.save()
-
-        return HttpResponseRedirect(UserCreate.success_url)
-
+        self.object = form.save()
+        return super(ModelFormMixin, self).form_valid(form)
 
 class UserUpdate(UpdateView):
     template_name = 'user_profile/user_update.html'
     model = UserProfile
     form_class = UserForm
     success_url = reverse_lazy('user_list')
+
+
+    @method_decorator(permission_required('user_profile.change_userprofile', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(UserUpdate, self).dispatch(*args, **kwargs)
 
     def get_form_kwargs(self):
         """
@@ -244,50 +231,31 @@ class UserUpdate(UpdateView):
         return kwargs
 
     def form_valid(self, form):
-        self.object.username = form.cleaned_data['username']
-        self.object.first_name = form.cleaned_data['first_name']
-        self.object.last_name = form.cleaned_data['last_name']
-        self.object.email = form.cleaned_data['email']
-        self.object.password = make_password(form.cleaned_data['password1'])
-        self.object.phone_number = form.cleaned_data['phone_number']
-        self.object.company = form.cleaned_data['company']
-        self.object.designation = form.cleaned_data['designation']
-        self.object.address = form.cleaned_data['address']
-        self.object.comment = form.cleaned_data['comment']
+        self.object= form.save(commit=False)
+        role= form.cleaned_data['role'][0]
+        project_group_name= project_group_role_dict_mapper[role.role_name]
+        project_group= Group.objects.get( name = project_group_name)
+        self.object.groups.add(project_group)
         self.object.save()
+        form.save_m2m()
 
-        # updating parent --> FK Relation
-        try:
-            parent_user = UserProfile.objects.get(username=form.cleaned_data['parent'])
-            self.object.parent = parent_user
-            self.object.save()
-        except:
-            print "User has no parent."
+        #User Activity Logs
 
-        # deleting old roles of user
-        self.object.role.clear()
+        initial_field_dict={}
+        for field in form.initial.keys():
+            if field in ('organization','parent'):
+                initial_field_dict[field]= form.initial[field].id
+            else:
+                initial_field_dict[field]= form.initial[field]
 
-        # updating roles  --> M2M Relation (Model: Roles)
-        for role in form.cleaned_data['role']:
-            user_role = Roles.objects.get(role_name=role)
-            self.object.role.add(user_role)
-            self.object.save()
-
-        # delete old relationship exist in department
-        Department.objects.filter(user_profile=self.object).delete()
-
-        # updating user_group --> M2M Relation (Model: Department)
-        for ug in form.cleaned_data['user_group']:
-            department = Department()
-            department.user_profile = self.object
-            department.user_group = ug
-            department.save()
-
-
-        initial_field_dict = { field : [ form.initial[field] ] if field in ('role','user_group') else form.initial[field]
-                               for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : ( map( lambda obj: obj.pk, form.cleaned_data[field])
-        if field in ('role','user_group') else form.cleaned_data[field] ) for field in form.cleaned_data.keys() }
+        cleaned_data_field_dict={}
+        for field in form.cleaned_data.keys():
+            if field =='role':
+                cleaned_data_field_dict[field]= form.cleaned_data[field][0].id
+            elif field in ('organization','parent'):
+                cleaned_data_field_dict[field]= form.cleaned_data[field].id
+            else:
+                cleaned_data_field_dict[field]=form.cleaned_data[field]
 
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
 
@@ -296,10 +264,14 @@ class UserUpdate(UpdateView):
 
         if changed_fields_dict:
 
-            initial_field_dict['role'] = Roles.objects.get(pk=initial_field_dict['role'][0]).role_name
-            initial_field_dict['user_group'] = UserGroup.objects.get(pk=initial_field_dict['user_group'][0]).name
-            cleaned_data_field_dict['role'] = Roles.objects.get(pk=cleaned_data_field_dict['role'][0]).role_name
-            cleaned_data_field_dict['user_group'] = UserGroup.objects.get(pk=cleaned_data_field_dict['user_group'][0]).name
+            initial_field_dict['role']= Roles.objects.get(id= initial_field_dict['role']).role_name
+            initial_field_dict['parent']= UserProfile.objects.get(id= initial_field_dict['parent']).username
+            initial_field_dict['organization'] = Organization.objects.get(id= initial_field_dict['organization']).name
+
+            cleaned_data_field_dict['role'] = Roles.objects.get(id= cleaned_data_field_dict['role']).role_name
+            cleaned_data_field_dict['parent'] = UserProfile.objects.get(id= cleaned_data_field_dict['parent']).username
+            cleaned_data_field_dict['organization'] = Organization.objects.get(id= cleaned_data_field_dict['organization']).name
+
 
             verb_string = 'Changed values of user %s from initial values '%(self.object.username) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
                            for k in changed_fields_dict])+\
@@ -316,6 +288,11 @@ class UserDelete(DeleteView):
     model = UserProfile
     template_name = 'user_profile/user_delete.html'
     success_url = reverse_lazy('user_list')
+
+    @method_decorator(permission_required('user_profile.delete_userprofile', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(UserDelete, self).dispatch(*args, **kwargs)
+
 
     def delete(self, request, *args, **kwargs):
         action.send(request.user, verb='deleting user: %s'%(self.object.username))

@@ -8,6 +8,8 @@
 {% load staticfiles %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
+    <!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
 {% endblock %}
 
 {% block page_setting_block %}
@@ -40,6 +42,9 @@
         <!--Filters Block Start-->
         <div class="pull-right">
             <ul class="list-unstyled list-inline">
+                <li>
+                    <input type="text" name="searchTxt" id="searchTxt" class="form-control col-xs-1 input-sm" placeholder="Address">
+                </li>
                 <li>
                     <!--technology Filter-->
                     <select name="technology" id="technology" class="form-control col-xs-1 input-sm">
@@ -97,7 +102,7 @@
 </div>
 
 <!-- Google Map Library-->
-<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,places&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
 <!--This library is used to create marker with labels-->
 <script type="text/javascript" src={% static "js/markerwithlabel.js" %}></script>
 <!--This library is used for marker clustering-->
@@ -112,6 +117,8 @@
 <script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
 <!-- Custon Script for this template-->
 <script type="text/javascript" src={% static "js/devicevisualization.js" %}></script>
+<!--Flot Chart Library for Fresnel zone-->
+<script src={% static "js/flot/jquery.flot.min.js" %}></script>
 <script type="text/javascript">
 
     var networkMapInstance = "",

@@ -383,7 +383,7 @@ function advanceSearchClass() {
 				        nmInstance.resetVariables();
 
 				        /*Call the getDevicesFilter function to seperate the filter values from the object array*/
-						nmInstance.getDevicesFilter(result.data.objects.children);
+						//nmInstance.getDevicesFilter(result.data.objects.children);
 
 				        /*Call the make network to create the BS-SS network on the google map*/
 				        nmInstance.populateNetwork(result.data.objects.children);

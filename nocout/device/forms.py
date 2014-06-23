@@ -33,7 +33,6 @@ class DeviceForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         # setting foreign keys field label
-        self.base_fields['device_group'].label = 'Device Group'
         self.base_fields['site_instance'].label = 'Site Instance'
         self.base_fields['device_technology'].label = 'Device Technology'
         self.base_fields['device_vendor'].label = 'Device Vendor'
@@ -41,8 +40,6 @@ class DeviceForm(forms.ModelForm):
         self.base_fields['device_type'].label = 'Device Type'
 
         initial = kwargs.setdefault('initial', {})
-        initial['device_group'] = kwargs['instance'].device_group.values_list('pk', flat=True)[0] if kwargs[
-            'instance'] else []
 
         super(DeviceForm, self).__init__(*args, **kwargs)
 
