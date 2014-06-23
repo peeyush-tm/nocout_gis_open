@@ -6,9 +6,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.views.generic.base import View
 from django.http import HttpResponse
 from django.contrib.auth.models import User
-from user_profile.models import Department
+# from user_profile.models import Department
 from user_group.models import Organization
-from device.models import Inventory, Device, DeviceType, DeviceVendor, \
+from device.models import Device, DeviceType, DeviceVendor, \
     DeviceTechnology, DeviceModel
 
 
@@ -118,21 +118,21 @@ class DeviceStats(View):
         device_object_list = []
         try:
             self.user_id = User.objects.get(username=user).id
-            self.user_gp_id = Department.objects.get(
-                user_profile_id=self.
-                user_id
-            ).user_group_id
+            # self.user_gp_id = Department.objects.get(
+            #     user_profile_id=self.
+            #     user_id
+            # ).user_group_id
             # One user_group may have associated with more than one device_group
-            self.dev_gp_list = Organization.objects.filter(
-                user_group_id=self.
-                user_gp_id
-            ).values()
+            # self.dev_gp_list = Organization.objects.filter(
+            #     user_group_id=self.
+            #     user_gp_id
+            # ).values()
 
-            for dev_gp in self.dev_gp_list:
-                obj_list = Inventory.objects.filter(
-                    device_group_id=dev_gp.get('device_group_id')
-                ).values()
-                inventory_list.extend(obj_list)
+            # for dev_gp in self.dev_gp_list:
+                # obj_list = Inventory.objects.filter(
+                #     device_group_id=dev_gp.get('device_group_id')
+                # ).values()
+                # inventory_list.extend(obj_list)
 
             total_count = len(inventory_list)
         except Exception, error:

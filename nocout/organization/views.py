@@ -24,17 +24,21 @@ class OrganizationList(ListView):
         datatable_headers = [
             {'mData':'name',                'sTitle' : 'Name',          'sWidth':'null',  },
             {'mData':'description',         'sTitle' : 'Description',   'sWidth':'null',  },
-            {'mData':'user_group__name',    'sTitle' : 'User Group',    'sWidth':'null',  },
-            {'mData':'device_group__name',  'sTitle' : 'Device Group',  'sWidth':'null',  },
-            {'mData':'actions',             'sTitle' : 'Actions',       'sWidth':'10%',   },
-            ]
+            {'mData':'city',                'sTitle' : 'City',          'sWidth':'null',  },
+            {'mData':'state',               'sTitle' : 'State',         'sWidth':'null',  },
+            {'mData':'country',             'sTitle' : 'Country',       'sWidth':'null',  },
+            {'mData':'parent__name',        'sTitle' : 'Parent',  'sWidth':'null',},]
+
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%'})
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class OrganizationListingTable(BaseDatatableView):
     model = Organization
-    columns = ['name', 'description', 'user_group__name', 'device_group__name']
-    order_columns = ['name', 'description', 'user_group__name', 'device_group__name']
+    columns = ['name', 'description','city','state','country', 'parent__name',]
+    order_columns = ['name', 'description', 'state', 'country', 'parent__name']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)

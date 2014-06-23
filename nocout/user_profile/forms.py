@@ -11,41 +11,38 @@ class UserForm(forms.ModelForm):
         self.request=kwargs.pop('request', None)
         initial = kwargs.setdefault('initial',{})
 
-        initial['role'] = kwargs['instance'].role.values_list('pk', flat=True)[0] if kwargs['instance'] else []
-        initial['user_group'] = kwargs['instance'].user_group.values_list('pk', flat=True)[0] if kwargs['instance'] else []
-        initial['parent'] = kwargs['instance'].parent if kwargs['instance'] else None
+        if kwargs['instance']:
+            initial['role'] = kwargs['instance'].role.values_list('pk', flat=True)[0]
+            initial['parent'] = kwargs['instance'].parent
+            initial['organization'] = kwargs['instance'].organization
 
         super(UserForm, self).__init__(*args, **kwargs)
 
         if self.instance.pk:
             self.fields['password1'].required = False
             self.fields['password2'].required = False
-            self.fields['role'].initial = self.instance.role.all()[0].pk
-            # self.base_fields['role']=self.instance.role.all()[0].pk
             if self.instance.pk == self.request.pk:
                 self.fields['username'].widget.attrs['readonly'] = True
                 self.fields['parent'].widget.attrs['disabled'] = 'disabled'
                 self.fields['role'].widget.attrs['disabled'] = 'disabled'
+                self.fields['organization'].widget.attrs['disabled'] = 'disabled'
                 self.fields['parent'].label='Manager'
                 self.fields.pop('comment')
-                self.fields.pop('user_group')
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 field.widget.attrs['class'] += ' form-control'
             else:
                 field.widget.attrs.update({'class':'form-control'})
-        self.base_fields['user_group'].help_text = "Please select a Usergroup."
 
     class Meta:
         model = UserProfile
         fields = (
-            'username', 'first_name', 'last_name', 'email', 'role', 'user_group', 'parent', 'designation', 'company',
-            'address', 'phone_number', 'comment',
+            'username', 'first_name', 'last_name', 'email', 'role', 'parent', 'designation', 'company',
+            'address', 'phone_number', 'comment','organization'
         )
         widgets = {
             'role': MultipleToSingleSelectionWidget,
-            'user_group': MultipleToSingleSelectionWidget,
         }
         fieldsets = (
             ('Personal', {

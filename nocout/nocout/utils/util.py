@@ -1,9 +1,12 @@
 import datetime
 
 #Used for JsonDatetime Encoding #example# ::json.dumps( json_object, default=date_handler )
+from django.contrib.auth.models import User
 from device.models import Device
 from device_group.models import DeviceGroup
+from organization.models import Organization
 from user_group.models import UserGroup
+from user_profile.models import UserProfile
 
 date_handler = lambda obj: obj.strftime('%Y-%m-%d %H:%M:%S') if isinstance(obj, datetime.datetime) else None
 
@@ -30,16 +33,8 @@ class DictDiffer(object):
         return set(o for o in self.intersect if self.past_dict[o] == self.current_dict[o])
 
 
-class Logged_In_User_Devices:
-    """
-    The Class is used to return the number of the devices for the Logged in User.
-
-    """
-    def __init__(self, request, columns):
-        self.request=request #request object
-        self.columns=columns #column names
-
-    def logged_in_user_devices_query(self):
-        user_group = UserGroup.objects.get( pk__in = self.request.user.userprofile.user_group.values_list('id', flat=True))
-        device_group_list = DeviceGroup.objects.filter( pk__in = user_group.device_group.values_list('id', flat=True))
-        return Device.objects.filter(device_group__in = device_group_list ).values(*self.columns)
+project_group_role_dict_mapper={
+    'admin':'group_admin',
+    'operator':'group_operator',
+    'viewer':'group_viewer',
+}
