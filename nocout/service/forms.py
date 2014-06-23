@@ -1,5 +1,5 @@
 from django import forms
-from models import Service, ServiceParameters
+from models import Service, ServiceParameters, ServiceDataSource
 
 
 class ServiceForm(forms.ModelForm):
@@ -13,6 +13,17 @@ class ServiceForm(forms.ModelForm):
     class Meta:
         model = Service
         fields = ('service_name', 'alias', 'parameters', 'service_data_sources', 'command', 'description')
+
+class ServiceDataSourceForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(ServiceDataSourceForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' form-control'
+            else:
+                field.widget.attrs.update({'class':'form-control'})
+    class Meta:
+        model = ServiceDataSource
 
 
 class ServiceParametersForm(forms.ModelForm):

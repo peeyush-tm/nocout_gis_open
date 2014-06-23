@@ -8,6 +8,9 @@ class ServiceDataSource(models.Model):
     warning = models.CharField('Warning', max_length=255, null=True, blank=True)
     critical = models.CharField('Critical', max_length=255, null=True, blank=True)
 
+    def __unicode__(self):
+        return  self.data_source_name
+
 
 class ServiceParameters(models.Model):
     parameter_description = models.CharField(max_length=250)

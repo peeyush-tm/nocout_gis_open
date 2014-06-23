@@ -37,6 +37,9 @@ class Backhaul(models.Model):
     dr_site = models.CharField('DR Site', max_length=150, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
+    def __unicode__(self):
+        return "{} : {} : {}".format(self.description, self.bh_configured_on, self.bh_port)
+
 
 # gis base station model
 class BaseStation(models.Model):
@@ -53,6 +56,8 @@ class BaseStation(models.Model):
     gps_type = models.CharField('GPS Type', max_length=100, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
+    def __unicode__(self):
+        return self.bs_site_name
 
 # gis sector model
 class Sector(models.Model):
@@ -71,6 +76,8 @@ class Sector(models.Model):
     cell_radius = models.IntegerField('Cell Radius', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
+    def __unicode__(self):
+        return self.name
 
 # gis customer model
 class Customer(models.Model):
@@ -80,6 +87,8 @@ class Customer(models.Model):
     address = models.CharField('Address', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
+    def __unicode__(self):
+        return self.name
 
 # gis sub-station
 class SubStation(models.Model):
@@ -97,6 +106,8 @@ class SubStation(models.Model):
     address = models.CharField('Address', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
+    def __unicode__(self):
+        return self.name
 
 # gis circuit model
 class Circuit(models.Model):
@@ -107,3 +118,6 @@ class Circuit(models.Model):
     sub_station = models.ForeignKey(SubStation)
     date_of_acceptance = models.DateTimeField('Date of Acceptance', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
+
+    def __unicode__(self):
+        return self.name
