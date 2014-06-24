@@ -12,11 +12,7 @@
 {% endblock %}
 
 {% block content %}
-	<style type="text/css">
-		.perfContainerBlock .box-title .pull-right ul {
-			margin-bottom: 0px;
-		}
-	</style>
+	<!--Single Device Live Perf Start-->
 	<div class='box border lite perfContainerBlock'>
 	    <div class='box-title'>
 	        <h4><i class='fa fa-file-text'></i> {{ page_title }} Live - {{ device_id }}</h4>
@@ -41,6 +37,7 @@
 	                    <input class="form-control col-xs-1 input-sm datepicker" type="text" name="end_date" size="10" id="end_date" placeholder="End Date">
 	                </li>
 	                <li>
+	                	<!--CSV or Excel download action. -->
 	                    <div class="btn-group dropdown col-xs-1">
 							<button class="btn  btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
 								Action
@@ -62,53 +59,42 @@
 	        <div class="clearfix"></div>
 	    </div>
 	    <div class='box-body'>
-	        <div class="col-md-6 col-md-offset-3 well well-sm">
+	    	<!--Device Staus Block Start-->
+	    	<button class="btn btn-info btn-xs pull-right" title="Show Status" id="show_status_btn">Show Status</button>
+	    	<div class="clearfix"></div>
+	        <div class="col-md-6 col-md-offset-3 well well-sm" id="status_container">
 	        	<table id="status_table" class="table table-bordered">
 					<thead></thead>
 					<tbody></tbody>
 				</table>
-        	</div>
+        	</div>        	
+        	<!--Device Staus Block End-->
         	<div class="clearfix"></div>
+        	<div class="divide-20"></div>
         	<div class="panel panel-default">
 	        	<div class="panel-body">
-	        		<div class="tabbable">
-						<ul class="nav nav-tabs">
-						   <li class="active"><a href="#perf_avail_block" id="availability_tab" data-toggle="tab">Availability</a></li>
-						   <li class=""><a href="#perf_packet_block" id="packertDrop_tab" data-toggle="tab">Packet Drop</a></li>
-						   <li class=""><a href="#perf_latency_block" id="latency_tab" data-toggle="tab">Latency</a></li>
-						   <li class=""><a href="#perf_rssi_block" id="rssi_tab" data-toggle="tab">RSSI</a></li>
-						   <li class=""><a href="#perf_cinr_block" id="cinr_tab" data-toggle="tab">CINR</a></li>
-						</ul>
-						<div class="tab-content">
-						   <div class="tab-pane fade active in" id="perf_avail_block">
-								<div class="divide-10"></div>
-								<p> Availability</p>
-						   </div>
-						   <div class="tab-pane fade" id="perf_packet_block">
-								<div class="divide-10"></div>
-								<p>Packey Drop</p>
-						   </div>
-						   <div class="tab-pane fade" id="perf_latency_block">
-								<div class="divide-10"></div>
-								<p>Latency</p>
-						   </div>
-						   <div class="tab-pane fade" id="perf_rssi_block">
-								<div class="divide-10"></div>
-								<p>RSSI</p>
-						   </div>
-						   <div class="tab-pane fade" id="perf_cinr_block">
-								<div class="divide-10"></div>
-								<p>CINR</p>
-						   </div>
-						</div>
-					 </div>
+	        		<!--Services Tabs & their content Start-->
+	        		<div class="tabbable" id="services_tab_container">
+						
+					</div>
+					<!--Services Tabs & their content End-->
 	        	</div>
         	</div>
         	<div class="clearfix"></div>
 	    </div>
 	</div>
+	<!--Single Device Live Perf End-->
+
 	<!-- JQUERY UI-->
 	<script src={% static "js/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.min.js" %}></script>
+	<!-- FLOT CHARTS -->
+	<script src={% static "js/flot/jquery.flot.min.js" %}></script>
+	<script src={% static "js/flot/jquery.flot.time.min.js" %}></script>
+    <script src={% static "js/flot/jquery.flot.selection.min.js" %}></script>
+	<script src={% static "js/flot/jquery.flot.resize.min.js" %}></script>
+    <script src={% static "js/flot/jquery.flot.pie.min.js" %}></script>
+    <script src={% static "js/flot/jquery.flot.stack.min.js" %}></script>
+    <script src={% static "js/flot/jquery.flot.crosshair.min.js" %}></script>
 	<!--Our Custom Script-->
 	<script src={% static "js/nocout/nocoutPerfLib.js" %}></script>
 	<!--Dummy Data-->
@@ -117,32 +103,46 @@
 	<script type="text/javascript">
 		/*Global Variables*/
 		var perfInstance = "",
-			getDevicesUrl = "",
-			getStatusUrl = "",
-			getServiceUrl = "",
-			getServiceDataUrl = "",
 			current_device = "";
 
 		$(document).ready(function(e) {
+			
 			/*Initialize Datepicker*/
 			$(".datepicker").datepicker();
+			
+			/*Hide Status Container*/
+			$("#status_container").hide();
 
-			getDevicesUrl = "{{ get_devices_url }}";
-			getStatusUrl = "{{ get_status_url }}";
+			var devicesUrl = "{{ get_devices_url }}";
+			var statusUrl = "{{ get_status_url }}";
+			var serviceUrl = "{{ get_services_url }}";
 
 			current_device = "{{ device_id }}";
 			perfInstance = new nocoutPerfLib();
 			
 			/*To Populate the device dropdown*/
-			perfInstance.getAllDevices(getDevicesUrl,current_device);
+			perfInstance.getAllDevices(devicesUrl,current_device);
 
 			/*To populate the status table*/
-			perfInstance.getStatus(getStatusUrl,current_device);
+			perfInstance.getStatus(statusUrl,current_device);
+
+			/*To populate the services tabs*/
+			perfInstance.getServices(serviceUrl,current_device);
+
+			/*Bind click event on tabs*/
+			$('#services_tab_container .nav-tabs li a').bind('click', function(e) {
+		        var serviceId = e.currentTarget.id.slice(0, -4);
+		        var serviceDataUrl = $.trim(e.currentTarget.attributes.url.nodeValue);
+
+		        perfInstance.getServiceData(serviceDataUrl,serviceId,current_device);
+		    });
 		});
 
-		$('.nav-tabs a').bind('click', function (e) {
-	        console.log(e.currentTarget.id);
-	    });
+		$("#show_status_btn").click(function(e) {
+
+			$("#status_container").slideToggle();
+		})
+
 	</script>
 
 {% endblock %}
