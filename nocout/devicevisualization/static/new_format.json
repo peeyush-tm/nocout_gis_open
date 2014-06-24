@@ -1,0 +1,602 @@
+{
+	"success" : 1,
+	"message" : "Data Fetached Successfully.",
+	"data" : {
+		"meta" : {
+			"total_count" : 2,
+			"limit" : 4
+		},
+		"objects" : {
+			"id" : "mainNode",
+			"name" : "mainNodeName",
+			"data" : {
+				"unspiderfy_icon" : "static/img/marker/slave01.png"
+			},
+			"children" : [
+				{
+					"id":7,
+					"name":"TTSL_BTS_Bagahati",
+					"type" : "PMP",
+					"children":[
+						{
+							"id":8,
+							"name":"TTSL_BTS_Bagahati",
+							"children":[],
+							"data":{
+								"param" : {
+									"sub_station" : [
+										{
+											"name" : "alias",
+											"title" : "Alias",
+											"show" : 1,
+											"value" : "TTSL BTS: Nurpur_001"
+										},
+										{
+											"name" : "title",
+											"title" : "Title",
+											"show" : 1,
+											"value" : "TTSL BTS: Nurpur_001"
+										},
+										{
+											"name" : "current_state",
+											"title" : "Current State",
+											"show" : 1,
+											"value" : "enable"
+										},
+										{
+											"name" : "ip",
+											"title" : "IP Address",
+											"show" : 1,
+											"value" : "10.172.205.42"
+										},
+										{
+											"name" : "technology",
+											"title" : "Device Technology",
+											"show" : 1,
+											"value" : "PMP"
+										}
+									],
+									"sector_info" : [
+										{
+											"name" : "sector_name",
+											"title" : "Sector Name",
+											"show" : 1,
+											"value" : "V1"
+										},
+										{
+											"name" : "idu_ip",
+											"title" : "IDU IP",
+											"show" : 1,
+											"value" : "10.172.26.4"
+										},
+										{
+											"name" : "idu_port",
+											"title" : "IDU Port",
+											"show" : 1,
+											"value" : "fe0/7/"
+										}
+									],
+									"backhual" : []	
+								},
+								"labels" : [
+									{
+										"name" : "Freq.",
+										"value" : "1233136",
+										"position" : "up",
+										"show" : 0 
+									},
+									{
+										"name" : "Perf",
+										"value" : "88%",
+										"position" : "down",
+										"show" : 0
+									}
+								],
+								"lat" : 22.9695277777778,
+								"lon" : 88.3778055555556,
+								"perf" : "70%",
+								"azimuth_angle" : 60,
+								"beam_width" : 60,
+								"radius" : 60,
+								"markerUrl" : "static/img/marker/icon4_small.png",
+								"link_color" : "green",
+								"show_link" : 1,
+								"sector_color" : "#156AAF",
+								"sector_orientation" : "horizontal",
+								"circle_radius" : 3000,
+								"circle_color" : "333333",
+								"antena_height" : 50
+							}
+						},
+						{
+							"id":8,
+							"name":"TTSL_BTS_Bagahati",
+							"children":[],
+							"data":{
+								"param" : {
+									"sub_station" : [
+										{
+											"name" : "alias",
+											"title" : "Alias",
+											"show" : 1,
+											"value" : "TTSL BTS: Nurpur_001"
+										},
+										{
+											"name" : "title",
+											"title" : "Title",
+											"show" : 1,
+											"value" : "TTSL BTS: Nurpur_001"
+										},
+										{
+											"name" : "current_state",
+											"title" : "Current State",
+											"show" : 1,
+											"value" : "enable"
+										},
+										{
+											"name" : "ip",
+											"title" : "IP Address",
+											"show" : 1,
+											"value" : "10.172.205.42"
+										},
+										{
+											"name" : "technology",
+											"title" : "Device Technology",
+											"show" : 1,
+											"value" : "PMP"
+										}
+									],
+									"sector_info" : [
+										{
+											"name" : "sector_name",
+											"title" : "Sector Name",
+											"show" : 1,
+											"value" : "V2"
+										},
+										{
+											"name" : "idu_ip",
+											"title" : "IDU IP",
+											"show" : 1,
+											"value" : "10.172.26.4"
+										},
+										{
+											"name" : "idu_port",
+											"title" : "IDU Port",
+											"show" : 1,
+											"value" : "fe0/7/"
+										}
+									],
+									"backhual" : []
+								},
+								"labels" : [
+									{
+										"name" : "Freq.",
+										"value" : "1233136",
+										"position" : "up",
+										"show" : 0 
+									},
+									{
+										"name" : "Perf",
+										"value" : "80%",
+										"position" : "down",
+										"show" : 0
+									}
+								],
+								"lat" : 18.5203,
+								"lon" : 73.8567,
+								"perf" : "75%",
+								"azimuth_angle" : 135,
+								"beam_width" : 60,
+								"radius" : 60,
+								"markerUrl" : "static/img/marker/icon3_small.png",
+								"link_color" : "green",
+								"show_link" : 1,
+								"sector_color" : "yellow",
+								"sector_orientation" : "vertical",
+								"circle_radius" : 3000,
+								"circle_color" : "999999",
+								"antena_height" : 60
+							}
+						}
+					],
+					"data":{
+						"perf" : "63%",
+						"lat" : 26.2800,
+						"lon" : 73.0200,
+						"circle_radius" : 3000,
+						"circle_color" : "A58383",
+						"antena_height" : 40,
+						"param" : {
+							"base_station" : [
+								{
+									"name" : "alias",
+									"title" : "Alias",
+									"show" : 1,
+									"value" : "TTSL BTS: Nurpur_001 (1872)"
+								},
+								{
+									"name" : "title",
+									"title" : "Title",
+									"show" : 1,
+									"value" : "TTSL BTS: Nurpur_001 (1872)"
+								},
+								{
+									"name" : "current_state",
+									"title" : "Current State",
+									"show" : 1,
+									"value" : "enable"
+								},
+								{
+									"name" : "ip",
+									"title" : "IP Address",
+									"show" : 1,
+									"value" : "10.172.205.42"
+								},
+								{
+									"name" : "technology",
+									"title" : "Device Technology",
+									"show" : 1,
+									"value" : "PMP"
+								}
+							],
+							"backhual" : [
+								{
+									"name" : "configured_on",
+									"title" : "Configured On",
+									"show" : 1,
+									"value" : "Converter"
+								},
+								{
+									"name" : "capacity",
+									"title" : "Capacity",
+									"show" : 1,
+									"value" : "4MB"
+								},
+								{
+									"name" : "bh_net",
+									"title" : "Offnet/Onnet",
+									"show" : 1,
+									"value" : "Onnet"
+								},
+								{
+									"name" : "type",
+									"title" : "Type",
+									"show" : 1,
+									"value" : "E1"
+								},
+								{
+									"name" : "circuit_id",
+									"title" : "Circuit ID",
+									"show" : 1,
+									"value" : "4895455564"
+								}
+							]
+						},
+						"labels" : [
+							{
+								"name" : "Freq.",
+								"value" : "5794316",
+								"show" : 0,
+								"position" : "up"
+							},
+							{
+								"name" : "Perf",
+								"value" : "80%",
+								"show" : 0,
+								"position" : "down"
+							}
+						],
+						"markerUrl" : "static/img/marker/icon2_small.png"
+					}
+				},
+				{
+					"id":8,
+					"name":"TTSL_BTS:_Nurpur_001",
+					"type" : "P2P",
+					"children":[
+						{
+							"id":12,
+							"name":"TTSL_BTS_Nurpur_001",
+							"children":[],
+							"data":{
+								"param" : {
+									"sub_station" : [
+										{
+											"name" : "alias",
+											"title" : "Alias",
+											"show" : 1,
+											"value" : "TTSL BTS: Nurpur_001"
+										},
+										{
+											"name" : "title",
+											"title" : "Title",
+											"show" : 1,
+											"value" : "TTSL BTS: Nurpur_001"
+										},
+										{
+											"name" : "current_state",
+											"title" : "Current State",
+											"show" : 1,
+											"value" : "enable"
+										},
+										{
+											"name" : "ip",
+											"title" : "IP Address",
+											"show" : 1,
+											"value" : "10.172.205.42"
+										},
+										{
+											"name" : "technology",
+											"title" : "Device Technology",
+											"show" : 1,
+											"value" : "PMP"
+										}
+									],
+									"sector_info" : [],
+									"backhual" : []
+								},
+								"labels" : [
+									{
+										"name" : "Freq.",
+										"value" : "1233136",
+										"position" : "up",
+										"show" : 0 
+									},
+									{
+										"name" : "Perf",
+										"value" : "80%",
+										"position" : "down",
+										"show" : 0
+									}
+								],
+								"lat" : 28.6918,
+								"lon" : 77.3891,
+								"perf" : "88%",
+								"markerUrl" : "static/img/marker/icon1_small.png",
+								"link_color" : "green",
+								"circle_radius" : 3000,
+								"circle_color" : "68F3F8",
+								"show_link" : 1,
+								"antena_height" : 65
+							}
+						}
+					],
+					"data":{
+						"perf" : "53%",
+						"lat" : 28.5334,
+						"lon" : 77.2921,
+						"circle_radius" : 3000,
+						"circle_color" : "79BFF4",
+						"antena_height" : 45,
+						"param" : {
+							"base_station" : [
+								{
+									"name" : "alias",
+									"title" : "Alias",
+									"show" : 1,
+									"value" : "TTSL BTS: Nurpur_001 (1872)"
+								},
+								{
+									"name" : "title",
+									"title" : "Title",
+									"show" : 1,
+									"value" : "TTSL BTS: Nurpur_001 (1872)"
+								},
+								{
+									"name" : "current_state",
+									"title" : "Current State",
+									"show" : 1,
+									"value" : "enable"
+								},
+								{
+									"name" : "ip",
+									"title" : "IP Address",
+									"show" : 1,
+									"value" : "10.172.205.42"
+								},
+								{
+									"name" : "technology",
+									"title" : "Device Technology",
+									"show" : 1,
+									"value" : "PMP"
+								}
+							],
+							"backhual" : [
+								{
+									"name" : "configured_on",
+									"title" : "Configured On",
+									"show" : 1,
+									"value" : "Switch"
+								},
+								{
+									"name" : "capacity",
+									"title" : "Capacity",
+									"show" : 1,
+									"value" : "8MB"
+								},
+								{
+									"name" : "bh_net",
+									"title" : "Offnet/Onnet",
+									"show" : 1,
+									"value" : "Offnet"
+								},
+								{
+									"name" : "type",
+									"title" : "Type",
+									"show" : 1,
+									"value" : "E1"
+								},
+								{
+									"name" : "circuit_id",
+									"title" : "Circuit ID",
+									"show" : 1,
+									"value" : "23498563"
+								}
+							]
+						},
+						"labels" : [
+							{
+								"name" : "Freq.",
+								"value" : "5794316",
+								"show" : 0,
+								"position" : "up"
+							},
+							{
+								"name" : "Perf",
+								"value" : "80%",
+								"show" : 0,
+								"position" : "down"
+							}
+						],
+						"markerUrl" : "static/img/marker/icon3_small.png"
+					}
+
+				},
+				{
+					"id":221,
+					"name":"TTSL_Nurpur_001",
+					"type" : "P2P",
+					"children":[
+						{
+							"id":121,
+							"name":"TTSL_Nurpur_001",
+							"children":[],
+							"data":{
+								"param" : {
+									"sub_station" : [
+										{
+											"name" : "alias",
+											"title" : "Alias",
+											"show" : 1,
+											"value" : "TTSL: Nurpur_001"
+										},
+										{
+											"name" : "title",
+											"title" : "Title",
+											"show" : 1,
+											"value" : "TTSL BTS: Nurpur_001"
+										},
+										{
+											"name" : "ip",
+											"title" : "IP Address",
+											"show" : 1,
+											"value" : "10.172.205.42"
+										},
+										{
+											"name" : "technology",
+											"title" : "Device Technology",
+											"show" : 1,
+											"value" : "PMP"
+										}
+									],
+									"sector_info" : [],
+									"backhual" : []
+								},
+								"labels" : [],
+								"lat" : 12.9667,
+								"lon" : 77.5667,
+								"perf" : "88%",
+								"markerUrl" : "static/img/marker/icon4_small.png",
+								"link_color" : "green",
+								"circle_radius" : 3000,
+								"circle_color" : "68F3F8",
+								"show_link" : 1,
+								"antena_height" : 48
+							}
+						}
+					],
+					"data":{
+						"perf" : "77%",
+						"lat" : 26.847,
+						"lon" : 80.947,
+						"circle_radius" : 3000,
+						"circle_color" : "79BFF4",
+						"antena_height" : 68,
+						"param" : {
+							"base_station" : [
+								{
+									"name" : "alias",
+									"title" : "Alias",
+									"show" : 1,
+									"value" : "TTSL BTS: Nurpur_001 (1872)"
+								},
+								{
+									"name" : "title",
+									"title" : "Title",
+									"show" : 1,
+									"value" : "TTSL BTS: Nurpur_001 (1872)"
+								},
+								{
+									"name" : "current_state",
+									"title" : "Current State",
+									"show" : 1,
+									"value" : "enable"
+								},
+								{
+									"name" : "ip",
+									"title" : "IP Address",
+									"show" : 1,
+									"value" : "10.172.205.42"
+								},
+								{
+									"name" : "technology",
+									"title" : "Device Technology",
+									"show" : 1,
+									"value" : "PMP"
+								}
+							],
+							"backhual" : [
+								{
+									"name" : "configured_on",
+									"title" : "Configured On",
+									"show" : 1,
+									"value" : "Switch"
+								},
+								{
+									"name" : "capacity",
+									"title" : "Capacity",
+									"show" : 1,
+									"value" : "8MB"
+								},
+								{
+									"name" : "bh_net",
+									"title" : "Offnet/Onnet",
+									"show" : 1,
+									"value" : "Offnet"
+								},
+								{
+									"name" : "type",
+									"title" : "Type",
+									"show" : 1,
+									"value" : "E1"
+								},
+								{
+									"name" : "circuit_id",
+									"title" : "Circuit ID",
+									"show" : 1,
+									"value" : "23498563"
+								}
+							]
+						},
+						"labels" : [
+							{
+								"name" : "Freq.",
+								"value" : "5794316",
+								"show" : 0,
+								"position" : "up"
+							},
+							{
+								"name" : "Perf",
+								"value" : "80%",
+								"show" : 0,
+								"position" : "down"
+							}
+						],
+						"markerUrl" : "static/img/marker/icon2_small.png"
+					}
+
+				}
+			]
+		}
+	}
+}

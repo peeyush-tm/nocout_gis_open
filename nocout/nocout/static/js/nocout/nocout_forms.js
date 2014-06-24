@@ -9,22 +9,23 @@ $(document).ready(function (e) {
     var hasError = 0,
         inputContainers = $(".formContainer .col-sm-7"),
         labelContainer = $(".formContainer label.col-sm-5");
-        errorMessage = '<ul class="list-unstyled">';
+        errorMessage = '<ul class="list-unstyled">';    
 
-    for (var i = 0; i < inputContainers.length; i++) {
+    for (var i = 0; i < inputContainers.length; i++) {    	
         /*Total no. of childrens in col-sm-7 class*/
         var childrenCount = inputContainers[i].children.length;
 
         if (childrenCount == 2) {
+
             /*Error class from server side validation check*/
             var errCLass = $.trim(inputContainers[i].children[1].className);
             if (errCLass == "errorlist") {
-
-                /*Field name on which error occured*/
-                var fieldName = $.trim(labelContainer[i].innerText);
                 
+                /*Field name on which error occured*/
+                var fieldName = $.trim(labelContainer[i].innerHTML);
+
                 /*Error message from server side*/
-                var errMsg = $.trim(inputContainers[i].children[1].childNodes[0].innerText);
+                var errMsg = $.trim(inputContainers[i].children[1].childNodes[0].innerHTML);
 
                 /*Id of the text box*/
                 var fieldId = inputContainers[i].children[0].id;
