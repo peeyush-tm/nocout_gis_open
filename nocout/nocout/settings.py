@@ -52,7 +52,7 @@ LANGUAGE_CODE = 'en-us'
 SITE_ID = 1
 
 LOGIN_URL = '/login/'
-LOGIN_EXEMPT_URLS = (r'auth/', 'login/')
+LOGIN_EXEMPT_URLS = (r'auth/', 'login/', 'admin/')
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -265,7 +265,7 @@ ACTSTREAM_SETTINGS = {
     'MODELS': ('auth.user', 'auth.group', 'sites.site', 'comments.comment','user_profile.userprofile', 'user_group.usergroup',
                 'device.device', 'device_group.devicegroup', 'device.devicetypefields','device.devicetechnology',
                 'device.devicevendor', 'device.devicemodel', 'device.devicetype','site_instance.siteinstance','service.service',
-                'service.serviceparameters','command.command','user_profile.organization','inventory.inventory'
+                'service.serviceparameters','command.command','user_profile.organization','inventory.inventory',
                 'inventory.antenna', 'inventory.basestation', 'inventory.sector', 'inventory.backhaul', 'inventory.customer',
                 'inventory.substation', 'inventory.circuit', 'machine.machine', 'service.servicedatasource'),
 

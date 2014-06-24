@@ -20,10 +20,11 @@ class ServiceList(ListView):
     def get_context_data(self, **kwargs):
         context=super(ServiceList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'service_name',             'sTitle' : 'Service',       'sWidth':'null',},
-            {'mData':'alias',                    'sTitle' : 'Alias',         'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'command__command_name',    'sTitle' : 'Command',       'sWidth':'null',},
-            {'mData':'description',              'sTitle' : 'Description',   'sWidth':'null','sClass':'hidden-xs'},]
+            {'mData':'name',                               'sTitle' : 'Name',          'sWidth':'null',},
+            {'mData':'alias',                              'sTitle' : 'Alias',         'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'parameters__parameter_description',  'sTitle' : 'Parameters',    'sWidth':'null',},
+            {'mData':'command__name',                      'sTitle' : 'Command',       'sWidth':'null',},
+            {'mData':'description',                        'sTitle' : 'Description',   'sWidth':'null','sClass':'hidden-xs'},]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
@@ -34,8 +35,8 @@ class ServiceList(ListView):
 
 class ServiceListingTable(BaseDatatableView):
     model = Service
-    columns = ['service_name', 'alias', 'command__command_name', 'description']
-    order_columns = ['service_name', 'alias', 'command__command_name', 'description']
+    columns = ['name', 'alias', 'parameters__parameter_description', 'command__name', 'description']
+    order_columns = ['name', 'alias', 'parameters__parameter_description', 'command__name', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -131,7 +132,7 @@ class ServiceUpdate(UpdateView):
             cleaned_data_field_dict['parameters'] = ', '.join([ServiceParameters.objects.get(pk=paramter).parameter_description
                                                      for paramter in cleaned_data_field_dict['parameters']])
 
-            verb_string = 'Changed values of Service : %s from initial values '%(self.object.service_name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
+            verb_string = 'Changed values of Service : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
@@ -285,19 +286,19 @@ class ServiceDataSourceList(ListView):
     def get_context_data(self, **kwargs):
         context=super(ServiceDataSourceList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'data_source_name',        'sTitle' : 'Name',                'sWidth':'null',},
-            {'mData':'data_source_alias',       'sTitle' : 'Alias',               'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'warning',                 'sTitle' : 'Warning',             'sWidth':'null',},
-            {'mData':'critical',                'sTitle' : 'Critical',            'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',                 'sTitle' : 'Actions',             'sWidth':'10%' ,}
+            {'mData':'name',             'sTitle' : 'Name',                'sWidth':'null',},
+            {'mData':'alias',            'sTitle' : 'Alias',               'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'warning',          'sTitle' : 'Warning',             'sWidth':'null',},
+            {'mData':'critical',         'sTitle' : 'Critical',            'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'actions',          'sTitle' : 'Actions',             'sWidth':'10%' ,}
             ]
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class ServiceDataSourceListingTable(BaseDatatableView):
     model = ServiceDataSourceList
-    columns = ['data_source_name', 'data_source_alias', 'warning', 'critical']
-    order_columns = ['data_source_name', 'data_source_alias', 'warning', 'critical']
+    columns = ['name', 'alias', 'warning', 'critical']
+    order_columns = ['name', 'alias', 'warning', 'critical']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)

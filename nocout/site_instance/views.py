@@ -21,7 +21,7 @@ class SiteInstanceList(ListView):
             {'mData':'name',                   'sTitle' : 'Name',            'sWidth':'null',},
             {'mData':'alias',                  'sTitle' : 'Alias',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'site_ip',                'sTitle' : 'Site IP',         'sWidth':'null',},
-            {'mData':'machine',                'sTitle' : 'Machine',         'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'machine__name',                'sTitle' : 'Machine',         'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'live_status_tcp_port',   'sTitle' : 'Live Status TCP PORT','sWidth':'null','sClass':'hidden-xs'},
             {'mData':'actions',                'sTitle' : 'Actions',             'sWidth':'5%' ,}
             ,]
@@ -30,8 +30,8 @@ class SiteInstanceList(ListView):
 
 class SiteInstanceListingTable(BaseDatatableView):
     model = SiteInstance
-    columns = ['name', 'alias','site_ip', 'machine', 'live_status_tcp_port']
-    order_columns = ['name', 'alias', 'site_ip', 'machine', 'live_status_tcp_port']
+    columns = ['name', 'alias','site_ip', 'machine__name', 'live_status_tcp_port']
+    order_columns = ['name', 'alias', 'site_ip', 'machine__name', 'live_status_tcp_port']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)

@@ -1,0 +1,19 @@
+[
+{
+  "pk": 1, 
+  "model": "inventory.inventory", 
+  "fields": {
+    "city": "", 
+    "name": "default", 
+    "country": "", 
+    "alias": "Default", 
+    "state": "", 
+    "user_group": 1, 
+    "device_groups": [
+      1
+    ], 
+    "organization": 1, 
+    "description": "It's default inventory."
+  }
+}
+]

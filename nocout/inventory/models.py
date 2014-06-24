@@ -8,7 +8,8 @@ from organization.models import Organization
 
 # inventory model --> mapper of user_group & device groups
 class Inventory(models.Model):
-    name = models.CharField('Name', max_length=200)
+    name = models.CharField('Name', max_length=200, unique=True)
+    alias = models.CharField('Alias', max_length=250, null=True, blank=True)
     organization = models.ForeignKey(Organization)
     user_group = models.ForeignKey(UserGroup)
     device_groups = models.ManyToManyField(DeviceGroup, null=True, blank=True)
@@ -17,9 +18,14 @@ class Inventory(models.Model):
     country = models.CharField('Country', max_length=200, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
+    def __unicode__(self):
+        return self.name
+
+
 # gis antenna model
 class Antenna(models.Model):
-    name = models.CharField('Antenna Name', max_length=250)
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250, null=True, blank=True)
     height = models.IntegerField('Antenna Height', null=True, blank=True)
     polarization = models.CharField('Polarization', max_length=50, null=True, blank=True)
     tilt = models.IntegerField('Tilt', null=True, blank=True)
@@ -36,6 +42,8 @@ class Antenna(models.Model):
 
 # gis backhaul model
 class Backhaul(models.Model):
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250, null=True, blank=True)
     bh_configured_on = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul')
     bh_port = models.IntegerField('BH Port', null=True, blank=True)
     bh_type = models.CharField('BH Type', max_length=250, null=True, blank=True)
@@ -58,8 +66,9 @@ class Backhaul(models.Model):
 
 # gis base station model
 class BaseStation(models.Model):
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250, null=True, blank=True)
     bs_site_id = models.CharField('BS Site ID', max_length=250, null=True, blank=True)
-    bs_site_name = models.CharField('BS Site Name', max_length=250, null=True, blank=True)
     bs_switch = models.ForeignKey(Device, null=True, blank=True, related_name='bs_switch')
     backhaul = models.ForeignKey(Backhaul)
     bs_type = models.CharField('BS Type', max_length=40, null=True, blank=True)
@@ -76,8 +85,9 @@ class BaseStation(models.Model):
 
 # gis sector model
 class Sector(models.Model):
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250, null=True, blank=True)
     sector_id = models.CharField('Sector ID', max_length=250, null=True, blank=False)
-    name = models.CharField('Sector Name', max_length=250)
     base_station = models.ForeignKey(BaseStation, related_name='sector')
     idu = models.ForeignKey(Device, max_length=250, null=True, blank=False, related_name='sector_idu')
     idu_port = models.IntegerField('IDU Port', null=True, blank=True)
@@ -96,7 +106,8 @@ class Sector(models.Model):
 
 # gis customer model
 class Customer(models.Model):
-    name = models.CharField('Name', max_length=250)
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250, null=True, blank=True)
     city = models.CharField('City', max_length=250)
     state = models.CharField('State', max_length=250)
     address = models.CharField('Address', max_length=250, null=True, blank=True)
@@ -107,7 +118,8 @@ class Customer(models.Model):
 
 # gis sub-station
 class SubStation(models.Model):
-    name = models.CharField('Name', max_length=250)
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250, null=True, blank=True)
     ip = models.IPAddressField('IP Address')
     mac = models.CharField('MAC Address', max_length=250)
     serial_no = models.CharField('Serial No.', max_length=250, null=True, blank=True)
@@ -126,8 +138,9 @@ class SubStation(models.Model):
 
 # gis circuit model
 class Circuit(models.Model):
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250, null=True, blank=True)
     circuit_id = models.CharField('Circuit ID', max_length=250)
-    name = models.CharField('Circuit Name', max_length=250, null=True, blank=True)
     sector = models.ForeignKey(Sector)
     customer = models.ForeignKey(Customer)
     sub_station = models.ForeignKey(SubStation)

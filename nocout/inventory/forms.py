@@ -7,8 +7,44 @@ from user_group.models import UserGroup
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
 
 
-#*************************************** Antenna **************************************
+#*************************************** Inventory ************************************
+class InventoryForm(forms.ModelForm):
 
+    def __init__(self, *args, **kwargs):
+        initial = kwargs.setdefault('initial',{})
+        if kwargs['instance']:
+            initial['organization']= kwargs['instance'].organization.id
+            initial['user_group']= kwargs['instance'].user_group.id
+            initial['device_groups']= kwargs['instance'].device_groups.values_list('id', flat=True)
+
+        elif Organization.objects.all():
+            initial['organization']=Organization.objects.all()[0].id
+        else:
+            initial['organization']=None
+
+        super(InventoryForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' form-control'
+            else:
+                field.widget.attrs.update({'class':'form-control'})
+
+        organization_id=None
+        if kwargs['instance']:
+            self.fields['name'].widget.attrs['readonly'] = True
+            organization_id=initial['organization']
+        elif Organization.objects.all():
+            organization_id=Organization.objects.all()[0].id
+        if organization_id:
+            organization_descendants_ids= Organization.objects.get(id= organization_id).get_descendants(include_self=True).values_list('id', flat=True)
+            self.fields['device_groups'].queryset= DeviceGroup.objects.filter( organization__in = organization_descendants_ids, is_deleted=0)
+            self.fields['user_group'].queryset = UserGroup.objects.filter( organization__in = organization_descendants_ids, is_deleted=0)
+
+    class Meta:
+        model = Inventory
+
+
+#*************************************** Antenna **************************************
 class AntennaForm(forms.ModelForm):
 
     POLARIZATION = (
@@ -37,35 +73,6 @@ class AntennaForm(forms.ModelForm):
     class Meta:
         model = Antenna
 
-class InventoryForm(forms.ModelForm):
-
-    def __init__(self, *args, **kwargs):
-        initial = kwargs.setdefault('initial',{})
-        if kwargs['instance']:
-            initial['organization']= kwargs['instance'].organization.id
-            initial['user_group']= kwargs['instance'].user_group.id
-            initial['device_groups']= kwargs['instance'].device_groups.values_list('id', flat=True)
-
-        elif Organization.objects.all():
-            initial['organization']=Organization.objects.all()[0].id
-        else:
-            initial['organization']=None
-
-        super(InventoryForm, self).__init__(*args, **kwargs)
-
-        organization_id=None
-        if kwargs['instance']:
-            self.fields['name'].widget.attrs['readonly'] = True
-            organization_id=initial['organization']
-        elif Organization.objects.all():
-            organization_id=Organization.objects.all()[0].id
-        if organization_id:
-            organization_descendants_ids= Organization.objects.get(id= organization_id).get_descendants(include_self=True).values_list('id', flat=True)
-            self.fields['device_groups'].queryset= DeviceGroup.objects.filter( organization__in = organization_descendants_ids, is_deleted=0)
-            self.fields['user_group'].queryset = UserGroup.objects.filter( organization__in = organization_descendants_ids, is_deleted=0)
-
-    class Meta:
-        model = Inventory
 
 #************************************ Base Station ****************************************
 class BaseStationForm(forms.ModelForm):
