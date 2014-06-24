@@ -11,17 +11,14 @@ class Migration(SchemaMigration):
         # Adding model 'Inventory'
         db.create_table(u'inventory_inventory', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=200)),
-            ('user_group', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['user_group.UserGroup'])),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=200)),
+            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
             ('organization', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['organization.Organization'])),
+            ('user_group', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['user_group.UserGroup'])),
             ('city', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
             ('state', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
             ('country', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
             ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-            ('created_by', self.gf('django.db.models.fields.IntegerField')()),
-            ('modified_by', self.gf('django.db.models.fields.IntegerField')()),
-            ('created_at', self.gf('django.db.models.fields.DateTimeField')()),
-            ('modified_at', self.gf('django.db.models.fields.DateTimeField')()),
         ))
         db.send_create_signal(u'inventory', ['Inventory'])
 
@@ -37,7 +34,8 @@ class Migration(SchemaMigration):
         # Adding model 'Antenna'
         db.create_table(u'inventory_antenna', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=250)),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
+            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
             ('height', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
             ('polarization', self.gf('django.db.models.fields.CharField')(max_length=50, null=True, blank=True)),
             ('tilt', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
@@ -53,6 +51,8 @@ class Migration(SchemaMigration):
         # Adding model 'Backhaul'
         db.create_table(u'inventory_backhaul', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
+            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
             ('bh_configured_on', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='backhaul', null=True, to=orm['device.Device'])),
             ('bh_port', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
             ('bh_type', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
@@ -74,8 +74,9 @@ class Migration(SchemaMigration):
         # Adding model 'BaseStation'
         db.create_table(u'inventory_basestation', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
+            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
             ('bs_site_id', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('bs_site_name', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
             ('bs_switch', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='bs_switch', null=True, to=orm['device.Device'])),
             ('backhaul', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.Backhaul'])),
             ('bs_type', self.gf('django.db.models.fields.CharField')(max_length=40, null=True, blank=True)),
@@ -92,8 +93,9 @@ class Migration(SchemaMigration):
         # Adding model 'Sector'
         db.create_table(u'inventory_sector', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
+            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
             ('sector_id', self.gf('django.db.models.fields.CharField')(max_length=250, null=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=250)),
             ('base_station', self.gf('django.db.models.fields.related.ForeignKey')(related_name='sector', to=orm['inventory.BaseStation'])),
             ('idu', self.gf('django.db.models.fields.related.ForeignKey')(max_length=250, related_name='sector_idu', null=True, to=orm['device.Device'])),
             ('idu_port', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
@@ -112,7 +114,8 @@ class Migration(SchemaMigration):
         # Adding model 'Customer'
         db.create_table(u'inventory_customer', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=250)),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
+            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
             ('city', self.gf('django.db.models.fields.CharField')(max_length=250)),
             ('state', self.gf('django.db.models.fields.CharField')(max_length=250)),
             ('address', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
@@ -123,7 +126,8 @@ class Migration(SchemaMigration):
         # Adding model 'SubStation'
         db.create_table(u'inventory_substation', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=250)),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
+            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
             ('ip', self.gf('django.db.models.fields.IPAddressField')(max_length=15)),
             ('mac', self.gf('django.db.models.fields.CharField')(max_length=250)),
             ('serial_no', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
@@ -142,8 +146,9 @@ class Migration(SchemaMigration):
         # Adding model 'Circuit'
         db.create_table(u'inventory_circuit', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
+            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
             ('circuit_id', self.gf('django.db.models.fields.CharField')(max_length=250)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
             ('sector', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.Sector'])),
             ('customer', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.Customer'])),
             ('sub_station', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.SubStation'])),
@@ -214,9 +219,10 @@ class Migration(SchemaMigration):
         },
         u'command.command': {
             'Meta': {'object_name': 'Command'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'command_line': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'command_name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'})
         },
         u'contenttypes.contenttype': {
             'Meta': {'ordering': "('name',)", 'unique_together': "(('app_label', 'model'),)", 'object_name': 'ContentType', 'db_table': "'django_content_type'"},
@@ -278,13 +284,14 @@ class Migration(SchemaMigration):
         },
         u'inventory.antenna': {
             'Meta': {'object_name': 'Antenna'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'azimuth_angle': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'beam_width': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'height': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'make_of_antenna': ('django.db.models.fields.CharField', [], {'max_length': '40', 'null': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
             'polarization': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
             'splitter_installed': ('django.db.models.fields.CharField', [], {'max_length': '4', 'null': 'True', 'blank': 'True'}),
             'sync_splitter_used': ('django.db.models.fields.CharField', [], {'max_length': '4', 'null': 'True', 'blank': 'True'}),
@@ -294,6 +301,7 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'Backhaul'},
             'aggregator': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'backhaul_aggregator'", 'null': 'True', 'to': u"orm['device.Device']"}),
             'aggregator_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'bh_capacity': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'bh_circuit_id': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'bh_configured_on': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'backhaul'", 'null': 'True', 'to': u"orm['device.Device']"}),
@@ -303,6 +311,7 @@ class Migration(SchemaMigration):
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'dr_site': ('django.db.models.fields.CharField', [], {'max_length': '150', 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
             'pe_hostname': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'pe_ip': ('django.db.models.fields.IPAddressField', [], {'max_length': '15', 'null': 'True', 'blank': 'True'}),
             'pop': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'backhaul_pop'", 'null': 'True', 'to': u"orm['device.Device']"}),
@@ -311,9 +320,9 @@ class Migration(SchemaMigration):
         },
         u'inventory.basestation': {
             'Meta': {'object_name': 'BaseStation'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'backhaul': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['inventory.Backhaul']"}),
             'bs_site_id': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
-            'bs_site_name': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'bs_switch': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'bs_switch'", 'null': 'True', 'to': u"orm['device.Device']"}),
             'bs_type': ('django.db.models.fields.CharField', [], {'max_length': '40', 'null': 'True', 'blank': 'True'}),
             'building_height': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
@@ -323,46 +332,47 @@ class Migration(SchemaMigration):
             'infra_provider': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'latitude': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
             'longitude': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
             'tower_height': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'})
         },
         u'inventory.circuit': {
             'Meta': {'object_name': 'Circuit'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'circuit_id': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
             'customer': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['inventory.Customer']"}),
             'date_of_acceptance': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
             'sector': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['inventory.Sector']"}),
             'sub_station': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['inventory.SubStation']"})
         },
         u'inventory.customer': {
             'Meta': {'object_name': 'Customer'},
             'address': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'city': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
             'state': ('django.db.models.fields.CharField', [], {'max_length': '250'})
         },
         u'inventory.inventory': {
             'Meta': {'object_name': 'Inventory'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'city': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'country': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'created_at': ('django.db.models.fields.DateTimeField', [], {}),
-            'created_by': ('django.db.models.fields.IntegerField', [], {}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'device_groups': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['device_group.DeviceGroup']", 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified_at': ('django.db.models.fields.DateTimeField', [], {}),
-            'modified_by': ('django.db.models.fields.IntegerField', [], {}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '200'}),
             'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
             'state': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'user_group': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['user_group.UserGroup']"})
         },
         u'inventory.sector': {
             'Meta': {'object_name': 'Sector'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'antenna': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'sector'", 'null': 'True', 'to': u"orm['inventory.Antenna']"}),
             'base_station': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'sector'", 'to': u"orm['inventory.BaseStation']"}),
             'cell_radius': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
@@ -373,7 +383,7 @@ class Migration(SchemaMigration):
             'idu': ('django.db.models.fields.related.ForeignKey', [], {'max_length': '250', 'related_name': "'sector_idu'", 'null': 'True', 'to': u"orm['device.Device']"}),
             'idu_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'mrc': ('django.db.models.fields.CharField', [], {'max_length': '4', 'null': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
             'odu': ('django.db.models.fields.related.ForeignKey', [], {'max_length': '250', 'related_name': "'sector_odu'", 'null': 'True', 'blank': 'True', 'to': u"orm['device.Device']"}),
             'odu_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'sector_id': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True'}),
@@ -382,6 +392,7 @@ class Migration(SchemaMigration):
         u'inventory.substation': {
             'Meta': {'object_name': 'SubStation'},
             'address': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'building_height': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'city': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
@@ -391,7 +402,7 @@ class Migration(SchemaMigration):
             'latitude': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
             'longitude': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
             'mac': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
             'serial_no': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'state': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
             'tower_height': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'})
@@ -407,16 +418,18 @@ class Migration(SchemaMigration):
         },
         u'organization.organization': {
             'Meta': {'object_name': 'Organization'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'city': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'country': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'created_at': ('django.db.models.fields.DateTimeField', [], {}),
-            'created_by': ('django.db.models.fields.IntegerField', [], {}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified_at': ('django.db.models.fields.DateTimeField', [], {}),
-            'modified_by': ('django.db.models.fields.IntegerField', [], {}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            'state': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'})
+            u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
+            u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
+            'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "'organization_children'", 'null': 'True', 'to': u"orm['organization.Organization']"}),
+            u'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
+            'state': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
+            u'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'})
         },
         u'service.service': {
             'Meta': {'object_name': 'Service'},
@@ -424,16 +437,16 @@ class Migration(SchemaMigration):
             'command': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['command.Command']", 'null': 'True', 'blank': 'True'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'parameters': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['service.ServiceParameters']", 'null': 'True', 'blank': 'True'}),
-            'service_data_sources': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['service.ServiceDataSource']", 'null': 'True', 'blank': 'True'}),
-            'service_name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
+            'service_data_sources': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['service.ServiceDataSource']", 'null': 'True', 'blank': 'True'})
         },
         u'service.servicedatasource': {
             'Meta': {'object_name': 'ServiceDataSource'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
             'critical': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
-            'data_source_alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            'data_source_name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'warning': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'})
         },
         u'service.serviceparameters': {

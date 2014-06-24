@@ -3,13 +3,13 @@ from command.models import Command
 
 
 class ServiceDataSource(models.Model):
-    data_source_name = models.CharField('Name', max_length=100)
-    data_source_alias = models.CharField('Alias', max_length=250)
+    name = models.CharField('Name', max_length=100)
+    alias = models.CharField('Alias', max_length=250)
     warning = models.CharField('Warning', max_length=255, null=True, blank=True)
     critical = models.CharField('Critical', max_length=255, null=True, blank=True)
 
     def __unicode__(self):
-        return  self.data_source_name
+        return  self.name
 
 
 class ServiceParameters(models.Model):
@@ -51,7 +51,7 @@ class ServiceParameters(models.Model):
 
 
 class Service(models.Model):
-    service_name = models.CharField('Service Name', max_length=100)
+    name = models.CharField('Service Name', max_length=100)
     alias = models.CharField('Service Alias', max_length=100)
     parameters = models.ManyToManyField(ServiceParameters, null=True, blank=True)
     service_data_sources = models.ManyToManyField(ServiceDataSource, null=True, blank=True)
@@ -59,5 +59,5 @@ class Service(models.Model):
     description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.service_name
+        return self.name
     

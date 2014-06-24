@@ -7,7 +7,8 @@ from mptt.models import MPTTModel, TreeForeignKey
 
 
 class Organization(MPTTModel, models.Model):
-    name = models.CharField('Name', max_length=250)
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250, null=True, blank=True)
     city = models.CharField('City', max_length=200, null=True, blank=True)
     state = models.CharField('State', max_length=200, null=True, blank=True)
     country = models.CharField('Country', max_length=200, null=True, blank=True)

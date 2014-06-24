@@ -1,0 +1,19 @@
+[
+{
+  "pk": 1, 
+  "model": "organization.organization", 
+  "fields": {
+    "city": "", 
+    "name": "default", 
+    "parent": null, 
+    "lft": 0, 
+    "country": "", 
+    "level": 0, 
+    "alias": "Default", 
+    "state": "", 
+    "tree_id": 0, 
+    "rght": 0, 
+    "description": "It's default organization."
+  }
+}
+]

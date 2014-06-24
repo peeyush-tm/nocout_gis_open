@@ -11,8 +11,8 @@ class Migration(SchemaMigration):
         # Adding model 'ServiceDataSource'
         db.create_table(u'service_servicedatasource', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('data_source_name', self.gf('django.db.models.fields.CharField')(max_length=100)),
-            ('data_source_alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=100)),
+            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
             ('warning', self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True)),
             ('critical', self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True)),
         ))
@@ -34,7 +34,7 @@ class Migration(SchemaMigration):
         # Adding model 'Service'
         db.create_table(u'service_service', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('service_name', self.gf('django.db.models.fields.CharField')(max_length=100)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=100)),
             ('alias', self.gf('django.db.models.fields.CharField')(max_length=100)),
             ('command', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['command.Command'], null=True, blank=True)),
             ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
@@ -80,9 +80,10 @@ class Migration(SchemaMigration):
     models = {
         u'command.command': {
             'Meta': {'object_name': 'Command'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'command_line': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'command_name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'})
         },
         u'service.service': {
             'Meta': {'object_name': 'Service'},
@@ -90,16 +91,16 @@ class Migration(SchemaMigration):
             'command': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['command.Command']", 'null': 'True', 'blank': 'True'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'parameters': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['service.ServiceParameters']", 'null': 'True', 'blank': 'True'}),
-            'service_data_sources': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['service.ServiceDataSource']", 'null': 'True', 'blank': 'True'}),
-            'service_name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
+            'service_data_sources': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['service.ServiceDataSource']", 'null': 'True', 'blank': 'True'})
         },
         u'service.servicedatasource': {
             'Meta': {'object_name': 'ServiceDataSource'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
             'critical': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
-            'data_source_alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            'data_source_name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'warning': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'})
         },
         u'service.serviceparameters': {
