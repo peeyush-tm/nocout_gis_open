@@ -12,4 +12,3 @@ class CommandForm(forms.ModelForm):
                 field.widget.attrs.update({'class':'form-control'})
     class Meta:
         model = Command
-        fields = ('command_name', 'command_line')

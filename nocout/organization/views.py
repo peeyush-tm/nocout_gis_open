@@ -22,12 +22,13 @@ class OrganizationList(ListView):
     def get_context_data(self, **kwargs):
         context=super(OrganizationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',                'sTitle' : 'Name',          'sWidth':'null',  },
-            {'mData':'description',         'sTitle' : 'Description',   'sWidth':'null',  },
-            {'mData':'city',                'sTitle' : 'City',          'sWidth':'null',  },
-            {'mData':'state',               'sTitle' : 'State',         'sWidth':'null',  },
-            {'mData':'country',             'sTitle' : 'Country',       'sWidth':'null',  },
-            {'mData':'parent__name',        'sTitle' : 'Parent',  'sWidth':'null',},]
+            {'mData':'name',                'sTitle' : 'Name',          'sWidth':'null',},
+            {'mData':'alias',               'sTitle' : 'Alias',         'sWidth':'null',},
+            {'mData':'parent__name',        'sTitle' : 'Parent',        'sWidth':'null',},
+            {'mData':'city',                'sTitle' : 'City',          'sWidth':'null',},
+            {'mData':'state',               'sTitle' : 'State',         'sWidth':'null',},
+            {'mData':'country',             'sTitle' : 'Country',       'sWidth':'null',},
+            {'mData':'description',         'sTitle' : 'Description',   'sWidth':'null',},]
 
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%'})
@@ -37,8 +38,8 @@ class OrganizationList(ListView):
 
 class OrganizationListingTable(BaseDatatableView):
     model = Organization
-    columns = ['name', 'description','city','state','country', 'parent__name',]
-    order_columns = ['name', 'description', 'state', 'country', 'parent__name']
+    columns = ['name', 'alias', 'description','city','state','country', 'parent__name',]
+    order_columns = ['name',  'alias', 'description', 'state', 'country', 'parent__name']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -123,17 +124,13 @@ class OrganizationUpdate(UpdateView):
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field].pk if field in ('user_group','device_group')  and form.cleaned_data[field]
-                                    else form.cleaned_data[field] for field in form.cleaned_data.keys() }
+        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            initial_field_dict['user_group']=UserGroup.objects.get( pk= initial_field_dict['user_group']).name if initial_field_dict['user_group'] else str(None)
-            cleaned_data_field_dict['device_group']=DeviceGroup.objects.get( pk= initial_field_dict['device_group']).name if initial_field_dict['device_group'] else str(None)
-
-            verb_string = 'Changed values of Organization : %s from initial values '%(self.object.name) + \
-                          ', '.join(['%s: %s' %(k, initial_field_dict[k]) for k in changed_fields_dict])+\
-                           ' to '+\
-                           ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            verb_string = 'Changed values of Organization : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
+                               for k in changed_fields_dict])+\
+                               ' to '+\
+                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
             self.object=form.save()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( OrganizationUpdate.success_url )

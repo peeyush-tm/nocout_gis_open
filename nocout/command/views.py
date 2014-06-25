@@ -18,7 +18,8 @@ class CommandList(ListView):
     def get_context_data(self, **kwargs):
         context=super(CommandList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'command_name',     'sTitle' : 'Command Name',  'sWidth':'null', },
+            {'mData':'name',             'sTitle' : 'Name',          'sWidth':'null', },
+            {'mData':'alias',            'sTitle' : 'Alias',         'sWidth':'null', },
             {'mData':'command_line',     'sTitle' : 'Command Line',  'sWidth':'null', },
             {'mData':'actions',          'sTitle' : 'Actions',       'sWidth':'10%',  },
             ]
@@ -28,8 +29,8 @@ class CommandList(ListView):
 
 class CommandListingTable(BaseDatatableView):
     model = Command
-    columns = ['command_name', 'command_line']
-    order_columns = ['command_name', 'command_line']
+    columns = ['name', 'alias', 'command_line']
+    order_columns = ['name', 'alias', 'command_line']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)

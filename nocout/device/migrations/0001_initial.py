@@ -271,9 +271,10 @@ class Migration(SchemaMigration):
     models = {
         u'command.command': {
             'Meta': {'object_name': 'Command'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'command_line': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'command_name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'})
         },
         u'device.city': {
             'Meta': {'object_name': 'City'},
@@ -422,16 +423,18 @@ class Migration(SchemaMigration):
         },
         u'organization.organization': {
             'Meta': {'object_name': 'Organization'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'city': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'country': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'created_at': ('django.db.models.fields.DateTimeField', [], {}),
-            'created_by': ('django.db.models.fields.IntegerField', [], {}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified_at': ('django.db.models.fields.DateTimeField', [], {}),
-            'modified_by': ('django.db.models.fields.IntegerField', [], {}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            'state': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'})
+            u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
+            u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
+            'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "'organization_children'", 'null': 'True', 'to': u"orm['organization.Organization']"}),
+            u'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
+            'state': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
+            u'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'})
         },
         u'service.service': {
             'Meta': {'object_name': 'Service'},
@@ -439,16 +442,16 @@ class Migration(SchemaMigration):
             'command': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['command.Command']", 'null': 'True', 'blank': 'True'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'parameters': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['service.ServiceParameters']", 'null': 'True', 'blank': 'True'}),
-            'service_data_sources': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['service.ServiceDataSource']", 'null': 'True', 'blank': 'True'}),
-            'service_name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
+            'service_data_sources': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['service.ServiceDataSource']", 'null': 'True', 'blank': 'True'})
         },
         u'service.servicedatasource': {
             'Meta': {'object_name': 'ServiceDataSource'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
             'critical': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
-            'data_source_alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            'data_source_name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'warning': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'})
         },
         u'service.serviceparameters': {

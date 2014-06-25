@@ -94,16 +94,18 @@ class Migration(SchemaMigration):
         },
         u'organization.organization': {
             'Meta': {'object_name': 'Organization'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'city': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'country': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'created_at': ('django.db.models.fields.DateTimeField', [], {}),
-            'created_by': ('django.db.models.fields.IntegerField', [], {}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified_at': ('django.db.models.fields.DateTimeField', [], {}),
-            'modified_by': ('django.db.models.fields.IntegerField', [], {}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            'state': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'})
+            u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
+            u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
+            'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "'organization_children'", 'null': 'True', 'to': u"orm['organization.Organization']"}),
+            u'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
+            'state': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
+            u'tree_id': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'})
         },
         u'user_profile.roles': {
             'Meta': {'object_name': 'Roles'},

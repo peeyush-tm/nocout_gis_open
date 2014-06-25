@@ -33,8 +33,13 @@ class InventoryListing(ListView):
         context=super(InventoryListing, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData':'name',                'sTitle' : 'Name',             'sWidth':'null',},
+            {'mData':'alias',               'sTitle' : 'Alias',            'sWidth':'null',},
             {'mData':'user_group__name',    'sTitle' : 'User Group',       'sWidth':'null',},
             {'mData':'organization__name',  'sTitle' : 'Organization',     'sWidth':'null',},
+            {'mData':'city',                'sTitle' : 'City',             'sWidth':'null',},
+            {'mData':'state',               'sTitle' : 'State',            'sWidth':'null',},
+            {'mData':'country',             'sTitle' : 'Country',          'sWidth':'null',},
+            {'mData':'description',         'sTitle' : 'Description',      'sWidth':'null',},
             ]
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
@@ -45,8 +50,8 @@ class InventoryListing(ListView):
 
 class InventoryListingTable(BaseDatatableView):
     model = Inventory
-    columns = ['name', 'user_group__name','organization__name']
-    order_columns = ['name', 'user_group__name', 'organization__name']
+    columns = ['name', 'alias', 'user_group__name','organization__name', 'city', 'state', 'country', 'description']
+    order_columns = ['name', 'alias', 'user_group__name','organization__name', 'city', 'state', 'country', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -75,7 +80,8 @@ class InventoryListingTable(BaseDatatableView):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
-            dct.update(actions='<a href="/inventory/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>'.format(dct.pop('id')))
+            dct.update(actions='<a href="/inventory/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                       <a href="/inventory/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
 
         return qs
 
@@ -140,6 +146,10 @@ class InventoryUpdate(UpdateView):
         action.send( self.request.user, verb='Created', action_object = self.object)
         return HttpResponseRedirect( InventoryCreate.success_url )
 
+class InventoryDelete(DeleteView):
+    model = Inventory
+    template_name = 'inventory/inventory_delete.html'
+    success_url = reverse_lazy('InventoryList')
 
 def inventory_details_wrt_organization(request):
     organization_id= request.GET['organization']
@@ -157,7 +167,6 @@ def inventory_details_wrt_organization(request):
 
 
 #**************************************** Antenna *********************************************
-
 class AntennaList(ListView):
     model = Antenna
     template_name = 'antenna/antenna_list.html'
@@ -166,6 +175,7 @@ class AntennaList(ListView):
         context=super(AntennaList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData':'name',              'sTitle' : 'Name',             'sWidth':'null',},
+            {'mData':'alias',             'sTitle' : 'Alias',            'sWidth':'null',},
             {'mData':'height',            'sTitle' : 'Height',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'polarization',      'sTitle' : 'Polarization',     'sWidth':'null',},
             {'mData':'tilt',              'sTitle' : 'Tilt',             'sWidth':'null','sClass':'hidden-xs'},
@@ -179,8 +189,8 @@ class AntennaList(ListView):
 
 class AntennaListingTable(BaseDatatableView):
     model = AntennaList
-    columns = ['name', 'height', 'polarization', 'tilt', 'beam_width']
-    order_columns = ['name', 'height', 'polarization', 'tilt', 'beam_width']
+    columns = ['name', 'alias', 'height', 'polarization', 'tilt', 'beam_width']
+    order_columns = ['name', 'alias', 'height', 'polarization', 'tilt', 'beam_width']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -292,7 +302,9 @@ class BaseStationList(ListView):
     def get_context_data(self, **kwargs):
         context=super(BaseStationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'bs_site_name',              'sTitle' : 'Base Site Name',                'sWidth':'null',},
+            {'mData':'name',                      'sTitle' : 'Name',                'sWidth':'null',},
+            {'mData':'alias',                     'sTitle' : 'Alias',               'sWidth':'null',},
+            {'mData':'bs_site_id',                'sTitle' : 'Base Site ID',        'sWidth':'null',},
             {'mData':'bs_switch',                 'sTitle' : 'Base Switch Name',    'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'backhaul',                  'sTitle' : 'Backhaul',            'sWidth':'null',},
             {'mData':'bs_type',                   'sTitle' : 'Base Station Type',   'sWidth':'null','sClass':'hidden-xs'},
@@ -305,8 +317,8 @@ class BaseStationList(ListView):
 
 class BaseStationListingTable(BaseDatatableView):
     model = BaseStationList
-    columns = ['bs_site_name', 'bs_switch', 'backhaul', 'bs_type', 'building_height', 'description']
-    order_columns = ['bs_site_name', 'bs_switch', 'backhaul', 'bs_type', 'building_height', 'description']
+    columns = ['name', 'alias', 'bs_site_id', 'bs_switch', 'backhaul', 'bs_type', 'building_height', 'description']
+    order_columns = ['name', 'alias', 'bs_site_id', 'bs_switch', 'backhaul', 'bs_type', 'building_height', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -419,6 +431,8 @@ class BackhaulList(ListView):
     def get_context_data(self, **kwargs):
         context=super(BackhaulList, self).get_context_data(**kwargs)
         datatable_headers = [
+            {'mData':'name',                    'sTitle' : 'Name',                         'sWidth':'null',},
+            {'mData':'alias',                   'sTitle' : 'Alias',                        'sWidth':'null',},
             {'mData':'bh_configured_on',        'sTitle' : 'Backhaul Configured On',       'sWidth':'null',},
             {'mData':'bh_port',                 'sTitle' : 'Backhaul Port',                'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'bh_type',                 'sTitle' : 'Backhaul Type',                'sWidth':'null',},
@@ -434,8 +448,8 @@ class BackhaulList(ListView):
 
 class BackhaulListingTable(BaseDatatableView):
     model = BackhaulList
-    columns = ['bh_configured_on', 'bh_port', 'bh_type', 'pop', 'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
-    order_columns = ['bh_configured_on', 'bh_port', 'bh_type', 'pop', 'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
+    columns = ['name', 'alias', 'bh_configured_on', 'bh_port', 'bh_type', 'pop', 'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
+    order_columns = ['name', 'alias', 'bh_configured_on', 'bh_port', 'bh_type', 'pop', 'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -549,6 +563,7 @@ class SectorList(ListView):
         context=super(SectorList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData':'name',          'sTitle' : 'Name',             'sWidth':'null',},
+            {'mData':'alias',         'sTitle' : 'Alias',            'sWidth':'null',},
             {'mData':'sector_id',     'sTitle' : 'ID',               'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'base_station',  'sTitle' : 'Base Station',     'sWidth':'null',},
             {'mData':'idu',           'sTitle' : 'IDU',              'sWidth':'null','sClass':'hidden-xs'},
@@ -563,8 +578,8 @@ class SectorList(ListView):
 
 class SectorListingTable(BaseDatatableView):
     model = SectorList
-    columns = ['name', 'sector_id', 'base_station', 'idu', 'odu', 'antenna', 'mrc', 'description']
-    order_columns = ['name', 'sector_id', 'base_station', 'idu', 'odu', 'antenna', 'mrc', 'description']
+    columns = ['name', 'alias', 'sector_id', 'base_station', 'idu', 'odu', 'antenna', 'mrc', 'description']
+    order_columns = ['name', 'alias', 'sector_id', 'base_station', 'idu', 'odu', 'antenna', 'mrc', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -677,6 +692,7 @@ class CustomerList(ListView):
         context=super(CustomerList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData':'name',              'sTitle' : 'Name',             'sWidth':'null',},
+            {'mData':'alias',             'sTitle' : 'Alias',            'sWidth':'null',},
             {'mData':'city',              'sTitle' : 'City',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'state',             'sTitle' : 'State',            'sWidth':'null',},
             {'mData':'address',           'sTitle' : 'Address',          'sWidth':'null','sClass':'hidden-xs'},
@@ -688,8 +704,8 @@ class CustomerList(ListView):
 
 class CustomerListingTable(BaseDatatableView):
     model = CustomerList
-    columns = ['name', 'city', 'state', 'address', 'description']
-    order_columns = ['name', 'city', 'state', 'address', 'description']
+    columns = ['name', 'alias', 'city', 'state', 'address', 'description']
+    order_columns = ['name', 'alias', 'city', 'state', 'address', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -802,6 +818,7 @@ class SubStationList(ListView):
         context=super(SubStationList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData':'name',             'sTitle' : 'Name',               'sWidth':'null',},
+            {'mData':'alias',            'sTitle' : 'Alias',              'sWidth':'null',},
             {'mData':'ip',               'sTitle' : 'IP',                 'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'mac',              'sTitle' : 'MAC',                'sWidth':'null',},
             {'mData':'serial_no',        'sTitle' : 'Serial No.',         'sWidth':'null','sClass':'hidden-xs'},
@@ -818,8 +835,8 @@ class SubStationList(ListView):
 
 class SubStationListingTable(BaseDatatableView):
     model = SubStationList
-    columns = ['name', 'ip', 'mac', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
-    order_columns = ['name', 'ip', 'mac', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
+    columns = ['name', 'alias', 'ip', 'mac', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
+    order_columns = ['name', 'alias', 'ip', 'mac', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -932,6 +949,7 @@ class CircuitList(ListView):
         context=super(CircuitList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData':'name',                    'sTitle' : 'Name',                 'sWidth':'null',},
+            {'mData':'alias',                   'sTitle' : 'Alias',                'sWidth':'null',},
             {'mData':'circuit_id',              'sTitle' : 'Circuit ID',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'sector',                  'sTitle' : 'Sector',               'sWidth':'null',},
             {'mData':'customer',                'sTitle' : 'Customer',             'sWidth':'null','sClass':'hidden-xs'},
@@ -945,8 +963,8 @@ class CircuitList(ListView):
 
 class CircuitListingTable(BaseDatatableView):
     model = CircuitList
-    columns = ['name', 'circuit_id', 'sector', 'customer', 'sub_station', 'date_of_acceptance', 'description']
-    order_columns = ['name', 'city', 'state', 'address', 'description']
+    columns = ['name', 'alias', 'circuit_id', 'sector', 'customer', 'sub_station', 'date_of_acceptance', 'description']
+    order_columns = ['name', 'alias', 'circuit_id', 'sector', 'customer', 'sub_station', 'date_of_acceptance', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)

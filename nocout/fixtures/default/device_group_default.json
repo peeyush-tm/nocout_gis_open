@@ -9,9 +9,13 @@
     "parent": null, 
     "lft": 1, 
     "tree_id": 1, 
+    "devices": [
+      1
+    ], 
     "alias": "Default", 
     "location": "", 
     "address": "", 
+    "organization": 1, 
     "level": 0
   }
 }

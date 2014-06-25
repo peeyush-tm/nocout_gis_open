@@ -11,7 +11,8 @@ class Migration(SchemaMigration):
         # Adding model 'Command'
         db.create_table(u'command_command', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('command_name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=100)),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=100)),
+            ('alias', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
             ('command_line', self.gf('django.db.models.fields.CharField')(max_length=100)),
         ))
         db.send_create_signal(u'command', ['Command'])
@@ -25,9 +26,10 @@ class Migration(SchemaMigration):
     models = {
         u'command.command': {
             'Meta': {'object_name': 'Command'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'command_line': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'command_name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'})
         }
     }
 
