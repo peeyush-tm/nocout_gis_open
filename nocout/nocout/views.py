@@ -13,7 +13,7 @@ from session_management.models import Visitor
 @csrf_protect
 def login(request):
     if not request.user.is_anonymous():
-        return HttpResponseRedirect('/home/')
+        return HttpResponseRedirect('/network_maps/gis/')
 
     return render(request, 'nocout/login.html')
 
