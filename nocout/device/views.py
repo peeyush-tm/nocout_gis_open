@@ -36,11 +36,13 @@ class DeviceList(ListView):
         context=super(DeviceList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData':'device_name',         'sTitle' : 'Device Name',   'sWidth':'null',},
+            {'mData':'device_alias',        'sTitle' : 'Alias',         'sWidth':'null',},
             {'mData':'site_instance__name', 'sTitle' : 'Site Instance', 'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'organization__name',  'sTitle' : 'Organization',  'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'ip_address',          'sTitle' : 'IP Address',    'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'city',                'sTitle' : 'City',          'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'state',               'sTitle' : 'State',         'sWidth':'10%' ,'sClass':'hidden-xs'},]
+            {'mData':'mac_address',          'sTitle' : 'MAC Address',    'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'parent__device_name',                'sTitle' : 'Parent',          'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'agent_tag',               'sTitle' : 'Agent Tag',         'sWidth':'10%' ,'sClass':'hidden-xs'},]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
@@ -61,8 +63,8 @@ def create_device_tree(request):
 
 class DeviceListingTable(BaseDatatableView):
     model = Device
-    columns = ['device_name', 'site_instance__name', 'organization__name', 'ip_address', 'city', 'state']
-    order_columns = ['device_name', 'site_instance__name', 'organization__name', 'ip_address', 'city', 'state']
+    columns = ['device_name', 'device_alias', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name', 'agent_tag']
+    order_columns = ['device_name', 'device_alias', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name', 'agent_tag']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -102,6 +104,7 @@ class DeviceListingTable(BaseDatatableView):
         for dct in qs:
             dct.update(actions='<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>\
+            <a href="#" onclick="Dajaxice.device.add_device_for_monitoring(device_add_status, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-warning"></i></a>\
             <a href="#" onclick="Dajaxice.device.start_device_monitoring(device_monitor_status, {{\'device_id\': {0}}})"><i class="fa fa-play-circle text-success"></i></a>'.format(dct.pop('id')))
         return qs
 
@@ -216,7 +219,7 @@ class DeviceCreate(CreateView):
 
         # saving associated services  --> M2M Relation (Model: Service)
         for service in form.cleaned_data['service']:
-            device_service = Service.objects.get(service_name=service)
+            device_service = Service.objects.get(name=service)
             device.service.add(device_service)
             device.save()
 
@@ -328,7 +331,7 @@ class DeviceUpdate(UpdateView):
 
         # saving associated services  --> M2M Relation (Model: Service)
         for service in form.cleaned_data['service']:
-            device_service = Service.objects.get(service_name=service)
+            device_service = Service.objects.get(name=service)
             self.object.service.add(device_service)
             self.object.save()
 
@@ -408,7 +411,7 @@ class DeviceUpdate(UpdateView):
                 if initial_field_dict['organization'] else str(None)
             initial_field_dict['site_instance'] = SiteInstance.objects.get(pk=initial_field_dict['site_instance']).name \
                 if initial_field_dict['site_instance'] else str(None)
-            initial_field_dict['service'] = ', '.join([Service.objects.get(pk=service).service_name for service in initial_field_dict['service']])\
+            initial_field_dict['service'] = ', '.join([Service.objects.get(pk=service).name for service in initial_field_dict['service']])\
                 if initial_field_dict['service'] else str(None)
             initial_field_dict['device_model'] = DeviceModel.objects.get(pk=initial_field_dict['device_model']).name \
                 if initial_field_dict['device_model'] else str(None)
@@ -425,7 +428,7 @@ class DeviceUpdate(UpdateView):
                 if cleaned_data_field_dict['organization'] else str(None)
             cleaned_data_field_dict['site_instance'] = SiteInstance.objects.get(pk=cleaned_data_field_dict['site_instance']).name \
                 if cleaned_data_field_dict['site_instance'] else str(None)
-            cleaned_data_field_dict['service'] = ', '.join([Service.objects.get(pk=service).service_name for service in cleaned_data_field_dict['service'] \
+            cleaned_data_field_dict['service'] = ', '.join([Service.objects.get(pk=service).name for service in cleaned_data_field_dict['service'] \
                 if cleaned_data_field_dict['service']])
             cleaned_data_field_dict['device_model'] = DeviceModel.objects.get(pk=cleaned_data_field_dict['device_model']).name \
                 if cleaned_data_field_dict['device_model'] else str(None)

@@ -209,6 +209,7 @@ class UserCreate(CreateView):
 
     def form_valid(self, form):
         self.object = form.save()
+
         return super(ModelFormMixin, self).form_valid(form)
 
 class UserUpdate(UpdateView):
@@ -237,6 +238,11 @@ class UserUpdate(UpdateView):
         project_group= Group.objects.get( name = project_group_name)
         self.object.groups.add(project_group)
         self.object.save()
+
+        print "*******************************************************"
+        print self.__dict__
+        print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"
+        print "Form: ", form
         form.save_m2m()
 
         #User Activity Logs
