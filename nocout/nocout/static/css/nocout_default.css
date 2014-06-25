@@ -73,3 +73,8 @@ span.dept {
 .box .header-tabs .nav-tabs {
   margin-right: 35px;
 }
+
+/*CSS for side menu*/
+#sidebar ul.sub li.has-sub-sub ul.sub-sub li.current {
+  background: #f4f4f4 !important;
+}
