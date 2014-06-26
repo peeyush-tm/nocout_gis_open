@@ -29,6 +29,8 @@ class Antenna(models.Model):
     height = models.IntegerField('Antenna Height', null=True, blank=True)
     polarization = models.CharField('Polarization', max_length=50, null=True, blank=True)
     tilt = models.IntegerField('Tilt', null=True, blank=True)
+    gain = models.IntegerField('Gain', null=True, blank=True)
+    mount_type = models.CharField('Mount Type', max_length=100, null=True, blank=True)
     beam_width = models.IntegerField('Beam Width', null=True, blank=True)
     azimuth_angle = models.IntegerField('Azimuth Angle', null=True, blank=True)
     splitter_installed = models.CharField('Splitter Installed', max_length=4, null=True, blank=True)
@@ -45,11 +47,17 @@ class Backhaul(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250, null=True, blank=True)
     bh_configured_on = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul')
+    bh_port_name = models.CharField('BH Port Name', max_length=40, null=True, blank=True)
     bh_port = models.IntegerField('BH Port', null=True, blank=True)
     bh_type = models.CharField('BH Type', max_length=250, null=True, blank=True)
+    bh_switch = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul_switch')
+    switch_port_name = models.CharField('Switch Port Name', max_length=40, null=True, blank=True)
+    switch_port = models.IntegerField('Switch Port', null=True, blank=True)
     pop = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul_pop')
+    pop_port_name = models.CharField('POP Port Name', max_length=40, null=True, blank=True)
     pop_port = models.IntegerField('Pop Port', null=True, blank=True)
     aggregator = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul_aggregator')
+    aggregator_port_name = models.CharField('Aggregator Port Name', max_length=40, null=True, blank=True)
     aggregator_port = models.IntegerField('Aggregator Port', null=True, blank=True)
     pe_hostname = models.CharField('PE Hostname', max_length=250, null=True, blank=True)
     pe_ip = models.IPAddressField('PE IP Address', null=True, blank=True)
@@ -61,7 +69,7 @@ class Backhaul(models.Model):
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
-        return "{} : {} : {}".format(self.description, self.bh_configured_on, self.bh_port)
+        return self.name
 
 
 # gis base station model
@@ -81,7 +89,8 @@ class BaseStation(models.Model):
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
-        return self.bs_site_name
+        return self.name
+
 
 # gis sector model
 class Sector(models.Model):
@@ -90,15 +99,24 @@ class Sector(models.Model):
     sector_id = models.CharField('Sector ID', max_length=250, null=True, blank=False)
     base_station = models.ForeignKey(BaseStation, related_name='sector')
     idu = models.ForeignKey(Device, max_length=250, null=True, blank=False, related_name='sector_idu')
+    idu_port_name = models.CharField('IDU Port Name', max_length=40, null=True, blank=True)
     idu_port = models.IntegerField('IDU Port', null=True, blank=True)
+    idu_type = models.CharField('IDU Type', max_length=250, null=True, blank=True)
     odu = models.ForeignKey(Device, max_length=250, null=True, blank=True, related_name='sector_odu')
+    odu_port_name = models.CharField('ODU Port Name', max_length=40, null=True, blank=True)
     odu_port = models.IntegerField('ODU Port', null=True, blank=True)
     antenna = models.ForeignKey(Antenna, null=True, blank=True, related_name='sector')
     mrc = models.CharField('MRC', max_length=4, null=True, blank=True)
     tx_power = models.IntegerField('TX Power', null=True, blank=True)
+    rx_power = models.IntegerField('RX Field', null=True, blank=True)
+    rf_bandwidth = models.CharField('RF Bandwidth', max_length=250, null=True, blank=True)
     frequency = models.IntegerField('Frequency', null=True, blank=True)
     frame_length = models.IntegerField('Frame Length', null=True, blank=True)
     cell_radius = models.IntegerField('Cell Radius', null=True, blank=True)
+    modulation = models.CharField('Modulation', max_length=250, null=True, blank=True)
+    city = models.CharField('City', max_length=250, null=True, blank=True)
+    state = models.CharField('State', max_length=250, null=True, blank=True)
+    address = models.CharField('Address', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
@@ -108,8 +126,8 @@ class Sector(models.Model):
 class Customer(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250, null=True, blank=True)
-    city = models.CharField('City', max_length=250)
-    state = models.CharField('State', max_length=250)
+    city = models.CharField('City', max_length=250, null=True, blank=True)
+    state = models.CharField('State', max_length=250, null=True, blank=True)
     address = models.CharField('Address', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
@@ -120,14 +138,13 @@ class Customer(models.Model):
 class SubStation(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250, null=True, blank=True)
-    ip = models.IPAddressField('IP Address')
-    mac = models.CharField('MAC Address', max_length=250)
+    device = models.ForeignKey(Device)
+    version = models.CharField('Versiom', max_length=40, null=True, blank=True)
     serial_no = models.CharField('Serial No.', max_length=250, null=True, blank=True)
-    latitude = models.FloatField('Latitude', null=True, blank=True)
-    longitude = models.FloatField('Longitude', null=True, blank=True)
     building_height = models.IntegerField('Building Height', null=True, blank=True)
     tower_height = models.IntegerField('Tower Height', null=True, blank=True)
     ethernet_extender = models.CharField('Ethernet Extender', max_length=250, null=True, blank=True)
+    cable_length = models.IntegerField('Cable Length', null=True, blank=True)
     city = models.CharField('City', max_length=250)
     state = models.CharField('State', max_length=250)
     address = models.CharField('Address', max_length=250, null=True, blank=True)
@@ -140,6 +157,7 @@ class SubStation(models.Model):
 class Circuit(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250, null=True, blank=True)
+    circuit_type = models.CharField('Type', max_length=250, null=True, blank=True)
     circuit_id = models.CharField('Circuit ID', max_length=250)
     sector = models.ForeignKey(Sector)
     customer = models.ForeignKey(Customer)
