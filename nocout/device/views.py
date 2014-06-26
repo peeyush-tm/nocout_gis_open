@@ -104,7 +104,7 @@ class DeviceListingTable(BaseDatatableView):
         for dct in qs:
             dct.update(actions='<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>\
-            <a href="#" onclick="Dajaxice.device.add_device_for_monitoring(device_add_status, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-warning"></i></a>\
+            <a href="#" class="add_device_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus-square text-warning"></i></a>\
             <a href="#" onclick="Dajaxice.device.start_device_monitoring(device_monitor_status, {{\'device_id\': {0}}})"><i class="fa fa-play-circle text-success"></i></a>'.format(dct.pop('id')))
         return qs
 
