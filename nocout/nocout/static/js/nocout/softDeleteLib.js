@@ -3,6 +3,7 @@
  * @method get_soft_delete_form
  * @param content {JSON Object} Contains data object sent from server
  */
+
 function get_soft_delete_form(content) {
     // soft_delete_html: contains html for soft delete form
     var soft_delete_html = "";
@@ -76,6 +77,36 @@ function get_soft_delete_form(content) {
  * @param responseResult {JSON Object} It contains the json object passed from the server
  */
 function show_response_message(responseResult) {
+
+    bootbox.alert(responseResult.result.message);
+}
+
+function add_device(device_id) {
+    bootbox.dialog({
+        message: "Add device "+device_id+" for monitoring.",
+        title: "<span class='text-danger'><i class='fa fa-times'></i> Add device to nms core. </span>",
+        buttons: {
+            success: {
+                label: "Yes!",
+                className: "btn-success",
+                callback: function () {
+                    Dajaxice.device.add_device_to_nms_core(device_add_message, {'device_id': device_id});
+                }
+            },
+            danger: {
+                label: "No!",
+                className: "btn-danger",
+                callback: function () {
+                    bootbox.alert("Ok! You choose to not add this device right now for monitoring.", function () {
+                        $(".bootbox").modal("hide");
+                    });
+                }
+            }
+        }
+    });
+}
+
+function device_add_message(responseResult) {
 
     bootbox.alert(responseResult.result.message);
 }
