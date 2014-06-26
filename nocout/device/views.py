@@ -40,9 +40,9 @@ class DeviceList(ListView):
             {'mData':'site_instance__name', 'sTitle' : 'Site Instance', 'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'organization__name',  'sTitle' : 'Organization',  'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'ip_address',          'sTitle' : 'IP Address',    'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'mac_address',          'sTitle' : 'MAC Address',    'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'parent__device_name',                'sTitle' : 'Parent',          'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'agent_tag',               'sTitle' : 'Agent Tag',         'sWidth':'10%' ,'sClass':'hidden-xs'},]
+            {'mData':'mac_address',         'sTitle' : 'MAC Address',   'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'parent__device_name', 'sTitle' : 'Parent',        'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'agent_tag',           'sTitle' : 'Agent Tag',     'sWidth':'10%' ,'sClass':'hidden-xs'},]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
