@@ -1,3 +1,4 @@
+import ast
 import json
 from dajax.core import Dajax
 from dajaxice.decorators import dajaxice_register
@@ -367,12 +368,12 @@ def update_cities_after_invalid_form(request, option, city_id):
 
 # add device for monitoring
 @dajaxice_register
-def add_device_for_monitoring(request, device_id):
+def add_device_to_nms_core(request, device_id):
     print "device_id", device_id
     result = dict()
     result['data'] = {}
     result['success'] = 0
-    result['message'] = "Device data monitoring failed."
+    result['message'] = "Device addition failed."
     result['data']['meta'] = ''
     device = Device.objects.get(pk=device_id)
     device_data = {'device_name': device.device_name,
@@ -381,38 +382,33 @@ def add_device_for_monitoring(request, device_id):
                    'agent_tag': device.agent_tag,
                    'site': device.site_instance.name,
                    'mode' : 'addhost'}
-    print "device_data", device_data
-    r = requests.post('http://omdadmin:omd@192.168.0.158/BT/check_mk/nocout.py', data=device_data)
+    r = requests.post('http://omdadmin:omd@192.168.0.166/site1/check_mk/nocout.py', data=device_data)
+    print "r: ", r.text
+    response_dict = ast.literal_eval(r.text)
     if r:
         result['data'] = device_data
         result['success'] = 1
-        result['message'] = "Device monitoring is successfully started."
-    print result
-    print "r.text", r.text
-    print "priyesh"
-    print "json.dumps({'result': result})"
+        if response_dict['error_code'] != None:
+            result['message'] = response_dict['error_message'].capitalize()
+        else:
+            result['message'] = "Device added successfully."
+
     return json.dumps({'result': result})
 
 
 # sending device  information for it's monitoring
 @dajaxice_register
-def start_device_monitoring(request, device_id):
-    print "device_id", device_id
+def start_device_monitoring(request):
     result = dict()
     result['data'] = {}
     result['success'] = 0
-    result['message'] = "Device data monitoring failed."
+    result['message'] = "Device activation for monitoring failed."
     result['data']['meta'] = ''
-    device = Device.objects.get(pk=device_id)
     device_data = {'mode' : 'sync'}
-    print "device_data", device_data
-    r = requests.post('http://omdadmin:omd@192.168.0.158/BT/check_mk/nocout.py', data=device_data)
+    r = requests.post('http://omdadmin:omd@localhost/site1/check_mk/nocout.py', data=device_data)
+    response_dict = ast.literal_eval(r.text)
     if r:
         result['data'] = device_data
         result['success'] = 1
-        result['message'] = "Device monitoring is successfully started."
-    print result
-    print "r.text", r.text
-    print "priyesh"
-    print "json.dumps({'result': result})"
+        result['message'] = response_dict['error_message'].capitalize()
     return json.dumps({'result': result})

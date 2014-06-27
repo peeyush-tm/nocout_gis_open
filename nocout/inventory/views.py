@@ -305,8 +305,8 @@ class BaseStationList(ListView):
             {'mData':'name',                      'sTitle' : 'Name',                'sWidth':'null',},
             {'mData':'alias',                     'sTitle' : 'Alias',               'sWidth':'null',},
             {'mData':'bs_site_id',                'sTitle' : 'Base Site ID',        'sWidth':'null',},
-            {'mData':'bs_switch',                 'sTitle' : 'Base Switch Name',    'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'backhaul',                  'sTitle' : 'Backhaul',            'sWidth':'null',},
+            {'mData':'bs_switch__device_name',    'sTitle' : 'Base Switch Name',    'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'backhaul__name',           'sTitle' : 'Backhaul',            'sWidth':'null',},
             {'mData':'bs_type',                   'sTitle' : 'Base Station Type',   'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'building_height',           'sTitle' : 'Building Height',     'sWidth':'null',},
             {'mData':'description',               'sTitle' : 'Description',         'sWidth':'null','sClass':'hidden-xs'},
@@ -317,8 +317,8 @@ class BaseStationList(ListView):
 
 class BaseStationListingTable(BaseDatatableView):
     model = BaseStationList
-    columns = ['name', 'alias', 'bs_site_id', 'bs_switch', 'backhaul', 'bs_type', 'building_height', 'description']
-    order_columns = ['name', 'alias', 'bs_site_id', 'bs_switch', 'backhaul', 'bs_type', 'building_height', 'description']
+    columns = ['name', 'alias', 'bs_site_id', 'bs_switch__device_name', 'backhaul__name', 'bs_type', 'building_height', 'description']
+    order_columns = ['name', 'alias', 'bs_site_id', 'bs_switch__device_name', 'backhaul__name', 'bs_type', 'building_height', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -433,10 +433,10 @@ class BackhaulList(ListView):
         datatable_headers = [
             {'mData':'name',                    'sTitle' : 'Name',                         'sWidth':'null',},
             {'mData':'alias',                   'sTitle' : 'Alias',                        'sWidth':'null',},
-            {'mData':'bh_configured_on',        'sTitle' : 'Backhaul Configured On',       'sWidth':'null',},
+            {'mData':'bh_configured_on__device_name',        'sTitle' : 'Backhaul Configured On',       'sWidth':'null',},
             {'mData':'bh_port',                 'sTitle' : 'Backhaul Port',                'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'bh_type',                 'sTitle' : 'Backhaul Type',                'sWidth':'null',},
-            {'mData':'pop',                     'sTitle' : 'POP',                          'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'pop__device_name',                     'sTitle' : 'POP',                          'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'pop_port',                'sTitle' : 'POP Port',                     'sWidth':'null',},
             {'mData':'bh_connectivity',         'sTitle' : 'Connectivity',                 'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'bh_circuit_id',           'sTitle' : 'Circuit ID',                   'sWidth':'null',},
@@ -448,8 +448,8 @@ class BackhaulList(ListView):
 
 class BackhaulListingTable(BaseDatatableView):
     model = BackhaulList
-    columns = ['name', 'alias', 'bh_configured_on', 'bh_port', 'bh_type', 'pop', 'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
-    order_columns = ['name', 'alias', 'bh_configured_on', 'bh_port', 'bh_type', 'pop', 'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
+    columns = ['name', 'alias', 'bh_configured_on__device_name', 'bh_port', 'bh_type', 'pop__device_name', 'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
+    order_columns = ['name', 'alias', 'bh_configured_on__device_name', 'bh_port', 'bh_type', 'pop__device_name', 'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -565,10 +565,10 @@ class SectorList(ListView):
             {'mData':'name',          'sTitle' : 'Name',             'sWidth':'null',},
             {'mData':'alias',         'sTitle' : 'Alias',            'sWidth':'null',},
             {'mData':'sector_id',     'sTitle' : 'ID',               'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'base_station',  'sTitle' : 'Base Station',     'sWidth':'null',},
-            {'mData':'idu',           'sTitle' : 'IDU',              'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'odu',           'sTitle' : 'ODU',              'sWidth':'null',},
-            {'mData':'antenna',       'sTitle' : 'Antenna',          'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'base_station__name',  'sTitle' : 'Base Station',     'sWidth':'null',},
+            {'mData':'idu__device_name',           'sTitle' : 'IDU',              'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'odu__device_name',           'sTitle' : 'ODU',              'sWidth':'null',},
+            {'mData':'antenna__name',       'sTitle' : 'Antenna',          'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'mrc',           'sTitle' : 'MRC',              'sWidth':'null',},
             {'mData':'description',   'sTitle' : 'Description',      'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'actions',       'sTitle' : 'Actions',          'sWidth':'10%' ,}
@@ -578,8 +578,8 @@ class SectorList(ListView):
 
 class SectorListingTable(BaseDatatableView):
     model = SectorList
-    columns = ['name', 'alias', 'sector_id', 'base_station', 'idu', 'odu', 'antenna', 'mrc', 'description']
-    order_columns = ['name', 'alias', 'sector_id', 'base_station', 'idu', 'odu', 'antenna', 'mrc', 'description']
+    columns = ['name', 'alias', 'sector_id', 'base_station__name', 'idu__device_name', 'odu__device_name', 'antenna__name', 'mrc', 'description']
+    order_columns = ['name', 'alias', 'sector_id', 'base_station__name', 'idu__device_name', 'odu__device_name', 'antenna__name', 'mrc', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -819,8 +819,8 @@ class SubStationList(ListView):
         datatable_headers = [
             {'mData':'name',             'sTitle' : 'Name',               'sWidth':'null',},
             {'mData':'alias',            'sTitle' : 'Alias',              'sWidth':'null',},
-            {'mData':'ip',               'sTitle' : 'IP',                 'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'mac',              'sTitle' : 'MAC',                'sWidth':'null',},
+            {'mData':'device__device_name',               'sTitle' : 'Device',                 'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'version',              'sTitle' : 'Version',                'sWidth':'null',},
             {'mData':'serial_no',        'sTitle' : 'Serial No.',         'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'building_height',  'sTitle' : 'Building Height',    'sWidth':'null',},
             {'mData':'tower_height',     'sTitle' : 'Tower Height',       'sWidth':'null','sClass':'hidden-xs'},
@@ -835,8 +835,8 @@ class SubStationList(ListView):
 
 class SubStationListingTable(BaseDatatableView):
     model = SubStationList
-    columns = ['name', 'alias', 'ip', 'mac', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
-    order_columns = ['name', 'alias', 'ip', 'mac', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
+    columns = ['name', 'alias', 'device__device_name', 'version', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
+    order_columns = ['name', 'alias', 'device__device_name', 'version', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -951,9 +951,9 @@ class CircuitList(ListView):
             {'mData':'name',                    'sTitle' : 'Name',                 'sWidth':'null',},
             {'mData':'alias',                   'sTitle' : 'Alias',                'sWidth':'null',},
             {'mData':'circuit_id',              'sTitle' : 'Circuit ID',           'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'sector',                  'sTitle' : 'Sector',               'sWidth':'null',},
-            {'mData':'customer',                'sTitle' : 'Customer',             'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'sub_station',             'sTitle' : 'Sub Station',          'sWidth':'null',},
+            {'mData':'sector__name',                  'sTitle' : 'Sector',               'sWidth':'null',},
+            {'mData':'customer__name',                'sTitle' : 'Customer',             'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'sub_station__name',             'sTitle' : 'Sub Station',          'sWidth':'null',},
             {'mData':'date_of_acceptance',      'sTitle' : 'Date of Acceptance',   'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'description',             'sTitle' : 'Description',          'sWidth':'null',},
             {'mData':'actions',                 'sTitle' : 'Actions',              'sWidth':'10%' ,}
@@ -963,8 +963,8 @@ class CircuitList(ListView):
 
 class CircuitListingTable(BaseDatatableView):
     model = CircuitList
-    columns = ['name', 'alias', 'circuit_id', 'sector', 'customer', 'sub_station', 'date_of_acceptance', 'description']
-    order_columns = ['name', 'alias', 'circuit_id', 'sector', 'customer', 'sub_station', 'date_of_acceptance', 'description']
+    columns = ['name', 'alias', 'circuit_id', 'sector__name', 'customer__name', 'sub_station__name', 'date_of_acceptance', 'description']
+    order_columns = ['name', 'alias', 'circuit_id', 'sector__name', 'customer__name', 'sub_station__name', 'date_of_acceptance', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
