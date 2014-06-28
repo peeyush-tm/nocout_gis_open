@@ -78,3 +78,29 @@ span.dept {
 #sidebar ul.sub li.has-sub-sub ul.sub-sub li.current {
   background: #f4f4f4 !important;
 }
+
+/*Side menu arrow*/
+.sidebar-menu ul li ul li a .arrow:before {
+  float: right;
+  margin-top: 1px;
+  margin-right: 5px;
+  display: inline;
+  font-size: 16px;
+  font-family: FontAwesome;
+  height: auto;
+  content: "\f0d9";
+  font-weight: 300;
+  text-shadow: none;
+}
+.sidebar-menu ul li ul li a .arrow.open:before {
+  float: right;
+  margin-top: 1px;
+  margin-right: 5px;
+  display: inline;
+  font-family: FontAwesome;
+  height: auto;
+  font-size: 16px;
+  content: "\f0d7";
+  font-weight: 300;
+  text-shadow: none;
+}
