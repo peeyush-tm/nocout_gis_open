@@ -366,10 +366,9 @@ def update_cities_after_invalid_form(request, option, city_id):
     return dajax.json()
 
 
-# add device for monitoring
+# add device to monitoring core
 @dajaxice_register
 def add_device_to_nms_core(request, device_id):
-    print "device_id", device_id
     result = dict()
     result['data'] = {}
     result['success'] = 0
@@ -382,8 +381,8 @@ def add_device_to_nms_core(request, device_id):
                    'agent_tag': device.agent_tag,
                    'site': device.site_instance.name,
                    'mode' : 'addhost'}
-    r = requests.post('http://omdadmin:omd@192.168.0.166/site1/check_mk/nocout.py', data=device_data)
-    print "r: ", r.text
+    url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
+    r = requests.post(url , data=device_data)
     response_dict = ast.literal_eval(r.text)
     if r:
         result['data'] = device_data
@@ -396,19 +395,20 @@ def add_device_to_nms_core(request, device_id):
     return json.dumps({'result': result})
 
 
-# sending device  information for it's monitoring
+# sync devices with monitoring core
 @dajaxice_register
-def start_device_monitoring(request):
+def sync_device_with_nms_core(request):
     result = dict()
     result['data'] = {}
     result['success'] = 0
     result['message'] = "Device activation for monitoring failed."
     result['data']['meta'] = ''
     device_data = {'mode' : 'sync'}
-    r = requests.post('http://omdadmin:omd@localhost/site1/check_mk/nocout.py', data=device_data)
+    url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
+    r = requests.post(url, data=device_data)
     response_dict = ast.literal_eval(r.text)
     if r:
         result['data'] = device_data
         result['success'] = 1
-        result['message'] = response_dict['error_message'].capitalize()
+        result['message'] = response_dict['message'].capitalize()
     return json.dumps({'result': result})

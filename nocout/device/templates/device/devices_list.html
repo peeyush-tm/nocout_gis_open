@@ -42,7 +42,6 @@
     <!-- Custom Script for soft delete-->
     <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
     <script type="text/javascript">
-        //$(document).ready(function (e) {
         $(document).ready(function() {
             /*Make a instance of ourDataTableWidget class */
             var dataTableInstance = new ourDataTableWidget();
@@ -59,7 +58,10 @@
                 var device_id = $(this).attr("device_id");
                 add_device(device_id);
             });
+            $(".sync_device_with_nms_core_btn").click(function(e) {
+                var device_id = $(this).attr("device_id");
+                sync_devices();
+            });
         },1000);
-
     </script>
 {% endblock %}
