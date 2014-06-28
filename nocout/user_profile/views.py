@@ -208,8 +208,9 @@ class UserCreate(CreateView):
         return kwargs
 
     def form_valid(self, form):
-        self.object = form.save()
-
+        self.object= form.save(commit=False)
+        self.object.set_password(form.cleaned_data["password2"])
+        self.object.save()
         return super(ModelFormMixin, self).form_valid(form)
 
 class UserUpdate(UpdateView):
@@ -233,16 +234,12 @@ class UserUpdate(UpdateView):
 
     def form_valid(self, form):
         self.object= form.save(commit=False)
+        self.object.set_password(form.cleaned_data["password2"])
         role= form.cleaned_data['role'][0]
         project_group_name= project_group_role_dict_mapper[role.role_name]
         project_group= Group.objects.get( name = project_group_name)
         self.object.groups.add(project_group)
         self.object.save()
-
-        print "*******************************************************"
-        print self.__dict__
-        print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"
-        print "Form: ", form
         form.save_m2m()
 
         #User Activity Logs
@@ -330,7 +327,7 @@ class CurrentUserProfileUpdate(UpdateView):
             kwargs.update({'password': make_password(form.cleaned_data['password2'])})
             action.send(self.request.user, verb='Changed Password !')
 
-        changed_fields=DictDiffer(form.cleaned_data, form.initial).changed() - set(['role','username','user_group'])
+        changed_fields=DictDiffer(form.cleaned_data, form.initial).changed() - set(['role','username','user_group','organization'])
         if changed_fields:
 
             initial_field_dict = { field : form.initial[field] for field in changed_fields }

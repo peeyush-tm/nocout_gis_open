@@ -3,6 +3,9 @@
  * @method get_soft_delete_form
  * @param content {JSON Object} Contains data object sent from server
  */
+
+
+// soft deletion of objects
 function get_soft_delete_form(content) {
     // soft_delete_html: contains html for soft delete form
     var soft_delete_html = "";
@@ -77,5 +80,67 @@ function get_soft_delete_form(content) {
  */
 function show_response_message(responseResult) {
 
+    bootbox.alert(responseResult.result.message);
+}
+
+
+// add device to monitoring core
+function add_device(device_id) {
+    bootbox.dialog({
+        message: "Add device for monitoring.",
+        title: "<span class='text-danger'><i class='fa fa-times'></i> Add device to nms core. </span>",
+        buttons: {
+            success: {
+                label: "Yes!",
+                className: "btn-success",
+                callback: function () {
+                    Dajaxice.device.add_device_to_nms_core(device_add_message, {'device_id': device_id});
+                }
+            },
+            danger: {
+                label: "No!",
+                className: "btn-danger",
+                callback: function () {
+                    bootbox.alert("Ok! You choose to not add this device right now for monitoring.", function () {
+                        $(".bootbox").modal("hide");
+                    });
+                }
+            }
+        }
+    });
+}
+
+function device_add_message(responseResult) {
+    bootbox.alert(responseResult.result.message);
+}
+
+
+// sync devices with monitoring core
+function sync_devices() {
+    bootbox.dialog({
+        message: "Sync devices for monitoring.",
+        title: "<span class='text-danger'><i class='fa fa-times'></i> Sync devices with nms core. </span>",
+        buttons: {
+            success: {
+                label: "Yes!",
+                className: "btn-success",
+                callback: function () {
+                    Dajaxice.device.sync_device_with_nms_core(sync_devices_message);
+                }
+            },
+            danger: {
+                label: "No!",
+                className: "btn-danger",
+                callback: function () {
+                    bootbox.alert("Ok! You choose to not sync devices right now for monitoring.", function () {
+                        $(".bootbox").modal("hide");
+                    });
+                }
+            }
+        }
+    });
+}
+
+function sync_devices_message(responseResult) {
     bootbox.alert(responseResult.result.message);
 }

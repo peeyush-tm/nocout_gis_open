@@ -40,9 +40,9 @@ class DeviceList(ListView):
             {'mData':'site_instance__name', 'sTitle' : 'Site Instance', 'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'organization__name',  'sTitle' : 'Organization',  'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'ip_address',          'sTitle' : 'IP Address',    'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'mac_address',          'sTitle' : 'MAC Address',    'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'parent__device_name',                'sTitle' : 'Parent',          'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'agent_tag',               'sTitle' : 'Agent Tag',         'sWidth':'10%' ,'sClass':'hidden-xs'},]
+            {'mData':'mac_address',         'sTitle' : 'MAC Address',   'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'parent__device_name', 'sTitle' : 'Parent',        'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'agent_tag',           'sTitle' : 'Agent Tag',     'sWidth':'10%' ,'sClass':'hidden-xs'},]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
@@ -104,8 +104,8 @@ class DeviceListingTable(BaseDatatableView):
         for dct in qs:
             dct.update(actions='<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>\
-            <a href="#" onclick="Dajaxice.device.add_device_for_monitoring(device_add_status, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-warning"></i></a>\
-            <a href="#" onclick="Dajaxice.device.start_device_monitoring(device_monitor_status, {{\'device_id\': {0}}})"><i class="fa fa-play-circle text-success"></i></a>'.format(dct.pop('id')))
+               <a href="#" class="add_device_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus-square text-warning"></i></a>\
+               <a href="#" class="sync_device_with_nms_core_btn" device_id="{0}"><i class="fa fa-play-circle text-success"></i></a>'.format(dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):
