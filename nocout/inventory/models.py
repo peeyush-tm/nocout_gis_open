@@ -1,7 +1,7 @@
 import datetime
 from django.db import models
 from user_group.models import UserGroup
-from device.models import Device
+from device.models import Device, DevicePort
 from device_group.models import DeviceGroup
 from organization.models import Organization
 
@@ -98,13 +98,8 @@ class Sector(models.Model):
     alias = models.CharField('Alias', max_length=250, null=True, blank=True)
     sector_id = models.CharField('Sector ID', max_length=250, null=True, blank=False)
     base_station = models.ForeignKey(BaseStation, related_name='sector')
-    idu = models.ForeignKey(Device, max_length=250, null=True, blank=False, related_name='sector_idu')
-    idu_port_name = models.CharField('IDU Port Name', max_length=40, null=True, blank=True)
-    idu_port = models.IntegerField('IDU Port', null=True, blank=True)
-    idu_type = models.CharField('IDU Type', max_length=250, null=True, blank=True)
-    odu = models.ForeignKey(Device, max_length=250, null=True, blank=True, related_name='sector_odu')
-    odu_port_name = models.CharField('ODU Port Name', max_length=40, null=True, blank=True)
-    odu_port = models.IntegerField('ODU Port', null=True, blank=True)
+    sector_configured_on = models.ForeignKey(Device, max_length=250, null=True, blank=False, related_name='sector_configured_on')
+    sector_configured_on_port = models.ForeignKey(DevicePort, null=True, blank=True)
     antenna = models.ForeignKey(Antenna, null=True, blank=True, related_name='sector')
     mrc = models.CharField('MRC', max_length=4, null=True, blank=True)
     tx_power = models.IntegerField('TX Power', null=True, blank=True)
