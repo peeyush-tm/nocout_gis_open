@@ -139,7 +139,7 @@ class SubStation(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250, null=True, blank=True)
     device = models.ForeignKey(Device)
-    version = models.CharField('Versiom', max_length=40, null=True, blank=True)
+    version = models.CharField('Version', max_length=40, null=True, blank=True)
     serial_no = models.CharField('Serial No.', max_length=250, null=True, blank=True)
     building_height = models.IntegerField('Building Height', null=True, blank=True)
     tower_height = models.IntegerField('Tower Height', null=True, blank=True)
