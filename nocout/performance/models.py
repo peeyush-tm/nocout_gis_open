@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class PerformanceMetric(models.Model):
     device_name = models.CharField('Device Name', max_length=100, null=True)
     service_name = models.CharField('Service Name', max_length=100, null=True)
@@ -17,4 +18,7 @@ class PerformanceMetric(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+
+
 

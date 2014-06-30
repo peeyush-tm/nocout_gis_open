@@ -37,6 +37,7 @@ class DeviceForm(forms.ModelForm):
         self.base_fields['device_vendor'].label = 'Device Vendor'
         self.base_fields['device_model'].label = 'Device Model'
         self.base_fields['device_type'].label = 'Device Type'
+        self.base_fields['service'].label = 'Services'
 
         initial = kwargs.setdefault('initial', {})
 
@@ -112,12 +113,6 @@ class DeviceForm(forms.ModelForm):
         if longitude!='' and len(longitude)>2 and longitude[2] != '.':
             raise forms.ValidationError("Please enter correct value for longitude.")
         return self.cleaned_data.get('longitude')
-
-    def clean_device_name(self):
-        device_name = self.cleaned_data['device_name']
-        if Device.objects.filter(device_name=device_name).count() > 0:
-            raise ValidationError('Device with this name already exists.')
-        return device_name
 
     def clean(self):
         latitude = self.cleaned_data.get('latitude')

@@ -1,6 +1,7 @@
 import json
 from actstream import action
 from django.contrib.auth.decorators import permission_required
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.db.models.query import ValuesQuerySet
 from django.utils.decorators import method_decorator
@@ -37,13 +38,11 @@ class DeviceList(ListView):
         datatable_headers = [
             {'mData':'device_name',         'sTitle' : 'Device Name',   'sWidth':'null',},
             {'mData':'device_alias',        'sTitle' : 'Alias',         'sWidth':'null',},
-            {'mData':'ports__name',                'sTitle' : 'Ports',         'sWidth':'null',},
             {'mData':'site_instance__name', 'sTitle' : 'Site Instance', 'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'organization__name',  'sTitle' : 'Organization',  'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'ip_address',          'sTitle' : 'IP Address',    'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'mac_address',         'sTitle' : 'MAC Address',   'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'parent__device_name', 'sTitle' : 'Parent',        'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'agent_tag',           'sTitle' : 'Agent Tag',     'sWidth':'10%' ,'sClass':'hidden-xs'},]
+            {'mData':'parent__device_name', 'sTitle' : 'Parent',        'sWidth':'null','sClass':'hidden-xs'},]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
@@ -64,8 +63,8 @@ def create_device_tree(request):
 
 class DeviceListingTable(BaseDatatableView):
     model = Device
-    columns = ['device_name', 'device_alias', 'ports__name', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name', 'agent_tag']
-    order_columns = ['device_name', 'device_alias', 'ports__name', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name', 'agent_tag']
+    columns = ['device_name', 'device_alias', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name']
+    order_columns = ['device_name', 'device_alias', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -209,6 +208,13 @@ class DeviceCreate(CreateView):
         device.longitude = form.cleaned_data['longitude']
         device.description = form.cleaned_data['description']
         device.organization_id= form.cleaned_data['organization'].id
+
+        try:
+            if Device.objects.get(device_name=form.cleaned_data['device_name']):
+                raise ValidationError("Device already eists.")
+        except:
+            print "Device doesn't exist."
+
         device.save()
 
         # saving site_instance --> FK Relation
