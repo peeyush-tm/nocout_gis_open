@@ -562,24 +562,23 @@ class SectorList(ListView):
     def get_context_data(self, **kwargs):
         context=super(SectorList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',          'sTitle' : 'Name',             'sWidth':'null',},
-            {'mData':'alias',         'sTitle' : 'Alias',            'sWidth':'null',},
-            {'mData':'sector_id',     'sTitle' : 'ID',               'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'base_station__name',  'sTitle' : 'Base Station',     'sWidth':'null',},
-            {'mData':'idu__device_name',           'sTitle' : 'IDU',              'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'odu__device_name',           'sTitle' : 'ODU',              'sWidth':'null',},
-            {'mData':'antenna__name',       'sTitle' : 'Antenna',          'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'mrc',           'sTitle' : 'MRC',              'sWidth':'null',},
-            {'mData':'description',   'sTitle' : 'Description',      'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',       'sTitle' : 'Actions',          'sWidth':'10%' ,}
+            {'mData':'name',                       'sTitle' : 'Name',             'sWidth':'null',},
+            {'mData':'alias',                      'sTitle' : 'Alias',            'sWidth':'null',},
+            {'mData':'sector_id',                  'sTitle' : 'ID',               'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'sector_configured_on__device_name',       'sTitle' : 'Sector Configured On',     'sWidth':'null',},
+            {'mData':'sector_configured_on_port__name',  'sTitle' : 'Sector Configured On Port',              'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'antenna__name',              'sTitle' : 'Antenna',          'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'mrc',                        'sTitle' : 'MRC',              'sWidth':'null',},
+            {'mData':'description',                'sTitle' : 'Description',      'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'actions',                    'sTitle' : 'Actions',          'sWidth':'10%' ,}
             ]
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class SectorListingTable(BaseDatatableView):
     model = SectorList
-    columns = ['name', 'alias', 'sector_id', 'base_station__name', 'idu__device_name', 'odu__device_name', 'antenna__name', 'mrc', 'description']
-    order_columns = ['name', 'alias', 'sector_id', 'base_station__name', 'idu__device_name', 'odu__device_name', 'antenna__name', 'mrc', 'description']
+    columns = ['name', 'alias', 'sector_id', 'base_station__name', 'sector_configured_on__device_name', 'sector_configured_on_port__name', 'antenna__name', 'mrc', 'description']
+    order_columns = ['name', 'alias', 'sector_id', 'base_station__name', 'sector_configured_on__device_name', 'sector_configured_on_port__name', 'antenna__name', 'mrc', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -669,10 +668,12 @@ class SectorUpdate(UpdateView):
         cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of Sector : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
+            verb_string = 'Changed values of Customer : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
             self.object=form.save()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( SectorUpdate.success_url )
