@@ -1,7 +1,7 @@
 import datetime
 from django.db import models
 from user_group.models import UserGroup
-from device.models import Device, DevicePort
+from device.models import Device, DevicePort, DeviceTechnology
 from device_group.models import DeviceGroup
 from organization.models import Organization
 
@@ -76,6 +76,7 @@ class Backhaul(models.Model):
 class BaseStation(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250, null=True, blank=True)
+    bs_technology = models.ForeignKey(DeviceTechnology, null=True, blank=True)
     bs_site_id = models.CharField('BS Site ID', max_length=250, null=True, blank=True)
     bs_switch = models.ForeignKey(Device, null=True, blank=True, related_name='bs_switch')
     backhaul = models.ForeignKey(Backhaul)
