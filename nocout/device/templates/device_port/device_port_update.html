@@ -1,11 +1,11 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
 {% block css %}
-    <link rel="stylesheet" type="text/css" href={% static "css/command.css" %}>
+    <link rel="stylesheet" type="text/css" href={% static "css/device_port.css" %}>
 {% endblock %}
-{% block breadcrumb_page_title %} > Command {% endblock %}
-{% block content_title %}Commands Management{% endblock %}
-{% block content_description %}Update a command ....{% endblock %}
+{% block breadcrumb_page_title %} > Device Port {% endblock %}
+{% block content_title %}Device Ports Management{% endblock %}
+{% block content_description %}Update a device port ....{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
@@ -13,7 +13,7 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i>Command : {{ object.command_name }}</h4>
+                            <h4><i class="fa fa-bars"></i>Device Port : {{ object.name }}</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-6"><br />
@@ -34,7 +34,7 @@
                                             <div class="col-sm-offset-5 col-sm-7">
                                                 <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
                                                 &nbsp;
-                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/command/')"><i class="fa fa-times"></i> Cancel</button>
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/device_port/')"><i class="fa fa-times"></i> Cancel</button>
                                             </div>
                                         </div>
                                     </form>

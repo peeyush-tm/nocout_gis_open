@@ -1,6 +1,7 @@
 from django import forms
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
-    Country, State, City, StateGeoInfo
+    Country, State, City, StateGeoInfo, DevicePort
+from django.core.exceptions import ValidationError
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
 from device.models import DeviceTypeFields
 import pyproj
@@ -11,8 +12,6 @@ from django.forms.util import ErrorList
 
 
 # *************************************** Device Form ***********************************************
-
-
 class DeviceForm(forms.ModelForm):
     device_technology = IntReturnModelChoiceField(queryset=DeviceTechnology.objects.all(),
                                                   required=False)
@@ -114,6 +113,12 @@ class DeviceForm(forms.ModelForm):
             raise forms.ValidationError("Please enter correct value for longitude.")
         return self.cleaned_data.get('longitude')
 
+    def clean_device_name(self):
+        device_name = self.cleaned_data['device_name']
+        if Device.objects.filter(device_name=device_name).count() > 0:
+            raise ValidationError('Device with this name already exists.')
+        return device_name
+
     def clean(self):
         latitude = self.cleaned_data.get('latitude')
         longitude = self.cleaned_data.get('longitude')
@@ -146,8 +151,6 @@ class DeviceForm(forms.ModelForm):
 
 
 # ********************************** Device Extra Fields Form ***************************************
-
-
 class DeviceTypeFieldsForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(DeviceTypeFieldsForm, self).__init__(*args, **kwargs)
@@ -177,8 +180,6 @@ class DeviceTypeFieldsUpdateForm(forms.ModelForm):
 
 
 # **************************************** Device Technology ****************************************
-
-
 class DeviceTechnologyForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(DeviceTechnologyForm, self).__init__(*args, **kwargs)
@@ -194,8 +195,6 @@ class DeviceTechnologyForm(forms.ModelForm):
 
 
 # ****************************************** Device Vendor ******************************************
-
-
 class DeviceVendorForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(DeviceVendorForm, self).__init__(*args, **kwargs)
@@ -211,8 +210,6 @@ class DeviceVendorForm(forms.ModelForm):
 
 
 # ******************************************* Device Model ******************************************
-
-
 class DeviceModelForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(DeviceModelForm, self).__init__(*args, **kwargs)
@@ -228,8 +225,6 @@ class DeviceModelForm(forms.ModelForm):
 
 
 # ******************************************* Device Type *******************************************
-
-
 class DeviceTypeForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(DeviceTypeForm, self).__init__(*args, **kwargs)
@@ -242,3 +237,16 @@ class DeviceTypeForm(forms.ModelForm):
     class Meta:
         model = DeviceType
         fields = ('name', 'alias', 'device_icon', 'device_gmap_icon', 'device_port', 'frequency')
+
+
+# ******************************************* Device Type *******************************************
+class DevicePortForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(DevicePortForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' form-control'
+            else:
+                field.widget.attrs.update({'class':'form-control'})
+    class Meta:
+        model = DevicePort

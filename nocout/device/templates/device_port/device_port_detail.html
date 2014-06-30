@@ -3,20 +3,24 @@
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/command.css" %}>
 {% endblock %}
-{% block breadcrumb_page_title %} > Command {% endblock %}
-{% block content_title %}Commands Management{% endblock %}
+{% block breadcrumb_page_title %} > Device Port {% endblock %}
+{% block content_title %}Device Ports Management{% endblock %}
 {% block content_description %}Detail of command ....{% endblock %}
 {% block content %}
-    <h1>{{ object.command_name }}</h1><br/>
+    <h1>{{ object.name }}</h1><br/>
     <div id="command">
         <table>
             <tr>
-                <td><strong>Command Name:</strong></td>
-                <td>{{ object.command_name }}</td>
+                <td><strong>Name:</strong></td>
+                <td>{{ object.name }}</td>
             </tr>
             <tr>
-                <td><strong>Command Line:</strong></td>
-                <td>{{ object.command_line }}</td>
+                <td><strong>Alias:</strong></td>
+                <td>{{ object.alias }}</td>
+            </tr>
+            <tr>
+                <td><strong>Value:</strong></td>
+                <td>{{ object.value }}</td>
             </tr>
         </table>
     </div>

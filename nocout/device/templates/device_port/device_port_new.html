@@ -1,11 +1,8 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
-{% block css %}
-    <link rel="stylesheet" type="text/css" href={% static "css/command.css" %}>
-{% endblock %}
-{% block breadcrumb_page_title %} > Command {% endblock %}
-{% block content_title %}Commands Management{% endblock %}
-{% block content_description %}Create a command ....{% endblock %}
+{% block breadcrumb_page_title %} > Device Port {% endblock %}
+{% block content_title %}Device Ports Management{% endblock %}
+{% block content_description %}Create a device port ....{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
@@ -13,11 +10,11 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i>Command</h4>
+                            <h4><i class="fa fa-bars"></i>Device Port</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-6"><br />
-                                    <form action="/command/new/" method="post" class="form-horizontal"
+                                    <form action="/device_port/new/" method="post" class="form-horizontal"
                                           role="form">{% csrf_token %}
                                         <div class="form-group">
                                             {% for field in form %}
@@ -37,7 +34,7 @@
                                             <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i> Reset
                                             </button>
                                             &nbsp;
-                                            <button type="reset" class="btn btn-danger" onclick="window.location.replace('/command/')"><i class="fa fa-times"></i> Cancel
+                                            <button type="reset" class="btn btn-danger" onclick="window.location.replace('/device_port/')"><i class="fa fa-times"></i> Cancel
                                             </button>
                                             </div>
                                         </div>
