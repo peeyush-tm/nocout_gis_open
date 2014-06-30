@@ -284,6 +284,8 @@ class AntennaUpdate(UpdateView):
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
             self.object=form.save()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( AntennaUpdate.success_url )
@@ -412,6 +414,8 @@ class BaseStationUpdate(UpdateView):
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
             self.object=form.save()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( BaseStationUpdate.success_url )
@@ -544,6 +548,8 @@ class BackhaulUpdate(UpdateView):
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
             self.object=form.save()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( BackhaulUpdate.success_url )
@@ -800,6 +806,8 @@ class CustomerUpdate(UpdateView):
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
             self.object=form.save()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( CustomerUpdate.success_url )
@@ -931,6 +939,8 @@ class SubStationUpdate(UpdateView):
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
             self.object=form.save()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( SubStationUpdate.success_url )
@@ -1059,6 +1069,8 @@ class CircuitUpdate(UpdateView):
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
             self.object=form.save()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( CircuitUpdate.success_url )
