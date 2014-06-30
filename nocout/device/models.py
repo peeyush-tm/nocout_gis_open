@@ -51,11 +51,12 @@ class DeviceFrequency(models.Model):
 
 # device ports
 class DevicePort(models.Model):
-    port_name = models.CharField('Port Name', max_length=100)
-    port_value = models.IntegerField('Port Value', default=0)
+    name = models.CharField('Name', max_length=100, unique=True)
+    alias = models.CharField('Alias', max_length=200, null=True, blank=True)
+    value = models.IntegerField('Port Value', default=0)
 
     def __unicode__(self):
-        return self.port_name
+        return self.name
 
 
 # device types info table
@@ -128,6 +129,7 @@ class Device(MPTTModel, models.Model):
     site_instance = models.ForeignKey(SiteInstance, null=True, blank=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='device_children')
     organization = models.ForeignKey(Organization)
+    ports = models.ManyToManyField(DevicePort, null=True, blank=True)
     device_technology = models.IntegerField('Device Technology', null=True, blank=True)
     device_vendor = models.IntegerField('Device Vendor', null=True, blank=True)
     device_model = models.IntegerField('Device Model', null=True, blank=True)
@@ -149,7 +151,6 @@ class Device(MPTTModel, models.Model):
     description = models.TextField('Description')
     address = models.TextField('Address', null=True, blank=True)
     is_deleted = models.IntegerField('Is Deleted', max_length=1, default=0)
-    agent_tag = models.CharField('Agent Tag', max_length=100, default='ping')
 
     def __unicode__(self):
         return self.device_name
