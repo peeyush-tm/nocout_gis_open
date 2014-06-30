@@ -24,8 +24,8 @@ class Inventory(models.Model):
 
 # gis antenna model
 class Antenna(models.Model):
-    name = models.CharField('Name', max_length=250, unique=True)
-    alias = models.CharField('Alias', max_length=250, null=True, blank=True)
+    name = models.CharField('Antenna Name', max_length=250, unique=True)
+    alias = models.CharField('Antenna Alias', max_length=250, null=True, blank=True)
     height = models.IntegerField('Antenna Height', null=True, blank=True)
     polarization = models.CharField('Polarization', max_length=50, null=True, blank=True)
     tilt = models.IntegerField('Tilt', null=True, blank=True)
@@ -44,10 +44,10 @@ class Antenna(models.Model):
 
 # gis backhaul model
 class Backhaul(models.Model):
-    name = models.CharField('Name', max_length=250, unique=True)
-    alias = models.CharField('Alias', max_length=250, null=True, blank=True)
+    name = models.CharField('Backhaul Name', max_length=250, unique=True)
+    alias = models.CharField('Backhaul Alias', max_length=250, null=True, blank=True)
     bh_configured_on = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul')
-    bh_port_name = models.CharField('BH Port Name', max_length=40, null=True, blank=True)
+    bh_port_name = models.CharField(max_length=40, verbose_name=" BH Port Name", null=True, blank=True)
     bh_port = models.IntegerField('BH Port', null=True, blank=True)
     bh_type = models.CharField('BH Type', max_length=250, null=True, blank=True)
     bh_switch = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul_switch')
@@ -55,7 +55,7 @@ class Backhaul(models.Model):
     switch_port = models.IntegerField('Switch Port', null=True, blank=True)
     pop = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul_pop')
     pop_port_name = models.CharField('POP Port Name', max_length=40, null=True, blank=True)
-    pop_port = models.IntegerField('Pop Port', null=True, blank=True)
+    pop_port = models.IntegerField('POP Port', null=True, blank=True)
     aggregator = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul_aggregator')
     aggregator_port_name = models.CharField('Aggregator Port Name', max_length=40, null=True, blank=True)
     aggregator_port = models.IntegerField('Aggregator Port', null=True, blank=True)
