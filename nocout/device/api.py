@@ -483,16 +483,22 @@ class DeviceStatsApi(View):
                                                       'value':sector.name
                                                       },
                                                       {
-                                                      'name':'idu_port',
-                                                      'title':'IDU PORT',
+                                                      'name':'tx_power',
+                                                      'title':'TX Power',
                                                       'show':1,
-                                                      'value':sector.idu_port
+                                                      'value':sector.tx_power
                                                       },
                                                       {
-                                                      'name':'odu_port',
-                                                      'title':'ODU PORT',
+                                                      'name':'rx_power',
+                                                      'title':'RX Power',
                                                       'show':1,
-                                                      'value':sector.odu_port
+                                                      'value':sector.rx_power
+                                                      },
+                                                      {
+                                                      'name':'rf_bandwidth',
+                                                      'title':'RF Bandwidth',
+                                                      'show':1,
+                                                      'value':sector.rf_bandwidth
                                                       },
                                                   ],
                                                   'backhaul':[],
