@@ -179,13 +179,12 @@ function networkMapClass() {
 			/*Ajax call to the API*/
 			$.ajax({
 				crossDomain: true,
-				// url : "../../device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
-				url : "../../static/new_format.json",
+				url : "../../device/stats/",
+//				url : "../../static/new_format.json",
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
 				success : function(result) {
-
 					if(result.data.objects != null) {
 
 						hitCounter = hitCounter + 1;
@@ -531,7 +530,7 @@ function networkMapClass() {
 
 			lat1 = (+lat) + (PRlat * cos( d2r * (azimuth - beamWidth/2 )));
 			lon1 = (+lng) + (PRlng * sin( d2r * (azimuth - beamWidth/2 )));
-			
+
 			PGpoints.push( new google.maps.LatLng(lat1,lon1));
 
 			lat2 = (+lat) + (PRlat * cos( d2r * (azimuth + beamWidth/2 )));
@@ -549,12 +548,12 @@ function networkMapClass() {
 
 			PGpoints.push( new google.maps.LatLng(lat2,lon2));
 			PGpoints.push(centerPoint);
+
 		}
 		/*Condition for the orientation of sector antina*/
 		if(orientation == "horizontal") {
 
-			var len = PGpoints.length / 3;
-
+			var len = Math.floor(PGpoints.length / 3);
 			triangle.push(PGpoints[0]);
 			triangle.push(PGpoints[(len * 2) - 1]);
 			triangle.push(PGpoints[(len * 3) - 1]);
@@ -574,7 +573,8 @@ function networkMapClass() {
 			strokeOpacity : 0.5,
 			strokeWeight  : 1,
 			dataset 	  : sectorData
-        });        
+        });
+
         /*Push polygon to an array*/
 		sectorArray.push(poly);
 
