@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from inventory.models import BaseStation, Sector, Circuit, SubStation
 from user_group.models import Organization
 from device.models import Device, DeviceType, DeviceVendor, \
-    DeviceTechnology, DeviceModel
+    DeviceTechnology, DeviceModel, State, Country, City
 
 
 # class DeviceStatsApi(View):
@@ -523,7 +523,55 @@ class DeviceStatsApi(View):
                             base_station_info['children'].append(sub_station_info)
 
                         self.result['data']['objects']['children'].append(base_station_info)
-                    self.result['message']='Data Fetached Successfully.'
+                    self.result['message']='Data Fetched Successfully.'
                     self.result['success']=1
         return HttpResponse(json.dumps(self.result))
+
+
+class DeviceFilterApi(View):
+
+    def get(self, request):
+        self.result = {
+            "success": 0,
+            "message": "No Device Data",
+            "data": {
+                "meta": {},
+                "objects": {}
+            }
+        }
+
+
+        logged_in_user= self.request.user.userprofile
+
+        if logged_in_user.role.values_list('role_name', flat=True)[0] =='admin':
+            organizations= logged_in_user.organization.get_descendants(include_self=True)
+        else:
+            organizations=logged_in_user.organization
+
+        if organizations:
+            for organization in organizations:
+                base_stations= BaseStation.objects.filter( bs_switch__in= organization.device_set.values_list('id', flat=True))
+                technology_data,vendor_data,state_data,city_data=[],[],[],[]
+                for base_station in base_stations:
+                        base_station_id=base_station.id
+                        technology_data.append({ 'id':base_station_id, 'value':base_station.bs_technology.name })
+                        vendor_data.append({ 'id': base_station_id, 'value':
+                        DeviceVendor.objects.get(id=base_station.bs_switch.device_vendor).name  if base_station.bs_switch.device_vendor else None })
+                        state_data.append({ 'id': base_station_id, 'value':
+                            State.objects.get(id=base_station.bs_switch.state).state_name if base_station.bs_switch.state else None })
+                        city_data.append({ 'id': base_station_id, 'value':
+                            City.objects.get(id=base_station.bs_switch.city).city_name if base_station.bs_switch.city else None })
+
+                self.result['data']['objects']['technology']={'data':technology_data}
+                self.result['data']['objects']['vendor']={'data':vendor_data}
+                self.result['data']['objects']['state']={'data':state_data}
+                self.result['data']['objects']['city']={'data':city_data}
+                self.result['message']='Data Fetched Successfully.'
+                self.result['success']=1
+
+        return HttpResponse(json.dumps(self.result))
+
+
+
+
 
