@@ -36,3 +36,4 @@ def get_performance_dashboard(request):
 def get_sector_dashboard(request):
 
 	return render_to_response('performance/sector_dashboard.html',context_instance=RequestContext(request))
+

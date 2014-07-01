@@ -1,6 +1,7 @@
 import json
 from actstream import action
 from django.contrib.auth.decorators import permission_required
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.db.models.query import ValuesQuerySet
 from django.utils.decorators import method_decorator
@@ -9,9 +10,9 @@ from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue, DeviceTechnology, \
-    TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType
+    TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType, DevicePort
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
-    DeviceVendorForm, DeviceModelForm, DeviceTypeForm
+    DeviceVendorForm, DeviceModelForm, DeviceTypeForm, DevicePortForm
 from nocout.utils.util import DictDiffer
 from django.http.response import HttpResponseRedirect
 from organization.models import Organization
@@ -41,8 +42,7 @@ class DeviceList(ListView):
             {'mData':'organization__name',  'sTitle' : 'Organization',  'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'ip_address',          'sTitle' : 'IP Address',    'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'mac_address',         'sTitle' : 'MAC Address',   'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'parent__device_name', 'sTitle' : 'Parent',        'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'agent_tag',           'sTitle' : 'Agent Tag',     'sWidth':'10%' ,'sClass':'hidden-xs'},]
+            {'mData':'parent__device_name', 'sTitle' : 'Parent',        'sWidth':'null','sClass':'hidden-xs'},]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
@@ -63,8 +63,8 @@ def create_device_tree(request):
 
 class DeviceListingTable(BaseDatatableView):
     model = Device
-    columns = ['device_name', 'device_alias', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name', 'agent_tag']
-    order_columns = ['device_name', 'device_alias', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name', 'agent_tag']
+    columns = ['device_name', 'device_alias', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name']
+    order_columns = ['device_name', 'device_alias', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -208,6 +208,13 @@ class DeviceCreate(CreateView):
         device.longitude = form.cleaned_data['longitude']
         device.description = form.cleaned_data['description']
         device.organization_id= form.cleaned_data['organization'].id
+
+        try:
+            if Device.objects.get(device_name=form.cleaned_data['device_name']):
+                raise ValidationError("Device already eists.")
+        except:
+            print "Device doesn't exist."
+
         device.save()
 
         # saving site_instance --> FK Relation
@@ -216,6 +223,12 @@ class DeviceCreate(CreateView):
             device.save()
         except:
             print "No instance to add."
+
+        # saving associated ports  --> M2M Relation (Model: DevicePort)
+        for port in form.cleaned_data['ports']:
+            device_port = DevicePort.objects.get(name=port)
+            device.ports.add(device_port)
+            device.save()
 
         # saving associated services  --> M2M Relation (Model: Service)
         for service in form.cleaned_data['service']:
@@ -292,6 +305,7 @@ class DeviceUpdate(UpdateView):
         # saving device data
         self.object.device_name = form.cleaned_data['device_name']
         self.object.device_alias = form.cleaned_data['device_alias']
+        self.object.ports = form.cleaned_data['ports']
         self.object.device_technology = form.cleaned_data['device_technology']
         self.object.device_vendor = form.cleaned_data['device_vendor']
         self.object.device_model = form.cleaned_data['device_model']
@@ -772,9 +786,8 @@ class DeviceTechnologyDelete(DeleteView):
         action.send(request.user, verb='deleting device technology: %s'%(self.object.field_name))
         super(DeviceTechnologyDelete, self).delete(self, request, *args, **kwargs)
 
+
 # ************************************* Device Vendor ***********************************************
-
-
 class DeviceVendorList(ListView):
     model = DeviceVendor
     template_name = 'device_vendor/device_vendor_list.html'
@@ -1232,6 +1245,134 @@ class DeviceTypeDelete(DeleteView):
     def delete(self, request, *args, **kwargs):
         action.send(request.user, verb='deleting device type: %s'%(self.object.name))
         super(DeviceTypeDelete, self).delete(self, request, *args, **kwargs)
+        
+        
+# ****************************************** Device Type *******************************************
+class DevicePortList(ListView):
+    model = DevicePort
+    template_name = 'device_port/device_ports_list.html'
+
+    def get_context_data(self, **kwargs):
+        context=super(DevicePortList, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData':'name',             'sTitle' : 'Name',          'sWidth':'null', },
+            {'mData':'alias',            'sTitle' : 'Alias',         'sWidth':'null', },
+            {'mData':'value',            'sTitle' : 'Value',         'sWidth':'null', },
+            {'mData':'actions',          'sTitle' : 'Actions',       'sWidth':'10%',  },
+            ]
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+
+class DevicePortListingTable(BaseDatatableView):
+    model = DevicePort
+    columns = ['name', 'alias', 'value']
+    order_columns = ['name', 'alias', 'value']
+
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        ##TODO:Need to optimise with the query making login.
+        if sSearch:
+            query=[]
+            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            for column in self.columns[:-1]:
+                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
+            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return DevicePort.objects.values(*self.columns+['id'])
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in qs:
+            dct.update(actions='<a href="/device_port/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/device_port/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs=list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+               }
+        return ret
+
+class DevicePortDetail(DetailView):
+    model = DevicePort
+    template_name = 'device_port/device_port_detail.html'
+
+
+class DevicePortCreate(CreateView):
+    template_name = 'device_port/device_port_new.html'
+    model = DevicePort
+    form_class = DevicePortForm
+    success_url = reverse_lazy('device_ports_list')
+
+    def form_valid(self, form):
+        self.object=form.save()
+        action.send(self.request.user, verb='Created', action_object = self.object)
+        return HttpResponseRedirect(DevicePortCreate.success_url)
+
+
+class DevicePortUpdate(UpdateView):
+    template_name = 'device_port/device_port_update.html'
+    model = DevicePort
+    form_class = DevicePortForm
+    success_url = reverse_lazy('device_ports_list')
+
+    def form_valid(self, form):
+        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
+
+        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        if changed_fields_dict:
+
+            verb_string = 'Changed values of DevicePort: %s from initial values '%(self.object.name) +\
+                          ', '.join(['%s: %s' %(k, initial_field_dict[k]) for k in changed_fields_dict])+\
+                          ' to '+\
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            self.object=form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect( DevicePortUpdate.success_url )
+
+
+class DevicePortDelete(DeleteView):
+    model = DevicePort
+    template_name = 'device_port/device_port_delete.html'
+    success_url = reverse_lazy('device_ports_list')
+    
 
 
 

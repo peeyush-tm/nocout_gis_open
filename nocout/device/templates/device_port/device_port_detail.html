@@ -1,0 +1,27 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/command.css" %}>
+{% endblock %}
+{% block breadcrumb_page_title %} > Device Port {% endblock %}
+{% block content_title %}Device Ports Management{% endblock %}
+{% block content_description %}Detail of command ....{% endblock %}
+{% block content %}
+    <h1>{{ object.name }}</h1><br/>
+    <div id="command">
+        <table>
+            <tr>
+                <td><strong>Name:</strong></td>
+                <td>{{ object.name }}</td>
+            </tr>
+            <tr>
+                <td><strong>Alias:</strong></td>
+                <td>{{ object.alias }}</td>
+            </tr>
+            <tr>
+                <td><strong>Value:</strong></td>
+                <td>{{ object.value }}</td>
+            </tr>
+        </table>
+    </div>
+{% endblock %}
