@@ -2,7 +2,7 @@ import operator
 import copy
 import ast
 import json
-from device.api import DeviceStats
+# from device.api import DeviceStats
 from django.db.models import Q
 from django.views.generic.base import View
 from django.http import HttpResponse

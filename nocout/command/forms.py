@@ -2,6 +2,7 @@ from django import forms
 from models import Command
 
 
+# command form
 class CommandForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(CommandForm, self).__init__(*args, **kwargs)

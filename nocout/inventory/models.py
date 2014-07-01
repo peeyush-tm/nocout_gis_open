@@ -1,7 +1,7 @@
 import datetime
 from django.db import models
 from user_group.models import UserGroup
-from device.models import Device
+from device.models import Device, DevicePort, DeviceTechnology
 from device_group.models import DeviceGroup
 from organization.models import Organization
 
@@ -24,8 +24,8 @@ class Inventory(models.Model):
 
 # gis antenna model
 class Antenna(models.Model):
-    name = models.CharField('Name', max_length=250, unique=True)
-    alias = models.CharField('Alias', max_length=250, null=True, blank=True)
+    name = models.CharField('Antenna Name', max_length=250, unique=True)
+    alias = models.CharField('Antenna Alias', max_length=250, null=True, blank=True)
     height = models.IntegerField('Antenna Height', null=True, blank=True)
     polarization = models.CharField('Polarization', max_length=50, null=True, blank=True)
     tilt = models.IntegerField('Tilt', null=True, blank=True)
@@ -44,10 +44,10 @@ class Antenna(models.Model):
 
 # gis backhaul model
 class Backhaul(models.Model):
-    name = models.CharField('Name', max_length=250, unique=True)
-    alias = models.CharField('Alias', max_length=250, null=True, blank=True)
+    name = models.CharField('Backhaul Name', max_length=250, unique=True)
+    alias = models.CharField('Backhaul Alias', max_length=250, null=True, blank=True)
     bh_configured_on = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul')
-    bh_port_name = models.CharField('BH Port Name', max_length=40, null=True, blank=True)
+    bh_port_name = models.CharField(max_length=40, verbose_name=" BH Port Name", null=True, blank=True)
     bh_port = models.IntegerField('BH Port', null=True, blank=True)
     bh_type = models.CharField('BH Type', max_length=250, null=True, blank=True)
     bh_switch = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul_switch')
@@ -55,7 +55,7 @@ class Backhaul(models.Model):
     switch_port = models.IntegerField('Switch Port', null=True, blank=True)
     pop = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul_pop')
     pop_port_name = models.CharField('POP Port Name', max_length=40, null=True, blank=True)
-    pop_port = models.IntegerField('Pop Port', null=True, blank=True)
+    pop_port = models.IntegerField('POP Port', null=True, blank=True)
     aggregator = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul_aggregator')
     aggregator_port_name = models.CharField('Aggregator Port Name', max_length=40, null=True, blank=True)
     aggregator_port = models.IntegerField('Aggregator Port', null=True, blank=True)
@@ -76,6 +76,7 @@ class Backhaul(models.Model):
 class BaseStation(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250, null=True, blank=True)
+    bs_technology = models.ForeignKey(DeviceTechnology, null=True, blank=True)
     bs_site_id = models.CharField('BS Site ID', max_length=250, null=True, blank=True)
     bs_switch = models.ForeignKey(Device, null=True, blank=True, related_name='bs_switch')
     backhaul = models.ForeignKey(Backhaul)
@@ -98,13 +99,8 @@ class Sector(models.Model):
     alias = models.CharField('Alias', max_length=250, null=True, blank=True)
     sector_id = models.CharField('Sector ID', max_length=250, null=True, blank=False)
     base_station = models.ForeignKey(BaseStation, related_name='sector')
-    idu = models.ForeignKey(Device, max_length=250, null=True, blank=False, related_name='sector_idu')
-    idu_port_name = models.CharField('IDU Port Name', max_length=40, null=True, blank=True)
-    idu_port = models.IntegerField('IDU Port', null=True, blank=True)
-    idu_type = models.CharField('IDU Type', max_length=250, null=True, blank=True)
-    odu = models.ForeignKey(Device, max_length=250, null=True, blank=True, related_name='sector_odu')
-    odu_port_name = models.CharField('ODU Port Name', max_length=40, null=True, blank=True)
-    odu_port = models.IntegerField('ODU Port', null=True, blank=True)
+    sector_configured_on = models.ForeignKey(Device, max_length=250, null=True, blank=False, related_name='sector_configured_on')
+    sector_configured_on_port = models.ForeignKey(DevicePort, null=True, blank=True)
     antenna = models.ForeignKey(Antenna, null=True, blank=True, related_name='sector')
     mrc = models.CharField('MRC', max_length=4, null=True, blank=True)
     tx_power = models.IntegerField('TX Power', null=True, blank=True)
@@ -139,7 +135,7 @@ class SubStation(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250, null=True, blank=True)
     device = models.ForeignKey(Device)
-    version = models.CharField('Versiom', max_length=40, null=True, blank=True)
+    version = models.CharField('Version', max_length=40, null=True, blank=True)
     serial_no = models.CharField('Serial No.', max_length=250, null=True, blank=True)
     building_height = models.IntegerField('Building Height', null=True, blank=True)
     tower_height = models.IntegerField('Tower Height', null=True, blank=True)

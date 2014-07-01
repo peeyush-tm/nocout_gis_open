@@ -188,7 +188,7 @@ class AntennaList(ListView):
         return context
 
 class AntennaListingTable(BaseDatatableView):
-    model = AntennaList
+    model = Antenna
     columns = ['name', 'alias', 'height', 'polarization', 'tilt', 'beam_width']
     order_columns = ['name', 'alias', 'height', 'polarization', 'tilt', 'beam_width']
 
@@ -284,6 +284,8 @@ class AntennaUpdate(UpdateView):
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
             self.object=form.save()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( AntennaUpdate.success_url )
@@ -316,7 +318,7 @@ class BaseStationList(ListView):
         return context
 
 class BaseStationListingTable(BaseDatatableView):
-    model = BaseStationList
+    model = BaseStation
     columns = ['name', 'alias', 'bs_site_id', 'bs_switch__device_name', 'backhaul__name', 'bs_type', 'building_height', 'description']
     order_columns = ['name', 'alias', 'bs_site_id', 'bs_switch__device_name', 'backhaul__name', 'bs_type', 'building_height', 'description']
 
@@ -412,6 +414,8 @@ class BaseStationUpdate(UpdateView):
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
             self.object=form.save()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( BaseStationUpdate.success_url )
@@ -447,7 +451,7 @@ class BackhaulList(ListView):
         return context
 
 class BackhaulListingTable(BaseDatatableView):
-    model = BackhaulList
+    model = Backhaul
     columns = ['name', 'alias', 'bh_configured_on__device_name', 'bh_port', 'bh_type', 'pop__device_name', 'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
     order_columns = ['name', 'alias', 'bh_configured_on__device_name', 'bh_port', 'bh_type', 'pop__device_name', 'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
 
@@ -544,6 +548,8 @@ class BackhaulUpdate(UpdateView):
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
             self.object=form.save()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( BackhaulUpdate.success_url )
@@ -562,24 +568,23 @@ class SectorList(ListView):
     def get_context_data(self, **kwargs):
         context=super(SectorList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',          'sTitle' : 'Name',             'sWidth':'null',},
-            {'mData':'alias',         'sTitle' : 'Alias',            'sWidth':'null',},
-            {'mData':'sector_id',     'sTitle' : 'ID',               'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'base_station__name',  'sTitle' : 'Base Station',     'sWidth':'null',},
-            {'mData':'idu__device_name',           'sTitle' : 'IDU',              'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'odu__device_name',           'sTitle' : 'ODU',              'sWidth':'null',},
-            {'mData':'antenna__name',       'sTitle' : 'Antenna',          'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'mrc',           'sTitle' : 'MRC',              'sWidth':'null',},
-            {'mData':'description',   'sTitle' : 'Description',      'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',       'sTitle' : 'Actions',          'sWidth':'10%' ,}
+            {'mData':'name',                       'sTitle' : 'Name',             'sWidth':'null',},
+            {'mData':'alias',                      'sTitle' : 'Alias',            'sWidth':'null',},
+            {'mData':'sector_id',                  'sTitle' : 'ID',               'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'sector_configured_on__device_name',       'sTitle' : 'Sector Configured On',     'sWidth':'null',},
+            {'mData':'sector_configured_on_port__name',  'sTitle' : 'Sector Configured On Port',              'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'antenna__name',              'sTitle' : 'Antenna',          'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'mrc',                        'sTitle' : 'MRC',              'sWidth':'null',},
+            {'mData':'description',                'sTitle' : 'Description',      'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'actions',                    'sTitle' : 'Actions',          'sWidth':'10%' ,}
             ]
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class SectorListingTable(BaseDatatableView):
-    model = SectorList
-    columns = ['name', 'alias', 'sector_id', 'base_station__name', 'idu__device_name', 'odu__device_name', 'antenna__name', 'mrc', 'description']
-    order_columns = ['name', 'alias', 'sector_id', 'base_station__name', 'idu__device_name', 'odu__device_name', 'antenna__name', 'mrc', 'description']
+    model = Sector
+    columns = ['name', 'alias', 'sector_id', 'base_station__name', 'sector_configured_on__device_name', 'sector_configured_on_port__name', 'antenna__name', 'mrc', 'description']
+    order_columns = ['name', 'alias', 'sector_id', 'base_station__name', 'sector_configured_on__device_name', 'sector_configured_on_port__name', 'antenna__name', 'mrc', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -669,10 +674,12 @@ class SectorUpdate(UpdateView):
         cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of Sector : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
+            verb_string = 'Changed values of Customer : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
             self.object=form.save()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( SectorUpdate.success_url )
@@ -703,7 +710,7 @@ class CustomerList(ListView):
         return context
 
 class CustomerListingTable(BaseDatatableView):
-    model = CustomerList
+    model = Customer
     columns = ['name', 'alias', 'city', 'state', 'address', 'description']
     order_columns = ['name', 'alias', 'city', 'state', 'address', 'description']
 
@@ -799,6 +806,8 @@ class CustomerUpdate(UpdateView):
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
             self.object=form.save()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( CustomerUpdate.success_url )
@@ -834,7 +843,7 @@ class SubStationList(ListView):
         return context
 
 class SubStationListingTable(BaseDatatableView):
-    model = SubStationList
+    model = SubStation
     columns = ['name', 'alias', 'device__device_name', 'version', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
     order_columns = ['name', 'alias', 'device__device_name', 'version', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
 
@@ -930,6 +939,8 @@ class SubStationUpdate(UpdateView):
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
             self.object=form.save()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( SubStationUpdate.success_url )
@@ -962,7 +973,7 @@ class CircuitList(ListView):
         return context
 
 class CircuitListingTable(BaseDatatableView):
-    model = CircuitList
+    model = Circuit
     columns = ['name', 'alias', 'circuit_id', 'sector__name', 'customer__name', 'sub_station__name', 'date_of_acceptance', 'description']
     order_columns = ['name', 'alias', 'circuit_id', 'sector__name', 'customer__name', 'sub_station__name', 'date_of_acceptance', 'description']
 
@@ -1058,6 +1069,8 @@ class CircuitUpdate(UpdateView):
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
             self.object=form.save()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( CircuitUpdate.success_url )
