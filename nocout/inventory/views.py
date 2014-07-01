@@ -188,7 +188,7 @@ class AntennaList(ListView):
         return context
 
 class AntennaListingTable(BaseDatatableView):
-    model = AntennaList
+    model = Antenna
     columns = ['name', 'alias', 'height', 'polarization', 'tilt', 'beam_width']
     order_columns = ['name', 'alias', 'height', 'polarization', 'tilt', 'beam_width']
 
@@ -318,7 +318,7 @@ class BaseStationList(ListView):
         return context
 
 class BaseStationListingTable(BaseDatatableView):
-    model = BaseStationList
+    model = BaseStation
     columns = ['name', 'alias', 'bs_site_id', 'bs_switch__device_name', 'backhaul__name', 'bs_type', 'building_height', 'description']
     order_columns = ['name', 'alias', 'bs_site_id', 'bs_switch__device_name', 'backhaul__name', 'bs_type', 'building_height', 'description']
 
@@ -451,7 +451,7 @@ class BackhaulList(ListView):
         return context
 
 class BackhaulListingTable(BaseDatatableView):
-    model = BackhaulList
+    model = Backhaul
     columns = ['name', 'alias', 'bh_configured_on__device_name', 'bh_port', 'bh_type', 'pop__device_name', 'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
     order_columns = ['name', 'alias', 'bh_configured_on__device_name', 'bh_port', 'bh_type', 'pop__device_name', 'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
 
@@ -582,7 +582,7 @@ class SectorList(ListView):
         return context
 
 class SectorListingTable(BaseDatatableView):
-    model = SectorList
+    model = Sector
     columns = ['name', 'alias', 'sector_id', 'base_station__name', 'sector_configured_on__device_name', 'sector_configured_on_port__name', 'antenna__name', 'mrc', 'description']
     order_columns = ['name', 'alias', 'sector_id', 'base_station__name', 'sector_configured_on__device_name', 'sector_configured_on_port__name', 'antenna__name', 'mrc', 'description']
 
@@ -710,7 +710,7 @@ class CustomerList(ListView):
         return context
 
 class CustomerListingTable(BaseDatatableView):
-    model = CustomerList
+    model = Customer
     columns = ['name', 'alias', 'city', 'state', 'address', 'description']
     order_columns = ['name', 'alias', 'city', 'state', 'address', 'description']
 
@@ -843,7 +843,7 @@ class SubStationList(ListView):
         return context
 
 class SubStationListingTable(BaseDatatableView):
-    model = SubStationList
+    model = SubStation
     columns = ['name', 'alias', 'device__device_name', 'version', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
     order_columns = ['name', 'alias', 'device__device_name', 'version', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
 
@@ -973,7 +973,7 @@ class CircuitList(ListView):
         return context
 
 class CircuitListingTable(BaseDatatableView):
-    model = CircuitList
+    model = Circuit
     columns = ['name', 'alias', 'circuit_id', 'sector__name', 'customer__name', 'sub_station__name', 'date_of_acceptance', 'description']
     order_columns = ['name', 'alias', 'circuit_id', 'sector__name', 'customer__name', 'sub_station__name', 'date_of_acceptance', 'description']
 
