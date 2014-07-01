@@ -1,0 +1,112 @@
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+    <li>Network Maps</li>
+    <li>Google Earth</li>
+{% endblock %}
+{% block content_title %}Google Earth{% endblock %}
+{% block content_description %}Location wise devices distribution{% endblock %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
+    <!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
+{% endblock %}
+
+{% block page_setting_block %}
+    <!-- GIS Page  -->
+    <span class="date-range pull-right">
+        <div class="btn-group">
+            <ul class="list-unstyled list-inline">
+                <li>
+                    <button id="advFilterBtn" class="btn btn-info" onclick="showAdvFilters();" data-complete-text="<i class='fa fa-filter'></i> Advance Filters" data-loading-text="Please Wait...">
+                        <i class='fa fa-filter'></i> Advance Filters
+                    </button>
+                    <button id="removeFilterBtn" class="btn btn-danger hide" onclick="removeAdvFilters();" style="margin-left:10px;">
+                        <i class='fa fa-times'></i> Remove Filters
+                    </button>
+                </li>
+            </ul>            
+        </div>
+    </span>
+    <!-- /DATE RANGE PICKER -->
+{% endblock %}
+
+{% block content %}
+<div class='box border lite mapContainerBlock'>
+    <div class='box-title'>
+        <h4><i class='fa fa-map-marker'></i> GOOGLE Earth <i class="fa fa-spinner fa fa-spin" id="loadingIcon">&nbsp;</i></h4>
+        <!--Filters Block Start-->
+        <div class="pull-right">
+            <ul class="list-unstyled list-inline">
+                <li>
+                    <!--technology Filter-->
+                    <select name="technology" id="technology" class="form-control col-xs-1 input-sm">
+                        <option value="">Select Technology</option>
+                    </select>   
+                </li>
+                <li>
+                    <!--vendor Filter-->
+                    <select name="vendor" id="vendor" class="form-control col-xs-1 input-sm">
+                        <option value="">Select Vendor</option>
+                    </select>
+                </li>
+                <li>
+                    <!--State Filter-->
+                    <select name="state" id="state" class="form-control col-xs-1 input-sm">
+                        <option value="">Select State</option>
+                    </select>
+                </li>
+                <li>
+                    <!--City Filter-->
+                    <select name="city" id="city" class="form-control col-xs-1 input-sm">
+                        <option value="">Select City</option>
+                    </select>   
+                </li>
+                <li>
+                    <!--Reset Button-->
+                    <button class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters" data-complete-text="<i class='fa fa-refresh'></i> Refresh" data-loading-text="Please Wait...">
+                        <i class="fa fa-refresh">&nbsp;</i> Reset
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <!--Filters Block End-->
+        <div class="clear"></div>
+    </div>
+    <div class='box-body' style="position:relative">
+        <!--div on which the map is to be plot-->
+
+        <!--Google Earth Container Start-->
+        <div id="google_earth_container"></div>
+        <!--Google Earth Container End-->
+    </div>
+</div>
+
+<!-- Google Earth Library-->
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<!-- Our Library to plot the devices on map & performs functionality accordingly-->
+<script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
+<!-- Our Library-->
+<script type="text/javascript" src={% static "js/earth_devicePlottingLib.js" %}></script>
+<script type="text/javascript">
+    
+    google.load("earth", "1");
+    
+    $(document).ready(function(e) {
+                
+        var earth_instance = new googleEarthClass();
+        earth_instance.createGoogleEarth('google_earth_container');
+    });
+</script>
+{% endblock %}
+
+{% block load_js %}
+<!-- /JAVASCRIPTS -->
+
+<script>
+    jQuery(document).ready(function () {
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+    });
+</script>
+{% endblock %}
