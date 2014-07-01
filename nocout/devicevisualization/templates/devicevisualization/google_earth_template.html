@@ -10,6 +10,9 @@
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
     <!-- JQUERY UI-->
     <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
+    <!-- CSS to style the file input field as button and adjust the Bootstrap progress bars -->
+    <link rel="stylesheet" href={% static "js/jquery-upload/css/jquery.fileupload.css" %}>
+    <link rel="stylesheet" href={% static "js/jquery-upload/css/jquery.fileupload-ui.css" %}>
 {% endblock %}
 
 {% block page_setting_block %}
@@ -23,6 +26,19 @@
                     </button>
                     <button id="removeFilterBtn" class="btn btn-danger hide" onclick="removeAdvFilters();" style="margin-left:10px;">
                         <i class='fa fa-times'></i> Remove Filters
+                    </button>                    
+                </li>
+                <li>
+                    <span class="btn btn-success fileinput-button">
+                        <i class="fa fa-plus"></i>
+                        <span id="fileName">Add File</span>
+                        <input type="file" name="kmlFile" id="kmlFile">
+                    </span>
+                </li>
+                <li>
+                    <button class="btn btn-primary start" id="kmlImportBtn">
+                        <i class="fa fa-arrow-circle-o-up"></i>
+                        <span>Import</span>
                     </button>
                 </li>
             </ul>            
@@ -90,12 +106,40 @@
 <script type="text/javascript" src={% static "js/earth_devicePlottingLib.js" %}></script>
 <script type="text/javascript">
     
+    var earth_instance = "";
     google.load("earth", "1");
     
     $(document).ready(function(e) {
                 
-        var earth_instance = new googleEarthClass();
+        earth_instance = new googleEarthClass();
         earth_instance.createGoogleEarth('google_earth_container');
+    });
+    /*Change event on file input*/
+    $("#kmlFile").on('change',function(e) {        
+        var fileName = $.trim($("#kmlFile")[0].files[0].name);
+        var fileNameArray = fileName.split(".");
+        var fileExtension = $.trim(fileNameArray[fileNameArray.length - 1]);
+        if(fileName.length > 0) {
+            if(fileExtension.toUpperCase() == "KML" || fileExtension.toUpperCase() == "KMZ" ) {
+                $("#fileName").html(fileName);
+            } else {
+                $("#kmlFile")[0].value = "";
+                $("#fileName").html("Add File");
+                alert("Please select KML or KMZ file to import data");
+            }
+        } else {
+            $("#fileName").html("Add File");
+        }
+    });
+
+    /*Click event on file upload*/
+    $("#kmlImportBtn").click(function(e) {
+        var fileExist = $.trim($("#kmlFile")[0].value);
+        if(fileExist.length > 0) {
+            earth_instance.importKmlData($("#kmlFile"));
+        } else {
+            alert("Please select KML or KMZ file to import data");
+        }
     });
 </script>
 {% endblock %}
