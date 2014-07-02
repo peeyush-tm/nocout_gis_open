@@ -369,7 +369,7 @@ class DeviceStatsApi(View):
                                     'lat':base_station.latitude,
                                     'lon':base_station.longitude,
                                     'circle_radius' : 3000,
-						            'circle_color' : 'A58383',
+						            'circle_color' : '{"r" : 74, "g" : 250, "b" : 194, "a" : 0.90,}',
                                     'antena_height':None,
                                     'param':{'base_station':[
                                                     {
@@ -395,6 +395,30 @@ class DeviceStatsApi(View):
                                                      'title':'BS Type',
                                                      'show':1,
                                                      'value':base_station.bs_type
+                                                    },{
+                                                     'name':'bs_technology',
+                                                     'title':'BS Technology',
+                                                     'show':1,
+                                                     'value':base_station.bs_technology.name
+                                                    },{
+                                                     'name':'bs_vendor',
+                                                     'title':'BS Vendor',
+                                                     'show':1,
+                                                     'value':DeviceVendor.objects.get(id=\
+                                                             Device.objects.get(id= base_station.bs_switch.id).device_vendor).name
+                                                    },{
+                                                     'name':'city',
+                                                     'title':'BS City',
+                                                     'show':1,
+                                                     'value':City.objects.get(id=
+                                                             Device.objects.get(id= base_station.bs_switch.id).city).city_name
+                                                    },{
+                                                     'name':'state',
+                                                     'title':'BS State',
+                                                     'show':1,
+                                                     'value':State.objects.get(id=
+                                                             Device.objects.get(id= base_station.bs_switch.id).state).state_name
+
                                                     },]
                                     ,
                                    'backhual':[
@@ -511,12 +535,12 @@ class DeviceStatsApi(View):
                                               "beam_width" : sector.antenna.beam_width,
                                               "radius" : sector.cell_radius,
                                               "markerUrl" : "static/img/marker/icon4_small.png",
-                                              "link_color" : "green",
+                                              "link_color" : '{"r" : 64, "g" : 200, "b" : 253, "a" : 0.99}',
                                               "show_link" : 1,
-                                              "sector_color" : "#156AAF",
+                                              "sector_color" : '{"r":250, "g" : 95, "b" : 113, "a" : 0.90}',
                                               "sector_orientation" : "horizontal",
                                               "circle_radius" : 3000,
-                                              "circle_color" : "333333",
+                                              "circle_color" : '{ "r" : 253, "g" : 242, "b" : 112, "a" : 0.90}',
                                               "antena_height" : sector.antenna.height,
                                               }
                             }
@@ -540,34 +564,28 @@ class DeviceFilterApi(View):
             }
         }
 
+        technology_data,vendor_data,state_data,city_data=[],[],[],[]
+        for device_technology in DeviceTechnology.objects.all():
+            technology_data.append({ 'id':device_technology.id,
+                                     'value':device_technology.name })
+        for vendor in DeviceVendor.objects.all():
+            vendor_data.append({ 'id':vendor.id,
+                                     'value':vendor.name })
 
-        logged_in_user= self.request.user.userprofile
+        for state in State.objects.all():
+            state_data.append({ 'id':state.id,
+                                     'value':state.state_name })
 
-        if logged_in_user.role.values_list('role_name', flat=True)[0] =='admin':
-            organizations= logged_in_user.organization.get_descendants(include_self=True)
-        else:
-            organizations=logged_in_user.organization
+        for city in City.objects.all():
+            city_data.append({ 'id':city.id,
+                                     'value':city.city_name })
 
-        if organizations:
-            for organization in organizations:
-                base_stations= BaseStation.objects.filter( bs_switch__in= organization.device_set.values_list('id', flat=True))
-                technology_data,vendor_data,state_data,city_data=[],[],[],[]
-                for base_station in base_stations:
-                        base_station_id=base_station.id
-                        technology_data.append({ 'id':base_station_id, 'value':base_station.bs_technology.name })
-                        vendor_data.append({ 'id': base_station_id, 'value':
-                        DeviceVendor.objects.get(id=base_station.bs_switch.device_vendor).name  if base_station.bs_switch.device_vendor else None })
-                        state_data.append({ 'id': base_station_id, 'value':
-                            State.objects.get(id=base_station.bs_switch.state).state_name if base_station.bs_switch.state else None })
-                        city_data.append({ 'id': base_station_id, 'value':
-                            City.objects.get(id=base_station.bs_switch.city).city_name if base_station.bs_switch.city else None })
-
-                self.result['data']['objects']['technology']={'data':technology_data}
-                self.result['data']['objects']['vendor']={'data':vendor_data}
-                self.result['data']['objects']['state']={'data':state_data}
-                self.result['data']['objects']['city']={'data':city_data}
-                self.result['message']='Data Fetched Successfully.'
-                self.result['success']=1
+        self.result['data']['objects']['technology']={'data':technology_data}
+        self.result['data']['objects']['vendor']={'data':vendor_data}
+        self.result['data']['objects']['state']={'data':state_data}
+        self.result['data']['objects']['city']={'data':city_data}
+        self.result['message']='Data Fetched Successfully.'
+        self.result['success']=1
 
         return HttpResponse(json.dumps(self.result))
 

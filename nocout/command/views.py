@@ -1,7 +1,9 @@
 import json
 from actstream import action
+from django.contrib.auth.decorators import permission_required
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect
+from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
@@ -102,6 +104,10 @@ class CommandCreate(CreateView):
     form_class = CommandForm
     success_url = reverse_lazy('commands_list')
 
+    @method_decorator(permission_required('command.add_command', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(CommandCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
@@ -113,6 +119,10 @@ class CommandUpdate(UpdateView):
     model = Command
     form_class = CommandForm
     success_url = reverse_lazy('commands_list')
+
+    @method_decorator(permission_required('command.change_command', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(CommandUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
@@ -138,4 +148,7 @@ class CommandDelete(DeleteView):
     template_name = 'command/command_delete.html'
     success_url = reverse_lazy('commands_list')
     
-    
+    @method_decorator(permission_required('command.delete_command', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(CommandDelete, self).dispatch(*args, **kwargs)
+

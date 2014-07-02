@@ -1,7 +1,9 @@
 import json
 from actstream import action
+from django.contrib.auth.decorators import permission_required
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect
+from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
@@ -106,6 +108,11 @@ class ServiceCreate(CreateView):
     form_class = ServiceForm
     success_url = reverse_lazy('services_list')
 
+    @method_decorator(permission_required('service.add_service', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ServiceCreate, self).dispatch(*args, **kwargs)
+
+
     def form_valid(self, form):
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
@@ -117,6 +124,10 @@ class ServiceUpdate(UpdateView):
     model = Service
     form_class = ServiceForm
     success_url = reverse_lazy('services_list')
+
+    @method_decorator(permission_required('service.change_service', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ServiceUpdate, self).dispatch(*args, **kwargs)
 
 
     def form_valid(self, form):
@@ -144,6 +155,10 @@ class ServiceDelete(DeleteView):
     model = Service
     template_name = 'service/service_delete.html'
     success_url = reverse_lazy('services_list')
+
+    @method_decorator(permission_required('service.delete_service', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ServiceDelete, self).dispatch(*args, **kwargs)
 
 
 #************************************* Service Parameters *****************************************
@@ -243,6 +258,10 @@ class ServiceParametersCreate(CreateView):
     form_class = ServiceParametersForm
     success_url = reverse_lazy('services_parameter_list')
 
+    @method_decorator(permission_required('service.add_serviceparameters', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ServiceParametersCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
@@ -253,6 +272,11 @@ class ServiceParametersUpdate(UpdateView):
     model = ServiceParameters
     form_class = ServiceParametersForm
     success_url = reverse_lazy('services_parameter_list')
+
+    @method_decorator(permission_required('service.change_serviceparameters', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ServiceParametersUpdate, self).dispatch(*args, **kwargs)
+
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
@@ -276,6 +300,10 @@ class ServiceParametersDelete(DeleteView):
     model = ServiceParameters
     template_name = 'service_parameter/service_parameter_delete.html'
     success_url = reverse_lazy('services_parameter_list')
+
+    @method_decorator(permission_required('service.delete_serviceparameters', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ServiceParametersDelete, self).dispatch(*args, **kwargs)
     
 
 #********************************** Service Data Source ***************************************
@@ -370,6 +398,11 @@ class ServiceDataSourceCreate(CreateView):
     form_class = ServiceDataSourceForm
     success_url = reverse_lazy('service_data_sources_list')
 
+    @method_decorator(permission_required('service.add_servicedatasource', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ServiceDataSourceCreate, self).dispatch(*args, **kwargs)
+
+
     def form_valid(self, form):
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
@@ -382,6 +415,9 @@ class ServiceDataSourceUpdate(UpdateView):
     form_class = ServiceDataSourceForm
     success_url = reverse_lazy('service_data_sources_list')
 
+    @method_decorator(permission_required('service.change_servicedatasource', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ServiceDataSourceUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
@@ -400,4 +436,8 @@ class ServiceDataSourceDelete(DeleteView):
     model = ServiceDataSource
     template_name = 'service_data_source/service_data_source_delete.html'
     success_url = reverse_lazy('service_data_sources_list')
+
+    @method_decorator(permission_required('service.delete_servicedatasource', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ServiceDataSourceDelete, self).dispatch(*args, **kwargs)
     
