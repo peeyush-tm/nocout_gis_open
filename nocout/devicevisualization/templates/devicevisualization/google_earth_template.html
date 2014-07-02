@@ -28,6 +28,7 @@
                         <i class='fa fa-times'></i> Remove Filters
                     </button>                    
                 </li>
+                <!--
                 <li>
                     <span class="btn btn-success fileinput-button">
                         <i class="fa fa-plus"></i>
@@ -41,6 +42,7 @@
                         <span>Import</span>
                     </button>
                 </li>
+                -->
             </ul>            
         </div>
     </span>
@@ -80,7 +82,7 @@
                 </li>
                 <li>
                     <!--Reset Button-->
-                    <button class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters" data-complete-text="<i class='fa fa-refresh'></i> Refresh" data-loading-text="Please Wait...">
+                    <button class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters" data-complete-text="<i class='fa fa-refresh'></i> Reset" data-loading-text="Please Wait...">
                         <i class="fa fa-refresh">&nbsp;</i> Reset
                     </button>
                 </li>
@@ -102,44 +104,43 @@
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <!-- Our Library to plot the devices on map & performs functionality accordingly-->
 <script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
-<!-- Our Library-->
+<!-- Our Library to plot the devices on google maps & performs functionality accordingly-->
+<script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
+<!-- Our Library to plot the devices on google earth & performs functionality accordingly-->
 <script type="text/javascript" src={% static "js/earth_devicePlottingLib.js" %}></script>
+<!-- Custon Script for this template-->
+<script type="text/javascript" src={% static "js/devicevisualization.js" %}></script>
+<!-- Our Library to plot the devices on map or earth & performs functionality accordingly-->
+<script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
+
 <script type="text/javascript">
     
-    var earth_instance = "";
+    var earth_instance = "",
+        advSearch = "",
+        getFilterApi = "",
+        setFilterApi = "";
+        
     google.load("earth", "1");
     
     $(document).ready(function(e) {
-                
-        earth_instance = new googleEarthClass();
-        earth_instance.createGoogleEarth('google_earth_container');
-    });
-    /*Change event on file input*/
-    $("#kmlFile").on('change',function(e) {        
-        var fileName = $.trim($("#kmlFile")[0].files[0].name);
-        var fileNameArray = fileName.split(".");
-        var fileExtension = $.trim(fileNameArray[fileNameArray.length - 1]);
-        if(fileName.length > 0) {
-            if(fileExtension.toUpperCase() == "KML" || fileExtension.toUpperCase() == "KMZ" ) {
-                $("#fileName").html(fileName);
-            } else {
-                $("#kmlFile")[0].value = "";
-                $("#fileName").html("Add File");
-                alert("Please select KML or KMZ file to import data");
-            }
-        } else {
-            $("#fileName").html("Add File");
-        }
-    });
 
-    /*Click event on file upload*/
-    $("#kmlImportBtn").click(function(e) {
-        var fileExist = $.trim($("#kmlFile")[0].value);
-        if(fileExist.length > 0) {
-            earth_instance.importKmlData($("#kmlFile"));
-        } else {
-            alert("Please select KML or KMZ file to import data");
-        }
+        getFilterApi = "{{get_filter_api}}";
+        setFilterApi = "{{set_filter_api}}";
+
+        /*Create a instance of googleEarthClass*/
+        earth_instance = new googleEarthClass();
+
+        /*Create a instance of gmap_devicePlottingLib*/
+        mapsLibInstance = new devicePlottingClass_gmap();
+
+        /*Create a instance of advanceSearchClass*/
+        advSearch = new advanceSearchClass();
+
+        /*Call 'createGoogleEarth' function to draw google earth on spicified domElement*/
+        earth_instance.createGoogleEarth('google_earth_container');
+
+        /*Call getBasicFilters funtion to fetch & populate basic filters dropdown*/
+        mapsLibInstance.getBasicFilters();
     });
 </script>
 {% endblock %}

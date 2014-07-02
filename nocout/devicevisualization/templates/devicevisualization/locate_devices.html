@@ -25,10 +25,10 @@
                         <i class='fa fa-times'></i> Remove Filters
                     </button>
                 </li>
-                <li>
+                <!-- <li>
                     <button class="btn btn-info" id="createPolygonBtn"  data-complete-text="<i class='fa fa-location-arrow'></i> Select Devices" data-loading-text="Please Wait..."><i class="fa fa-location-arrow"></i> Select Devices</button>
                     <button class="btn btn-xs btn-danger hide" id="clearPolygonBtn"><i class="fa fa-times"></i> Clear Selection</button>
-                </li>
+                </li> -->
             </ul>            
         </div>
     </span>
@@ -71,7 +71,7 @@
                 </li>
                 <li>
                     <!--Reset Button-->
-                    <button class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters" data-complete-text="<i class='fa fa-refresh'></i> Refresh" data-loading-text="Please Wait...">
+                    <button class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters" data-complete-text="<i class='fa fa-refresh'></i> Reset" data-loading-text="Please Wait...">
                         <i class="fa fa-refresh">&nbsp;</i> Reset
                     </button>
                 </li>
@@ -111,7 +111,7 @@
 <script type="text/javascript" src={% static "js/oms.min.js" %}></script>
 <!-- Our Library to plot the devices on map & performs functionality accordingly-->
 <script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
-<!-- Our Library to plot the devices on map & performs functionality accordingly-->
+<!-- Our Library to plot the devices on map or earth & performs functionality accordingly-->
 <script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
 <!-- SPARKLINES -->
 <script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
@@ -122,7 +122,6 @@
 <script type="text/javascript">
 
     var networkMapInstance = "",
-        username = "",
         getFilterApi = "",
         setFilterApi = "",
         advSearch = "",
@@ -130,13 +129,12 @@
 
     $(document).ready(function(e) {
 
-        username = "{{username}}";
         getFilterApi = "{{get_filter_api}}";
         setFilterApi = "{{set_filter_api}}";
         deviceName = "{{ device_name }}";
         
-        /*Create a instance of networkMapClass*/
-        networkMapInstance = new networkMapClass();
+        /*Create a instance of gmap_devicePlottingLib*/
+        networkMapInstance = new devicePlottingClass_gmap();
 
         /*Create a instance of advanceSearchClass*/
         advSearch = new advanceSearchClass();
@@ -147,7 +145,7 @@
         if($.trim(deviceName) == "default_device_name") {
             
             /*Call the make network to create the BS-SS network on the google map*/
-            networkMapInstance.getDevicesData(username);
+            networkMapInstance.getDevicesData_gmap();
 
         } else {
 
@@ -159,6 +157,8 @@
                 $("#removeFilterBtn").addClass("hide");
             }
         }
+        /*Call getBasicFilters funtion to fetch & populate basic filters dropdown*/
+        networkMapInstance.getBasicFilters();
     });
 </script>
 {% endblock %}
