@@ -1,4 +1,6 @@
+from django.contrib.auth.decorators import permission_required
 from django.db.models.query import ValuesQuerySet
+from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
@@ -105,6 +107,10 @@ class SiteInstanceCreate(CreateView):
     form_class = SiteInstanceForm
     success_url = reverse_lazy('site_instance_list')
 
+    @method_decorator(permission_required('site_instance.add_siteinstance', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(SiteInstanceCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
@@ -115,6 +121,10 @@ class SiteInstanceUpdate(UpdateView):
     model = SiteInstance
     form_class = SiteInstanceForm
     success_url = reverse_lazy('site_instance_list')
+
+    @method_decorator(permission_required('site_instance.change_siteinstance', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(SiteInstanceUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
@@ -137,3 +147,6 @@ class SiteInstanceDelete(DeleteView):
     template_name = 'site_instance/site_instance_delete.html'
     success_url = reverse_lazy('site_instance_list')
 
+    @method_decorator(permission_required('site_instance.delete_siteinstance', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(SiteInstanceDelete, self).dispatch(*args, **kwargs)
