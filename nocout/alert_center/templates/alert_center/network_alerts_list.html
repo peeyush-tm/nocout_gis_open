@@ -84,11 +84,12 @@
             var ajax_url_latency = '{% url "LatencyListingTable" %}';
             var ajax_url_packet_drop = '{% url "PacketDropListingTable" %}';
             var ajax_url_down = '{% url "DownListingTable" %}';
-            var ajax_url_down = '{% url "ServiceAlertsListingTable" %}';
+            var ajax_url_servicealerts = '{% url "ServiceAlertsListingTable" %}';
             /*Call createDataTable function of ourDataTableWidget class*/
             dataTableInstance.createDataTable("latencylistingtable", gridHeadersObj_latency, ajax_url_latency);
             dataTableInstance.createDataTable("packetdroplistingtable", gridHeadersObj_packetdrop, ajax_url_packet_drop);
             dataTableInstance.createDataTable("downlistingtable", gridHeadersObj_down, ajax_url_down);
+            dataTableInstance.createDataTable("servicealertslistingtable", gridHeadersObj_servicealerts, ajax_url_servicealerts);
         });
 </script>
 {% endblock %}

@@ -11,5 +11,5 @@ urlpatterns = patterns('',
     url(r'^latencylistingtable/',views.LatencyListingTable.as_view(), name='LatencyListingTable'),
     url(r'^packetdroplistingtable/',views.PacketDropListingTable.as_view(), name='PacketDropListingTable'),
     url(r'^downlistingtable/',views.DownListingTable.as_view(), name='DownListingTable'),
-    url(r'^servicealertslistingtable/',views.DownListingTable.as_view(), name='ServiceAlertsListingTable'),
+    url(r'^servicealertslistingtable/',views.ServiceAlertsListingTable.as_view(), name='ServiceAlertsListingTable'),
 )
