@@ -12,8 +12,9 @@ var self = "",
 
 /**
  * This class is used to create th filter form by calling the get_filter API & the call the set_filter API with the selected filters
- * @class advanceSearchClass
+ * @class advanceSearchLib
  * @uses jQuery
+ * @uses Select2
  * Coded By :- Yogender Purohit
  */
 function advanceSearchClass() {
@@ -24,7 +25,7 @@ function advanceSearchClass() {
 	/**
 	 * This function first get the filters object from the server, create the filters HTML struction & then populate the HTML in the popup
 	 * @function getFilterInfo
-	 * @class advanceSearchClass
+	 * @class advanceSearchLib
 	 * @param domElement "String" It is dom element.
 	 * @param windowTitle "String" It is title of the popup
 	 * @param buttonId "String" It is the dom selector or ID of the clicked button.
@@ -373,20 +374,18 @@ function advanceSearchClass() {
 
 					if(result.data.objects != null) {
 
-						/*Create a instance of networkMapClass*/
-						nmInstance = new networkMapClass();
+						console.log(result);
+						// /*Create a instance of networkMapClass*/
+						// nmInstance = new devicePlottingClass_gmap();
 
-						/*Reset markers, polyline & filters*/
-				        nmInstance.clearMapElements();
+						// /*Reset markers, polyline & filters*/
+				  //       nmInstance.clearGmapElements();
 
-				        /*Reset Global Variables & Filters*/
-				        nmInstance.resetVariables();
+				  //       /*Reset Global Variables & Filters*/
+				  //       nmInstance.resetVariables_gmap();
 
-				        /*Call the getDevicesFilter function to seperate the filter values from the object array*/
-						//nmInstance.getDevicesFilter(result.data.objects.children);
-
-				        /*Call the make network to create the BS-SS network on the google map*/
-				        nmInstance.populateNetwork(result.data.objects.children);
+				  //       /*Call the make network to create the BS-SS network on the google map*/
+				  //       nmInstance.plotDevices_gmap(result.data.objects.children);
 					}
 				} else {
 

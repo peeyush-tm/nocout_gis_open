@@ -2,6 +2,7 @@
 var mapInstance = "",
 	that = "",
 	currentDomElement = "",
+	main_devices_data_gmaps = [],
 	oms = "",
 	pathConnector = "",
 	infowindow = "",
@@ -15,13 +16,14 @@ var mapInstance = "",
 	stateArray = [],
 	vendorArray = [],
 	techArray = [],
-	devices = [],
+	devices_gmaps = [],
 	masterMarkersObj = [],
 	slaveMarkersObj = [],
 	pathLineArray = [],
 	counter = -999,
 	totalCalls = 1,
 	clusterIcon = "",
+	appliedFilterObj_gmaps = {},
 	masterClusterInstance = "",
 	slaveClusterInstance = "",
 	polygonSelectedDevices = [],
@@ -59,15 +61,15 @@ var mapInstance = "",
 
 /**
  * This class is used to plot the BS & SS on the google maps & performs their functionality.
- * @class networkMap
- * @method networkMapClass
+ * @class gmap_devicePlottingLib
+ * @method devicePlottingClass_gmap
  * @uses jQuery
  * @uses Google Maps
  * @uses jQuery Flot
  * @uses jQuery UI
  * Coded By :- Yogender Purohit
  */
-function networkMapClass() {
+function devicePlottingClass_gmap() {
 
 	/*Store the reference of current pointer in a global variable*/
 	that = this;
@@ -75,13 +77,10 @@ function networkMapClass() {
 	/**
 	 * This function creates the base google map with the lat long of India
 	 * @function createMap
-	 * @class networkMap
+	 * @class gmap_devicePlottingLib
 	 * @param domElement "String" It the the dom element on which the map is to be create
 	 */
 	this.createMap = function(domElement) {
-
-		/*Store the reference of current pointer in a global variable*/
-		that = this;
 
 		/*Save the dom element in the global variable*/
 		currentDomElement = domElement;
@@ -158,13 +157,10 @@ function networkMapClass() {
 
 	/**
 	 * This function plots the BS & SS network on the created google map
-	 * @function getDevicesData
-	 * @class networkMap
+	 * @function getDevicesData_gmap
+	 * @class gmap_devicePlottingLib
 	 */
-	this.getDevicesData = function(username) {
-
-		/*Store the reference of current pointer in a global variable*/
-		that = this;
+	this.getDevicesData_gmap = function() {
 
 		if(counter > 0 || counter == -999) {
 			/*Show The loading Icon*/
@@ -180,7 +176,7 @@ function networkMapClass() {
 			$.ajax({
 				crossDomain: true,
 				url : "../../device/stats/",
-//				url : "../../static/new_format.json",
+				// url : "../../static/new_format.json",
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
@@ -193,11 +189,14 @@ function networkMapClass() {
 
 							/*Save the result json to the global variable for global access*/
 							devicesObject = result;
-							/**/
-							devices = devicesObject.data.objects.children;
+							/*This will update if any filer is applied*/
+							devices_gmaps = devicesObject.data.objects.children;
+							/*This will changes only when data re-fetched*/
+							main_devices_data_gmaps = devicesObject.data.objects.children;
+
 						} else {
 
-							devices = devices.concat(result.data.objects.children);
+							devices_gmaps = devices_gmaps.concat(result.data.objects.children);
 						}
 
 						/*Update the device count with the received data*/
@@ -207,7 +206,7 @@ function networkMapClass() {
 						showLimit = devicesObject.data.meta.limit;
 
 						if(counter == -999) {
-							counter = Math.round(devicesCount/showLimit);
+							counter = Math.floor(devicesCount / showLimit);
 						}
 						
 						if(devicesObject.success == 1) {
@@ -219,57 +218,59 @@ function networkMapClass() {
 								clusterIcon = "../../"+devicesObject.data.objects.data.unspiderfy_icon;
 							}
 
-							/*Call the populateNetwork to show the markers on the map*/
-							that.populateNetwork(devices);
-							
-							/*Call the getDevicesFilter function to seperate the filter values from the object array*/
-							//that.getDevicesFilter(devices);
+							/*Check that any filter is applied or not*/
+							var appliedFilterLength_gmaps = Object.keys(appliedFilterObj_gmaps).length;
+
+							if(appliedFilterLength_gmaps > 0) {
+								/*If any filter is applied then plot the fetch data as per the filters*/
+								that.applyFilter_gmaps(appliedFilterObj_gmaps);
+							} else {
+								/*Call the plotDevices_gmap to show the markers on the map*/
+								that.plotDevices_gmap(devices_gmaps);
+							}
 
 							/*Call the function after 3 sec.*/
 							setTimeout(function() {
 									
-								that.getDevicesData(username);
+								that.getDevicesData_gmap();
 							},3000);
 
 						} else {
 
-							that.recallServer();
+							that.recallServer_gmap();
 						}
 						/*Decrement the counter*/
 						counter = counter - 1;
 
 					} else {
 
-						that.recallServer();
+						that.recallServer_gmap();
 					}
 				},
 				/*If data not fetched*/
 				error : function(err) {
+
 					console.log(err.responseText);
-					that.recallServer();
-					console.log(err.statusText);
+					that.recallServer_gmap();
 				}
 			});
 		} else {
 
 			/*Recall the server after the defined time*/
-			that.recallServer();
+			that.recallServer_gmap();
 		}
 	};
 
 	/**
      * This function is used to populate the markers on the google maps
-     * @class netowrkMap
-     * @method populateNetwork
+     * @class gmap_devicePlottingLib
+     * @method plotDevices_gmap
      * @param resultantMarkers [JSON Objet Array] It is the devies object array
 	 */
-	this.populateNetwork = function(resultantMarkers) {
-
-		/*Store the reference of current pointer in a global variable*/
-		that = this;
+	this.plotDevices_gmap = function(resultantMarkers) {
 
 		/*Assign the potting devices to the 'devices' global variables*/
-		devices = resultantMarkers;
+		devices_gmaps = resultantMarkers;
 
 		for(var i=0;i<resultantMarkers.length;i++) {
 
@@ -312,9 +313,16 @@ function networkMapClass() {
 		    masterMarkersObj.push(masterMarker);
 		    /*Add parent markers to the OverlappingMarkerSpiderfier*/
 		    oms.addMarker(masterMarker);
+		    var bhCircleColor = "";
+		    bhCircleColor = "rgba(";
+		    bhCircleColor += resultantMarkers[i].data.circle_color.r+",";
+		    bhCircleColor += resultantMarkers[i].data.circle_color.g+",";
+		    bhCircleColor += resultantMarkers[i].data.circle_color.b+",";
+		    bhCircleColor += resultantMarkers[i].data.circle_color.a;
+		    bhCircleColor += ")";
 
 		    /*Call createCircle function to create backhual circle around BS & SS pt.*/
-	    	that.createCircle(resultantMarkers[i].data.lat,resultantMarkers[i].data.lon,resultantMarkers[i].data.circle_radius,resultantMarkers[i].data.circle_color,"backhual","bs",resultantMarkers[i].data.param.backhual);
+	    	that.createCircle(resultantMarkers[i].data.lat,resultantMarkers[i].data.lon,resultantMarkers[i].data.circle_radius,bhCircleColor,"backhual","bs",resultantMarkers[i].data.param.backhual);
 
 		    var slaveCount = resultantMarkers[i].children.length;  
 		    /*Loop for the number of slave & their links with the master*/
@@ -359,12 +367,20 @@ function networkMapClass() {
 		    	slaveMarkersObj.push(slaveMarker);
 			    /*Add child markers to the OverlappingMarkerSpiderfier*/
 				oms.addMarker(slaveMarker);
+					
+				var ssCircleColor = "";
+			    ssCircleColor = "rgba(";
+			    ssCircleColor += resultantMarkers[i].children[j].data.circle_color.r+",";
+			    ssCircleColor += resultantMarkers[i].children[j].data.circle_color.g+",";
+			    ssCircleColor += resultantMarkers[i].children[j].data.circle_color.b+",";
+			    ssCircleColor += resultantMarkers[i].children[j].data.circle_color.a;
+			    ssCircleColor += ")";
 
 				/*Call createCircle function to create frequency circle around BS & SS pt.*/
-	    		that.createCircle(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon,resultantMarkers[i].children[j].data.circle_radius,resultantMarkers[i].children[j].data.circle_color,"frequency","ss",resultantMarkers[i].children[j].data.param.backhual);
+	    		that.createCircle(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon,resultantMarkers[i].children[j].data.circle_radius,ssCircleColor,"frequency","ss",resultantMarkers[i].children[j].data.param.backhual);
 
 				/*Call createCircle function to create the circle aroung BS & SS pt.*/
-	    		that.createCircle(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon,resultantMarkers[i].children[j].data.circle_radius,resultantMarkers[i].children[j].data.circle_color,"backhual","ss",resultantMarkers[i].children[j].data.param.backhual);
+	    		that.createCircle(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon,resultantMarkers[i].children[j].data.circle_radius,ssCircleColor,"backhual","ss",resultantMarkers[i].children[j].data.param.backhual);
 
 				var pathDataObject = [];
 				/*If device are of P2P type*/
@@ -375,21 +391,33 @@ function networkMapClass() {
 						new google.maps.LatLng(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon)
 					];
 				} else {
+
 					var lat = resultantMarkers[i].data.lat;
 					var lon = resultantMarkers[i].data.lon;
 					var rad = resultantMarkers[i].children[j].data.radius;
 					var azimuth = resultantMarkers[i].children[j].data.azimuth_angle;
 					var beam_width = resultantMarkers[i].children[j].data.beam_width;
-					var sector_color = resultantMarkers[i].children[j].data.sector_color;
-					var sectorDataset = resultantMarkers[i].children[j].data.param.sector_info;
-					var orientation = $.trim(resultantMarkers[i].children[j].data.sector_orientation);
-					/*Call create sector function to plot the section.*/
-					that.createSector(lat,lon,rad,azimuth,beam_width,sector_color,sectorDataset,orientation,function(sectorObj) {
+					var sector_color = "";
+				    sector_color = "rgba(";
+				    sector_color += resultantMarkers[i].children[j].data.sector_color.r+",";
+				    sector_color += resultantMarkers[i].children[j].data.sector_color.g+",";
+				    sector_color += resultantMarkers[i].children[j].data.sector_color.b+",";
+				    sector_color += resultantMarkers[i].children[j].data.sector_color.a;
+				    sector_color += ")";
 
-						var halfPt = Math.floor(sectorObj.length / (+2));
+					var sectorInfo = resultantMarkers[i].children[j].data.param.sector_info;
+					var orientation = $.trim(resultantMarkers[i].children[j].data.sector_orientation);
+					
+					/*Call createSectorData function to get the points array to plot the sector on google maps.*/
+					that.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
+
+						/*Plot sector on map with the retrived points*/
+						that.plotSector_gmap(pointsArray,sectorInfo,sector_color);
+
+						var halfPt = Math.floor(pointsArray.length / (+2));
 						/*Create object for Link Line Between Master & Slave*/
 						pathDataObject = [
-							new google.maps.LatLng(sectorObj[halfPt].k,sectorObj[halfPt].A),
+							new google.maps.LatLng(pointsArray[halfPt].lat,pointsArray[halfPt].lon),
 							new google.maps.LatLng(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon)
 						];
 					});
@@ -397,11 +425,25 @@ function networkMapClass() {
 
 				if(resultantMarkers[i].children[j].data.show_link == 1) {
 
-					var linkObject = {};
+					var linkObject = {},
+						link_path_color = "";
+
+					link_path_color = "rgba(";
+				    link_path_color += resultantMarkers[i].children[j].data.link_color.r+",";
+				    link_path_color += resultantMarkers[i].children[j].data.link_color.g+",";
+				    link_path_color += resultantMarkers[i].children[j].data.link_color.b+",";
+				    
+				    if(resultantMarkers[i].children[j].data.link_color.a != undefined) {
+				    	link_path_color += resultantMarkers[i].children[j].data.link_color.a;
+				    } else {
+				    	link_path_color += "1.0";	
+				    }
+
+				    link_path_color += ")";
 
 					linkObject = {
 						path 				: pathDataObject,
-						strokeColor			: resultantMarkers[i].children[j].data.link_color,
+						strokeColor			: link_path_color,
 						strokeOpacity		: 1.0,
 						strokeWeight		: 2,
 						pointType 			: "path",
@@ -431,7 +473,6 @@ function networkMapClass() {
 
 					/*Bind Click Event on Link Path Between Master & Slave*/
 					google.maps.event.addListener(pathConnector, 'click', function(e) {
-
 						/*Call the function to create info window content*/
 						var content = that.makeWindowContent(this);
 						/*Set the content for infowindow*/
@@ -500,9 +541,9 @@ function networkMapClass() {
 
 
 	/**
-	 * This function creates sectors on google maps.
-	 * @class networkMapClass.
-	 * @method createSector.
+	 * This function creates data to plot sectors on google maps.
+	 * @class gmap_devicePlottingLib
+	 * @method createSectorData.
 	 * @param Lat "Number", It contains lattitude of any point.
 	 * @param Lng "Number", It contains longitude of any point.
 	 * @param radius "Number", It contains radius for sector.
@@ -510,8 +551,9 @@ function networkMapClass() {
 	 * @param beamwidth "Number", It contains width for the sector.
 	 * @param sectorData {JSON Object}, It contains sector info json object.
 	 * @param orientation "String", It contains the orientation type of antena i.e. vertical or horizontal
+	 * @return sectorDataArray {JSON Object Array}, It is the polygon points lat-lon object array
 	 */
-	this.createSector = function(lat,lng,radius,azimuth,beamWidth,bgColor,sectorData,orientation,callback) {
+	this.createSectorData = function(lat,lng,radius,azimuth,beamWidth,orientation,callback) {
 
 		var triangle = [],
 			sectorDataArray = [];
@@ -519,19 +561,24 @@ function networkMapClass() {
         var d2r = Math.PI / 180;
         //  Radians to degrees
         var r2d = 180 / Math.PI;
-		
-        var centerPoint = new google.maps.LatLng((+lat),(+lng));
 
         var PRlat = (radius/3963) * r2d; // using 3963 miles as earth's radius
         var PRlng = PRlat/Math.cos(lat*d2r);
 
-        var PGpoints = [];
+        var PGpoints = [],
+        	pointObj = {};
+
         with(Math) {
 
 			lat1 = (+lat) + (PRlat * cos( d2r * (azimuth - beamWidth/2 )));
 			lon1 = (+lng) + (PRlng * sin( d2r * (azimuth - beamWidth/2 )));
-
-			PGpoints.push( new google.maps.LatLng(lat1,lon1));
+			/*Create lat-lon point object*/
+			/*Reset Pt Object*/
+			pointObj = {};
+			pointObj["lat"] = lat1;
+			pointObj["lon"] = lon1;
+			/*Add point object to array*/
+			PGpoints.push(pointObj);
 
 			lat2 = (+lat) + (PRlat * cos( d2r * (azimuth + beamWidth/2 )));
 			lon2 = (+lng) + (PRlng * sin( d2r * (azimuth + beamWidth/2 )));
@@ -542,18 +589,34 @@ function networkMapClass() {
 			for (var a = 1; theta < gamma ; a++ ) {
 				theta = d2r * (azimuth - beamWidth/2 +a);
 				PGlon = (+lng) + (PRlng * sin( theta ));
-				PGlat = (+lat) + (PRlat * cos( theta ));				
-				PGpoints.push(new google.maps.LatLng($.trim(PGlat),$.trim(PGlon)));				
+				PGlat = (+lat) + (PRlat * cos( theta ));
+				/*Reset Pt Object*/
+				pointObj = {};
+				pointObj["lat"] = PGlat;
+				pointObj["lon"] = PGlon;
+				/*Add point object to array*/
+				PGpoints.push(pointObj);
 			}
+			/*Reset Pt Object*/
+			pointObj = {};
+			pointObj["lat"] = lat2;
+			pointObj["lon"] = lon2;
+			/*Add point object to array*/
+			PGpoints.push(pointObj);
 
-			PGpoints.push( new google.maps.LatLng(lat2,lon2));
-			PGpoints.push(centerPoint);
 
+			var centerPtObj = {};
+			centerPtObj["lat"] = lat;
+			centerPtObj["lon"] = lng;
+			/*Add center point object to array*/
+			PGpoints.push(centerPtObj);
 		}
+
 		/*Condition for the orientation of sector antina*/
 		if(orientation == "horizontal") {
 
 			var len = Math.floor(PGpoints.length / 3);
+
 			triangle.push(PGpoints[0]);
 			triangle.push(PGpoints[(len * 2) - 1]);
 			triangle.push(PGpoints[(len * 3) - 1]);
@@ -564,15 +627,36 @@ function networkMapClass() {
 			sectorDataArray = PGpoints;
 		}
 
+		/*Callback with lat-lon object array.*/
+        callback(sectorDataArray);
+	};
+
+	/**
+	 * This function plot the sector for given lat-lon points
+	 * @class gmap_devicePlottingLib
+	 * @method plotSector_gmap.
+	 * @param pointsArray [Array], It contains the points lat-lon object array.
+	 * @param sectorInfo {JSON Object Array}, It contains the information about the sector which are shown in info window.
+	 * @param bgColor "String", It contains the RGBA format color code for sector.
+	 */
+	this.plotSector_gmap = function(pointsArray,sectorInfo,bgColor) {
+
+		var polyPathArray = [];
+
+		for(var i=0;i<pointsArray.length;i++) {
+			var pt = new google.maps.LatLng(pointsArray[i].lat,pointsArray[i].lon);
+			polyPathArray.push(pt);
+		}
+
 		var poly = new google.maps.Polygon({
 			map 		  : mapInstance,
-			path 		  : sectorDataArray,
-			strokeColor   : bgColor,
+			path 		  : polyPathArray,
+			strokeColor   : "rgba(90, 101, 102, 1.0)",
 			fillColor 	  : bgColor,
 			pointType	  : "sector",
-			strokeOpacity : 0.5,
+			strokeOpacity : 1.0,
 			strokeWeight  : 1,
-			dataset 	  : sectorData
+			dataset 	  : sectorInfo
         });
 
         /*Push polygon to an array*/
@@ -581,8 +665,9 @@ function networkMapClass() {
         poly.setMap(mapInstance);
 
         /*listener for click event of sector*/
-		google.maps.event.addListener(poly,'click',function(p) {
-			var windowPosition = new google.maps.LatLng(lat,lng);
+		google.maps.event.addListener(poly,'click',function(e) {
+
+			var windowPosition = new google.maps.LatLng(e.latLng.k,e.latLng.B);
 			/*Call the function to create info window content*/
 			var content = that.makeWindowContent(poly);
 			/*Set the content for infowindow*/
@@ -592,13 +677,11 @@ function networkMapClass() {
 			/*Open the info window*/
 			infowindow.open(mapInstance);
 		});
-
-        callback(sectorDataArray);
 	};
 
 	/**
 	 * This function creates circle on the given lat lon of given radius
-	 * @class networkMapClass.
+	 * @class gmap_devicePlottingLib
 	 * @method createCircle.
 	 * @param Lat "Number", It contains lattitude of any point.
 	 * @param Lng "Number", It contains longitude of any point.
@@ -668,15 +751,12 @@ function networkMapClass() {
 
 	/**
 	 * This function creates the info window content for BS,SS & link path 
-	 * @class networkMap
+	 * @class gmap_devicePlottingLib
 	 * @method makeWindowContent
 	 * @param contentObject {JSON Object} It contains current pointer(this) information
 	 * @return windowContent "String" It contains content to be shown on info window
 	 */
 	this.makeWindowContent = function(contentObject) {
-
-		/*Store the reference of current pointer in a global variable*/
-		that = this;
 
 		var windowContent = "",
 			infoTable =  "",
@@ -761,7 +841,7 @@ function networkMapClass() {
 
 	/**
 	 * This function calculates the fresnel zone
-	 * @class networkMap
+	 * @class gmap_devicePlottingLib
 	 * @method claculateFresnelZone
 	 * @param lat1 "Int", It contains lattitude of first point
 	 * @param lon1 "Int", It contains longitude of first point
@@ -854,7 +934,7 @@ function networkMapClass() {
 
 	/**
 	 * This function generate fresnel point data.
-	 * @class networkMap
+	 * @class gmap_devicePlottingLib
 	 * @method getFresnelPath
 	 * @param lat1 "Int", It contains lattitude of first point
 	 * @param lon1 "Int", It contains longitude of first point
@@ -884,7 +964,7 @@ function networkMapClass() {
 
 	/**
 	 * This function calculates mid lattitude point for given lat-lons
-	 * @class networkMap
+	 * @class gmap_devicePlottingLib
 	 * @method getMidPT_Lat
 	 * @param lat1 "Int", It contains lattitude of first point
 	 * @param lon1 "Int", It contains longitude of first point
@@ -903,7 +983,7 @@ function networkMapClass() {
 
 	/**
 	 * This function calculates mid longitude point for given lat-lons
-	 * @class networkMap
+	 * @class gmap_devicePlottingLib
 	 * @method getMidPT_Lon
 	 * @param lat1 "Int", It contains lattitude of first point
 	 * @param lon1 "Int", It contains longitude of first point
@@ -923,7 +1003,7 @@ function networkMapClass() {
 
 	/**
 	 * This function generates the data for fresnel zone
-	 * @class networkMap
+	 * @class gmap_devicePlottingLib
 	 * @method getFresnelChartData
 	 * @param elevationArray [Int Array], It contains elevation values array
 	 * @param pt_distance "Int", It contains distance between two points
@@ -1006,7 +1086,7 @@ function networkMapClass() {
 
 	/**
 	 * This function creates the fresnal zone chart with elevation points using jquery.flot.js
-	 * @class networkMap
+	 * @class gmap_devicePlottingLib
 	 * @method drawFresnelChart
 	 * @user jquery.flot.js
 	 * @user bootbox.js
@@ -1171,7 +1251,7 @@ function networkMapClass() {
 
 	/**
 	 * This function show hovering position detail in right side.
-	 * @class networkMap
+	 * @class gmap_devicePlottingLib
 	 * @method showScanPointerDetails
 	 * @param pos {JSON Object}, It contains the position object.
 	 */
@@ -1194,7 +1274,7 @@ function networkMapClass() {
 
 	/**
 	 * This function returns the nearest point on X-axis
-	 * @class networkMap
+	 * @class gmap_devicePlottingLib
 	 * @method getNearestPointX
 	 * @param posx "Int", It contains the current point X-position value
 	 * @return result "Int", It contains the next or nearest point on X-axis
@@ -1213,7 +1293,7 @@ function networkMapClass() {
 
 	/**
 	 * This function adds pin point info at the bottom of the fresnel graph & bind hover and click event on them.
-	 * @class networkMap
+	 * @class gmap_devicePlottingLib
 	 * @method addPinPoint
 	 * @param index "Int", It contains counter value of no. of pin points
 	 * @param pos {JSON Object}, It contains the position object.
@@ -1251,7 +1331,7 @@ function networkMapClass() {
 
 	/**
 	 * This function trigger when any antina height slider is changed
-	 * @class networkMap
+	 * @class gmap_devicePlottingLib
 	 * @method heightChanged
 	 */
 	this.heightChanged = function() {
@@ -1266,192 +1346,244 @@ function networkMapClass() {
 	};
 
 	/**
+	 * This function fetch the basic filters from appropriate API & this populate the data to respective dropdowns
+	 * @class gmap_devicePlottingLib
+	 * @method getBasicFilters
+	 */
+	this.getBasicFilters = function() {
+
+		var filtersData = {};
+
+		/*Ajax call for filters data*/
+		$.ajax({
+			url : "../../device/filter/",
+			// url : "../../static/filter_data.json",
+			success : function(result) {				
+				filtersData = JSON.parse(result);
+
+				var techData = filtersData.data.objects.technology.data;
+				var vendorData = filtersData.data.objects.vendor.data;
+				var cityData = filtersData.data.objects.city.data;
+				var stateData = filtersData.data.objects.state.data;
+
+				/*Populate technology dropdown*/
+				var techOptions = "<option value=''>Select Technology</option>";
+				$.grep(techData,function(tech) {
+					techOptions += "<option value='"+tech.id+"'>"+tech.value.toUpperCase()+"</option>";
+				});
+				$("#technology").html(techOptions);
+
+				/*Populate Vendor dropdown*/
+				var vendorOptions = "<option value=''>Select Vendor</option>";
+				$.grep(vendorData,function(vendor) {
+					vendorOptions += "<option value='"+vendor.id+"'>"+vendor.value.toUpperCase()+"</option>";
+				});
+				$("#vendor").html(vendorOptions);
+
+				/*Populate City dropdown*/
+				var cityOptions = "<option value=''>Select City</option>";
+				$.grep(cityData,function(city) {
+					cityOptions += "<option value='"+city.id+"'>"+city.value.toUpperCase()+"</option>";
+				});
+				$("#city").html(cityOptions);
+
+				/*Populate State dropdown*/
+				var stateOptions = "<option value=''>Select State</option>";
+				$.grep(stateData,function(state) {
+					stateOptions += "<option value='"+state.id+"'>"+state.value.toUpperCase()+"</option>";
+				});
+				$("#state").html(stateOptions);
+			},
+			error : function(err) {
+				console.log(err);
+			}
+		});
+	};
+
+	/**
 	 * This function filters the markers for the given filters
-	 * @class networkMap
-	 * @method applyFilter
+	 * @class gmap_devicePlottingLib
+	 * @method applyFilter_gmaps
 	 * @param filtersArray [JSON Array] It is an object array of filters with keys
 	 */
-	this.applyFilter = function(filtersArray) {
-
-		/*Store the reference of current pointer in a global variable*/
-		that = this;
+	this.applyFilter_gmaps = function(filtersArray) {
 
 		var filterKey = [],
 			filteredData = [],
-			masterIds = [],
-			slaveIds = [];
+			masterIds = [];
 
 		/*Fetch the keys from the filter array*/
 		$.each(filtersArray, function(key, value) {
 
 		    filterKey.push(key);
 		});
-		
-	 	if(devices.length > 0) {
 
-	 		filteredData = [];
-	 		for(var i=0;i<devices.length;i++) {
+	 	if(main_devices_data_gmaps.length > 0) {
 
-	 			/*Total Slaves Count*/
-	 			var slaveLength = devices[i].children.length;
-	 			/*Loop For Slaves*/
-	 			for(var j=0;j<slaveLength;j++) {
+	 		for(var i=0;i<main_devices_data_gmaps.length;i++) {
 
-	 				var master = devices[i];
-		 			var slave = devices[i].children[j];
-		 				
-		 			/*Conditions as per the number of filters*/
-		 			if(filterKey.length == 1) {
+ 				var master = main_devices_data_gmaps[i];
 
-	 					if(master.data[filterKey[0]] == filtersArray[filterKey[0]] || slave.data[filterKey[0]] == filtersArray[filterKey[0]]) {
+	 			/*Conditions as per the number of filters*/
+	 			if(filterKey.length == 1) {
+	 				
+ 					if(master.data[filterKey[0]].toLowerCase() == filtersArray[filterKey[0]].toLowerCase()) {
 
-		 					/*Check For The Duplicacy*/
-		 					if(masterIds.indexOf(master.id) == -1 && slaveIds.indexOf(slave.id) == -1) {
+	 					/*Check For The Duplicacy*/
+	 					if(masterIds.indexOf(master.id) == -1) {
 
-		 						/*Save the master & slave ids to array to remove duplicacy*/
-		 						masterIds.push(master.id);
-		 						slaveIds.push(slave.id);
+	 						/*Save the BS id's to array to remove duplicacy*/
+	 						masterIds.push(master.id);
 
-		 						filteredData.push(devices[i]);
-		 					}
-		 				}
+	 						filteredData.push(main_devices_data_gmaps[i]);
+	 					}
+	 				}
 
-		 			} else if(filterKey.length == 2) {
+	 			} else if(filterKey.length == 2) {
 
-	 					if((master.data[filterKey[0]] == filtersArray[filterKey[0]] || slave.data[filterKey[0]] == filtersArray[filterKey[0]]) && (master.data[filterKey[1]] == filtersArray[filterKey[1]] || slave.data[filterKey[1]] == filtersArray[filterKey[1]])) {
+ 					if((master.data[filterKey[0]].toLowerCase() == filtersArray[filterKey[0]].toLowerCase()) && (master.data[filterKey[1]].toLowerCase() == filtersArray[filterKey[1]].toLowerCase())) {
 
-		 					/*Check For The Duplicacy*/
-		 					if(masterIds.indexOf(master.id) == -1 && slaveIds.indexOf(slave.id) == -1) {
+	 					/*Check For The Duplicacy*/
+	 					if(masterIds.indexOf(master.id) == -1) {
 
-		 						/*Save the master & slave ids to array to remove duplicacy*/
-		 						masterIds.push(master.id);
-		 						slaveIds.push(slave.id);
+	 						/*Save the BS id's to array to remove duplicacy*/
+	 						masterIds.push(master.id);
 
-		 						filteredData.push(devices[i]);
-		 					}
-		 				}
-		 			} else if(filterKey.length == 3) {
+	 						filteredData.push(main_devices_data_gmaps[i]);
+	 					}
+	 				}
+	 			} else if(filterKey.length == 3) {
 
-		 				if((master.data[filterKey[0]] == filtersArray[filterKey[0]] || slave.data[filterKey[0]] == filtersArray[filterKey[0]]) && (master.data[filterKey[1]] == filtersArray[filterKey[1]] || slave.data[filterKey[1]] == filtersArray[filterKey[1]]) && (master.data[filterKey[2]] == filtersArray[filterKey[2]] || slave.data[filterKey[2]] == filtersArray[filterKey[2]])) {
+	 				if((master.data[filterKey[0]].toLowerCase() == filtersArray[filterKey[0]].toLowerCase()) && (master.data[filterKey[1]].toLowerCase() == filtersArray[filterKey[1]].toLowerCase()) && (master.data[filterKey[2]].toLowerCase() == filtersArray[filterKey[2]].toLowerCase())) {
 
-		 					/*Check For The Duplicacy*/
-		 					if(masterIds.indexOf(master.id) == -1 && slaveIds.indexOf(slave.id) == -1) {
+	 					/*Check For The Duplicacy*/
+	 					if(masterIds.indexOf(master.id) == -1) {
 
-		 						/*Save the master & slave ids to array to remove duplicacy*/
-		 						masterIds.push(master.id);
-		 						slaveIds.push(slave.id);
+	 						/*Save the BS id's to array to remove duplicacy*/
+	 						masterIds.push(master.id);
 
-		 						filteredData.push(devices[i]);
-		 					}
-		 				}
-		 			} else if(filterKey.length == 4) {
+	 						filteredData.push(main_devices_data_gmaps[i]);
+	 					}
+	 				}
+	 			} else if(filterKey.length == 4) {
 
-		 				if((master.data[filterKey[0]] == filtersArray[filterKey[0]] || slave.data[filterKey[0]] == filtersArray[filterKey[0]]) && (master.data[filterKey[1]] == filtersArray[filterKey[1]] || slave.data[filterKey[1]] == filtersArray[filterKey[1]]) && (master.data[filterKey[2]] == filtersArray[filterKey[2]] || slave.data[filterKey[2]] == filtersArray[filterKey[2]]) && (master.data[filterKey[3]] == filtersArray[filterKey[3]] || slave.data[filterKey[3]] == filtersArray[filterKey[3]])) {
+	 				if((master.data[filterKey[0]].toLowerCase() == filtersArray[filterKey[0]].toLowerCase()) && (master.data[filterKey[1]].toLowerCase() == filtersArray[filterKey[1]].toLowerCase()) && (master.data[filterKey[2]].toLowerCase() == filtersArray[filterKey[2]].toLowerCase()) && (master.data[filterKey[3]].toLowerCase() == filtersArray[filterKey[3]].toLowerCase())) {
 
-		 					/*Check For The Duplicacy*/
-		 					if(masterIds.indexOf(master.id) == -1 && slaveIds.indexOf(slave.id) == -1) {
+	 					/*Check For The Duplicacy*/
+	 					if(masterIds.indexOf(master.id) == -1) {
 
-		 						/*Save the master & slave ids to array to remove duplicacy*/
-		 						masterIds.push(master.id);
-		 						slaveIds.push(slave.id);
+	 						/*Save the BS id's to array to remove duplicacy*/
+	 						masterIds.push(master.id);
 
-		 						filteredData.push(devices[i]);
-		 					}
-		 				}
-		 			}
+	 						filteredData.push(main_devices_data_gmaps[i]);
+	 					}
+	 				}
 	 			}
 	 		}
 	 		/*Check that after applying filters any data exist or not*/
 	 		if(filteredData.length === 0) {
 
 	 			bootbox.alert("User Don't Have Any Devies For Selected Filters");
+	 			$("#resetFilters").click();
 
 	 		} else {
 
 				/*Reset the markers, polyline & filters*/
-	 			that.clearMapElements();
+	 			that.clearGmapElements();
 
 				masterMarkersObj = [];
 				slaveMarkersObj = [];
 
 				/*Populate the map with the filtered markers*/
-	 			that.populateNetwork(filteredData);
+	 			that.plotDevices_gmap(filteredData);
 	 		}	 		
 	 	}	
 	};
 
 	/**
-	 * This function calls the populateNetwork function to load the fetched devices in case of no filters
-	 * @class devicePlottingLib
+	 * This function calls the plotDevices_gmap function to load the fetched devices in case of no filters
+	 * @class gmap_devicePlottingLib
 	 * @method loadExistingDevices
 	 */
 	this.loadExistingDevices = function() {
 
-		/*Store the reference of current pointer in a global variable*/
-		that = this;
-
-		that.populateNetwork(devices);
+		that.plotDevices_gmap(main_devices_data_gmaps);
 	};
 
 	/**
      * This function makes an array from the selected filters
+     * @class gmap_devicePlottingLib
      * @function makeFiltersArray
-     * @return selectedArray [JSON Array] It is an object array of the selected filters with the keys
+     * @param mapPageType "String", It contains the string value by which we can get the page information
      */
-    this.makeFiltersArray = function() {
+    this.makeFiltersArray = function(mapPageType) {
 
-    	/*Store the reference of current pointer in a global variable*/
-		that = this;
+        var selectedTechnology = "",
+            selectedvendor = "",
+            selectedState = "",
+            selectedCity = "";
 
-        var selectedTechnology = $("#technology").val(),
-            selectedvendor = $("#vendor").val(),
-            selectedState = $("#state").val(),
-            selectedCity = $("#city").val(),
-            selectedArray = {};
+        if($("#technology").val().length > 0) {
+        	selectedTechnology = $("#technology option:selected").text();
+        }
+
+        if($("#vendor").val().length > 0) {
+        	selectedvendor = $("#vendor option:selected").text();
+        }
+
+        if($("#state").val().length > 0) {
+        	selectedState = $("#state option:selected").text();
+        }
+
+        if($("#city").val().length > 0) {
+        	selectedCity = $("#city option:selected").text();
+        }
+
 
         if(selectedTechnology != "") {
 
-            selectedArray["technology"] = selectedTechnology;
+            appliedFilterObj_gmaps["technology"] = selectedTechnology;
         }
 
         if(selectedvendor != "") {
 
-            selectedArray["vendor"] = selectedvendor;
+            appliedFilterObj_gmaps["vendor"] = selectedvendor;
         }
 
         if(selectedState != "") {
 
-            selectedArray["state"] = selectedState;
+            appliedFilterObj_gmaps["state"] = selectedState;
         }
 
         if(selectedCity != "") {
 
-            selectedArray["city"] = selectedCity;
+            appliedFilterObj_gmaps["city"] = selectedCity;
         }
         /*Get The Length Of Filter Array*/
-        var filtersLength = Object.keys(selectedArray).length;
+        var filtersLength = Object.keys(appliedFilterObj_gmaps).length;
 
         /*If any filter is applied then filter the data*/
         if(filtersLength > 0) {
 
-            that.applyFilter(selectedArray);
+        	if($.trim(mapPageType) == "gmap") {
+        		that.applyFilter_gmaps(appliedFilterObj_gmaps);
+        	} else {
+        		earth_instance.applyFilter_earth(appliedFilterObj_gmaps);
+        	}
         }
         /*If no filter is applied the load all the devices*/
         else {
 
-            that.loadExistingDevices();
+            that.plotDevices_gmap(main_devices_data_gmaps);
         }
     };
 
 	/**
 	 * This function creates enable the polygon drawing tool & draw the polygon
-	 * @class devicePlottingLib
+	 * @class gmap_devicePlottingLib
 	 * @method createPolygon
 	 */
 	this.createPolygon = function() {
-
-		/*Store the reference of current pointer in a global variable*/
-    	that = this;
     	
     	selectedCount = polygonSelectedDevices.length;
 
@@ -1554,7 +1686,7 @@ function networkMapClass() {
 
 	/**
 	 * This function clear the polygon selection from the map
-	 * @class devicePlottingLib
+	 * @class gmap_devicePlottingLib
 	 * @method clearPolygon
 	 */
 	this.clearPolygon = function() {
@@ -1585,7 +1717,7 @@ function networkMapClass() {
 
 	/**
 	 * This function creates the line chart for the monitoring of selected devices
-	 * @class devicePlottingLib
+	 * @class gmap_devicePlottingLib
 	 * @method makeMonitoringChart
 	 * @param id 'Integer'
 	 */
@@ -1669,14 +1801,11 @@ function networkMapClass() {
 	};
 	
     /**
-     * This function resets the global variables & again call the api calling function after given timeout
-     * @class devicePlottingLib
-     * @method recallServer
+     * This function resets the global variables & again call the api calling function after given timeout i.e. 5 minutes
+     * @class gmap_devicePlottingLib
+     * @method recallServer_gmap
      */
-    this.recallServer = function() {
-
-    	/*Store the reference of current pointer in a global variable*/
-    	that = this;
+    this.recallServer_gmap = function() {
 
     	/*Hide The loading Icon*/
 		$("#loadingIcon").hide();
@@ -1694,26 +1823,23 @@ function networkMapClass() {
 			$("#resetFilters").button("loading");
 
 			/*Reset markers & polyline*/
-			that.clearMapElements();
+			that.clearGmapElements();
 
 			/*Reset Global Variables & Filters*/
-			that.resetVariables();	
+			that.resetVariables_gmap();	
 			
 			/*Recall the API*/
-			that.getDevicesData(username);
+			that.getDevicesData_gmap();
 
-		},120000);
+		},300000);
     };
 
     /**
 	 * This function removes all the elements from the map
-	 * @class devicePlottingLib
-	 * @method clearMapElements
+	 * @class gmap_devicePlottingLib
+	 * @method clearGmapElements
 	 */
-	this.clearMapElements = function() {
-
-		/*Store the reference of current pointer in a global variable*/
-		that = this;
+	this.clearGmapElements = function() {
 
 		/*Clear the marker array of OverlappingMarkerSpiderfier*/
 		oms.clearMarkers();
@@ -1782,10 +1908,10 @@ function networkMapClass() {
 
 	/**
 	 * This function reset all global variable used in the process
-	 * @class devicePlottingLib
-	 * @method resetVariables
+	 * @class gmap_devicePlottingLib
+	 * @method resetVariables_gmap
 	 */
-	this.resetVariables = function() {
+	this.resetVariables_gmap = function() {
 
 		/*Reset All The Variables*/
 		hitCounter = 1;
@@ -1794,7 +1920,7 @@ function networkMapClass() {
 		counter = -999;
 		totalCalls = 1;
 		devicesObject = {};
-		devices = [];
+		devices_gmaps = [];
 		masterMarkersObj = [];
 		slaveMarkersObj = [];
 		clusterIcon = "";
