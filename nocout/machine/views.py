@@ -1,8 +1,10 @@
+from django.contrib.auth.decorators import permission_required
 from django.shortcuts import render
 import json
 from actstream import action
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect
+from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
@@ -105,6 +107,10 @@ class MachineCreate(CreateView):
     form_class = MachineForm
     success_url = reverse_lazy('machines_list')
 
+    @method_decorator(permission_required('machine.add_machine', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(MachineCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
@@ -116,6 +122,10 @@ class MachineUpdate(UpdateView):
     model = Machine
     form_class = MachineForm
     success_url = reverse_lazy('machines_list')
+
+    @method_decorator(permission_required('machine.change_machine', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(MachineUpdate, self).dispatch(*args, **kwargs)
 
 
     def form_valid(self, form):
@@ -135,3 +145,10 @@ class MachineDelete(DeleteView):
     model = Machine
     template_name = 'machine/machine_delete.html'
     success_url = reverse_lazy('machines_list')
+
+    @method_decorator(permission_required('machine.delete_machine', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(MachineDelete, self).dispatch(*args, **kwargs)
+
+
+

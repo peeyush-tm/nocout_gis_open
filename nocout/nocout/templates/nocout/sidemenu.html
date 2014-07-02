@@ -182,9 +182,7 @@
                             {% endfor %}
                         </ul>
                     </li>
-                    {% for group in user.groups.all %}
-                    {% if group.name == 'group_admin' %}
-                        <li class="has-sub-sub">
+                            <li class="has-sub-sub">
                             <a class="" href="javascript:;">
                                 <span class="sub-menu-text">GIS Inventory</span>
                                 <span class="arrow"></span>
@@ -199,8 +197,6 @@
                                 <li><a class="" href="/circuit/"><span class="sub-menu-text">Circuit</span></a></li>
                             </ul>
                         </li>
-                    {% endif %}
-                    {% endfor %}
                         </ul>
                     </li>
             <li class="has-sub">

@@ -589,6 +589,10 @@ class DeviceTypeFieldsCreate(CreateView):
     form_class = DeviceTypeFieldsForm
     success_url = reverse_lazy('device_extra_field_list')
 
+    @method_decorator(permission_required('device.add_devicetypefieldsvalue', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceTypeFieldsCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object=self.object)
@@ -599,6 +603,10 @@ class DeviceTypeFieldsUpdate(UpdateView):
     model = DeviceTypeFields
     form_class = DeviceTypeFieldsUpdateForm
     success_url = reverse_lazy('device_extra_field_list')
+
+    @method_decorator(permission_required('device.change_devicetypefieldsvalue', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceTypeFieldsUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
 
@@ -629,6 +637,11 @@ class DeviceTypeFieldsDelete(DeleteView):
     model = DeviceTypeFields
     template_name = 'device_extra_fields/device_extra_field_delete.html'
     success_url = reverse_lazy('device_extra_field_list')
+
+    @method_decorator(permission_required('device.delete_devicetypefieldsvalue', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceTypeFieldsDelete, self).dispatch(*args, **kwargs)
+
 
     def delete(self, request, *args, **kwargs):
         action.send(request.user, verb='deleting user: %s'%(self.object.field_name))
@@ -730,6 +743,10 @@ class DeviceTechnologyCreate(CreateView):
     form_class = DeviceTechnologyForm
     success_url = reverse_lazy('device_technology_list')
 
+    @method_decorator(permission_required('device.add_devicetechnology', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceTechnologyCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         device_technology = DeviceTechnology()
         device_technology.name = form.cleaned_data['name']
@@ -752,6 +769,10 @@ class DeviceTechnologyUpdate(UpdateView):
     model = DeviceTechnology
     form_class = DeviceTechnologyForm
     success_url = reverse_lazy('device_technology_list')
+
+    @method_decorator(permission_required('device.change_devicetechnology', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceTechnologyUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         self.object.name = form.cleaned_data['name']
@@ -796,6 +817,9 @@ class DeviceTechnologyDelete(DeleteView):
     template_name = 'device_technology/device_technology_delete.html'
     success_url = reverse_lazy('device_technology_list')
 
+    @method_decorator(permission_required('device.delete_devicetechnology', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceTechnologyDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         action.send(request.user, verb='deleting device technology: %s'%(self.object.field_name))
@@ -896,6 +920,10 @@ class DeviceVendorCreate(CreateView):
     form_class = DeviceVendorForm
     success_url = reverse_lazy('device_vendor_list')
 
+    @method_decorator(permission_required('device.add_devicevendor', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceVendorCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         device_vendor = DeviceVendor()
         device_vendor.name = form.cleaned_data['name']
@@ -918,6 +946,10 @@ class DeviceVendorUpdate(UpdateView):
     model = DeviceVendor
     form_class = DeviceVendorForm
     success_url = reverse_lazy('device_vendor_list')
+
+    @method_decorator(permission_required('device.change_devicevendor', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceVendorUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         self.object.name = form.cleaned_data['name']
@@ -961,6 +993,10 @@ class DeviceVendorDelete(DeleteView):
     model = DeviceVendor
     template_name = 'device_vendor/device_vendor_delete.html'
     success_url = reverse_lazy('device_vendor_list')
+
+    @method_decorator(permission_required('device.delete_devicevendor', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceVendorDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         action.send(request.user, verb='deleting device vendor: %s'%(self.object.name))
@@ -1059,6 +1095,10 @@ class DeviceModelCreate(CreateView):
     form_class = DeviceModelForm
     success_url = reverse_lazy('device_model_list')
 
+    @method_decorator(permission_required('device.add_devicemodel', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceModelCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         device_model = DeviceModel()
         device_model.name = form.cleaned_data['name']
@@ -1081,6 +1121,10 @@ class DeviceModelUpdate(UpdateView):
     model = DeviceModel
     form_class = DeviceModelForm
     success_url = reverse_lazy('device_model_list')
+
+    @method_decorator(permission_required('device.change_devicemodel', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceModelUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         self.object.name = form.cleaned_data['name']
@@ -1126,6 +1170,10 @@ class DeviceModelDelete(DeleteView):
     model = DeviceModel
     template_name = 'device_model/device_model_delete.html'
     success_url = reverse_lazy('device_model_list')
+
+    @method_decorator(permission_required('device.delete_devicemodel', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceModelDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         action.send(request.user, verb='deleting device vendor: %s'%(self.object.name))
@@ -1223,6 +1271,10 @@ class DeviceTypeCreate(CreateView):
     form_class = DeviceTypeForm
     success_url = reverse_lazy('device_type_list')
 
+    @method_decorator(permission_required('device.add_devicetype', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceTypeCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
@@ -1234,6 +1286,11 @@ class DeviceTypeUpdate(UpdateView):
     model = DeviceType
     form_class = DeviceTypeForm
     success_url = reverse_lazy('device_type_list')
+
+    @method_decorator(permission_required('device.change_devicetype', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceTypeUpdate, self).dispatch(*args, **kwargs)
+
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
@@ -1256,6 +1313,9 @@ class DeviceTypeDelete(DeleteView):
     template_name = 'device_type/device_type_delete.html'
     success_url = reverse_lazy('device_type_list')
 
+    @method_decorator(permission_required('device.delete_devicetype', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceTypeDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         action.send(request.user, verb='deleting device type: %s'%(self.object.name))
@@ -1354,6 +1414,10 @@ class DevicePortCreate(CreateView):
     form_class = DevicePortForm
     success_url = reverse_lazy('device_ports_list')
 
+    @method_decorator(permission_required('device.add_deviceport', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DevicePortCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
@@ -1365,6 +1429,10 @@ class DevicePortUpdate(UpdateView):
     model = DevicePort
     form_class = DevicePortForm
     success_url = reverse_lazy('device_ports_list')
+
+    @method_decorator(permission_required('device.change_deviceport', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DevicePortUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
@@ -1388,7 +1456,9 @@ class DevicePortDelete(DeleteView):
     template_name = 'device_port/device_port_delete.html'
     success_url = reverse_lazy('device_ports_list')
     
-
+    @method_decorator(permission_required('device.delete_deviceport', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DevicePortDelete, self).dispatch(*args, **kwargs)
 
 
 

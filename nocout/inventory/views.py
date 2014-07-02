@@ -151,6 +151,10 @@ class InventoryDelete(DeleteView):
     template_name = 'inventory/inventory_delete.html'
     success_url = reverse_lazy('InventoryList')
 
+    @method_decorator(permission_required('inventory.delete_inventory', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(InventoryDelete, self).dispatch(*args, **kwargs)
+
 def inventory_details_wrt_organization(request):
     organization_id= request.GET['organization']
     organization_descendants_ids= Organization.objects.get(id= organization_id).get_descendants(include_self=True).values_list('id', flat=True)
@@ -181,8 +185,8 @@ class AntennaList(ListView):
             {'mData':'tilt',              'sTitle' : 'Tilt',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'beam_width',        'sTitle' : 'Beam Width',       'sWidth':'10%' ,},]
 
-        #if the user role is Admin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        if 'admin' or 'operator' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -262,6 +266,10 @@ class AntennaCreate(CreateView):
     form_class = AntennaForm
     success_url = reverse_lazy('antennas_list')
 
+    @method_decorator(permission_required('inventory.add_antenna', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(AntennaCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
@@ -273,6 +281,10 @@ class AntennaUpdate(UpdateView):
     model = Antenna
     form_class = AntennaForm
     success_url = reverse_lazy('antennas_list')
+
+    @method_decorator(permission_required('inventory.change_antenna', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(AntennaUpdate, self).dispatch(*args, **kwargs)
 
 
     def form_valid(self, form):
@@ -295,6 +307,9 @@ class AntennaDelete(DeleteView):
     template_name = 'antenna/antenna_delete.html'
     success_url = reverse_lazy('antennas_list')
 
+    @method_decorator(permission_required('inventory.delete_antenna', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(AntennaDelete, self).dispatch(*args, **kwargs)
 
 #****************************************** Base Station ********************************************
 class BaseStationList(ListView):
@@ -312,8 +327,10 @@ class BaseStationList(ListView):
             {'mData':'bs_type',                   'sTitle' : 'Base Station Type',   'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'building_height',           'sTitle' : 'Building Height',     'sWidth':'null',},
             {'mData':'description',               'sTitle' : 'Description',         'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',                   'sTitle' : 'Actions',             'sWidth':'10%' ,}
             ]
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        if 'admin' or 'operator' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -392,6 +409,10 @@ class BaseStationCreate(CreateView):
     form_class = BaseStationForm
     success_url = reverse_lazy('base_stations_list')
 
+    @method_decorator(permission_required('inventory.add_basestation', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(BaseStationCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
@@ -404,6 +425,9 @@ class BaseStationUpdate(UpdateView):
     form_class = BaseStationForm
     success_url = reverse_lazy('base_stations_list')
 
+    @method_decorator(permission_required('inventory.change_basestation', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(BaseStationUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
@@ -425,6 +449,10 @@ class BaseStationDelete(DeleteView):
     template_name = 'base_station/base_station_delete.html'
     success_url = reverse_lazy('base_stations_list')
     
+    @method_decorator(permission_required('inventory.delete_basestation', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(BaseStationDelete, self).dispatch(*args, **kwargs)
+
 
 
 #**************************************** Backhaul *********************************************
@@ -445,8 +473,11 @@ class BackhaulList(ListView):
             {'mData':'bh_connectivity',         'sTitle' : 'Connectivity',                 'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'bh_circuit_id',           'sTitle' : 'Circuit ID',                   'sWidth':'null',},
             {'mData':'bh_capacity',             'sTitle' : 'Capacity',                     'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',                 'sTitle' : 'Actions',                      'sWidth':'10%' ,}
             ]
+
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        if 'admin' or 'operator' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -525,6 +556,10 @@ class BackhaulCreate(CreateView):
     form_class = BackhaulForm
     success_url = reverse_lazy('backhauls_list')
 
+    @method_decorator(permission_required('inventory.add_backhaul', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(BackhaulCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
@@ -537,6 +572,9 @@ class BackhaulUpdate(UpdateView):
     form_class = BackhaulForm
     success_url = reverse_lazy('backhauls_list')
 
+    @method_decorator(permission_required('inventory.change_backhaul', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(BackhaulUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
@@ -558,7 +596,11 @@ class BackhaulDelete(DeleteView):
     model = Backhaul
     template_name = 'backhaul/backhaul_delete.html'
     success_url = reverse_lazy('backhauls_list')
-    
+
+    @method_decorator(permission_required('inventory.delete_backhaul', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(BackhaulDelete, self).dispatch(*args, **kwargs)
+
 
 #**************************************** Sector *********************************************
 class SectorList(ListView):
@@ -576,8 +618,12 @@ class SectorList(ListView):
             {'mData':'antenna__name',              'sTitle' : 'Antenna',          'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'mrc',                        'sTitle' : 'MRC',              'sWidth':'null',},
             {'mData':'description',                'sTitle' : 'Description',      'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',                    'sTitle' : 'Actions',          'sWidth':'10%' ,}
             ]
+
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        if 'admin' or 'operator' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -656,6 +702,10 @@ class SectorCreate(CreateView):
     form_class = SectorForm
     success_url = reverse_lazy('sectors_list')
 
+    @method_decorator(permission_required('inventory.add_sector', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(SectorCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
@@ -668,6 +718,9 @@ class SectorUpdate(UpdateView):
     form_class = SectorForm
     success_url = reverse_lazy('sectors_list')
 
+    @method_decorator(permission_required('inventory.change_sector', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(SectorUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
@@ -688,7 +741,11 @@ class SectorDelete(DeleteView):
     model = Sector
     template_name = 'sector/sector_delete.html'
     success_url = reverse_lazy('sectors_list')
-    
+
+    @method_decorator(permission_required('inventory.delete_sector', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(SectorDelete, self).dispatch(*args, **kwargs)
+
 
 #**************************************** Customer *********************************************
 class CustomerList(ListView):
@@ -704,8 +761,10 @@ class CustomerList(ListView):
             {'mData':'state',             'sTitle' : 'State',            'sWidth':'null',},
             {'mData':'address',           'sTitle' : 'Address',          'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'description',       'sTitle' : 'Description',      'sWidth':'null',},
-            {'mData':'actions',           'sTitle' : 'Actions',          'sWidth':'10%' ,}
             ]
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        if 'admin' or 'operator' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -784,6 +843,10 @@ class CustomerCreate(CreateView):
     form_class = CustomerForm
     success_url = reverse_lazy('customers_list')
 
+    @method_decorator(permission_required('inventory.add_customer', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(CustomerCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
@@ -796,6 +859,9 @@ class CustomerUpdate(UpdateView):
     form_class = CustomerForm
     success_url = reverse_lazy('customers_list')
 
+    @method_decorator(permission_required('inventory.change_customer', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(CustomerUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
@@ -816,6 +882,10 @@ class CustomerDelete(DeleteView):
     model = Customer
     template_name = 'customer/customer_delete.html'
     success_url = reverse_lazy('customers_list')
+
+    @method_decorator(permission_required('inventory.delete_customer', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(CustomerDelete, self).dispatch(*args, **kwargs)
     
 
 #**************************************** Sub Station *********************************************
@@ -837,8 +907,12 @@ class SubStationList(ListView):
             {'mData':'state',            'sTitle' : 'State',              'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'address',          'sTitle' : 'Address',            'sWidth':'null',},
             {'mData':'description',      'sTitle' : 'Description',        'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',          'sTitle' : 'Actions',            'sWidth':'10%' ,}
             ]
+
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        if 'admin' or 'operator' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -917,6 +991,10 @@ class SubStationCreate(CreateView):
     form_class = SubStationForm
     success_url = reverse_lazy('sub_stations_list')
 
+    @method_decorator(permission_required('inventory.add_substation', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(SubStationCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
@@ -929,6 +1007,9 @@ class SubStationUpdate(UpdateView):
     form_class = SubStationForm
     success_url = reverse_lazy('sub_stations_list')
 
+    @method_decorator(permission_required('inventory.change_substation', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(SubStationUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
@@ -950,6 +1031,10 @@ class SubStationDelete(DeleteView):
     template_name = 'sub_station/sub_station_delete.html'
     success_url = reverse_lazy('sub_stations_list')
 
+    @method_decorator(permission_required('inventory.delete_substation', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(SubStationDelete, self).dispatch(*args, **kwargs)
+
 
 #**************************************** Circuit *********************************************
 class CircuitList(ListView):
@@ -967,8 +1052,11 @@ class CircuitList(ListView):
             {'mData':'sub_station__name',             'sTitle' : 'Sub Station',          'sWidth':'null',},
             {'mData':'date_of_acceptance',      'sTitle' : 'Date of Acceptance',   'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'description',             'sTitle' : 'Description',          'sWidth':'null',},
-            {'mData':'actions',                 'sTitle' : 'Actions',              'sWidth':'10%' ,}
             ]
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        if 'admin' or 'operator' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -1047,6 +1135,10 @@ class CircuitCreate(CreateView):
     form_class = CircuitForm
     success_url = reverse_lazy('circuits_list')
 
+    @method_decorator(permission_required('inventory.add_circuit', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(CircuitCreate, self).dispatch(*args, **kwargs)
+
     def form_valid(self, form):
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
@@ -1059,6 +1151,9 @@ class CircuitUpdate(UpdateView):
     form_class = CircuitForm
     success_url = reverse_lazy('circuits_list')
 
+    @method_decorator(permission_required('inventory.change_circuit', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(CircuitUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
@@ -1079,3 +1174,7 @@ class CircuitDelete(DeleteView):
     model = Circuit
     template_name = 'circuit/circuit_delete.html'
     success_url = reverse_lazy('circuits_list')
+
+    @method_decorator(permission_required('inventory.delete_circuit', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(CircuitDelete, self).dispatch(*args, **kwargs)
