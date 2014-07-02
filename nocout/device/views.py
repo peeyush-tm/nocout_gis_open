@@ -1300,16 +1300,9 @@ class DeviceTypeDelete(DeleteView):
 
     @method_decorator(permission_required('device.delete_devicetype', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        action.send(self.request.user, verb='deleting device type: %s'%(self.get_object().name))
         return super(DeviceTypeDelete, self).dispatch(*args, **kwargs)
 
-    def delete(self, request, *args, **kwargs):
-        try:
-            action.send(request.user, verb='deleting device type: %s'%(self.object.name))
-        except:
-            pass
-        super(DeviceTypeDelete, self).delete(self, request, *args, **kwargs)
-        
-        
 # ****************************************** Device Type *******************************************
 class DevicePortList(ListView):
     model = DevicePort
