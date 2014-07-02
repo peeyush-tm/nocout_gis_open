@@ -3,8 +3,8 @@
 	"message" : "Data Fetached Successfully.",
 	"data" : {
 		"meta" : {
-			"total_count" : 2,
-			"limit" : 4
+			"total_count" : 0,
+			"limit" : 1
 		},
 		"objects" : {
 			"id" : "mainNode",
@@ -99,17 +99,32 @@
 								"beam_width" : 60,
 								"radius" : 60,
 								"markerUrl" : "static/img/marker/icon4_small.png",
-								"link_color" : "green",
 								"show_link" : 1,
-								"sector_color" : "#156AAF",
+								"link_color" : {
+									"r" : 94,
+									"g" : 135,
+									"b" : 176,
+									"a" : 0.70
+								},								
+								"sector_color" : {
+									"r" : 94,
+									"g" : 135,
+									"b" : 176,
+									"a" : 0.70
+								},
+								"circle_color" : {
+									"r" : 74,
+									"g" : 250,
+									"b" : 194,
+									"a" : 0.90
+								},
 								"sector_orientation" : "horizontal",
 								"circle_radius" : 3000,
-								"circle_color" : "333333",
 								"antena_height" : 50
 							}
 						},
 						{
-							"id":8,
+							"id":9,
 							"name":"TTSL_BTS_Bagahati",
 							"children":[],
 							"data":{
@@ -189,22 +204,46 @@
 								"beam_width" : 60,
 								"radius" : 60,
 								"markerUrl" : "static/img/marker/icon3_small.png",
-								"link_color" : "green",
 								"show_link" : 1,
-								"sector_color" : "yellow",
+								"link_color" : {
+									"r" : 253,
+									"g" : 242,
+									"b" : 112,
+									"a" : 0.90
+								},								
+								"sector_color" : {
+									"r" : 253,
+									"g" : 242,
+									"b" : 112,
+									"a" : 0.90
+								},
+								"circle_color" : {
+									"r" : 74,
+									"g" : 250,
+									"b" : 194,
+									"a" : 0.90
+								},
 								"sector_orientation" : "vertical",
 								"circle_radius" : 3000,
-								"circle_color" : "999999",
 								"antena_height" : 60
 							}
 						}
 					],
 					"data":{
+						"technology" : "PMP",
+						"vendor" : "cambium",
+						"city" : "jodhpur",
+						"state" : "rajasthan",
 						"perf" : "63%",
 						"lat" : 26.2800,
 						"lon" : 73.0200,
 						"circle_radius" : 3000,
-						"circle_color" : "A58383",
+						"circle_color" : {
+							"r" : 250,
+							"g" : 95,
+							"b" : 113,
+							"a" : 0.90
+						},
 						"antena_height" : 40,
 						"param" : {
 							"base_station" : [
@@ -290,7 +329,7 @@
 					}
 				},
 				{
-					"id":8,
+					"id":15,
 					"name":"TTSL_BTS:_Nurpur_001",
 					"type" : "P2P",
 					"children":[
@@ -353,20 +392,39 @@
 								"lon" : 77.3891,
 								"perf" : "88%",
 								"markerUrl" : "static/img/marker/icon1_small.png",
-								"link_color" : "green",
+								"link_color" : {
+									"r" : 64,
+									"g" : 200,
+									"b" : 253,
+									"a" : 0.99
+								},
+								"circle_color" : {
+									"r" : 74,
+									"g" : 250,
+									"b" : 194,
+									"a" : 0.90
+								},
 								"circle_radius" : 3000,
-								"circle_color" : "68F3F8",
 								"show_link" : 1,
 								"antena_height" : 65
 							}
 						}
 					],
 					"data":{
+						"technology" : "PTP",
+						"vendor" : "radwin",
+						"city" : "gurgaon",
+						"state" : "haryana",
 						"perf" : "53%",
 						"lat" : 28.5334,
 						"lon" : 77.2921,
 						"circle_radius" : 3000,
-						"circle_color" : "79BFF4",
+						"circle_color" : {
+							"r" : 253,
+							"g" : 242,
+							"b" : 112,
+							"a" : 0.90
+						},
 						"antena_height" : 45,
 						"param" : {
 							"base_station" : [
@@ -497,20 +555,39 @@
 								"lon" : 77.5667,
 								"perf" : "88%",
 								"markerUrl" : "static/img/marker/icon4_small.png",
-								"link_color" : "green",
+								"link_color" : {
+									"r" : 250,
+									"g" : 95,
+									"b" : 113,
+									"a" : 0.90
+								},
+								"circle_color" : {
+									"r" : 74,
+									"g" : 250,
+									"b" : 194,
+									"a" : 0.90
+								},
 								"circle_radius" : 3000,
-								"circle_color" : "68F3F8",
 								"show_link" : 1,
 								"antena_height" : 48
 							}
 						}
 					],
 					"data":{
+						"technology" : "PTP",
+						"vendor" : "radwin",
+						"city" : "bangalore",
+						"state" : "karnataka",
 						"perf" : "77%",
 						"lat" : 26.847,
 						"lon" : 80.947,
 						"circle_radius" : 3000,
-						"circle_color" : "79BFF4",
+						"circle_color" : {
+							"r" : 253,
+							"g" : 242,
+							"b" : 112,
+							"a" : 0.90
+						},
 						"antena_height" : 68,
 						"param" : {
 							"base_station" : [
