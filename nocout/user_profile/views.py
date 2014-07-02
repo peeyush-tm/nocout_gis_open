@@ -210,7 +210,12 @@ class UserCreate(CreateView):
     def form_valid(self, form):
         self.object= form.save(commit=False)
         self.object.set_password(form.cleaned_data["password2"])
+        role= form.cleaned_data['role'][0]
+        project_group_name= project_group_role_dict_mapper[role.role_name]
+        project_group= Group.objects.get( name = project_group_name)
         self.object.save()
+        form.save_m2m()
+        self.object.groups.add(project_group)
         return super(ModelFormMixin, self).form_valid(form)
 
 class UserUpdate(UpdateView):
@@ -238,6 +243,7 @@ class UserUpdate(UpdateView):
         role= form.cleaned_data['role'][0]
         project_group_name= project_group_role_dict_mapper[role.role_name]
         project_group= Group.objects.get( name = project_group_name)
+        UserProfile.groups.through.objects.filter(user_id=self.object.id).delete()
         self.object.groups.add(project_group)
         self.object.save()
         form.save_m2m()
