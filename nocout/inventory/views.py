@@ -185,8 +185,8 @@ class AntennaList(ListView):
             {'mData':'tilt',              'sTitle' : 'Tilt',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'beam_width',        'sTitle' : 'Beam Width',       'sWidth':'10%' ,},]
 
-        #if the user role is Admin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        if 'admin' or 'operator' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -327,8 +327,10 @@ class BaseStationList(ListView):
             {'mData':'bs_type',                   'sTitle' : 'Base Station Type',   'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'building_height',           'sTitle' : 'Building Height',     'sWidth':'null',},
             {'mData':'description',               'sTitle' : 'Description',         'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',                   'sTitle' : 'Actions',             'sWidth':'10%' ,}
             ]
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        if 'admin' or 'operator' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -471,8 +473,11 @@ class BackhaulList(ListView):
             {'mData':'bh_connectivity',         'sTitle' : 'Connectivity',                 'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'bh_circuit_id',           'sTitle' : 'Circuit ID',                   'sWidth':'null',},
             {'mData':'bh_capacity',             'sTitle' : 'Capacity',                     'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',                 'sTitle' : 'Actions',                      'sWidth':'10%' ,}
             ]
+
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        if 'admin' or 'operator' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -613,8 +618,12 @@ class SectorList(ListView):
             {'mData':'antenna__name',              'sTitle' : 'Antenna',          'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'mrc',                        'sTitle' : 'MRC',              'sWidth':'null',},
             {'mData':'description',                'sTitle' : 'Description',      'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',                    'sTitle' : 'Actions',          'sWidth':'10%' ,}
             ]
+
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        if 'admin' or 'operator' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -752,8 +761,10 @@ class CustomerList(ListView):
             {'mData':'state',             'sTitle' : 'State',            'sWidth':'null',},
             {'mData':'address',           'sTitle' : 'Address',          'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'description',       'sTitle' : 'Description',      'sWidth':'null',},
-            {'mData':'actions',           'sTitle' : 'Actions',          'sWidth':'10%' ,}
             ]
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        if 'admin' or 'operator' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -896,8 +907,12 @@ class SubStationList(ListView):
             {'mData':'state',            'sTitle' : 'State',              'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'address',          'sTitle' : 'Address',            'sWidth':'null',},
             {'mData':'description',      'sTitle' : 'Description',        'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',          'sTitle' : 'Actions',            'sWidth':'10%' ,}
             ]
+
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        if 'admin' or 'operator' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -1037,8 +1052,11 @@ class CircuitList(ListView):
             {'mData':'sub_station__name',             'sTitle' : 'Sub Station',          'sWidth':'null',},
             {'mData':'date_of_acceptance',      'sTitle' : 'Date of Acceptance',   'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'description',             'sTitle' : 'Description',          'sWidth':'null',},
-            {'mData':'actions',                 'sTitle' : 'Actions',              'sWidth':'10%' ,}
             ]
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        if 'admin' or 'operator' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 

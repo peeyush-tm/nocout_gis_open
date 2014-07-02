@@ -7,8 +7,12 @@
 {% block content_title %}Sector Management{% endblock %}
 {% block content_description %}List of sector{% endblock %}
 {% block content %}
-    <p><a href="/sector/new"><i class="fa fa-plus">&nbsp;</i> Create Sector</a></p>
-    
+    {% for group in user.groups.all %}
+        {% if group.name == 'group_admin' or group.name == 'group_operator' %}
+            <p><a href="/sector/new"><i class="fa fa-plus">&nbsp;</i> Create Sector</a></p>
+        {% endif %}
+    {% endfor %}
+
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>SECTOR LISTING</h4>

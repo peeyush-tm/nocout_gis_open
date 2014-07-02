@@ -7,7 +7,11 @@
 {% block content_title %}Base Station Management{% endblock %}
 {% block content_description %}List of base station{% endblock %}
 {% block content %}
-    <p><a href="/base_station/new"><i class="fa fa-plus">&nbsp;</i> Create Base Station</a></p>
+    {% for group in user.groups.all %}
+        {% if group.name == 'group_admin' or group.name == 'group_operator' %}
+            <p><a href="/base_station/new"><i class="fa fa-plus">&nbsp;</i> Create Base Station</a></p>
+        {% endif %}
+    {% endfor %}
     
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
