@@ -1,4 +1,5 @@
 import json
+import time
 from django.db.models.query import ValuesQuerySet
 from django.shortcuts import render_to_response
 from django.views.generic import ListView
@@ -42,9 +43,6 @@ class LatencyList(ListView):
             {'mData':'machine_name',                   'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'site_name',                      'sTitle' : 'Site Name',               'sWidth':'null',},
             {'mData':'data_source',                    'sTitle' : 'Data Source',             'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'warning_threshold',              'sTitle' : 'Warning Threshold',             'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'critical_threshold',             'sTitle' : 'Critical Threshold',             'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'current_value',                  'sTitle' : 'Current Value',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'avg_value',                      'sTitle' : 'Latency',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'check_timestamp',                'sTitle' : 'Timestamp',          'sWidth':'null',},
             ]
@@ -63,8 +61,8 @@ class LatencyList(ListView):
 
 class LatencyListingTable(BaseDatatableView):
     model = PerformanceMetric
-    columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'data_source', 'warning_threshold', 'critical_threshold', 'current_value', 'avg_value', 'check_timestamp']
-    order_columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'data_source', 'warning_threshold', 'critical_threshold', 'current_value', 'avg_value', 'check_timestamp']
+    columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'data_source', 'avg_value', 'check_timestamp']
+    order_columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'data_source', 'avg_value', 'check_timestamp']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -92,6 +90,7 @@ class LatencyListingTable(BaseDatatableView):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
+            dct['check_timestamp'] =  time.strftime('%a %d-%b-%Y %H:%M:%S %Z', time.localtime(dct['check_timestamp']))
             dct.update(actions='<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
@@ -158,6 +157,7 @@ class PacketDropListingTable(BaseDatatableView):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
+            dct['check_timestamp'] =  time.strftime('%a %d-%b-%Y %H:%M:%S %Z', time.localtime(dct['check_timestamp']))
             dct.update(actions='<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
