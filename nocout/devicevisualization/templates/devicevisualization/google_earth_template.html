@@ -1,15 +1,18 @@
 {% extends "nocout/base.html" %}
 {% block breadcrumb_title %}
     <li>Network Maps</li>
-    <li>Google Maps</li>
+    <li>Google Earth</li>
 {% endblock %}
-{% block content_title %}Google Maps{% endblock %}
+{% block content_title %}Google Earth{% endblock %}
 {% block content_description %}Location wise devices distribution{% endblock %}
 {% load staticfiles %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
     <!-- JQUERY UI-->
     <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
+    <!-- CSS to style the file input field as button and adjust the Bootstrap progress bars -->
+    <link rel="stylesheet" href={% static "js/jquery-upload/css/jquery.fileupload.css" %}>
+    <link rel="stylesheet" href={% static "js/jquery-upload/css/jquery.fileupload-ui.css" %}>
 {% endblock %}
 
 {% block page_setting_block %}
@@ -23,12 +26,23 @@
                     </button>
                     <button id="removeFilterBtn" class="btn btn-danger hide" onclick="removeAdvFilters();" style="margin-left:10px;">
                         <i class='fa fa-times'></i> Remove Filters
+                    </button>                    
+                </li>
+                <!--
+                <li>
+                    <span class="btn btn-success fileinput-button">
+                        <i class="fa fa-plus"></i>
+                        <span id="fileName">Add File</span>
+                        <input type="file" name="kmlFile" id="kmlFile">
+                    </span>
+                </li>
+                <li>
+                    <button class="btn btn-primary start" id="kmlImportBtn">
+                        <i class="fa fa-arrow-circle-o-up"></i>
+                        <span>Import</span>
                     </button>
                 </li>
-                <!-- <li>
-                    <button class="btn btn-info" id="createPolygonBtn"  data-complete-text="<i class='fa fa-location-arrow'></i> Select Devices" data-loading-text="Please Wait..."><i class="fa fa-location-arrow"></i> Select Devices</button>
-                    <button class="btn btn-xs btn-danger hide" id="clearPolygonBtn"><i class="fa fa-times"></i> Clear Selection</button>
-                </li> -->
+                -->
             </ul>            
         </div>
     </span>
@@ -38,13 +52,10 @@
 {% block content %}
 <div class='box border lite mapContainerBlock'>
     <div class='box-title'>
-        <h4><i class='fa fa-map-marker'></i> GOOGLE MAPS <i class="fa fa-spinner fa fa-spin" id="loadingIcon">&nbsp;</i></h4>
+        <h4><i class='fa fa-map-marker'></i> GOOGLE Earth <i class="fa fa-spinner fa fa-spin" id="loadingIcon">&nbsp;</i></h4>
         <!--Filters Block Start-->
         <div class="pull-right">
             <ul class="list-unstyled list-inline">
-                <li>
-                    <input type="text" name="searchTxt" id="searchTxt" class="form-control col-xs-1 input-sm" placeholder="Address">
-                </li>
                 <li>
                     <!--technology Filter-->
                     <select name="technology" id="technology" class="form-control col-xs-1 input-sm">
@@ -83,82 +94,53 @@
     <div class='box-body' style="position:relative">
         <!--div on which the map is to be plot-->
 
-        <!--Map Container Start-->
-        <div id="deviceMap"></div>
-        <!--Map Container End-->
-        <div id="sideInfoContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">
-                            <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#sideInfo">Selected Devices</a>
-                        </h3>
-                    </div>
-                    <div id="sideInfo" class="panel-collapse in">
-                        <div class="panel-body">Sorry, No device selected.</div>
-                    </div>
-                </div>
-        </div>
+        <!--Google Earth Container Start-->
+        <div id="google_earth_container"></div>
+        <!--Google Earth Container End-->
     </div>
 </div>
 
-<!-- Google Map Library-->
-<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,places&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
-<!--This library is used to create marker with labels-->
-<script type="text/javascript" src={% static "js/markerwithlabel.js" %}></script>
-<!--This library is used for marker clustering-->
-<script type="text/javascript" src={% static "js/markerclusterer.js" %}></script>
-<!--OverlappingMarkerSpiderfier Library for marker spiderify effect-->
-<script type="text/javascript" src={% static "js/oms.min.js" %}></script>
+<!-- Google Earth Library-->
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <!-- Our Library to plot the devices on map & performs functionality accordingly-->
-<script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
-<!-- Our Library to plot the devices on map or earth & performs functionality accordingly-->
 <script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
-<!-- SPARKLINES -->
-<script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
+<!-- Our Library to plot the devices on google maps & performs functionality accordingly-->
+<script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
+<!-- Our Library to plot the devices on google earth & performs functionality accordingly-->
+<script type="text/javascript" src={% static "js/earth_devicePlottingLib.js" %}></script>
 <!-- Custon Script for this template-->
 <script type="text/javascript" src={% static "js/devicevisualization.js" %}></script>
-<!--Flot Chart Library for Fresnel zone-->
-<script src={% static "js/flot/jquery.flot.min.js" %}></script>
+<!-- Our Library to plot the devices on map or earth & performs functionality accordingly-->
+<script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
+
 <script type="text/javascript">
-
-    var networkMapInstance = "",
-        getFilterApi = "",
-        setFilterApi = "",
+    
+    var earth_instance = "",
         advSearch = "",
-        deviceName = "";
-
+        getFilterApi = "",
+        setFilterApi = "";
+        
+    google.load("earth", "1");
+    
     $(document).ready(function(e) {
 
         getFilterApi = "{{get_filter_api}}";
         setFilterApi = "{{set_filter_api}}";
-        deviceName = "{{ device_name }}";
-        
+
+        /*Create a instance of googleEarthClass*/
+        earth_instance = new googleEarthClass();
+
         /*Create a instance of gmap_devicePlottingLib*/
-        networkMapInstance = new devicePlottingClass_gmap();
+        mapsLibInstance = new devicePlottingClass_gmap();
 
         /*Create a instance of advanceSearchClass*/
         advSearch = new advanceSearchClass();
 
-        /*Call the function to create map*/
-        networkMapInstance.createMap("deviceMap");
+        /*Call 'createGoogleEarth' function to draw google earth on spicified domElement*/
+        earth_instance.createGoogleEarth('google_earth_container');
 
-        if($.trim(deviceName) == "default_device_name") {
-            
-            /*Call the make network to create the BS-SS network on the google map*/
-            networkMapInstance.getDevicesData_gmap();
-
-        } else {
-
-            var searchString = JSON.stringify([{"field":"device_name","value":[deviceName]}]);
-            advSearch.setFilters(searchString,setFilterApi);
-
-            /*Hide Remove Filters button*/
-            if(!$("#removeFilterBtn").hasClass("hide")) {
-                $("#removeFilterBtn").addClass("hide");
-            }
-        }
         /*Call getBasicFilters funtion to fetch & populate basic filters dropdown*/
-        networkMapInstance.getBasicFilters();
+        mapsLibInstance.getBasicFilters();
     });
 </script>
 {% endblock %}
