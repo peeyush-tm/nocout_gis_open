@@ -4,7 +4,8 @@ from alert_center import views
 
 urlpatterns = patterns('',
     url(r'^network/$', views.LatencyList.as_view()),
-    url(r'^customer/(?P<page_type>\w+)/$', views.CustomerLatencyList.as_view()),
+    url(r'^customer/latency/$', views.CustomerLatencyList.as_view()),
+    url(r'^customer/packet_drop/$', views.CustomerPacketDropList.as_view()),
     url(r'^detail/customer_detail/$', views.getCustomerAlertDetail),
     url(r'^detail/network_detail/$', views.getNetworkAlertDetail),
     url(r'^latencylist/',views.LatencyList.as_view(), name='LatencyList'),

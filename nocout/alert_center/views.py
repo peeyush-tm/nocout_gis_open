@@ -370,3 +370,24 @@ class CustomerLatencyList(ListView):
             ]
         context['datatable_headers_latency'] = json.dumps(datatable_headers_latency)
         return context
+
+
+class CustomerPacketDropList(ListView):
+    model = PerformanceNetwork
+    template_name = 'alert_center/customer_packet_alerts_list.html'
+
+    def get_context_data(self, **kwargs):
+        context=super(CustomerPacketDropList, self).get_context_data(**kwargs)
+        print "*********************context***********************"
+        print context
+        datatable_headers_packetdrop = [
+            {'mData':'device_name',            'sTitle' : 'Device Name',                 'sWidth':'null',},
+            {'mData':'service_name',           'sTitle' : 'Service Name',                'sWidth':'null',},
+            {'mData':'machine_name',           'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'site_name',              'sTitle' : 'Site Name',               'sWidth':'null',},
+            {'mData':'data_source',            'sTitle' : 'Data Source',             'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'avg_value',              'sTitle' : 'Packet Drop',             'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'check_timestamp',        'sTitle' : 'Timestamp',          'sWidth':'null',},
+            ]
+        context['datatable_headers_packetdrop'] = json.dumps(datatable_headers_packetdrop)
+        return context

@@ -87,7 +87,7 @@
 
 
 {% block jquery %}
-    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
 <script type="text/javascript">
     /*This is a temporary code which is replace when data for data table is provided*/
     $(document).ready(function (e) {
@@ -95,7 +95,6 @@
             var dataTableInstance = new ourDataTableWidget();
             /*Grid headers object*/
             var gridHeadersObj_latency = $.parseJSON('{{ datatable_headers_latency|safe }}');
-            console.log(gridHeadersObj_latency)
             /*Ajax url to get grid data*/
             var ajax_url_latency = '{% url "LatencyListingTable" %}';
             /*Call createDataTable function of ourDataTableWidget class*/
