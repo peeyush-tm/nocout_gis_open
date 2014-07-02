@@ -1,14 +1,14 @@
 /*Global Variables*/
 var earth_that = "",
+	mapsLibInstance = "",
 	ge = "",
-	devicesObject = {},
-	devices = [],
-	masterMarkersObj = [],
-	slaveMarkersObj = [],
+	devices_earth = [],
+	main_devices_data_earth = [],
+	appliedFilterObj_earth = {},
+	devicesObject_earth = {},
 	hitCounter = 1,
 	showLimit = 0,
 	devicesCount = 0,
-	clusterIcon = "",
 	counter = -999;
 
 /**
@@ -32,7 +32,7 @@ function googleEarthClass() {
 	 * @param domElement "String", It is the dom element on which google earth is to be created.
 	 */
 	this.createGoogleEarth = function(domElement) {
-		
+
 		google.earth.createInstance(domElement, earth_that.earthInitCallback, earth_that.earthFailureCallback);
 	};
 
@@ -63,7 +63,7 @@ function googleEarthClass() {
 		ge.getLayerRoot().enableLayerById(ge.LAYER_ROADS, true);
 
 		/*Call get devices function*/
-		earth_that.getDevices();
+		earth_that.getDevicesData_earth();
 	};
 
 	/**
@@ -79,9 +79,9 @@ function googleEarthClass() {
 	/**
 	 * This function fetch the BS & SS from python API.
 	 * @class earth_devicePlottingLib
-	 * @function getDevices
+	 * @function getDevicesData_earth
 	 */
-	this.getDevices = function() {
+	this.getDevicesData_earth = function() {
 
 		if(counter > 0 || counter == -999) {
 
@@ -94,8 +94,8 @@ function googleEarthClass() {
 			/*Ajax call to the API*/
 			$.ajax({
 				crossDomain: true,
-				// url : "../../device/stats/?page_number="+hitCounter+"&limit="+showLimit,
-				url : "../../static/new_format.json",
+				url : "../../device/stats/",
+				// url : "../../static/new_format.json",
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
@@ -105,51 +105,51 @@ function googleEarthClass() {
 
 						hitCounter = hitCounter + 1;
 						/*First call case*/
-						if(devicesObject.data == undefined) {
+						if(devicesObject_earth.data == undefined) {
 
 							/*Save the result json to the global variable for global access*/
-							devicesObject = result;
-							/**/
-							devices = devicesObject.data.objects.children;
+							devicesObject_earth = result;
+							/*This will update if any filer is applied*/
+							devices_earth = devicesObject_earth.data.objects.children;
+							/*This will changes only when data re-fetched*/
+							main_devices_data_earth = devicesObject_earth.data.objects.children;
 						} else {
 
-							devices = devices.concat(result.data.objects.children);
+							devices_earth = devices_earth.concat(result.data.objects.children);
 						}
 
 						/*Update the device count with the received data*/
-						devicesCount = devicesObject.data.meta.total_count;
+						devicesCount = devicesObject_earth.data.meta.total_count;
 
 						/*Update the device count with the received data*/
-						showLimit = devicesObject.data.meta.limit;
+						showLimit = devicesObject_earth.data.meta.limit;
 
 						if(counter == -999) {
 							counter = Math.round(devicesCount/showLimit);
 						}
 						
-						if(devicesObject.success == 1) {
+						if(devicesObject_earth.success == 1) {
 
-							/*If cluster icon exist then save it to global variable else make the global variable blank*/
-							if(devicesObject.data.objects.data.unspiderfy_icon == undefined) {
-								clusterIcon = "";
+							/*Check that any filter is applied or not*/
+							var appliedFilterLength_earth = Object.keys(appliedFilterObj_earth).length;
+
+							if(appliedFilterLength_earth > 0) {
+								/*If any filter is applied then plot the fetch data as per the filters*/
+								earth_that.applyFilter(appliedFilterObj_earth);
 							} else {
-								clusterIcon = "../../"+devicesObject.data.objects.data.unspiderfy_icon;
+								/*Call the plotDevices_earth to show the markers on the map*/
+								earth_that.plotDevices_earth(devices_earth);
 							}
-
-							/*Call the populateNetwork to show the markers on the map*/
-							earth_that.populateEarthNetwork(devices);
-							
-							/*Call the getDevicesFilter function to seperate the filter values from the object array*/
-							//that.getDevicesFilter(devices);
 
 							/*Call the function after 3 sec.*/
 							setTimeout(function() {
 									
-								earth_that.getDevices();
+								earth_that.getDevicesData_earth();
 							},3000);
 
 						} else {
 
-							// earth_that.recallServer();
+							// earth_that.recallServer_earth();
 							/*Hide The loading Icon*/
 							$("#loadingIcon").hide();
 
@@ -161,7 +161,7 @@ function googleEarthClass() {
 
 					} else {
 
-						// earth_that.recallServer();
+						// earth_that.recallServer_earth();
 						/*Hide The loading Icon*/
 						$("#loadingIcon").hide();
 
@@ -185,14 +185,14 @@ function googleEarthClass() {
 
 	/**
      * This function is used to populate the markers on the google earth
-     * @class netowrkMap
-     * @method populateEarthNetwork
+     * @class earth_devicePlottingLib
+     * @method plotDevices_earth
      * @param resultantMarkers [JSON Objet Array] It is the devies object array
 	 */
-	this.populateEarthNetwork = function(resultantMarkers) {
+	this.plotDevices_earth = function(resultantMarkers) {
 
 		/*Assign the potting devices to the 'devices' global variables*/
-		devices = resultantMarkers;
+		devices_earth = resultantMarkers;
 		for(var i=0;i<resultantMarkers.length;i++) {
 
 			/*Create BS info window HTML string*/
@@ -285,14 +285,19 @@ function googleEarthClass() {
 					var azimuth = resultantMarkers[i].children[j].data.azimuth_angle;
 					var beam_width = resultantMarkers[i].children[j].data.beam_width;
 					var sector_color = resultantMarkers[i].children[j].data.sector_color;
-					var sectorDataset = resultantMarkers[i].children[j].data.param.sector_info;
+					var sectorInfo = resultantMarkers[i].children[j].data.param.sector_info;
 					var orientation = $.trim(resultantMarkers[i].children[j].data.sector_orientation);
-					/*Call create sector function to plot the section.*/
-					earth_that.createSector(lat,lon,rad,azimuth,beam_width,sector_color,sectorDataset,orientation,function(sectorObj) {
-						var halfPt = Math.floor(sectorObj.length / (+2));
-						// Create object for Link Line Between Master & Slave
-						startLat = sectorObj[halfPt].lat;
-						startLon = sectorObj[halfPt].lon;
+					
+					/*Call createSectorData function to get the points array to plot the sector on google earth.*/
+					mapsLibInstance.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
+						
+						/*Plot sector on google earth with the retrived points*/
+						earth_that.plotSector_earth(lat,lon,pointsArray,sectorInfo,sector_color);
+
+						var halfPt = Math.floor(pointsArray.length / (+2));
+						// Create object for Link Line Between BS & SS
+						startLat = pointsArray[halfPt].lat;
+						startLon = pointsArray[halfPt].lon;
 						endLat = resultantMarkers[i].children[j].data.lat;
 						endLon = resultantMarkers[i].children[j].data.lon;
 
@@ -365,7 +370,11 @@ function googleEarthClass() {
 					lineStringPlacemark.setStyleSelector(ge.createStyle(''));
 					var lineStyle = lineStringPlacemark.getStyleSelector().getLineStyle();
 					lineStyle.setWidth(2);
-					lineStyle.getColor().set('ff008000');  // aabbggrr format
+					var link_color_obj = resultantMarkers[i].children[j].data.link_color;
+					lineStyle.getColor().setA(200);
+					lineStyle.getColor().setB(link_color_obj.b);
+					lineStyle.getColor().setG(link_color_obj.g);
+					lineStyle.getColor().setR(link_color_obj.r);
 					// Add the feature to Earth
 					ge.getFeatures().appendChild(lineStringPlacemark);				
 				}/*SHOW_LINK condition ends*/
@@ -374,97 +383,23 @@ function googleEarthClass() {
 	};
 
 	/**
-	 * This function creates sectors on google maps.
-	 * @class networkMapClass.
-	 * @method createSector.
+	 * This function plot the sector for given lat-lon points
+	 * @class earth_devicePlottingLib
+	 * @method plotSector_earth.
 	 * @param Lat "Number", It contains lattitude of any point.
 	 * @param Lng "Number", It contains longitude of any point.
-	 * @param radius "Number", It contains radius for sector.
-	 * @param azimuth "Number", It contains azimuth angle for sector.
-	 * @param beamwidth "Number", It contains width for the sector.
-	 * @param sectorData {JSON Object}, It contains sector info json object.
-	 * @param orientation "String", It contains the orientation type of antena i.e. vertical or horizontal
+	 * @param pointsArray [Array], It contains the points lat-lon object array.
+	 * @param sectorInfo {JSON Object Array}, It contains the information about the sector which are shown in info window.
+	 * @param bgColor {JSON Object}, It contains the RGBA format color code JSON object.
 	 */
-	this.createSector = function(lat,lng,radius,azimuth,beamWidth,bgColor,sectorData,orientation,callback) {
-
-		var triangle = [],
-			sectorDataArray = [];
-		// Degrees to radians
-        var d2r = Math.PI / 180;
-        //  Radians to degrees
-        var r2d = 180 / Math.PI;
-
-        var PRlat = (radius/3963) * r2d; // using 3963 miles as earth's radius
-        var PRlng = PRlat/Math.cos(lat*d2r);
-
-        var PGpoints = [],
-        	pointObj = {};
-
-        with(Math) {
-
-			lat1 = (+lat) + (PRlat * cos( d2r * (azimuth - beamWidth/2 )));
-			lon1 = (+lng) + (PRlng * sin( d2r * (azimuth - beamWidth/2 )));
-			/*Create lat-lon point object*/
-			/*Reset Pt Object*/
-			pointObj = {};
-			pointObj["lat"] = lat1;
-			pointObj["lon"] = lon1;
-			/*Add point object to array*/
-			PGpoints.push(pointObj);
-
-			lat2 = (+lat) + (PRlat * cos( d2r * (azimuth + beamWidth/2 )));
-			lon2 = (+lng) + (PRlng * sin( d2r * (azimuth + beamWidth/2 )));
-			
-			var theta = 0;
-			var gamma = d2r * (azimuth + beamWidth/2 );
-
-			for (var a = 1; theta < gamma ; a++ ) {
-				theta = d2r * (azimuth - beamWidth/2 +a);
-				PGlon = (+lng) + (PRlng * sin( theta ));
-				PGlat = (+lat) + (PRlat * cos( theta ));
-				/*Reset Pt Object*/
-				pointObj = {};
-				pointObj["lat"] = PGlat;
-				pointObj["lon"] = PGlon;
-				/*Add point object to array*/
-				PGpoints.push(pointObj);
-			}
-			/*Reset Pt Object*/
-			pointObj = {};
-			pointObj["lat"] = lat2;
-			pointObj["lon"] = lon2;
-			/*Add point object to array*/
-			PGpoints.push(pointObj);
-
-
-			var centerPtObj = {};
-			centerPtObj["lat"] = lat;
-			centerPtObj["lon"] = lng;
-			/*Add center point object to array*/
-			PGpoints.push(centerPtObj);
-		}
-
-		/*Condition for the orientation of sector antina*/
-		if(orientation == "horizontal") {
-
-			var len = Math.floor(PGpoints.length / 3);
-
-			triangle.push(PGpoints[0]);
-			triangle.push(PGpoints[(len * 2) - 1]);
-			triangle.push(PGpoints[(len * 3) - 1]);
-			/*Assign the triangle object array to sectorDataArray for plotting the polygon*/
-			sectorDataArray = triangle;
-		} else {
-			/*Assign the PGpoints object array to sectorDataArray for plotting the polygon*/
-			sectorDataArray = PGpoints;
-		}
+	this.plotSector_earth = function(lat,lng,pointsArray,sectorInfo,bgColor) {
 
 		/*Create Sector info window HTML string*/
     	var sector_infoTable = "<table class='table table-bordered'><tbody>";
     	/*Fetch SS information*/
-		for(var y=0;y<sectorData.length;y++) {
-			if(sectorData[y].show == 1) {
-					sector_infoTable += "<tr><td>"+sectorData[y].title+"</td><td>"+sectorData[y].value+"</td></tr>";
+		for(var y=0;y<sectorInfo.length;y++) {
+			if(sectorInfo[y].show == 1) {
+					sector_infoTable += "<tr><td>"+sectorInfo[y].title+"</td><td>"+sectorInfo[y].value+"</td></tr>";
 			}
 		}
 		/*Set lat-lon*/
@@ -484,10 +419,11 @@ function googleEarthClass() {
 		// Add points for poly coordinates.
 		var polyPoints = ge.createLinearRing('');
 		polyPoints.setAltitudeMode(ge.ALTITUDE_RELATIVE_TO_GROUND);
+		
 		/*Loop to get the polygon point n plot the coordinates*/
-		for(var i=0;i<sectorDataArray.length;i++) {
-			polyPoints.getCoordinates().pushLatLngAlt(sectorDataArray[i].lat, sectorDataArray[i].lon, 700);
-		}		
+		for(var i=0;i<pointsArray.length;i++) {
+			polyPoints.getCoordinates().pushLatLngAlt(pointsArray[i].lat, pointsArray[i].lon, 700);
+		}
 
 		sector_polygon.setOuterBoundary(polyPoints);
 		//Create a style and set width and color of line
@@ -496,35 +432,184 @@ function googleEarthClass() {
 		sectorPolygonObj.setDescription(sector_windowContent);
 		var lineStyle = sectorPolygonObj.getStyleSelector().getLineStyle();
 		lineStyle.setWidth(1);
-		// lineStyle.getColor().set('ff00ffff');
 		lineStyle.getColor().setA(200);
-		lineStyle.getColor().setB(175);
-		lineStyle.getColor().setG(135);
-		lineStyle.getColor().setR(94);
+		lineStyle.getColor().setB(102);
+		lineStyle.getColor().setG(101);
+		lineStyle.getColor().setR(99);
 
 		// Color can also be specified by individual color components.
-		// var polyColor = sectorPolygonObj.getStyleSelector().getPolyStyle().getColor();
-		// polyColor.setA(200);
-		// polyColor.setB(0);
-		// polyColor.setG(255);
-		// polyColor.setR(255);
+		var polyColor = sectorPolygonObj.getStyleSelector().getPolyStyle().getColor();
+		polyColor.setA(200);
+		polyColor.setB(bgColor.b);
+		polyColor.setG(bgColor.g);
+		polyColor.setR(bgColor.r);
 		// Add the placemark to Earth.
 		ge.getFeatures().appendChild(sectorPolygonObj);
-		/*Callback with sector lat-lons array object*/
-        callback(sectorDataArray);
 	};
 
-	this.importKmlData = function(fileObject) {
+	/**
+	 * This function filters the BS data from devices object as per the applied rule
+	 * @class earth_devicePlottingLib
+	 * @method applyFilter_earth
+	 * @param filtersArray [JSON Array] It is an object array of filters with keys
+	 */
+	this.applyFilter_earth = function(filtersArray) {
 
-		console.log(fileObject[0].files[0]);
+		appliedFilterObj_earth = filtersArray;
 
-		// var link = ge.createLink('');
-		// var href = 'http://code.google.com/apis/earth/documentation/samples/kml_example.kml'
-		// link.setHref(href);
+		var filterKey = [],
+			filteredData = [],
+			masterIds = [];
 
-		// var networkLink = ge.createNetworkLink('');
-		// networkLink.set(link, true, true); // Sets the link, refreshVisibility, and flyToView
+		/*Fetch the keys from the filter array*/
+		$.each(filtersArray, function(key, value) {
 
-		// ge.getFeatures().appendChild(networkLink);
+		    filterKey.push(key);
+		});
+
+	 	if(main_devices_data_earth.length > 0) {
+
+	 		for(var i=0;i<main_devices_data_earth.length;i++) {
+
+ 				var master = main_devices_data_earth[i];
+
+	 			/*Conditions as per the number of filters*/
+	 			if(filterKey.length == 1) {
+
+ 					if(master.data[filterKey[0]].toLowerCase() == filtersArray[filterKey[0]].toLowerCase()) {
+
+	 					/*Check For The Duplicacy*/
+	 					if(masterIds.indexOf(master.id) == -1) {
+
+	 						/*Save the BS id's to array to remove duplicacy*/
+	 						masterIds.push(master.id);
+
+	 						filteredData.push(main_devices_data_earth[i]);
+	 					}
+	 				}
+
+	 			} else if(filterKey.length == 2) {
+
+ 					if((master.data[filterKey[0]].toLowerCase() == filtersArray[filterKey[0]].toLowerCase()) && (master.data[filterKey[1]].toLowerCase() == filtersArray[filterKey[1]].toLowerCase())) {
+
+	 					/*Check For The Duplicacy*/
+	 					if(masterIds.indexOf(master.id) == -1) {
+
+	 						/*Save the BS id's to array to remove duplicacy*/
+	 						masterIds.push(master.id);
+
+	 						filteredData.push(main_devices_data_earth[i]);
+	 					}
+	 				}
+	 			} else if(filterKey.length == 3) {
+
+	 				if((master.data[filterKey[0]].toLowerCase() == filtersArray[filterKey[0]].toLowerCase()) && (master.data[filterKey[1]].toLowerCase() == filtersArray[filterKey[1]].toLowerCase()) && (master.data[filterKey[2]].toLowerCase() == filtersArray[filterKey[2]].toLowerCase())) {
+
+	 					/*Check For The Duplicacy*/
+	 					if(masterIds.indexOf(master.id) == -1) {
+
+	 						/*Save the BS id's to array to remove duplicacy*/
+	 						masterIds.push(master.id);
+
+	 						filteredData.push(main_devices_data_earth[i]);
+	 					}
+	 				}
+	 			} else if(filterKey.length == 4) {
+
+	 				if((master.data[filterKey[0]].toLowerCase() == filtersArray[filterKey[0]].toLowerCase()) && (master.data[filterKey[1]].toLowerCase() == filtersArray[filterKey[1]].toLowerCase()) && (master.data[filterKey[2]].toLowerCase() == filtersArray[filterKey[2]].toLowerCase()) && (master.data[filterKey[3]].toLowerCase() == filtersArray[filterKey[3]].toLowerCase())) {
+
+	 					/*Check For The Duplicacy*/
+	 					if(masterIds.indexOf(master.id) == -1) {
+
+	 						/*Save the BS id's to array to remove duplicacy*/
+	 						masterIds.push(master.id);
+
+	 						filteredData.push(main_devices_data_earth[i]);
+	 					}
+	 				}
+	 			}
+	 		}
+	 		/*Check that after applying filters any data exist or not*/
+	 		if(filteredData.length === 0) {
+
+	 			bootbox.alert("User Don't Have Any Devies For Selected Filters");
+	 			$("#resetFilters").click();
+
+	 		} else {
+
+				/*Reset the markers, polyline & filters*/
+	 			earth_that.clearEarthElements();
+
+				masterMarkersObj = [];
+				slaveMarkersObj = [];
+
+				/*Populate the map with the filtered markers*/
+	 			earth_that.plotDevices_earth(filteredData);
+	 		}	 		
+	 	}	
 	};
+
+	/**
+     * This function resets the global variables & again call the api calling function after given timeout i.e. 5 minutes
+     * @class earth_devicePlottingLib
+     * @method recallServer_earth
+     */
+    this.recallServer_earth = function() {
+
+    	/*Hide The loading Icon*/
+		$("#loadingIcon").hide();
+
+		/*Enable the refresh button*/
+		$("#resetFilters").button("complete");
+		
+
+    	setTimeout(function() {
+			
+			/*Hide The loading Icon*/
+			$("#loadingIcon").show();
+
+			/*Enable the refresh button*/
+			$("#resetFilters").button("loading");
+
+			/*Clear all the elements from google earth*/
+			earth_that.clearEarthElements();
+
+			/*Reset Global Variables*/
+			earth_that.resetVariables_earth();
+			
+			/*Recall the API*/
+			earth_that.getDevicesData_earth();
+
+		},300000);
+    };
+
+    /**
+     * This function will clear all the elements from google earth
+     * @class earth_devicePlottingLib
+     * @method clearEarthElements
+     */
+    this.clearEarthElements = function() {
+
+    	var features = ge.getFeatures(); 
+        while (features.getFirstChild()) { 
+           features.removeChild(features.getFirstChild()); 
+        }
+    };
+
+
+    /**
+     * This function will clear all the elements from google earth
+     * @class earth_devicePlottingLib
+     * @method resetVariables_earth
+     */
+    this.resetVariables_earth = function() {
+
+ 		devices_earth = [];
+ 		appliedFilterObj_earth = {};
+		devicesObject_earth = {};
+		hitCounter = 1;
+		showLimit = 0;
+		devicesCount = 0;
+		counter = -999;
+    };
 }
