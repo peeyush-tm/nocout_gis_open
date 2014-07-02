@@ -1303,7 +1303,10 @@ class DeviceTypeDelete(DeleteView):
         return super(DeviceTypeDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        action.send(request.user, verb='deleting device type: %s'%(self.object.name))
+        try:
+            action.send(request.user, verb='deleting device type: %s'%(self.object.name))
+        except:
+            pass
         super(DeviceTypeDelete, self).delete(self, request, *args, **kwargs)
         
         
