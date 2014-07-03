@@ -67,6 +67,7 @@ class DeviceType(models.Model):
     device_gmap_icon = models.CharField('Device GMap Icon', max_length=200, null=True, blank=True)
     frequency = models.ManyToManyField(DeviceFrequency, null=True, blank=True)
     device_port = models.ManyToManyField(DevicePort, null=True, blank=True)
+    agent_tag = models.CharField('Agent Tag', max_length=200, null=True, blank=True)
 
     def __unicode__(self):
         return self.name
