@@ -42,6 +42,7 @@ class LatencyList(ListView):
             {'mData':'service_name',                   'sTitle' : 'Service Name',                'sWidth':'null',},
             {'mData':'machine_name',                   'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'site_name',                      'sTitle' : 'Site Name',               'sWidth':'null',},
+            {'mData':'ip_address',          'sTitle' : 'IP Address',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'data_source',                    'sTitle' : 'Data Source',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'avg_value',                      'sTitle' : 'Latency',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'check_timestamp',                'sTitle' : 'Timestamp',          'sWidth':'null',},
@@ -51,16 +52,16 @@ class LatencyList(ListView):
             {'mData':'service_name',           'sTitle' : 'Service Name',                'sWidth':'null',},
             {'mData':'machine_name',           'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'site_name',              'sTitle' : 'Site Name',               'sWidth':'null',},
+            {'mData':'ip_address',          'sTitle' : 'IP Address',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'data_source',            'sTitle' : 'Data Source',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'avg_value',              'sTitle' : 'Packet Drop',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'check_timestamp',        'sTitle' : 'Timestamp',          'sWidth':'null',},
             ]
         datatable_headers_down = [
             {'mData':'host',                'sTitle' : 'Device Name',                 'sWidth':'null',},
+            {'mData':'machine_name',           'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'site_name',           'sTitle' : 'Site Name',                'sWidth':'null',},
             {'mData':'ip_address',          'sTitle' : 'IP Address',           'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'state_type',          'sTitle' : 'State Type',               'sWidth':'null',},
-            {'mData':'event_type',          'sTitle' : 'Event Type',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'status',              'sTitle' : 'Status',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'device_type',         'sTitle' : 'Device Type',          'sWidth':'null',},
             {'mData':'time',                'sTitle' : 'Timestamp',             'sWidth':'null','sClass':'hidden-xs'},
@@ -68,11 +69,10 @@ class LatencyList(ListView):
             ]
         datatable_headers_servicealerts = [
             {'mData':'host',                'sTitle' : 'Device Name',                 'sWidth':'null',},
+            {'mData':'machine_name',           'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'site_name',           'sTitle' : 'Site Name',                'sWidth':'null',},
             {'mData':'ip_address',          'sTitle' : 'IP Address',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'service',             'sTitle' : 'Service Name',                'sWidth':'null',},
-            {'mData':'state_type',          'sTitle' : 'State Type',               'sWidth':'null',},
-            {'mData':'event_type',          'sTitle' : 'Event Type',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'status',              'sTitle' : 'Status',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'device_type',         'sTitle' : 'Device Type',          'sWidth':'null',},
             {'mData':'time',                'sTitle' : 'Timestamp',             'sWidth':'null','sClass':'hidden-xs'},
@@ -86,8 +86,8 @@ class LatencyList(ListView):
 
 class LatencyListingTable(BaseDatatableView):
     model = PerformanceNetwork
-    columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'data_source', 'avg_value', 'check_timestamp']
-    order_columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'data_source', 'avg_value', 'check_timestamp']
+    columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'data_source', 'avg_value', 'check_timestamp']
+    order_columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'data_source', 'avg_value', 'check_timestamp']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -153,8 +153,8 @@ class LatencyListingTable(BaseDatatableView):
 #**************************************** PacketDrop *********************************************
 class PacketDropListingTable(BaseDatatableView):
     model = PerformanceNetwork
-    columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'data_source', 'avg_value', 'check_timestamp']
-    order_columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'data_source', 'avg_value', 'check_timestamp']
+    columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'data_source', 'avg_value', 'check_timestamp']
+    order_columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'data_source', 'avg_value', 'check_timestamp']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -220,8 +220,8 @@ class PacketDropListingTable(BaseDatatableView):
 #**************************************** Down *********************************************
 class DownListingTable(BaseDatatableView):
     model = EventNetwork
-    columns = ['host', 'site_name', 'ip_address', 'state_type', 'event_type', 'status', 'device_type', 'time', 'event_description']
-    order_columns = ['host', 'site_name', 'ip_address', 'state_type', 'event_type', 'status', 'device_type', 'time', 'event_description']
+    columns = ['host', 'site_name', 'ip_address', 'machine_name', 'status', 'device_type', 'time', 'event_description']
+    order_columns = ['host', 'site_name', 'ip_address', 'machine_name', 'status', 'device_type', 'time', 'event_description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -287,8 +287,8 @@ class DownListingTable(BaseDatatableView):
 #**************************************** Down *********************************************
 class ServiceAlertsListingTable(BaseDatatableView):
     model = EventService
-    columns = ['host', 'site_name', 'ip_address', 'service', 'state_type', 'event_type', 'status', 'device_type', 'time', 'event_description']
-    order_columns = ['host', 'site_name', 'ip_address', 'service', 'state_type', 'event_type', 'status', 'device_type', 'time', 'event_description']
+    columns = ['host', 'site_name', 'ip_address', 'machine_name', 'service', 'status', 'device_type', 'time', 'event_description']
+    order_columns = ['host', 'site_name', 'ip_address', 'machine_name', 'service', 'state_type', 'event_type', 'status', 'device_type', 'time', 'event_description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -364,6 +364,7 @@ class CustomerLatencyList(ListView):
             {'mData':'service_name',                   'sTitle' : 'Service Name',                'sWidth':'null',},
             {'mData':'machine_name',                   'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'site_name',                      'sTitle' : 'Site Name',               'sWidth':'null',},
+            {'mData':'ip_address',          'sTitle' : 'IP Address',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'data_source',                    'sTitle' : 'Data Source',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'avg_value',                      'sTitle' : 'Latency',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'check_timestamp',                'sTitle' : 'Timestamp',          'sWidth':'null',},
@@ -385,6 +386,7 @@ class CustomerPacketDropList(ListView):
             {'mData':'service_name',           'sTitle' : 'Service Name',                'sWidth':'null',},
             {'mData':'machine_name',           'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'site_name',              'sTitle' : 'Site Name',               'sWidth':'null',},
+            {'mData':'ip_address',          'sTitle' : 'IP Address',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'data_source',            'sTitle' : 'Data Source',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'avg_value',              'sTitle' : 'Packet Drop',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'check_timestamp',        'sTitle' : 'Timestamp',          'sWidth':'null',},
