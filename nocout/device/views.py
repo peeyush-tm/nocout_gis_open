@@ -46,7 +46,7 @@ class DeviceList(ListView):
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%' ,})
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'8%'})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -102,10 +102,12 @@ class DeviceListingTable(BaseDatatableView):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
-            dct.update(actions='<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-               <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>\
-               <a href="#" class="add_device_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus-square text-warning"></i></a>\
-               <a href="#" class="sync_device_with_nms_core_btn" device_id="{0}"><i class="fa fa-play-circle text-success"></i></a>'.format(dct.pop('id')))
+            dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+               <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+               <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>\
+               <a href="#" class="add_device_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus-square text-warning" title="Add device for monitoring"></i></a>\
+               <a href="#" class="sync_device_with_nms_core_btn" device_id="{0}"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+               <a href="#" class="add_svc_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus text-success" title="Add service for monitoring"></i></a>'.format(dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -245,11 +247,11 @@ class DeviceCreate(CreateView):
             device.ports.add(device_port)
             device.save()
 
-        # saving associated services  --> M2M Relation (Model: Service)
-        for service in form.cleaned_data['service']:
-            device_service = Service.objects.get(name=service)
-            device.service.add(device_service)
-            device.save()
+        # # saving associated services  --> M2M Relation (Model: Service)
+        # for service in form.cleaned_data['service']:
+        #     device_service = Service.objects.get(name=service)
+        #     device.service.add(device_service)
+        #     device.save()
 
         # saving device 'parent device' --> FK Relation
         try:
@@ -355,14 +357,14 @@ class DeviceUpdate(UpdateView):
                                 )
             pass
 
-        # deleting old services of device
-        self.object.service.clear()
+        # # deleting old services of device
+        # self.object.service.clear()
 
-        # saving associated services  --> M2M Relation (Model: Service)
-        for service in form.cleaned_data['service']:
-            device_service = Service.objects.get(name=service)
-            self.object.service.add(device_service)
-            self.object.save()
+        # # saving associated services  --> M2M Relation (Model: Service)
+        # for service in form.cleaned_data['service']:
+        #     device_service = Service.objects.get(name=service)
+        #     self.object.service.add(device_service)
+        #     self.object.save()
 
         # saving device 'parent device' --> FK Relation
         try:
@@ -420,9 +422,9 @@ class DeviceUpdate(UpdateView):
         def cleaned_data_field():
             cleaned_data_field_dict={}
             for field in form.cleaned_data.keys():
-                if field in ('service'):
-                    cleaned_data_field_dict[field]=map(lambda obj: obj.pk, form.cleaned_data[field])
-                elif field in ('parent', 'site_instance','organization'):
+                # if field in ('service'):
+                #     cleaned_data_field_dict[field]=map(lambda obj: obj.pk, form.cleaned_data[field])
+                if field in ('parent', 'site_instance','organization'):
                     cleaned_data_field_dict[field]=form.cleaned_data[field].pk if form.cleaned_data[field] else None
                 elif field in ('device_model', 'device_type', 'device_vendor', 'device_technology') and form.cleaned_data[field]:
                     cleaned_data_field_dict[field]=int(form.cleaned_data[field])
@@ -440,8 +442,8 @@ class DeviceUpdate(UpdateView):
                 if initial_field_dict['organization'] else str(None)
             initial_field_dict['site_instance'] = SiteInstance.objects.get(pk=initial_field_dict['site_instance']).name \
                 if initial_field_dict['site_instance'] else str(None)
-            initial_field_dict['service'] = ', '.join([Service.objects.get(pk=service).name for service in initial_field_dict['service']])\
-                if initial_field_dict['service'] else str(None)
+            # initial_field_dict['service'] = ', '.join([Service.objects.get(pk=service).name for service in initial_field_dict['service']])\
+            #     if initial_field_dict['service'] else str(None)
             initial_field_dict['device_model'] = DeviceModel.objects.get(pk=initial_field_dict['device_model']).name \
                 if initial_field_dict['device_model'] else str(None)
             initial_field_dict['device_type'] = DeviceType.objects.get(pk=initial_field_dict['device_type']).name \
@@ -457,8 +459,8 @@ class DeviceUpdate(UpdateView):
                 if cleaned_data_field_dict['organization'] else str(None)
             cleaned_data_field_dict['site_instance'] = SiteInstance.objects.get(pk=cleaned_data_field_dict['site_instance']).name \
                 if cleaned_data_field_dict['site_instance'] else str(None)
-            cleaned_data_field_dict['service'] = ', '.join([Service.objects.get(pk=service).name for service in cleaned_data_field_dict['service'] \
-                if cleaned_data_field_dict['service']])
+            # cleaned_data_field_dict['service'] = ', '.join([Service.objects.get(pk=service).name for service in cleaned_data_field_dict['service'] \
+            #     if cleaned_data_field_dict['service']])
             cleaned_data_field_dict['device_model'] = DeviceModel.objects.get(pk=cleaned_data_field_dict['device_model']).name \
                 if cleaned_data_field_dict['device_model'] else str(None)
             cleaned_data_field_dict['device_type'] = DeviceType.objects.get(pk=cleaned_data_field_dict['device_type']).name \

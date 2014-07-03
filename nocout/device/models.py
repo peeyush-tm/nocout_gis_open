@@ -63,10 +63,12 @@ class DevicePort(models.Model):
 class DeviceType(models.Model):
     name = models.CharField('Device Type', max_length=200, unique=True)
     alias = models.CharField('Device Description', max_length=200, null=True, blank=True)
+    device_port = models.ManyToManyField(DevicePort, null=True, blank=True)
+    service = models.ManyToManyField(Service, blank=True, null=True)
     device_icon = models.CharField('Device Icon', max_length=200, null=True, blank=True)
     device_gmap_icon = models.CharField('Device GMap Icon', max_length=200, null=True, blank=True)
     frequency = models.ManyToManyField(DeviceFrequency, null=True, blank=True)
-    device_port = models.ManyToManyField(DevicePort, null=True, blank=True)
+    agent_tag = models.CharField('Agent Tag', max_length=200, null=True, blank=True)
 
     def __unicode__(self):
         return self.name
@@ -128,13 +130,13 @@ class Device(MPTTModel, models.Model):
     device_alias = models.CharField('Device Alias', max_length=200)
     site_instance = models.ForeignKey(SiteInstance, null=True, blank=True)
     organization = models.ForeignKey(Organization)
-    device_technology = models.IntegerField('Device Technology', null=True, blank=True)
-    device_vendor = models.IntegerField('Device Vendor', null=True, blank=True)
-    device_model = models.IntegerField('Device Model', null=True, blank=True)
-    device_type = models.IntegerField('Device Type', null=True, blank=True)
+    device_technology = models.IntegerField('Device Technology')
+    device_vendor = models.IntegerField('Device Vendor')
+    device_model = models.IntegerField('Device Model')
+    device_type = models.IntegerField('Device Type')
     parent = models.ForeignKey('self', null=True, blank=True, related_name='device_children')
     ports = models.ManyToManyField(DevicePort, null=True, blank=True)
-    service = models.ManyToManyField(Service, null=True, blank=True)
+    #service = models.ManyToManyField(Service, null=True, blank=True)
     ip_address = models.IPAddressField('IP Address', unique=True)
     mac_address = models.CharField('MAC Address', max_length=100, )
     netmask = models.IPAddressField('Netmask', null=True, blank=True)
@@ -160,7 +162,6 @@ class Device(MPTTModel, models.Model):
 class ModelType(models.Model):
     model = models.ForeignKey(DeviceModel)
     type = models.ForeignKey(DeviceType)
-    service = models.ManyToManyField(Service, blank=True, null=True)
 
 
 # vendor-model mapper
