@@ -4,8 +4,8 @@ from dajax.core import Dajax
 from dajaxice.decorators import dajaxice_register
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
     DeviceTypeFieldsValue, Country, State, City
-import logging
 import requests
+import logging
 logger=logging.getLogger(__name__)
 
 
@@ -167,7 +167,7 @@ def device_extra_fields_update(request, device_type, device_name):
             dtfv = DeviceTypeFieldsValue.objects.get(device_type_field=extra_field.id, device_id=device.id)
             field_value = dtfv.field_value
         except:
-            print "Device type field doesn't exist."
+            logger.info("Device type field doesn't exist.")
         out.append(
             "<div class='form-group'><label for='%s' class='col-sm-5 control-label'>%s:</label><div class='col-sm-7'><input id='%s' name='%s' type='text' class='form-control' value='%s' /></div></div>"
             % (extra_field.field_name, extra_field.field_display_name,
@@ -277,13 +277,13 @@ def device_soft_delete(request, device_id, new_parent_id):
         # new_parent: new parent device for associated devices
         new_parent = Device.objects.get(id=new_parent_id)
     except:
-        print "No new device parent exist."
+        logger.info("No new device parent exist.")
 
     # fetching all child devices of device which needs to be deleted
     try:
         child_devices = Device.objects.filter(parent_id=device_id)
     except:
-        print "No child device exists."
+        logger.info("No child device exists.")
 
     # assign new parent device to all child devices
     if child_devices.count() > 0:
@@ -375,10 +375,18 @@ def add_device_to_nms_core(request, device_id):
     result['message'] = "Device addition failed."
     result['data']['meta'] = ''
     device = Device.objects.get(pk=device_id)
+
+    # get 'agent_tag' from DeviceType model
+    try :
+        agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
+    except:
+        logger.info("Device has no device type.")
+
+
     device_data = {'device_name': device.device_name,
                    'device_alias': device.device_alias,
                    'ip_address':device.ip_address,
-                   'agent_tag': device.agent_tag,
+                   'agent_tag': agent_tag,
                    'site': device.site_instance.name,
                    'mode' : 'addhost'}
     url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
@@ -412,3 +420,4 @@ def sync_device_with_nms_core(request):
         result['success'] = 1
         result['message'] = response_dict['message'].capitalize()
     return json.dumps({'result': result})
+
