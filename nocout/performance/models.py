@@ -22,11 +22,11 @@ class PerformanceMetric(models.Model):
         return self.device_name
 
 
-
 class PerformanceNetwork(models.Model):
     device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
     data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
     severity = models.IntegerField('Severity', null=True, blank=True)
@@ -47,6 +47,7 @@ class PerformanceService(models.Model):
     device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
     data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
     severity = models.IntegerField('Severity', null=True, blank=True)
@@ -126,13 +127,11 @@ class PerformanceInventory(models.Model):
 # events tables
 class EventNetwork(models.Model):
     host = models.CharField('Device Name', max_length=40, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=40, null=True, blank=True)
     ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
-    state_type = models.CharField('State Type', max_length=20, null=True, blank=True)
-    event_type = models.CharField('Event Type', max_length=40, null=True, blank=True)
     status = models.CharField('Status', max_length=40, null=True, blank=True)
     device_type = models.CharField('Device Type', max_length=20, null=True, blank=True)
-    #service = models.CharField('Service', max_length=20, null=True, blank=True)
     time = models.IntegerField('Time', null=True, blank=True)
     event_description = models.CharField('Event Description', max_length=255, null=True, blank=True)
 
@@ -142,10 +141,9 @@ class EventNetwork(models.Model):
 
 class EventService(models.Model):
     host = models.CharField('Device Name', max_length=40, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=40, null=True, blank=True)
     ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
-    state_type = models.CharField('State Type', max_length=20, null=True, blank=True)
-    event_type = models.CharField('Event Type', max_length=40, null=True, blank=True)
     status = models.CharField('Status', max_length=40, null=True, blank=True)
     device_type = models.CharField('Device Type', max_length=20, null=True, blank=True)
     service = models.CharField('Service', max_length=20, null=True, blank=True)
