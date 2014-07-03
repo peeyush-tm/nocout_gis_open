@@ -14,13 +14,13 @@ from django.forms.util import ErrorList
 # *************************************** Device Form ***********************************************
 class DeviceForm(forms.ModelForm):
     device_technology = IntReturnModelChoiceField(queryset=DeviceTechnology.objects.all(),
-                                                  required=False)
+                                                  required=True)
     device_vendor = IntReturnModelChoiceField(queryset=DeviceVendor.objects.all(),
-                                              required=False)
+                                              required=True)
     device_model = IntReturnModelChoiceField(queryset=DeviceModel.objects.all(),
-                                             required=False)
+                                             required=True)
     device_type = IntReturnModelChoiceField(queryset=DeviceType.objects.all(),
-                                            required=False)
+                                            required=True)
     country = IntReturnModelChoiceField(queryset=Country.objects.all(),
                                         required=False)
     state = IntReturnModelChoiceField(queryset=State.objects.all(),
