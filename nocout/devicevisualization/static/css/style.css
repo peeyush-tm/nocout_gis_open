@@ -253,3 +253,26 @@
     overflow-y: auto;
     margin-top:10px; 
 }
+
+/*CSS for max-width on basic filter 'li' container*/
+.mapContainerBlock .box-title .col-md-9, .earthContainerBlock .box-title .col-md-9 {
+    padding-left: 0px;
+    padding-right: 0px;
+}
+.mapContainerBlock .box-title .col-md-9 ul.list-unstyled li {
+    width: 140px;
+    max-width: 100%;
+    padding-left: 0px;
+    padding-right: 0px;
+}
+.mapContainerBlock .box-title .col-md-9 ul.list-unstyled li:last-child {
+    width: auto;
+}
+.mapContainerBlock .box-title .col-md-9 ul.list-unstyled li .input-sm {
+    padding: 5px;
+}
+.earthContainerBlock .box-title .col-md-9 ul.list-unstyled li {
+    max-width: 165px;
+    padding-left: 0px;
+    padding-right: 0px;   
+}
