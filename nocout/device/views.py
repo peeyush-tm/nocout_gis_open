@@ -102,7 +102,8 @@ class DeviceListingTable(BaseDatatableView):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
-            dct.update(actions='<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+            dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info"></i></a>\
+               <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>\
                <a href="#" class="add_device_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus-square text-warning"></i></a>\
                <a href="#" class="sync_device_with_nms_core_btn" device_id="{0}"><i class="fa fa-play-circle text-success"></i></a>'.format(dct.pop('id')))
