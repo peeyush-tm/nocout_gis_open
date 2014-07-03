@@ -421,3 +421,35 @@ def sync_device_with_nms_core(request):
         result['message'] = response_dict['message'].capitalize()
     return json.dumps({'result': result})
 
+
+# generate content for add service popup form
+@dajaxice_register
+def add_service_form(request, value):
+    # device to which services are associated
+    device = Device.objects.get(id=value)
+    # result: data dictionary send in ajax response
+    #{
+    #  "success": 1,     # 0 - fail, 1 - success, 2 - exception
+    #  "message": "Success/Fail message.",
+    #  "data": {
+    #     "meta": {},
+    #     "objects": {
+    #          "device_name": <name>,
+    #          "services": [
+    #                   {
+    #                       "name': <id>,
+    #                       "value": <value>,
+    #                   },
+    #                   {
+    #                       "name': <id>,
+    #                       "value": <value>,
+    #                   }
+    #           ]
+    #}
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = "Failed to render form correctly."
+    result['data']['meta'] = ''
+    result['data']['objects'] = {}
+

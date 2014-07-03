@@ -37,7 +37,7 @@ class DeviceForm(forms.ModelForm):
         self.base_fields['device_vendor'].label = 'Device Vendor'
         self.base_fields['device_model'].label = 'Device Model'
         self.base_fields['device_type'].label = 'Device Type'
-        self.base_fields['service'].label = 'Services'
+        # self.base_fields['service'].label = 'Services'
 
         initial = kwargs.setdefault('initial', {})
 
@@ -231,7 +231,6 @@ class DeviceTypeForm(forms.ModelForm):
 
     class Meta:
         model = DeviceType
-        fields = ('name', 'alias', 'device_icon', 'device_gmap_icon', 'device_port', 'frequency')
 
 
 # ******************************************* Device Type *******************************************
