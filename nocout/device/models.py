@@ -63,10 +63,11 @@ class DevicePort(models.Model):
 class DeviceType(models.Model):
     name = models.CharField('Device Type', max_length=200, unique=True)
     alias = models.CharField('Device Description', max_length=200, null=True, blank=True)
+    device_port = models.ManyToManyField(DevicePort, null=True, blank=True)
+    service = models.ManyToManyField(Service, blank=True, null=True)
     device_icon = models.CharField('Device Icon', max_length=200, null=True, blank=True)
     device_gmap_icon = models.CharField('Device GMap Icon', max_length=200, null=True, blank=True)
     frequency = models.ManyToManyField(DeviceFrequency, null=True, blank=True)
-    device_port = models.ManyToManyField(DevicePort, null=True, blank=True)
     agent_tag = models.CharField('Agent Tag', max_length=200, null=True, blank=True)
 
     def __unicode__(self):
@@ -161,7 +162,6 @@ class Device(MPTTModel, models.Model):
 class ModelType(models.Model):
     model = models.ForeignKey(DeviceModel)
     type = models.ForeignKey(DeviceType)
-    service = models.ManyToManyField(Service, blank=True, null=True)
 
 
 # vendor-model mapper
