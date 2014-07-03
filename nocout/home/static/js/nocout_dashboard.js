@@ -177,10 +177,10 @@ $(document).ready(function(e) {
 		}
     });
 
-    $(".sparkline").each(function() {
+    $(".sparkline-bar").each(function() {
 
 		var barSpacing, barWidth, color, height;
-		color = $(this).attr("data-color") || "red";
+		color = $(this).attr("data-color") || "#ff7f00";
 		height = "18px";
 		barWidth = "3px";
 		barSpacing = "1px";
@@ -190,6 +190,18 @@ $(document).ready(function(e) {
 			height: height,
 			barWidth: barWidth,
 			barSpacing: barSpacing,
+			zeroAxis: true
+		});
+	});
+
+    $(".sparkline-line").each(function() {
+
+		var barSpacing, barWidth, color, height;
+		color = $(this).attr("data-color") || "red";
+		height = "18px";
+		return $(this).sparkline("html", {
+			type: "line",
+			height: height,
 			zeroAxis: false
 		});
 	});
