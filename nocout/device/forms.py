@@ -14,13 +14,13 @@ from django.forms.util import ErrorList
 # *************************************** Device Form ***********************************************
 class DeviceForm(forms.ModelForm):
     device_technology = IntReturnModelChoiceField(queryset=DeviceTechnology.objects.all(),
-                                                  required=False)
+                                                  required=True)
     device_vendor = IntReturnModelChoiceField(queryset=DeviceVendor.objects.all(),
-                                              required=False)
+                                              required=True)
     device_model = IntReturnModelChoiceField(queryset=DeviceModel.objects.all(),
-                                             required=False)
+                                             required=True)
     device_type = IntReturnModelChoiceField(queryset=DeviceType.objects.all(),
-                                            required=False)
+                                            required=True)
     country = IntReturnModelChoiceField(queryset=Country.objects.all(),
                                         required=False)
     state = IntReturnModelChoiceField(queryset=State.objects.all(),
@@ -37,7 +37,7 @@ class DeviceForm(forms.ModelForm):
         self.base_fields['device_vendor'].label = 'Device Vendor'
         self.base_fields['device_model'].label = 'Device Model'
         self.base_fields['device_type'].label = 'Device Type'
-        self.base_fields['service'].label = 'Services'
+        # self.base_fields['service'].label = 'Services'
 
         initial = kwargs.setdefault('initial', {})
 
@@ -231,7 +231,6 @@ class DeviceTypeForm(forms.ModelForm):
 
     class Meta:
         model = DeviceType
-        fields = ('name', 'alias', 'device_icon', 'device_gmap_icon', 'device_port', 'frequency')
 
 
 # ******************************************* Device Type *******************************************
