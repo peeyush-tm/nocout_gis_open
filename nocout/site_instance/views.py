@@ -150,3 +150,7 @@ class SiteInstanceDelete(DeleteView):
     @method_decorator(permission_required('site_instance.delete_siteinstance', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         return super(SiteInstanceDelete, self).dispatch(*args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting site instance: %s'%(self.get_object().name))
+        return super(SiteInstanceDelete, self).delete(request, *args, **kwargs)

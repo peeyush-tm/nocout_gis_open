@@ -302,10 +302,9 @@ class UserDelete(DeleteView):
     def dispatch(self, *args, **kwargs):
         return super(UserDelete, self).dispatch(*args, **kwargs)
 
-
     def delete(self, request, *args, **kwargs):
-        action.send(request.user, verb='deleting user: %s'%(self.object.username))
-        super(UserDelete, self).delete(self, request, *args, **kwargs)
+        action.send(request.user, verb='deleting user: %s'%(self.get_object().username))
+        return super(UserDelete, self).delete(request, *args, **kwargs)
 
 class CurrentUserProfileUpdate(UpdateView):
     model = UserProfile

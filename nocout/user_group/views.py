@@ -160,10 +160,9 @@ class UserGroupDelete(DeleteView):
     def dispatch(self, *args, **kwargs):
         return super(UserGroupDelete, self).dispatch(*args, **kwargs)
 
-
     def delete(self, request, *args, **kwargs):
-        action.send(request.user, verb='deleting user group: %s'%(self.object.name))
-        super(UserGroupDelete, self).delete(self, request, *args, **kwargs)
+        action.send(request.user, verb='deleting user group: %s'%(self.get_object().name))
+        return super(UserGroupDelete, self).delete(request, *args, **kwargs)
 
 def user_group_users_render_wrt_organization(request):
     organization_id= request.GET['organization']
