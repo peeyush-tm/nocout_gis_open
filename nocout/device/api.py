@@ -445,114 +445,116 @@ class DeviceStatsApi(View):
                         #                         'azimuth_angle':None, 'beam_width':None, 'orientation':None }]
                         sectors= Sector.objects.filter(base_station = base_station.id)
                         for sector in sectors:
-                            circuit= Circuit.objects.get(sector = sector.id)
-                            substation= SubStation.objects.get(id = circuit.sub_station.id)
-                            device= Device.objects.get(id= substation.device.id)
+                            try:
+                                circuit= Circuit.objects.get(sector = sector.id)
+                                substation= SubStation.objects.get(id = circuit.sub_station.id)
+                                device= Device.objects.get(id= substation.device.id)
 
-                            base_station_info['data']['param']['sector']+=[{
-                                'info':[{
-                                        'name':'sector_name',
-                                        'title':'Sector Name',
-                                        'show':1,
-                                        'value':sector.name
-                                        },
-                                        {
-                                        'name':'frequency',
-                                        'title':'Frequency',
-                                        'show':1,
-                                        'value':sector.frequency
-                                        },],
-                            'color':'{"r":250, "g" : 95, "b" : 113, "a" : 0.90}',
-                            'radius':sector.cell_radius,
-                            'azimuth_angle':sector.antenna.azimuth_angle,
-                            'beam_width' : sector.antenna.beam_width,
-    						'orientation' : 'horizontal'
-                            }]
+                                base_station_info['data']['param']['sector']+=[{
+                                    'info':[{
+                                            'name':'sector_name',
+                                            'title':'Sector Name',
+                                            'show':1,
+                                            'value':sector.name
+                                            },
+                                            {
+                                            'name':'frequency',
+                                            'title':'Frequency',
+                                            'show':1,
+                                            'value':sector.frequency
+                                            },],
+                                'color':'{"r":250, "g" : 95, "b" : 113, "a" : 0.90}',
+                                'radius':sector.cell_radius,
+                                'azimuth_angle':sector.antenna.azimuth_angle,
+                                'beam_width' : sector.antenna.beam_width,
+                                'orientation' : 'horizontal'
+                                }]
 
-                            sub_station_info={'id': substation.id,
-                                              'name':substation.name,
-                                              'children':[],
-                                              'data':{
-                                                  'param':{
-                                                      'sub_station':[
+                                sub_station_info={'id': substation.id,
+                                                  'name':substation.name,
+                                                  'children':[],
+                                                  'data':{
+                                                      'param':{
+                                                          'sub_station':[
+                                                              {
+                                                               'name':'alias',
+                                                               'title':'alias',
+                                                               'show':1,
+                                                               'value':device.device_alias
+                                                              },
+                                                              {
+                                                               'name':'technology',
+                                                               'title':'Device Technology',
+                                                               'show':1,
+                                                               'value':DeviceType.objects.get(id=device.device_type).name
+                                                              },
+                                                              {
+                                                               'name':'ip',
+                                                               'titile':'IP Address',
+                                                               'show':1,
+                                                               'value':device.ip_address
+                                                              },
+                                                              {
+                                                               'name':'building height',
+                                                               'title':'Building Height',
+                                                               'show':1,
+                                                               'value':substation.building_height
+                                                              },
+                                                              {
+                                                               'name':'tower height',
+                                                               'title':'Tower Height',
+                                                               'show':1,
+                                                               'value':substation.tower_height
+                                                              }
+                                                          ],
+                                                      'sector_info':[
                                                           {
-                                                           'name':'alias',
-                                                           'title':'alias',
-                                                           'show':1,
-                                                           'value':device.device_alias
+                                                          'name':'sector_name',
+                                                          'title':'Sector Name',
+                                                          'show':1,
+                                                          'value':sector.name
                                                           },
                                                           {
-                                                           'name':'technology',
-                                                           'title':'Device Technology',
-                                                           'show':1,
-                                                           'value':DeviceType.objects.get(id=device.device_type).name
+                                                          'name':'tx_power',
+                                                          'title':'TX Power',
+                                                          'show':1,
+                                                          'value':sector.tx_power
                                                           },
                                                           {
-                                                           'name':'ip',
-                                                           'titile':'IP Address',
-                                                           'show':1,
-                                                           'value':device.ip_address
+                                                          'name':'rx_power',
+                                                          'title':'RX Power',
+                                                          'show':1,
+                                                          'value':sector.rx_power
                                                           },
                                                           {
-                                                           'name':'building height',
-                                                           'title':'Building Height',
-                                                           'show':1,
-                                                           'value':substation.building_height
+                                                          'name':'rf_bandwidth',
+                                                          'title':'RF Bandwidth',
+                                                          'show':1,
+                                                          'value':sector.rf_bandwidth
                                                           },
-                                                          {
-                                                           'name':'tower height',
-                                                           'title':'Tower Height',
-                                                           'show':1,
-                                                           'value':substation.tower_height
-                                                          }
                                                       ],
-                                                  'sector_info':[
-                                                      {
-                                                      'name':'sector_name',
-                                                      'title':'Sector Name',
-                                                      'show':1,
-                                                      'value':sector.name
+                                                      'backhaul':[],
                                                       },
-                                                      {
-                                                      'name':'tx_power',
-                                                      'title':'TX Power',
-                                                      'show':1,
-                                                      'value':sector.tx_power
-                                                      },
-                                                      {
-                                                      'name':'rx_power',
-                                                      'title':'RX Power',
-                                                      'show':1,
-                                                      'value':sector.rx_power
-                                                      },
-                                                      {
-                                                      'name':'rf_bandwidth',
-                                                      'title':'RF Bandwidth',
-                                                      'show':1,
-                                                      'value':sector.rf_bandwidth
-                                                      },
-                                                  ],
-                                                  'backhaul':[],
-                                                  },
-                                              "labels":[],
-                                              "lat":device.latitude,
-                                              "lon":device.longitude,
-                                              "perf":'70%',
-                                              "azimuth_angle":sector.antenna.azimuth_angle,
-                                              "beam_width" : sector.antenna.beam_width,
-                                              "radius" : sector.cell_radius,
-                                              "markerUrl" : "static/img/marker/icon4_small.png",
-                                              "link_color" : '{"r" : 64, "g" : 200, "b" : 253, "a" : 0.99}',
-                                              "show_link" : 1,
-                                              "sector_color" : '{"r":250, "g" : 95, "b" : 113, "a" : 0.90}',
-                                              "sector_orientation" : "horizontal",
-                                              "circle_radius" : 200,
-                                              "circle_color" : '{ "r" : 253, "g" : 242, "b" : 112, "a" : 0.90}',
-                                              "antena_height" : sector.antenna.height,
-                                              }
-                            }
-                            base_station_info['children'].append(sub_station_info)
-
+                                                  "labels":[],
+                                                  "lat":device.latitude,
+                                                  "lon":device.longitude,
+                                                  "perf":'70%',
+                                                  "azimuth_angle":sector.antenna.azimuth_angle,
+                                                  "beam_width" : sector.antenna.beam_width,
+                                                  "radius" : sector.cell_radius,
+                                                  "markerUrl" : "static/img/marker/icon4_small.png",
+                                                  "link_color" : '{"r" : 64, "g" : 200, "b" : 253, "a" : 0.99}',
+                                                  "show_link" : 1,
+                                                  "sector_color" : '{"r":250, "g" : 95, "b" : 113, "a" : 0.90}',
+                                                  "sector_orientation" : "horizontal",
+                                                  "circle_radius" : 200,
+                                                  "circle_color" : '{ "r" : 253, "g" : 242, "b" : 112, "a" : 0.90}',
+                                                  "antena_height" : sector.antenna.height,
+                                                  }
+                                }
+                                base_station_info['children'].append(sub_station_info)
+                            except:
+                                pass
                         self.result['data']['objects']['children'].append(base_station_info)
                     self.result['message']='Data Fetched Successfully.'
                     self.result['success']=1
