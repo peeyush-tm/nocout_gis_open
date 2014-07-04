@@ -3,8 +3,10 @@
 }
 .dashboard_pie_chart {
 	height: 198px;
-	width: 70%;
-	margin: 15px auto;
+	max-width: 100%;
+	width: 200px;
+	/*width: 70%;
+	margin: 15px auto;*/
 }
 #dashboardContainer .col-md-3 .tech_block .col-md-7 , #dashboardContainer .col-md-3 .tech_block .col-md-5 {
 	padding: 0px;
@@ -17,7 +19,7 @@
 #dashboardContainer .col-md-3 .tech_block .col-md-7 .legend div {
 	left: 0px !important;
 }
-#dashboardContainer .networkPerfContainer .col-md-3 .tech_block .col-md-7  , #dashboardContainer .pmpPerfContainer .col-md-3 .tech_block .col-md-7 {
+#dashboardContainer .networkPerfContainer .col-md-3 .tech_block .col-md-7  , #dashboardContainer .pmpPerfContainer .col-md-3 .tech_block .col-md-7 , #dashboardContainer .col-md-7 {
     margin-left: -10px;
 }
 #dashboardContainer .col-md-3 .tech_block  h5.alert{
@@ -34,4 +36,7 @@
 }
 #dashboardContainer .col-md-3 .tech_block .col-md-5 .side_info_block .chart_title h6{
     font-weight: 400;
+}
+.chart_title {
+	min-width: 85px;
 }
