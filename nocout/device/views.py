@@ -474,12 +474,9 @@ class DeviceDelete(DeleteView):
     def dispatch(self, *args, **kwargs):
         return super(DeviceDelete, self).dispatch(*args, **kwargs)
 
-
     def delete(self, request, *args, **kwargs):
-        action.send(request.user, verb='deleting device: %s'%(self.object.device_name))
-        super(DeviceDelete, self).delete(self, request, *args, **kwargs)
-
-
+        action.send(request.user, verb='deleting device: %s'%(self.get_object().device_name))
+        return super(DeviceDelete, self).delete(request, *args, **kwargs)
 
 # ******************************** Device Type Form Fields Views ************************************
 
@@ -627,15 +624,11 @@ class DeviceTypeFieldsDelete(DeleteView):
     def dispatch(self, *args, **kwargs):
         return super(DeviceTypeFieldsDelete, self).dispatch(*args, **kwargs)
 
-
     def delete(self, request, *args, **kwargs):
-        action.send(request.user, verb='deleting user: %s'%(self.object.field_name))
-        super(DeviceTypeFieldsDelete, self).delete(self, request, *args, **kwargs)
-
-
+        action.send(request.user, verb='deleting device type field: %s'%(self.get_object().field_name))
+        return super(DeviceTypeFieldsDelete, self).delete(request, *args, **kwargs)
 
 # **************************************** Device Technology ****************************************
-
 
 class DeviceTechnologyList(ListView):
     model = DeviceTechnology
@@ -807,8 +800,8 @@ class DeviceTechnologyDelete(DeleteView):
         return super(DeviceTechnologyDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        action.send(request.user, verb='deleting device technology: %s'%(self.object.field_name))
-        super(DeviceTechnologyDelete, self).delete(self, request, *args, **kwargs)
+        action.send(request.user, verb='deleting device technology: %s'%(self.get_object().name))
+        return super(DeviceTechnologyDelete, self).delete(self, request, *args, **kwargs)
 
 
 # ************************************* Device Vendor ***********************************************
@@ -984,9 +977,8 @@ class DeviceVendorDelete(DeleteView):
         return super(DeviceVendorDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        action.send(request.user, verb='deleting device vendor: %s'%(self.object.name))
-        super(DeviceVendorDelete, self).delete(self, request, *args, **kwargs)
-
+        action.send(request.user, verb='deleting device vendor: %s'%(self.get_object().name))
+        return super(DeviceVendorDelete, self).delete(request, *args, **kwargs)
 
 # ****************************************** Device Model *******************************************
 
@@ -1161,8 +1153,8 @@ class DeviceModelDelete(DeleteView):
         return super(DeviceModelDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        action.send(request.user, verb='deleting device vendor: %s'%(self.object.name))
-        super(DeviceModelDelete, self).delete(self, request, *args, **kwargs)
+        action.send(request.user, verb='deleting device model: %s'%(self.get_object().name))
+        return super(DeviceModelDelete, self).delete(request, *args, **kwargs)
 
 # ****************************************** Device Type *******************************************
 
@@ -1300,8 +1292,11 @@ class DeviceTypeDelete(DeleteView):
 
     @method_decorator(permission_required('device.delete_devicetype', raise_exception=True))
     def dispatch(self, *args, **kwargs):
-        action.send(self.request.user, verb='deleting device type: %s'%(self.get_object().name))
         return super(DeviceTypeDelete, self).dispatch(*args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting device type: %s'%(self.get_object().name))
+        return super(DeviceTypeDelete, self).delete(request, *args, **kwargs)
 
 # ****************************************** Device Type *******************************************
 class DevicePortList(ListView):
@@ -1441,6 +1436,7 @@ class DevicePortDelete(DeleteView):
     def dispatch(self, *args, **kwargs):
         return super(DevicePortDelete, self).dispatch(*args, **kwargs)
 
-
-
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting device port: %s'%(self.get_object().name))
+        return super(DevicePortDelete, self).delete(request, *args, **kwargs)
 
