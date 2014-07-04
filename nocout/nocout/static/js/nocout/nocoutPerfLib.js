@@ -1,7 +1,7 @@
 /**
  * This library is used to show live performance of particular device & its functionality
  * @class nocout.perf.lib
- * @uses FLOT CHARTS
+ * @uses Highcharts
  * Coded By :- Yogender Purohit
  */
 
@@ -138,7 +138,7 @@ var perf_that = "",
 							service_tabs_data += '<div class="tab-pane fade active in" id="'+value.name+'_block"><div class="divide-10"></div><div class="chart_container"><div id="'+value.name+'_chart" style="height:350px;width:100%;"></div></div></div>';
 						} else {
 							service_tabs += '<li class=""><a href="#'+value.name+'_block" url="'+value.url+'" id="'+value.name+'_tab" data-toggle="tab">'+value.title+'</a></li>';
-							service_tabs_data += '<div class="tab-pane fade" id="'+value.name+'_block"><div class="divide-10"></div><div class="chart_container"><div id="'+value.name+'_chart" style="height:350px;width:100%;"></div></div></div>';
+							service_tabs_data += '<div class="tab-pane fade" id="'+value.name+'_block"><div class="divide-10"></div><div class="chart_container" style="width:100%;"><div id="'+value.name+'_chart" style="height:350px;width:100%;"></div></div></div>';
 						}
 					});
 
@@ -197,31 +197,50 @@ var perf_that = "",
 						single_service_data = singleServiceData3.data.objects;
 					}
 
-					$.plot($("#"+service_id+"_chart"), single_service_data.chart_data, {
-                        series: {
-                            stack: true,
-                            lines: {
-                                show: single_service_data.show_line,
-                                steps: single_service_data.steps
-                            },
-                            bars: {
-                                show: single_service_data.show_bar,
-                                barWidth: 1000*60*60*1,//1000*60*60*24*350,/*Bar width in Hrs*/
-                                horizontal : single_service_data.horizontal
-                            }
-                        },
-                        crosshair: {
-                            mode: "x"
-                        },
-                        yaxis: {},
-				        xaxis: {
-			        		mode: "time"
-    						// timeformat: "%d/%m/%Y"
-						},
-						grid:{
-								borderWidth: 0
+					$('#'+service_id+'_chart').highcharts({
+			            chart: {
+			                type: single_service_data.type
+			            },
+			            title: {
+			                text: ''
+			            },
+			            legend: {
+				            align: 'right',
+				            verticalAlign: 'top',
+				            x: 0,
+				            y: 0,
+				            floating: true,
+				            borderWidth: 1,
+				            backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
+				        },
+			            tooltip: {
+			                pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b> ({point.percentage:.0f}%)<br/>',
+			                shared: true
+			            },
+			            xAxis: {
+		            		type: 'datetime',
+			                dateTimeLabelFormats: {
+			                    day: '%e. %b',
+								week: '%e. %b',
+								month: '%b \'%y',
+								year: '%Y'
+			                }
+			            },
+			            plotOptions: {
+			                column: {
+			                    stacking: 'percent'
+			                }
+			            },
+			                series: single_service_data.chart_data
+			        });
+
+					/*Hide Highcharts.com Name*/
+					var highcharts_link = $("#services_tab_container svg text:last-child");
+					$.grep(highcharts_link,function(val) {
+						if($.trim(val.innerHTML) == 'Highcharts.com') {
+							val.innerHTML = "";
 						}
-                    });
+					});
 					
 				} else {
 					console.log(singleServiceData1.message);

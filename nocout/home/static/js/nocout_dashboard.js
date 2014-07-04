@@ -55,7 +55,13 @@ $(document).ready(function(e) {
     createPieChart("other_pie_chart4",chartData);
 
     /*Hide Highcharts.com Name*/
-    $(".dashboard_pie_chart svg text:last-child").hide();
+    var highcharts_link = $("#dashboard_pie_chart svg text:last-child");
+    $.grep(highcharts_link,function(val) {
+        if($.trim(val.innerHTML) == 'Highcharts.com') {
+            val.innerHTML = "";
+        }
+    });
+    // $(".dashboard_pie_chart svg text:last-child").hide();
     
 
 
