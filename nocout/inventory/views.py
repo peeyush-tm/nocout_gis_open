@@ -155,6 +155,10 @@ class InventoryDelete(DeleteView):
     def dispatch(self, *args, **kwargs):
         return super(InventoryDelete, self).dispatch(*args, **kwargs)
 
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting inventory: %s'%(self.get_object().name))
+        return super(InventoryDelete, self).delete(request, *args, **kwargs)
+
 def inventory_details_wrt_organization(request):
     organization_id= request.GET['organization']
     organization_descendants_ids= Organization.objects.get(id= organization_id).get_descendants(include_self=True).values_list('id', flat=True)

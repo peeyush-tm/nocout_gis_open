@@ -26,11 +26,8 @@ class ServiceList(ListView):
             {'mData':'alias',                              'sTitle' : 'Alias',         'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'parameters__parameter_description',  'sTitle' : 'Parameters',    'sWidth':'null',},
             {'mData':'command__name',                      'sTitle' : 'Command',       'sWidth':'null',},
-            {'mData':'description',                        'sTitle' : 'Description',   'sWidth':'null','sClass':'hidden-xs'},]
-
-        #if the user role is Admin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%' ,})
+            {'mData':'description',                        'sTitle' : 'Description',   'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'actions',                            'sTitle':'Actions',         'sWidth':'5%' ,}]
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -153,6 +150,10 @@ class ServiceDelete(DeleteView):
     @method_decorator(permission_required('service.delete_service', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         return super(ServiceDelete, self).dispatch(*args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting services: %s'%(self.get_object().name))
+        return super(ServiceDelete, self).delete(request, *args, **kwargs)
 
 
 #************************************* Service Parameters *****************************************
@@ -298,6 +299,10 @@ class ServiceParametersDelete(DeleteView):
     @method_decorator(permission_required('service.delete_serviceparameters', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         return super(ServiceParametersDelete, self).dispatch(*args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting services parameters: %s'%(self.get_object().parameter_description))
+        return super(ServiceParametersDelete, self).delete( request, *args, **kwargs)
     
 
 #********************************** Service Data Source ***************************************
@@ -434,4 +439,7 @@ class ServiceDataSourceDelete(DeleteView):
     @method_decorator(permission_required('service.delete_servicedatasource', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         return super(ServiceDataSourceDelete, self).dispatch(*args, **kwargs)
-    
+
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting services data source: %s'%(self.get_object().name))
+        return super(ServiceDataSourceDelete, self).delete( request, *args, **kwargs)

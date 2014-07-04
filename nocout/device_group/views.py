@@ -187,8 +187,8 @@ class DeviceGroupDelete(DeleteView):
         return super(DeviceGroupDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        action.send(request.user, verb='deleting device group: %s'%(self.object.name))
-        super(DeviceGroupDelete, self).delete(self, request, *args, **kwargs)
+        action.send(request.user, verb='deleting device group: %s'%(self.get_object().name))
+        return super(DeviceGroupDelete, self).delete(request, *args, **kwargs)
 
 def device_group_devices_wrt_organization(request):
     organization_id= request.GET['organization']
