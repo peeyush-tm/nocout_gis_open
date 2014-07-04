@@ -129,21 +129,15 @@ class ServiceUpdate(UpdateView):
 
     def form_valid(self, form):
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-
-        cleaned_data_field_dict = { field : map(lambda obj: obj.pk, form.cleaned_data[field])
-        if field in ('parameters') and  form.cleaned_data[field] else form.cleaned_data[field] for field in form.cleaned_data.keys() }
-
+        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            initial_field_dict['parameters'] = ', '.join([ServiceParameters.objects.get(pk=paramter).parameter_description
-                                               for paramter in initial_field_dict['parameters']])
-            cleaned_data_field_dict['parameters'] = ', '.join([ServiceParameters.objects.get(pk=paramter).parameter_description
-                                                     for paramter in cleaned_data_field_dict['parameters']])
-
             verb_string = 'Changed values of Service : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
             self.object=form.save()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( ServiceUpdate.success_url )
