@@ -453,3 +453,7 @@ def add_service_form(request, value):
     result['data']['meta'] = ''
     result['data']['objects'] = {}
 
+    # get services associated with device
+    device_
+
+
