@@ -73,7 +73,15 @@ function googleEarthClass() {
 	 * @param errorCode {JSON Object}, It is the JSON object returned from google earth create instance function when google earth creation was not successful or failed.
 	 */
 	this.earthFailureCallback = function(errorCode) {
-		console.log(errorCode);
+		// console.log(errorCode);
+		$.gritter.add({
+            // (string | mandatory) the heading of the notification
+            title: 'Google Earth',
+            // (string | mandatory) the text inside the notification
+            text: errorCode,
+            // (bool | optional) if you want it to fade out on its own or just sit there
+            sticky: true
+        });
 	};
 
 	/**
@@ -104,52 +112,73 @@ function googleEarthClass() {
 					if(result.data.objects != null) {
 
 						hitCounter = hitCounter + 1;
-						/*First call case*/
-						if(devicesObject_earth.data == undefined) {
-
-							/*Save the result json to the global variable for global access*/
-							devicesObject_earth = result;
-							/*This will update if any filer is applied*/
-							devices_earth = devicesObject_earth.data.objects.children;
-							/*This will changes only when data re-fetched*/
-							main_devices_data_earth = devicesObject_earth.data.objects.children;
-						} else {
-
-							devices_earth = devices_earth.concat(result.data.objects.children);
-						}
-
-						/*Update the device count with the received data*/
-						devicesCount = devicesObject_earth.data.meta.total_count;
-
-						/*Update the device count with the received data*/
-						showLimit = devicesObject_earth.data.meta.limit;
-
-						if(counter == -999) {
-							counter = Math.round(devicesCount/showLimit);
-						}
 						
-						if(devicesObject_earth.success == 1) {
+						if(result.success == 1) {
 
-							/*Check that any filter is applied or not*/
-							var appliedFilterLength_earth = Object.keys(appliedFilterObj_earth).length;
+							if(result.data.objects.children.length > 0) {
 
-							if(appliedFilterLength_earth > 0) {
-								/*If any filter is applied then plot the fetch data as per the filters*/
-								earth_that.applyFilter(appliedFilterObj_earth);
+								/*First call case*/
+								if(devicesObject_earth.data == undefined) {
+
+									/*Save the result json to the global variable for global access*/
+									devicesObject_earth = result;
+									/*This will update if any filer is applied*/
+									devices_earth = devicesObject_earth.data.objects.children;
+									/*This will changes only when data re-fetched*/
+									main_devices_data_earth = devicesObject_earth.data.objects.children;
+								} else {
+
+									devices_earth = devices_earth.concat(result.data.objects.children);
+								}
+
+								/*Update the device count with the received data*/
+								devicesCount = devicesObject_earth.data.meta.total_count;
+
+								/*Update the device count with the received data*/
+								showLimit = devicesObject_earth.data.meta.limit;
+
+								if(counter == -999) {
+									counter = Math.round(devicesCount/showLimit);
+								}
+
+								/*Check that any filter is applied or not*/
+								var appliedFilterLength_earth = Object.keys(appliedFilterObj_earth).length;
+
+								if(appliedFilterLength_earth > 0) {
+									/*If any filter is applied then plot the fetch data as per the filters*/
+									earth_that.applyFilter(appliedFilterObj_earth);
+								} else {
+									/*Call the plotDevices_earth to show the markers on the map*/
+									earth_that.plotDevices_earth(devices_earth);
+								}
+
+								/*Call the function after 3 sec.*/
+								setTimeout(function() {
+										
+									earth_that.getDevicesData_earth();
+								},3000);
 							} else {
-								/*Call the plotDevices_earth to show the markers on the map*/
-								earth_that.plotDevices_earth(devices_earth);
+								$.gritter.add({
+						            // (string | mandatory) the heading of the notification
+						            title: 'Googole Earth - No Data',
+						            // (string | mandatory) the text inside the notification
+						            text: 'No Devices Found',
+						            // (bool | optional) if you want it to fade out on its own or just sit there
+						            sticky: true
+						        });
 							}
 
-							/*Call the function after 3 sec.*/
-							setTimeout(function() {
-									
-								earth_that.getDevicesData_earth();
-							},3000);
-
 						} else {
+							$.gritter.add({
+					            // (string | mandatory) the heading of the notification
+					            title: 'Google Earth - Server Error',
+					            // (string | mandatory) the text inside the notification
+					            text: devicesObject_earth.message,
+					            // (bool | optional) if you want it to fade out on its own or just sit there
+					            sticky: true
+					        });
 
-							// earth_that.recallServer_earth();
+							earth_that.recallServer_earth();
 							/*Hide The loading Icon*/
 							$("#loadingIcon").hide();
 
@@ -161,7 +190,7 @@ function googleEarthClass() {
 
 					} else {
 
-						// earth_that.recallServer_earth();
+						earth_that.recallServer_earth();
 						/*Hide The loading Icon*/
 						$("#loadingIcon").hide();
 
@@ -171,7 +200,15 @@ function googleEarthClass() {
 
 				},
 				error : function(err) {
-					console.log(err);
+					// console.log(err);
+					$.gritter.add({
+			            // (string | mandatory) the heading of the notification
+			            title: 'Google Earth - Server Error',
+			            // (string | mandatory) the text inside the notification
+			            text: err.statusText,
+			            // (bool | optional) if you want it to fade out on its own or just sit there
+			            sticky: true
+			        });
 				}
 			});
 		} else {
@@ -229,6 +266,29 @@ function googleEarthClass() {
 			// Add the placemark to Earth.
 			ge.getFeatures().appendChild(bs_placemark);
 
+			if(resultantMarkers[i].type != "P2P") {
+	    		
+				var sectorsArray = resultantMarkers[i].data.param.sector;
+
+	    		$.grep(sectorsArray,function(sector) { 
+
+	    			var lat = resultantMarkers[i].data.lat;
+					var lon = resultantMarkers[i].data.lon;
+					var rad = sector.radius;
+					var azimuth = sector.azimuth_angle;
+					var beam_width = sector.beam_width;
+					var sector_color = sector.color;
+					var sectorInfo = sector.info;
+					var orientation = $.trim(sector.orientation);
+					
+					/*Call createSectorData function to get the points array to plot the sector on google earth.*/
+					mapsLibInstance.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
+						/*Plot sector on google earth with the retrived points*/
+						earth_that.plotSector_earth(lat,lon,pointsArray,sectorInfo,sector_color);
+					});
+
+	    		});
+			}
 
 		    var SSCount = resultantMarkers[i].children.length;  
 		    /*Loop for the number of SS & their links with the master*/
@@ -292,7 +352,7 @@ function googleEarthClass() {
 					mapsLibInstance.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
 						
 						/*Plot sector on google earth with the retrived points*/
-						earth_that.plotSector_earth(lat,lon,pointsArray,sectorInfo,sector_color);
+						// earth_that.plotSector_earth(lat,lon,pointsArray,sectorInfo,sector_color);
 
 						var halfPt = Math.floor(pointsArray.length / (+2));
 						// Create object for Link Line Between BS & SS
