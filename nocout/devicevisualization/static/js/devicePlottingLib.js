@@ -175,8 +175,8 @@ function devicePlottingClass_gmap() {
 			/*Ajax call to the API*/
 			$.ajax({
 				crossDomain: true,
-				// url : "../../device/stats/",
-				url : "../../static/new_format.json",
+				url : "../../device/stats/",
+				// url : "../../static/new_format.json",
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
