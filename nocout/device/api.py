@@ -440,11 +440,35 @@ class DeviceStatsApi(View):
                             'markerUrl':'static/img/marker/icon2_small.png'
                             }
                         }
+                        base_station_info['data']['param']['sector']=[]
+                        # [{'info':[], 'color':{}, 'radius':None,
+                        #                         'azimuth_angle':None, 'beam_width':None, 'orientation':None }]
                         sectors= Sector.objects.filter(base_station = base_station.id)
                         for sector in sectors:
                             circuit= Circuit.objects.get(sector = sector.id)
                             substation= SubStation.objects.get(id = circuit.sub_station.id)
                             device= Device.objects.get(id= substation.device.id)
+
+                            base_station_info['data']['param']['sector']+=[{
+                                'info':[{
+                                        'name':'sector_name',
+                                        'title':'Sector Name',
+                                        'show':1,
+                                        'value':sector.name
+                                        },
+                                        {
+                                        'name':'frequency',
+                                        'title':'Frequency',
+                                        'show':1,
+                                        'value':sector.frequency
+                                        },],
+                            'color':'{"r":250, "g" : 95, "b" : 113, "a" : 0.90}',
+                            'radius':sector.cell_radius,
+                            'azimuth_angle':sector.antenna.azimuth_angle,
+                            'beam_width' : sector.antenna.beam_width,
+    						'orientation' : 'horizontal'
+                            }]
+
                             sub_station_info={'id': substation.id,
                                               'name':substation.name,
                                               'children':[],
