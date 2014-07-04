@@ -200,27 +200,27 @@ function devicePlottingClass_gmap() {
 							devices_gmaps = devices_gmaps.concat(result.data.objects.children);
 						}
 
-						/*Update the device count with the received data*/
-						if(devicesObject.data.meta.total_count != undefined) {
-							devicesCount = devicesObject.data.meta.total_count;
-						} else {
-							devicesCount = 1;
-						}
-
-						/*Update the device count with the received data*/
-						if(devicesObject.data.meta.limit != undefined) {
-							showLimit = devicesObject.data.meta.limit;
-						} else {
-							showLimit = 1;
-						}
-
-						if(counter == -999) {
-							counter = Math.floor(devicesCount / showLimit);
-						}
-
 						if(devicesObject.success == 1) {
 
 							if(devicesObject.data.objects.children.length > 0) {
+
+								/*Update the device count with the received data*/
+								if(devicesObject.data.meta.total_count != undefined) {
+									devicesCount = devicesObject.data.meta.total_count;
+								} else {
+									devicesCount = 1;
+								}
+
+								/*Update the device count with the received data*/
+								if(devicesObject.data.meta.limit != undefined) {
+									showLimit = devicesObject.data.meta.limit;
+								} else {
+									showLimit = 1;
+								}
+
+								if(counter == -999) {
+									counter = Math.floor(devicesCount / showLimit);
+								}
 
 								/*If cluster icon exist then save it to global variable else make the global variable blank*/
 								if(devicesObject.data.objects.data.unspiderfy_icon == undefined) {
@@ -245,6 +245,7 @@ function devicePlottingClass_gmap() {
 										
 									that.getDevicesData_gmap();
 								},3000);
+								
 							} else {
 								$.gritter.add({
 						            // (string | mandatory) the heading of the notification
