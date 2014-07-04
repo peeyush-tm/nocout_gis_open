@@ -1,186 +1,70 @@
 $(document).ready(function(e) {
 	
+    /*Pie Charts*/
+
     var series = Math.floor(Math.random() * 9) + 1;
     series = 3;
     var pieChartLegends = [];
-    var pie_color_array = ["#A8BC7B", "#F0AD4E", "#D9534F"];
+    var pie_color_array = ["#01A85A", "#F29F05", "#ED3338"];
     
     pieChartLegends.push("Good");
     pieChartLegends.push("Warning");
     pieChartLegends.push("Critical");
 
-    /*Draw PTP pie chart*/
-    var ptp_data = getPieChartData(series,pieChartLegends);
 
-	$.plot($("#ptp_pie_chart"), ptp_data, {
-        series: {
-            pie: {
-                show: true
-            }
-        },
-		colors: pie_color_array,
-		legend : {
-			position : "nw"
-		}
-    });
+    var chartData = getPieChartData(series,pieChartLegends,pie_color_array);
+    createPieChart("ptp_pie_chart",chartData);
 
-    $.plot($("#ptp_pie_chart2"), ptp_data, {
-        series: {
-            pie: {
-                show: true
-            }
-        },
-		colors: pie_color_array,
-		legend : {
-			position : "nw"
-		}
-    });
+    var chartData = getPieChartData(series,pieChartLegends,pie_color_array);
+    createPieChart("ptp_pie_chart2",chartData);
 
-    $.plot($("#ptp_pie_chart3"), ptp_data, {
-        series: {
-            pie: {
-                show: true
-            }
-        },
-		colors: pie_color_array,
-		legend : {
-			position : "nw"
-		}
-    });
+    var chartData = getPieChartData(series,pieChartLegends,pie_color_array);
+    createPieChart("ptp_pie_chart3",chartData);
 
-    $.plot($("#ptp_pie_chart4"), ptp_data, {
-        series: {
-            pie: {
-                show: true
-            }
-        },
-		colors: pie_color_array,
-		legend : {
-			position : "nw"
-		}
-    });
+    var chartData = getPieChartData(series,pieChartLegends,pie_color_array);
+    createPieChart("ptp_pie_chart4",chartData);
 
-	/*Draw PMP pie chart*/
-    var pmp_data = getPieChartData(series,pieChartLegends);
 
-	$.plot($("#pmp_pie_chart"), pmp_data, {
-        series: {
-            pie: {
-                show: true
-            }
-        },
-		colors: pie_color_array,
-		legend : {
-			position : "nw"
-		}
-    });
+    var chartData = getPieChartData(series,pieChartLegends,pie_color_array);
+    createPieChart("pmp_pie_chart",chartData);
 
-    $.plot($("#pmp_pie_chart3"), pmp_data, {
-        series: {
-            pie: {
-                show: true
-            }
-        },
-		colors: pie_color_array,
-		legend : {
-			position : "nw"
-		}
-    });
+    var chartData = getPieChartData(series,pieChartLegends,pie_color_array);
+    createPieChart("pmp_pie_chart3",chartData);
 
-    $.plot($("#pmp_pie_chart4"), pmp_data, {
-        series: {
-            pie: {
-                show: true
-            }
-        },
-		colors: pie_color_array,
-		legend : {
-			position : "nw"
-		}
-    });
+    var chartData = getPieChartData(series,pieChartLegends,pie_color_array);
+    createPieChart("pmp_pie_chart4",chartData);
 
-	/*Draw Wimax pie chart*/
-    var wimax_data = getPieChartData(series,pieChartLegends);
 
-	$.plot($("#wimax_pie_chart"), wimax_data, {
-        series: {
-            pie: {
-                show: true
-            }
-        },
-		colors: pie_color_array,
-		legend : {
-			position : "nw"
-		}
-    });
+    var chartData = getPieChartData(series,pieChartLegends,pie_color_array);
+    createPieChart("wimax_pie_chart",chartData);
 
-    $.plot($("#wimax_pie_chart3"), wimax_data, {
-        series: {
-            pie: {
-                show: true
-            }
-        },
-		colors: pie_color_array,
-		legend : {
-			position : "nw"
-		}
-    });
+    var chartData = getPieChartData(series,pieChartLegends,pie_color_array);
+    createPieChart("wimax_pie_chart3",chartData);
 
-    $.plot($("#wimax_pie_chart4"), wimax_data, {
-        series: {
-            pie: {
-                show: true
-            }
-        },
-		colors: pie_color_array,
-		legend : {
-			position : "nw"
-		}
-    });
+    var chartData = getPieChartData(series,pieChartLegends,pie_color_array);
+    createPieChart("wimax_pie_chart4",chartData);
 
-	/*Draw Others pie chart*/
-    var other_data = getPieChartData(series,pieChartLegends);
 
-	$.plot($("#other_pie_chart"), other_data, {
-        series: {
-            pie: {
-                show: true
-            }
-        },
-		colors: pie_color_array,
-		legend : {
-			position : "nw"
-		}
-    });
+    var chartData = getPieChartData(series,pieChartLegends,pie_color_array);
+    createPieChart("other_pie_chart",chartData);
 
-    $.plot($("#other_pie_chart3"), other_data, {
-        series: {
-            pie: {
-                show: true
-            }
-        },
-		colors: pie_color_array,
-		legend : {
-			position : "nw"
-		}
-    });
+    var chartData = getPieChartData(series,pieChartLegends,pie_color_array);
+    createPieChart("other_pie_chart3",chartData);
 
-    $.plot($("#other_pie_chart4"), other_data, {
-        series: {
-            pie: {
-                show: true
-            }
-        },
-		colors: pie_color_array,
-		legend : {
-			position : "nw"
-		}
-    });
+    var chartData = getPieChartData(series,pieChartLegends,pie_color_array);
+    createPieChart("other_pie_chart4",chartData);
+
+    /*Hide Highcharts.com Name*/
+    $(".dashboard_pie_chart svg text:last-child").hide();
+    
+
+
+    /*Sparkline Bar Charts*/
 
     $(".sparkline-bar").each(function() {
 
 		var barSpacing, barWidth, color, height;
-		color = $(this).attr("data-color") || "#ff7f00";
+		color = $(this).attr("data-color");
 		height = "18px";
 		barWidth = "3px";
 		barSpacing = "1px";
@@ -194,6 +78,8 @@ $(document).ready(function(e) {
 		});
 	});
 
+    /*Sparkline Line Charts*/
+
     $(".sparkline-line").each(function() {
 
 		var barSpacing, barWidth, color, height;
@@ -206,146 +92,14 @@ $(document).ready(function(e) {
 		});
 	});
 
-    var wimax = [
-                    [30, 10],
-                    [29, 24],
-                    [28, 38],
-                    [27, 32],
-                    [26, 31],
-                    [25, 25],
-                    [24, 35],
-                    [23, 46],
-                    [22, 36],
-                    [21, 48],
-                    [20, 38],
-                    [19, 60],
-                    [18, 63],
-                    [17, 72],
-                    [16, 58],
-                    [15, 65],
-                    [14, 50],
-                    [13, 32],
-                    [12, 40],
-                    [11, 35],
-                    [10, 30],
-                    [9, 35],
-                    [8, 50],
-                    [7, 53],
-                    [6, 42],
-                    [5, 34],
-                    [4, 22],
-                    [3, 15],
-                    [2, 20],
-                    [1, 5]
-                ];
-    var pmp = [
-                    [1, 0],
-                    [2, 14],
-                    [3, 28],
-                    [4, 22],
-                    [5, 21],
-                    [6, 15],
-                    [7, 25],
-                    [8, 36],
-                    [9, 26],
-                    [10, 38],
-                    [11, 28],
-                    [12, 50],
-                    [13, 53],
-                    [14, 62],
-                    [15, 48],
-                    [16, 55],
-                    [17, 40],
-                    [18, 22],
-                    [19, 30],
-                    [20, 25],
-                    [21, 20],
-                    [22, 15],
-                    [23, 40],
-                    [24, 43],
-                    [25, 32],
-                    [26, 24],
-                    [27, 12],
-                    [28, 5],
-                    [29, 19],
-                    [30, 27]
-                ];
+    /*Area Chart(Uptime)*/
 
-    var ptp = [
+    var area_chart_points = 30;
+    var areaChartLegends = ["PTP","PMP","WIMAX","OTHERS"];
+    var areaColorArray = ["#7cb5ec","#f7a35c","#8085e9","#90ed7d"]
+    var uptime_lineChart_data = getAreaChartData(area_chart_points,areaChartLegends,areaColorArray);
 
-                    [30, 110],
-                    [29, 124],
-                    [28, 138],
-                    [27, 132],
-                    [26, 31],
-                    [25, 225],
-                    [24, 135],
-                    [23, 146],
-                    [22, 236],
-                    [21, 248],
-                    [20, 238],
-                    [19, 160],
-                    [18, 263],
-                    [17, 72],
-                    [16, 158],
-                    [15, 65],
-                    [14, 50],
-                    [13, 32],
-                    [12, 40],
-                    [11, 35],
-                    [10, 130],
-                    [9, 135],
-                    [8, 150],
-                    [7, 153],
-                    [6, 120],
-                    [5, 140],
-                    [4, 220],
-                    [3, 150],
-                    [2, 200],
-                    [1, 50]
-    ]
-
-    var others = [
-                [1, 10],
-                [2, 114],
-                [3, 128],
-                [4, 122],
-                [5, 121],
-                [6, 115],
-                [7, 125],
-                [8, 136],
-                [9, 126],
-                [10, 138],
-                [11, 128],
-                [12, 150],
-                [13, 153],
-                [14, 162],
-                [15, 148],
-                [16, 155],
-                [17, 140],
-                [18, 122],
-                [19, 130],
-                [20, 125],
-                [21, 120],
-                [22, 115],
-                [23, 140],
-                [24, 143],
-                [25, 132],
-                [26, 124],
-                [27, 112],
-                [28, 15],
-                [29, 119],
-                [30, 127]
-            ];
-
-	/*Line chart data*/
-	var uptime_lineChart_data = [{label: 'wimax', color:'#70AFC4', data: wimax},
-                                {label: 'pmp', color:'#f22f43', data: pmp},
-                                {label: 'ptp', color:'#f22999', data: ptp},
-                                {label: 'others', color:'#70BBB4', data: others}
-    ];
-
-	createLineChart(uptime_lineChart_data,"uptime_line_chart");
+	createAreaChart("uptime_line_chart",uptime_lineChart_data);
 
 	/*Initialize CEM data-table*/
 	$("#cem_table").DataTable();
@@ -354,38 +108,144 @@ $(document).ready(function(e) {
     $("#wimax_events_table").DataTable();
 });
 
-function getPieChartData(series,pieChartLegends) {
+
+/**
+ * This function creates pie chart data.
+ * @method getPieChartData
+ * @param valuesCount "Int", It contains an integer value which tells that how many data items are needed.
+ * @param pieChartLegends [Array], It contains the chart legends name array.
+ * @param colorArray [Array], It contains the chart color name array.
+ */
+function getPieChartData(valuesCount,pieChartLegends,colorArray) {
 
 	var data = [];
-	for (var i = 0; i < series; i++) {
+	for (var i = 0; i < valuesCount; i++) {
         data[i] = {
-            label: pieChartLegends[i],
-            data: Math.floor(Math.random() * 100)
+            name: pieChartLegends[i],
+            color : colorArray[i],
+            y: Math.floor(Math.random() * 100),
+            sliced : false,
+            selected : false
         }
     }
 
     return data;
 }
 
-function createLineChart(chart_data,domElement) {
+/**
+ * This function creates area chart data.
+ * @method getAreaChartData
+ * @param valuesCount "Int", It contains an integer value which tells that how many data items are needed.
+ * @param chartLegends [Array], It contains the chart legends name array.
+ * @param colorArray [Array], It contains the chart color name array.
+ */
+function getAreaChartData(valuesCount,chartLegends,colorArray) {
+    var data = [];
+    for (var i = 0; i < chartLegends.length; i++) {
+        var obj = {};
+        obj["name"] =  chartLegends[i];
+        obj["color"] = colorArray[i];
+        var dataVal = [];
+        for(var j=0;j<valuesCount;j++) {
+            
+            dataVal.push([j+1, Math.floor(Math.random() * 100)]);
+        }
+        obj["data"] =  dataVal;
+        data[i] = obj;
+    }
 
-	$.plot($("#"+domElement), chart_data, {
-        series: {
-            lines: {
-                show: true,
-                lineWidth: 2,
-                fill: true,
-                fillColor:{
-                    colors:[{opacity:0.004}, {opacity:0.003}, {opacity:0.002}, {opacity:0.001}]
-                }
+    return data;
+}
+
+/**
+ * This function will create area chart with given data on given DOM element.
+ * @uses highcharts
+ * @method createAreaChart
+ * @param domElement "String", It contains the div id on which the chart is to be plotted.
+ * @param chartData [JSON Object Array], It contains the chart data json object array.
+ */
+function createAreaChart(domElement,chartData) {
+
+    $('#'+domElement).highcharts({
+        chart: {
+            type: 'areaspline'
+        },
+        title: {
+            text: ''
+        },
+        legend: {
+            layout: 'vertical',
+            align: 'right',
+            verticalAlign: 'top',
+            x: 0,
+            y: 0,
+            floating: true,
+            borderWidth: 1,
+            backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
+        },
+        tooltip: {
+            shared: true,
+            valueSuffix: ' units'
+        },
+        credits: {
+            enabled: false
+        },
+        plotOptions: {
+            areaspline: {
+                fillOpacity: 0.5
             }
         },
-        yaxis: {},
-        xaxis: {},
-		grid: {
-			hoverable: true,
-			borderWidth: 0,
-			autoHighlight: false
-		}
+        series: chartData
+    });
+}
+
+
+/**
+ * This function will create pie chart with given data on given DOM element.
+ * @uses highcharts
+ * @method createPieChart
+ * @param domElement "String", It contains the div id on which the chart is to be plotted.
+ * @param chartData [JSON Object Array], It contains the chart data json object array.
+ */
+function createPieChart(domElement,chartData) {
+
+    $('#'+domElement).highcharts({
+        chart: {
+            plotBackgroundColor: null,
+            plotBorderWidth: null,
+            plotShadow: true
+        },
+        series: [{
+            type: 'pie',
+            data: chartData
+        }],
+        legend:{
+            enabled: true,
+            x : '-20',
+            y : '-20',
+            floating: true,
+            itemStyle: {
+                color: '#555555',
+                fontWeight: 'normal',
+                fontSize : '12px',
+                fontWeight : '400'
+            }
+        },
+        title: {
+            text: ''
+        },
+        tooltip: {
+            pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    enabled: false
+                },
+                showInLegend: true
+            }
+        }
     });
 }

@@ -345,7 +345,7 @@ class DeviceStatsApi(View):
         if logged_in_user.role.values_list('role_name', flat=True)[0] =='admin':
             organizations= logged_in_user.organization.get_descendants(include_self=True)
         else:
-            organizations=logged_in_user.organization
+            organizations=[logged_in_user.organization]
 
         if organizations:
             for organization in organizations:
@@ -368,9 +368,16 @@ class DeviceStatsApi(View):
                             'data':{'perf':"63%",
                                     'lat':base_station.latitude,
                                     'lon':base_station.longitude,
-                                    'circle_radius' : 3000,
+                                    'circle_radius' : 200,
 						            'circle_color' : '{"r" : 74, "g" : 250, "b" : 194, "a" : 0.90,}',
                                     'antena_height':None,
+                                    'technology':base_station.bs_technology.name,
+                                    'vendor':DeviceVendor.objects.get(id=\
+                                             Device.objects.get(id= base_station.bs_switch.id).device_vendor).name,
+                                    'city':City.objects.get(id=\
+                                           Device.objects.get(id= base_station.bs_switch.id).city).city_name,
+                                    'state':State.objects.get(id=\
+                                            Device.objects.get(id= base_station.bs_switch.id).state).state_name,
                                     'param':{'base_station':[
                                                     {
                                                      'name':'alias',
@@ -395,30 +402,6 @@ class DeviceStatsApi(View):
                                                      'title':'BS Type',
                                                      'show':1,
                                                      'value':base_station.bs_type
-                                                    },{
-                                                     'name':'bs_technology',
-                                                     'title':'BS Technology',
-                                                     'show':1,
-                                                     'value':base_station.bs_technology.name
-                                                    },{
-                                                     'name':'bs_vendor',
-                                                     'title':'BS Vendor',
-                                                     'show':1,
-                                                     'value':DeviceVendor.objects.get(id=\
-                                                             Device.objects.get(id= base_station.bs_switch.id).device_vendor).name
-                                                    },{
-                                                     'name':'city',
-                                                     'title':'BS City',
-                                                     'show':1,
-                                                     'value':City.objects.get(id=
-                                                             Device.objects.get(id= base_station.bs_switch.id).city).city_name
-                                                    },{
-                                                     'name':'state',
-                                                     'title':'BS State',
-                                                     'show':1,
-                                                     'value':State.objects.get(id=
-                                                             Device.objects.get(id= base_station.bs_switch.id).state).state_name
-
                                                     },]
                                     ,
                                    'backhual':[
@@ -539,7 +522,7 @@ class DeviceStatsApi(View):
                                               "show_link" : 1,
                                               "sector_color" : '{"r":250, "g" : 95, "b" : 113, "a" : 0.90}',
                                               "sector_orientation" : "horizontal",
-                                              "circle_radius" : 3000,
+                                              "circle_radius" : 200,
                                               "circle_color" : '{ "r" : 253, "g" : 242, "b" : 112, "a" : 0.90}',
                                               "antena_height" : sector.antenna.height,
                                               }

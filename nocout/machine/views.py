@@ -150,5 +150,7 @@ class MachineDelete(DeleteView):
     def dispatch(self, *args, **kwargs):
         return super(MachineDelete, self).dispatch(*args, **kwargs)
 
-
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting machine: %s'%(self.get_object().name))
+        return super(MachineDelete, self).delete(request, *args, **kwargs)
 
