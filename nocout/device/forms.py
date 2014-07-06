@@ -44,23 +44,25 @@ class DeviceForm(forms.ModelForm):
         super(DeviceForm, self).__init__(*args, **kwargs)
 
         # setting select menus default values which is by default '---------'
-        self.fields['parent'].empty_label = "Select Parent Device..."
+        self.fields['organization'].widget.choices = self.fields['organization'].choices
+        self.fields['organization'].empty_label = "Select"
+        self.fields['parent'].empty_label = "Select"
         self.fields['parent'].widget.choices = self.fields['parent'].choices
-        self.fields['site_instance'].empty_label = "Select Site Instance...."
+        self.fields['site_instance'].empty_label = "Select"
         self.fields['site_instance'].widget.choices = self.fields['site_instance'].choices
-        self.fields['device_technology'].empty_label = "Select Device Technology...."
+        self.fields['device_technology'].empty_label = "Select"
         self.fields['device_technology'].widget.choices = self.fields['device_technology'].choices
-        self.fields['device_vendor'].empty_label = "Select Device Vendor...."
+        self.fields['device_vendor'].empty_label = "Select"
         self.fields['device_vendor'].widget.choices = self.fields['device_vendor'].choices
-        self.fields['device_model'].empty_label = "Select Device Model...."
+        self.fields['device_model'].empty_label = "Select"
         self.fields['device_model'].widget.choices = self.fields['device_model'].choices
-        self.fields['device_type'].empty_label = "Select Device Type...."
+        self.fields['device_type'].empty_label = "Select"
         self.fields['device_type'].widget.choices = self.fields['device_type'].choices
-        self.fields['country'].empty_label = "Select Country...."
+        self.fields['country'].empty_label = "Select"
         self.fields['country'].widget.choices = self.fields['country'].choices
-        self.fields['state'].empty_label = "Select State...."
+        self.fields['state'].empty_label = "Select"
         self.fields['state'].widget.choices = self.fields['state'].choices
-        self.fields['city'].empty_label = "Select City...."
+        self.fields['city'].empty_label = "Select"
         self.fields['city'].widget.choices = self.fields['city'].choices
         #self.fields['latitude'].widget.attrs['data-mask'] = '99.99999999999999999999'
         #self.fields['longitude'].widget.attrs['data-mask'] = '99.99999999999999999999'
