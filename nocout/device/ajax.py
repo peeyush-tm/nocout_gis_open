@@ -18,7 +18,7 @@ def update_vendor(request, option):
     tech = DeviceTechnology.objects.get(pk=int(option))
     vendors = tech.device_vendors.all()
     out = []
-    out.append("<option value='' selected>Select Vendor....</option>")
+    out.append("<option value='' selected>Select</option>")
     for vendor in vendors:
         out.append("<option value='%d'>%s</option>" % (vendor.id, vendor.name))
     dajax.assign('#id_device_vendor', 'innerHTML', ''.join(out))
@@ -32,7 +32,7 @@ def update_model(request, option):
     vendor = DeviceVendor.objects.get(pk=int(option))
     models = vendor.device_models.all()
     out = []
-    out.append("<option value=''>Select Model....</option>")
+    out.append("<option value=''>Select</option>")
     for model in models:
         out.append("<option value='%d'>%s</option>" % (model.id, model.name))
 
@@ -48,7 +48,7 @@ def update_type(request, option):
     model = DeviceModel.objects.get(pk=int(option))
     types = model.device_types.all()
     out = []
-    out.append("<option value=''>Select Type....</option>")
+    out.append("<option value=''>Select</option>")
     for dtype in types:
         out.append("<option value='%d'>%s</option>" % (dtype.id, dtype.name))
     dajax.assign('#id_device_type', 'innerHTML', ''.join(out))
@@ -62,7 +62,7 @@ def after_update_vendor(request, option, selected=''):
     tech = DeviceTechnology.objects.get(pk=int(option))
     vendors = tech.device_vendors.all()
     out = []
-    out.append("<option value=''>Select Vendor....</option>")
+    out.append("<option value=''>Select</option>")
     for vendor in vendors:
         if vendor.id==int(selected):
             out.append("<option value='%d' selected>%s</option>" % (vendor.id, vendor.name))
@@ -80,7 +80,7 @@ def after_update_model(request, option, selected=''):
     vendor = DeviceVendor.objects.get(pk=int(option))
     models = vendor.device_models.all()
     out = []
-    out.append("<option value=''>Select Model....</option>")
+    out.append("<option value=''>Select</option>")
     for model in models:
         if model.id==int(selected):
             out.append("<option value='%d' selected>%s</option>" % (model.id, model.name))
@@ -100,7 +100,7 @@ def after_update_type(request, option, selected=''):
     model = DeviceModel.objects.get(pk=int(option))
     types = model.device_types.all()
     out = []
-    out.append("<option value=''>Select Type....</option>")
+    out.append("<option value=''>Select</option>")
     for dtype in types:
         if dtype.id==int(selected):
             out.append("<option value='%d' selected>%s</option>" % (dtype.id, dtype.name))
@@ -131,7 +131,7 @@ def device_type_extra_fields(request, option):
 @dajaxice_register
 def device_parent_choices_initial(request):
     dajax = Dajax()
-    out = ["<option value=''>Select Parent Device......</option>"]
+    out = ["<option value=''>Select</option>"]
     for device in Device.objects.all():
         out.append("<option value='%d'>%s - (%s)</option>"
                    % (int(device.id), device.device_alias, device.ip_address))
@@ -143,7 +143,7 @@ def device_parent_choices_initial(request):
 @dajaxice_register
 def device_parent_choices_selected(request, option):
     dajax = Dajax()
-    out = ["<option value=''>Select Parent Device......</option>"]
+    out = ["<option value=''>Select</option>"]
     for device in Device.objects.all():
         if device.id == int(option):
             out.append("<option value='%d' selected='selected'>%s - (%s)</option>"
@@ -401,6 +401,9 @@ def add_device_to_nms_core(request, device_id):
             result['message'] = response_dict['error_message'].capitalize()
         else:
             result['message'] = "Device added successfully."
+            # set 'is_added_to_nms' to 1 after device successfully added to nocout nms core
+            device.is_added_to_nms = 1
+            device.save()
 
     return json.dumps({'result': result})
 
@@ -417,13 +420,15 @@ def sync_device_with_nms_core(request):
     print device_data
     url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
     r = requests.post(url, data=device_data)
-    response_dict = ast.literal_eval(r.text)
-    print "**********************************************************************"
-    print response_dict
-    if r:
-        result['data'] = device_data
-        result['success'] = 1
-        result['message'] = response_dict['message'].capitalize()
+    try:
+        response_dict = ast.literal_eval(r.text)
+        if r:
+            result['data'] = device_data
+            result['success'] = 1
+            result['message'] = response_dict['message'].capitalize()
+    except:
+        result['message'] = "Failed to add service."
+        logger.info(r.text)
     return json.dumps({'result': result})
 
 
@@ -529,7 +534,7 @@ def service_data_sources_popup(request, option=""):
 
 # generate content for add service popup form
 @dajaxice_register
-def add_service(request, device_id, service_id, service_data_source_id, port_id):
+def add_service(request, **kwargs):
     # result: data dictionary send in ajax response
     # {
     #     "message": "Failed to render form correctly.",
@@ -565,81 +570,92 @@ def add_service(request, device_id, service_id, service_data_source_id, port_id)
     result['message'] = "Failed to render form correctly."
     result['data']['meta'] = {}
     result['data']['objects'] = {}
-    service_data = dict()
-    service_data['mode'] = "addservice"
 
-    # get device
-    try:
-        device = Device.objects.get(pk=device_id)
-    except:
-        logger.info('No device available.')
+    if len(kwargs) == 4:
+        device_id = kwargs['device_id']
+        service_id = kwargs['service_id']
+        service_data_source_id = kwargs['service_data_source_id']
+        port_id = kwargs['port_id']
+        service_data = dict()
+        service_data['mode'] = "addservice"
 
-    # get service name
-    try:
-        service_name = Service.objects.get(pk=service_id).name
-        service_data['service_name'] = service_name
-    except:
-        logger.info("There is no service available.")
+        # get device
+        try:
+            device = Device.objects.get(pk=device_id)
+        except:
+            logger.info('No device available.')
 
-    # get device name
-    try:
-        device_name = Device.objects.get(pk=device_id).device_name
-        service_data['device_name'] = device_name
-    except:
-        logger.info("There is no device available.")
+        # get service name
+        try:
+            service_name = Service.objects.get(pk=service_id).name
+            service_data['service_name'] = service_name
+        except:
+            logger.info("There is no service available.")
 
-    # get service parameters
-    try:
-        service_parameters = Service.objects.get(pk=service_id).parameters
-        service_data['serv_params'] = dict()
-        service_data['serv_params']['max_check_attempts'] = service_parameters.max_check_attempts
-        service_data['serv_params']['check_interval'] = service_parameters.check_interval
-        service_data['serv_params']['retry_interval'] = service_parameters.retry_interval
-        service_data['serv_params']['check_period'] = service_parameters.check_period
-        service_data['serv_params']['notification_interval'] = service_parameters.notification_interval
-        service_data['serv_params']['notification_period'] = service_parameters.notification_period
-    except:
-        logger.info("There are no service parameters.")
+        # get device name
+        try:
+            device_name = Device.objects.get(pk=device_id).device_name
+            service_data['device_name'] = device_name
+        except:
+            logger.info("There is no device available.")
 
-    # get service data parameters (or command parameters)
-    try:
-        service_data_source = ServiceDataSource.objects.get(pk=service_data_source_id)
-        service_data['cmd_params'] = dict()
-        service_data['cmd_params'][service_data_source.name] = dict()
-        service_data['cmd_params'][service_data_source.name]['warning'] = service_data_source.warning
-        service_data['cmd_params'][service_data_source.name]['critical'] = service_data_source.critical
-    except:
-        logger.info("There is no service data source.")
+        # get service parameters
+        try:
+            service_parameters = Service.objects.get(pk=service_id).parameters
+            service_data['serv_params'] = dict()
+            service_data['serv_params']['max_check_attempts'] = service_parameters.max_check_attempts
+            service_data['serv_params']['check_interval'] = service_parameters.check_interval
+            service_data['serv_params']['retry_interval'] = service_parameters.retry_interval
+            service_data['serv_params']['check_period'] = service_parameters.check_period
+            service_data['serv_params']['notification_interval'] = service_parameters.notification_interval
+            service_data['serv_params']['notification_period'] = service_parameters.notification_period
+        except:
+            logger.info("There are no service parameters.")
 
-    # get agent_tag from device_type table
-    try:
-        device = Device.objects.get(pk=device_id)
-        agent_tag = DeviceType.objects.get(pk=device.device_type).agent_tag
-        service_data['agent_tag'] = agent_tag
-    except:
-        logger.info("There is no agent_tag associated.")
+        # get service data parameters (or command parameters)
+        try:
+            service_data_source = ServiceDataSource.objects.get(pk=service_data_source_id)
+            service_data['cmd_params'] = dict()
+            service_data['cmd_params'][service_data_source.name] = dict()
+            service_data['cmd_params'][service_data_source.name]['warning'] = service_data_source.warning
+            service_data['cmd_params'][service_data_source.name]['critical'] = service_data_source.critical
+        except:
+            logger.info("There is no service data source.")
 
-    # get device port
-    try:
-        port = DevicePort.objects.get(pk=port_id)
-        service_data['snmp_port'] = port.value
-    except:
-        logger.info("There is no device port.")
+        # get agent_tag from device_type table
+        try:
+            device = Device.objects.get(pk=device_id)
+            agent_tag = DeviceType.objects.get(pk=device.device_type).agent_tag
+            service_data['agent_tag'] = agent_tag
+        except:
+            logger.info("There is no agent_tag associated.")
 
-    # nocout api url
-    url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
+        # get device port
+        try:
+            port = DevicePort.objects.get(pk=port_id)
+            service_data['snmp_port'] = port.value
+        except:
+            logger.info("There is no device port.")
 
-    # cal to add service api
-    r = requests.post(url , data=service_data)
-    response_dict = ast.literal_eval(r.text)
+        # nocout api url
+        url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
 
-    if r:
-        result['data'] = service_data
-        result['success'] = 1
-        if response_dict['error_code'] != None:
-            result['message'] = response_dict['error_message'].capitalize()
-        else:
-            result['message'] = "Device added successfully."
+        # cal to add service api
+        r = requests.post(url , data=service_data)
+        response_dict = ast.literal_eval(r.text)
 
+        if r:
+            result['data'] = service_data
+            result['success'] = 1
+            if response_dict['error_code'] != None:
+                result['message'] = response_dict['error_message'].capitalize()
+            else:
+                result['message'] = "Service added successfully."
+                device = Device.objects.get(pk=device_id)
+                # set 'is_monitored_on_nms' to 1 if service is added successfully
+                device.is_monitored_on_nms = 1
+                device.save()
+    else:
+        result['message'] = "Service cannot be added because device has no service associated with it."
     return json.dumps({'result': result})
 
