@@ -97,7 +97,7 @@ class DeviceForm(forms.ModelForm):
 
     class Meta:
         model = Device
-        exclude = ['is_deleted']
+        exclude = ['is_deleted', 'is_added_to_nms', 'is_monitored_on_nms']
         widgets = {
             'device_group': MultipleToSingleSelectionWidget,
         }
