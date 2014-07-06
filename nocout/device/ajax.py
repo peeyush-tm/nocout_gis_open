@@ -22,7 +22,6 @@ def update_vendor(request, option):
     for vendor in vendors:
         out.append("<option value='%d'>%s</option>" % (vendor.id, vendor.name))
     dajax.assign('#id_device_vendor', 'innerHTML', ''.join(out))
-    print dajax.json()
     return dajax.json()
 
 # updating model corresponding to the selected vendor
@@ -37,7 +36,6 @@ def update_model(request, option):
         out.append("<option value='%d'>%s</option>" % (model.id, model.name))
 
     dajax.assign('#id_device_model', 'innerHTML', ''.join(out))
-    print dajax.json()
     return dajax.json()
 
 
@@ -52,7 +50,6 @@ def update_type(request, option):
     for dtype in types:
         out.append("<option value='%d'>%s</option>" % (dtype.id, dtype.name))
     dajax.assign('#id_device_type', 'innerHTML', ''.join(out))
-    print dajax.json()
     return dajax.json()
 
 # to get vendor as during device update
@@ -69,7 +66,6 @@ def after_update_vendor(request, option, selected=''):
         else:
             out.append("<option value='%d'>%s</option>" % (vendor.id, vendor.name))
     dajax.assign('#id_device_vendor', 'innerHTML', ''.join(out))
-    print dajax.json()
     return dajax.json()
 
 # updating model corresponding to the selected vendor
@@ -88,14 +84,12 @@ def after_update_model(request, option, selected=''):
             out.append("<option value='%d'>%s</option>" % (model.id, model.name))
 
     dajax.assign('#id_device_model', 'innerHTML', ''.join(out))
-    print dajax.json()
     return dajax.json()
 
 
 # updating type corresponding to the selected model
 @dajaxice_register
 def after_update_type(request, option, selected=''):
-    print 'type', selected
     dajax = Dajax()
     model = DeviceModel.objects.get(pk=int(option))
     types = model.device_types.all()
@@ -107,7 +101,6 @@ def after_update_type(request, option, selected=''):
         else:
             out.append("<option value='%d'>%s</option>" % (dtype.id, dtype.name))
     dajax.assign('#id_device_type', 'innerHTML', ''.join(out))
-    print dajax.json()
     return dajax.json()
 
 # pop up device 'extra fields' corresponding to the selected 'device type'
@@ -418,7 +411,6 @@ def sync_device_with_nms_core(request):
     result['message'] = "Device activation for monitoring failed."
     result['data']['meta'] = ''
     device_data = {'mode' : 'sync'}
-    print device_data
     url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
     r = requests.post(url, data=device_data)
     try:
