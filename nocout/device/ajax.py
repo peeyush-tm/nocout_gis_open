@@ -377,34 +377,35 @@ def add_device_to_nms_core(request, device_id):
     result['message'] = "Device addition failed."
     result['data']['meta'] = ''
     device = Device.objects.get(pk=device_id)
+    if device.host_state != "Disable":
+        # get 'agent_tag' from DeviceType model
+        try :
+            agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
+        except:
+            logger.info("Device has no device type.")
 
-    # get 'agent_tag' from DeviceType model
-    try :
-        agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
-    except:
-        logger.info("Device has no device type.")
 
-
-    device_data = {'device_name': device.device_name,
-                   'device_alias': device.device_alias,
-                   'ip_address':device.ip_address,
-                   'agent_tag': agent_tag,
-                   'site': device.site_instance.name,
-                   'mode' : 'addhost'}
-    url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
-    r = requests.post(url , data=device_data)
-    response_dict = ast.literal_eval(r.text)
-    if r:
-        result['data'] = device_data
-        result['success'] = 1
-        if response_dict['error_code'] != None:
-            result['message'] = response_dict['error_message'].capitalize()
-        else:
-            result['message'] = "Device added successfully."
-            # set 'is_added_to_nms' to 1 after device successfully added to nocout nms core
-            device.is_added_to_nms = 1
-            device.save()
-
+        device_data = {'device_name': device.device_name,
+                       'device_alias': device.device_alias,
+                       'ip_address':device.ip_address,
+                       'agent_tag': agent_tag,
+                       'site': device.site_instance.name,
+                       'mode' : 'addhost'}
+        url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
+        r = requests.post(url , data=device_data)
+        response_dict = ast.literal_eval(r.text)
+        if r:
+            result['data'] = device_data
+            result['success'] = 1
+            if response_dict['error_code'] != None:
+                result['message'] = response_dict['error_message'].capitalize()
+            else:
+                result['message'] = "Device added successfully."
+                # set 'is_added_to_nms' to 1 after device successfully added to nocout nms core
+                device.is_added_to_nms = 1
+                device.save()
+    else:
+        result['message'] = "Device state is disabled. First enable it than add it to nms core."
     return json.dumps({'result': result})
 
 
@@ -528,7 +529,6 @@ def service_data_sources_popup(request, option=""):
     else:
         out.append("<h5 class='text-warning'>No data source associated.</h5> ")
     dajax.assign('#service_data_source_id', 'innerHTML', ''.join(out))
-    print dajax.json()
     return dajax.json()
 
 
