@@ -87,7 +87,7 @@ function devicePlottingClass_gmap() {
 
 		var mapObject = {
 			center    : new google.maps.LatLng(21.1500,79.0900),
-			zoom      : 5
+			zoom      : 4
 		};    
 		/*Create Map Type Object*/
 		mapInstance = new google.maps.Map(document.getElementById(domElement),mapObject);
@@ -124,8 +124,8 @@ function devicePlottingClass_gmap() {
 		infowindow = new google.maps.InfoWindow();		
 
 		oms.addListener('click', function(marker,e) {
-			
-			var windowPosition = new google.maps.LatLng(marker.position.k,marker.position.A);
+
+			var windowPosition = new google.maps.LatLng(marker.ptLat,marker.ptLon);
 			/*Call the function to create info window content*/
 			var content = that.makeWindowContent(marker);
 			/*Set the content for infowindow*/
@@ -181,6 +181,7 @@ function devicePlottingClass_gmap() {
 				dataType : "json",
 				/*If data fetched successful*/
 				success : function(result) {
+
 					if(result.data.objects != null) {
 
 						hitCounter = hitCounter + 1;
@@ -199,44 +200,77 @@ function devicePlottingClass_gmap() {
 							devices_gmaps = devices_gmaps.concat(result.data.objects.children);
 						}
 
-						/*Update the device count with the received data*/
-						devicesCount = devicesObject.data.meta.total_count;
-
-						/*Update the device count with the received data*/
-						showLimit = devicesObject.data.meta.limit;
-
-						if(counter == -999) {
-							counter = Math.floor(devicesCount / showLimit);
-						}
-						
 						if(devicesObject.success == 1) {
 
-							/*If cluster icon exist then save it to global variable else make the global variable blank*/
-							if(devicesObject.data.objects.data.unspiderfy_icon == undefined) {
-								clusterIcon = "";
+							if(devicesObject.data.objects.children.length > 0) {
+
+								/*Update the device count with the received data*/
+								if(devicesObject.data.meta.total_count != undefined) {
+									devicesCount = devicesObject.data.meta.total_count;
+								} else {
+									devicesCount = 1;
+								}
+
+								/*Update the device count with the received data*/
+								if(devicesObject.data.meta.limit != undefined) {
+									showLimit = devicesObject.data.meta.limit;
+								} else {
+									showLimit = 1;
+								}
+
+								if(counter == -999) {
+									counter = Math.floor(devicesCount / showLimit);
+								}
+
+								/*If cluster icon exist then save it to global variable else make the global variable blank*/
+								if(devicesObject.data.objects.data.unspiderfy_icon == undefined) {
+									clusterIcon = "";
+								} else {
+									clusterIcon = "../../"+devicesObject.data.objects.data.unspiderfy_icon;
+								}
+
+								/*Check that any filter is applied or not*/
+								var appliedFilterLength_gmaps = Object.keys(appliedFilterObj_gmaps).length;
+
+								if(appliedFilterLength_gmaps > 0) {
+									/*If any filter is applied then plot the fetch data as per the filters*/
+									that.applyFilter_gmaps(appliedFilterObj_gmaps);
+								} else {
+									/*Call the plotDevices_gmap to show the markers on the map*/
+									that.plotDevices_gmap(devices_gmaps);
+								}
+
+								/*Call the function after 3 sec.*/
+								setTimeout(function() {
+										
+									that.getDevicesData_gmap();
+								},3000);
+								
 							} else {
-								clusterIcon = "../../"+devicesObject.data.objects.data.unspiderfy_icon;
+								$.gritter.add({
+						            // (string | mandatory) the heading of the notification
+						            title: 'GIS - No Data',
+						            // (string | mandatory) the text inside the notification
+						            text: 'No Devices Found',
+						            // (bool | optional) if you want it to fade out on its own or just sit there
+						            sticky: true
+						        });
+
+						        /*Recall the server after particular timeout*/
+								that.recallServer_gmap();
 							}
-
-							/*Check that any filter is applied or not*/
-							var appliedFilterLength_gmaps = Object.keys(appliedFilterObj_gmaps).length;
-
-							if(appliedFilterLength_gmaps > 0) {
-								/*If any filter is applied then plot the fetch data as per the filters*/
-								that.applyFilter_gmaps(appliedFilterObj_gmaps);
-							} else {
-								/*Call the plotDevices_gmap to show the markers on the map*/
-								that.plotDevices_gmap(devices_gmaps);
-							}
-
-							/*Call the function after 3 sec.*/
-							setTimeout(function() {
-									
-								that.getDevicesData_gmap();
-							},3000);
 
 						} else {
+							$.gritter.add({
+					            // (string | mandatory) the heading of the notification
+					            title: 'GIS - Server Error',
+					            // (string | mandatory) the text inside the notification
+					            text: devicesObject.message,
+					            // (bool | optional) if you want it to fade out on its own or just sit there
+					            sticky: true
+					        });
 
+					        /*Recall the server after particular timeout*/
 							that.recallServer_gmap();
 						}
 						/*Decrement the counter*/
@@ -244,13 +278,30 @@ function devicePlottingClass_gmap() {
 
 					} else {
 
+						$.gritter.add({
+				            // (string | mandatory) the heading of the notification
+				            title: 'GIS - Server Error',
+				            // (string | mandatory) the text inside the notification
+				            text: 'No Devices Found',
+				            // (bool | optional) if you want it to fade out on its own or just sit there
+				            sticky: true
+				        });
+
 						that.recallServer_gmap();
 					}
 				},
 				/*If data not fetched*/
 				error : function(err) {
 
-					console.log(err.responseText);
+					// console.log(err.responseText);
+					$.gritter.add({
+			            // (string | mandatory) the heading of the notification
+			            title: 'GIS - Server Error',
+			            // (string | mandatory) the text inside the notification
+			            text: err.statusText,
+			            // (bool | optional) if you want it to fade out on its own or just sit there
+			            sticky: true
+			        });
 					that.recallServer_gmap();
 				}
 			});
@@ -293,6 +344,8 @@ function devicePlottingClass_gmap() {
 			/*Create Master Marker Object*/
 			var masterMarkerObject = {
 		    	position  	  : new google.maps.LatLng(resultantMarkers[i].data.lat,resultantMarkers[i].data.lon),
+		    	ptLat 		  : resultantMarkers[i].data.lat,
+		    	ptLon 		  : resultantMarkers[i].data.lon,
 		    	map       	  : mapInstance,
 		    	icon 	  	  : "../../"+resultantMarkers[i].data.markerUrl,//"https://chart.googleapis.com/chart?chst=d_map_pin_letter&chld=|fcfcfc|",
 		    	oldIcon 	  : "../../"+resultantMarkers[i].data.markerUrl,
@@ -313,6 +366,7 @@ function devicePlottingClass_gmap() {
 		    masterMarkersObj.push(masterMarker);
 		    /*Add parent markers to the OverlappingMarkerSpiderfier*/
 		    oms.addMarker(masterMarker);
+
 		    var bhCircleColor = "";
 		    bhCircleColor = "rgba(";
 		    bhCircleColor += resultantMarkers[i].data.circle_color.r+",";
@@ -323,6 +377,40 @@ function devicePlottingClass_gmap() {
 
 		    /*Call createCircle function to create backhual circle around BS & SS pt.*/
 	    	that.createCircle(resultantMarkers[i].data.lat,resultantMarkers[i].data.lon,resultantMarkers[i].data.circle_radius,bhCircleColor,"backhual","bs",resultantMarkers[i].data.param.backhual);
+
+	    	/*Loop to plot all the sectors*/
+	    	if(resultantMarkers[i].type != "P2P") {
+	    		
+				var sectorsArray = resultantMarkers[i].data.param.sector;
+
+	    		$.grep(sectorsArray,function(sector) { 
+
+	    			var lat = resultantMarkers[i].data.lat;
+					var lon = resultantMarkers[i].data.lon;
+					var rad = sector.radius;
+					var azimuth = sector.azimuth_angle;
+					var beam_width = sector.beam_width;
+					var sector_color = "";
+				    sector_color = "rgba(";
+				    sector_color += sector.color.r+",";
+				    sector_color += sector.color.g+",";
+				    sector_color += sector.color.b+",";
+				    sector_color += sector.color.a;
+				    sector_color += ")";
+
+					var sectorInfo = sector.info;
+					var orientation = $.trim(sector.orientation);
+					
+					/*Call createSectorData function to get the points array to plot the sector on google maps.*/
+					that.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
+
+						/*Plot sector on map with the retrived points*/
+						that.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color);
+
+					});
+	    		});
+				/*Sector loop end*/
+	    	}
 
 		    var slaveCount = resultantMarkers[i].children.length;  
 		    /*Loop for the number of slave & their links with the master*/
@@ -347,6 +435,8 @@ function devicePlottingClass_gmap() {
 		    	/*Create Slave Marker Object*/
 			    var slaveMarkerObject = {
 			    	position  	  : new google.maps.LatLng(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon),
+			    	ptLat 		  : resultantMarkers[i].children[j].data.lat,
+		    		ptLon 		  : resultantMarkers[i].children[j].data.lon,
 			    	map       	  : mapInstance,
 			    	icon 	  	  : "../../"+resultantMarkers[i].children[j].data.markerUrl,
 			    	oldIcon 	  : "../../"+resultantMarkers[i].children[j].data.markerUrl,
@@ -380,11 +470,11 @@ function devicePlottingClass_gmap() {
 	    		that.createCircle(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon,resultantMarkers[i].children[j].data.circle_radius,ssCircleColor,"frequency","ss",resultantMarkers[i].children[j].data.param.backhual);
 
 				/*Call createCircle function to create the circle aroung BS & SS pt.*/
-	    		that.createCircle(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon,resultantMarkers[i].children[j].data.circle_radius,ssCircleColor,"backhual","ss",resultantMarkers[i].children[j].data.param.backhual);
+	    		// that.createCircle(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon,resultantMarkers[i].children[j].data.circle_radius,ssCircleColor,"backhual","ss",resultantMarkers[i].children[j].data.param.backhual);
 
 				var pathDataObject = [];
 				/*If device are of P2P type*/
-				if(resultantMarkers[i].type == "P2P") {
+				if(resultantMarkers[i].type == "P2P" || resultantMarkers[i].type == "PTP") {
 					/*Create object for Link Line Between Master & Slave*/
 					pathDataObject = [
 						new google.maps.LatLng(resultantMarkers[i].data.lat,resultantMarkers[i].data.lon),
@@ -397,22 +487,10 @@ function devicePlottingClass_gmap() {
 					var rad = resultantMarkers[i].children[j].data.radius;
 					var azimuth = resultantMarkers[i].children[j].data.azimuth_angle;
 					var beam_width = resultantMarkers[i].children[j].data.beam_width;
-					var sector_color = "";
-				    sector_color = "rgba(";
-				    sector_color += resultantMarkers[i].children[j].data.sector_color.r+",";
-				    sector_color += resultantMarkers[i].children[j].data.sector_color.g+",";
-				    sector_color += resultantMarkers[i].children[j].data.sector_color.b+",";
-				    sector_color += resultantMarkers[i].children[j].data.sector_color.a;
-				    sector_color += ")";
-
-					var sectorInfo = resultantMarkers[i].children[j].data.param.sector_info;
 					var orientation = $.trim(resultantMarkers[i].children[j].data.sector_orientation);
 					
 					/*Call createSectorData function to get the points array to plot the sector on google maps.*/
 					that.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
-
-						/*Plot sector on map with the retrived points*/
-						that.plotSector_gmap(pointsArray,sectorInfo,sector_color);
 
 						var halfPt = Math.floor(pointsArray.length / (+2));
 						/*Create object for Link Line Between Master & Slave*/
@@ -459,7 +537,7 @@ function devicePlottingClass_gmap() {
 						bs_height 			: resultantMarkers[i].data.antena_height
 					};
 
-					if($.trim(resultantMarkers[i].type) == "P2P") {
+					if($.trim(resultantMarkers[i].type) == "P2P" || $.trim(resultantMarkers[i].type) == "PTP") {
 						linkObject["bs_info"] = resultantMarkers[i].data.param.base_station;
 					} else {
 						linkObject["bs_info"] = resultantMarkers[i].children[j].data.param.sector_info;
@@ -473,6 +551,7 @@ function devicePlottingClass_gmap() {
 
 					/*Bind Click Event on Link Path Between Master & Slave*/
 					google.maps.event.addListener(pathConnector, 'click', function(e) {
+
 						/*Call the function to create info window content*/
 						var content = that.makeWindowContent(this);
 						/*Set the content for infowindow*/
@@ -635,11 +714,13 @@ function devicePlottingClass_gmap() {
 	 * This function plot the sector for given lat-lon points
 	 * @class gmap_devicePlottingLib
 	 * @method plotSector_gmap.
+	 * @param Lat "Number", It contains lattitude of the point on which sector is creater i.e. BS lat-lon.
+	 * @param Lng "Number", It contains longitude of the point on which sector is creater i.e. BS lat-lon.
 	 * @param pointsArray [Array], It contains the points lat-lon object array.
 	 * @param sectorInfo {JSON Object Array}, It contains the information about the sector which are shown in info window.
 	 * @param bgColor "String", It contains the RGBA format color code for sector.
 	 */
-	this.plotSector_gmap = function(pointsArray,sectorInfo,bgColor) {
+	this.plotSector_gmap = function(lat,lon,pointsArray,sectorInfo,bgColor) {
 
 		var polyPathArray = [];
 
@@ -651,6 +732,8 @@ function devicePlottingClass_gmap() {
 		var poly = new google.maps.Polygon({
 			map 		  : mapInstance,
 			path 		  : polyPathArray,
+			ptLat 		  : lat,
+			ptLon 		  : lon,
 			strokeColor   : "rgba(90, 101, 102, 1.0)",
 			fillColor 	  : bgColor,
 			pointType	  : "sector",
@@ -698,7 +781,7 @@ function devicePlottingClass_gmap() {
 			sColor = "";
 		if($.trim(pType) == "frequency") {
 			rad = radius * 2;
-			fOpacity = 0.7;
+			fOpacity = 0.5;
 			sColor = bgColor;
 		} else if($.trim(dType) == "ss") {
 			rad = radius;
@@ -706,13 +789,15 @@ function devicePlottingClass_gmap() {
 			sColor = '000000';
 		} else {
 			rad = radius;
-			fOpacity = 0.7;
+			fOpacity = 0.8;
 			sColor = bgColor;
 		}
 		/*Make circle data object for devices*/
 		var devicesCircleOptions = {
 			strokeColor		: "#"+sColor,
 			strokeOpacity	: 1.0,
+			ptLat 			: lat,
+			ptLon 			: lng,
 			clickable		: true,
 			strokeWeight	: 1,
 			fillColor		: "#"+bgColor,
@@ -771,11 +856,12 @@ function devicePlottingClass_gmap() {
 			/*BS-Sector Info Start*/
 			infoTable += "<td>";	
 			infoTable += "<table class='table table-hover innerTable'><tbody>";
-			/*Loop for ss info object array*/
-			for(var i=0;i<contentObject.ss_info.length;i++) {
+			
+			/*Loop for BS or Sector info object array*/
+			for(var i=0;i<contentObject.bs_info.length;i++) {
 
-				if(contentObject.ss_info[i].show == 1) {
-					infoTable += "<tr><td>"+contentObject.ss_info[i].title+"</td><td>"+contentObject.ss_info[i].value+"</td></tr>";
+				if(contentObject.bs_info[i].show == 1) {
+					infoTable += "<tr><td>"+contentObject.bs_info[i].title+"</td><td>"+contentObject.bs_info[i].value+"</td></tr>";
 				}
 			}
 
@@ -789,11 +875,12 @@ function devicePlottingClass_gmap() {
 			/*SS Info Start*/
 			infoTable += "<td>";			
 			infoTable += "<table class='table table-hover innerTable'><tbody>";
-			/*Loop for BS or Sector info object array*/
-			for(var i=0;i<contentObject.bs_info.length;i++) {
+			
+			/*Loop for ss info object array*/
+			for(var i=0;i<contentObject.ss_info.length;i++) {
 
-				if(contentObject.bs_info[i].show == 1) {
-					infoTable += "<tr><td>"+contentObject.bs_info[i].title+"</td><td>"+contentObject.bs_info[i].value+"</td></tr>";
+				if(contentObject.ss_info[i].show == 1) {
+					infoTable += "<tr><td>"+contentObject.ss_info[i].title+"</td><td>"+contentObject.ss_info[i].value+"</td></tr>";
 				}
 			}
 
@@ -820,12 +907,8 @@ function devicePlottingClass_gmap() {
 					infoTable += "<tr><td>"+contentObject.dataset[i].title+"</td><td>"+contentObject.dataset[i].value+"</td></tr>";
 				}
 			}
-			
-			if(contentObject.position != undefined) {
-				infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.position.k+", "+contentObject.position.A+"</td></tr>";
-			} else if(contentObject.center != undefined) {
-				infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.center.k+", "+contentObject.center.A+"</td></tr>";
-			}
+			/*Set the lat lon of the point*/
+			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ptLat+", "+contentObject.ptLon+"</td></tr>";
 
 			infoTable += "</tbody></table>";
 
@@ -1395,7 +1478,15 @@ function devicePlottingClass_gmap() {
 				$("#state").html(stateOptions);
 			},
 			error : function(err) {
-				console.log(err);
+				$.gritter.add({
+		            // (string | mandatory) the heading of the notification
+		            title: 'Basic Filters - Server Error',
+		            // (string | mandatory) the text inside the notification
+		            text: err.statusText,
+		            // (bool | optional) if you want it to fade out on its own or just sit there
+		            sticky: true
+		        });
+				// console.log(err);
 			}
 		});
 	};
@@ -1826,7 +1917,7 @@ function devicePlottingClass_gmap() {
 			that.clearGmapElements();
 
 			/*Reset Global Variables & Filters*/
-			that.resetVariables_gmap();	
+			that.resetVariables_gmap();
 			
 			/*Recall the API*/
 			that.getDevicesData_gmap();
