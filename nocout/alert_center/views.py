@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 from django.db.models.query import ValuesQuerySet
 from django.shortcuts import render_to_response
@@ -8,7 +9,7 @@ from django.template import RequestContext
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from performance.models import PerformanceNetwork, EventNetwork, EventService
 
-# Create your views here.
+logger=logging.getLogger(__name__)
 
 def getNetworkAlert(request):
 
@@ -253,7 +254,10 @@ class DownListingTable(BaseDatatableView):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
-            #dct['check_timestamp'] =  time.strftime('%a %d-%b-%Y %H:%M:%S %Z', time.localtime(dct['check_timestamp']))
+            try:
+                dct['check_timestamp'] =  time.strftime('%a %d-%b-%Y %H:%M:%S %Z', time.localtime(dct['check_timestamp']))
+            except:
+                logger.info("No timestamp data.")
             dct.update(actions='<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
