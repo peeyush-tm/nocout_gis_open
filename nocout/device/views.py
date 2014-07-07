@@ -21,6 +21,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.conf import settings #Importing settings for logger
 from site_instance.models import SiteInstance
+from inventory.models import BaseStation, SubStation
 
 if settings.DEBUG:
     import logging
@@ -104,10 +105,29 @@ class DeviceListingTable(BaseDatatableView):
         for dct in qs:
             dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-               <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>\
-               <a href="#" class="add_device_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus-square text-warning" title="Add device for monitoring"></i></a>\
-               <a href="#" class="sync_device_with_nms_core_btn" device_id="{0}"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-               <a href="#" class="add_svc_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus text-success" title="Add service for monitoring"></i></a>'.format(dct.pop('id')))
+               <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(dct['id']))
+
+            current_device = Device.objects.get(device_name=dct['device_name'])
+            try:
+                if BaseStation.objects.get(bs_switch=current_device):
+                    dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+                        <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+                        <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>\
+                        <a href="#" class="add_device_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus-square text-warning" title="Add device for monitoring"></i></a>\
+                        <a href="#" class="sync_device_with_nms_core_btn" device_id="{0}"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+                        <a href="#" class="add_svc_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus text-success" title="Add service for monitoring"></i></a>'.format(dct['id']))
+            except:
+                logger.info("Device is not basestation")
+            try:
+                if SubStation.objects.get(device=current_device):
+                    dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+                        <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+                        <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>\
+                        <a href="#" class="add_device_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus-square text-warning" title="Add device for monitoring"></i></a>\
+                        <a href="#" class="sync_device_with_nms_core_btn" device_id="{0}"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+                        <a href="#" class="add_svc_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus text-success" title="Add service for monitoring"></i></a>'.format(dct['id']))
+            except:
+                logger.info("Device is not substation.")
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -225,13 +245,6 @@ class DeviceCreate(CreateView):
         device.longitude = form.cleaned_data['longitude']
         device.description = form.cleaned_data['description']
         device.organization_id= form.cleaned_data['organization'].id
-
-        try:
-            if Device.objects.get(device_name=form.cleaned_data['device_name']):
-                raise ValidationError("Device already eists.")
-        except:
-            print "Device doesn't exist."
-
         device.save()
 
         # saving site_instance --> FK Relation
@@ -1298,6 +1311,8 @@ class DeviceTypeUpdate(UpdateView):
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
             self.object=form.save()
             action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(DeviceTypeUpdate.success_url)
@@ -1439,6 +1454,8 @@ class DevicePortUpdate(UpdateView):
                           ', '.join(['%s: %s' %(k, initial_field_dict[k]) for k in changed_fields_dict])+\
                           ' to '+\
                           ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
             self.object=form.save()
             action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect( DevicePortUpdate.success_url )

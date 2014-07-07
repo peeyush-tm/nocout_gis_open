@@ -64,7 +64,7 @@
             });
             $(".add_svc_to_nms_core_btn").click(function(e) {
                 var device_id = $(this).attr("device_id");
-                add_service(device_id);
+                Dajaxice.device.add_service_form(get_service_add_form, {value: device_id});
             });
         },1000);
     </script>
