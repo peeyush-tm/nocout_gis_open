@@ -5,7 +5,7 @@ $(document).ready(function(e) {
     var series = Math.floor(Math.random() * 9) + 1;
     series = 3;
     var pieChartLegends = [];
-    var pie_color_array = ["#01A85A", "#F29F05", "#ED3338"];
+    var pie_color_array = ["#99CC00", "#FFE90D", "#FF0022"];
     
     pieChartLegends.push("Good");
     pieChartLegends.push("Warning");
