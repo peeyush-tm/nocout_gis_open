@@ -139,7 +139,6 @@ function devicePlottingClass_gmap() {
 				if($.trim(marker.technology) != "PTP" && $.trim(marker.technology) != "P2P") {
 					
 					$.grep(marker.sectors,function(sector) {
-		    		
 		    			var lat = marker.ptLat;
 						var lon = marker.ptLon;
 						var rad = 4;//sector.radius;
@@ -147,10 +146,10 @@ function devicePlottingClass_gmap() {
 						var beam_width = sector.beam_width;
 						var sector_color = "";
 					    sector_color = "rgba(";
-					    sector_color += sector.color.r+",";
-					    sector_color += sector.color.g+",";
-					    sector_color += sector.color.b+",";
-					    sector_color += sector.color.a;
+					    sector_color += JSON.parse(sector.color).r+",";
+					    sector_color += JSON.parse(sector.color).g+",";
+					    sector_color += JSON.parse(sector.color).b+",";
+					    sector_color += JSON.parse(sector.color).a;
 					    sector_color += ")";
 
 						var sectorInfo = sector.info;
@@ -506,8 +505,8 @@ function devicePlottingClass_gmap() {
 	    		ss_info["perf"] = bs_ss_devices[i].data.perf;
 
 	    		/*Link color object*/
-	    		linkColor = bs_ss_devices[i].data.link_color;
-
+	    		linkColor = JSON.parse(bs_ss_devices[i].data.link_color);
+	    		
 		    	/*Create the link between BS & SS or Sector & SS*/
 		    	that.createLink_gmaps(startEndObj,linkColor,bs_info,ss_info);
 
@@ -1581,7 +1580,7 @@ function devicePlottingClass_gmap() {
 		            // (bool | optional) if you want it to fade out on its own or just sit there
 		            sticky: true
 		        });
-		        
+
 	 			/*Reset the markers, polyline & filters*/
 	 			that.clearGmapElements();
 
