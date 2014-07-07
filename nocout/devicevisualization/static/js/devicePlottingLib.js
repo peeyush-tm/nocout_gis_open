@@ -325,21 +325,10 @@ function devicePlottingClass_gmap() {
 
 		for(var i=0;i<resultantMarkers.length;i++) {
 
-			var master_label_content = "";
-			master_label_content = "<div class='labelContainer'>";
-
-			for(var lbl=0;lbl<resultantMarkers[i].data.labels.length;lbl++) {
-
-				if(resultantMarkers[i].data.labels[lbl].show == 1) {
-
-					if($.trim(resultantMarkers[i].data.labels[lbl].position) == "up") {
-						master_label_content += "<div class='topLabel'>"+resultantMarkers[i].data.labels[lbl].name+" : "+resultantMarkers[i].data.labels[lbl].value+"</div>";
-					} else if($.trim(resultantMarkers[i].data.labels[lbl].position) == "down") {
-						master_label_content += "<div class='bottomLabel'>"+resultantMarkers[i].data.labels[lbl].name+" : "+resultantMarkers[i].data.labels[lbl].value+"</div>";
-					}
-				}
+			var available_sectors = [];
+			if(resultantMarkers[i].data.param.sector != undefined) {
+				available_sectors = resultantMarkers[i].data.param.sector;
 			}
-			master_label_content += "</div>";
 
 			/*Create Master Marker Object*/
 			var masterMarkerObject = {
@@ -350,263 +339,38 @@ function devicePlottingClass_gmap() {
 		    	icon 	  	  : "../../"+resultantMarkers[i].data.markerUrl,//"https://chart.googleapis.com/chart?chst=d_map_pin_letter&chld=|fcfcfc|",
 		    	oldIcon 	  : "../../"+resultantMarkers[i].data.markerUrl,
 		    	pointType	  : "bs",
-		    	labelContent  : master_label_content,
-				labelAnchor   : new google.maps.Point(0, 62),
-				labelClass    : "markerLabels",
-				labelStyle	  : {opacity: 0.85},
 				perf 		  : resultantMarkers[i].data.perf,
+				ssList   	  : resultantMarkers[i].children,
+				sectors 	  : available_sectors,
 				dataset 	  : resultantMarkers[i].data.param.base_station,
 				antena_height : resultantMarkers[i].data.antena_height
 			};
 
 			/*Create Master Marker*/
-		    // var masterMarker = new google.maps.Marker(masterMarkerObject);
-		    var masterMarker = new MarkerWithLabel(masterMarkerObject);
+		    var masterMarker = new google.maps.Marker(masterMarkerObject);
 		    /*Add the master marker to the global master markers array*/
 		    masterMarkersObj.push(masterMarker);
 		    /*Add parent markers to the OverlappingMarkerSpiderfier*/
 		    oms.addMarker(masterMarker);
-
-		    var bhCircleColor = "";
-		    bhCircleColor = "rgba(";
-		    bhCircleColor += resultantMarkers[i].data.circle_color.r+",";
-		    bhCircleColor += resultantMarkers[i].data.circle_color.g+",";
-		    bhCircleColor += resultantMarkers[i].data.circle_color.b+",";
-		    bhCircleColor += resultantMarkers[i].data.circle_color.a;
-		    bhCircleColor += ")";
-
-		    /*Call createCircle function to create backhual circle around BS & SS pt.*/
-	    	that.createCircle(resultantMarkers[i].data.lat,resultantMarkers[i].data.lon,resultantMarkers[i].data.circle_radius,bhCircleColor,"backhual","bs",resultantMarkers[i].data.param.backhual);
-
-	    	/*Loop to plot all the sectors*/
-	    	if(resultantMarkers[i].type != "P2P") {
-	    		
-				var sectorsArray = resultantMarkers[i].data.param.sector;
-
-	    		$.grep(sectorsArray,function(sector) { 
-
-	    			var lat = resultantMarkers[i].data.lat;
-					var lon = resultantMarkers[i].data.lon;
-					var rad = sector.radius;
-					var azimuth = sector.azimuth_angle;
-					var beam_width = sector.beam_width;
-					var sector_color = "";
-				    sector_color = "rgba(";
-				    sector_color += sector.color.r+",";
-				    sector_color += sector.color.g+",";
-				    sector_color += sector.color.b+",";
-				    sector_color += sector.color.a;
-				    sector_color += ")";
-
-					var sectorInfo = sector.info;
-					var orientation = $.trim(sector.orientation);
-					
-					/*Call createSectorData function to get the points array to plot the sector on google maps.*/
-					that.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
-
-						/*Plot sector on map with the retrived points*/
-						that.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color);
-
-					});
-	    		});
-				/*Sector loop end*/
-	    	}
-
-		    var slaveCount = resultantMarkers[i].children.length;  
-		    /*Loop for the number of slave & their links with the master*/
-		    for(var j=0;j<slaveCount;j++) {
-
-		    	var slave_label_content = "";
-				slave_label_content = "<div class='labelContainer'>";
-
-				for(var lbl=0;lbl<resultantMarkers[i].children[j].data.labels.length;lbl++) {
-
-					if(resultantMarkers[i].children[j].data.labels[lbl].show == 1) {
-
-						if($.trim(resultantMarkers[i].children[j].data.labels[lbl].position) == "up") {
-							slave_label_content += "<div class='topLabel'>"+resultantMarkers[i].children[j].data.labels[lbl].name+" : "+resultantMarkers[i].children[j].data.labels[lbl].value+"</div>";
-						} else if($.trim(resultantMarkers[i].children[j].data.labels[lbl].position) == "down") {
-							slave_label_content += "<div class='bottomLabel'>"+resultantMarkers[i].children[j].data.labels[lbl].name+" : "+resultantMarkers[i].children[j].data.labels[lbl].value+"</div>";
-						}
-					}
-				}
-				slave_label_content += "</div>";
-
-		    	/*Create Slave Marker Object*/
-			    var slaveMarkerObject = {
-			    	position  	  : new google.maps.LatLng(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon),
-			    	ptLat 		  : resultantMarkers[i].children[j].data.lat,
-		    		ptLon 		  : resultantMarkers[i].children[j].data.lon,
-			    	map       	  : mapInstance,
-			    	icon 	  	  : "../../"+resultantMarkers[i].children[j].data.markerUrl,
-			    	oldIcon 	  : "../../"+resultantMarkers[i].children[j].data.markerUrl,
-			    	pointType	  : "ss",
-			    	labelContent  : slave_label_content,
-					labelAnchor   : new google.maps.Point(0, 62),
-					labelClass    : "markerLabels",
-					labelStyle	  : {opacity: 0.85},
-					perf 		  : resultantMarkers[i].data.perf,
-					dataset  	  : resultantMarkers[i].children[j].data.param.sub_station,
-					antena_height : resultantMarkers[i].children[j].data.antena_height
-				};
-
-				/*Create Slave Marker*/
-			    // var slaveMarker = new google.maps.Marker(slaveMarkerObject);
-			    var slaveMarker = new MarkerWithLabel(slaveMarkerObject);
-			    /*Add the slave marker to the global slave array*/
-		    	slaveMarkersObj.push(slaveMarker);
-			    /*Add child markers to the OverlappingMarkerSpiderfier*/
-				oms.addMarker(slaveMarker);
-					
-				var ssCircleColor = "";
-			    ssCircleColor = "rgba(";
-			    ssCircleColor += resultantMarkers[i].children[j].data.circle_color.r+",";
-			    ssCircleColor += resultantMarkers[i].children[j].data.circle_color.g+",";
-			    ssCircleColor += resultantMarkers[i].children[j].data.circle_color.b+",";
-			    ssCircleColor += resultantMarkers[i].children[j].data.circle_color.a;
-			    ssCircleColor += ")";
-
-				/*Call createCircle function to create frequency circle around BS & SS pt.*/
-	    		that.createCircle(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon,resultantMarkers[i].children[j].data.circle_radius,ssCircleColor,"frequency","ss",resultantMarkers[i].children[j].data.param.backhual);
-
-				/*Call createCircle function to create the circle aroung BS & SS pt.*/
-	    		// that.createCircle(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon,resultantMarkers[i].children[j].data.circle_radius,ssCircleColor,"backhual","ss",resultantMarkers[i].children[j].data.param.backhual);
-
-				var pathDataObject = [];
-				/*If device are of P2P type*/
-				if(resultantMarkers[i].type == "P2P" || resultantMarkers[i].type == "PTP") {
-					/*Create object for Link Line Between Master & Slave*/
-					pathDataObject = [
-						new google.maps.LatLng(resultantMarkers[i].data.lat,resultantMarkers[i].data.lon),
-						new google.maps.LatLng(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon)
-					];
-				} else {
-
-					var lat = resultantMarkers[i].data.lat;
-					var lon = resultantMarkers[i].data.lon;
-					var rad = resultantMarkers[i].children[j].data.radius;
-					var azimuth = resultantMarkers[i].children[j].data.azimuth_angle;
-					var beam_width = resultantMarkers[i].children[j].data.beam_width;
-					var orientation = $.trim(resultantMarkers[i].children[j].data.sector_orientation);
-					
-					/*Call createSectorData function to get the points array to plot the sector on google maps.*/
-					that.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
-
-						var halfPt = Math.floor(pointsArray.length / (+2));
-						/*Create object for Link Line Between Master & Slave*/
-						pathDataObject = [
-							new google.maps.LatLng(pointsArray[halfPt].lat,pointsArray[halfPt].lon),
-							new google.maps.LatLng(resultantMarkers[i].children[j].data.lat,resultantMarkers[i].children[j].data.lon)
-						];
-					});
-				}
-
-				if(resultantMarkers[i].children[j].data.show_link == 1) {
-
-					var linkObject = {},
-						link_path_color = "";
-
-					link_path_color = "rgba(";
-				    link_path_color += resultantMarkers[i].children[j].data.link_color.r+",";
-				    link_path_color += resultantMarkers[i].children[j].data.link_color.g+",";
-				    link_path_color += resultantMarkers[i].children[j].data.link_color.b+",";
-				    
-				    if(resultantMarkers[i].children[j].data.link_color.a != undefined) {
-				    	link_path_color += resultantMarkers[i].children[j].data.link_color.a;
-				    } else {
-				    	link_path_color += "1.0";	
-				    }
-
-				    link_path_color += ")";
-
-					linkObject = {
-						path 				: pathDataObject,
-						strokeColor			: link_path_color,
-						strokeOpacity		: 1.0,
-						strokeWeight		: 2,
-						pointType 			: "path",
-						geodesic			: true,
-						ss_info				: resultantMarkers[i].children[j].data.param.sub_station,
-						ss_lat 				: resultantMarkers[i].children[j].data.lat,
-						ss_lon 				: resultantMarkers[i].children[j].data.lon,						
-						ss_perf 			: resultantMarkers[i].children[j].data.perf,
-						ss_height 			: resultantMarkers[i].children[j].data.antena_height,
-						bs_lat 				: resultantMarkers[i].data.lat,
-						bs_lon 				: resultantMarkers[i].data.lon,
-						bs_perf 			: resultantMarkers[i].data.perf,
-						bs_height 			: resultantMarkers[i].data.antena_height
-					};
-
-					if($.trim(resultantMarkers[i].type) == "P2P" || $.trim(resultantMarkers[i].type) == "PTP") {
-						linkObject["bs_info"] = resultantMarkers[i].data.param.base_station;
-					} else {
-						linkObject["bs_info"] = resultantMarkers[i].children[j].data.param.sector_info;
-					}
-
-					pathConnector = new google.maps.Polyline(linkObject);
-					/*Plot the link line between master & slave*/
-					pathConnector.setMap(mapInstance);
-
-					pathLineArray.push(pathConnector);
-
-					/*Bind Click Event on Link Path Between Master & Slave*/
-					google.maps.event.addListener(pathConnector, 'click', function(e) {
-
-						/*Call the function to create info window content*/
-						var content = that.makeWindowContent(this);
-						/*Set the content for infowindow*/
-						infowindow.setContent(content);
-						/*Set The Position for InfoWindow*/
-						infowindow.setPosition(e.latLng);
-						/*Open the info window*/
-						infowindow.open(mapInstance);
-					});
-				}/*SHOW_LINK condition ends*/
-			}
 		}
 		
 		var bsLatArray = [],
-			bsLonArray = [],
-			ssLatArray = [],
-			ssLonArray = [];
+			bsLonArray = [];
 
 		/*Get All BS Lat & Lon*/
 		$.grep(masterMarkersObj,function(bs) {
-			bsLatArray.push(bs.position.A);
-			bsLonArray.push(bs.position.k);
-		});
-
-		/*Get All SS Lat & Lon*/
-		$.grep(slaveMarkersObj,function(ss) {
-			ssLatArray.push(ss.position.A);
-			ssLonArray.push(ss.position.k);
+			bsLatArray.push(bs.ptLat);
+			bsLonArray.push(bs.ptLon);
 		});
 
 		/*Loop to change the icon for same location markers(to cluster icon)*/
 		for(var k=0;k<masterMarkersObj.length;k++) {
 			
 			/*if two BS on same position*/
-			var bsLatOccurence = $.grep(bsLatArray, function (elem) {return elem === masterMarkersObj[k].position.A;}).length;
-			var bsLonOccurence = $.grep(bsLonArray, function (elem) {return elem === masterMarkersObj[k].position.k;}).length;
+			var bsLatOccurence = $.grep(bsLatArray, function (elem) {return elem === masterMarkersObj[k].ptLat;}).length;
+			var bsLonOccurence = $.grep(bsLonArray, function (elem) {return elem === masterMarkersObj[k].ptLon;}).length;
 			if(bsLatOccurence > 1 && bsLonOccurence > 1) {
 				masterMarkersObj[k].setOptions({"icon" : clusterIcon});
-			}
-
-			for(var l=0;l<slaveMarkersObj.length;l++) {
-				
-				/*if two BS on same position*/
-				var ssLatOccurence = $.grep(ssLatArray, function (elem) {return elem === slaveMarkersObj[l].position.A;}).length;
-				var ssLonOccurence = $.grep(ssLonArray, function (elem) {return elem === slaveMarkersObj[l].position.k;}).length;
-				if(ssLatOccurence > 1 && ssLonOccurence > 1) {
-					slaveMarkersObj[l].setOptions({"icon" : clusterIcon});
-				}
-
-				/*if some BS & SS are on same position*/
-				var BS_SS_location = masterMarkersObj[k].position.A == slaveMarkersObj[l].position.A && masterMarkersObj[k].position.k == slaveMarkersObj[l].position.k;
-				if(BS_SS_location) {
-					slaveMarkersObj[l].setOptions({"icon" : clusterIcon});	
-					masterMarkersObj[k].setOptions({"icon" : clusterIcon});
-				}
 			}
 		}
 
@@ -614,8 +378,6 @@ function devicePlottingClass_gmap() {
 		var clusterOptions = {gridSize: 70, maxZoom: 8};
 		/*Add the master markers to the cluster MarkerCluster object*/
 		masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
-		/*Add the slave markers to the cluster MarkerCluster object*/
-		slaveClusterInstance = new MarkerClusterer(mapInstance, slaveMarkersObj, clusterOptions);
 	};
 
 
