@@ -475,7 +475,8 @@ def add_service_form(request, value):
 
     # get ports associated with device
     try:
-        ports = device.ports.all()
+        device_type = DeviceType.objects.get(id=device.device_type)
+        ports = device_type.device_port.all()
         for port in ports:
             port_dict = {}
             port_dict['key'] = port.id
