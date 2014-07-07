@@ -144,3 +144,72 @@ function sync_devices() {
 function sync_devices_message(responseResult) {
     bootbox.alert(responseResult.result.message);
 }
+
+
+// add service to nms core
+// sync devices with monitoring core
+function get_service_add_form(content) {
+    var service_add_html = "";
+    if (!(typeof content.result.data.objects.services === 'undefined') && !(Object.keys(content.result.data.objects.services).length === 0)) {
+
+        // display port select menu
+        service_add_html += '<h5 class="text-warning">You can add service for device ' + '"' + content.result.data.objects.device_alias + '" </h5>';
+        service_add_html += '<input type="hidden" id="device_id" value="'+content.result.data.objects.device_id+'" />';
+        if (!(typeof content.result.data.objects.ports === 'undefined')) {
+            service_add_html += '<h5 class="text-warning"> Choose port:</h5>';
+            service_add_html += '<select class="form-control" id="id_ports" name="ports">';
+            service_add_html += '<option value="">Select</option>';
+            for (var i = 0, l = content.result.data.objects.ports.length; i < l; i++) {
+                service_add_html += '<option value="' + content.result.data.objects.ports[i].key + '">' + content.result.data.objects.ports[i].value + '</option>';
+            }
+            service_add_html += '</select>';
+        }
+
+        // display service select menu
+        if (!(typeof content.result.data.objects.services === 'undefined')) {
+            service_add_html += '<h5 class="text-warning"> Choose service:</h5>';
+            service_add_html += '<select class="form-control" id="id_services_to_monitor" name="services_to_monitor" onChange="on_service_change();">';
+            service_add_html += '<option value="">Select '+$.trim(content.result.data.objects.form_title)+'</option>';
+            for (var i = 0, l = content.result.data.objects.services.length; i < l; i++) {
+                service_add_html += '<option value="' + content.result.data.objects.services[i].key + '">' + content.result.data.objects.services[i].value + '</option>';
+            }
+            service_add_html += '</select>';
+            service_add_html += '<div id="service_data_source_id"></div>';
+        }
+    }
+    else{
+        service_add_html += '<h5 class="text-warning">There are no service for device ' + '"' + content.result.data.objects.device_alias + '"to monitor. </h5>';
+    }
+    bootbox.dialog({
+        message: service_add_html,
+        title: "<span class='text-danger'><i class='fa fa-times'></i> Add service to nms core. </span>",
+        buttons: {
+            success: {
+                label: "Yes!",
+                className: "btn-success",
+                callback: function () {
+                    Dajaxice.device.add_service(add_services_message, {'device_id': content.result.data.objects.device_id, 'service_id': $('#id_services_to_monitor').val(),
+                                                                       'service_data_source_id': $('#service_data_source_select_id').val(),
+                                                                       'port_id': $('#id_ports').val()});
+                }
+            },
+            danger: {
+                label: "No!",
+                className: "btn-danger",
+                callback: function () {
+                    bootbox.alert("Ok! You choose to not to add service right now for monitoring.", function () {
+                        $(".bootbox").modal("hide");
+                    });
+                }
+            }
+        }
+    });
+}
+
+function on_service_change(){
+    Dajaxice.device.service_data_sources_popup(Dajax.process, {'option': $('#id_services_to_monitor').val()});
+}
+
+function add_services_message(responseResult) {
+    bootbox.alert(responseResult.result.message);
+}

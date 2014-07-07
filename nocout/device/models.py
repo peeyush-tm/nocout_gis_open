@@ -136,7 +136,6 @@ class Device(MPTTModel, models.Model):
     device_type = models.IntegerField('Device Type')
     parent = models.ForeignKey('self', null=True, blank=True, related_name='device_children')
     ports = models.ManyToManyField(DevicePort, null=True, blank=True)
-    #service = models.ManyToManyField(Service, null=True, blank=True)
     ip_address = models.IPAddressField('IP Address', unique=True)
     mac_address = models.CharField('MAC Address', max_length=100, )
     netmask = models.IPAddressField('Netmask', null=True, blank=True)
@@ -153,6 +152,8 @@ class Device(MPTTModel, models.Model):
     address = models.TextField('Address', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
     is_deleted = models.IntegerField('Is Deleted', max_length=1, default=0)
+    is_added_to_nms = models.IntegerField('Is Added', max_length=1, default=0)
+    is_monitored_on_nms = models.IntegerField('Is Monitored', max_length=1, default=0)
 
     def __unicode__(self):
         return self.device_name
