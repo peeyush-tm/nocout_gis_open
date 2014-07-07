@@ -120,7 +120,10 @@ class LatencyListingTable(BaseDatatableView):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
-            dct['check_timestamp'] =  time.strftime('%a %d-%b-%Y %H:%M:%S %Z', time.localtime(dct['check_timestamp']))
+            try:
+                dct['check_timestamp'] = time.strftime('%a %d-%b-%Y %H:%M:%S %Z', time.localtime(dct['check_timestamp']))
+            except:
+                logger.info("No timestamp data.")
             dct.update(actions='<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
@@ -187,7 +190,10 @@ class PacketDropListingTable(BaseDatatableView):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
-            dct['check_timestamp'] =  time.strftime('%a %d-%b-%Y %H:%M:%S %Z', time.localtime(dct['check_timestamp']))
+            try:
+                dct['check_timestamp'] = time.strftime('%a %d-%b-%Y %H:%M:%S %Z', time.localtime(dct['check_timestamp']))
+            except:
+                logger.info("No timestamp data.")
             dct.update(actions='<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
@@ -255,7 +261,7 @@ class DownListingTable(BaseDatatableView):
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
             try:
-                dct['check_timestamp'] =  time.strftime('%a %d-%b-%Y %H:%M:%S %Z', time.localtime(dct['check_timestamp']))
+                dct['check_timestamp'] = time.strftime('%a %d-%b-%Y %H:%M:%S %Z', time.localtime(dct['check_timestamp']))
             except:
                 logger.info("No timestamp data.")
             dct.update(actions='<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
@@ -324,7 +330,10 @@ class ServiceAlertsListingTable(BaseDatatableView):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
-            #dct['check_timestamp'] =  time.strftime('%a %d-%b-%Y %H:%M:%S %Z', time.localtime(dct['check_timestamp']))
+            try:
+                dct['check_timestamp'] = time.strftime('%a %d-%b-%Y %H:%M:%S %Z', time.localtime(dct['check_timestamp']))
+            except:
+                logger.info("No timestamp data.")
             dct.update(actions='<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
