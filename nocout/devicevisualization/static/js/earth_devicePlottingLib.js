@@ -266,7 +266,7 @@ function googleEarthClass() {
 			// Add the placemark to Earth.
 			ge.getFeatures().appendChild(bs_placemark);
 
-			if(resultantMarkers[i].type != "P2P") {
+			if($.trim(resultantMarkers[i].data.technology) != "P2P" && $.trim(resultantMarkers[i].data.technology) != "PTP") {
 	    		
 				var sectorsArray = resultantMarkers[i].data.param.sector;
 
@@ -274,10 +274,10 @@ function googleEarthClass() {
 
 	    			var lat = resultantMarkers[i].data.lat;
 					var lon = resultantMarkers[i].data.lon;
-					var rad = sector.radius;
+					var rad = 4;//sector.radius;
 					var azimuth = sector.azimuth_angle;
 					var beam_width = sector.beam_width;
-					var sector_color = sector.color;
+					var sector_color = JSON.parse(sector.color);
 					var sectorInfo = sector.info;
 					var orientation = $.trim(sector.orientation);
 					
@@ -331,7 +331,7 @@ function googleEarthClass() {
 					endLat = "",
 					endLon = "";
 				/*If device are of P2P type*/
-				if(resultantMarkers[i].type == "P2P") {
+				if($.trim(resultantMarkers[i].data.technology) == "P2P" || $.trim(resultantMarkers[i].data.technology) == "PTP") {
 					/*Create object for Link Line Between Master & Slave*/
 					startLat = resultantMarkers[i].data.lat;
 					startLon = resultantMarkers[i].data.lon;
@@ -341,7 +341,7 @@ function googleEarthClass() {
 				} else {
 					var lat = resultantMarkers[i].data.lat;
 					var lon = resultantMarkers[i].data.lon;
-					var rad = resultantMarkers[i].children[j].data.radius;
+					var rad = 4;//resultantMarkers[i].children[j].data.radius;
 					var azimuth = resultantMarkers[i].children[j].data.azimuth_angle;
 					var beam_width = resultantMarkers[i].children[j].data.beam_width;
 					var sector_color = resultantMarkers[i].children[j].data.sector_color;
@@ -350,7 +350,7 @@ function googleEarthClass() {
 					
 					/*Call createSectorData function to get the points array to plot the sector on google earth.*/
 					mapsLibInstance.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
-						
+
 						/*Plot sector on google earth with the retrived points*/
 						// earth_that.plotSector_earth(lat,lon,pointsArray,sectorInfo,sector_color);
 
@@ -369,7 +369,7 @@ function googleEarthClass() {
 					/*Create info window HTML string for link(line).*/
 					var line_infoTable = "",
 						bs_info = {};
-					if($.trim(resultantMarkers[i].type) == "P2P") {
+					if($.trim(resultantMarkers[i].data.technology) == "P2P" || $.trim(resultantMarkers[i].data.technology) == "PTP") {
 						bs_info = resultantMarkers[i].data.param.base_station;
 					} else {
 						bs_info = resultantMarkers[i].children[j].data.param.sector_info;
@@ -430,7 +430,8 @@ function googleEarthClass() {
 					lineStringPlacemark.setStyleSelector(ge.createStyle(''));
 					var lineStyle = lineStringPlacemark.getStyleSelector().getLineStyle();
 					lineStyle.setWidth(2);
-					var link_color_obj = resultantMarkers[i].children[j].data.link_color;
+					var link_color_obj = JSON.parse(resultantMarkers[i].children[j].data.link_color);
+
 					lineStyle.getColor().setA(200);
 					lineStyle.getColor().setB(link_color_obj.b);
 					lineStyle.getColor().setG(link_color_obj.g);
