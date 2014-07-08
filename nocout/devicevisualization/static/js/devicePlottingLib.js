@@ -126,44 +126,7 @@ function devicePlottingClass_gmap() {
 
 		oms.addListener('click', function(marker,e) {
 			
-			if($.trim(marker.pointType) == 'base_station') {
-
-				/*Clear all the Sectors on BS*/
-				for(var k=0;k<sectorArray.length;k++) {
-					sectorArray[k].setMap(null);	
-				}
-				/*Reset the SS points array*/				
-				sectorArray = [];
-
-				/*True in case of PMP & WIMAX*/
-				if($.trim(marker.technology) != "PTP" && $.trim(marker.technology) != "P2P") {
-					
-					$.grep(marker.sectors,function(sector) {
-		    			var lat = marker.ptLat;
-						var lon = marker.ptLon;
-						var rad = 4;//sector.radius;
-						var azimuth = sector.azimuth_angle;
-						var beam_width = sector.beam_width;
-						var sector_color = "";
-					    sector_color = "rgba(";
-					    sector_color += JSON.parse(sector.color).r+",";
-					    sector_color += JSON.parse(sector.color).g+",";
-					    sector_color += JSON.parse(sector.color).b+",";
-					    sector_color += JSON.parse(sector.color).a;
-					    sector_color += ")";
-
-						var sectorInfo = sector.info;
-						var orientation = $.trim(sector.orientation);
-						/*Call createSectorData function to get the points array to plot the sector on google maps.*/
-						that.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
-
-							/*Plot sector on map with the retrived points*/
-							that.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color);
-
-						});
-		    		});
-
-				}
+			if($.trim(marker.pointType) == 'base_station') {				
 
 				/*Clear the existing SS for same point*/
 				for(var i=0;i<plottedSS.length;i++) {
@@ -178,7 +141,7 @@ function devicePlottingClass_gmap() {
 				plottedSS = [];
 				pathLineArray = [];
 
-				that.plotDevices_gmap(marker,"sub_station");
+				that.plotSubStation_gmap(marker);
 			}
 
 			var windowPosition = new google.maps.LatLng(marker.ptLat,marker.ptLon);
@@ -244,8 +207,8 @@ function devicePlottingClass_gmap() {
 			/*Ajax call to the API*/
 			$.ajax({
 				crossDomain: true,
-				url : "../../device/stats/",
-				// url : "../../static/new_format.json",
+				url : window.location.origin+"/"+"device/stats/",
+				// url : window.location.origin+"/"+"static/new_format.json",
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
@@ -382,7 +345,7 @@ function devicePlottingClass_gmap() {
 	};
 
 	/**
-     * This function is used to populate the markers on the google maps
+     * This function is used to plot BS or SS devices & their respective elements on the google maps
      * @class devicePlottingLib
      * @method plotDevices_gmap
      * @param stationObject {JSON Objet} In case of BS, it is the devies object array & for SS it contains BS marker object with SS & sector info
@@ -397,26 +360,61 @@ function devicePlottingClass_gmap() {
 		if($.trim(stationType) == "base_station") {
 			bs_ss_devices = stationObject;
 		} else {
-			bs_ss_devices = stationObject.ssList;
+			bs_ss_devices = stationObject.child_ss;
 		}
 
 		for(var i=0;i<bs_ss_devices.length;i++) {
 
-			var available_sectors = [],
-				deviceData = [],
-				pt_technology = "";
-
-			if(bs_ss_devices[i].data.param.sector != undefined) {
-				available_sectors = bs_ss_devices[i].data.param.sector;
-			}
+			var deviceData = [],
+				pt_technology = "",
+				bhInfo = [];			
 
 			if($.trim(stationType) == "base_station") {
 				deviceData = bs_ss_devices[i].data.param.base_station;
 				pt_technology = bs_ss_devices[i].data.technology;
+				bhInfo = bs_ss_devices[i].data.param.backhual;
 			} else {				
 				deviceData = bs_ss_devices[i].data.param.sub_station;
 			}
 
+			/*If base station then create all the sectors within it.*/
+			if($.trim(stationType) == "base_station") {
+
+		    	/*True in case of PMP & WIMAX*/
+				if($.trim(bs_ss_devices[i].data.technology) != "PTP" && $.trim(bs_ss_devices[i].data.technology) != "P2P") {
+					
+					var sector_array = bs_ss_devices[i].data.param.sector;
+
+					$.grep(sector_array,function(sector) {
+
+		    			var lat = bs_ss_devices[i].data.lat;
+						var lon = bs_ss_devices[i].data.lon;
+						var azimuth = sector.azimuth_angle;
+						var beam_width = sector.beam_width;
+						var sector_color = sector.color;
+						var sectorInfo = sector.info;
+						var orientation = $.trim(sector.orientation);
+						var sector_child = sector.sub_station;
+						
+						var rad = 1;
+
+						/*If radius is greater than 4 Kms then set it to 4.*/
+						if(sector.radius > 4) {
+							rad = 4;
+						} else {
+							rad = sector.radius;
+						}
+
+						/*Call createSectorData function to get the points array to plot the sector on google maps.*/
+						that.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
+
+							/*Plot sector on map with the retrived points*/
+							that.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child);
+
+						});
+		    		});
+				}
+		    }
 
 			/*Get All BS Lat & Lon*/
 			bsLatArray.push(bs_ss_devices[i].data.lat);
@@ -424,19 +422,19 @@ function devicePlottingClass_gmap() {
 
 			/*Create BS or SS Marker Object*/
 			var station_marker_object = {
-		    	position  	  : new google.maps.LatLng(bs_ss_devices[i].data.lat,bs_ss_devices[i].data.lon),
-		    	ptLat 		  : bs_ss_devices[i].data.lat,
-		    	technology 	  : pt_technology,
-		    	ptLon 		  : bs_ss_devices[i].data.lon,
-		    	map       	  : mapInstance,
-		    	icon 	  	  : "../../"+bs_ss_devices[i].data.markerUrl,//"https://chart.googleapis.com/chart?chst=d_map_pin_letter&chld=|fcfcfc|",
-		    	oldIcon 	  : "../../"+bs_ss_devices[i].data.markerUrl,
-		    	pointType	  : stationType,
-				perf 		  : bs_ss_devices[i].data.perf,
-				ssList   	  : bs_ss_devices[i].children,
-				sectors 	  : available_sectors,
-				dataset 	  : deviceData,
-				antena_height : bs_ss_devices[i].data.antena_height
+		    	position  	     : new google.maps.LatLng(bs_ss_devices[i].data.lat,bs_ss_devices[i].data.lon),
+		    	ptLat 		     : bs_ss_devices[i].data.lat,
+		    	ptLon 		     : bs_ss_devices[i].data.lon,
+		    	technology 	     : pt_technology,
+		    	map       	     : mapInstance,
+		    	icon 	  	     : window.location.origin+"/"+bs_ss_devices[i].data.markerUrl,
+		    	oldIcon 	     : window.location.origin+"/"+bs_ss_devices[i].data.markerUrl,
+		    	pointType	     : stationType,
+				child_ss   	     : bs_ss_devices[i].data.param.sector,
+				original_sectors : bs_ss_devices[i].data.param.sector,
+				dataset 	     : deviceData,
+				bhInfo 			 : bhInfo,
+				antena_height    : bs_ss_devices[i].data.antena_height
 			};
 
 			/*Create BS or SS Marker*/
@@ -454,47 +452,17 @@ function devicePlottingClass_gmap() {
 		    		/*Start & end point object*/
 		    		startEndObj["startLat"] = stationObject.ptLat;
 		    		startEndObj["startLon"] = stationObject.ptLon;
-
-		    		/*Base station info Object*/
-		    		bs_info["info"] = stationObject.dataset;
-		    		bs_info["antena_height"] = stationObject.antena_height;
-		    		bs_info["perf"] = stationObject.perf;
-
 		    	} else {
-		    		var lat = "",
-		    			lon = "",
-		    			rad = 4,
-		    			azimuth = "",
-		    			beam_width = "",
-		    			orientation = "";
-
-		    		lat = stationObject.ptLat;
-					lon = stationObject.ptLon;
-
-					if(bs_ss_devices[i].data.radius != null && resultantMarkers[i].children[j].data.radius > 0) {
-						rad = resultantMarkers[i].children[j].data.radius;
-					}
-
-					azimuth = bs_ss_devices[i].data.azimuth_angle;
-					beam_width = bs_ss_devices[i].data.beam_width;
-					orientation = $.trim(bs_ss_devices[i].data.sector_orientation);
-
-					
-					/*Call createSectorData function to get the points array to plot the sector on google maps.*/
-					that.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
-
-						var halfPt = Math.floor(pointsArray.length / (+2));
-						
-						startEndObj["startLat"] = pointsArray[halfPt].lat;
-		    			startEndObj["startLon"] = pointsArray[halfPt].lon;
-					});
-
-					/*Base station info Object*/
-		    		bs_info["info"] = bs_ss_devices[i].data.param.sector_info;
+		    			
+					startEndObj["startLat"] = stationObject.startLat;
+	    			startEndObj["startLon"] = stationObject.startLon;
 		    	}
 
+		    	/*Base station info Object*/
+	    		bs_info["info"] = stationObject.dataset;
+	    		bs_info["antena_height"] = stationObject.antena_height;
+
 		    	bs_info["antena_height"] = stationObject.antena_height;
-	    		bs_info["perf"] = stationObject.perf;
 
 		    	startEndObj["endLat"] = bs_ss_devices[i].data.lat;
 	    		startEndObj["endLon"] = bs_ss_devices[i].data.lon;
@@ -505,13 +473,13 @@ function devicePlottingClass_gmap() {
 	    		ss_info["perf"] = bs_ss_devices[i].data.perf;
 
 	    		/*Link color object*/
-	    		linkColor = JSON.parse(bs_ss_devices[i].data.link_color);
+	    		linkColor = bs_ss_devices[i].data.link_color;
 	    		
 		    	/*Create the link between BS & SS or Sector & SS*/
 		    	that.createLink_gmaps(startEndObj,linkColor,bs_info,ss_info);
 
 		    	/*Push the plotted SS to an array for further use*/
-		    	plottedSS[i]  = station_marker;
+		    	plottedSS.push(station_marker);
 		    }
 
 		    if($.trim(stationType) == "base_station") {
@@ -519,6 +487,7 @@ function devicePlottingClass_gmap() {
 		    	/*Add the master marker to the global master markers array*/
 		    	masterMarkersObj.push(station_marker);
 		    }
+
 		    /*Add parent markers to the OverlappingMarkerSpiderfier*/
 		    oms.addMarker(station_marker);
 		}
@@ -541,34 +510,74 @@ function devicePlottingClass_gmap() {
 	};
 
 	/**
+	 * This function plots all the sub-station in given sectors object array.
+	 * @class devicePlottingLib
+	 * @method plotSubStation_gmap.
+	 * @param stationSectorObject {JSON Objet} It contains sector object in which SS are present.
+	 */
+	this.plotSubStation_gmap = function(stationSectorObject) {
+
+		var sectorObj = stationSectorObject.original_sectors;
+
+		if($.trim(stationSectorObject.technology) == "PTP" || $.trim(stationSectorObject.technology) == "P2P") {
+
+			var subStationData = [];
+			if(stationSectorObject.original_sectors[0].sub_station.length > 0) {
+				subStationData = stationSectorObject.original_sectors[0].sub_station;
+			}
+			stationSectorObject["child_ss"] = subStationData;
+
+			that.plotDevices_gmap(stationSectorObject,"sub_station");
+
+		} else {
+
+			for(var i=0;i<sectorObj.length;i++) {
+
+				var rad = 1;
+
+				/*If radius is greater than 4 Kms then set it to 4.*/
+				if(sectorObj[i].radius > 4) {
+					rad = 4;
+				} else {
+					rad = sectorObj[i].radius;
+				}
+
+				that.createSectorData(stationSectorObject.ptLat,stationSectorObject.ptLon,rad,sectorObj[i].azimuth_angle,sectorObj[i].beam_width,sectorObj[i].orientation,function(pointArray) {
+
+					var halfPt = Math.floor(pointArray.length / (+2));
+
+					stationSectorObject["startLat"] = pointArray[halfPt].lat;
+					stationSectorObject["startLon"] = pointArray[halfPt].lon;
+				});
+
+				stationSectorObject["child_ss"] = sectorObj[i].sub_station;
+				// stationSectorObject["bhInfo"] = stationSectorObject["dataset"];
+				stationSectorObject["dataset"] = sectorObj[i].info;				
+				
+				that.plotDevices_gmap(stationSectorObject,"sub_station");
+			}
+		}
+	};
+
+
+	/**
 	 * This function creates a link between Bs & SS
 	 * @class devicePlottingLib
 	 * @method createLink_gmaps. 
-	 * 
+	 * @param startEndObj {JSON Object}, It contains the start & end points json object.
+	 * @param linkColor "String", It contains the color for link line.
+	 * @param bs_info {JSON Object}, It contains the start point information json object.
+	 * @param ss_info {JSON Object}, It contains the end point information json object.
 	 *
 	 */
 	this.createLink_gmaps = function(startEndObj,linkColor,bs_info,ss_info) {
 
-		pathDataObject = [
+		var pathDataObject = [
 			new google.maps.LatLng(startEndObj.startLat,startEndObj.startLon),
 			new google.maps.LatLng(startEndObj.endLat,startEndObj.endLon)
-		];
-
-		var linkObject = {},
-			link_path_color = "";
-
-		link_path_color = "rgba(";
-	    link_path_color += linkColor.r+",";
-	    link_path_color += linkColor.g+",";
-	    link_path_color += linkColor.b+",";
-	    
-	    if(linkColor.a != undefined) {
-	    	link_path_color += linkColor.a;
-	    } else {
-	    	link_path_color += "1.0";	
-	    }
-
-	    link_path_color += ")";
+		],
+		linkObject = {},
+		link_path_color = linkColor;
 
 		linkObject = {
 			path 				: pathDataObject,
@@ -588,12 +597,6 @@ function devicePlottingClass_gmap() {
 			bs_perf 			: bs_info.perf,
 			bs_height 			: bs_info.antena_height
 		};
-
-		// if($.trim(resultantMarkers[i].type) == "P2P" || $.trim(resultantMarkers[i].type) == "PTP") {
-		// 	linkObject["bs_info"] = resultantMarkers[i].data.param.base_station;
-		// } else {
-		// 	linkObject[""] = resultantMarkers[i].children[j].data.param.sector_info;
-		// }
 
 		pathConnector = new google.maps.Polyline(linkObject);
 		/*Plot the link line between master & slave*/
@@ -716,10 +719,16 @@ function devicePlottingClass_gmap() {
 	 * @param pointsArray [Array], It contains the points lat-lon object array.
 	 * @param sectorInfo {JSON Object Array}, It contains the information about the sector which are shown in info window.
 	 * @param bgColor "String", It contains the RGBA format color code for sector.
+	 * @param sector_child [JSON object Array], It contains the connected SS data.
 	 */
-	this.plotSector_gmap = function(lat,lon,pointsArray,sectorInfo,bgColor) {
+	this.plotSector_gmap = function(lat,lon,pointsArray,sectorInfo,bgColor,sector_child) {
 
 		var polyPathArray = [];
+		
+		var halfPt = Math.floor(pointsArray.length / (+2));
+		
+		var startLat = pointsArray[halfPt].lat;
+		var startLon = pointsArray[halfPt].lon;
 
 		for(var i=0;i<pointsArray.length;i++) {
 			var pt = new google.maps.LatLng(pointsArray[i].lat,pointsArray[i].lon);
@@ -727,16 +736,21 @@ function devicePlottingClass_gmap() {
 		}
 
 		var poly = new google.maps.Polygon({
-			map 		  : mapInstance,
-			path 		  : polyPathArray,
-			ptLat 		  : lat,
-			ptLon 		  : lon,
-			strokeColor   : "rgba(90, 101, 102, 1.0)",
-			fillColor 	  : bgColor,
-			pointType	  : "sector",
-			strokeOpacity : 1.0,
-			strokeWeight  : 1,
-			dataset 	  : sectorInfo
+			map 		     : mapInstance,
+			path 		     : polyPathArray,
+			ptLat 		     : lat,
+			ptLon 		     : lon,
+			strokeColor      : "rgba(90, 101, 102, 1.0)",
+			fillColor 	     : bgColor,
+			pointType	     : "sector",
+			strokeOpacity    : 1.0,
+			strokeWeight     : 1,
+			dataset 	     : sectorInfo,
+			startLat 	     : startLat,
+			startLon 	     : startLon,
+			bhInfo 			 : [],
+			child_ss 	     : sector_child,
+			original_sectors : sector_child,
         });
 
         /*Push polygon to an array*/
@@ -746,6 +760,21 @@ function devicePlottingClass_gmap() {
 
         /*listener for click event of sector*/
 		google.maps.event.addListener(poly,'click',function(e) {
+
+			/*Clear the existing SS for same point*/
+			for(var i=0;i<plottedSS.length;i++) {
+				plottedSS[i].setMap(null);
+			}
+
+			/*Clear all the link between BS & SS  or Sector & SS*/
+			for(var j=0;j<pathLineArray.length;j++) {
+				pathLineArray[j].setMap(null);	
+			}
+			/*Reset global variables*/
+			plottedSS = [];
+			pathLineArray = [];
+
+			that.plotDevices_gmap(this,"sub_station");
 
 			var windowPosition = new google.maps.LatLng(e.latLng.k,e.latLng.B);
 			/*Call the function to create info window content*/
@@ -757,78 +786,6 @@ function devicePlottingClass_gmap() {
 			/*Open the info window*/
 			infowindow.open(mapInstance);
 		});
-	};
-
-	/**
-	 * This function creates circle on the given lat lon of given radius
-	 * @class devicePlottingLib
-	 * @method createCircle.
-	 * @param Lat "Number", It contains lattitude of any point.
-	 * @param Lng "Number", It contains longitude of any point.
-	 * @param radius "Number", It contains radius for sector.
-	 * @param bgColor "String", It contains bg color for circle.
-	 * @param pType "String", It contains info about circle is plot for BH or frequency.
-	 * @param dType "String", It contains info about circle is plot for SS or BS.
-	 * @param bhData {JSON Object}, It contains JSON object of BH info data.
-	 */
-	this.createCircle = function(lat,lng,radius,bgColor,pType,dType,bhData) {
-
-		var rad = 0,
-			fOpacity = 0,
-			sColor = "";
-		if($.trim(pType) == "frequency") {
-			rad = radius * 2;
-			fOpacity = 0.5;
-			sColor = bgColor;
-		} else if($.trim(dType) == "ss") {
-			rad = radius;
-			fOpacity = 0.95;
-			sColor = '000000';
-		} else {
-			rad = radius;
-			fOpacity = 0.8;
-			sColor = bgColor;
-		}
-		/*Make circle data object for devices*/
-		var devicesCircleOptions = {
-			strokeColor		: "#"+sColor,
-			strokeOpacity	: 1.0,
-			ptLat 			: lat,
-			ptLon 			: lng,
-			clickable		: true,
-			strokeWeight	: 1,
-			fillColor		: "#"+bgColor,
-			fillOpacity		: fOpacity,
-			pointType		: pType,
-			map 			: mapInstance,
-			center 			: new google.maps.LatLng(lat,lng),
-			radius 			: rad,
-			dataset 		: bhData
-		};
-
-		/*Make the circle on the device marker*/
-		var deviceCircle = new google.maps.Circle(devicesCircleOptions);
-
-		/*Add circle object to an array*/
-		circleArray.push(deviceCircle);
-		rad = 0;
-		fOpacity = 0;
-		sColor = "";
-		if($.trim(pType) == "backhual") {
-			/*listener for click event of circle*/
-			google.maps.event.addListener(deviceCircle,'click',function(e) {
-				
-				var windowPosition = new google.maps.LatLng(lat,lng);
-				/*Call the function to create info window content*/
-				var content = that.makeWindowContent(deviceCircle);
-				/*Set the content for infowindow*/
-				infowindow.setContent(content);
-				/*Set The Position for InfoWindow*/
-				infowindow.setPosition(windowPosition);
-				/*Open the info window*/
-				infowindow.open(mapInstance);
-			});
-		}
 	};
 
 	/**
@@ -848,7 +805,7 @@ function devicePlottingClass_gmap() {
 		/*True,if clicked on the link line*/
 		if(clickedType == "path") {
 
-			infoTable += "<table class='table table-bordered'><thead><th>BS-Sector Info</th><th>BS-Sector Perf</th><th>SS Info</th><th>SS Perf</th></thead><tbody>";
+			infoTable += "<table class='table table-bordered'><thead><th>BS-Sector Info</th><th>SS Info</th></thead><tbody>";
 			infoTable += "<tr>";
 			/*BS-Sector Info Start*/
 			infoTable += "<td>";	
@@ -866,9 +823,7 @@ function devicePlottingClass_gmap() {
 			infoTable += "</tbody></table>";			
 			infoTable += "</td>";
 			/*BS-Sector Info End*/
-			/*BS-Sector Performance Start*/
-			infoTable += "<td style='vertical-align:middle;text-align: center;'><h1><i class='fa fa-signal'></i>  "+contentObject.bs_perf+"</h1></td>";
-			/*BS-Sector Performance End*/
+
 			/*SS Info Start*/
 			infoTable += "<td>";			
 			infoTable += "<table class='table table-hover innerTable'><tbody>";
@@ -885,9 +840,7 @@ function devicePlottingClass_gmap() {
 			infoTable += "</tbody></table>";		
 			infoTable += "</td>";
 			/*SS Info End*/
-			/*SS Performance Start*/
-			infoTable += "<td style='vertical-align:middle;text-align: center;'><h1><i class='fa fa-signal'></i>  "+contentObject.ss_perf+"</h1></td>";
-			/*SS Performance End*/
+
 			infoTable += "</tr>";
 			infoTable += "</tbody></table>";
 			
@@ -904,16 +857,25 @@ function devicePlottingClass_gmap() {
 					infoTable += "<tr><td>"+contentObject.dataset[i].title+"</td><td>"+contentObject.dataset[i].value+"</td></tr>";
 				}
 			}
+			
 			/*Set the lat lon of the point*/
 			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ptLat+", "+contentObject.ptLon+"</td></tr>";
 
+			if(clickedType == "base_station") {
+
+				infoTable += "<tr><td colspan='2'><b>Backhaul Info</b></td></tr>";
+				for(var i=0;i<contentObject.bhInfo.length;i++) {
+
+					if(contentObject.bhInfo[i].show == 1) {
+						infoTable += "<tr><td>"+contentObject.bhInfo[i].title+"</td><td>"+contentObject.bhInfo[i].value+"</td></tr>";
+					}
+				}
+			}
+
 			infoTable += "</tbody></table>";
 
-			if(contentObject.perf != undefined) {
-				perfContent += "<h1><i class='fa fa-signal'></i>  "+contentObject.perf+"</h1>";
-			}			
 			/*Final infowindow content string*/
-			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+contentObject.pointType.toUpperCase()+"</h4></div><div class='box-body'><div class='windowInfo' align='center'>"+infoTable+"</div><div class='perf'>"+perfContent+"</div><div class='clearfix'></div></div></div></div>";
+			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+contentObject.pointType.toUpperCase()+"</h4></div><div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div></div></div></div>";
 		}
 		/*Return the info window content*/
 		return windowContent;
@@ -1436,7 +1398,7 @@ function devicePlottingClass_gmap() {
 
 		/*Ajax call for filters data*/
 		$.ajax({
-			url : "../../device/filter/",
+			url : window.location.origin+"/"+"device/filter/",
 			// url : "../../static/filter_data.json",
 			success : function(result) {				
 				filtersData = JSON.parse(result);
