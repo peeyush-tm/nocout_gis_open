@@ -10,9 +10,16 @@ class ServiceForm(forms.ModelForm):
         self.fields['command'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
     class Meta:
         model = Service
 
@@ -23,9 +30,16 @@ class ServiceDataSourceForm(forms.ModelForm):
         super(ServiceDataSourceForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
     class Meta:
         model = ServiceDataSource
 
@@ -37,9 +51,16 @@ class ServiceParametersForm(forms.ModelForm):
         self.fields['protocol'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
     class Meta:
         model = ServiceParameters
 
@@ -74,8 +95,15 @@ class ProtocolForm(forms.ModelForm):
         super(ProtocolForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
     class Meta:
         model = Protocol

@@ -4,7 +4,7 @@ from command.models import Command
 
 class Protocol(models.Model):
     name = models.CharField('Parameters Name', max_length=255)
-    protocol_name = models.CharField('Name', max_length=255)
+    protocol_name = models.CharField('Protocol Name', max_length=255)
     port = models.IntegerField('Port', null=True, blank=True)
     version = models.CharField('Version', max_length=10, blank=True, null=True)
     read_community = models.CharField('Read Community', max_length=100, blank=True, null=True)

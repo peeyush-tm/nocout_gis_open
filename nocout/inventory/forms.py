@@ -24,11 +24,19 @@ class InventoryForm(forms.ModelForm):
 
         super(InventoryForm, self).__init__(*args, **kwargs)
         self.fields['user_group'].empty_label = 'Select'
+        self.fields['organization'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
 
         organization_id=None
         if kwargs['instance']:
@@ -68,9 +76,16 @@ class AntennaForm(forms.ModelForm):
         super(AntennaForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
         model = Antenna
@@ -100,9 +115,16 @@ class BackhaulForm(forms.ModelForm):
         self.fields['aggregator'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
     class Meta:
         model = Backhaul
 
@@ -124,9 +146,16 @@ class BaseStationForm(forms.ModelForm):
         self.fields['backhaul'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
     class Meta:
         model = BaseStation
 
@@ -149,9 +178,16 @@ class SectorForm(forms.ModelForm):
         self.fields['antenna'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
     class Meta:
         model = Sector
         
@@ -163,9 +199,16 @@ class CustomerForm(forms.ModelForm):
         super(CustomerForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
     class Meta:
         model = Customer
         
@@ -185,9 +228,16 @@ class SubStationForm(forms.ModelForm):
         self.fields['device'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
     class Meta:
         model = SubStation
         
@@ -202,8 +252,15 @@ class CircuitForm(forms.ModelForm):
         self.fields['sub_station'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
     class Meta:
         model = Circuit
