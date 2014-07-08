@@ -254,11 +254,11 @@ class DeviceCreate(CreateView):
         except:
             print "No instance to add."
 
-        # saving associated ports  --> M2M Relation (Model: DevicePort)
-        for port in form.cleaned_data['ports']:
-            device_port = DevicePort.objects.get(name=port)
-            device.ports.add(device_port)
-            device.save()
+        # # saving associated ports  --> M2M Relation (Model: DevicePort)
+        # for port in form.cleaned_data['ports']:
+        #     device_port = DevicePort.objects.get(name=port)
+        #     device.ports.add(device_port)
+        #     device.save()
 
         # # saving associated services  --> M2M Relation (Model: Service)
         # for service in form.cleaned_data['service']:
@@ -335,7 +335,7 @@ class DeviceUpdate(UpdateView):
         # saving device data
         self.object.device_name = form.cleaned_data['device_name']
         self.object.device_alias = form.cleaned_data['device_alias']
-        self.object.ports = form.cleaned_data['ports']
+        #self.object.ports = form.cleaned_data['ports']
         self.object.device_technology = form.cleaned_data['device_technology']
         self.object.device_vendor = form.cleaned_data['device_vendor']
         self.object.device_model = form.cleaned_data['device_model']

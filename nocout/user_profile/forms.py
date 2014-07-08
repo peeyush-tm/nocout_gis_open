@@ -17,6 +17,8 @@ class UserForm(forms.ModelForm):
             initial['organization'] = kwargs['instance'].organization
 
         super(UserForm, self).__init__(*args, **kwargs)
+        self.fields['parent'].empty_label = 'Select'
+        self.fields['organization'].empty_label = 'Select'
 
         if self.instance.pk:
             self.fields['password1'].required = False
@@ -31,9 +33,16 @@ class UserForm(forms.ModelForm):
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
         model = UserProfile
