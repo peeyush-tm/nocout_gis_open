@@ -7,6 +7,7 @@ from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, D
 import requests
 import logging
 from service.models import Service, ServiceDataSource
+import urllib
 
 logger=logging.getLogger(__name__)
 
@@ -384,7 +385,7 @@ def add_device_to_nms_core(request, device_id):
                        'agent_tag': agent_tag,
                        'site': device.site_instance.name,
                        'mode' : 'addhost'}
-        url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
+        url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
         r = requests.post(url , data=device_data)
         response_dict = ast.literal_eval(r.text)
         if r:
@@ -411,7 +412,7 @@ def sync_device_with_nms_core(request):
     result['message'] = "Device activation for monitoring failed."
     result['data']['meta'] = ''
     device_data = {'mode' : 'sync'}
-    url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
+    url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
     r = requests.post(url, data=device_data)
     try:
         response_dict = ast.literal_eval(r.text)
@@ -607,8 +608,8 @@ def add_service(request, **kwargs):
         # get service data parameters (or command parameters)
         try:
             service_data_source = ServiceDataSource.objects.get(pk=service_data_source_id)
-            service_data['cmd_params'] = dict()
-            service_data['cmd_params'][service_data_source.name] = dict()
+            service_data['cmd_params'] = {}
+            service_data['cmd_params'][service_data_source.name.strip()] = {}
             service_data['cmd_params'][service_data_source.name]['warning'] = service_data_source.warning
             service_data['cmd_params'][service_data_source.name]['critical'] = service_data_source.critical
         except:
@@ -630,17 +631,18 @@ def add_service(request, **kwargs):
             logger.info("There is no device port.")
 
         # nocout api url
-        url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
+        url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
 
         # cal to add service api
-        r = requests.post(url , data=service_data)
+	encoded_data = urllib.urlencode(service_data)
+        r = requests.post(url , data=encoded_data)
         response_dict = ast.literal_eval(r.text)
 
         if r:
             result['data'] = service_data
             result['success'] = 1
-            if response_dict['error_code'] != None:
-                result['message'] = response_dict['error_message'].capitalize()
+            if not response_dict.get('success'):
+                result['message'] = response_dict.get('error_message')
             else:
                 result['message'] = "Service added successfully."
                 device = Device.objects.get(pk=device_id)
