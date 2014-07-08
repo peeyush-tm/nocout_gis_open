@@ -16,6 +16,8 @@ class DeviceGroupForm(forms.ModelForm):
             initial['organization']=None
 
         super(DeviceGroupForm, self).__init__(*args, **kwargs)
+        self.fields['parent'].empty_label = 'Select'
+        self.fields['organization'].empty_label = 'Select'
 
         organization_id=None
         if kwargs['instance']:

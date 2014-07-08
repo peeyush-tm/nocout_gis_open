@@ -5,6 +5,7 @@ from .models import SiteInstance
 class SiteInstanceForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(SiteInstanceForm, self).__init__(*args, **kwargs)
+        self.fields['machine'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 field.widget.attrs['class'] += ' form-control'

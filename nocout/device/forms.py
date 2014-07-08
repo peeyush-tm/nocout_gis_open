@@ -151,6 +151,7 @@ class DeviceForm(forms.ModelForm):
 class DeviceTypeFieldsForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(DeviceTypeFieldsForm, self).__init__(*args, **kwargs)
+        self.fields['device_type'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 field.widget.attrs['class'] += ' form-control'

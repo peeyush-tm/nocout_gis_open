@@ -17,6 +17,8 @@ class UserGroupForm(forms.ModelForm):
             initial['organization']=None
 
         super(UserGroupForm, self).__init__(*args, **kwargs)
+        self.fields['parent'].empty_label = 'Select'
+        self.fields['organization'].empty_label = 'Select'
         organization_id=None
         if kwargs['instance']:
             self.fields['name'].widget.attrs['readonly'] = True

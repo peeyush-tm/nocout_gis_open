@@ -17,6 +17,8 @@ class UserForm(forms.ModelForm):
             initial['organization'] = kwargs['instance'].organization
 
         super(UserForm, self).__init__(*args, **kwargs)
+        self.fields['parent'].empty_label = 'Select'
+        self.fields['organization'].empty_label = 'Select'
 
         if self.instance.pk:
             self.fields['password1'].required = False

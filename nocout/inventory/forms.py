@@ -23,6 +23,7 @@ class InventoryForm(forms.ModelForm):
             initial['organization']=None
 
         super(InventoryForm, self).__init__(*args, **kwargs)
+        self.fields['user_group'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 field.widget.attrs['class'] += ' form-control'
@@ -48,13 +49,13 @@ class InventoryForm(forms.ModelForm):
 class AntennaForm(forms.ModelForm):
 
     POLARIZATION = (
-        ('', 'Select....'),
+        ('', 'Select'),
         ('vertical', 'Vertical'),
         ('horizontal', 'Horizontal')
     )
 
     SPLITTER_INSTALLED = (
-        ('', 'Select....'),
+        ('', 'Select'),
         ('yes', 'Yes'),
         ('no', 'No')
     )
@@ -78,12 +79,12 @@ class AntennaForm(forms.ModelForm):
 #************************************* Backhaul ****************************************
 class BackhaulForm(forms.ModelForm):
     BH_TYPE = (
-        ('', 'Select....'),
+        ('', 'Select'),
         ('e1', 'E1'),
         ('ethernet', 'Ethernet')
     )
     BH_CONNECTIVITY = (
-        ('', 'Select....'),
+        ('', 'Select'),
         ('onnet', 'Onnet'),
         ('offnet', 'Offnet')
     )
@@ -93,6 +94,10 @@ class BackhaulForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(BackhaulForm, self).__init__(*args, **kwargs)
+        self.fields['bh_configured_on'].empty_label = 'Select'
+        self.fields['bh_switch'].empty_label = 'Select'
+        self.fields['pop'].empty_label = 'Select'
+        self.fields['aggregator'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 field.widget.attrs['class'] += ' form-control'
@@ -105,7 +110,7 @@ class BackhaulForm(forms.ModelForm):
 #************************************ Base Station ****************************************
 class BaseStationForm(forms.ModelForm):
     BS_TYPE = (
-        ('', 'Select....'),
+        ('', 'Select'),
         ('master', 'Master'),
         ('slave', 'Slave')
     )
@@ -114,6 +119,9 @@ class BaseStationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(BaseStationForm, self).__init__(*args, **kwargs)
+        self.fields['bs_technology'].empty_label = 'Select'
+        self.fields['bs_switch'].empty_label = 'Select'
+        self.fields['backhaul'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 field.widget.attrs['class'] += ' form-control'
@@ -126,7 +134,7 @@ class BaseStationForm(forms.ModelForm):
 #************************************* Sector *************************************
 class SectorForm(forms.ModelForm):
     MRC = (
-        ('', 'Select....'),
+        ('', 'Select'),
         ('yes', 'Yes'),
         ('no', 'No')
     )
@@ -135,6 +143,10 @@ class SectorForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(SectorForm, self).__init__(*args, **kwargs)
+        self.fields['base_station'].empty_label = 'Select'
+        self.fields['sector_configured_on'].empty_label = 'Select'
+        self.fields['sector_configured_on_port'].empty_label = 'Select'
+        self.fields['antenna'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 field.widget.attrs['class'] += ' form-control'
@@ -161,7 +173,7 @@ class CustomerForm(forms.ModelForm):
 #*********************************** Sub Station *************************************
 class SubStationForm(forms.ModelForm):
     ETHERNET_EXTENDER = (
-        ('', 'Select....'),
+        ('', 'Select'),
         ('yes', 'Yes'),
         ('no', 'No')
     )
@@ -170,6 +182,7 @@ class SubStationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(SubStationForm, self).__init__(*args, **kwargs)
+        self.fields['device'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 field.widget.attrs['class'] += ' form-control'
@@ -184,6 +197,9 @@ class CircuitForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CircuitForm, self).__init__(*args, **kwargs)
+        self.fields['sector'].empty_label = 'Select'
+        self.fields['customer'].empty_label = 'Select'
+        self.fields['sub_station'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 field.widget.attrs['class'] += ' form-control'

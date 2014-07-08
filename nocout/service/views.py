@@ -165,6 +165,7 @@ class ServiceParametersList(ListView):
         context=super(ServiceParametersList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData':'parameter_description',     'sTitle' : 'Parameter Description', 'sWidth':'null',},
+            {'mData':'protocol__name',            'sTitle' : 'Protocol',              'sWidth':'null',},
             {'mData':'max_check_attempts',        'sTitle' : 'Max Check Attempts',    'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'check_interval',            'sTitle' : 'Check Intervals',       'sWidth':'null',},
             {'mData':'retry_interval',            'sTitle' : 'Retry Interval',        'sWidth':'null',},
@@ -178,9 +179,9 @@ class ServiceParametersList(ListView):
 
 class ServiceParametersListingTable(BaseDatatableView):
     model = ServiceParameters
-    columns = ['parameter_description', 'max_check_attempts', 'check_interval', 'retry_interval','check_period',
+    columns = ['parameter_description', 'protocol__name', 'max_check_attempts', 'check_interval', 'retry_interval','check_period',
                 'notification_interval','notification_period']
-    order_columns = ['parameter_description', 'max_check_attempts', 'check_interval', 'retry_interval','check_period',
+    order_columns = ['parameter_description', 'protocol__name', 'max_check_attempts', 'check_interval', 'retry_interval','check_period',
                      'notification_interval','notification_period']
 
     def filter_queryset(self, qs):
