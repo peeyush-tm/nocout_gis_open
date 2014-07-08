@@ -254,16 +254,12 @@ class DownListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return EventService.objects.all().values(*self.columns+['id'])
+        return EventNetwork.objects.filter(severity="DOWN").values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
-            try:
-                dct['check_timestamp'] = time.strftime('%a %d-%b-%Y %H:%M:%S %Z', time.localtime(dct['check_timestamp']))
-            except:
-                logger.info("No timestamp data.")
             dct.update(actions='<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs

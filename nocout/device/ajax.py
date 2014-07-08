@@ -640,13 +640,15 @@ def add_service(request, **kwargs):
         }
 
         # nocout api url
-        url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py?mode="addservice"'
+        url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
         print "****************************************** mydata ***************************************"
         print service_data
-        headers = {"Content-type":"application/x-www-form-urlencoded","Accept":"text/plain", "Accept-Encoding": "gzip,deflate,sdch", "Accept-Language": "en-US,en;q=0.8"}
+        print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"
+        print json.dumps(service_data)
+        headers = {"Content-type":"application/json"}
         # cal to add service api
         try:
-            r = requests.post(url , data=service_data, headers=headers)
+            r = requests.post(url , data=json.dumps(service_data), headers=headers)
             print "******************************** r.text *****************************************"
             print r.text
             print "******************************* r.header ******************************************"
