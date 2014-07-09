@@ -1,5 +1,6 @@
 import ast
 import json
+import unicodedata
 from dajax.core import Dajax
 from dajaxice.decorators import dajaxice_register
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
@@ -476,7 +477,8 @@ def add_service_form(request, value):
 
     # get ports associated with device
     try:
-        ports = device.ports.all()
+        device_type = DeviceType.objects.get(id=device.device_type)
+        ports = device_type.device_port.all()
         for port in ports:
             port_dict = {}
             port_dict['key'] = port.id
@@ -569,8 +571,6 @@ def add_service(request, **kwargs):
         service_id = kwargs['service_id']
         service_data_source_id = kwargs['service_data_source_id']
         port_id = kwargs['port_id']
-        service_data = dict()
-        service_data['mode'] = "addservice"
 
         # get device
         try:
@@ -581,63 +581,76 @@ def add_service(request, **kwargs):
         # get service name
         try:
             service_name = Service.objects.get(pk=service_id).name
-            service_data['service_name'] = service_name
         except:
             logger.info("There is no service available.")
 
         # get device name
         try:
             device_name = Device.objects.get(pk=device_id).device_name
-            service_data['device_name'] = device_name
         except:
             logger.info("There is no device available.")
+
+        # get site name
+        try:
+            site_name = Device.objects.get(pk=device_id).site_instance.name
+        except:
+            logger.info("No site instance available.")
 
         # get service parameters
         try:
             service_parameters = Service.objects.get(pk=service_id).parameters
-            service_data['serv_params'] = dict()
-            service_data['serv_params']['max_check_attempts'] = service_parameters.max_check_attempts
-            service_data['serv_params']['check_interval'] = service_parameters.check_interval
-            service_data['serv_params']['retry_interval'] = service_parameters.retry_interval
-            service_data['serv_params']['check_period'] = service_parameters.check_period
-            service_data['serv_params']['notification_interval'] = service_parameters.notification_interval
-            service_data['serv_params']['notification_period'] = service_parameters.notification_period
         except:
             logger.info("There are no service parameters.")
 
         # get service data parameters (or command parameters)
-        try:
-            service_data_source = ServiceDataSource.objects.get(pk=service_data_source_id)
-            service_data['cmd_params'] = {}
-            service_data['cmd_params'][service_data_source.name.strip()] = {}
-            service_data['cmd_params'][service_data_source.name]['warning'] = service_data_source.warning
-            service_data['cmd_params'][service_data_source.name]['critical'] = service_data_source.critical
-        except:
-            logger.info("There is no service data source.")
+        service_data = {}
+
+        service_data_source = ServiceDataSource.objects.get(pk=service_data_source_id)
+        service_data['cmd_params'] = {}
+        service_data['cmd_params'][service_data_source.name.strip()] = {}
+        service_data['cmd_params'][service_data_source.name]['warning'] = service_data_source.warning
+        service_data['cmd_params'][service_data_source.name]['critical'] = service_data_source.critical
+        service_data_source_name  = service_data_source.name
 
         # get agent_tag from device_type table
         try:
             device = Device.objects.get(pk=device_id)
             agent_tag = DeviceType.objects.get(pk=device.device_type).agent_tag
-            service_data['agent_tag'] = agent_tag
         except:
             logger.info("There is no agent_tag associated.")
 
         # get device port
         try:
-            port = DevicePort.objects.get(pk=port_id)
-            service_data['snmp_port'] = port.value
+            port = DevicePort.objects.get(pk=port_id).value
         except:
             logger.info("There is no device port.")
 
+        service_data = {'mode': 'addservice',
+                        'service_name': service_name,
+                        'device_name': device_name,
+                        'agent_tag': agent_tag,
+                        'snmp_port': port,
+                        'site': site_name,
+                        'serv_params': {'max_check_attempts': service_parameters.max_check_attempts,
+                                        'check_interval': service_parameters.check_interval,
+                                        'retry_interval': service_parameters.retry_interval,
+                                        'check_period': service_parameters.check_period,
+                                        'notification_interval': service_parameters.notification_interval,
+                                        'notification_period': service_parameters.notification_period
+                        },
+                        'cmd_params': {service_data_source_name :{'warning': service_data_source.warning,
+                                                                  'critical': service_data_source.critical},
+                        },
+        }
+
         # nocout api url
+
         url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
 
         # cal to add service api
-	encoded_data = urllib.urlencode(service_data)
+        encoded_data = urllib.urlencode(service_data)
         r = requests.post(url , data=encoded_data)
         response_dict = ast.literal_eval(r.text)
-
         if r:
             result['data'] = service_data
             result['success'] = 1
@@ -652,4 +665,3 @@ def add_service(request, **kwargs):
     else:
         result['message'] = "Service cannot be added because device has no service associated with it."
     return json.dumps({'result': result})
-

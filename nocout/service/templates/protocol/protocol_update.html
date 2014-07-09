@@ -2,11 +2,11 @@
 {% load staticfiles %}
 {% block breadcrumb_title %}
     <li>Inventory</li>
-    <li>Device Group</li>
-    <li>Add New</li>
+    <li>Protocol</li>
+    <li>Edit</li>
 {% endblock %}
-{% block content_title %}New Device Group{% endblock %}
-{% block content_description %}Add device group{% endblock %}
+{% block content_title %}Edit Protocol{% endblock %}
+{% block content_description %}Edit protocol{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
@@ -14,17 +14,17 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> ADD DEVICE GROUP</h4>
+                            <h4><i class="fa fa-bars"></i> PROTOCOL : {{ object.name }}</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-6"><br />
-                                    <form action="/device_group/new/" method="post" class="form-horizontal"
+                                    <form action="" method="post" class="form-horizontal"
                                           role="form">{% csrf_token %}
                                         <div class="form-group">
                                             {% for field in form %}
                                                 <div class="form-group">
                                                     <label for="{{ field.id_for_label }}"
-                                                           class="col-sm-5 control-label">{{ field.label }}</label>
+                                                           class="col-sm-5 control-label">{{ field.label|title }}</label>
                                                     <div class="col-sm-7">
                                                         {{ field }} {{ field.errors }}
                                                     </div>
@@ -33,13 +33,9 @@
                                         </div>
                                         <div class="form-group">
                                             <div class="col-sm-offset-5 col-sm-7">
-                                            <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i> Create</button>
-                                            &nbsp;
-                                            <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i> Reset
-                                            </button>
-                                            &nbsp;
-                                            <button type="reset" class="btn btn-danger" onclick="window.location.replace('/device_group/')"><i class="fa fa-times"></i> Cancel
-                                            </button>
+                                                <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/protocol/')"><i class="fa fa-times"></i> Cancel</button>
                                             </div>
                                         </div>
                                     </form>
@@ -53,20 +49,6 @@
     </div>
     {% block content_js %}
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
-        <script>
-               $('#id_organization').change(function(){
-                    $.ajax({
-                        url: "/device_group/device_group_devices_wrt_organization/",
-                        type: "GET",
-                        data: {'organization': $('#id_organization').val() },
-                        dataType: "json",
-                        success: function (data) {
-                             $('#id_devices').html(data.response)
-
-                        } // success ends
-                    });//ajax ends
-                });
-        </script>
     {% endblock %}
     <script>
         $(document).ready(function(){

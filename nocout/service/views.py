@@ -8,8 +8,8 @@ from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from models import Service, ServiceParameters, ServiceDataSource
-from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm
+from models import Service, ServiceParameters, ServiceDataSource, Protocol
+from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm, ProtocolForm
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
 
@@ -165,6 +165,7 @@ class ServiceParametersList(ListView):
         context=super(ServiceParametersList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData':'parameter_description',     'sTitle' : 'Parameter Description', 'sWidth':'null',},
+            {'mData':'protocol__name',            'sTitle' : 'Protocol',              'sWidth':'null',},
             {'mData':'max_check_attempts',        'sTitle' : 'Max Check Attempts',    'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'check_interval',            'sTitle' : 'Check Intervals',       'sWidth':'null',},
             {'mData':'retry_interval',            'sTitle' : 'Retry Interval',        'sWidth':'null',},
@@ -178,9 +179,9 @@ class ServiceParametersList(ListView):
 
 class ServiceParametersListingTable(BaseDatatableView):
     model = ServiceParameters
-    columns = ['parameter_description', 'max_check_attempts', 'check_interval', 'retry_interval','check_period',
+    columns = ['parameter_description', 'protocol__name', 'max_check_attempts', 'check_interval', 'retry_interval','check_period',
                 'notification_interval','notification_period']
-    order_columns = ['parameter_description', 'max_check_attempts', 'check_interval', 'retry_interval','check_period',
+    order_columns = ['parameter_description', 'protocol__name', 'max_check_attempts', 'check_interval', 'retry_interval','check_period',
                      'notification_interval','notification_period']
 
     def filter_queryset(self, qs):
@@ -443,3 +444,151 @@ class ServiceDataSourceDelete(DeleteView):
     def delete(self, request, *args, **kwargs):
         action.send(request.user, verb='deleting services data source: %s'%(self.get_object().name))
         return super(ServiceDataSourceDelete, self).delete( request, *args, **kwargs)
+
+
+#********************************** Protocol ***************************************
+class ProtocolList(ListView):
+    model = Protocol
+    template_name = 'protocol/protocols_list.html'
+
+    def get_context_data(self, **kwargs):
+        context=super(ProtocolList, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData':'name',                'sTitle' : 'Name',                'sWidth':'null',},
+            {'mData':'protocol_name',       'sTitle' : 'Protocol Name',       'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'port',                'sTitle' : 'Port',                'sWidth':'null',},
+            {'mData':'version',             'sTitle' : 'Version',             'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'read_community',      'sTitle' : 'Read Community',      'sWidth':'null',},
+            {'mData':'write_community',     'sTitle' : 'Write Community',     'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'auth_password',       'sTitle' : 'Auth Password',       'sWidth':'null',},
+            {'mData':'auth_protocol',       'sTitle' : 'Auth Protocol',       'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'security_name',       'sTitle' : 'Security Name',       'sWidth':'null',},
+            {'mData':'security_level',      'sTitle' : 'Security Level',      'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'private_phase',       'sTitle' : 'Private Phase',       'sWidth':'null',},
+            {'mData':'private_pass_phase',  'sTitle' : 'Private Pass Phase',  'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'actions',             'sTitle' : 'Actions',             'sWidth':'10%' ,}
+            ]
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+class ProtocolListingTable(BaseDatatableView):
+    model = ProtocolList
+    columns = ['name', 'protocol_name', 'port', 'version', 'read_community', 'write_community', 'auth_password', 'auth_protocol', 'security_name', 'security_level', 'private_phase', 'private_pass_phase']
+    order_columns = ['name', 'protocol_name', 'port', 'version', 'read_community', 'write_community', 'auth_password', 'auth_protocol', 'security_name', 'security_level', 'private_phase', 'private_pass_phase']
+
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        ##TODO:Need to optimise with the query making login.
+        if sSearch:
+            query=[]
+            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            for column in self.columns[:-1]:
+                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
+            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return Protocol.objects.values(*self.columns+['id'])
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in qs:
+            dct.update(actions='<a href="/protocol/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/protocol/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs=list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+               }
+        return ret
+
+class ProtocolDetail(DetailView):
+    model = Protocol
+    template_name = 'protocol/protocol_detail.html'
+
+
+class ProtocolCreate(CreateView):
+    template_name = 'protocol/protocol_new.html'
+    model = Protocol
+    form_class = ProtocolForm
+    success_url = reverse_lazy('protocols_list')
+
+    @method_decorator(permission_required('service.add_protocol', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ProtocolCreate, self).dispatch(*args, **kwargs)
+
+
+    def form_valid(self, form):
+        self.object=form.save()
+        action.send(self.request.user, verb='Created', action_object = self.object)
+        return HttpResponseRedirect(ProtocolCreate.success_url)
+
+
+class ProtocolUpdate(UpdateView):
+    template_name = 'protocol/protocol_update.html'
+    model = Protocol
+    form_class = ProtocolForm
+    success_url = reverse_lazy('protocols_list')
+
+    @method_decorator(permission_required('service.change_protocol', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ProtocolUpdate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
+        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        if changed_fields_dict:
+            verb_string = 'Changed values of Protocol : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
+                               for k in changed_fields_dict])+\
+                               ' to '+\
+                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            self.object=form.save()
+            action.send( self.request.user, verb=verb_string )
+        return HttpResponseRedirect( ProtocolUpdate.success_url )
+
+class ProtocolDelete(DeleteView):
+    model = Protocol
+    template_name = 'protocol/protocol_delete.html'
+    success_url = reverse_lazy('protocols_list')
+
+    @method_decorator(permission_required('service.delete_servicedatasource', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ProtocolDelete, self).dispatch(*args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting services data source: %s'%(self.get_object().name))
+        return super(ProtocolDelete, self).delete( request, *args, **kwargs)
