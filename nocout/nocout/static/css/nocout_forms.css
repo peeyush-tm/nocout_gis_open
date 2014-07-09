@@ -8,6 +8,8 @@
     border-radius: 2px;
     height: 35px;
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset;
+    padding-top: 1px;
+    padding-left: 12px;
 }
 .select2-drop {
     border-color: -moz-use-text-color rgb(204, 204, 204) rgb(204, 204, 204);
@@ -19,6 +21,7 @@
 .select2-container .select2-choice .select2-arrow {
     background: none;
     border-left: none;
+    padding-top: 2px;
 }
 
 /* multi select menu styles */

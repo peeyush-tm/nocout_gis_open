@@ -16,6 +16,8 @@ class DeviceGroupForm(forms.ModelForm):
             initial['organization']=None
 
         super(DeviceGroupForm, self).__init__(*args, **kwargs)
+        self.fields['parent'].empty_label = 'Select'
+        self.fields['organization'].empty_label = 'Select'
 
         organization_id=None
         if kwargs['instance']:
@@ -28,23 +30,17 @@ class DeviceGroupForm(forms.ModelForm):
             self.fields['devices'].queryset= Device.objects.filter( organization__in = organization_descendants_ids, is_deleted=0)
 
         for name, field in self.fields.items():
-            if field.widget.__class__ == forms.widgets.TextInput:
-                if field.widget.attrs.has_key('class'):
-                    field.widget.attrs['class'] += ' form-control'
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
                 else:
-                    field.widget.attrs.update({'class':'form-control'})
-        for name, field in self.fields.items():
-            if field.widget.__class__ == forms.widgets.Select:
-                if field.widget.attrs.has_key('class'):
                     field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
-                    field.widget.attrs.update({'class':'form-control'})
-        for name, field in self.fields.items():
-            if field.widget.__class__ == forms.widgets.SelectMultiple:
-                if field.widget.attrs.has_key('class'):
-                    field.widget.attrs['class'] += ' form-control'
-                else:
-                    field.widget.attrs.update({'class':'form-control'})
+                    field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
         model = DeviceGroup
