@@ -28,15 +28,16 @@ class InventoryForm(forms.ModelForm):
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
-                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' col-md-8'
                     field.widget.attrs['class'] += ' select2select'
                 else:
+                    field.widget.attrs['class'] += ' col-md-8'
                     field.widget.attrs['class'] += ' form-control'
             else:
                 if isinstance(field.widget, forms.widgets.Select):
-                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                    field.widget.attrs.update({'class': 'col-md-8 select2select'})
                 else:
-                    field.widget.attrs.update({'class': 'form-control'})
+                    field.widget.attrs.update({'class': 'col-md-8 form-control'})
 
         organization_id=None
         if kwargs['instance']:
@@ -104,8 +105,15 @@ class BackhaulForm(forms.ModelForm):
         ('offnet', 'Offnet')
     )
 
+    DR_SITE = (
+        ('', 'Select'),
+        ('yes', 'Yes'),
+        ('no', 'No')
+    )
+
     bh_type = forms.TypedChoiceField(choices=BH_TYPE, required=False)
     bh_connectivity = forms.TypedChoiceField(choices=BH_CONNECTIVITY, required=False)
+    dr_site = forms.TypedChoiceField(choices=DR_SITE, required=False)
 
     def __init__(self, *args, **kwargs):
         super(BackhaulForm, self).__init__(*args, **kwargs)
@@ -244,6 +252,9 @@ class SubStationForm(forms.ModelForm):
         
 #*********************************** Circuit ***************************************
 class CircuitForm(forms.ModelForm):
+
+    date_of_acceptance = forms.DateField(input_formats=('%d-%m-%Y',), help_text='(dd-mm-yyyy) Enter a date.',
+                                         widget=forms.widgets.DateInput(format="%d-%m-%Y"))
 
     def __init__(self, *args, **kwargs):
         super(CircuitForm, self).__init__(*args, **kwargs)

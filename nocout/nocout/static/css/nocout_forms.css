@@ -48,3 +48,12 @@
     box-shadow: 0 4px 5px rgba(0, 0, 0, 0.15);
     outline: 0 none;
 }
+
+.mandatory{
+    color: #cc010d;
+}
+/* help text for form fields
+.help_text{
+    color: #0055cc;
+}
+*/
