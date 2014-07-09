@@ -27,11 +27,9 @@
                                         {% for field in form %}
                                             {% if field.field.widget.attrs.class == 'form-control' or field.field.widget.attrs.class == 'col-md-12 select2select' %}
                                                 <div class="form-group">
-                                                    <label for="{{ field.id_for_label }}"
-                                                           class="col-sm-5 control-label">{{ field.label }}</label>
-
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-5 control-label">{{ field.label }}</label>
                                                     <div class="col-sm-7">
-                                                        {{ field }} {{ field.errors }}
+                                                        {{ field }} {{ field.help_text }} {{ field.errors }}
                                                     </div>
                                                 </div>
                                             {% endif %}
@@ -44,9 +42,7 @@
                                             {% for field in form %}
                                                 {% if field.field.widget.attrs.class == 'extra form-control' %}
                                                     <div class="form-group">
-                                                        <label for="{{ field.id_for_label }}"
-                                                               class="col-sm-5 control-label">{{ field.label }}</label>
-
+                                                        <label for="{{ field.id_for_label }}" class="col-sm-5 control-label">{{ field.label }}</label>
                                                         <div class="col-sm-7">
                                                             {{ field }} {{ field.errors }}
                                                         </div>

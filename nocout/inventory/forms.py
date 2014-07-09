@@ -104,8 +104,15 @@ class BackhaulForm(forms.ModelForm):
         ('offnet', 'Offnet')
     )
 
+    DR_SITE = (
+        ('', 'Select'),
+        ('yes', 'Yes'),
+        ('no', 'No')
+    )
+
     bh_type = forms.TypedChoiceField(choices=BH_TYPE, required=False)
     bh_connectivity = forms.TypedChoiceField(choices=BH_CONNECTIVITY, required=False)
+    dr_site = forms.TypedChoiceField(choices=DR_SITE, required=False)
 
     def __init__(self, *args, **kwargs):
         super(BackhaulForm, self).__init__(*args, **kwargs)
