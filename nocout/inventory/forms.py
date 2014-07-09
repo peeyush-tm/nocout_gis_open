@@ -1,7 +1,9 @@
 from django import forms
+from device.models import Country, State, City
 from device_group.models import DeviceGroup
 from models import Inventory
 # gis antenna form
+from nocout.widgets import IntReturnModelChoiceField
 from organization.models import Organization
 from user_group.models import UserGroup
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
@@ -95,15 +97,30 @@ class BackhaulForm(forms.ModelForm):
         super(BackhaulForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
     class Meta:
         model = Backhaul
 
 
 #************************************ Base Station ****************************************
 class BaseStationForm(forms.ModelForm):
+
+    country = IntReturnModelChoiceField(queryset=Country.objects.all(),
+                                        required=False)
+    state = IntReturnModelChoiceField(queryset=State.objects.all(),
+                                      required=False)
+    city = IntReturnModelChoiceField(queryset=City.objects.all(),
+                                     required=False)
+
     BS_TYPE = (
         ('', 'Select....'),
         ('master', 'Master'),
@@ -116,9 +133,16 @@ class BaseStationForm(forms.ModelForm):
         super(BaseStationForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
     class Meta:
         model = BaseStation
 
