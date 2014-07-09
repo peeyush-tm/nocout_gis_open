@@ -439,7 +439,7 @@ class DeviceStatsApi(View):
                         for sector in sectors:
                             try:
                                 base_station_info['data']['param']['sector']+=[{
-                                "color" : sector.frequency.color_hex_value if hasattr(sector, 'frequency') else 'rgba(74,72,94,0.58)',
+                                "color" : sector.frequency.color_hex_value if hasattr(sector, 'frequency')  and sector.frequency else 'rgba(74,72,94,0.58)',
                                 'radius':sector.cell_radius,
                                 'azimuth_angle':sector.antenna.azimuth_angle,
                                 'beam_width' : sector.antenna.beam_width,
@@ -454,7 +454,7 @@ class DeviceStatsApi(View):
                                             'name':'frequency',
                                             'title':'Frequency',
                                             'show':1,
-                                            'value':sector.frequency.value if hasattr(sector, 'frequency') else '3000000'
+                                            'value':sector.frequency.value if hasattr(sector, 'frequency') and sector.frequency else '3000000'
                                             }],
                                 'sub_station':[]
 
@@ -472,7 +472,7 @@ class DeviceStatsApi(View):
                                                           "lon":substation_device.longitude,
                                                           "antena_height" : sector.antenna.height,
                                                           "markerUrl" : "static/img/marker/icon4_small.png",
-                                                          "link_color" : sector.frequency.color_hex_value if hasattr(sector, 'frequency') else 'rgba(74,72,94,0.58)',
+                                                          "link_color" : sector.frequency.color_hex_value if hasattr(sector, 'frequency')  and sector.frequency else 'rgba(74,72,94,0.58)',
                                                           'param':{
                                                                   'sub_station':[
                                                                       {
