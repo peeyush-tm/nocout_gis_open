@@ -26,7 +26,7 @@ class Inventory(models.Model):
 class Antenna(models.Model):
     name = models.CharField('Antenna Name', max_length=250, unique=True)
     alias = models.CharField('Antenna Alias', max_length=250)
-    height = models.FloatField('Antenna Height', null=True, blank=True, help_text='(m) Enter a number.')
+    height = models.FloatField('Antenna Height', null=True, blank=True, help_text='(mtr) Enter a number.')
     polarization = models.CharField('Polarization', max_length=50, null=True, blank=True)
     tilt = models.FloatField('Tilt', null=True, blank=True, help_text='Enter a number.')
     gain = models.FloatField('Gain', null=True, blank=True, help_text='(dBi) Enter a number.')
@@ -84,8 +84,8 @@ class BaseStation(models.Model):
     latitude = models.FloatField('Latitude', null=True, blank=True)
     longitude = models.FloatField('Longitude', null=True, blank=True)
     infra_provider = models.CharField('Infra Provider', max_length=100, null=True, blank=True)
-    building_height = models.FloatField('Building Height', null=True, blank=True)
-    tower_height = models.FloatField('Tower Height', null=True, blank=True)
+    building_height = models.FloatField('Building Height', null=True, blank=True, help_text='(mtr) Enter a number.')
+    tower_height = models.FloatField('Tower Height', null=True, blank=True, help_text='(mtr) Enter a number.')
     gps_type = models.CharField('GPS Type', max_length=100, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
@@ -158,7 +158,7 @@ class Circuit(models.Model):
     sector = models.ForeignKey(Sector)
     customer = models.ForeignKey(Customer)
     sub_station = models.ForeignKey(SubStation)
-    date_of_acceptance = models.DateField('Date of Acceptance', null=True, blank=True, help_text='(dd-mm-yyyy) Enter a date.')
+    date_of_acceptance = models.DateField('Date of Acceptance', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
