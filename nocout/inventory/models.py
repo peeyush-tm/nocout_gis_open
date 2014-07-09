@@ -137,10 +137,10 @@ class SubStation(models.Model):
     device = models.ForeignKey(Device)
     version = models.CharField('Version', max_length=40, null=True, blank=True)
     serial_no = models.CharField('Serial No.', max_length=250, null=True, blank=True)
-    building_height = models.FloatField('Building Height', null=True, blank=True)
-    tower_height = models.FloatField('Tower Height', null=True, blank=True)
+    building_height = models.FloatField('Building Height', null=True, blank=True, help_text='(mtr) Enter a number.')
+    tower_height = models.FloatField('Tower Height', null=True, blank=True, help_text='(mtr) Enter a number.')
     ethernet_extender = models.CharField('Ethernet Extender', max_length=250, null=True, blank=True)
-    cable_length = models.FloatField('Cable Length', null=True, blank=True)
+    cable_length = models.FloatField('Cable Length', null=True, blank=True, help_text='(mtr) Enter a number.')
     city = models.CharField('City', max_length=250)
     state = models.CharField('State', max_length=250)
     address = models.CharField('Address', max_length=250, null=True, blank=True)
@@ -158,7 +158,7 @@ class Circuit(models.Model):
     sector = models.ForeignKey(Sector)
     customer = models.ForeignKey(Customer)
     sub_station = models.ForeignKey(SubStation)
-    date_of_acceptance = models.DateTimeField('Date of Acceptance', null=True, blank=True)
+    date_of_acceptance = models.DateField('Date of Acceptance', null=True, blank=True, help_text='(dd-mm-yyyy) Enter a date.')
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
