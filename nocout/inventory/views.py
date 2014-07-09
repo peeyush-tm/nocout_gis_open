@@ -187,7 +187,8 @@ class AntennaList(ListView):
             {'mData':'height',            'sTitle' : 'Height',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'polarization',      'sTitle' : 'Polarization',     'sWidth':'null',},
             {'mData':'tilt',              'sTitle' : 'Tilt',             'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'beam_width',        'sTitle' : 'Beam Width',       'sWidth':'10%' ,},]
+            {'mData':'beam_width',        'sTitle' : 'Beam Width',       'sWidth':'10%' ,},
+            {'mData':'azimuth_angle',     'sTitle' : 'Azimuth Angle',    'sWidth':'10%' ,},]
 
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role=self.request.user.userprofile.role.values_list('role_name', flat=True)
@@ -198,8 +199,8 @@ class AntennaList(ListView):
 
 class AntennaListingTable(BaseDatatableView):
     model = Antenna
-    columns = ['name', 'alias', 'height', 'polarization', 'tilt', 'beam_width']
-    order_columns = ['name', 'alias', 'height', 'polarization', 'tilt', 'beam_width']
+    columns = ['name', 'alias', 'height', 'polarization', 'tilt', 'beam_width', 'azimuth_angle']
+    order_columns = ['name', 'alias', 'height', 'polarization', 'tilt', 'beam_width', 'azimuth_angle']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
