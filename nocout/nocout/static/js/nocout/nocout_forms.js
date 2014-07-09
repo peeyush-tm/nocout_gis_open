@@ -7,15 +7,15 @@ $(document).ready(function (e) {
 
     /*Initialize the variables*/
     var hasError = 0,
-        inputContainers = $(".formContainer .col-sm-7"),
-        labelContainer = $(".formContainer label.col-sm-5");
+        inputContainers = $(".formContainer .col-sm-9 .col-md-8"),
+        labelContainer = $(".formContainer label.col-sm-3");
         errorMessage = '<ul class="list-unstyled">';    
-
+    console.log(inputContainers);
     for (var i = 0; i < inputContainers.length; i++) {    	
         /*Total no. of childrens in col-sm-7 class*/
         var childrenCount = inputContainers[i].children.length;
-
-        if (childrenCount == 2) {
+        console.log(childrenCount);
+        if (childrenCount == 3) {
 
             /*Error class from server side validation check*/
             var errCLass = $.trim(inputContainers[i].children[1].className);
