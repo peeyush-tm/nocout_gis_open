@@ -8,6 +8,7 @@ from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, D
 import requests
 import logging
 from service.models import Service, ServiceDataSource
+import urllib
 
 logger=logging.getLogger(__name__)
 
@@ -385,7 +386,7 @@ def add_device_to_nms_core(request, device_id):
                        'agent_tag': agent_tag,
                        'site': device.site_instance.name,
                        'mode' : 'addhost'}
-        url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
+        url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
         r = requests.post(url , data=device_data)
         response_dict = ast.literal_eval(r.text)
         if r:
@@ -412,7 +413,7 @@ def sync_device_with_nms_core(request):
     result['message'] = "Device activation for monitoring failed."
     result['data']['meta'] = ''
     device_data = {'mode' : 'sync'}
-    url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
+    url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
     r = requests.post(url, data=device_data)
     try:
         response_dict = ast.literal_eval(r.text)
@@ -602,11 +603,14 @@ def add_service(request, **kwargs):
             logger.info("There are no service parameters.")
 
         # get service data parameters (or command parameters)
-        try:
-            service_data_source = ServiceDataSource.objects.get(pk=service_data_source_id)
-            service_data_source_name = unicodedata.normalize('NFKD', service_data_source.name).encode('ascii','ignore')
-        except:
-            logger.info("There is no service data source.")
+        service_data = {}
+
+        service_data_source = ServiceDataSource.objects.get(pk=service_data_source_id)
+        service_data['cmd_params'] = {}
+        service_data['cmd_params'][service_data_source.name.strip()] = {}
+        service_data['cmd_params'][service_data_source.name]['warning'] = service_data_source.warning
+        service_data['cmd_params'][service_data_source.name]['critical'] = service_data_source.critical
+        service_data_source_name  = service_data_source.name
 
         # get agent_tag from device_type table
         try:
@@ -640,31 +644,18 @@ def add_service(request, **kwargs):
         }
 
         # nocout api url
-        url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
-        print "****************************************** mydata ***************************************"
-        print service_data
-        print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"
-        print json.dumps(service_data)
-        headers = {"Content-type":"application/json"}
+
+        url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+
         # cal to add service api
-        try:
-            r = requests.post(url , data=json.dumps(service_data), headers=headers)
-            print "******************************** r.text *****************************************"
-            print r.text
-            print "******************************* r.header ******************************************"
-            print r.headers
-            print "******************************** r,requests **************************************"
-            print r.content
-        except Exception as e:
-            print e.message +'++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-
-
+        encoded_data = urllib.urlencode(service_data)
+        r = requests.post(url , data=encoded_data)
         response_dict = ast.literal_eval(r.text)
         if r:
             result['data'] = service_data
             result['success'] = 1
-            if response_dict['error_code'] != None:
-                result['message'] = response_dict['error_message'].capitalize()
+            if not response_dict.get('success'):
+                result['message'] = response_dict.get('error_message')
             else:
                 result['message'] = "Service added successfully."
                 device = Device.objects.get(pk=device_id)
@@ -674,4 +665,3 @@ def add_service(request, **kwargs):
     else:
         result['message'] = "Service cannot be added because device has no service associated with it."
     return json.dumps({'result': result})
-
