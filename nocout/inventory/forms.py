@@ -72,9 +72,25 @@ class AntennaForm(forms.ModelForm):
         ('No', 'No')
     )
 
+    REFLECTOR = (
+        ('', 'Select'),
+        ('Yes', 'Yes'),
+        ('No', 'No')
+    )
+
+    ANTENNA_TYPE = (
+        ('', 'Select'),
+        ('Normal', 'Normal'),
+        ('Narrow Beam', 'Narrow Beam'),
+        ('Lens', 'Lens'),
+        ('Integrated', 'Integrated')
+    )
+
+    antenna_type = forms.TypedChoiceField(choices=ANTENNA_TYPE, required=False)
     polarization = forms.TypedChoiceField(choices=POLARIZATION, required=False)
     splitter_installed = forms.TypedChoiceField(choices=SPLITTER_INSTALLED, required=False)
     sync_splitter_used = forms.TypedChoiceField(choices=SPLITTER_INSTALLED, required=False)
+    reflector = forms.TypedChoiceField(choices=REFLECTOR, required=False)
 
     def __init__(self, *args, **kwargs):
         super(AntennaForm, self).__init__(*args, **kwargs)
@@ -101,7 +117,8 @@ class BackhaulForm(forms.ModelForm):
         ('', 'Select'),
         ('E1', 'E1'),
         ('Ethernet', 'Ethernet'),
-        ('SDH', 'SDH')
+        ('SDH', 'SDH'),
+        ('UBR', 'UBR')
     )
     BH_CONNECTIVITY = (
         ('', 'Select'),
@@ -157,7 +174,14 @@ class BaseStationForm(forms.ModelForm):
         ('Slave', 'Slave')
     )
 
+    BS_SITE_TYPE = (
+        ('', 'Select'),
+        ('RTT', 'RTT'),
+        ('GBT', 'GBT')
+    )
+
     bs_type = forms.TypedChoiceField(choices=BS_TYPE, required=False)
+    bs_site_type = forms.TypedChoiceField(choices=BS_SITE_TYPE, required=False)
 
     def __init__(self, *args, **kwargs):
         super(BaseStationForm, self).__init__(*args, **kwargs)
@@ -266,7 +290,7 @@ class SubStationForm(forms.ModelForm):
 class CircuitForm(forms.ModelForm):
 
     date_of_acceptance = forms.DateField(input_formats=('%d-%m-%Y',), help_text='(dd-mm-yyyy) Enter a date.',
-                                         widget=forms.widgets.DateInput(format="%d-%m-%Y"))
+                                         widget=forms.widgets.DateInput(format="%d-%m-%Y", attrs={'class': 'datepicker'}))
 
     def __init__(self, *args, **kwargs):
         super(CircuitForm, self).__init__(*args, **kwargs)
