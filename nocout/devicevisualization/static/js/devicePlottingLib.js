@@ -28,6 +28,7 @@ var mapInstance = "",
 	masterClusterInstance = "",
 	slaveClusterInstance = "",
 	polygonSelectedDevices = [],
+	ssLinkArray = [],
 	pathArray = [],
 	polygon = "",
 	pointsArray = [],
@@ -367,20 +368,23 @@ function devicePlottingClass_gmap() {
 
 			var deviceData = [],
 				pt_technology = "",
-				bhInfo = [];			
+				bhInfo = [],
+				bsInfo = [];
 
 			if($.trim(stationType) == "base_station") {
 				deviceData = bs_ss_devices[i].data.param.base_station;
+				bsInfo = bs_ss_devices[i].data.param.base_station;
 				pt_technology = bs_ss_devices[i].data.technology;
 				bhInfo = bs_ss_devices[i].data.param.backhual;
 			} else {
+				bsInfo = bs_ss_devices[i].data.param.sub_station;
 				deviceData = bs_ss_devices[i].data.param.sub_station;
 			}
 
 			/*If base station then create all the sectors within it.*/
 			if($.trim(stationType) == "base_station") {
 
-		    	/*True in case of PMP & WIMAX*/
+		    	/*In case of PMP or WIMAX*/
 				if($.trim(bs_ss_devices[i].data.technology) != "PTP" && $.trim(bs_ss_devices[i].data.technology) != "P2P") {
 					
 					var sector_array = bs_ss_devices[i].data.param.sector;
@@ -396,13 +400,12 @@ function devicePlottingClass_gmap() {
 						var orientation = $.trim(sector.orientation);
 						var sector_child = sector.sub_station;
 						
-						var rad = 1;
+						var rad = 4;
+						var sectorRadius = (+sector.radius);
 
 						/*If radius is greater than 4 Kms then set it to 4.*/
-						if(sector.radius > 4 || sector.radius == null) {
-							rad = 4;
-						} else {
-							rad = sector.radius;
+						if((sectorRadius <= 4) && (sectorRadius != null) && (sectorRadius > 0)) {
+							rad = sectorRadius;
 						}
 
 						/*Call createSectorData function to get the points array to plot the sector on google maps.*/
@@ -413,14 +416,68 @@ function devicePlottingClass_gmap() {
 
 						});
 		    		});
+		    		/*In case of PTP*/
+				} else {
+
+					var has_ss = bs_ss_devices[i].data.param.sector[0].sub_station.length;
+
+					if(has_ss > 0) {
+
+						var ss_marker_obj = bs_ss_devices[i].data.param.sector[0].sub_station[0];
+
+						/*Create SS Marker Object*/
+						var ss_marker_object = {
+					    	position  	     : new google.maps.LatLng(ss_marker_obj.data.lat,ss_marker_obj.data.lon),
+					    	ptLat 		     : ss_marker_obj.data.lat,
+					    	ptLon 		     : ss_marker_obj.data.lon,
+					    	technology 	     : pt_technology,
+					    	map       	     : mapInstance,
+					    	icon 	  	     : window.location.origin+"/"+ss_marker_obj.data.markerUrl,
+					    	oldIcon 	     : window.location.origin+"/"+ss_marker_obj.data.markerUrl,
+					    	pointType	     : "sub_station",
+							dataset 	     : ss_marker_obj.data.param.sub_station,
+							bhInfo 			 : [],
+							antena_height    : ss_marker_obj.data.antena_height,
+							zIndex 			 : 200
+						};
+
+						/*Create SS Marker*/
+					    var ss_marker = new google.maps.Marker(ss_marker_object);
+					    
+					    var startEndObj = {},
+					    	ss_info = {},
+					    	base_info = {};
+
+					    startEndObj["startLat"] = bs_ss_devices[i].data.lat;
+			    		startEndObj["startLon"] = bs_ss_devices[i].data.lon;
+					    
+					    startEndObj["endLat"] = ss_marker_obj.data.lat;
+			    		startEndObj["endLon"] = ss_marker_obj.data.lon;
+
+			    		/*Sub station info Object*/
+			    		ss_info["info"] = ss_marker_obj.data.param.sub_station;
+			    		ss_info["antena_height"] = ss_marker_obj.data.antena_height;
+
+			    		
+			    		/*Link color object*/
+			    		linkColor = ss_marker_obj.data.link_color;
+			    			
+		    			base_info["info"] = bs_ss_devices[i].data.param.base_station;
+		    			base_info["antena_height"] = bs_ss_devices[i].data.antena_height;
+		    			
+		    			if(ss_marker_obj.data.show_link == 1) {
+		    				/*Create the link between BS & SS or Sector & SS*/
+					    	var ss_link_line = that.createLink_gmaps(startEndObj,linkColor,base_info,ss_info);
+
+					    	ssLinkArray.push(ss_link_line);
+		    			}
+					    /*Add SS markers to the OverlappingMarkerSpiderfier*/
+		    			oms.addMarker(ss_marker);
+					}
 				}
 		    }
 
-			/*Get All BS Lat & Lon*/
-			bsLatArray.push(bs_ss_devices[i].data.lat);
-			bsLonArray.push(bs_ss_devices[i].data.lon);
-
-			/*Create BS or SS Marker Object*/
+		    /*Create BS or SS Marker Object*/
 			var station_marker_object = {
 		    	position  	     : new google.maps.LatLng(bs_ss_devices[i].data.lat,bs_ss_devices[i].data.lon),
 		    	ptLat 		     : bs_ss_devices[i].data.lat,
@@ -433,12 +490,19 @@ function devicePlottingClass_gmap() {
 				child_ss   	     : bs_ss_devices[i].data.param.sector,
 				original_sectors : bs_ss_devices[i].data.param.sector,
 				dataset 	     : deviceData,
+				bsInfo 			 : bsInfo,
 				bhInfo 			 : bhInfo,
-				antena_height    : bs_ss_devices[i].data.antena_height
+				bs_name 		 : bs_ss_devices[i].name,
+				antena_height    : bs_ss_devices[i].data.antena_height,
+				zIndex 			 : 200
 			};
 
 			/*Create BS or SS Marker*/
 		    var station_marker = new google.maps.Marker(station_marker_object);
+
+			/*Get All BS Lat & Lon*/
+			bsLatArray.push(bs_ss_devices[i].data.lat);
+			bsLonArray.push(bs_ss_devices[i].data.lon);
 
 
 		    if($.trim(stationType) != "base_station") {
@@ -461,8 +525,7 @@ function devicePlottingClass_gmap() {
 		    	/*Base station info Object*/
 	    		bs_info["info"] = stationObject.dataset;
 	    		bs_info["antena_height"] = stationObject.antena_height;
-
-		    	bs_info["antena_height"] = stationObject.antena_height;
+		    	
 
 		    	startEndObj["endLat"] = bs_ss_devices[i].data.lat;
 	    		startEndObj["endLon"] = bs_ss_devices[i].data.lon;
@@ -470,14 +533,15 @@ function devicePlottingClass_gmap() {
 	    		/*Sub station info Object*/
 	    		ss_info["info"] = bs_ss_devices[i].data.param.sub_station;
 	    		ss_info["antena_height"] = bs_ss_devices[i].data.antena_height;
-	    		ss_info["perf"] = bs_ss_devices[i].data.perf;
 
 	    		/*Link color object*/
 	    		linkColor = bs_ss_devices[i].data.link_color;
 	    		
 		    	/*Create the link between BS & SS or Sector & SS*/
-		    	that.createLink_gmaps(startEndObj,linkColor,bs_info,ss_info);
+		    	var polyLineObj = that.createLink_gmaps(startEndObj,linkColor,bs_info,ss_info);
 
+		    	/*Push the created line in global line array*/
+		    	pathLineArray.push(polyLineObj);
 		    	/*Push the plotted SS to an array for further use*/
 		    	plottedSS.push(station_marker);
 		    }
@@ -486,6 +550,7 @@ function devicePlottingClass_gmap() {
 		    	
 		    	/*Add the master marker to the global master markers array*/
 		    	masterMarkersObj.push(station_marker);
+		    	masterMarkersObj.push(ss_marker);
 		    }
 
 		    /*Add parent markers to the OverlappingMarkerSpiderfier*/
@@ -495,11 +560,17 @@ function devicePlottingClass_gmap() {
 		/*Loop to change the icon for same location markers(to cluster icon)*/
 		for(var k=0;k<masterMarkersObj.length;k++) {
 			
-			/*if two BS on same position*/
-			var bsLatOccurence = $.grep(bsLatArray, function (elem) {return elem === masterMarkersObj[k].ptLat;}).length;
-			var bsLonOccurence = $.grep(bsLonArray, function (elem) {return elem === masterMarkersObj[k].ptLon;}).length;
-			if(bsLatOccurence > 1 && bsLonOccurence > 1) {
-				masterMarkersObj[k].setOptions({"icon" : clusterIcon});
+			if(masterMarkersObj[k] != undefined) {
+
+				/*if two BS on same position*/
+				var bsLatOccurence = $.grep(bsLatArray, function (elem) {return elem === masterMarkersObj[k].ptLat;}).length;
+				var bsLonOccurence = $.grep(bsLonArray, function (elem) {return elem === masterMarkersObj[k].ptLon;}).length;
+
+				if(bsLatOccurence > 1 && bsLonOccurence > 1) {
+					masterMarkersObj[k].setOptions({"icon" : clusterIcon});
+				}
+			} else {
+				masterMarkersObj.splice(k, 1);
 			}
 		}
 
@@ -519,27 +590,17 @@ function devicePlottingClass_gmap() {
 
 		var sectorObj = stationSectorObject.original_sectors;
 
-		if($.trim(stationSectorObject.technology) == "PTP" || $.trim(stationSectorObject.technology) == "P2P") {
-
-			var subStationData = [];
-			if(stationSectorObject.original_sectors[0].sub_station.length > 0) {
-				subStationData = stationSectorObject.original_sectors[0].sub_station;
-			}
-			stationSectorObject["child_ss"] = subStationData;
-
-			that.plotDevices_gmap(stationSectorObject,"sub_station");
-
-		} else {
+		if($.trim(stationSectorObject.technology) != "PTP" && $.trim(stationSectorObject.technology) != "P2P") {
 
 			for(var i=0;i<sectorObj.length;i++) {
 
-				var rad = 1;
+				var rad = 4;
+
+				var sectorRadius = (+sectorObj[i].radius);
 
 				/*If radius is greater than 4 Kms then set it to 4.*/
-				if(sectorObj[i].radius > 4 || sectorObj[i].radius == null) {
-					rad = 4;
-				} else {
-					rad = sectorObj[i].radius;
+				if((sectorRadius <= 4) && (sectorRadius != null) && (sectorRadius > 0)) {
+					rad = sectorRadius;
 				}
 
 				that.createSectorData(stationSectorObject.ptLat,stationSectorObject.ptLon,rad,sectorObj[i].azimuth_angle,sectorObj[i].beam_width,sectorObj[i].orientation,function(pointArray) {
@@ -568,7 +629,7 @@ function devicePlottingClass_gmap() {
 	 * @param linkColor "String", It contains the color for link line.
 	 * @param bs_info {JSON Object}, It contains the start point information json object.
 	 * @param ss_info {JSON Object}, It contains the end point information json object.
-	 *
+	 * @return pathConnector {JSON Object}, It contains gmaps polyline object.
 	 */
 	this.createLink_gmaps = function(startEndObj,linkColor,bs_info,ss_info) {
 
@@ -580,29 +641,28 @@ function devicePlottingClass_gmap() {
 		link_path_color = linkColor;
 
 		linkObject = {
-			path 				: pathDataObject,
-			strokeColor			: link_path_color,
-			strokeOpacity		: 1.0,
-			strokeWeight		: 2,
-			pointType 			: "path",
-			geodesic			: true,
-			ss_info				: ss_info.info,
-			ss_lat 				: startEndObj.endLat,
-			ss_lon 				: startEndObj.endLon,
-			ss_perf 			: ss_info.perf,
-			ss_height 			: ss_info.antena_height,
-			bs_lat 				: startEndObj.startLat,
-			bs_info 			: bs_info.info,
-			bs_lon 				: startEndObj.startLon,
-			bs_perf 			: bs_info.perf,
-			bs_height 			: bs_info.antena_height
+			path 			: pathDataObject,
+			strokeColor		: link_path_color,
+			strokeOpacity	: 1.0,
+			strokeWeight	: 3,
+			pointType 		: "path",
+			geodesic		: true,
+			ss_info			: ss_info.info,
+			ss_lat 			: startEndObj.endLat,
+			ss_lon 			: startEndObj.endLon,
+			ss_perf 		: ss_info.perf,
+			ss_height 		: ss_info.antena_height,
+			bs_lat 			: startEndObj.startLat,
+			bs_info 		: bs_info.info,
+			bs_lon 			: startEndObj.startLon,
+			bs_perf 		: bs_info.perf,
+			bs_height 		: bs_info.antena_height,
+			zIndex 			: 9999
 		};
 
 		pathConnector = new google.maps.Polyline(linkObject);
 		/*Plot the link line between master & slave*/
 		pathConnector.setMap(mapInstance);
-
-		pathLineArray.push(pathConnector);
 
 		/*Bind Click Event on Link Path Between Master & Slave*/
 		google.maps.event.addListener(pathConnector, 'click', function(e) {
@@ -616,6 +676,9 @@ function devicePlottingClass_gmap() {
 			/*Open the info window*/
 			infowindow.open(mapInstance);
 		});
+
+		/*returns gmap polyline object */
+		return pathConnector;
 	};
 
 
@@ -740,10 +803,11 @@ function devicePlottingClass_gmap() {
 			path 		     : polyPathArray,
 			ptLat 		     : lat,
 			ptLon 		     : lon,
-			strokeColor      : "rgba(90, 101, 102, 1.0)",
+			strokeColor      : bgColor,
 			fillColor 	     : bgColor,
 			pointType	     : "sector",
 			strokeOpacity    : 1.0,
+			fillOpacity 	 : 0.6,
 			strokeWeight     : 1,
 			dataset 	     : sectorInfo,
 			startLat 	     : startLat,
@@ -751,6 +815,8 @@ function devicePlottingClass_gmap() {
 			bhInfo 			 : [],
 			child_ss 	     : sector_child,
 			original_sectors : sector_child,
+			zIndex 			 : 180,
+			geodesic		 : true
         });
 
         /*Push polygon to an array*/
@@ -850,11 +916,17 @@ function devicePlottingClass_gmap() {
 		} else {
 
 			infoTable += "<table class='table table-bordered'><tbody>";
+			var startPtInfo = [];
 
-			for(var i=0;i<contentObject.dataset.length;i++) {
+			if(contentObject.bsInfo != undefined) {
+				startPtInfo = contentObject.bsInfo;
+			} else {
+				startPtInfo = contentObject.dataset;	
+			}
+			for(var i=0;i<startPtInfo.length;i++) {
 
-				if(contentObject.dataset[i].show == 1) {
-					infoTable += "<tr><td>"+contentObject.dataset[i].title+"</td><td>"+contentObject.dataset[i].value+"</td></tr>";
+				if(startPtInfo[i].show == 1) {
+					infoTable += "<tr><td>"+startPtInfo[i].title+"</td><td>"+startPtInfo[i].value+"</td></tr>";
 				}
 			}
 			
@@ -1474,10 +1546,14 @@ function devicePlottingClass_gmap() {
 
  				var master = main_devices_data_gmaps[i];
 
+				// master.data[filterKey[0]].toLowerCase().split(",").indexOf(filtersArray[filterKey[0]].toLowerCase())
 	 			/*Conditions as per the number of filters*/
 	 			if(filterKey.length == 1) {
-	 				
- 					if(master.data[filterKey[0]].toLowerCase() == filtersArray[filterKey[0]].toLowerCase()) {
+
+	 				var dataVal1 = master.data[filterKey[0]].toLowerCase().split(",");
+	 				var selectedVal1 = filtersArray[filterKey[0]].toLowerCase();
+
+ 					if(dataVal1.indexOf(selectedVal1) > -1) {
 
 	 					/*Check For The Duplicacy*/
 	 					if(masterIds.indexOf(master.id) == -1) {
@@ -1491,7 +1567,13 @@ function devicePlottingClass_gmap() {
 
 	 			} else if(filterKey.length == 2) {
 
- 					if((master.data[filterKey[0]].toLowerCase() == filtersArray[filterKey[0]].toLowerCase()) && (master.data[filterKey[1]].toLowerCase() == filtersArray[filterKey[1]].toLowerCase())) {
+	 				var dataVal1 = master.data[filterKey[0]].toLowerCase().split(",");
+	 				var selectedVal1 = filtersArray[filterKey[0]].toLowerCase();
+
+	 				var dataVal2 = master.data[filterKey[1]].toLowerCase().split(",");
+	 				var selectedVal2 = filtersArray[filterKey[1]].toLowerCase();
+
+ 					if((dataVal1.indexOf(selectedVal1) > -1) && (dataVal2.indexOf(selectedVal2) > -1)) {
 
 	 					/*Check For The Duplicacy*/
 	 					if(masterIds.indexOf(master.id) == -1) {
@@ -1504,7 +1586,16 @@ function devicePlottingClass_gmap() {
 	 				}
 	 			} else if(filterKey.length == 3) {
 
-	 				if((master.data[filterKey[0]].toLowerCase() == filtersArray[filterKey[0]].toLowerCase()) && (master.data[filterKey[1]].toLowerCase() == filtersArray[filterKey[1]].toLowerCase()) && (master.data[filterKey[2]].toLowerCase() == filtersArray[filterKey[2]].toLowerCase())) {
+	 				var dataVal1 = master.data[filterKey[0]].toLowerCase().split(",");
+	 				var selectedVal1 = filtersArray[filterKey[0]].toLowerCase();
+
+	 				var dataVal2 = master.data[filterKey[1]].toLowerCase().split(",");
+	 				var selectedVal2 = filtersArray[filterKey[1]].toLowerCase();
+
+	 				var dataVal3 = master.data[filterKey[2]].toLowerCase().split(",");
+	 				var selectedVal3 = filtersArray[filterKey[2]].toLowerCase();
+	 				
+	 				if((dataVal1.indexOf(selectedVal1) > -1) && (dataVal2.indexOf(selectedVal2) > -1) && (dataVal3.indexOf(selectedVal3) > -1)) {
 
 	 					/*Check For The Duplicacy*/
 	 					if(masterIds.indexOf(master.id) == -1) {
@@ -1517,7 +1608,19 @@ function devicePlottingClass_gmap() {
 	 				}
 	 			} else if(filterKey.length == 4) {
 
-	 				if((master.data[filterKey[0]].toLowerCase() == filtersArray[filterKey[0]].toLowerCase()) && (master.data[filterKey[1]].toLowerCase() == filtersArray[filterKey[1]].toLowerCase()) && (master.data[filterKey[2]].toLowerCase() == filtersArray[filterKey[2]].toLowerCase()) && (master.data[filterKey[3]].toLowerCase() == filtersArray[filterKey[3]].toLowerCase())) {
+	 				var dataVal1 = master.data[filterKey[0]].toLowerCase().split(",");
+	 				var selectedVal1 = filtersArray[filterKey[0]].toLowerCase();
+
+	 				var dataVal2 = master.data[filterKey[1]].toLowerCase().split(",");
+	 				var selectedVal2 = filtersArray[filterKey[1]].toLowerCase();
+
+	 				var dataVal3 = master.data[filterKey[2]].toLowerCase().split(",");
+	 				var selectedVal3 = filtersArray[filterKey[2]].toLowerCase();
+
+	 				var dataVal4 = master.data[filterKey[3]].toLowerCase().split(",");
+	 				var selectedVal4 = filtersArray[filterKey[3]].toLowerCase();
+
+	 				if((dataVal1.indexOf(selectedVal1) > -1) && (dataVal2.indexOf(selectedVal2) > -1) && (dataVal3.indexOf(selectedVal3) > -1) && (dataVal4.indexOf(selectedVal4) > -1)) {
 
 	 					/*Check For The Duplicacy*/
 	 					if(masterIds.indexOf(master.id) == -1) {
@@ -1609,13 +1712,50 @@ function devicePlottingClass_gmap() {
         if($("#state").val().length > 0) {
         	// selectedState = $("#state option:selected").text();
         	appliedFilterObj_gmaps["state"] = $("#state option:selected").text();
+
+        	/*Zoom to the selected state area*/
+        	$.getJSON("https://maps.googleapis.com/maps/api/geocode/json?address="+$("#state option:selected").text(),function(result) {
+        	
+	        	var bounds = new google.maps.LatLngBounds();
+	    		/*point bounds to the place location*/
+	    		var ptLatLon = new google.maps.LatLng(result.results[0].geometry.location.lat, result.results[0].geometry.location.lng);
+	    		bounds.extend(ptLatLon);
+	    		/*call fitbounts for the mapInstance with the place location bounds object*/
+	    		mapInstance.fitBounds(bounds)
+
+	    		var listener = google.maps.event.addListener(mapInstance, "idle", function() { 
+	    			/*check for current zoom level*/
+					if (mapInstance.getZoom() > 8) {
+						mapInstance.setZoom(8);
+					}
+					google.maps.event.removeListener(listener);
+				});
+	        });
         }
 
         if($("#city").val().length > 0) {
         	// selectedCity = $("#city option:selected").text();
         	appliedFilterObj_gmaps["city"] = $("#city option:selected").text();
-        }
 
+        	/*Zoom to the selected city area*/
+        	$.getJSON("https://maps.googleapis.com/maps/api/geocode/json?address="+$("#city option:selected").text(),function(result) {
+        	
+	        	var bounds = new google.maps.LatLngBounds();
+	    		/*point bounds to the place location*/
+	    		var ptLatLon = new google.maps.LatLng(result.results[0].geometry.location.lat, result.results[0].geometry.location.lng);
+	    		bounds.extend(ptLatLon);
+	    		/*call fitbounts for the mapInstance with the place location bounds object*/
+	    		mapInstance.fitBounds(bounds)
+
+	    		var listener = google.maps.event.addListener(mapInstance, "idle", function() { 
+	    			/*check for current zoom level*/
+					if (mapInstance.getZoom() > 12) {
+						mapInstance.setZoom(12);
+					}
+					google.maps.event.removeListener(listener);
+				});
+	        });
+        }
 
         /*Get The Length Of Filter Array*/
         var filtersLength = Object.keys(appliedFilterObj_gmaps).length;
@@ -1671,7 +1811,8 @@ function devicePlottingClass_gmap() {
 
 				pathArray = e.overlay.getPath().getArray();
 				polygon = new google.maps.Polygon({"path" : pathArray});
-				bs_ss_array = masterMarkersObj.concat(slaveMarkersObj);
+				bs_ss_array = masterMarkersObj;
+
 				currentPolygon = e.overlay;
 				currentPolygon.type = e.type;
 				
@@ -1679,14 +1820,15 @@ function devicePlottingClass_gmap() {
 					
 					var point = bs_ss_array[k].position;
 
-					if (google.maps.geometry.poly.containsLocation(point, polygon)) {
+					if (google.maps.geometry.poly.containsLocation(point, polygon) && $.trim(bs_ss_array[k].pointType) == "base_station") {
 						polygonSelectedDevices.push(bs_ss_array[k]);
 					}
 				}
 				selectedCount = polygonSelectedDevices.length;
+
 				if(selectedCount == 0) {
 					
-					bootbox.alert("No devices are under the selected area.Please re-select");
+					bootbox.alert("No 'Base Station' are under the selected area.Please re-select");
 					/*Remove current polygon from map*/
 					that.clearPolygon();
 
@@ -1697,19 +1839,10 @@ function devicePlottingClass_gmap() {
 					that.clearPolygon();
 
 				} else {
-					// var datasetArray = [];
-					// $.each(polygonSelectedDevices,function(key,val) {
-					// 	datasetArray.push(val.dataset);
-					// });
-					// $.each(datasetArray,function(key2,dataval) {
-					// 	if(dataval.name == "title" || dataval.name == "ip") {
-							
-					// 	}
-					// });
 					
 					var devicesTemplate = "<div class='deviceWellContainer'>";
 					for(var i=0;i<selectedCount;i++) {
-						devicesTemplate += '<div class="well well-sm"><h5>'+polygonSelectedDevices[i].title+'('+polygonSelectedDevices[i].pointIp+')</h5><ul class="list-unstyled list-inline">';
+						devicesTemplate += '<div class="well well-sm"><h5>'+polygonSelectedDevices[i].bs_name+'</h5><ul class="list-unstyled list-inline">';
 						devicesTemplate += '<li><button id="play_'+i+'" onClick="that.startMonitoring('+i+')" class="btn btn-default btn-xs"><i class="fa fa-play"></i></button></li>';
 						devicesTemplate += '<li><button id="pause_'+i+'" onClick="that.pauseMonitoring('+i+')" class="btn btn-default btn-xs"><i class="fa fa-pause"></i></button></li>';
 						devicesTemplate += '<li><button id="stop_'+i+'" onClick="that.stopMonitoring('+i+')" class="btn btn-default btn-xs"><i class="fa fa-stop"></i></button></li>';
@@ -1920,6 +2053,11 @@ function devicePlottingClass_gmap() {
 		/*Enable the refresh button*/
 		$("#resetFilters").button("complete");		
 
+		/*Clear the existing SS for same point*/
+		for(var i=0;i<plottedSS.length;i++) {
+			plottedSS[i].setMap(null);
+		}
+
 		/*Remove All Master Markers*/
 		for(var i=0;i<masterMarkersObj.length;i++) {
 
@@ -1941,6 +2079,12 @@ function devicePlottingClass_gmap() {
 		for(var j=0;j<sectorArray.length;j++) {
 
 			sectorArray[j].setMap(null);
+		}
+
+		/*Clear PTP SS*/
+		for(var j=0;j<ssLinkArray.length;j++) {
+
+			ssLinkArray[j].setMap(null);
 		}
 	};
 
@@ -1965,5 +2109,7 @@ function devicePlottingClass_gmap() {
 		clusterIcon = "";
 		sectorArray = [];
 		circleArray = [];
+		plottedSS = [];
+		ssLinkArray = [];
 	};
 }
