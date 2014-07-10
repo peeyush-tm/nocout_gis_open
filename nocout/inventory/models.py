@@ -1,4 +1,3 @@
-import datetime
 from django.db import models
 from user_group.models import UserGroup
 from device.models import Device, DevicePort, DeviceTechnology

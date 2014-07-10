@@ -21,6 +21,9 @@ class InventoryForm(forms.ModelForm):
         else:
             initial['organization']=None
 
+        # removing help text for device_groups 'select' field
+        self.base_fields['device_groups'].help_text = ''
+
         super(InventoryForm, self).__init__(*args, **kwargs)
         self.fields['user_group'].empty_label = 'Select'
         self.fields['organization'].empty_label = 'Select'

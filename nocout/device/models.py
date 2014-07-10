@@ -8,7 +8,7 @@ from mptt.models import MPTTModel
 #************************************ Device Inventory**************************************
 # table for countries
 class Country(models.Model):
-    country_name = models.CharField(max_length=200)
+    country_name = models.CharField('Name', max_length=200)
 
     def __unicode__(self):
         return self.country_name
@@ -16,7 +16,7 @@ class Country(models.Model):
 
 # table for states
 class State(models.Model):
-    state_name = models.CharField(max_length=200)
+    state_name = models.CharField('Name', max_length=200)
     country = models.ForeignKey(Country, null=True, blank=True)
 
     def __unicode__(self):
@@ -25,7 +25,7 @@ class State(models.Model):
 
 # table for cities
 class City(models.Model):
-    city_name = models.CharField(max_length=250)
+    city_name = models.CharField('Name', max_length=250)
     state = models.ForeignKey(State, null=True, blank=True)
 
     def __unicode__(self):
@@ -34,9 +34,9 @@ class City(models.Model):
 
 # table for state latitude & longitude
 class StateGeoInfo(models.Model):
+    state = models.ForeignKey(State)
     latitude = models.FloatField('Latitude')
     longitude = models.FloatField('Longitude')
-    state = models.ForeignKey(State)
 
 
 # table for device frequencies color coding
@@ -87,7 +87,7 @@ class DeviceModel(models.Model):
 # device vendor info table
 class DeviceVendor(models.Model):
     name = models.CharField('Device Vendor', max_length=100, unique=True)
-    alias = models.CharField('Alias', max_length=200, null=True, blank=True)
+    alias = models.CharField('Alias', max_length=200)
     device_models = models.ManyToManyField(DeviceModel, through="VendorModel", blank=True, null=True)
 
     def __unicode__(self):
@@ -97,7 +97,7 @@ class DeviceVendor(models.Model):
 # device technology info table
 class DeviceTechnology(models.Model):
     name = models.CharField('Device Technology', max_length=100, unique=True)
-    alias = models.CharField('Alias', max_length=200, null=True, blank=True)
+    alias = models.CharField('Alias', max_length=200)
     device_vendors = models.ManyToManyField(DeviceVendor, through="TechnologyVendor", blank=True, null=True)
 
     def __unicode__(self):
@@ -126,8 +126,8 @@ class Device(MPTTModel, models.Model):
         (low, 'Low')
     )
 
-    device_name = models.CharField('Device Name', max_length=200, unique=True)
-    device_alias = models.CharField('Device Alias', max_length=200)
+    device_name = models.CharField('Name', max_length=200, unique=True)
+    device_alias = models.CharField('Alias', max_length=200)
     site_instance = models.ForeignKey(SiteInstance, null=True, blank=True)
     organization = models.ForeignKey(Organization)
     device_technology = models.IntegerField('Device Technology')

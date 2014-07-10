@@ -4,12 +4,20 @@ from nocout.widgets import MultipleToSingleSelectionWidget
 
 class UserForm(forms.ModelForm):
 
+    first_name = forms.CharField(required=True)
+    email = forms.CharField(label='Email', required=True)
     password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
     password2 = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
 
     def __init__(self, *args, **kwargs):
         self.request=kwargs.pop('request', None)
         initial = kwargs.setdefault('initial',{})
+
+        # removing help text for username 'select' field
+        self.base_fields['username'].help_text = ''
+
+        # removing help text for role 'select' field
+        self.base_fields['role'].help_text = ''
 
         if kwargs['instance']:
             initial['role'] = kwargs['instance'].role.values_list('pk', flat=True)[0]

@@ -70,8 +70,8 @@ class ServiceParameters(models.Model):
 
 
 class Service(models.Model):
-    name = models.CharField('Service Name', max_length=100)
-    alias = models.CharField('Service Alias', max_length=100)
+    name = models.CharField('Name', max_length=100)
+    alias = models.CharField('Alias', max_length=100)
     parameters = models.ForeignKey(ServiceParameters, null=True, blank=True)
     service_data_sources = models.ManyToManyField(ServiceDataSource, null=True, blank=True)
     command = models.ForeignKey(Command, null=True, blank=True)
