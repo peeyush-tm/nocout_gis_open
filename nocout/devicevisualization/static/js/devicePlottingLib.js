@@ -373,7 +373,7 @@ function devicePlottingClass_gmap() {
 				deviceData = bs_ss_devices[i].data.param.base_station;
 				pt_technology = bs_ss_devices[i].data.technology;
 				bhInfo = bs_ss_devices[i].data.param.backhual;
-			} else {				
+			} else {
 				deviceData = bs_ss_devices[i].data.param.sub_station;
 			}
 
@@ -399,7 +399,7 @@ function devicePlottingClass_gmap() {
 						var rad = 1;
 
 						/*If radius is greater than 4 Kms then set it to 4.*/
-						if(sector.radius > 4) {
+						if(sector.radius > 4 || sector.radius == null) {
 							rad = 4;
 						} else {
 							rad = sector.radius;
@@ -536,7 +536,7 @@ function devicePlottingClass_gmap() {
 				var rad = 1;
 
 				/*If radius is greater than 4 Kms then set it to 4.*/
-				if(sectorObj[i].radius > 4) {
+				if(sectorObj[i].radius > 4 || sectorObj[i].radius == null) {
 					rad = 4;
 				} else {
 					rad = sectorObj[i].radius;

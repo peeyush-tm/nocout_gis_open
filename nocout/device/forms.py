@@ -1,6 +1,6 @@
 from django import forms
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
-    Country, State, City, StateGeoInfo, DevicePort
+    Country, State, City, StateGeoInfo, DevicePort, DeviceFrequency
 from django.core.exceptions import ValidationError
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
 from device.models import DeviceTypeFields
@@ -151,11 +151,19 @@ class DeviceForm(forms.ModelForm):
 class DeviceTypeFieldsForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(DeviceTypeFieldsForm, self).__init__(*args, **kwargs)
+        self.fields['device_type'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class': 'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
         model = DeviceTypeFields
@@ -167,9 +175,16 @@ class DeviceTypeFieldsUpdateForm(forms.ModelForm):
         super(DeviceTypeFieldsUpdateForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class': 'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
         model = DeviceTypeFields
@@ -182,9 +197,16 @@ class DeviceTechnologyForm(forms.ModelForm):
         super(DeviceTechnologyForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class': 'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
         model = DeviceTechnology
@@ -197,9 +219,16 @@ class DeviceVendorForm(forms.ModelForm):
         super(DeviceVendorForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class': 'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
         model = DeviceVendor
@@ -212,9 +241,16 @@ class DeviceModelForm(forms.ModelForm):
         super(DeviceModelForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class': 'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
         model = DeviceModel
@@ -227,9 +263,16 @@ class DeviceTypeForm(forms.ModelForm):
         super(DeviceTypeForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class': 'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
         model = DeviceType
@@ -246,3 +289,17 @@ class DevicePortForm(forms.ModelForm):
                 field.widget.attrs.update({'class':'form-control'})
     class Meta:
         model = DevicePort
+
+class DeviceFrequencyForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(DeviceFrequencyForm, self).__init__(*args, **kwargs)
+        self.fields['color_hex_value'].widget.attrs.update({'value':"rgb(45,14,255,0.58)",'class':'colorpicker',\
+                                                            'data-color-format':'rgba' })
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' form-control'
+            else:
+                field.widget.attrs.update({'class':'form-control'})
+    class Meta:
+        model = DeviceFrequency

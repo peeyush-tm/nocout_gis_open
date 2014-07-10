@@ -10,9 +10,10 @@ from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, DeviceType, DeviceTypeFields, DeviceTypeFieldsValue, DeviceTechnology, \
-    TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType, DevicePort, Country, State, City
+    TechnologyVendor, DeviceVendor, VendorModel, DeviceModel, ModelType, DevicePort, Country, State, City, \
+    DeviceFrequency
 from forms import DeviceForm, DeviceTypeFieldsForm, DeviceTypeFieldsUpdateForm, DeviceTechnologyForm, \
-    DeviceVendorForm, DeviceModelForm, DeviceTypeForm, DevicePortForm
+    DeviceVendorForm, DeviceModelForm, DeviceTypeForm, DevicePortForm, DeviceFrequencyForm
 from nocout.utils.util import DictDiffer
 from django.http.response import HttpResponseRedirect
 from organization.models import Organization
@@ -254,11 +255,11 @@ class DeviceCreate(CreateView):
         except:
             print "No instance to add."
 
-        # saving associated ports  --> M2M Relation (Model: DevicePort)
-        for port in form.cleaned_data['ports']:
-            device_port = DevicePort.objects.get(name=port)
-            device.ports.add(device_port)
-            device.save()
+        # # saving associated ports  --> M2M Relation (Model: DevicePort)
+        # for port in form.cleaned_data['ports']:
+        #     device_port = DevicePort.objects.get(name=port)
+        #     device.ports.add(device_port)
+        #     device.save()
 
         # # saving associated services  --> M2M Relation (Model: Service)
         # for service in form.cleaned_data['service']:
@@ -335,7 +336,7 @@ class DeviceUpdate(UpdateView):
         # saving device data
         self.object.device_name = form.cleaned_data['device_name']
         self.object.device_alias = form.cleaned_data['device_alias']
-        self.object.ports = form.cleaned_data['ports']
+        #self.object.ports = form.cleaned_data['ports']
         self.object.device_technology = form.cleaned_data['device_technology']
         self.object.device_vendor = form.cleaned_data['device_vendor']
         self.object.device_model = form.cleaned_data['device_model']
@@ -1474,3 +1475,120 @@ class DevicePortDelete(DeleteView):
         action.send(request.user, verb='deleting device port: %s'%(self.get_object().name))
         return super(DevicePortDelete, self).delete(request, *args, **kwargs)
 
+class DeviceFrequencyListing(ListView):
+    model = DeviceFrequency
+    template_name = 'device_frequency/device_frequency_list.html'
+
+    def get_context_data(self, **kwargs):
+        context=super(DeviceFrequencyListing, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData':'value',            'sTitle' : 'Value',        'sWidth':'null', },
+            {'mData':'color_hex_value',  'sTitle' : 'Hex Value',     'sWidth':'null', },
+            {'mData':'actions',          'sTitle' : 'Actions',       'sWidth':'10%',  },
+            ]
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+class DeviceFrequencyListingTable(BaseDatatableView):
+    model = DeviceFrequency
+    columns = ['value', 'color_hex_value']
+    order_columns = ['value', 'color_hex_value']
+
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        if sSearch:
+            query=[]
+            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            for column in self.columns[:-1]:
+                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return DeviceFrequency.objects.values(*self.columns+['id'])
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in qs:
+            dct.update(actions='<a href="/frequency/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/frequency/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs=list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+               }
+        return ret
+
+class DeviceFrequencyCreate(CreateView):
+    template_name = 'device_frequency/device_frequency_new.html'
+    model = DeviceFrequency
+    form_class = DeviceFrequencyForm
+    success_url = reverse_lazy('device_frequency_list')
+
+    @method_decorator(permission_required('device.add_devicefrequency', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceFrequencyCreate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        self.object=form.save()
+        action.send(self.request.user, verb='Created', action_object = self.object)
+        return HttpResponseRedirect(DeviceFrequencyCreate.success_url)
+
+class DeviceFrequencyUpdate(UpdateView):
+    template_name = 'device_frequency/device_frequency_update.html'
+    model = DeviceFrequency
+    form_class = DeviceFrequencyForm
+    success_url = reverse_lazy('device_frequency_list')
+
+    @method_decorator(permission_required('device.change_devicefrequency', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceFrequencyUpdate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        self.object=form.save()
+        action.send(self.request.user, verb='Created', action_object = self.object)
+        return HttpResponseRedirect(DeviceFrequencyUpdate.success_url)
+
+class DeviceFrequencyDelete(DeleteView):
+    model = DeviceFrequency
+    template_name = 'device_frequency/device_frequency_delete.html'
+    success_url = reverse_lazy('device_frequency_list')
+
+    @method_decorator(permission_required('device.delete_devicefrequency', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(DeviceFrequencyDelete, self).dispatch(*args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        action.send(request.user, verb='deleting device frequency: %s'%(self.get_object().value))
+        return super(DeviceFrequencyDelete, self).delete(request, *args, **kwargs)

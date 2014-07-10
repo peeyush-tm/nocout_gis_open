@@ -39,14 +39,12 @@ class StateGeoInfo(models.Model):
     state = models.ForeignKey(State, null=True, blank=True)
 
 
-# table for device frequencies color coding
 class DeviceFrequency(models.Model):
-    frequency_name = models.CharField(max_length=100)
-    frequency_value = models.CharField(max_length=50)
-    color_hex_value = models.CharField(max_length=10)
+    value = models.CharField(max_length=50)
+    color_hex_value = models.CharField(max_length=100)
 
     def __unicode__(self):
-        return self.frequency_name
+        return self.value
 
 
 # device ports
@@ -67,7 +65,6 @@ class DeviceType(models.Model):
     service = models.ManyToManyField(Service, blank=True, null=True)
     device_icon = models.CharField('Device Icon', max_length=200, null=True, blank=True)
     device_gmap_icon = models.CharField('Device GMap Icon', max_length=200, null=True, blank=True)
-    frequency = models.ManyToManyField(DeviceFrequency, null=True, blank=True)
     agent_tag = models.CharField('Agent Tag', max_length=200, null=True, blank=True)
 
     def __unicode__(self):
@@ -135,7 +132,7 @@ class Device(MPTTModel, models.Model):
     device_model = models.IntegerField('Device Model')
     device_type = models.IntegerField('Device Type')
     parent = models.ForeignKey('self', null=True, blank=True, related_name='device_children')
-    ports = models.ManyToManyField(DevicePort, null=True, blank=True)
+    #ports = models.ManyToManyField(DevicePort, null=True, blank=True)
     ip_address = models.IPAddressField('IP Address', unique=True)
     mac_address = models.CharField('MAC Address', max_length=100, )
     netmask = models.IPAddressField('Netmask', null=True, blank=True)
