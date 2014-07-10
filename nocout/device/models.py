@@ -8,7 +8,7 @@ from mptt.models import MPTTModel
 #************************************ Device Inventory**************************************
 # table for countries
 class Country(models.Model):
-    country_name = models.CharField(max_length=200, null=True, blank=True)
+    country_name = models.CharField(max_length=200)
 
     def __unicode__(self):
         return self.country_name
@@ -16,7 +16,7 @@ class Country(models.Model):
 
 # table for states
 class State(models.Model):
-    state_name = models.CharField(max_length=200, null=True, blank=True)
+    state_name = models.CharField(max_length=200)
     country = models.ForeignKey(Country, null=True, blank=True)
 
     def __unicode__(self):
@@ -25,7 +25,7 @@ class State(models.Model):
 
 # table for cities
 class City(models.Model):
-    city_name = models.CharField(max_length=250, null=True, blank=True)
+    city_name = models.CharField(max_length=250)
     state = models.ForeignKey(State, null=True, blank=True)
 
     def __unicode__(self):
@@ -34,9 +34,9 @@ class City(models.Model):
 
 # table for state latitude & longitude
 class StateGeoInfo(models.Model):
-    latitude = models.FloatField('Latitude', null=True, blank=True)
-    longitude = models.FloatField('Longitude', null=True, blank=True)
-    state = models.ForeignKey(State, null=True, blank=True)
+    latitude = models.FloatField('Latitude')
+    longitude = models.FloatField('Longitude')
+    state = models.ForeignKey(State)
 
 
 # table for device frequencies color coding
@@ -52,7 +52,7 @@ class DeviceFrequency(models.Model):
 # device ports
 class DevicePort(models.Model):
     name = models.CharField('Name', max_length=100, unique=True)
-    alias = models.CharField('Alias', max_length=200, null=True, blank=True)
+    alias = models.CharField('Alias', max_length=200)
     value = models.IntegerField('Port Value', default=0)
 
     def __unicode__(self):
@@ -62,7 +62,7 @@ class DevicePort(models.Model):
 # device types info table
 class DeviceType(models.Model):
     name = models.CharField('Device Type', max_length=200, unique=True)
-    alias = models.CharField('Device Description', max_length=200, null=True, blank=True)
+    alias = models.CharField('Alias', max_length=200)
     device_port = models.ManyToManyField(DevicePort, null=True, blank=True)
     service = models.ManyToManyField(Service, blank=True, null=True)
     device_icon = models.CharField('Device Icon', max_length=200, null=True, blank=True)
@@ -137,7 +137,7 @@ class Device(MPTTModel, models.Model):
     parent = models.ForeignKey('self', null=True, blank=True, related_name='device_children')
     #ports = models.ManyToManyField(DevicePort, null=True, blank=True)
     ip_address = models.IPAddressField('IP Address', unique=True)
-    mac_address = models.CharField('MAC Address', max_length=100, )
+    mac_address = models.CharField('MAC Address', max_length=100)
     netmask = models.IPAddressField('Netmask', null=True, blank=True)
     gateway = models.IPAddressField('Gateway', null=True, blank=True)
     dhcp_state = models.CharField('DHCP State', max_length=200, choices=DHCP_STATE, default=disable)
@@ -179,9 +179,9 @@ class TechnologyVendor(models.Model):
 
 # table for extra fields of device (depends upon device type)
 class DeviceTypeFields(models.Model):
-    device_type = models.ForeignKey(DeviceType, null=True, blank=True)
     field_name = models.CharField(max_length=100)
     field_display_name = models.CharField(max_length=200)
+    device_type = models.ForeignKey(DeviceType)
 
     def __unicode__(self):
         return self.field_display_name
