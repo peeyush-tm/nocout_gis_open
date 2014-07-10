@@ -434,19 +434,22 @@ function googleEarthClass() {
 						// Add the placemark to Earth.
 						ge.getFeatures().appendChild(ss_placemark);
 
-						var startEndObj = {};
+						/*Create link between bs & ss or sector & ss*/
+						if(ssDataObj.data.show_link == 1) {
+							var startEndObj = {};
 						
-						startEndObj["startLat"] = resultantMarkers[i].data.lat;
-						startEndObj["startLon"] = resultantMarkers[i].data.lon;
+							startEndObj["startLat"] = resultantMarkers[i].data.lat;
+							startEndObj["startLon"] = resultantMarkers[i].data.lon;
 
-						startEndObj["endLat"] = ssDataObj.data.lat;
-						startEndObj["endLon"] = ssDataObj.data.lon;
+							startEndObj["endLat"] = ssDataObj.data.lat;
+							startEndObj["endLon"] = ssDataObj.data.lon;
 
-						var linkColor = ssDataObj.data.link_color;
-						var bs_info = resultantMarkers[i].data.param.base_station;
-						var ss_info = ssDataObj.data.param.sub_station;
+							var linkColor = ssDataObj.data.link_color;
+							var bs_info = resultantMarkers[i].data.param.base_station;
+							var ss_info = ssDataObj.data.param.sub_station;
 
-						var linkLinePlacemark = earth_that.createLink_earth(startEndObj,linkColor,bs_info,ss_info);
+							var linkLinePlacemark = earth_that.createLink_earth(startEndObj,linkColor,bs_info,ss_info);
+						}
 					}/*Has sub-station condition ends*/
 				}
 				/*end if for base_station case*/
@@ -454,8 +457,6 @@ function googleEarthClass() {
 				/*Add plotted sub-stations to an array*/
 				plotted_ss_earth.push(bs_placemark);
 
-				// var startLat = devicesList.startLon;
-				// var startLon = devicesList.startLon;
 				/*Create link between bs & ss or sector & ss*/
 				if(resultantMarkers[i].data.show_link == 1) {
 
