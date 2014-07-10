@@ -62,14 +62,14 @@ class AntennaForm(forms.ModelForm):
 
     POLARIZATION = (
         ('', 'Select'),
-        ('vertical', 'Vertical'),
-        ('horizontal', 'Horizontal')
+        ('Vertical', 'Vertical'),
+        ('Horizontal', 'Horizontal')
     )
 
     SPLITTER_INSTALLED = (
         ('', 'Select'),
-        ('yes', 'Yes'),
-        ('no', 'No')
+        ('Yes', 'Yes'),
+        ('No', 'No')
     )
 
     polarization = forms.TypedChoiceField(choices=POLARIZATION, required=False)
@@ -99,19 +99,20 @@ class AntennaForm(forms.ModelForm):
 class BackhaulForm(forms.ModelForm):
     BH_TYPE = (
         ('', 'Select'),
-        ('e1', 'E1'),
-        ('ethernet', 'Ethernet')
+        ('E1', 'E1'),
+        ('Ethernet', 'Ethernet'),
+        ('SDH', 'SDH')
     )
     BH_CONNECTIVITY = (
         ('', 'Select'),
-        ('onnet', 'Onnet'),
-        ('offnet', 'Offnet')
+        ('Onnet', 'Onnet'),
+        ('Offnet', 'Offnet')
     )
 
     DR_SITE = (
         ('', 'Select'),
-        ('yes', 'Yes'),
-        ('no', 'No')
+        ('Yes', 'Yes'),
+        ('No', 'No')
     )
 
     bh_type = forms.TypedChoiceField(choices=BH_TYPE, required=False)
@@ -152,8 +153,8 @@ class BaseStationForm(forms.ModelForm):
 
     BS_TYPE = (
         ('', 'Select'),
-        ('master', 'Master'),
-        ('slave', 'Slave')
+        ('Master', 'Master'),
+        ('Slave', 'Slave')
     )
 
     bs_type = forms.TypedChoiceField(choices=BS_TYPE, required=False)
@@ -183,8 +184,8 @@ class BaseStationForm(forms.ModelForm):
 class SectorForm(forms.ModelForm):
     MRC = (
         ('', 'Select'),
-        ('yes', 'Yes'),
-        ('no', 'No')
+        ('Yes', 'Yes'),
+        ('No', 'No')
     )
 
     mrc = forms.TypedChoiceField(choices=MRC, required=False)
@@ -236,8 +237,8 @@ class CustomerForm(forms.ModelForm):
 class SubStationForm(forms.ModelForm):
     ETHERNET_EXTENDER = (
         ('', 'Select'),
-        ('yes', 'Yes'),
-        ('no', 'No')
+        ('Yes', 'Yes'),
+        ('Yo', 'No')
     )
 
     ethernet_extender = forms.TypedChoiceField(choices=ETHERNET_EXTENDER, required=False)
