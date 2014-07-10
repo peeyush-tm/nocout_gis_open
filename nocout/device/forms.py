@@ -1,6 +1,6 @@
 from django import forms
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
-    Country, State, City, StateGeoInfo, DevicePort
+    Country, State, City, StateGeoInfo, DevicePort, DeviceFrequency
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
 from device.models import DeviceTypeFields
 import pyproj
@@ -309,3 +309,17 @@ class DevicePortForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
         model = DevicePort
+
+class DeviceFrequencyForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(DeviceFrequencyForm, self).__init__(*args, **kwargs)
+        self.fields['color_hex_value'].widget.attrs.update({'value':"rgb(45,14,255,0.58)",'class':'colorpicker',\
+                                                            'data-color-format':'rgba' })
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' form-control'
+            else:
+                field.widget.attrs.update({'class':'form-control'})
+    class Meta:
+        model = DeviceFrequency

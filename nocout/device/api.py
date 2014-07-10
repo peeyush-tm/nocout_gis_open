@@ -1,7 +1,7 @@
 import operator
 import json
 import copy
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.core.exceptions import ObjectDoesNotExist
 from django.views.generic.base import View
 from django.http import HttpResponse
@@ -12,10 +12,9 @@ from user_group.models import Organization
 from device.models import Device, DeviceType, DeviceVendor, \
     DeviceTechnology, DeviceModel, State, Country, City
 
-
 # class DeviceStatsApi(View):
 #     """
-#     Api calls initiated for device stats
+#     Api calls :wq!initiated for device stats
 #
 #     """
 #
@@ -349,36 +348,32 @@ class DeviceStatsApi(View):
 
         if organizations:
             for organization in organizations:
-                base_stations= BaseStation.objects.filter( bs_switch__in= organization.device_set.values_list('id', flat=True))
+                base_stations_and_sector_configured_on_devices= Sector.objects.filter(sector_configured_on__id__in= organization.device_set.values_list('id', flat=True))\
+                    .values_list('base_station').annotate(dcount=Count('base_station'))
                 self.result['data']['meta']['total_count']=0
 
-                if base_stations:
+                if base_stations_and_sector_configured_on_devices:
                     self.result['data']['objects']= {"id" : "mainNode", "name" : "mainNodeName", "data" :
                                                             { "unspiderfy_icon" : "static/img/marker/slave01.png" }
                                                     }
                     self.result['data']['objects']['children']=list()
-                    for base_station in base_stations:
-
+                    for base_station_id, dcount in base_stations_and_sector_configured_on_devices:
+                        base_station=BaseStation.objects.get(id=base_station_id)
+                        # sector_configured_on_device=Device.objects.get(id=sector_configured_on_device)
                         base_station_info={
                             'id':base_station.id,
                             'name':base_station.name,
-                            'type':DeviceType.objects.get(id = Device.objects.get(id= \
-                                                                          base_station.bs_switch.id).device_type).name,
-                            'children':list(),
-                            'data':{'perf':"63%",
+                            'data':{
                                     'lat':base_station.latitude,
                                     'lon':base_station.longitude,
-                                    'circle_radius' : 200,
-						            'circle_color' : '{"r" : 74, "g" : 250, "b" : 194, "a" : 0.90,}',
-                                    'antena_height':None,
+                                    "markerUrl" : "static/img/marker/icon2_small.png",
                                     'technology':base_station.bs_technology.name,
-                                    'vendor':DeviceVendor.objects.get(id=\
-                                             Device.objects.get(id= base_station.bs_switch.id).device_vendor).name,
-                                    'city':City.objects.get(id=\
-                                           Device.objects.get(id= base_station.bs_switch.id).city).city_name,
-                                    'state':State.objects.get(id=\
-                                            Device.objects.get(id= base_station.bs_switch.id).state).state_name,
-                                    'param':{'base_station':[
+                                    'antena_height':None,
+                                    'vendor':str(base_station.bs_technology.device_vendors.values_list('name', flat=True)),
+                                    'city':City.objects.get(id=base_station.city).city_name if base_station.city else None ,
+                                    'state':State.objects.get(id=base_station.state).state_name if base_station.state else None,
+                                    'param':{
+                                        'base_station':[
                                                     {
                                                      'name':'alias',
                                                      'title':'Alias',
@@ -402,56 +397,54 @@ class DeviceStatsApi(View):
                                                      'title':'BS Type',
                                                      'show':1,
                                                      'value':base_station.bs_type
-                                                    },]
-                                    ,
-                                   'backhual':[
-                                       {
-                                        'name':'bh_configured_on',
-                                        'title':'BH Configured On',
-                                        'show':1,
-                                        'value':base_station.backhaul.bh_configured_on.device_name
-                                       },
-                                       {
-                                        'name':'bh_capacity',
-                                        'title':'BH Capacity',
-                                        'show':1,
-                                        'value':base_station.backhaul.bh_capacity
-                                       },
-                                       {
-                                        'name':'bh_type',
-                                        'title':'BH Type',
-                                        'show':1,
-                                        'value':base_station.backhaul.bh_type
-                                       },
-                                       {
-                                        'name':'pe_ip',
-                                        'title':'PE IP',
-                                        'show':1,
-                                        'value':base_station.backhaul.pe_ip
-                                       },
-                                       {
-                                        'name':'type',
-                                        'title':'TYPE',
-                                        'show':1,
-                                        'value':base_station.backhaul.bh_type
-                                       },
-                                   ]},
-                            'labels':[],
-                            'markerUrl':'static/img/marker/icon2_small.png'
+                                                    }],
+                                          'backhual':[
+                                                       {
+                                                        'name':'bh_configured_on',
+                                                        'title':'BH Configured On',
+                                                        'show':1,
+                                                        'value':base_station.backhaul.bh_configured_on.device_name
+                                                       },
+                                                       {
+                                                        'name':'bh_capacity',
+                                                        'title':'BH Capacity',
+                                                        'show':1,
+                                                        'value':base_station.backhaul.bh_capacity
+                                                       },
+                                                       {
+                                                        'name':'bh_type',
+                                                        'title':'BH Type',
+                                                        'show':1,
+                                                        'value':base_station.backhaul.bh_type
+                                                       },
+                                                       {
+                                                        'name':'pe_ip',
+                                                        'title':'PE IP',
+                                                        'show':1,
+                                                        'value':base_station.backhaul.pe_ip
+                                                       },
+                                                       {
+                                                        'name':'type',
+                                                        'title':'TYPE',
+                                                        'show':1,
+                                                        'value':base_station.backhaul.bh_type
+                                                       },
+                                   ]}
+
+                                   },
                             }
-                        }
+
                         base_station_info['data']['param']['sector']=[]
-                        # [{'info':[], 'color':{}, 'radius':None,
-                        #                         'azimuth_angle':None, 'beam_width':None, 'orientation':None }]
                         sectors= Sector.objects.filter(base_station = base_station.id)
                         for sector in sectors:
                             try:
-                                circuit= Circuit.objects.get(sector = sector.id)
-                                substation= SubStation.objects.get(id = circuit.sub_station.id)
-                                device= Device.objects.get(id= substation.device.id)
-
                                 base_station_info['data']['param']['sector']+=[{
-                                    'info':[{
+                                "color" : sector.frequency.color_hex_value if hasattr(sector, 'frequency')  and sector.frequency else 'rgba(74,72,94,0.58)',
+                                'radius':sector.cell_radius,
+                                'azimuth_angle':sector.antenna.azimuth_angle,
+                                'beam_width' : sector.antenna.beam_width,
+                                'orientation' : sector.antenna.polarization,
+                                'info':[   {
                                             'name':'sector_name',
                                             'title':'Sector Name',
                                             'show':1,
@@ -461,100 +454,69 @@ class DeviceStatsApi(View):
                                             'name':'frequency',
                                             'title':'Frequency',
                                             'show':1,
-                                            'value':sector.frequency
-                                            },],
-                                'color':'{"r":250, "g" : 95, "b" : 113, "a" : 0.90}',
-                                'radius':sector.cell_radius,
-                                'azimuth_angle':sector.antenna.azimuth_angle,
-                                'beam_width' : sector.antenna.beam_width,
-                                'orientation' : 'horizontal'
+                                            'value':sector.frequency.value if hasattr(sector, 'frequency') and sector.frequency else '3000000'
+                                            }],
+                                'sub_station':[]
+
                                 }]
 
-                                sub_station_info={'id': substation.id,
-                                                  'name':substation.name,
-                                                  'children':[],
-                                                  'data':{
-                                                      'param':{
-                                                          'sub_station':[
-                                                              {
-                                                               'name':'alias',
-                                                               'title':'alias',
-                                                               'show':1,
-                                                               'value':device.device_alias
-                                                              },
-                                                              {
-                                                               'name':'technology',
-                                                               'title':'Device Technology',
-                                                               'show':1,
-                                                               'value':DeviceType.objects.get(id=device.device_type).name
-                                                              },
-                                                              {
-                                                               'name':'ip',
-                                                               'titile':'IP Address',
-                                                               'show':1,
-                                                               'value':device.ip_address
-                                                              },
-                                                              {
-                                                               'name':'building height',
-                                                               'title':'Building Height',
-                                                               'show':1,
-                                                               'value':substation.building_height
-                                                              },
-                                                              {
-                                                               'name':'tower height',
-                                                               'title':'Tower Height',
-                                                               'show':1,
-                                                               'value':substation.tower_height
+                                circuits= Circuit.objects.filter(sector = sector.id)
+                                for circuit in circuits:
+                                    substation= SubStation.objects.get(id = circuit.sub_station.id)
+                                    substation_device= Device.objects.get(id= substation.device.id)
+                                    base_station_info['data']['param']['sector'][-1]['sub_station']+=[{
+                                                      'id'  : substation.id,
+                                                      'name': substation.name,
+                                                      'data': {
+                                                          "lat":substation_device.latitude,
+                                                          "lon":substation_device.longitude,
+                                                          "antena_height" : sector.antenna.height,
+                                                          "markerUrl" : "static/img/marker/icon4_small.png",
+                                                          "link_color" : sector.frequency.color_hex_value if hasattr(sector, 'frequency')  and sector.frequency else 'rgba(74,72,94,0.58)',
+                                                          'param':{
+                                                                  'sub_station':[
+                                                                      {
+                                                                       'name':'alias',
+                                                                       'title':'alias',
+                                                                       'show':1,
+                                                                       'value':substation_device.device_alias
+                                                                      },
+                                                                      {
+                                                                       'name':'cktid',
+                                                                       'title':'Circuit ID',
+                                                                       'show':1,
+                                                                       'value':circuit.id
+                                                                      },
+                                                                      {
+                                                                       'name':'latitude',
+                                                                       'title':'Latitude',
+                                                                       'show':1,
+                                                                       'value':substation_device.latitude
+                                                                      },
+                                                                      {
+                                                                       'name':'longitude',
+                                                                       'title':'Longitude',
+                                                                       'show':1,
+                                                                       'value':substation.device.longitude
+                                                                      },
+                                                                      {
+                                                                       'name':'antenna_height',
+                                                                       'title':'Antenna Height',
+                                                                       'show':1,
+                                                                       'value':sector.antenna.height
+                                                                      },
+                                                                      {
+                                                                       'name':'polarisation',
+                                                                       'title':'Polarisation',
+                                                                       'show':1,
+                                                                       'value':sector.antenna.polarization
+                                                                      }
+                                                                  ],
                                                               }
-                                                          ],
-                                                      'sector_info':[
-                                                          {
-                                                          'name':'sector_name',
-                                                          'title':'Sector Name',
-                                                          'show':1,
-                                                          'value':sector.name
-                                                          },
-                                                          {
-                                                          'name':'tx_power',
-                                                          'title':'TX Power',
-                                                          'show':1,
-                                                          'value':sector.tx_power
-                                                          },
-                                                          {
-                                                          'name':'rx_power',
-                                                          'title':'RX Power',
-                                                          'show':1,
-                                                          'value':sector.rx_power
-                                                          },
-                                                          {
-                                                          'name':'rf_bandwidth',
-                                                          'title':'RF Bandwidth',
-                                                          'show':1,
-                                                          'value':sector.rf_bandwidth
-                                                          },
-                                                      ],
-                                                      'backhaul':[],
-                                                      },
-                                                  "labels":[],
-                                                  "lat":device.latitude,
-                                                  "lon":device.longitude,
-                                                  "perf":'70%',
-                                                  "azimuth_angle":sector.antenna.azimuth_angle,
-                                                  "beam_width" : sector.antenna.beam_width,
-                                                  "radius" : sector.cell_radius,
-                                                  "markerUrl" : "static/img/marker/icon4_small.png",
-                                                  "link_color" : '{"r" : 64, "g" : 200, "b" : 253, "a" : 0.99}',
-                                                  "show_link" : 1,
-                                                  "sector_color" : '{"r":250, "g" : 95, "b" : 113, "a" : 0.90}',
-                                                  "sector_orientation" : "horizontal",
-                                                  "circle_radius" : 200,
-                                                  "circle_color" : '{ "r" : 253, "g" : 242, "b" : 112, "a" : 0.90}',
-                                                  "antena_height" : sector.antenna.height,
-                                                  }
-                                }
-                                base_station_info['children'].append(sub_station_info)
-                            except:
-                                pass
+                                                          }
+                                                          }]
+                            except Exception as e:
+                                print e.message
                         self.result['data']['objects']['children'].append(base_station_info)
                     self.result['message']='Data Fetched Successfully.'
                     self.result['success']=1

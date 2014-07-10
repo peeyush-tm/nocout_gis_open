@@ -1,6 +1,6 @@
 from django.db import models
 from user_group.models import UserGroup
-from device.models import Device, DevicePort, DeviceTechnology
+from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency
 from device_group.models import DeviceGroup
 from organization.models import Organization
 
@@ -85,6 +85,9 @@ class BaseStation(models.Model):
     infra_provider = models.CharField('Infra Provider', max_length=100, null=True, blank=True)
     building_height = models.FloatField('Building Height', null=True, blank=True, help_text='(mtr) Enter a number.')
     tower_height = models.FloatField('Tower Height', null=True, blank=True, help_text='(mtr) Enter a number.')
+    country = models.IntegerField('Country', null=True, blank=True)
+    state = models.IntegerField('State', null=True, blank=True)
+    city = models.IntegerField('City', null=True, blank=True)
     gps_type = models.CharField('GPS Type', max_length=100, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
@@ -105,9 +108,9 @@ class Sector(models.Model):
     tx_power = models.FloatField('TX Power', null=True, blank=True, help_text='(dB) Enter a number.')
     rx_power = models.FloatField('RX Field', null=True, blank=True, help_text='(dB) Enter a number.')
     rf_bandwidth = models.FloatField('RF Bandwidth', max_length=250, null=True, blank=True, help_text='(kbps) Enter a number.')
-    frequency = models.FloatField('Frequency', null=True, blank=True, help_text='(MHz) Enter a number.')
     frame_length = models.FloatField('Frame Length', null=True, blank=True, help_text='(mtr) Enter a number.')
     cell_radius = models.FloatField('Cell Radius', null=True, blank=True, help_text='(mtr) Enter a number.')
+    frequency = models.ForeignKey(DeviceFrequency, null=True, blank=True)
     modulation = models.CharField('Modulation', max_length=250, null=True, blank=True)
     city = models.CharField('City', max_length=250, null=True, blank=True)
     state = models.CharField('State', max_length=250, null=True, blank=True)
