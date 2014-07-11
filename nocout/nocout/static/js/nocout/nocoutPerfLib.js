@@ -99,6 +99,8 @@ var perf_that = "",
 				}
 			},
 			error : function(err) {
+
+				$("#status_table tbody").html(err.statusText);
 				console.log(err);
 			}
 		});
@@ -159,6 +161,8 @@ var perf_that = "",
 				}
 			},
 			error : function(err) {
+
+				$("#services_tab_container").html(err.statusText);
 				console.log(err);
 			}
 		});
@@ -238,6 +242,8 @@ var perf_that = "",
 				}
 			},
 			error : function(err) {
+				
+				$('#'+service_id+'_chart').html(err.statusText);
 				console.log(err);
 			}
 		});
