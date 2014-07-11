@@ -3,13 +3,13 @@ from performance import views
 from performance.views import Get_Service_Type_Performance_Data
 
 urlpatterns = patterns('',
-	url(r'^(?P<page_type>\w+)_live/$', views.get_live_performance),
-	url(r'^(?P<page_type>\w+)_live/(?P<device_id>\w+)/$', views.get_performance),
-	url(r'^performance_dashboard/$', views.get_performance_dashboard),
-	url(r'^sector_dashboard/$', views.get_sector_dashboard),
-	url(r'^get_substation_devices/$', views.get_substation_devices),
-	url(r'^get_substation_status/(?P<device_id>\d+)/$', views.get_substation_status),
-	url(r'^get_substation_services/(?P<device_id>\d+)/$', views.get_substation_services),
-	# url(r'^service/(?P<service_type>\w+)/data/(?P<device_id>\d+)$', views.get_service_type_performance_data),
-	url(r'^service/(?P<service_type>\w+)/data/(?P<device_id>\d+)$', Get_Service_Type_Performance_Data.as_view())
+	url(r'^(?P<page_type>\w+)_live/$', views.Get_Live_Performance.as_view()),
+	url(r'^(?P<page_type>\w+)_live/(?P<device_id>\w+)/$', views.Get_Perfomance.as_view()),
+	url(r'^performance_dashboard/$', views.Performance_Dashboard.as_view()),
+	url(r'^sector_dashboard/$', views.Sector_Dashboard.as_view()),
+	url(r'^get_inventory_devices/(?P<page_type>\w+)$', views.Fetch_Inventory_Devices.as_view()),
+	url(r'^get_inventory_device_status/(?P<page_type>\w+)/device/(?P<device_id>\d+)/$', views.Inventory_Device_Status.as_view()),
+	url(r'^get_inventory_service_data_sources/(?P<page_type>\w+)/device/(?P<device_id>\d+)/$',
+        views.Inventory_Device_Service_Data_Source.as_view()),
+	url(r'^service_data_source/(?P<service_data_source_type>\w+)/(?P<page_type>\w+)/device/(?P<device_id>\d+)$', Get_Service_Type_Performance_Data.as_view())
 )
