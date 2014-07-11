@@ -1,7 +1,6 @@
 from django import forms
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
     Country, State, City, StateGeoInfo, DevicePort, DeviceFrequency
-from django.core.exceptions import ValidationError
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
 from device.models import DeviceTypeFields
 import pyproj
@@ -194,6 +193,9 @@ class DeviceTypeFieldsUpdateForm(forms.ModelForm):
 # **************************************** Device Technology ****************************************
 class DeviceTechnologyForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+        # removing help text for device_vendors 'select' field
+        self.base_fields['device_vendors'].help_text = ''
+
         super(DeviceTechnologyForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -216,6 +218,9 @@ class DeviceTechnologyForm(forms.ModelForm):
 # ****************************************** Device Vendor ******************************************
 class DeviceVendorForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+        # removing help text for device_models 'select' field
+        self.base_fields['device_models'].help_text = ''
+
         super(DeviceVendorForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -238,6 +243,10 @@ class DeviceVendorForm(forms.ModelForm):
 # ******************************************* Device Model ******************************************
 class DeviceModelForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+
+        # removing help text for device_types 'select' field
+        self.base_fields['device_types'].help_text = ''
+
         super(DeviceModelForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -260,6 +269,10 @@ class DeviceModelForm(forms.ModelForm):
 # ******************************************* Device Type *******************************************
 class DeviceTypeForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+        # removing help text for device_port 'select' field
+        self.base_fields['device_port'].help_text = ''
+        # removing help text for service 'select' field
+        self.base_fields['service'].help_text = ''
         super(DeviceTypeForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -284,9 +297,16 @@ class DevicePortForm(forms.ModelForm):
         super(DevicePortForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' form-control'
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
             else:
-                field.widget.attrs.update({'class':'form-control'})
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
     class Meta:
         model = DevicePort
 

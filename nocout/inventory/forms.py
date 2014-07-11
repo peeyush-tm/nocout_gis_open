@@ -2,7 +2,6 @@ from django import forms
 from device.models import Country, State, City
 from device_group.models import DeviceGroup
 from models import Inventory
-# gis antenna form
 from nocout.widgets import IntReturnModelChoiceField
 from organization.models import Organization
 from user_group.models import UserGroup
@@ -24,22 +23,24 @@ class InventoryForm(forms.ModelForm):
         else:
             initial['organization']=None
 
+        # removing help text for device_groups 'select' field
+        self.base_fields['device_groups'].help_text = ''
+
         super(InventoryForm, self).__init__(*args, **kwargs)
         self.fields['user_group'].empty_label = 'Select'
         self.fields['organization'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
-                    field.widget.attrs['class'] += ' col-md-8'
+                    field.widget.attrs['class'] += ' col-md-12'
                     field.widget.attrs['class'] += ' select2select'
                 else:
-                    field.widget.attrs['class'] += ' col-md-8'
                     field.widget.attrs['class'] += ' form-control'
             else:
                 if isinstance(field.widget, forms.widgets.Select):
-                    field.widget.attrs.update({'class': 'col-md-8 select2select'})
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
-                    field.widget.attrs.update({'class': 'col-md-8 form-control'})
+                    field.widget.attrs.update({'class': 'form-control'})
 
         organization_id=None
         if kwargs['instance']:
@@ -61,19 +62,34 @@ class AntennaForm(forms.ModelForm):
 
     POLARIZATION = (
         ('', 'Select'),
-        ('vertical', 'Vertical'),
-        ('horizontal', 'Horizontal')
+        ('Vertical', 'Vertical'),
+        ('Horizontal', 'Horizontal')
     )
 
     SPLITTER_INSTALLED = (
         ('', 'Select'),
-        ('yes', 'Yes'),
-        ('no', 'No')
+        ('Yes', 'Yes'),
+        ('No', 'No')
     )
 
+    REFLECTOR = (
+        ('', 'Select'),
+        ('Yes', 'Yes'),
+        ('No', 'No')
+    )
+
+    ANTENNA_TYPE = (
+        ('', 'Select'),
+        ('Normal', 'Normal'),
+        ('Narrow Beam', 'Narrow Beam'),
+        ('Lens', 'Lens'),
+    )
+
+    antenna_type = forms.TypedChoiceField(choices=ANTENNA_TYPE, required=False)
     polarization = forms.TypedChoiceField(choices=POLARIZATION, required=False)
     splitter_installed = forms.TypedChoiceField(choices=SPLITTER_INSTALLED, required=False)
     sync_splitter_used = forms.TypedChoiceField(choices=SPLITTER_INSTALLED, required=False)
+    reflector = forms.TypedChoiceField(choices=REFLECTOR, required=False)
 
     def __init__(self, *args, **kwargs):
         super(AntennaForm, self).__init__(*args, **kwargs)
@@ -98,19 +114,21 @@ class AntennaForm(forms.ModelForm):
 class BackhaulForm(forms.ModelForm):
     BH_TYPE = (
         ('', 'Select'),
-        ('e1', 'E1'),
-        ('ethernet', 'Ethernet')
+        ('E1', 'E1'),
+        ('Ethernet', 'Ethernet'),
+        ('SDH', 'SDH'),
+        ('UBR', 'UBR')
     )
     BH_CONNECTIVITY = (
         ('', 'Select'),
-        ('onnet', 'Onnet'),
-        ('offnet', 'Offnet')
+        ('Onnet', 'Onnet'),
+        ('Offnet', 'Offnet')
     )
 
     DR_SITE = (
         ('', 'Select'),
-        ('yes', 'Yes'),
-        ('no', 'No')
+        ('Yes', 'Yes'),
+        ('No', 'No')
     )
 
     bh_type = forms.TypedChoiceField(choices=BH_TYPE, required=False)
@@ -151,17 +169,27 @@ class BaseStationForm(forms.ModelForm):
 
     BS_TYPE = (
         ('', 'Select'),
-        ('master', 'Master'),
-        ('slave', 'Slave')
+        ('Master', 'Master'),
+        ('Slave', 'Slave')
+    )
+
+    BS_SITE_TYPE = (
+        ('', 'Select'),
+        ('RTT', 'RTT'),
+        ('GBT', 'GBT')
     )
 
     bs_type = forms.TypedChoiceField(choices=BS_TYPE, required=False)
+    bs_site_type = forms.TypedChoiceField(choices=BS_SITE_TYPE, required=False)
 
     def __init__(self, *args, **kwargs):
         super(BaseStationForm, self).__init__(*args, **kwargs)
         self.fields['bs_technology'].empty_label = 'Select'
         self.fields['bs_switch'].empty_label = 'Select'
         self.fields['backhaul'].empty_label = 'Select'
+        self.fields['country'].empty_label = 'Select'
+        self.fields['state'].empty_label = 'Select'
+        self.fields['city'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -182,8 +210,8 @@ class BaseStationForm(forms.ModelForm):
 class SectorForm(forms.ModelForm):
     MRC = (
         ('', 'Select'),
-        ('yes', 'Yes'),
-        ('no', 'No')
+        ('Yes', 'Yes'),
+        ('No', 'No')
     )
 
     mrc = forms.TypedChoiceField(choices=MRC, required=False)
@@ -235,8 +263,8 @@ class CustomerForm(forms.ModelForm):
 class SubStationForm(forms.ModelForm):
     ETHERNET_EXTENDER = (
         ('', 'Select'),
-        ('yes', 'Yes'),
-        ('no', 'No')
+        ('Yes', 'Yes'),
+        ('Yo', 'No')
     )
 
     ethernet_extender = forms.TypedChoiceField(choices=ETHERNET_EXTENDER, required=False)
@@ -263,8 +291,8 @@ class SubStationForm(forms.ModelForm):
 #*********************************** Circuit ***************************************
 class CircuitForm(forms.ModelForm):
 
-    date_of_acceptance = forms.DateField(input_formats=('%d-%m-%Y',), help_text='(dd-mm-yyyy) Enter a date.',
-                                         widget=forms.widgets.DateInput(format="%d-%m-%Y"))
+    date_of_acceptance = forms.DateField(input_formats=('%m/%d/%Y',), help_text='(mm-dd-yyyy) Enter a date.',
+                                         widget=forms.widgets.DateInput(format="%m/%d/%Y", attrs={'class': 'datepicker'}))
 
     def __init__(self, *args, **kwargs):
         super(CircuitForm, self).__init__(*args, **kwargs)

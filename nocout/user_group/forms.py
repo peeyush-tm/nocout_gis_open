@@ -16,6 +16,9 @@ class UserGroupForm(forms.ModelForm):
         else:
             initial['organization']=None
 
+        # removing help text for users 'select' field
+        self.base_fields['users'].help_text = ''
+
         super(UserGroupForm, self).__init__(*args, **kwargs)
         self.fields['parent'].empty_label = 'Select'
         self.fields['organization'].empty_label = 'Select'

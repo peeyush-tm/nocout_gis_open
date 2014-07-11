@@ -7,7 +7,7 @@ from organization.models import Organization
 # user profile class
 class UserProfile(MPTTModel, User):
     parent = TreeForeignKey('self', null=True, blank=True, related_name='user_children')
-    role = models.ManyToManyField('Roles', null=True, blank=True)
+    role = models.ManyToManyField('Roles')
     organization = models.ForeignKey(Organization)
     phone_number = models.CharField('Phone No.', max_length=15, null=True, blank=True)
     company = models.CharField('Company', max_length=100, null=True, blank=True)

@@ -12,7 +12,7 @@ class Migration(SchemaMigration):
         db.create_table(u'site_instance_siteinstance', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=200)),
-            ('alias', self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True)),
+            ('alias', self.gf('django.db.models.fields.CharField')(max_length=255)),
             ('machine', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['machine.Machine'], null=True, blank=True)),
             ('site_ip', self.gf('django.db.models.fields.IPAddressField')(max_length=15)),
             ('live_status_tcp_port', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
@@ -38,7 +38,7 @@ class Migration(SchemaMigration):
         },
         u'site_instance.siteinstance': {
             'Meta': {'object_name': 'SiteInstance'},
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'live_status_tcp_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),

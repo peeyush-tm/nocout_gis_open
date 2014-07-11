@@ -33,13 +33,17 @@ class ServiceDataSource(models.Model):
 class ServiceParameters(models.Model):
     parameter_description = models.CharField(max_length=250)
     protocol = models.ForeignKey(Protocol, null=True, blank=True)
+    normal_check_interval = models.IntegerField(null=True, blank=True)
+    retry_check_interval = models.IntegerField(null=True, blank=True)
+    max_check_attempts = models.IntegerField(null=True, blank=True)
+
+    '''
     max_check_attempts = models.IntegerField()
     check_interval = models.IntegerField()
     retry_interval = models.IntegerField(null=True, blank=True)
     check_period = models.CharField(max_length=100, null=True, blank=True)
     notification_interval = models.IntegerField(null=True, blank=True)
     notification_period = models.CharField(max_length=100, null=True, blank=True)  # timeperiod_name
-    '''
     is_volatile = models.IntegerField(null=True, blank=True)
     initial_state = models.CharField(max_length=1, null=True, blank=True)                              # [o,w,u,c]
     active_checks_enabled = models.IntegerField(null=True, blank=True)                                 # [0/1]
@@ -70,8 +74,8 @@ class ServiceParameters(models.Model):
 
 
 class Service(models.Model):
-    name = models.CharField('Service Name', max_length=100)
-    alias = models.CharField('Service Alias', max_length=100)
+    name = models.CharField('Name', max_length=100)
+    alias = models.CharField('Alias', max_length=100)
     parameters = models.ForeignKey(ServiceParameters, null=True, blank=True)
     service_data_sources = models.ManyToManyField(ServiceDataSource, null=True, blank=True)
     command = models.ForeignKey(Command, null=True, blank=True)

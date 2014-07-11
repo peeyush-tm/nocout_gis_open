@@ -164,25 +164,20 @@ class ServiceParametersList(ListView):
     def get_context_data(self, **kwargs):
         context=super(ServiceParametersList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'parameter_description',     'sTitle' : 'Parameter Description', 'sWidth':'null',},
-            {'mData':'protocol__name',            'sTitle' : 'Protocol',              'sWidth':'null',},
-            {'mData':'max_check_attempts',        'sTitle' : 'Max Check Attempts',    'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'check_interval',            'sTitle' : 'Check Intervals',       'sWidth':'null',},
-            {'mData':'retry_interval',            'sTitle' : 'Retry Interval',        'sWidth':'null',},
-            {'mData':'check_period',              'sTitle' : 'Check Period',          'sWidth':'null',},
-            {'mData':'notification_interval',     'sTitle' : 'Notification Interval', 'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'notification_period',       'sTitle' : 'Notification Period',   'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',                   'sTitle' : 'Actions',               'sWidth':'5%' ,}
+            {'mData':'parameter_description',     'sTitle' : 'Parameter Description',      'sWidth':'null',},
+            {'mData':'protocol__name',            'sTitle' : 'Protocol',                   'sWidth':'null',},
+            {'mData':'normal_check_interval',     'sTitle' : 'Normal Check Intervals',     'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'retry_check_interval',      'sTitle' : 'Retry Check Intervals',      'sWidth':'null',},
+            {'mData':'max_check_attempts',        'sTitle' : 'Max Check Attempts',         'sWidth':'null',},
+            {'mData':'actions',                   'sTitle' : 'Actions',                    'sWidth':'5%' ,}
             ]
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class ServiceParametersListingTable(BaseDatatableView):
     model = ServiceParameters
-    columns = ['parameter_description', 'protocol__name', 'max_check_attempts', 'check_interval', 'retry_interval','check_period',
-                'notification_interval','notification_period']
-    order_columns = ['parameter_description', 'protocol__name', 'max_check_attempts', 'check_interval', 'retry_interval','check_period',
-                     'notification_interval','notification_period']
+    columns = ['parameter_description', 'protocol__name', 'normal_check_interval', 'retry_check_interval', 'max_check_attempts']
+    order_columns = ['parameter_description', 'protocol__name', 'normal_check_interval', 'retry_check_interval', 'max_check_attempts']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)

@@ -1,9 +1,9 @@
-import datetime
 from django.db import models
 from user_group.models import UserGroup
 from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency
 from device_group.models import DeviceGroup
 from organization.models import Organization
+from django.utils.safestring import mark_safe
 
 
 # inventory model --> mapper of user_group & device groups
@@ -26,13 +26,15 @@ class Inventory(models.Model):
 class Antenna(models.Model):
     name = models.CharField('Antenna Name', max_length=250, unique=True)
     alias = models.CharField('Antenna Alias', max_length=250)
-    height = models.FloatField('Antenna Height', null=True, blank=True, help_text='(mtr) Enter a number.')
+    antenna_type = models.CharField('Antenna Type', max_length=100, null=True, blank=True)
+    height = models.FloatField('Antenna Height', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
     polarization = models.CharField('Polarization', max_length=50, null=True, blank=True)
     tilt = models.FloatField('Tilt', null=True, blank=True, help_text='Enter a number.')
-    gain = models.FloatField('Gain', null=True, blank=True, help_text='(dBi) Enter a number.')
+    gain = models.FloatField('Gain', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(dBi)</span> Enter a number.'))
     mount_type = models.CharField('Mount Type', max_length=100, null=True, blank=True)
     beam_width = models.FloatField('Beam Width', null=True, blank=True, help_text='Enter a number.')
     azimuth_angle = models.FloatField('Azimuth Angle', null=True, blank=True, help_text='Enter a number.')
+    reflector = models.CharField('Lens/Reflector', max_length=100, null=True, blank=True)
     splitter_installed = models.CharField('Splitter Installed', max_length=4, null=True, blank=True)
     sync_splitter_used = models.CharField('Sync Splitter User', max_length=4, null=True, blank=True)
     make_of_antenna = models.CharField('Make Of Antenna', max_length=40, null=True, blank=True)
@@ -78,14 +80,17 @@ class BaseStation(models.Model):
     alias = models.CharField('Alias', max_length=250)
     bs_technology = models.ForeignKey(DeviceTechnology, null=True, blank=True)
     bs_site_id = models.CharField('BS Site ID', max_length=250, null=True, blank=True)
+    bs_site_type = models.CharField('BS Site Type', max_length=100, null=True, blank=True)
     bs_switch = models.ForeignKey(Device, null=True, blank=True, related_name='bs_switch')
     backhaul = models.ForeignKey(Backhaul)
     bs_type = models.CharField('BS Type', max_length=40, null=True, blank=True)
+    bh_bso = models.CharField('BH BSO', max_length=40, null=True, blank=True)
+    hssu_used = models.CharField('HSSU Used', max_length=40, null=True, blank=True)
     latitude = models.FloatField('Latitude', null=True, blank=True)
     longitude = models.FloatField('Longitude', null=True, blank=True)
     infra_provider = models.CharField('Infra Provider', max_length=100, null=True, blank=True)
-    building_height = models.FloatField('Building Height', null=True, blank=True, help_text='(mtr) Enter a number.')
-    tower_height = models.FloatField('Tower Height', null=True, blank=True, help_text='(mtr) Enter a number.')
+    building_height = models.FloatField('Building Height', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
+    tower_height = models.FloatField('Tower Height', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
     country = models.IntegerField('Country', null=True, blank=True)
     state = models.IntegerField('State', null=True, blank=True)
     city = models.IntegerField('City', null=True, blank=True)
@@ -100,17 +105,17 @@ class BaseStation(models.Model):
 class Sector(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
-    sector_id = models.CharField('Sector ID', max_length=250, null=True, blank=False)
+    sector_id = models.CharField('Sector ID', max_length=250, null=True, blank=True)
     base_station = models.ForeignKey(BaseStation, related_name='sector')
     sector_configured_on = models.ForeignKey(Device, max_length=250, null=True, blank=False, related_name='sector_configured_on')
     sector_configured_on_port = models.ForeignKey(DevicePort, null=True, blank=True)
     antenna = models.ForeignKey(Antenna, null=True, blank=True, related_name='sector')
     mrc = models.CharField('MRC', max_length=4, null=True, blank=True)
-    tx_power = models.FloatField('TX Power', null=True, blank=True, help_text='(dB) Enter a number.')
+    tx_power = models.FloatField('TX Power', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(dB)</span> Enter a number.'))
     rx_power = models.FloatField('RX Field', null=True, blank=True, help_text='(dB) Enter a number.')
-    rf_bandwidth = models.FloatField('RF Bandwidth', max_length=250, null=True, blank=True, help_text='(kbps) Enter a number.')
-    frame_length = models.FloatField('Frame Length', null=True, blank=True, help_text='(mtr) Enter a number.')
-    cell_radius = models.FloatField('Cell Radius', null=True, blank=True, help_text='(mtr) Enter a number.')
+    rf_bandwidth = models.FloatField('RF Bandwidth', max_length=250, null=True, blank=True, help_text=mark_safe('<span class="si_unit">(kbps)</span> Enter a number.'))
+    frame_length = models.FloatField('Frame Length', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
+    cell_radius = models.FloatField('Cell Radius', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
     frequency = models.ForeignKey(DeviceFrequency, null=True, blank=True)
     modulation = models.CharField('Modulation', max_length=250, null=True, blank=True)
     city = models.CharField('City', max_length=250, null=True, blank=True)
@@ -140,12 +145,12 @@ class SubStation(models.Model):
     device = models.ForeignKey(Device)
     version = models.CharField('Version', max_length=40, null=True, blank=True)
     serial_no = models.CharField('Serial No.', max_length=250, null=True, blank=True)
-    building_height = models.FloatField('Building Height', null=True, blank=True, help_text='(mtr) Enter a number.')
-    tower_height = models.FloatField('Tower Height', null=True, blank=True, help_text='(mtr) Enter a number.')
+    building_height = models.FloatField('Building Height', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
+    tower_height = models.FloatField('Tower Height', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
     ethernet_extender = models.CharField('Ethernet Extender', max_length=250, null=True, blank=True)
-    cable_length = models.FloatField('Cable Length', null=True, blank=True, help_text='(mtr) Enter a number.')
-    city = models.CharField('City', max_length=250)
-    state = models.CharField('State', max_length=250)
+    cable_length = models.FloatField('Cable Length', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
+    city = models.CharField('City', max_length=250, null=True, blank=True)
+    state = models.CharField('State', max_length=250, null=True, blank=True)
     address = models.CharField('Address', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
@@ -161,6 +166,11 @@ class Circuit(models.Model):
     sector = models.ForeignKey(Sector)
     customer = models.ForeignKey(Customer)
     sub_station = models.ForeignKey(SubStation)
+    qos_bandwidth = models.FloatField('QOS(BW)', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(kbps)</span> Enter a number.'))
+    dl_rssi_during_acceptance = models.CharField('RSSI During Acceptance', max_length=100, null=True, blank=True)
+    dl_cinr_during_acceptance = models.CharField('CINR During Acceptance', max_length=100, null=True, blank=True)
+    jitter_value_during_acceptance = models.CharField('Jitter Value During Acceptance', max_length=100, null=True, blank=True)
+    throughput_during_acceptance = models.CharField('Throughput During Acceptance', max_length=100, null=True, blank=True)
     date_of_acceptance = models.DateField('Date of Acceptance', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 

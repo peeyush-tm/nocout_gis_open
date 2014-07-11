@@ -5,6 +5,10 @@
     <li>Circuit</li>
     <li>New</li>
 {% endblock %}
+{% block css %}
+	<!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
+{% endblock %}
 {% block content_title %}Add Circuit{% endblock %}
 {% block content_description %}Add circuit{% endblock %}
 {% block content %}
@@ -60,6 +64,9 @@
         $(document).ready(function(){
             // Initialize the select2 selectbox.
             $(".select2select").select2();
+
+            /*Initialize Datepicker*/
+			$(".datepicker").datepicker();
         })
     </script>
 {% endblock %}
