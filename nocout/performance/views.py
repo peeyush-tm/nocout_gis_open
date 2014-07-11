@@ -38,7 +38,7 @@ class Get_Perfomance(View):
                         'device_id' : device_id,
                         'get_devices_url' : 'performance/get_inventory_devices/'+str(page_type),
                         'get_status_url' : 'performance/get_inventory_device_status/'+str(page_type)+'/device/'+str(device_id),
-                        'get_services_url' : 'performance/get_inventory_service_data_sources'+str(page_type)+'/device/'+str(device_id),
+                        'get_services_url' : 'performance/get_inventory_service_data_sources/'+str(page_type)+'/device/'+str(device_id),
                         # 'get_service_data_url' : 'get_substation_services_data/'+str(device_id)+'/'
                     }
 
@@ -191,7 +191,7 @@ class Inventory_Device_Service_Data_Source(View):
                 result['data']['objects'].append({
                     'name':service_data_source.name,
                     'title':service_data_source.alias,
-                    'url':'service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
+                    'url':'performance/service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
                     'active':1
                 })
 
@@ -222,14 +222,15 @@ class Get_Service_Type_Performance_Data(View):
 
         now=format(datetime.datetime.now(),'U')
         now_minus_30_min=format(datetime.datetime.now() + datetime.timedelta(minutes=-30), 'U')
-        performance_data=PerformanceService.objects.filter(device_name=inventory_device_name, data_source=service_data_source_type,
-                         sys_timestamp__gte=now_minus_30_min,sys_timestamp__lte=now )
+        performance_data=PerformanceService.objects.filter(device_name='bs_switch_dv_1', data_source='execution_time', sys_timestamp__gte='1404728700', sys_timestamp__lte='1404916800')
+        #performance_data=PerformanceService.objects.filter(device_name=inventory_device_name, data_source=service_data_source_type,sys_timestamp__gte=now_minus_30_min,sys_timestamp__lte=now )
 
         if performance_data:
             result['data']['objects']['type']='line'
             data_list=[]
             for data in performance_data:
-                data_list.append([data.sys_timestamp, data.avg_value ])
+                #data_list.append([data.sys_timestamp, data.avg_value ])
+                data_list.append([data.sys_timestamp, float(data.avg_value) if data.avg_value else None])
                 result['success']=1
                 result['message']='Substation Service Fetched Successfully.'
 
