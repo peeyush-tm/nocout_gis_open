@@ -83,7 +83,6 @@ class AntennaForm(forms.ModelForm):
         ('Normal', 'Normal'),
         ('Narrow Beam', 'Narrow Beam'),
         ('Lens', 'Lens'),
-        ('Integrated', 'Integrated')
     )
 
     antenna_type = forms.TypedChoiceField(choices=ANTENNA_TYPE, required=False)
@@ -188,6 +187,9 @@ class BaseStationForm(forms.ModelForm):
         self.fields['bs_technology'].empty_label = 'Select'
         self.fields['bs_switch'].empty_label = 'Select'
         self.fields['backhaul'].empty_label = 'Select'
+        self.fields['country'].empty_label = 'Select'
+        self.fields['state'].empty_label = 'Select'
+        self.fields['city'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -289,8 +291,8 @@ class SubStationForm(forms.ModelForm):
 #*********************************** Circuit ***************************************
 class CircuitForm(forms.ModelForm):
 
-    date_of_acceptance = forms.DateField(input_formats=('%d-%m-%Y',), help_text='(dd-mm-yyyy) Enter a date.',
-                                         widget=forms.widgets.DateInput(format="%d-%m-%Y", attrs={'class': 'datepicker'}))
+    date_of_acceptance = forms.DateField(input_formats=('%m/%d/%Y',), help_text='(mm-dd-yyyy) Enter a date.',
+                                         widget=forms.widgets.DateInput(format="%m/%d/%Y", attrs={'class': 'datepicker'}))
 
     def __init__(self, *args, **kwargs):
         super(CircuitForm, self).__init__(*args, **kwargs)
