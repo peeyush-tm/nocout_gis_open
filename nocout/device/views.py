@@ -1517,7 +1517,8 @@ class DeviceFrequencyListingTable(BaseDatatableView):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
-            dct.update(color_hex_value="<div style='float:left; display:block; height:20px; width:20px; background:{0}'>"
+            if "color_hex_value" in dct:
+                dct.update(color_hex_value="<div style='float:left; display:block; height:20px; width:20px; background:{0}'>"
                        "</div>"\
                        "<span style='margin-left: 5px;'>{0}</span>".
                        format(dct["color_hex_value"]))
