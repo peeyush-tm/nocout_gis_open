@@ -5,6 +5,9 @@ from models import Service, ServiceParameters, ServiceDataSource, Protocol
 #************************************* Service ******************************************
 class ServiceForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+        # removing help text for service_data_sources 'select' field
+        self.base_fields['service_data_sources'].help_text = ''
+
         super(ServiceForm, self).__init__(*args, **kwargs)
         self.fields['parameters'].empty_label = 'Select'
         self.fields['command'].empty_label = 'Select'

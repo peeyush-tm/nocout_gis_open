@@ -15,9 +15,14 @@ class DeviceGroupForm(forms.ModelForm):
         else:
             initial['organization']=None
 
+
+        # removing help text for devices 'select' field
+        self.base_fields['devices'].help_text = ''
+
         super(DeviceGroupForm, self).__init__(*args, **kwargs)
         self.fields['parent'].empty_label = 'Select'
         self.fields['organization'].empty_label = 'Select'
+
 
         organization_id=None
         if kwargs['instance']:

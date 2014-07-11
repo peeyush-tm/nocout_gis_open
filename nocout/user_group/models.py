@@ -6,8 +6,8 @@ from user_profile.models import UserProfile
 
 # user_group model
 class UserGroup(MPTTModel, models.Model):
-    name = models.CharField('Group Name', max_length=50, unique=True)
-    alias = models.CharField('Group Alias', max_length=50)
+    name = models.CharField('Name', max_length=50, unique=True)
+    alias = models.CharField('Alias', max_length=50)
     users = models.ManyToManyField(UserProfile)
     parent = TreeForeignKey('self', null=True, blank=True, related_name='usergroup_children')
     organization = models.ForeignKey(Organization)

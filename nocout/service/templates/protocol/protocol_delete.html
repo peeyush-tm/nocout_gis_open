@@ -1,11 +1,11 @@
 {% extends "inventory/inventory.html" %}
 {% block breadcrumb_title %}
 	<li>Inventory</li>
-    <li>Protocol</li>
+    <li>SNMP Parameters</li>
     <li>Delete</li>
 {% endblock %}
-{% block content_title %}Delete Protocol{% endblock %}
-{% block content_description %}Delete protocol{% endblock %}
+{% block content_title %}Delete SNMP Parameter{% endblock %}
+{% block content_description %}Delete SNMP parameter{% endblock %}
 {% block content %}
     <form action="" method="post">{% csrf_token %}
         <p>Are you sure you want to delete "{{ object }}" ?</p>

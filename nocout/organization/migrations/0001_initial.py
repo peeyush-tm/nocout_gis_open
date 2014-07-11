@@ -12,7 +12,7 @@ class Migration(SchemaMigration):
         db.create_table(u'organization_organization', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
-            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
+            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
             ('city', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
             ('state', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
             ('country', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
@@ -34,7 +34,7 @@ class Migration(SchemaMigration):
     models = {
         u'organization.organization': {
             'Meta': {'object_name': 'Organization'},
-            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
             'city': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'country': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
