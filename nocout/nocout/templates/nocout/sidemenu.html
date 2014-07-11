@@ -216,8 +216,7 @@
             <li>
                 <a class="" href="/scheduling/"><i class="fa fa-calendar"></i> <span class="menu-text">Scheduling</span></a>
             </li>
-            {% for group in user.groups.all %}
-            {% if group.name == 'group_admin' %}
+            
             <li class="has-sub">
                 <a href="javascript:;" class="">
                     <i class="fa fa-cog"></i> <span class="menu-text">Settings</span>
@@ -230,8 +229,7 @@
                     <li><a class="" href="javascript:;"><span class="sub-menu-text">Thematic Settings</span></a></li>
                 </ul>
             </li>
-            {% endif %}
-            {% endfor %}
+
         </ul>
 <!-- /SIDEBAR MENU -->
 </div>
