@@ -27,16 +27,16 @@ var perf_that = "",
  	 * @param device_id "INT", It contains the ID of current device.
  	 */
  	this.getAllDevices = function(get_device_url,device_id) {
-
 		/*Ajax call to Get Devices API*/
-		// $.ajax({
-		// 	crossDomain: true,
-		// 	url : get_device_url,
-		// 	type : "GET",
-		// 	dataType : "json",
-		// 	success : function(result) {
-				if(device_data.success == 1) {
-					allDevices = device_data.data.objects;
+		$.ajax({
+			crossDomain: true,
+			url : window.location.origin+"/"+get_device_url,
+			type : "GET",
+			dataType : "json",
+			success : function(result) {
+
+				if(result.success == 1) {
+					allDevices = result.data.objects;
 					var devices_options = '<option value="">Select Device</option>';
 					$.each(allDevices,function(key,value) {
 						if(value.id == device_id) {
@@ -47,13 +47,13 @@ var perf_that = "",
 					});
 					$("#device_name").html(devices_options);
 				} else {
-					console.log(device_data.message);
+					console.log(result.message);
 				}
-		// 	},
-		// 	error : function(err) {
-		// 		console.log(err);
-		// 	}
-		// });
+			},
+			error : function(err) {
+				console.log(err);
+			}
+		});
  	};
 
  	/**
@@ -66,18 +66,18 @@ var perf_that = "",
  	this.getStatus = function(get_status_url,device_id) {
 
  		/*Ajax call to Get Devices API*/
-		// $.ajax({
-		// 	crossDomain: true,
-		// 	url : get_status_url,
-		// 	type : "GET",
-		// 	dataType : "json",
-		// 	success : function(result) {
-				if(status_data.success == 1) {
+		$.ajax({
+			crossDomain: true,
+			url : window.location.origin+"/"+get_status_url,
+			type : "GET",
+			dataType : "json",
+			success : function(result) {
+				if(result.success == 1) {
 					
-					device_status = status_data.data.objects;
+					device_status = result.data.objects;
 					/*Loop for table headers*/
 					var headers = "<tr>";
-					$.each(device_status.header,function(key,value) {
+					$.each(device_status.headers,function(key,value) {
 						headers += '<th>'+value+'</th>';
 					});
 
@@ -97,11 +97,13 @@ var perf_that = "",
 				} else {
 					console.log(device_status.message);
 				}
-		// 	},
-		// 	error : function(err) {
-		// 		console.log(err);
-		// 	}
-		// });
+			},
+			error : function(err) {
+
+				$("#status_table tbody").html(err.statusText);
+				console.log(err);
+			}
+		});
  	};
 
  	/**
@@ -114,16 +116,17 @@ var perf_that = "",
  	this.getServices = function(get_service_url,device_id) {
 
  		/*Ajax call to Get Devices API*/
-		// $.ajax({
-		// 	crossDomain: true,
-		// 	url : get_service_url,
-		// 	type : "GET",
-		// 	dataType : "json",
-		// 	success : function(result) {
-				if(service_data.success == 1) {
+		$.ajax({
+			crossDomain: true,
+			url : window.location.origin+"/"+get_service_url,
+			type : "GET",
+			dataType : "json",
+			success : function(result) {
+
+				if(result.success == 1) {
 					var active_tab_id = "",
 						active_tab_url = "";
-					device_services = service_data.data.objects;
+					device_services = result.data.objects;
 					/*Loop to get services from object*/
 					var service_tabs = '<ul class="nav nav-tabs">';
 					var service_tabs_data = '<div class="tab-content">';
@@ -153,13 +156,16 @@ var perf_that = "",
 					perf_that.getServiceData(active_tab_url,active_tab_id,device_id);
 
 				} else {
-					console.log(device_services.message);
+					$("#services_tab_container").html("<p>"+result.message+"</p>");
+					console.log(result.message);
 				}
-		// 	},
-		// 	error : function(err) {
-		// 		console.log(err);
-		// 	}
-		// });
+			},
+			error : function(err) {
+
+				$("#services_tab_container").html(err.statusText);
+				console.log(err);
+			}
+		});
  	};
 
  	/**
@@ -172,30 +178,18 @@ var perf_that = "",
  	 */
  	this.getServiceData = function(get_service_data_url,service_id,device_id) {
  		
- 		/*Temporary Code*/
- 		if(x >= 3) {
- 			x = 1;
- 		} else {
- 			x++;
- 		}
- 		
  		/*Ajax call to Get Devices API*/
-		// $.ajax({
-		// 	crossDomain: true,
-		// 	url : get_service_data_url,
-		// 	type : "GET",
-		// 	dataType : "json",
-		// 	success : function(result) {
-				if(singleServiceData1.success == 1) {
-					
-					/*Temporary code*/
-					if(x == 1) {
-						single_service_data = singleServiceData1.data.objects;
-					} else if(x == 2) {
-						single_service_data = singleServiceData2.data.objects;
-					} else {
-						single_service_data = singleServiceData3.data.objects;
-					}
+		$.ajax({
+			crossDomain: true,
+			url : window.location.origin+"/"+get_service_data_url,
+			type : "GET",
+			dataType : "json",
+			success : function(result) {
+
+				if(result.success == 1) {
+					/*Service Data Object*/
+					single_service_data = result.data.objects;
+
 
 					$('#'+service_id+'_chart').highcharts({
 			            chart: {
@@ -243,12 +237,15 @@ var perf_that = "",
 					});
 					
 				} else {
-					console.log(singleServiceData1.message);
+					$('#'+service_id+'_chart').html(result.message);
+					console.log(result.message);
 				}
-		// 	},
-		// 	error : function(err) {
-		// 		console.log(err);
-		// 	}
-		// });
+			},
+			error : function(err) {
+				
+				$('#'+service_id+'_chart').html(err.statusText);
+				console.log(err);
+			}
+		});
  	};
  }
