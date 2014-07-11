@@ -36,9 +36,9 @@ class Get_Perfomance(View):
         page_data = {
                         'page_title' : page_type.capitalize(),
                         'device_id' : device_id,
-                        'get_devices_url' : 'get_inventory_devices/'+str(page_type)+'/',
-                        'get_status_url' : 'get_inventory_device_status/'+str(page_type)+'/device/'+str(device_id)+'/',
-                        'get_services_url' : 'get_inventory_service_data_sources'+str(page_type)+'/device/'+str(device_id)+'/',
+                        'get_devices_url' : 'performance/get_inventory_devices/'+str(page_type),
+                        'get_status_url' : 'performance/get_inventory_device_status/'+str(page_type)+'/device/'+str(device_id),
+                        'get_services_url' : 'performance/get_inventory_service_data_sources'+str(page_type)+'/device/'+str(device_id),
                         # 'get_service_data_url' : 'get_substation_services_data/'+str(device_id)+'/'
                     }
 
@@ -175,12 +175,12 @@ class Inventory_Device_Service_Data_Source(View):
         }
         if page_type =='customer':
             inventory_device= SubStation.objects.get(id= device_id)
+            inventory_device_type_id= Device.objects.get(id= inventory_device.device_id).device_type
 
         elif page_type == 'network':
             #for basestation we need to fetch sector_configured_on device field from the device
-            inventory_device= Device.objects.get(id=int(device_id))
+            inventory_device_type_id= Device.objects.get(id=int(device_id)).device_type
 
-        inventory_device_type_id= Device.objects.get(id= inventory_device.id).device_type
         inventory_device_service_data_sources_ids= DeviceType.objects.get(id= inventory_device_type_id) \
             .service.values_list('service_data_sources', flat=True)
         inventory_device_service_data_sources_ids= filter(partial(is_not, None), inventory_device_service_data_sources_ids)
