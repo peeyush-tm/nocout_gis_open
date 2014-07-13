@@ -78,8 +78,8 @@ function get_soft_delete_form(content) {
  * This function show the response message from the server in bootbox alert box
  * @param responseResult {JSON Object} It contains the json object passed from the server
  */
+// show message for soft deletion success/failure
 function show_response_message(responseResult) {
-
     bootbox.alert(responseResult.result.message);
 }
 
@@ -111,6 +111,7 @@ function add_device(device_id) {
 }
 
 
+// show message for device addition success/failure
 function device_add_message(responseResult) {
     bootbox.alert(responseResult.result.message);
 }
@@ -142,6 +143,8 @@ function sync_devices() {
     });
 }
 
+
+// show message for device sync addition success/failure
 function sync_devices_message(responseResult) {
     bootbox.alert(responseResult.result.message);
 }
@@ -189,9 +192,6 @@ function get_service_add_form(content) {
                         var $this = $(this);
                         //console.log($this.text());
                         $this.children(".checkbox").find("input:checked").each(function () {
-                            console.log($(this).prop("value"));
-                            console.log("HI");
-                            console.log(this.text);
                             service_temp_id = $(this).prop("value");
                             svc_val = $("#service_" + service_temp_id).val();
                             svc = {"device_id": $("#device_id").val(),"service_id": $(this).prop("value"), "template_id": svc_val};
@@ -214,14 +214,20 @@ function get_service_add_form(content) {
     });
 }
 
-function on_service_change(){
-    Dajaxice.device.service_data_sources_popup(Dajax.process, {'option': $('#id_services_to_monitor').val()});
-}
 
+// show message for service addition success/failure
 function add_services_message(responseResult) {
     bootbox.alert(responseResult.result.message);
 }
 
+
+// display data sources select menu
+function on_service_change(){
+    Dajaxice.device.service_data_sources_popup(Dajax.process, {'option': $('#id_services_to_monitor').val()});
+}
+
+
+// display service templates select menu
 function show_svc_templates(value) {
     id = "#svc_"+value;
     if ($(id).is(":checked")){
@@ -235,6 +241,8 @@ function show_svc_templates(value) {
     }
 }
 
+
+// display service parameters table
 function show_param_tables(value){
     service_value = value;
     para_value = $("#service_"+value).val();
