@@ -362,7 +362,7 @@ def update_cities_after_invalid_form(request, option, city_id):
     return dajax.json()
 
 
-# add device to monitoring core
+# add device to nms core
 @dajaxice_register
 def add_device_to_nms_core(request, device_id):
     result = dict()
@@ -489,6 +489,8 @@ def add_service_form(request, value):
 
     return json.dumps({'result': result})
 
+
+# service data sources select menu popup for service addition form
 @dajaxice_register
 def service_data_sources_popup(request, option=""):
     dajax = Dajax()
@@ -515,37 +517,31 @@ def service_data_sources_popup(request, option=""):
     return dajax.json()
 
 
-# generate content for add service popup form
+# adding services to nocout core
 @dajaxice_register
 def add_service(request, service_data):
-    # result: data dictionary send in ajax response
+    # service format for nocout core
     # {
-    #     "message": "Failed to render form correctly.",
-    #     "data": {
-    #         "meta": "",
-    #         "objects": {
-    #             "service_name": "radwin_rssi",
-    #             "snmp_port": 165,
-    #             "serv_params": {
-    #                 "check_period": "24x7",
-    #                 "notification_interval": 10,
-    #                 "notification_period": "24x7",
-    #                 "retry_interval": 5,
-    #                 "check_interval": 5,
-    #                 "max_check_attempts": 5
-    #             },
-    #             "agent_tag": "snmp",
-    #             "mode": "addservice",
-    #             "device_name": "bh_dv1",
-    #             "cmd_params": {
-    #                 "rssi": {
-    #                     "warning": "-50",
-    #                     "critical": "-80"
-    #                 }
-    #             }
-    #         }
+    #     "snmp_community": {
+    #         "read_community": "public",
+    #         "version": "v2c"
     #     },
-    #     "success": 0
+    #     "agent_tag": "snmp",
+    #     "service_name": "radwin_rssi",
+    #     "snmp_port": 161,
+    #     "serv_params": {
+    #         "normal_check_interval": 5,
+    #         "max_check_attempts": 5,
+    #         "retry_check_interval": 5
+    #     },
+    #     "device_name": "radwin",
+    #     "mode": "addservice",
+    #     "cmd_params": {
+    #         "rssi": {
+    #             "warning": "-50",
+    #             "critical": "-80"
+    #         }
+    #     }
     # }
     result = dict()
     result['data'] = {}
@@ -564,6 +560,8 @@ def add_service(request, service_data):
             result['data']['objects']['mode'] = "addservice"
             # device name
             result['data']['objects']['device_name'] = device.device_name
+            # site instance name
+            result['data']['objects']['site'] = device.site_instance.name
             # service name
             result['data']['objects']['service_name'] = service.name
             # service parameters
@@ -583,35 +581,38 @@ def add_service(request, service_data):
             result['data']['objects']['snmp_port'] = service_para.protocol.port
             # agent tag
             result['data']['objects']['agent_tag'] = DeviceType.objects.get(pk=device.device_type).agent_tag
+
+            # payload data
+            service_data = result['data']['objects']
+
             # nocout api url
-            print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"
-            print result
             # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
             url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
-            encoded_data = urllib.urlencode(result['data']['objects'])
-            print "************************************************** encoded_data **********************************************"
-            print encoded_data
+
+            encoded_data = urllib.urlencode(service_data)
+
             r = requests.post(url , data=encoded_data)
+
             response_dict = ast.literal_eval(r.text)
-            print "****************************************************** response_dict ****************************************"
+
             if r:
                 result['data'] = service_data
                 result['success'] = 1
                 if not response_dict.get('success'):
-                    result['message'] = response_dict.get('error_message')
+                    result['message'] += response_dict.get('error_message')
                 else:
                     result['message'] = "Service added successfully."
                     device = Device.objects.get(pk=int(sd['device_id']))
+
                     # set 'is_monitored_on_nms' to 1 if service is added successfully
                     device.is_monitored_on_nms = 1
                     device.save()
         except:
-            #result['message'] = "Service cannot be added because device has no service associated with it."
-            result['message'] = response_dict.get('error_message')
+            result['message'] = "Service cannot be added."
     return json.dumps({'result': result})
 
 
-
+# get service templates for service addition form
 @dajaxice_register
 def get_service_templates(request, option=""):
     dajax = Dajax()
@@ -637,6 +638,8 @@ def get_service_templates(request, option=""):
     dajax.assign(field_id, 'innerHTML', ''.join(out))
     return dajax.json()
 
+
+# get service parameters and data source tables for service addition form
 @dajaxice_register
 def get_service_para_and_data_source_tables(request, service_value="", para_value="" ):
     dajax = Dajax()
@@ -669,7 +672,7 @@ def get_service_para_and_data_source_tables(request, service_value="", para_valu
             )
             params.append("</tbody></div></div></div>")
         except:
-            pass
+            logger.info("Service data source doesn't exist.")
     else:
         params.append("<h5 class='text-warning'>No data to show.</h5> ")
     dajax.assign(service_paras_table_id, 'innerHTML', ''.join(params))

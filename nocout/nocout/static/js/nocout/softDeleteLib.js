@@ -110,6 +110,7 @@ function add_device(device_id) {
     });
 }
 
+
 function device_add_message(responseResult) {
     bootbox.alert(responseResult.result.message);
 }
@@ -147,7 +148,6 @@ function sync_devices_message(responseResult) {
 
 
 // add service to nms core
-// sync devices with monitoring core
 function get_service_add_form(content) {
     var service_add_html = "";
     if (!(typeof content.result.data.objects.services === 'undefined') && !(Object.keys(content.result.data.objects.services).length === 0)) {

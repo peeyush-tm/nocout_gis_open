@@ -114,8 +114,8 @@ class DeviceListingTable(BaseDatatableView):
                     dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                         <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
                         <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>\
-                        <a href="#" class="add_device_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus-square text-warning" title="Add device for monitoring"></i></a>\
-                        <a href="#" class="sync_device_with_nms_core_btn" device_id="{0}"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+                        <a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+                        <a href="#" onclick="sync_devices();"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
                         <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             except:
                 logger.info("Device is not basestation")
@@ -124,8 +124,8 @@ class DeviceListingTable(BaseDatatableView):
                     dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                         <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
                         <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>\
-                        <a href="#" class="add_device_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus-square text-warning" title="Add device for monitoring"></i></a>\
-                        <a href="#" class="sync_device_with_nms_core_btn" device_id="{0}"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+                        <a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+                        <a href="#" onclick="sync_devices();"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
                         <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             except:
                 logger.info("Device is not substation.")
