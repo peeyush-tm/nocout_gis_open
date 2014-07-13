@@ -3,7 +3,8 @@ from performance import views
 from performance.views import Get_Service_Type_Performance_Data
 
 urlpatterns = patterns('',
-	url(r'^(?P<page_type>\w+)_live/$', views.Get_Live_Performance.as_view()),
+	url(r'^(?P<page_type>\w+)_live/$', views.Live_Performance.as_view()),
+	url(r'^liveperformancelistingtable/$', views.LivePerformanceListing.as_view(), name='LivePerformanceListing'),
 	url(r'^(?P<page_type>\w+)_live/(?P<device_id>\w+)/$', views.Get_Perfomance.as_view()),
 	url(r'^performance_dashboard/$', views.Performance_Dashboard.as_view()),
 	url(r'^sector_dashboard/$', views.Sector_Dashboard.as_view()),
