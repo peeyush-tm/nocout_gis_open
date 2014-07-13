@@ -78,8 +78,8 @@ function get_soft_delete_form(content) {
  * This function show the response message from the server in bootbox alert box
  * @param responseResult {JSON Object} It contains the json object passed from the server
  */
+// show message for soft deletion success/failure
 function show_response_message(responseResult) {
-
     bootbox.alert(responseResult.result.message);
 }
 
@@ -110,6 +110,8 @@ function add_device(device_id) {
     });
 }
 
+
+// show message for device addition success/failure
 function device_add_message(responseResult) {
     bootbox.alert(responseResult.result.message);
 }
@@ -141,13 +143,14 @@ function sync_devices() {
     });
 }
 
+
+// show message for device sync addition success/failure
 function sync_devices_message(responseResult) {
     bootbox.alert(responseResult.result.message);
 }
 
 
 // add service to nms core
-// sync devices with monitoring core
 function get_service_add_form(content) {
     var service_add_html = "";
     if (!(typeof content.result.data.objects.services === 'undefined') && !(Object.keys(content.result.data.objects.services).length === 0)) {
@@ -155,26 +158,22 @@ function get_service_add_form(content) {
         // display port select menu
         service_add_html += '<h5 class="text-warning">You can add service for device ' + '"' + content.result.data.objects.device_alias + '" </h5>';
         service_add_html += '<input type="hidden" id="device_id" value="'+content.result.data.objects.device_id+'" />';
-        if (!(typeof content.result.data.objects.ports === 'undefined')) {
-            service_add_html += '<h5 class="text-warning"> Choose port:</h5>';
-            service_add_html += '<select class="form-control" id="id_ports" name="ports">';
-            service_add_html += '<option value="">Select</option>';
-            for (var i = 0, l = content.result.data.objects.ports.length; i < l; i++) {
-                service_add_html += '<option value="' + content.result.data.objects.ports[i].key + '">' + content.result.data.objects.ports[i].value + '</option>';
-            }
-            service_add_html += '</select>';
-        }
 
-        // display service select menu
+        // service display
         if (!(typeof content.result.data.objects.services === 'undefined')) {
-            service_add_html += '<h5 class="text-warning"> Choose service:</h5>';
-            service_add_html += '<select class="form-control" id="id_services_to_monitor" name="services_to_monitor" onChange="on_service_change();">';
-            service_add_html += '<option value="">Select '+$.trim(content.result.data.objects.form_title)+'</option>';
+            service_add_html += '<label class="control-label"><h5 class="text-warning">Services:</h5></label>';
             for (var i = 0, l = content.result.data.objects.services.length; i < l; i++) {
-                service_add_html += '<option value="' + content.result.data.objects.services[i].key + '">' + content.result.data.objects.services[i].value + '</option>';
-            }
-            service_add_html += '</select>';
-            service_add_html += '<div id="service_data_source_id"></div>';
+                service_add_html += '<div class="service">';
+                service_add_html += '<label class="checkbox">';
+                service_add_html += '<input class="uniform" id="svc_'+content.result.data.objects.services[i].key+'" type="checkbox" value="'+content.result.data.objects.services[i].key+'" onchange="show_svc_templates('+content.result.data.objects.services[i].key+');">';
+                service_add_html += content.result.data.objects.services[i].value;
+                service_add_html += '</label>';
+                service_add_html += '<div id="svc_params_id_'+content.result.data.objects.services[i].key+'" onchange="show_param_tables('+content.result.data.objects.services[i].key+');"></div>';
+                service_add_html += '<div id="svc_params_table_id_'+content.result.data.objects.services[i].key+'"></div>';
+                service_add_html += '<div id="service_data_source_table_id_'+content.result.data.objects.services[i].key+'"></div>';
+                service_add_html += '</div>';
+                }
+            service_add_html += '</div>';
         }
     }
     else{
@@ -188,9 +187,18 @@ function get_service_add_form(content) {
                 label: "Yes!",
                 className: "btn-success",
                 callback: function () {
-                    Dajaxice.device.add_service(add_services_message, {'device_id': content.result.data.objects.device_id, 'service_id': $('#id_services_to_monitor').val(),
-                                                                       'service_data_source_id': $('#service_data_source_select_id').val(),
-                                                                       'port_id': $('#id_ports').val()});
+                    var service_data = [];
+                    $(".service").each(function (index) {
+                        var $this = $(this);
+                        //console.log($this.text());
+                        $this.children(".checkbox").find("input:checked").each(function () {
+                            service_temp_id = $(this).prop("value");
+                            svc_val = $("#service_" + service_temp_id).val();
+                            svc = {"device_id": $("#device_id").val(),"service_id": $(this).prop("value"), "template_id": svc_val};
+                            service_data.push(svc);
+                        });
+                    });
+                    Dajaxice.device.add_service(add_services_message, {'service_data': service_data});
                 }
             },
             danger: {
@@ -206,10 +214,37 @@ function get_service_add_form(content) {
     });
 }
 
+
+// show message for service addition success/failure
+function add_services_message(responseResult) {
+    bootbox.alert(responseResult.result.message);
+}
+
+
+// display data sources select menu
 function on_service_change(){
     Dajaxice.device.service_data_sources_popup(Dajax.process, {'option': $('#id_services_to_monitor').val()});
 }
 
-function add_services_message(responseResult) {
-    bootbox.alert(responseResult.result.message);
+
+// display service templates select menu
+function show_svc_templates(value) {
+    id = "#svc_"+value;
+    if ($(id).is(":checked")){
+        //console.log($(id).prop("value"));
+        Dajaxice.device.get_service_templates(Dajax.process, {'option': value});
+    }
+    else {
+        $("#svc_params_id_"+value+"").empty();
+        $("#svc_params_table_id_"+value+"").empty();
+        $("#service_data_source_table_id_"+value+"").empty();
+    }
+}
+
+
+// display service parameters table
+function show_param_tables(value){
+    service_value = value;
+    para_value = $("#service_"+value).val();
+    Dajaxice.device.get_service_para_and_data_source_tables(Dajax.process, {'service_value': service_value, 'para_value': para_value});
 }

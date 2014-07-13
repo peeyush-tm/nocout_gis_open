@@ -6,7 +6,7 @@ from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, D
     DeviceTypeFieldsValue, Country, State, City, DevicePort
 import requests
 import logging
-from service.models import Service, ServiceDataSource
+from service.models import Service, ServiceDataSource, ServiceParameters
 import urllib
 
 logger=logging.getLogger(__name__)
@@ -362,7 +362,7 @@ def update_cities_after_invalid_form(request, option, city_id):
     return dajax.json()
 
 
-# add device to monitoring core
+# add device to nms core
 @dajaxice_register
 def add_device_to_nms_core(request, device_id):
     result = dict()
@@ -385,7 +385,8 @@ def add_device_to_nms_core(request, device_id):
                        'agent_tag': agent_tag,
                        'site': device.site_instance.name,
                        'mode' : 'addhost'}
-        url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+        # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+        url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
         r = requests.post(url , data=device_data)
         response_dict = ast.literal_eval(r.text)
         if r:
@@ -412,7 +413,8 @@ def sync_device_with_nms_core(request):
     result['message'] = "Device activation for monitoring failed."
     result['data']['meta'] = ''
     device_data = {'mode' : 'sync'}
-    url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+    # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+    url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
     r = requests.post(url, data=device_data)
     try:
         response_dict = ast.literal_eval(r.text)
@@ -471,20 +473,7 @@ def add_service_form(request, value):
     result['data']['objects']['device_id'] = value
     result['data']['objects']['device_name'] = device.device_name
     result['data']['objects']['device_alias'] = device.device_alias
-    result['data']['objects']['ports'] = []
     result['data']['objects']['services'] = []
-
-    # get ports associated with device
-    try:
-        device_type = DeviceType.objects.get(id=device.device_type)
-        ports = device_type.device_port.all()
-        for port in ports:
-            port_dict = {}
-            port_dict['key'] = port.id
-            port_dict['value'] = port.alias
-            result['data']['objects']['ports'].append(port_dict)
-    except:
-        logger.info("No port to associate.")
 
     # get services associated with device
     try:
@@ -500,6 +489,8 @@ def add_service_form(request, value):
 
     return json.dumps({'result': result})
 
+
+# service data sources select menu popup for service addition form
 @dajaxice_register
 def service_data_sources_popup(request, option=""):
     dajax = Dajax()
@@ -526,37 +517,31 @@ def service_data_sources_popup(request, option=""):
     return dajax.json()
 
 
-# generate content for add service popup form
+# adding services to nocout core
 @dajaxice_register
-def add_service(request, **kwargs):
-    # result: data dictionary send in ajax response
+def add_service(request, service_data):
+    # service format for nocout core
     # {
-    #     "message": "Failed to render form correctly.",
-    #     "data": {
-    #         "meta": "",
-    #         "objects": {
-    #             "service_name": "radwin_rssi",
-    #             "snmp_port": 165,
-    #             "serv_params": {
-    #                 "check_period": "24x7",
-    #                 "notification_interval": 10,
-    #                 "notification_period": "24x7",
-    #                 "retry_interval": 5,
-    #                 "check_interval": 5,
-    #                 "max_check_attempts": 5
-    #             },
-    #             "agent_tag": "snmp",
-    #             "mode": "addservice",
-    #             "device_name": "bh_dv1",
-    #             "cmd_params": {
-    #                 "rssi": {
-    #                     "warning": "-50",
-    #                     "critical": "-80"
-    #                 }
-    #             }
-    #         }
+    #     "snmp_community": {
+    #         "read_community": "public",
+    #         "version": "v2c"
     #     },
-    #     "success": 0
+    #     "agent_tag": "snmp",
+    #     "service_name": "radwin_rssi",
+    #     "snmp_port": 161,
+    #     "serv_params": {
+    #         "normal_check_interval": 5,
+    #         "max_check_attempts": 5,
+    #         "retry_check_interval": 5
+    #     },
+    #     "device_name": "radwin",
+    #     "mode": "addservice",
+    #     "cmd_params": {
+    #         "rssi": {
+    #             "warning": "-50",
+    #             "critical": "-80"
+    #         }
+    #     }
     # }
     result = dict()
     result['data'] = {}
@@ -565,102 +550,131 @@ def add_service(request, **kwargs):
     result['data']['meta'] = {}
     result['data']['objects'] = {}
 
-    if len(kwargs) == 4:
-        device_id = kwargs['device_id']
-        service_id = kwargs['service_id']
-        service_data_source_id = kwargs['service_data_source_id']
-        port_id = kwargs['port_id']
-
-        # get device
+    for sd in service_data:
         try:
-            device = Device.objects.get(pk=device_id)
+            device = Device.objects.get(pk=int(sd['device_id']))
+            service = Service.objects.get(pk=int(sd['service_id']))
+            service_para = ServiceParameters.objects.get(pk=int(sd['template_id']))
+
+            # mode
+            result['data']['objects']['mode'] = "addservice"
+            # device name
+            result['data']['objects']['device_name'] = device.device_name
+            # site instance name
+            result['data']['objects']['site'] = device.site_instance.name
+            # service name
+            result['data']['objects']['service_name'] = service.name
+            # service parameters
+            result['data']['objects']['serv_params'] = {}
+            result['data']['objects']['serv_params']['normal_check_interval'] = service_para.normal_check_interval
+            result['data']['objects']['serv_params']['retry_check_interval'] = service_para.retry_check_interval
+            result['data']['objects']['serv_params']['max_check_attempts'] = service_para.max_check_attempts
+            # snmp parameters
+            result['data']['objects']['snmp_community'] = {}
+            result['data']['objects']['snmp_community']['version'] = service_para.protocol.version
+            result['data']['objects']['snmp_community']['read_community'] = service_para.protocol.read_community
+            # command parameters
+            result['data']['objects']['cmd_params'] = {}
+            for sds in service.service_data_sources.all():
+                result['data']['objects']['cmd_params'][sds.name] = {'warning': sds.warning, 'critical': sds.critical}
+            # snmp port
+            result['data']['objects']['snmp_port'] = service_para.protocol.port
+            # agent tag
+            result['data']['objects']['agent_tag'] = DeviceType.objects.get(pk=device.device_type).agent_tag
+
+            # payload data
+            service_data = result['data']['objects']
+
+            # nocout api url
+            # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+            url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
+
+            encoded_data = urllib.urlencode(service_data)
+
+            r = requests.post(url , data=encoded_data)
+
+            response_dict = ast.literal_eval(r.text)
+
+            if r:
+                result['data'] = service_data
+                result['success'] = 1
+                if not response_dict.get('success'):
+                    result['message'] += response_dict.get('error_message')
+                else:
+                    result['message'] = "Service added successfully."
+                    device = Device.objects.get(pk=int(sd['device_id']))
+
+                    # set 'is_monitored_on_nms' to 1 if service is added successfully
+                    device.is_monitored_on_nms = 1
+                    device.save()
         except:
-            logger.info('No device available.')
-
-        # get service name
-        try:
-            service_name = Service.objects.get(pk=service_id).name
-        except:
-            logger.info("There is no service available.")
-
-        # get device name
-        try:
-            device_name = Device.objects.get(pk=device_id).device_name
-        except:
-            logger.info("There is no device available.")
-
-        # get site name
-        try:
-            site_name = Device.objects.get(pk=device_id).site_instance.name
-        except:
-            logger.info("No site instance available.")
-
-        # get service parameters
-        try:
-            service_parameters = Service.objects.get(pk=service_id).parameters
-        except:
-            logger.info("There are no service parameters.")
-
-        # get service data parameters (or command parameters)
-        service_data = {}
-
-        service_data_source = ServiceDataSource.objects.get(pk=service_data_source_id)
-        service_data['cmd_params'] = {}
-        service_data['cmd_params'][service_data_source.name.strip()] = {}
-        service_data['cmd_params'][service_data_source.name]['warning'] = service_data_source.warning
-        service_data['cmd_params'][service_data_source.name]['critical'] = service_data_source.critical
-        service_data_source_name  = service_data_source.name
-
-        # get agent_tag from device_type table
-        try:
-            device = Device.objects.get(pk=device_id)
-            agent_tag = DeviceType.objects.get(pk=device.device_type).agent_tag
-        except:
-            logger.info("There is no agent_tag associated.")
-
-        # get device port
-        try:
-            port = DevicePort.objects.get(pk=port_id).value
-        except:
-            logger.info("There is no device port.")
-
-        service_data = {'mode': 'addservice',
-                        'service_name': service_name,
-                        'device_name': device_name,
-                        'agent_tag': agent_tag,
-                        'snmp_port': port,
-                        'site': site_name,
-                        'serv_params': {'max_check_attempts': service_parameters.max_check_attempts,
-                                        'check_interval': service_parameters.check_interval,
-                                        'retry_interval': service_parameters.retry_interval,
-                                        'check_period': service_parameters.check_period,
-                                        'notification_interval': service_parameters.notification_interval,
-                                        'notification_period': service_parameters.notification_period
-                        },
-                        'cmd_params': {service_data_source_name :{'warning': service_data_source.warning,
-                                                                  'critical': service_data_source.critical},
-                        },
-        }
-
-        # nocout api url
-
-        url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
-
-        # cal to add service api
-        encoded_data = urllib.urlencode(service_data)
-        r = requests.post(url , data=encoded_data)
-        response_dict = ast.literal_eval(r.text)
-        if r:
-            result['data'] = service_data
-            result['success'] = 1
-            if not response_dict.get('success'):
-                result['message'] = response_dict.get('error_message')
-            else:
-                result['message'] = "Service added successfully."
-                device = Device.objects.get(pk=device_id)
-                # set 'is_monitored_on_nms' to 1 if service is added successfully
-                device.is_monitored_on_nms = 1
-                device.save()
-    else:
-        result['message'] = "Service cannot be added because device has no service associated with it."
+            result['message'] = "Service cannot be added."
     return json.dumps({'result': result})
+
+
+# get service templates for service addition form
+@dajaxice_register
+def get_service_templates(request, option=""):
+    dajax = Dajax()
+    out = []
+    field_id = "#svc_params_id_{0}".format(option)
+    if option and option != "":
+        svc_params = ServiceParameters.objects.all()
+        if svc_params:
+            try:
+                if svc_params:
+                    out.append("<h5>Select service template:</h5> ")
+                    out.append("<select class='form-control'  id='service_%d'>" % option)
+                    out.append("<option value='' selected>Select</option>")
+                    for svc_param in svc_params:
+                        out.append("<option value='%d'>%s</option>" % (svc_param.id, svc_param.parameter_description))
+                    out.append("</select>")
+                else:
+                    out.append("<h5 class='text-warning'>No data source associated.</h5> ")
+            except:
+                logger.info("No data source available.")
+    else:
+        out.append("<h5 class='text-warning'>No data source associated.</h5> ")
+    dajax.assign(field_id, 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+# get service parameters and data source tables for service addition form
+@dajaxice_register
+def get_service_para_and_data_source_tables(request, service_value="", para_value="" ):
+    dajax = Dajax()
+    params = []
+    data_sources = []
+    service_paras_table_id = "#svc_params_table_id_{0}".format(service_value)
+    service_data_source_table_id = "#service_data_source_table_id_{0}".format(service_value)
+    if service_value and service_value != "":
+        service = Service.objects.get(pk=service_value)
+        svc_param = ServiceParameters.objects.get(pk=para_value)
+        params.append("<br />")
+        params.append("<div class=''><div class='box border orange'><div class='box-title'><h4><i class='fa fa-table'></i>Service Parameters</h4></div>")
+        params.append("<div class='box-body'><table class='table'>")
+        params.append("<thead><tr><th>Normal Check Interval</th><th>Retry Check Interval</th><th>Max Check Attemps</th></tr></thead>")
+        params.append("<tbody><tr><td>%d</td><td>%d</td><td>%d</td></tr></tbody>" % (svc_param.normal_check_interval,
+                                                                             svc_param.retry_check_interval,
+                                                                             svc_param.max_check_attempts)
+        )
+        params.append("</div></div></div>")
+        try:
+            svc_data_sources = service.service_data_sources.all()
+            data_sources.append("<br />")
+            data_sources.append("<div class=''><div class='box border orange'><div class='box-title'><h4><i class='fa fa-table'></i>Service Data Sources</h4></div>")
+            data_sources.append("<div class='box-body'><table class='table'>")
+            data_sources.append("<thead><tr><th>Name</th><th>Warning</th><th>Critical</th></tr></thead><tbody>")
+            for svc_data_source in svc_data_sources:
+                data_sources.append("<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % (svc_data_source.alias,
+                                                                                    svc_data_source.warning,
+                                                                                    svc_data_source.critical)
+            )
+            params.append("</tbody></div></div></div>")
+        except:
+            logger.info("Service data source doesn't exist.")
+    else:
+        params.append("<h5 class='text-warning'>No data to show.</h5> ")
+    dajax.assign(service_paras_table_id, 'innerHTML', ''.join(params))
+    dajax.assign(service_data_source_table_id, 'innerHTML', ''.join(data_sources))
+    return dajax.json()
