@@ -155,26 +155,22 @@ function get_service_add_form(content) {
         // display port select menu
         service_add_html += '<h5 class="text-warning">You can add service for device ' + '"' + content.result.data.objects.device_alias + '" </h5>';
         service_add_html += '<input type="hidden" id="device_id" value="'+content.result.data.objects.device_id+'" />';
-        if (!(typeof content.result.data.objects.ports === 'undefined')) {
-            service_add_html += '<h5 class="text-warning"> Choose port:</h5>';
-            service_add_html += '<select class="form-control" id="id_ports" name="ports">';
-            service_add_html += '<option value="">Select</option>';
-            for (var i = 0, l = content.result.data.objects.ports.length; i < l; i++) {
-                service_add_html += '<option value="' + content.result.data.objects.ports[i].key + '">' + content.result.data.objects.ports[i].value + '</option>';
-            }
-            service_add_html += '</select>';
-        }
 
-        // display service select menu
+        // service display
         if (!(typeof content.result.data.objects.services === 'undefined')) {
-            service_add_html += '<h5 class="text-warning"> Choose service:</h5>';
-            service_add_html += '<select class="form-control" id="id_services_to_monitor" name="services_to_monitor" onChange="on_service_change();">';
-            service_add_html += '<option value="">Select '+$.trim(content.result.data.objects.form_title)+'</option>';
+            service_add_html += '<label class="control-label">Services </label>';
             for (var i = 0, l = content.result.data.objects.services.length; i < l; i++) {
-                service_add_html += '<option value="' + content.result.data.objects.services[i].key + '">' + content.result.data.objects.services[i].value + '</option>';
-            }
-            service_add_html += '</select>';
-            service_add_html += '<div id="service_data_source_id"></div>';
+                service_add_html += '<div class="service">';
+                service_add_html += '<label class="checkbox">';
+                service_add_html += '<input class="uniform" id="svc_'+content.result.data.objects.services[i].key+'" type="checkbox" value="'+content.result.data.objects.services[i].key+'" onchange="show_svc_templates('+content.result.data.objects.services[i].key+');">';
+                service_add_html += content.result.data.objects.services[i].value;
+                service_add_html += '</label>';
+                service_add_html += '<div id="svc_params_id_'+content.result.data.objects.services[i].key+'" onchange="show_param_tables('+content.result.data.objects.services[i].key+');"></div>';
+                service_add_html += '<div id="svc_params_table_id_'+content.result.data.objects.services[i].key+'"></div>';
+                service_add_html += '<div id="service_data_source_table_id_'+content.result.data.objects.services[i].key+'"></div>';
+                service_add_html += '</div>';
+                }
+            service_add_html += '</div>';
         }
     }
     else{
@@ -188,9 +184,21 @@ function get_service_add_form(content) {
                 label: "Yes!",
                 className: "btn-success",
                 callback: function () {
-                    Dajaxice.device.add_service(add_services_message, {'device_id': content.result.data.objects.device_id, 'service_id': $('#id_services_to_monitor').val(),
-                                                                       'service_data_source_id': $('#service_data_source_select_id').val(),
-                                                                       'port_id': $('#id_ports').val()});
+                    var service_data = [];
+                    $(".service").each(function (index) {
+                        var $this = $(this);
+                        //console.log($this.text());
+                        $this.children(".checkbox").find("input:checked").each(function () {
+                            console.log($(this).prop("value"));
+                            console.log("HI");
+                            console.log(this.text);
+                            service_temp_id = $(this).prop("value");
+                            svc_val = $("#service_" + service_temp_id).val();
+                            svc = {"device_id": $("#device_id").val(),"service_id": $(this).prop("value"), "template_id": svc_val};
+                            service_data.push(svc);
+                        });
+                    });
+                    Dajaxice.device.add_service(add_services_message, {'service_data': service_data});
                 }
             },
             danger: {
@@ -212,4 +220,23 @@ function on_service_change(){
 
 function add_services_message(responseResult) {
     bootbox.alert(responseResult.result.message);
+}
+
+function show_svc_templates(value) {
+    id = "#svc_"+value;
+    if ($(id).is(":checked")){
+        //console.log($(id).prop("value"));
+        Dajaxice.device.get_service_templates(Dajax.process, {'option': value});
+    }
+    else {
+        $("#svc_params_id_"+value+"").empty();
+        $("#svc_params_table_id_"+value+"").empty();
+        $("#service_data_source_table_id_"+value+"").empty();
+    }
+}
+
+function show_param_tables(value){
+    service_value = value;
+    para_value = $("#service_"+value).val();
+    Dajaxice.device.get_service_para_and_data_source_tables(Dajax.process, {'service_value': service_value, 'para_value': para_value});
 }

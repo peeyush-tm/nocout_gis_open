@@ -116,7 +116,7 @@ class DeviceListingTable(BaseDatatableView):
                         <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>\
                         <a href="#" class="add_device_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus-square text-warning" title="Add device for monitoring"></i></a>\
                         <a href="#" class="sync_device_with_nms_core_btn" device_id="{0}"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-                        <a href="#" class="add_svc_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus text-success" title="Add service for monitoring"></i></a>'.format(dct['id']))
+                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             except:
                 logger.info("Device is not basestation")
             try:
@@ -126,7 +126,7 @@ class DeviceListingTable(BaseDatatableView):
                         <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>\
                         <a href="#" class="add_device_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus-square text-warning" title="Add device for monitoring"></i></a>\
                         <a href="#" class="sync_device_with_nms_core_btn" device_id="{0}"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-                        <a href="#" class="add_svc_to_nms_core_btn" device_id="{0}"><i class="fa fa-plus text-success" title="Add service for monitoring"></i></a>'.format(dct['id']))
+                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             except:
                 logger.info("Device is not substation.")
         return qs
