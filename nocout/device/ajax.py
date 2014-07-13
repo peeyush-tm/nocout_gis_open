@@ -623,7 +623,7 @@ def get_service_templates(request, option=""):
         if svc_params:
             try:
                 if svc_params:
-                    out.append("<h5 class='text-warning'>Select service template:</h5> ")
+                    out.append("<h5>Select service template:</h5> ")
                     out.append("<select class='form-control'  id='service_%d'>" % option)
                     out.append("<option value='' selected>Select</option>")
                     for svc_param in svc_params:

@@ -161,7 +161,7 @@ function get_service_add_form(content) {
 
         // service display
         if (!(typeof content.result.data.objects.services === 'undefined')) {
-            service_add_html += '<label class="control-label">Services </label>';
+            service_add_html += '<label class="control-label"><h5 class="text-warning">Services:</h5></label>';
             for (var i = 0, l = content.result.data.objects.services.length; i < l; i++) {
                 service_add_html += '<div class="service">';
                 service_add_html += '<label class="checkbox">';
