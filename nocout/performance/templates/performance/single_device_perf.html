@@ -12,6 +12,11 @@
 {% endblock %}
 
 {% block content %}
+	<style>
+		.perfContainerBlock .box-title .pull-right .list-inline > li {
+			max-width: 200px !important;
+		}
+	</style>
 	<!--Single Device Live Perf Start-->
 	<div class='box border lite perfContainerBlock'>
 	    <div class='box-title'>
@@ -62,7 +67,7 @@
 	    	<!--Device Staus Block Start-->
 	    	<button class="btn btn-info btn-xs pull-right" title="Show Status" id="show_status_btn">Show Status</button>
 	    	<div class="clearfix"></div>
-	        <div class="col-md-6 col-md-offset-3 well well-sm" id="status_container">
+	        <div class="well well-sm" id="status_container" style="margin:10px;">
 	        	<table id="status_table" class="table table-bordered">
 					<thead></thead>
 					<tbody></tbody>
@@ -89,8 +94,6 @@
 	<script src={% static "js/highcharts.js" %}></script>
 	<!--Our Custom Script-->
 	<script src={% static "js/nocout/nocoutPerfLib.js" %}></script>
-	<!--Dummy Data-->
-	<script src={% static "js/nocout/dummy_data/devices_list.js" %}></script>
 
 	<script type="text/javascript">
 		/*Global Variables*/
@@ -111,7 +114,7 @@
 
 			current_device = "{{ device_id }}";
 			perfInstance = new nocoutPerfLib();
-			
+
 			/*To Populate the device dropdown*/
 			perfInstance.getAllDevices(devicesUrl,current_device);
 
