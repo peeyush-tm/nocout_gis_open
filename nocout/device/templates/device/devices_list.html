@@ -52,16 +52,5 @@
             /*Call createDataTable function of ourDataTableWidget class*/
             dataTableInstance.createDataTable("DeviceTable", gridHeadersObj, ajax_url);
         });
-        /*setTimeout is used because click event on '.start_monitoring_btn' class is binds before the data-table loads. Hence not working.*/
-        setTimeout(function(e) {
-            $(".add_device_to_nms_core_btn").click(function(e) {
-                var device_id = $(this).attr("device_id");
-                add_device(device_id);
-            });
-            $(".sync_device_with_nms_core_btn").click(function(e) {
-                var device_id = $(this).attr("device_id");
-                sync_devices();
-            });
-        },1000);
     </script>
 {% endblock %}
