@@ -1,14 +1,13 @@
 import json
 import datetime
 from django.db.models import Count
+from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, render
+from django.views.generic import ListView
 from django.views.generic.base import View
-from django.template import RequestContext
-
-# Create your views here.
+from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceType
-
 from inventory.models import SubStation, Circuit, Sector, BaseStation
 from performance.models import PerformanceService
 from service.models import Service, ServiceDataSource
@@ -16,19 +15,147 @@ from operator import is_not
 from functools import partial
 from django.utils.dateformat import format
 
-class Get_Live_Performance(View):
+class Live_Performance(ListView):
 
-    def get(self, request, page_type = "no_page"):
+    model= PerformanceService
+    template_name = 'performance/live_perf.html'
 
-        # Customer live performance case
-        if(page_type == "customer"):
-            return render(request, 'performance/customer_perf.html')
-        # Network live performance case
-        elif(page_type == "network"):
-            return render(request, 'performance/network_perf.html')
-        # Other live performance case
+    def get_context_data(self, **kwargs):
+        context= super(Live_Performance, self).get_context_data(**kwargs)
+        datatable_headers=[
+            {'mData':'site_instance',      'sTitle' : 'Site ID',       'Width':'null',},
+            {'mData':'id',                 'sTitle' : 'Device ID',     'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'device_alias',       'sTitle' : 'Alias',         'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'ip_address',         'sTitle' : 'IP',            'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'device_type',        'sTitle' : 'Type',          'sWidth':'10%' ,'sClass':'hidden-xs'},
+            {'mData':'city',               'sTitle' : 'City',          'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'state',              'sTitle' : 'State',         'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'packet_loss',        'sTitle' : 'Packet Loss',   'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'latency',            'sTitle' : 'Latency',       'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'last_updated',       'sTitle' : 'Last Updated',  'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'actions',            'sTitle':'Actions',         'sWidth':'5%' ,}
+            ]
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        context['page_type']=self.kwargs['page_type']
+        return context
+
+
+class LivePerformanceListing(BaseDatatableView):
+    model = PerformanceService
+    columns = ['site_instance', 'id', 'device_alias', 'ip_address', 'device_type', 'city', 'state']
+
+    def filter_queryset(self, qs):
+
+        sSearch = self.request.GET.get('sSearch', None)
+        if sSearch:
+            result_list=list()
+            for dictionary in qs:
+                for key in dictionary.keys():
+                    if str(dictionary[key])==sSearch:
+                        result_list.append(dictionary)
+
+            return result_list
+
+        return qs
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
-            return render(request, 'performance/other_perf.html')
+            if self.request.user.userprofile.role.values_list('role_name', flat=True)[0] =='admin':
+                organization_ids= self.request.user.userprofile.organization.get_descendants(include_self= True)\
+                                                                             .values_list('id', flat= True)
+            else:
+                organization_ids= [self.request.user.userprofile.organization.id]
+
+            if self.request.GET['page_type']=='customer':
+                return self.get_initial_query_set_data( device_association='substation', organization_ids=organization_ids)
+
+            elif self.request.GET['page_type'] == 'network':
+                return self.get_initial_query_set_data(device_association='sector_configured_on', organization_ids=organization_ids)
+            else:
+                return self.get_initial_query_set_data(device_association='', organization_ids=organization_ids)
+
+    def get_initial_query_set_data(self, device_association='', **kwargs):
+        device_list=list()
+        devices= Device.objects.filter( organization__in= kwargs['organization_ids']).values(*self.columns+ \
+                                                                        ['device_name', device_association])
+        for device in devices:
+            if device[device_association]:
+                performance_data= PerformanceService.objects.raw('''select id, device_name, avg_value, sys_timestamp from \
+                                  performance_performanceservice where id = (select MAX(id) from \
+                                  performance_performanceservice where (device_name=%s and data_source=%s))''' \
+                                                            ,[ device['device_name'], 'pl'])
+                for data in performance_data:
+                    device.update({'latency':data.avg_value, 'packet_loss':'pl', 'last_updated':
+                                   str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
+                                   'city':City.objects.get(id=device['city']).city_name,
+                                   'state':State.objects.get(id=device['state']).state_name
+                                 })
+                    device_list.append(device)
+        return device_list
+
+    def prepare_results(self, qs):
+        if qs:
+            for dct in qs:
+                dct.update(actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-list-alt text-info"></i></a>'\
+                           .format( self.request.GET['page_type'], dct['id']))
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = len(qs)
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = len(qs)
+
+        # qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs=list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+               }
+        return ret
+
+
+    # def get(self, request, page_type = "no_page"):
+    #
+    #     # Customer live performance case
+    #     if(page_type == "customer"):
+    #
+    #
+    #         Device.objects.filter(id__in= SubStation.objects.all().values_list('device', flat=True), is_monitored_on_nms=1)
+    #         return render(request, 'performance/customer_perf.html')
+    #     # Network live performance case
+    #     elif(page_type == "network"):
+    #         return render(request, 'performance/network_perf.html')
+    #     # Other live performance case
+    #     else:
+    #         return render(request, 'performance/other_perf.html')
+
+
+
+
+
+
+
+
+
 
 class Get_Perfomance(View):
 
@@ -222,8 +349,9 @@ class Get_Service_Type_Performance_Data(View):
 
         now=format(datetime.datetime.now(),'U')
         now_minus_30_min=format(datetime.datetime.now() + datetime.timedelta(minutes=-30), 'U')
-        performance_data=PerformanceService.objects.filter(device_name='bs_switch_dv_1', data_source='execution_time', sys_timestamp__gte='1404728700', sys_timestamp__lte='1404916800')
-        #performance_data=PerformanceService.objects.filter(device_name=inventory_device_name, data_source=service_data_source_type,sys_timestamp__gte=now_minus_30_min,sys_timestamp__lte=now )
+        # performance_data=PerformanceService.objects.filter(device_name='bs_switch_dv_1', data_source='execution_time', sys_timestamp__gte='1404728700', sys_timestamp__lte='1404916800')
+        performance_data=PerformanceService.objects.filter(device_name=inventory_device_name, \
+                       data_source=service_data_source_type,sys_timestamp__gte=now_minus_30_min,sys_timestamp__lte=now )
 
         if performance_data:
             result['data']['objects']['type']='line'
