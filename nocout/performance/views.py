@@ -9,15 +9,15 @@ from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceType
 from inventory.models import SubStation, Circuit, Sector, BaseStation
-from performance.models import PerformanceService
-from service.models import Service, ServiceDataSource
+from performance.models import PerformanceService, PerformanceNetwork
+from service.models import ServiceDataSource
 from operator import is_not
 from functools import partial
 from django.utils.dateformat import format
 
 class Live_Performance(ListView):
 
-    model= PerformanceService
+    model= PerformanceNetwork
     template_name = 'performance/live_perf.html'
 
     def get_context_data(self, **kwargs):
@@ -42,7 +42,7 @@ class Live_Performance(ListView):
 
 
 class LivePerformanceListing(BaseDatatableView):
-    model = PerformanceService
+    model = PerformanceNetwork
     columns = ['site_instance', 'id', 'device_alias', 'ip_address', 'device_type', 'city', 'state']
 
     def filter_queryset(self, qs):
@@ -83,9 +83,9 @@ class LivePerformanceListing(BaseDatatableView):
                                                                         ['device_name', device_association])
         for device in devices:
             if device[device_association]:
-                performance_data= PerformanceService.objects.raw('''select id, device_name, avg_value, sys_timestamp from \
-                                  performance_performanceservice where id = (select MAX(id) from \
-                                  performance_performanceservice where (device_name=%s and data_source=%s))''' \
+                performance_data= PerformanceNetwork.objects.raw('''select id, device_name, avg_value, sys_timestamp from \
+                                  performance_performancenetwork where id = (select MAX(id) from \
+                                  performance_performancenetwork where (device_name=%s and data_source=%s))''' \
                                                             ,[ device['device_name'], 'pl'])
                 for data in performance_data:
                     device.update({'latency':data.avg_value, 'packet_loss':'pl', 'last_updated':
@@ -132,31 +132,6 @@ class LivePerformanceListing(BaseDatatableView):
                }
         return ret
 
-
-    # def get(self, request, page_type = "no_page"):
-    #
-    #     # Customer live performance case
-    #     if(page_type == "customer"):
-    #
-    #
-    #         Device.objects.filter(id__in= SubStation.objects.all().values_list('device', flat=True), is_monitored_on_nms=1)
-    #         return render(request, 'performance/customer_perf.html')
-    #     # Network live performance case
-    #     elif(page_type == "network"):
-    #         return render(request, 'performance/network_perf.html')
-    #     # Other live performance case
-    #     else:
-    #         return render(request, 'performance/other_perf.html')
-
-
-
-
-
-
-
-
-
-
 class Get_Perfomance(View):
 
     def get(self, request, page_type = "no_page", device_id=0):
@@ -166,7 +141,6 @@ class Get_Perfomance(View):
                         'get_devices_url' : 'performance/get_inventory_devices/'+str(page_type),
                         'get_status_url' : 'performance/get_inventory_device_status/'+str(page_type)+'/device/'+str(device_id),
                         'get_services_url' : 'performance/get_inventory_service_data_sources/'+str(page_type)+'/device/'+str(device_id),
-                        # 'get_service_data_url' : 'get_substation_services_data/'+str(device_id)+'/'
                     }
 
         return render(request, 'performance/single_device_perf.html',page_data)
@@ -338,6 +312,7 @@ class Get_Service_Type_Performance_Data(View):
             'objects' : {}
             }
         }
+        inventory_device_name=None
         if page_type =='customer':
             inventory_device_name= SubStation.objects.get(id= int(device_id)).name
         elif page_type == 'network':
@@ -350,8 +325,12 @@ class Get_Service_Type_Performance_Data(View):
         now=format(datetime.datetime.now(),'U')
         now_minus_30_min=format(datetime.datetime.now() + datetime.timedelta(minutes=-30), 'U')
         # performance_data=PerformanceService.objects.filter(device_name='bs_switch_dv_1', data_source='execution_time', sys_timestamp__gte='1404728700', sys_timestamp__lte='1404916800')
-        performance_data=PerformanceService.objects.filter(device_name=inventory_device_name, \
-                       data_source=service_data_source_type,sys_timestamp__gte=now_minus_30_min,sys_timestamp__lte=now )
+        if service_data_source_type=='pl' or 'rta':
+            performance_data=PerformanceService.objects.filter(device_name=inventory_device_name, \
+                           data_source=service_data_source_type,sys_timestamp__gte=now_minus_30_min, sys_timestamp__lte=now )
+        else:
+            performance_data=PerformanceNetwork.objects.filter(device_name=inventory_device_name, \
+                           data_source=service_data_source_type, sys_timestamp__gte=now_minus_30_min, sys_timestamp__lte=now )
 
         if performance_data:
             result['data']['objects']['type']='line'
