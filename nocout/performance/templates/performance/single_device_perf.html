@@ -100,17 +100,28 @@
 		var perfInstance = "",
 			current_device = "";
 
+        var desired_url_string = "https";
+        if (window.location.protocol == "https:"){
+            desired_url_string = "https://";
+        }
+
+        if (window.location.protocol != "https:") {
+            window.location.href = "https:" + window.location.href.substring(window.location.protocol.length);
+            window.location.origin = "https:" + window.location.origin.substring(window.location.protocol.length);
+        }
+
+
 		$(document).ready(function(e) {
 			
 			/*Initialize Datepicker*/
 			$(".datepicker").datepicker();
 			
 			/*Hide Status Container*/
-			$("#status_container").hide();
+			//$("#status_container").hide();
 
-			var devicesUrl = "{{ get_devices_url }}";
-			var statusUrl = "{{ get_status_url }}";
-			var serviceUrl = "{{ get_services_url }}";
+			var devicesUrl = window.location.origin + "/" + "{{ get_devices_url }}";
+			var statusUrl = window.location.origin + "/" + "{{ get_status_url }}" + "/";
+			var serviceUrl = window.location.origin + "/" + "{{ get_services_url }}" + "/";
 
 			current_device = "{{ device_id }}";
 			perfInstance = new nocoutPerfLib();
@@ -127,8 +138,7 @@
 			/*Bind click event on tabs*/
 			$('#services_tab_container .nav-tabs li a').bind('click', function(e) {
 		        var serviceId = e.currentTarget.id.slice(0, -4);
-		        var serviceDataUrl = $.trim(e.currentTarget.attributes.url.nodeValue);
-
+		        var serviceDataUrl = window.location.origin + "/" + $.trim(e.currentTarget.attributes.url.nodeValue) + "/";
 		        perfInstance.getServiceData(serviceDataUrl,serviceId,current_device);
 		    });
 		});

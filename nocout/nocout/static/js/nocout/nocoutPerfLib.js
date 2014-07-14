@@ -28,9 +28,10 @@ var perf_that = "",
  	 */
  	this.getAllDevices = function(get_device_url,device_id) {
 		/*Ajax call to Get Devices API*/
+        var get_url = get_device_url;
 		$.ajax({
 			crossDomain: true,
-			url : window.location.origin+"/"+get_device_url,
+			url : get_url,
 			type : "GET",
 			dataType : "json",
 			success : function(result) {
@@ -66,9 +67,10 @@ var perf_that = "",
  	this.getStatus = function(get_status_url,device_id) {
 
  		/*Ajax call to Get Devices API*/
+        var get_url = get_status_url;
 		$.ajax({
 			crossDomain: true,
-			url : window.location.origin+"/"+get_status_url,
+			url : get_url,
 			type : "GET",
 			dataType : "json",
 			success : function(result) {
@@ -95,13 +97,13 @@ var perf_that = "",
 					/*Populate table data*/
 					$("#status_table tbody").html(status_val);
 				} else {
-					console.log(device_status.message);
+					console.log(result.message);
 				}
 			},
 			error : function(err) {
 
 				$("#status_table tbody").html(err.statusText);
-				console.log(err);
+
 			}
 		});
  	};
@@ -116,9 +118,10 @@ var perf_that = "",
  	this.getServices = function(get_service_url,device_id) {
 
  		/*Ajax call to Get Devices API*/
+        var get_url = get_service_url;
 		$.ajax({
 			crossDomain: true,
-			url : window.location.origin+"/"+get_service_url,
+			url : get_url,
 			type : "GET",
 			dataType : "json",
 			success : function(result) {
@@ -135,7 +138,7 @@ var perf_that = "",
 						if(value.active == 1) {
 							
 							active_tab_id = value.name;
-							active_tab_url = value.url;
+							active_tab_url = "/"+value.url;
 
 							service_tabs += '<li class="active"><a href="#'+value.name+'_block" url="'+value.url+'" id="'+value.name+'_tab" data-toggle="tab">'+value.title+'</a></li>';
 							service_tabs_data += '<div class="tab-pane fade active in" id="'+value.name+'_block"><div class="divide-10"></div><div class="chart_container"><div id="'+value.name+'_chart" style="height:350px;width:100%;"></div></div></div>';
@@ -163,7 +166,7 @@ var perf_that = "",
 			error : function(err) {
 
 				$("#services_tab_container").html(err.statusText);
-				console.log(err);
+
 			}
 		});
  	};
@@ -177,11 +180,12 @@ var perf_that = "",
  	 * @param device_id "INT", It contains the ID of current device.
  	 */
  	this.getServiceData = function(get_service_data_url,service_id,device_id) {
- 		
+
  		/*Ajax call to Get Devices API*/
+        var get_url = get_service_data_url;
 		$.ajax({
 			crossDomain: true,
-			url : window.location.origin+"/"+get_service_data_url,
+			url : get_url,
 			type : "GET",
 			dataType : "json",
 			success : function(result) {
