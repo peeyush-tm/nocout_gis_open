@@ -28,10 +28,10 @@
                 
                 <div class="tabbable header-tabs">
                     <ul class="nav nav-tabs">
-                        <li><a href="#network_alert_packet" data-toggle="tab"><span class="hidden-inline-mobile">Packet Drop</span></a></li>
-                        <li><a href="#network_alert_service" data-toggle="tab"><span class="hidden-inline-mobile">Service Impact Alerts</span></a></li>
-                        <li><a href="#network_alert_down" data-toggle="tab"><span class="hidden-inline-mobile">Down</span></a></li>
                         <li class="active"><a href="#network_alert_latency" data-toggle="tab"><span class="hidden-inline-mobile">Latency</span></a></li>
+                        <li><a href="#network_alert_packet" data-toggle="tab"><span class="hidden-inline-mobile">Packet Drop</span></a></li>
+{#                        <li><a href="#network_alert_service" data-toggle="tab"><span class="hidden-inline-mobile">Service Impact Alerts</span></a></li>#}
+{#                        <li><a href="#network_alert_down" data-toggle="tab"><span class="hidden-inline-mobile">Down</span></a></li>#}
                     </ul>
                     <div class="tab-content">
                         <div class="tab-pane fade in active" id="network_alert_latency">
@@ -46,18 +46,18 @@
                                 <tbody></tbody>
                             </table>
                         </div>
-                        <div class="tab-pane fade" id="network_alert_service">
-                            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="servicealertslistingtable">
-                                <thead></thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                        <div class="tab-pane fade" id="network_alert_down">
-                            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="downlistingtable">
-                                <thead></thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
+{#                        <div class="tab-pane fade" id="network_alert_service">#}
+{#                            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="servicealertslistingtable">#}
+{#                                <thead></thead>#}
+{#                                <tbody></tbody>#}
+{#                            </table>#}
+{#                        </div>#}
+{#                        <div class="tab-pane fade" id="network_alert_down">#}
+{#                            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="downlistingtable">#}
+{#                                <thead></thead>#}
+{#                                <tbody></tbody>#}
+{#                            </table>#}
+{#                        </div>#}
                     </div>
                 </div>
             </div>
@@ -78,18 +78,18 @@
             /*Grid headers object*/
             var gridHeadersObj_latency = $.parseJSON('{{ datatable_headers_latency|safe }}');
             var gridHeadersObj_packetdrop = $.parseJSON('{{ datatable_headers_packetdrop|safe }}');
-            var gridHeadersObj_down = $.parseJSON('{{ datatable_headers_down|safe }}');
-            var gridHeadersObj_servicealerts = $.parseJSON('{{ datatable_headers_servicealerts|safe }}');
+{#            var gridHeadersObj_down = $.parseJSON('{{ datatable_headers_down|safe }}');#}
+{#            var gridHeadersObj_servicealerts = $.parseJSON('{{ datatable_headers_servicealerts|safe }}');#}
             /*Ajax url to get grid data*/
             var ajax_url_latency = '{% url "LatencyListingTable" %}';
             var ajax_url_packet_drop = '{% url "PacketDropListingTable" %}';
-            var ajax_url_down = '{% url "DownListingTable" %}';
-            var ajax_url_servicealerts = '{% url "ServiceAlertsListingTable" %}';
+{#            var ajax_url_down = '{% url "DownListingTable" %}';#}
+{#            var ajax_url_servicealerts = '{% url "ServiceAlertsListingTable" %}';#}
             /*Call createDataTable function of ourDataTableWidget class*/
             dataTableInstance.createDataTable("latencylistingtable", gridHeadersObj_latency, ajax_url_latency);
             dataTableInstance.createDataTable("packetdroplistingtable", gridHeadersObj_packetdrop, ajax_url_packet_drop);
-            dataTableInstance.createDataTable("downlistingtable", gridHeadersObj_down, ajax_url_down);
-            dataTableInstance.createDataTable("servicealertslistingtable", gridHeadersObj_servicealerts, ajax_url_servicealerts);
+{#            dataTableInstance.createDataTable("downlistingtable", gridHeadersObj_down, ajax_url_down);#}
+{#            dataTableInstance.createDataTable("servicealertslistingtable", gridHeadersObj_servicealerts, ajax_url_servicealerts);#}
         });
 </script>
 {% endblock %}
