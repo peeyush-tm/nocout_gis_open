@@ -15,6 +15,8 @@ from operator import is_not
 from functools import partial
 from django.utils.dateformat import format
 
+import logging
+log=logging.getLogger(__name__)
 class Live_Performance(ListView):
 
     model= PerformanceNetwork
@@ -75,7 +77,8 @@ class LivePerformanceListing(BaseDatatableView):
             elif self.request.GET['page_type'] == 'network':
                 return self.get_initial_query_set_data(device_association='sector_configured_on', organization_ids=organization_ids)
             else:
-                return self.get_initial_query_set_data(device_association='', organization_ids=organization_ids)
+                # return self.get_initial_query_set_data(device_association='', organization_ids=organization_ids)
+                return []
 
     def get_initial_query_set_data(self, device_association='', **kwargs):
         device_list=list()
@@ -320,7 +323,7 @@ class Get_Service_Type_Performance_Data(View):
         }
         inventory_device_name=None
         if page_type =='customer':
-            inventory_device_name= SubStation.objects.get(id= int(device_id)).name
+            inventory_device_name= SubStation.objects.get(id= int(device_id)).device.device_name
         elif page_type == 'network':
             inventory_device_name=Device.objects.get(id=int(device_id)).device_name
         #raw query commented.
@@ -331,12 +334,14 @@ class Get_Service_Type_Performance_Data(View):
         now=format(datetime.datetime.now(),'U')
         now_minus_30_min=format(datetime.datetime.now() + datetime.timedelta(minutes=-30), 'U')
         # performance_data=PerformanceService.objects.filter(device_name='bs_switch_dv_1', data_source='execution_time', sys_timestamp__gte='1404728700', sys_timestamp__lte='1404916800')
-        if service_data_source_type=='pl' or 'rta':
-            performance_data=PerformanceService.objects.filter(device_name=inventory_device_name, \
-                           data_source=service_data_source_type,sys_timestamp__gte=now_minus_30_min, sys_timestamp__lte=now )
-        else:
+        if service_data_source_type in ['pl', 'rta']:
             performance_data=PerformanceNetwork.objects.filter(device_name=inventory_device_name, \
-                           data_source=service_data_source_type, sys_timestamp__gte=now_minus_30_min, sys_timestamp__lte=now )
+                           data_source=service_data_source_type, sys_timestamp__gte=now_minus_30_min, sys_timestamp__lte=now)
+            # log.info("network performance data %s device name" %(performance_data, inventory_device_name))
+        else:
+            performance_data=PerformanceService.objects.filter(device_name=inventory_device_name, \
+                           data_source=service_data_source_type, sys_timestamp__gte=now_minus_30_min, sys_timestamp__lte=now)
+
 
         if performance_data:
             result['data']['objects']['type']='line'
