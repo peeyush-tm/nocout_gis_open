@@ -906,17 +906,18 @@ class SubStationList(ListView):
     def get_context_data(self, **kwargs):
         context=super(SubStationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',             'sTitle' : 'Name',               'sWidth':'null',},
-            {'mData':'alias',            'sTitle' : 'Alias',              'sWidth':'null',},
-            {'mData':'device__device_name',               'sTitle' : 'Device',                 'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'version',              'sTitle' : 'Version',                'sWidth':'null',},
-            {'mData':'serial_no',        'sTitle' : 'Serial No.',         'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'building_height',  'sTitle' : 'Building Height',    'sWidth':'null',},
-            {'mData':'tower_height',     'sTitle' : 'Tower Height',       'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'city',             'sTitle' : 'City',               'sWidth':'null',},
-            {'mData':'state',            'sTitle' : 'State',              'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'address',          'sTitle' : 'Address',            'sWidth':'null',},
-            {'mData':'description',      'sTitle' : 'Description',        'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'name',                 'sTitle' : 'Name',               'sWidth':'null',},
+            {'mData':'alias',                'sTitle' : 'Alias',              'sWidth':'null',},
+            {'mData':'device__device_name',  'sTitle' : 'Device',             'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'antenna__name',        'sTitle' : 'Antenna',            'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'version',              'sTitle' : 'Version',            'sWidth':'null',},
+            {'mData':'serial_no',            'sTitle' : 'Serial No.',         'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'building_height',      'sTitle' : 'Building Height',    'sWidth':'null',},
+            {'mData':'tower_height',         'sTitle' : 'Tower Height',       'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'city',                 'sTitle' : 'City',               'sWidth':'null',},
+            {'mData':'state',                'sTitle' : 'State',              'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'address',              'sTitle' : 'Address',            'sWidth':'null',},
+            {'mData':'description',          'sTitle' : 'Description',        'sWidth':'null','sClass':'hidden-xs'},
             ]
 
         #if the user role is Admin or operator then the action column will appear on the datatable
@@ -929,8 +930,8 @@ class SubStationList(ListView):
 
 class SubStationListingTable(BaseDatatableView):
     model = SubStation
-    columns = ['name', 'alias', 'device__device_name', 'version', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
-    order_columns = ['name', 'alias', 'device__device_name', 'version', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
+    columns = ['name', 'alias', 'device__device_name', 'antenna__name', 'version', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
+    order_columns = ['name', 'alias', 'device__device_name', 'antenna__name', 'version', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)

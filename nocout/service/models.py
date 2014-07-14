@@ -32,7 +32,7 @@ class ServiceDataSource(models.Model):
 
 class ServiceParameters(models.Model):
     parameter_description = models.CharField(max_length=250)
-    protocol = models.ForeignKey(Protocol, null=True, blank=True)
+    protocol = models.ForeignKey(Protocol, null=True, blank=True, verbose_name=" SNMP Parameters")
     normal_check_interval = models.IntegerField(null=True, blank=True)
     retry_check_interval = models.IntegerField(null=True, blank=True)
     max_check_attempts = models.IntegerField(null=True, blank=True)

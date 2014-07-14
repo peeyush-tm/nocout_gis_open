@@ -118,7 +118,7 @@ function device_add_message(responseResult) {
 
 
 // sync devices with monitoring core
-function sync_devices() {
+function sync_devices(device_id) {
     bootbox.dialog({
         message: "Sync devices for monitoring.",
         title: "<span class='text-danger'><i class='fa fa-times'></i> Sync devices with nms core. </span>",
@@ -127,7 +127,7 @@ function sync_devices() {
                 label: "Yes!",
                 className: "btn-success",
                 callback: function () {
-                    Dajaxice.device.sync_device_with_nms_core(sync_devices_message);
+                    Dajaxice.device.sync_device_with_nms_core(sync_devices_message, {'device_id': device_id});
                 }
             },
             danger: {

@@ -10,7 +10,6 @@ from forms import SiteInstanceForm
 from django.http.response import HttpResponseRedirect
 from nocout.utils.util import DictDiffer
 from actstream import action
-
 import json
 
 class SiteInstanceList(ListView):
@@ -20,20 +19,23 @@ class SiteInstanceList(ListView):
     def get_context_data(self, **kwargs):
         context=super(SiteInstanceList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',                   'sTitle' : 'Name',            'sWidth':'null',},
-            {'mData':'alias',                  'sTitle' : 'Alias',           'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'site_ip',                'sTitle' : 'Site IP',         'sWidth':'null',},
-            {'mData':'machine__name',                'sTitle' : 'Machine',         'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'live_status_tcp_port',   'sTitle' : 'Live Status TCP PORT','sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',                'sTitle' : 'Actions',             'sWidth':'5%' ,}
+            {'mData':'name',                  'sTitle' : 'Name',                  'sWidth':'null',},
+            {'mData':'alias',                 'sTitle' : 'Alias',                 'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'site_ip',               'sTitle' : 'Site IP',               'sWidth':'null',},
+            {'mData':'machine__name',         'sTitle' : 'Machine',               'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'live_status_tcp_port',  'sTitle' : 'Live Status TCP Port',  'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'web_service_port',      'sTitle' : 'Web Service Port',      'sWidth':'null',},
+            {'mData':'username',              'sTitle' : 'Username',              'sWidth':'null',},
+            {'mData':'password',              'sTitle' : 'Password',              'sWidth':'null',},
+            {'mData':'actions',               'sTitle' : 'Actions',               'sWidth':'5%' ,}
             ,]
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class SiteInstanceListingTable(BaseDatatableView):
     model = SiteInstance
-    columns = ['name', 'alias','site_ip', 'machine__name', 'live_status_tcp_port']
-    order_columns = ['name', 'alias', 'site_ip', 'machine__name', 'live_status_tcp_port']
+    columns = ['name', 'alias','site_ip', 'machine__name', 'live_status_tcp_port', 'web_service_port', 'username', 'password']
+    order_columns = ['name', 'alias','site_ip', 'machine__name', 'live_status_tcp_port', 'web_service_port', 'username', 'password']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
