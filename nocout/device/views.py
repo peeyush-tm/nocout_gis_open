@@ -22,7 +22,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.conf import settings #Importing settings for logger
 from site_instance.models import SiteInstance
-from inventory.models import BaseStation, SubStation
+from inventory.models import Backhaul, SubStation
 
 if settings.DEBUG:
     import logging
@@ -110,12 +110,12 @@ class DeviceListingTable(BaseDatatableView):
 
             current_device = Device.objects.get(device_name=dct['device_name'])
             try:
-                if BaseStation.objects.get(bs_switch=current_device):
+                if Backhaul.objects.get(bh_configured_on=current_device):
                     dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                         <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
                         <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>\
                         <a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-                        <a href="#" onclick="sync_devices();"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+                        <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
                         <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             except:
                 logger.info("Device is not basestation")
@@ -125,7 +125,7 @@ class DeviceListingTable(BaseDatatableView):
                         <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
                         <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>\
                         <a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-                        <a href="#" onclick="sync_devices();"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+                        <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
                         <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             except:
                 logger.info("Device is not substation.")
