@@ -99,8 +99,14 @@ class LivePerformanceListing(BaseDatatableView):
     def prepare_results(self, qs):
         if qs:
             for dct in qs:
-                dct.update(actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-list-alt text-info"></i></a>'\
-                           .format( self.request.GET['page_type'], dct['id']))
+                if self.request.GET['page_type']=='customer':
+                    substation_id=Device.objects.get(id=dct['id']).substation_set.values()[0]['id']
+                    dct.update(actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-list-alt text-info"></i></a>'\
+                               .format( self.request.GET['page_type'], substation_id))
+                elif self.request.GET['page_type'] == 'network':
+                    dct.update(actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-list-alt text-info"></i></a>'\
+                               .format( self.request.GET['page_type'], dct['id']))
+
         return qs
 
     def get_context_data(self, *args, **kwargs):
