@@ -2,7 +2,7 @@
 {% block breadcrumb_title %}
     <li>Alert Center</li>
     <li>Customer Alerts</li>
-    <li>Packet Drop</li>
+    <li>{{ data_source }}</li>
 {% endblock %}
 {% block content_title %}Customer Alerts{% endblock %}
 {% block content_description %}Customer Alerts List{% endblock %}
@@ -12,7 +12,7 @@
 
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-bell"></i>CUSTOMER ALERT - PACKET DROP</h4>
+            <h4><i class="fa fa-bell"></i>CUSTOMER ALERT - {{ data_source|upper }}</h4>
 
             <div class="tools hidden-xs">
                 <a href="#box-config" data-toggle="modal" class="config">
@@ -26,57 +26,14 @@
 
         <div class="box-body">
             <div id="customerAlertContainer">
-                
-                <div class="tabbable header-tabs">
-                    <ul class="nav nav-tabs">
-                        <li class="active"><a href="#customer_ptp_block" data-toggle="tab"><span class="hidden-inline-mobile">PTP</span></a></li>
-                        <li><a href="#customer_pmp_block" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
-                        <li><a href="#customer_wimax_block" data-toggle="tab"><span class="hidden-inline-mobile">Wimax</span></a></li>
-                    </ul>
                     <div class="tab-content">
                         <div class="tab-pane fade in active" id="customer_ptp_block">
-                            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="packetdroplistingtable">
+                            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="customeralertlistingtable">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
-                        <div class="tab-pane fade" id="customer_pmp_block">
-                            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
-                                <thead>
-                                    <th>Severity</th>
-                                    <th>City</th>
-                                    <th>Technology</th>
-                                    <th>Circuit ID</th>
-                                    <th>BS Name</th>
-                                    <th>IDU IP</th>
-                                    <th>Sector ID</th>
-                                    <th>% Drop</th>
-                                    <th>&nbsp;</th>
-                                    <th>&nbsp;</th>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                        <div class="tab-pane fade" id="customer_wimax_block">
-                            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
-                                <thead>
-                                    <th>Severity</th>
-                                    <th>City</th>
-                                    <th>Technology</th>
-                                    <th>Circuit ID</th>
-                                    <th>BS Name</th>
-                                    <th>IDU IP</th>
-                                    <th>Sector ID</th>
-                                    <th>% Drop</th>
-                                    <th>&nbsp;</th>
-                                    <th>&nbsp;</th>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
                     </div>
-                </div>
-
             </div>
             <div class="clearfix"></div>
         </div>
@@ -90,11 +47,18 @@
             /*Make a instance of ourDataTableWidget class */
             var dataTableInstance = new ourDataTableWidget();
             /*Grid headers object*/
-            var gridHeadersObj_packetdrop = $.parseJSON('{{ datatable_headers_packetdrop|safe }}');
+            var gridHeadersObj_packetdrop = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/
-            var ajax_url_packet_drop = '{% url "PacketDropListingTable" %}';
+            ajax_url_get_parameter=0
+            if(/latency/i.test(window.location.pathname))
+            { ajax_url_get_parameter='latency' }
+            else if(/packet_drop/i.test(window.location.pathname))
+            { ajax_url_get_parameter='packet_drop' }
+
+
+            var ajax_url_packet_drop = '{% url "CustomerAlertListingTable" %}'+'?data_source=' + ajax_url_get_parameter;
             /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable("packetdroplistingtable", gridHeadersObj_packetdrop, ajax_url_packet_drop);
+            dataTableInstance.createDataTable("customeralertlistingtable", gridHeadersObj_packetdrop, ajax_url_packet_drop);
         });
 
 </script>
