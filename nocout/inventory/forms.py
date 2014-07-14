@@ -292,7 +292,7 @@ class SubStationForm(forms.ModelForm):
 class CircuitForm(forms.ModelForm):
 
     date_of_acceptance = forms.DateField(input_formats=('%m/%d/%Y',), help_text='(mm-dd-yyyy) Enter a date.',
-                                         widget=forms.widgets.DateInput(format="%m/%d/%Y", attrs={'class': 'datepicker'}))
+                                         required=False, widget=forms.widgets.DateInput(format="%m/%d/%Y", attrs={'class': 'datepicker'}))
 
     def __init__(self, *args, **kwargs):
         super(CircuitForm, self).__init__(*args, **kwargs)
