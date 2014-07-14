@@ -6,12 +6,8 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response, render
 from django.views.generic import ListView
 from django.views.generic.base import View
-from django.template import RequestContext
-
-# Create your views here.
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceType
-
 from inventory.models import SubStation, Circuit, Sector, BaseStation
 from performance.models import PerformanceService
 from service.models import Service, ServiceDataSource
@@ -37,6 +33,7 @@ class Live_Performance(ListView):
             {'mData':'packet_loss',        'sTitle' : 'Packet Loss',   'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'latency',            'sTitle' : 'Latency',       'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'last_updated',       'sTitle' : 'Last Updated',  'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'actions',            'sTitle':'Actions',         'sWidth':'5%' ,}
             ]
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -47,22 +44,19 @@ class Live_Performance(ListView):
 class LivePerformanceListing(BaseDatatableView):
     model = PerformanceService
     columns = ['site_instance', 'id', 'device_alias', 'ip_address', 'device_type', 'city', 'state']
-    order_columns = ['site_instance', 'device_id', 'alias', 'ip', 'device_type', 'city', 'state']
 
     def filter_queryset(self, qs):
-        # sSearch = self.request.GET.get('sSearch', None)
-        # ##TODO:Need to optimise with the query making login.
-        # if sSearch:
-        #     query=[]
-        #     exec_query = "qs = %s.objects.filter("%(self.model.__name__)
-        #     for column in self.columns[:-1]:
-        #         query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
-        #
-        #     exec_query += " | ".join(query)
-        #     exec_query += ").values(*"+str(self.columns+['id'])+")"
-        #     # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-        #     # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
-        #     exec exec_query
+
+        sSearch = self.request.GET.get('sSearch', None)
+        if sSearch:
+            result_list=list()
+            for dictionary in qs:
+                for key in dictionary.keys():
+                    if str(dictionary[key])==sSearch:
+                        result_list.append(dictionary)
+
+            return result_list
+
         return qs
 
     def get_initial_queryset(self):
@@ -103,16 +97,10 @@ class LivePerformanceListing(BaseDatatableView):
         return device_list
 
     def prepare_results(self, qs):
-        # if qs:
-        #     qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
-        #     sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
-        #     OrderedDict({'dict_final_key':'manager_name', 'dict_key1':'parent__first_name', 'dict_key2':'parent__last_name'})]
-        #     qs, qs_headers = Datatable_Generation( qs, sanity_dicts_list ).main()
-        # #if the user role is Admin then the action column_values will appear on the datatable
-        # if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-        #     for dct in qs:
-        #         dct.update(actions='<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-        #                     <a href="#" onclick="Dajaxice.user_profile.user_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        if qs:
+            for dct in qs:
+                dct.update(actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-list-alt text-info"></i></a>'\
+                           .format( self.request.GET['page_type'], dct['id']))
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -124,7 +112,7 @@ class LivePerformanceListing(BaseDatatableView):
         # number of records before filtering
         total_records = len(qs)
 
-        # qs = self.filter_queryset(qs)
+        qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = len(qs)
