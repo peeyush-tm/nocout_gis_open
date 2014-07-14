@@ -1,0 +1,75 @@
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+	<li>Performance Reports</li>
+	<li>{{ page_type|title }} Live</li>
+{% endblock %}
+{% block content_title %}{{ page_type }} Live{% endblock %}
+{% block content_description %} {% endblock %}
+{% load staticfiles %}
+
+{% block content %}
+
+	<div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i> {{ page_type|upper }} LISTING</h4>
+
+            <div class="tools hidden-xs">
+                <a href="#box-config" data-toggle="modal" class="config">
+                    <i class="fa fa-cog"></i>
+                </a>
+                <a href="javascript:;" class="reload">
+                    <i class="fa fa-refresh"></i>
+                </a>
+            </div>
+        </div>
+
+        <div id="tableContainer" class="box-body">
+            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="PerformanceLiveTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    <div class="clearfix"></div>
+
+{% endblock %}
+
+{% block jquery %}
+    <!-- Custom script for data table-->
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Custom Script for soft delete-->
+    <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
+    <script type="text/javascript">
+        $(document).ready(function (e) {
+            /*Make a instance of ourDataTableWidget class */
+            var dataTableInstance = new ourDataTableWidget();
+            /*Grid headers object*/
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+
+            ajax_url_get_parameter=0
+            if(/customer/i.test(window.location.pathname))
+            { ajax_url_get_parameter='customer' }
+            else if(/network/i.test(window.location.pathname))
+            { ajax_url_get_parameter='network' }
+
+            /*Ajax url to get grid data*/
+            var ajax_url = '{% url "LivePerformanceListing" %}'+'?page_type=' + ajax_url_get_parameter;
+            /*Call createDataTable function of ourDataTableWidget class*/
+            dataTableInstance.createDataTable("PerformanceLiveTable", gridHeadersObj, ajax_url);
+        });
+    </script>
+{% endblock %}
+
+{% block load_js %}
+<!-- /JAVASCRIPTS -->
+
+
+
+
+<script>
+    jQuery(document).ready(function () {
+        App.setPage("");  //Set current page
+        App.init(); //Initialise plugins and elements
+    });
+</script>
+{% endblock %}
