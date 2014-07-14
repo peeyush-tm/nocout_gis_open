@@ -8,6 +8,7 @@ import requests
 import logging
 from service.models import Service, ServiceDataSource, ServiceParameters
 import urllib
+from site_instance.models import SiteInstance
 
 logger=logging.getLogger(__name__)
 
@@ -387,14 +388,16 @@ def add_device_to_nms_core(request, device_id):
                        'site': device.site_instance.name,
                        'mode' : 'addhost'}
 
+        master_site = SiteInstance.objects.get(name='master_UA')
         # url for nocout.py
         # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
         # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
-        url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(device.site_instance.username,
-                                                                device.site_instance.password,
-                                                                device.site_instance.machine.machine_ip,
-                                                                device.site_instance.web_service_port,
-                                                                device.site_instance.name)
+        url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                                master_site.password,
+                                                                master_site.machine.machine_ip,
+                                                                master_site.web_service_port,
+                                                                master_site.name)
+
         r = requests.post(url , data=device_data)
         response_dict = ast.literal_eval(r.text)
         if r:
@@ -423,15 +426,15 @@ def sync_device_with_nms_core(request, device_id):
     device_data = {'mode' : 'sync'}
     # get device
     device = Device.objects.get(pk=device_id)
-
+    master_site = SiteInstance.objects.get(name='master_UA')
     # url for nocout.py
     # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
     # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
-    url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(device.site_instance.username,
-                                                            device.site_instance.password,
-                                                            device.site_instance.machine.machine_ip,
-                                                            device.site_instance.web_service_port,
-                                                            device.site_instance.name)
+    url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                            master_site.password,
+                                                            master_site.machine.machine_ip,
+                                                            master_site.web_service_port,
+                                                            master_site.name)
 
     r = requests.post(url, data=device_data)
 
@@ -604,14 +607,15 @@ def add_service(request, service_data):
             # payload data
             service_data = result['data']['objects']
 
+            master_site = SiteInstance.objects.get(name='master_UA')
             # url for nocout.py
             # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
             # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
-            url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(device.site_instance.username,
-                                                                    device.site_instance.password,
-                                                                    device.site_instance.machine.machine_ip,
-                                                                    device.site_instance.web_service_port,
-                                                                    device.site_instance.name)
+            url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                                    master_site.password,
+                                                                    master_site.machine.machine_ip,
+                                                                    master_site.web_service_port,
+                                                                    master_site.name)
 
             encoded_data = urllib.urlencode(service_data)
 
