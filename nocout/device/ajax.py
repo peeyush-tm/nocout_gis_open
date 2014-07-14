@@ -373,6 +373,7 @@ def add_device_to_nms_core(request, device_id):
     device = Device.objects.get(pk=device_id)
     if device.host_state != "Disable":
         # get 'agent_tag' from DeviceType model
+        agent_tag = ""
         try :
             agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
         except:
@@ -385,8 +386,15 @@ def add_device_to_nms_core(request, device_id):
                        'agent_tag': agent_tag,
                        'site': device.site_instance.name,
                        'mode' : 'addhost'}
+
+        # url for nocout.py
         # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
-        url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
+        # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
+        url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(device.site_instance.username,
+                                                                device.site_instance.password,
+                                                                device.site_instance.machine.machine_ip,
+                                                                device.site_instance.web_service_port,
+                                                                device.site_instance.name)
         r = requests.post(url , data=device_data)
         response_dict = ast.literal_eval(r.text)
         if r:
@@ -406,16 +414,27 @@ def add_device_to_nms_core(request, device_id):
 
 # sync devices with monitoring core
 @dajaxice_register
-def sync_device_with_nms_core(request):
+def sync_device_with_nms_core(request, device_id):
     result = dict()
     result['data'] = {}
     result['success'] = 0
     result['message'] = "Device activation for monitoring failed."
     result['data']['meta'] = ''
     device_data = {'mode' : 'sync'}
+    # get device
+    device = Device.objects.get(pk=device_id)
+
+    # url for nocout.py
     # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
-    url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
+    # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
+    url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(device.site_instance.username,
+                                                            device.site_instance.password,
+                                                            device.site_instance.machine.machine_ip,
+                                                            device.site_instance.web_service_port,
+                                                            device.site_instance.name)
+
     r = requests.post(url, data=device_data)
+
     try:
         response_dict = ast.literal_eval(r.text)
         if r:
@@ -423,7 +442,7 @@ def sync_device_with_nms_core(request):
             result['success'] = 1
             result['message'] = response_dict['message'].capitalize()
     except:
-        result['message'] = "Failed to add service."
+        result['message'] = "Failed to sync device and services."
         logger.info(r.text)
     return json.dumps({'result': result})
 
@@ -585,9 +604,14 @@ def add_service(request, service_data):
             # payload data
             service_data = result['data']['objects']
 
-            # nocout api url
+            # url for nocout.py
             # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
-            url = 'http://omdadmin:omd@localhost/site1/check_mk/nocout.py'
+            # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
+            url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(device.site_instance.username,
+                                                                    device.site_instance.password,
+                                                                    device.site_instance.machine.machine_ip,
+                                                                    device.site_instance.web_service_port,
+                                                                    device.site_instance.name)
 
             encoded_data = urllib.urlencode(service_data)
 
@@ -608,7 +632,7 @@ def add_service(request, service_data):
                     device.is_monitored_on_nms = 1
                     device.save()
         except:
-            result['message'] = "Service cannot be added."
+            result['message'] = "Failed to add service."
     return json.dumps({'result': result})
 
 
