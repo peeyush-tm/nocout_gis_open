@@ -131,6 +131,9 @@ class OrganizationUpdate(UpdateView):
                                for k in changed_fields_dict])+\
                                ' to '+\
                                ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string)>=255:
+                verb_string=verb_string[:250] + '...'
+
             self.object=form.save()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( OrganizationUpdate.success_url )
