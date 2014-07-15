@@ -388,7 +388,7 @@ def add_device_to_nms_core(request, device_id):
                        'site': device.site_instance.name,
                        'mode' : 'addhost'}
 
-        master_site = SiteInstance.objects.get(name='master_UA')
+        master_site = SiteInstance.objects.get(name='site1')
         # url for nocout.py
         # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
         # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
@@ -426,7 +426,7 @@ def sync_device_with_nms_core(request, device_id):
     device_data = {'mode' : 'sync'}
     # get device
     device = Device.objects.get(pk=device_id)
-    master_site = SiteInstance.objects.get(name='master_UA')
+    master_site = SiteInstance.objects.get(name='site1')
     # url for nocout.py
     # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
     # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
@@ -505,6 +505,10 @@ def add_service_form(request, value):
             svc_dict = {}
             svc_dict['key'] = service.id
             svc_dict['value'] = service.alias
+            try:
+                svc_dict['para'] = service.parameters.parameter_description
+            except:
+                logger.info("Service has no parameters associated.")
             result['data']['objects']['services'].append(svc_dict)
     except:
         logger.info("No service to monitor.")
@@ -607,7 +611,7 @@ def add_service(request, service_data):
             # payload data
             service_data = result['data']['objects']
 
-            master_site = SiteInstance.objects.get(name='master_UA')
+            master_site = SiteInstance.objects.get(name='site1')
             # url for nocout.py
             # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
             # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'

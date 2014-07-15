@@ -7,7 +7,7 @@ $(document).ready(function (e) {
 
     /*Initialize the variables*/
     var hasError = 0,
-        inputContainers = $(".formContainer .col-md-8"),
+        inputContainers = $(".formContainer .col-md-9"),
         labelContainer = $(".formContainer label.col-sm-3");
         errorMessage = '<ul class="list-unstyled">';
     console.log(inputContainers);
@@ -58,7 +58,7 @@ $(document).ready(function (e) {
 
 /*It removes the error class from fields if exists*/
 function resetForm() {    
-    var inputContainers = $(".formContainer .col-sm-7");
+    var inputContainers = $(".formContainer .col-md-9");
     /*Remove the error class from all the fields.*/
     for (var i = 0; i < inputContainers.length; i++) {
         var childrenCount = inputContainers[i].children.length;

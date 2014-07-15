@@ -166,7 +166,7 @@ function get_service_add_form(content) {
                 service_add_html += '<div class="service">';
                 service_add_html += '<label class="checkbox">';
                 service_add_html += '<input class="uniform" id="svc_'+content.result.data.objects.services[i].key+'" type="checkbox" value="'+content.result.data.objects.services[i].key+'" onchange="show_svc_templates('+content.result.data.objects.services[i].key+');">';
-                service_add_html += content.result.data.objects.services[i].value;
+                service_add_html += content.result.data.objects.services[i].value +" ("+ content.result.data.objects.services[i].para+")";
                 service_add_html += '</label>';
                 service_add_html += '<div id="svc_params_id_'+content.result.data.objects.services[i].key+'" onchange="show_param_tables('+content.result.data.objects.services[i].key+');"></div>';
                 service_add_html += '<div id="svc_params_table_id_'+content.result.data.objects.services[i].key+'"></div>';
