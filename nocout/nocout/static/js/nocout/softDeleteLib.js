@@ -153,36 +153,42 @@ function sync_devices_message(responseResult) {
 // add service to nms core
 function get_service_add_form(content) {
     var service_add_html = "";
-    if (content.result.data.objects.master_site == "master_UA") {
-        if (!(typeof content.result.data.objects.services === 'undefined') && !(Object.keys(content.result.data.objects.services).length === 0)) {
 
-            // display port select menu
-            service_add_html += '<h5 class="text-warning">You can add service for device ' + '"' + content.result.data.objects.device_alias + '" </h5>';
-            service_add_html += '<input type="hidden" id="device_id" value="' + content.result.data.objects.device_id + '" />';
+    if (content.result.data.objects.is_added == 1){
+        if (content.result.data.objects.master_site == "master_UA") {
+            if (!(typeof content.result.data.objects.services === 'undefined') && !(Object.keys(content.result.data.objects.services).length === 0)) {
 
-            // service display
-            if (!(typeof content.result.data.objects.services === 'undefined')) {
-                service_add_html += '<label class="control-label"><h5 class="text-warning">Services:</h5></label>';
-                for (var i = 0, l = content.result.data.objects.services.length; i < l; i++) {
-                    service_add_html += '<div class="service">';
-                    service_add_html += '<label class="checkbox">';
-                    service_add_html += '<input class="uniform" id="svc_' + content.result.data.objects.services[i].key + '" type="checkbox" value="' + content.result.data.objects.services[i].key + '" onchange="show_svc_templates(' + content.result.data.objects.services[i].key + ');">';
-                    service_add_html += content.result.data.objects.services[i].value;
-                    service_add_html += '</label>';
-                    service_add_html += '<div id="svc_params_id_' + content.result.data.objects.services[i].key + '" onchange="show_param_tables(' + content.result.data.objects.services[i].key + ');"></div>';
-                    service_add_html += '<div id="svc_params_table_id_' + content.result.data.objects.services[i].key + '"></div>';
-                    service_add_html += '<div id="service_data_source_table_id_' + content.result.data.objects.services[i].key + '"></div>';
+                // display port select menu
+                service_add_html += '<h5 class="text-warning">You can add service for device ' + '"' + content.result.data.objects.device_alias + '" </h5>';
+                service_add_html += '<input type="hidden" id="device_id" value="' + content.result.data.objects.device_id + '" />';
+
+                // service display
+                if (!(typeof content.result.data.objects.services === 'undefined')) {
+                    service_add_html += '<label class="control-label"><h5 class="text-warning">Services:</h5></label>';
+                    for (var i = 0, l = content.result.data.objects.services.length; i < l; i++) {
+                        service_add_html += '<div class="service">';
+                        service_add_html += '<label class="checkbox">';
+                        service_add_html += '<input class="uniform" id="svc_' + content.result.data.objects.services[i].key + '" type="checkbox" value="' + content.result.data.objects.services[i].key + '" onchange="show_svc_templates(' + content.result.data.objects.services[i].key + ');">';
+                        service_add_html += content.result.data.objects.services[i].value;
+                        service_add_html += '</label>';
+                        service_add_html += '<div id="svc_params_id_' + content.result.data.objects.services[i].key + '" onchange="show_param_tables(' + content.result.data.objects.services[i].key + ');"></div>';
+                        service_add_html += '<div id="svc_params_table_id_' + content.result.data.objects.services[i].key + '"></div>';
+                        service_add_html += '<div id="service_data_source_table_id_' + content.result.data.objects.services[i].key + '"></div>';
+                        service_add_html += '</div>';
+                    }
                     service_add_html += '</div>';
                 }
-                service_add_html += '</div>';
+            }
+            else {
+                service_add_html += '<h5 class="text-warning">There are no service for device ' + '"' + content.result.data.objects.device_alias + '"to monitor. </h5>';
             }
         }
-        else {
-            service_add_html += '<h5 class="text-warning">There are no service for device ' + '"' + content.result.data.objects.device_alias + '"to monitor. </h5>';
+        else{
+            service_add_html += content.result.message;
         }
     }
     else{
-        service_add_html += content.result.message
+        service_add_html += content.result.message;
     }
 
     bootbox.dialog({
