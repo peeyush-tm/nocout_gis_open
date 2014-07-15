@@ -194,8 +194,11 @@ def addservice():
                 cmd_params = ast.literal_eval(payload.get('cmd_params'))
                 for param, thresholds in cmd_params.items():
                     t = ()
-                    t += (int(thresholds.get('warning')),)
-                    t += (int(thresholds.get('critical')),)
+                    if thresholds.get('warning') and thresholds.get('critical'):
+                        t += (int(thresholds.get('warning')),)
+                        t += (int(thresholds.get('critical')),)
+                    else:
+                        t = None
                 check_tuple = ([payload.get('host')], payload.get('service'), None, t)
                 g_service_vars['checks'].append(check_tuple)
             except Exception, e:
@@ -230,9 +233,9 @@ def addservice():
         if payload.get('snmp_community'):
             snmp_community_list = ast.literal_eval(payload.get('snmp_community'))
             if snmp_community_list.get('version') == 'v1':
-                snmp_community = (snmp_community_list.get('read_community'), [payload.get('host')])
+                snmp_community = (snmp_community_list.get('read_community'), [], [payload.get('host')])
             elif snmp_community_list.get('version') == 'v2c':
-                snmp_community = (snmp_community_list.get('read_community'), [payload.get('host')])
+                snmp_community = (snmp_community_list.get('read_community'), [], [payload.get('host')])
             elif snmp_community_list.get('version') == 'v3':
                 snmp_community = ((snmp_community_list.get('security_level'),snmp_community_list.get('auth_protocol'),
                     snmp_community_list.get('security_name'),snmp_community_list.get('auth_password'),
@@ -330,15 +333,28 @@ def editservice():
         delete_host_rules(hostname=payload.get('host'), servicename=payload.get('service'))
         cmd_params = None
         t = ()
+        ping_level = ()
+        ping_attributes = {}
         if payload.get('cmd_params'):
             try:
                 cmd_params = ast.literal_eval(payload.get('cmd_params'))
-                for param, thresholds in cmd_params.items():
-                    t = ()
-                    t += (int(thresholds.get('warning')),)
-                    t += (int(thresholds.get('critical')),)
-                check_tuple = ([payload.get('host')], payload.get('service'), None, t)
-                g_service_vars['checks'].append(check_tuple)
+                if payload.get('service').strip().lower() == 'ping':
+                    ping_attributes.update({
+                        'loss': (int(cmd_params.get('pl').get('warning', 80)), int(cmd_params.get('pl').get('critical', 100))),
+                        'rta': (int(cmd_params.get('rta').get('warning', 3000)), int(cmd_params.get('rta').get('critical', 5000))),
+                        'packets': int(cmd_params.get('packets', 20))
+                    })
+                    ping_level += (ping_attributes,)
+                    ping_level += ([],)
+                    ping_level += ([payload.get('host')],)
+                    g_service_vars['ping_levels'].append(ping_levels)
+                else:
+                    for param, thresholds in cmd_params.items():
+                        t = ()
+                        t += (int(thresholds.get('warning')),)
+                        t += (int(thresholds.get('critical')),)
+                    check_tuple = ([payload.get('host')], payload.get('service'), None, t)
+                    g_service_vars['checks'].append(check_tuple)
             except Exception, e:
                 response.update({
                     "success": 0,
@@ -371,9 +387,9 @@ def editservice():
         if payload.get('snmp_community'):
             snmp_community_list = ast.literal_eval(payload.get('snmp_community'))
             if snmp_community_list.get('version') == 'v1':
-                snmp_community = (snmp_community_list.get('read_community'), [payload.get('host')])
+                snmp_community = (snmp_community_list.get('read_community'), [], [payload.get('host')])
             elif snmp_community_list.get('version') == 'v2c':
-                snmp_community = (snmp_community_list.get('read_community'), [payload.get('host')])
+                snmp_community = (snmp_community_list.get('read_community'), [], [payload.get('host')])
             elif snmp_community_list.get('version') == 'v3':
                 snmp_community = ((snmp_community_list.get('security_level'),snmp_community_list.get('auth_protocol'),
                     snmp_community_list.get('security_name'),snmp_community_list.get('auth_password'),
@@ -501,6 +517,7 @@ def delete_host_rules(hostname=None, servicename=None):
     if hostname is None:
         return
     if not servicename:
+        g_service_vars['ping_levels'] = filter(lambda t: hostname not in t[2], g_service_vars['ping_levels'])
         g_service_vars['checks'] = filter(lambda t: hostname not in t[0], g_service_vars['checks'])
 
         for serv_param, param_vals in g_service_vars['extra_service_conf'].items():
@@ -512,6 +529,9 @@ def delete_host_rules(hostname=None, servicename=None):
         for check, check_vals in g_service_vars['static_checks'].items():
             g_service_vars['static_checks'][check] = filter(lambda t: hostname not in t[2], check_vals)
     else:
+        if servicename.strip().lower() == 'ping':
+            g_service_vars['ping_levels'] = filter(lambda t: hostname not in t[2], g_service_vars['ping_levels'])
+            return
         iter_func = ifilterfalse(lambda t: hostname in t[0] and servicename in t[1], g_service_vars['checks'])
         g_service_vars['checks'] = map(lambda x: x, iter_func)
 
@@ -659,7 +679,7 @@ def load_file(file_path):
         execfile(file_path, g_host_vars, g_host_vars)
         del g_host_vars['__builtins__']
     except IOError, e:
-        raise IOError, e
+        pass
 
 
 def save_host(file_path):
@@ -772,11 +792,14 @@ def nocout_find_host(host):
         "host_contactgroups": [],
         "_lock": False,
     }
-    execfile(hosts_file, local_host_vars, local_host_vars)
-    for entry in local_host_vars['all_hosts']:
-        if host in entry:
-            new_host = False
-            break
+    try:
+        execfile(hosts_file, local_host_vars, local_host_vars)
+        for entry in local_host_vars['all_hosts']:
+            if host in entry:
+                new_host = False
+                break
+    except IOError, e:
+        pass
 
     return new_host
 
