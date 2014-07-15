@@ -496,16 +496,30 @@ def add_service_form(request, value):
     result['data']['objects']['device_name'] = device.device_name
     result['data']['objects']['device_alias'] = device.device_alias
     result['data']['objects']['services'] = []
+    result['data']['objects']['master_site'] = ""
+    result['data']['objects']['is_added'] = device.is_added_to_nms
 
     # get services associated with device
     try:
-        device_type = DeviceType.objects.get(id=device.device_type)
-        services = device_type.service.all()
-        for service in services:
-            svc_dict = {}
-            svc_dict['key'] = service.id
-            svc_dict['value'] = service.alias
-            result['data']['objects']['services'].append(svc_dict)
+        master_site_name = ""
+        try:
+            master_site_name = SiteInstance.objects.get(name='master_UA').name
+            result['data']['objects']['master_site'] = master_site_name
+        except:
+            logger.info("Master site doesn't exist.")
+        if device.is_added_to_nms == 1:
+            if master_site_name == "master_UA":
+                device_type = DeviceType.objects.get(id=device.device_type)
+                services = device_type.service.all()
+                for service in services:
+                    svc_dict = {}
+                    svc_dict['key'] = service.id
+                    svc_dict['value'] = service.alias
+                    result['data']['objects']['services'].append(svc_dict)
+            else:
+                result['message'] = "Master site doesn't exist. <br /> Please first create master site with name 'master_UA'."
+        else:
+            result['message'] = "First add device in nms core."
     except:
         logger.info("No service to monitor.")
 
@@ -537,107 +551,6 @@ def service_data_sources_popup(request, option=""):
         out.append("<h5 class='text-warning'>No data source associated.</h5> ")
     dajax.assign('#service_data_source_id', 'innerHTML', ''.join(out))
     return dajax.json()
-
-
-# adding services to nocout core
-@dajaxice_register
-def add_service(request, service_data):
-    # service format for nocout core
-    # {
-    #     "snmp_community": {
-    #         "read_community": "public",
-    #         "version": "v2c"
-    #     },
-    #     "agent_tag": "snmp",
-    #     "service_name": "radwin_rssi",
-    #     "snmp_port": 161,
-    #     "serv_params": {
-    #         "normal_check_interval": 5,
-    #         "max_check_attempts": 5,
-    #         "retry_check_interval": 5
-    #     },
-    #     "device_name": "radwin",
-    #     "mode": "addservice",
-    #     "cmd_params": {
-    #         "rssi": {
-    #             "warning": "-50",
-    #             "critical": "-80"
-    #         }
-    #     }
-    # }
-    result = dict()
-    result['data'] = {}
-    result['success'] = 0
-    result['message'] = "Failed to render form correctly."
-    result['data']['meta'] = {}
-    result['data']['objects'] = {}
-
-    for sd in service_data:
-        try:
-            device = Device.objects.get(pk=int(sd['device_id']))
-            service = Service.objects.get(pk=int(sd['service_id']))
-            service_para = ServiceParameters.objects.get(pk=int(sd['template_id']))
-
-            # mode
-            result['data']['objects']['mode'] = "addservice"
-            # device name
-            result['data']['objects']['device_name'] = device.device_name
-            # site instance name
-            result['data']['objects']['site'] = device.site_instance.name
-            # service name
-            result['data']['objects']['service_name'] = service.name
-            # service parameters
-            result['data']['objects']['serv_params'] = {}
-            result['data']['objects']['serv_params']['normal_check_interval'] = service_para.normal_check_interval
-            result['data']['objects']['serv_params']['retry_check_interval'] = service_para.retry_check_interval
-            result['data']['objects']['serv_params']['max_check_attempts'] = service_para.max_check_attempts
-            # snmp parameters
-            result['data']['objects']['snmp_community'] = {}
-            result['data']['objects']['snmp_community']['version'] = service_para.protocol.version
-            result['data']['objects']['snmp_community']['read_community'] = service_para.protocol.read_community
-            # command parameters
-            result['data']['objects']['cmd_params'] = {}
-            for sds in service.service_data_sources.all():
-                result['data']['objects']['cmd_params'][sds.name] = {'warning': sds.warning, 'critical': sds.critical}
-            # snmp port
-            result['data']['objects']['snmp_port'] = service_para.protocol.port
-            # agent tag
-            result['data']['objects']['agent_tag'] = DeviceType.objects.get(pk=device.device_type).agent_tag
-
-            # payload data
-            service_data = result['data']['objects']
-
-            master_site = SiteInstance.objects.get(name='master_UA')
-            # url for nocout.py
-            # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
-            # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
-            url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
-                                                                    master_site.password,
-                                                                    master_site.machine.machine_ip,
-                                                                    master_site.web_service_port,
-                                                                    master_site.name)
-
-            encoded_data = urllib.urlencode(service_data)
-
-            r = requests.post(url , data=encoded_data)
-
-            response_dict = ast.literal_eval(r.text)
-
-            if r:
-                result['data'] = service_data
-                result['success'] = 1
-                if not response_dict.get('success'):
-                    result['message'] += response_dict.get('error_message')
-                else:
-                    result['message'] = "Service added successfully."
-                    device = Device.objects.get(pk=int(sd['device_id']))
-
-                    # set 'is_monitored_on_nms' to 1 if service is added successfully
-                    device.is_monitored_on_nms = 1
-                    device.save()
-        except:
-            result['message'] = "Failed to add service."
-    return json.dumps({'result': result})
 
 
 # get service templates for service addition form
@@ -706,3 +619,103 @@ def get_service_para_and_data_source_tables(request, service_value="", para_valu
     dajax.assign(service_paras_table_id, 'innerHTML', ''.join(params))
     dajax.assign(service_data_source_table_id, 'innerHTML', ''.join(data_sources))
     return dajax.json()
+
+
+# adding services to nocout core
+@dajaxice_register
+def add_service(request, service_data):
+    # service format for nocout core
+    # {
+    #     "snmp_community": {
+    #         "read_community": "public",
+    #         "version": "v2c"
+    #     },
+    #     "agent_tag": "snmp",
+    #     "service_name": "radwin_rssi",
+    #     "snmp_port": 161,
+    #     "serv_params": {
+    #         "normal_check_interval": 5,
+    #         "max_check_attempts": 5,
+    #         "retry_check_interval": 5
+    #     },
+    #     "device_name": "radwin",
+    #     "mode": "addservice",
+    #     "cmd_params": {
+    #         "rssi": {
+    #             "warning": "-50",
+    #             "critical": "-80"
+    #         }
+    #     }
+    # }
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = ""
+    result['data']['meta'] = {}
+    result['data']['objects'] = {}
+
+    for sd in service_data:
+        try:
+            device = Device.objects.get(pk=int(sd['device_id']))
+            service = Service.objects.get(pk=int(sd['service_id']))
+            service_para = ServiceParameters.objects.get(pk=int(sd['template_id']))
+
+            # mode
+            result['data']['objects']['mode'] = "addservice"
+            # device name
+            result['data']['objects']['device_name'] = str(device.device_name)
+            # service name
+            result['data']['objects']['service_name'] = str(service.name)
+            # service parameters
+            result['data']['objects']['serv_params'] = {}
+            result['data']['objects']['serv_params']['normal_check_interval'] = str(service_para.normal_check_interval)
+            result['data']['objects']['serv_params']['retry_check_interval'] = str(service_para.retry_check_interval)
+            result['data']['objects']['serv_params']['max_check_attempts'] = str(service_para.max_check_attempts)
+            # snmp parameters
+            result['data']['objects']['snmp_community'] = {}
+            result['data']['objects']['snmp_community']['version'] = str(service_para.protocol.version)
+            result['data']['objects']['snmp_community']['read_community'] = str(service_para.protocol.read_community)
+            # command parameters
+            result['data']['objects']['cmd_params'] = {}
+            for sds in service.service_data_sources.all():
+                result['data']['objects']['cmd_params'][str(sds.name)] = {'warning': str(sds.warning), 'critical': str(sds.critical)}
+            # snmp port
+            result['data']['objects']['snmp_port'] = str(service_para.protocol.port)
+            # agent tag
+            result['data']['objects']['agent_tag'] = str(DeviceType.objects.get(pk=device.device_type).agent_tag)
+            # payload data
+            service_data = result['data']['objects']
+
+            master_site = SiteInstance.objects.get(name='master_UA')
+            # url for nocout.py
+            # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+            # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
+            url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                                    master_site.password,
+                                                                    master_site.machine.machine_ip,
+                                                                    master_site.web_service_port,
+                                                                    master_site.name)
+
+            encoded_data = urllib.urlencode(service_data)
+
+            r = requests.post(url , data=encoded_data)
+
+            response_dict = ast.literal_eval(r.text)
+
+            if r:
+                result['data'] = service_data
+                result['success'] = 1
+                if not response_dict.get('success'):
+                    result['message'] += response_dict.get('error_message')
+                else:
+                    result['message'] += "Successfully added service '%s'. <br />" % (service.name)
+                    device = Device.objects.get(pk=int(sd['device_id']))
+
+                    # set 'is_monitored_on_nms' to 1 if service is added successfully
+                    device.is_monitored_on_nms = 1
+                    device.save()
+
+        except:
+            result['message'] += "Failed to add service '%s'. <br />" % (service.name)
+    return json.dumps({'result': result})
+
