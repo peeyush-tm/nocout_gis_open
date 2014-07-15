@@ -497,6 +497,7 @@ def add_service_form(request, value):
     result['data']['objects']['device_alias'] = device.device_alias
     result['data']['objects']['services'] = []
     result['data']['objects']['master_site'] = ""
+    result['data']['objects']['is_added'] = device.is_added_to_nms
 
     # get services associated with device
     try:
@@ -506,16 +507,19 @@ def add_service_form(request, value):
             result['data']['objects']['master_site'] = master_site_name
         except:
             logger.info("Master site doesn't exist.")
-        if master_site_name == "master_UA":
-            device_type = DeviceType.objects.get(id=device.device_type)
-            services = device_type.service.all()
-            for service in services:
-                svc_dict = {}
-                svc_dict['key'] = service.id
-                svc_dict['value'] = service.alias
-                result['data']['objects']['services'].append(svc_dict)
+        if device.is_added_to_nms == 1:
+            if master_site_name == "master_UA":
+                device_type = DeviceType.objects.get(id=device.device_type)
+                services = device_type.service.all()
+                for service in services:
+                    svc_dict = {}
+                    svc_dict['key'] = service.id
+                    svc_dict['value'] = service.alias
+                    result['data']['objects']['services'].append(svc_dict)
+            else:
+                result['message'] = "Master site doesn't exist. <br /> Please first create master site with name 'master_UA'."
         else:
-            result['message'] = "Master site doesn't exist. <br /> Please first create master site with name 'master_UA'."
+            result['message'] = "First add device in nms core."
     except:
         logger.info("No service to monitor.")
 
@@ -646,7 +650,7 @@ def add_service(request, service_data):
     result = dict()
     result['data'] = {}
     result['success'] = 0
-    result['message'] = "Failed to render form correctly."
+    result['message'] = ""
     result['data']['meta'] = {}
     result['data']['objects'] = {}
 
@@ -704,13 +708,14 @@ def add_service(request, service_data):
                 if not response_dict.get('success'):
                     result['message'] += response_dict.get('error_message')
                 else:
-                    result['message'] = "Service added successfully."
+                    result['message'] += "Successfully added service '%s'. <br />" % (service.name)
                     device = Device.objects.get(pk=int(sd['device_id']))
 
                     # set 'is_monitored_on_nms' to 1 if service is added successfully
                     device.is_monitored_on_nms = 1
                     device.save()
+
         except:
-            result['message'] = "Failed to add service."
+            result['message'] += "Failed to add service '%s'. <br />" % (service.name)
     return json.dumps({'result': result})
 
