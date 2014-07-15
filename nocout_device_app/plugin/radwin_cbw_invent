@@ -1,0 +1,81 @@
+#!/usr/bin/python
+"""
+Channel Bandwidth Poller script.
+
+This is part of device application. 
+Poller script determines the channel bandwidth in KHZ.
+poller script takes the snmp value of OID .1.3.6.1.4.1.4458.1000.1.5.24 from snmp agent of device at specific interval.
+Channel bandwidth information is sent to device application 
+
+"""
+# #####################################################################
+# Function : check_radwin_cbw_invent
+#
+# Parameters: info (SNMP device) _no_params (No parameters)
+#
+# Output: service state,plugin output
+#########################################################################
+
+import logging
+
+import os
+
+try:
+    log_file = "nocout/log_plugins.log"
+    with open(log_file, 'a+') as f:
+        pass
+    logging.basicConfig(filename=log_file, level=logging.CRITICAL)
+except:
+    pass
+
+
+def check_radwin_cbw_invent(item, _no_params, info):
+    """
+                check_radwin_cbw_invent function calculates current channel bandwidth 
+
+                Args:
+                        item (str) Specific item on SNMP output on which we want to filter results
+                
+                Kwargs:
+                        params (tuple) Check parameters for critical and warning state of service
+
+                Returns:
+                        state (int) :
+                                        0 : OK
+                                        1 : Warning
+                                        2: Critical
+                    3: unknown
+                        infotext(string):
+                                        plugin output
+                                        Example : OK - 20 MHZ
+                        Raises:
+                                ValueError ,Exception
+    """
+    state = 3
+    infotext = "unknown output"
+    try:
+        logging.debug("radwin_cbw_invent SNMP output %s", info)
+        if info[0][0]:
+            cbw = int(info[0][0])
+            state = 0
+            cbw = cbw / 1000
+            infotext = "%d MHZ" % cbw
+    except ValueError:
+        infotext = "type mismatch value"
+        logging.critical("radwin_cbw_invent %s", infotext, exc_info=True)
+    except:
+        infotext = "unkown value"
+        logging.critical("radwin_cbw_invent %s", infotext, exc_info=True)
+    return (state, infotext)
+
+check_info["radwin_cbw_invent"] = {
+    'check_function': check_radwin_cbw_invent,
+    'service_description': 'radwin_cbw_invent',
+}
+
+############################################################################
+#SNMP OID of the Channel Bandwidth of channel
+##############################################################################
+
+
+snmp_info["radwin_cbw_invent"] = ( ".1.3.6.1.4.1.4458.1000.1", ["5.24"] )
