@@ -496,20 +496,26 @@ def add_service_form(request, value):
     result['data']['objects']['device_name'] = device.device_name
     result['data']['objects']['device_alias'] = device.device_alias
     result['data']['objects']['services'] = []
+    result['data']['objects']['master_site'] = ""
 
     # get services associated with device
     try:
-        device_type = DeviceType.objects.get(id=device.device_type)
-        services = device_type.service.all()
-        for service in services:
-            svc_dict = {}
-            svc_dict['key'] = service.id
-            svc_dict['value'] = service.alias
-            try:
-                svc_dict['para'] = service.parameters.parameter_description
-            except:
-                logger.info("Service has no parameters associated.")
-            result['data']['objects']['services'].append(svc_dict)
+        master_site_name = ""
+        try:
+            master_site_name = SiteInstance.objects.get(name='master_UA').name
+            result['data']['objects']['master_site'] = master_site_name
+        except:
+            logger.info("Master site doesn't exist.")
+        if master_site_name == "master_UA":
+            device_type = DeviceType.objects.get(id=device.device_type)
+            services = device_type.service.all()
+            for service in services:
+                svc_dict = {}
+                svc_dict['key'] = service.id
+                svc_dict['value'] = service.alias
+                result['data']['objects']['services'].append(svc_dict)
+        else:
+            result['message'] = "Master site doesn't exist. <br /> Please first create master site with name 'master_UA'."
     except:
         logger.info("No service to monitor.")
 
