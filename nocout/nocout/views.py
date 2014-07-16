@@ -145,7 +145,7 @@ def auth_view(request):
         # values to store in user audit logs
         user_audit = {
             "user": User.objects.get(pk=1),
-            "verb": u'a locked user is loggedin using username : %s from IP address, '
+            "verb": u'a locked user is loggedin using username : %s from IP address %s, '
                     % (username, get_client_ip(request))
         }
 
