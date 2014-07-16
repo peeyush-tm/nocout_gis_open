@@ -208,7 +208,7 @@ var perf_that = "",
 			                type: single_service_data.type
 			            },
 			            title: {
-			                text: ''
+			                text: single_service_data.name
 			            },
 			            legend: {
 				            align: 'right',
@@ -220,14 +220,13 @@ var perf_that = "",
 				            backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
 				        },
 			            tooltip: {
-			                pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b> ({point.percentage:.0f}%)<br/>',
+			                pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
 			                shared: true
 			            },
 			            xAxis: {
 		            		type: 'datetime',
 			                dateTimeLabelFormats: {
 			                    day: '%e. %b',
-								week: '%e. %b',
 								month: '%b \'%y',
 								year: '%Y'
 			                }

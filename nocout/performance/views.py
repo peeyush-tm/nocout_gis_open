@@ -17,6 +17,14 @@ from django.utils.dateformat import format
 
 import logging
 log=logging.getLogger(__name__)
+
+SERVICE_DATA_SOURCE = {
+    "uas": {"type" : "spline"},
+    "rssi": {"type": "column"},
+    "uptime": {"type": "spline"}
+}
+
+
 class Live_Performance(ListView):
 
     model= PerformanceNetwork
@@ -346,7 +354,7 @@ class Get_Service_Type_Performance_Data(View):
                                                                data_source=service_data_source_type,
                                                                sys_timestamp__gte=now_minus_30_min,
                                                                sys_timestamp__lte=now)
-
+            data_list=[]
         if performance_data:
             result['data']['objects']['type']='spline'
             data_list=[]
