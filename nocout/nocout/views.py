@@ -9,6 +9,11 @@ from nocout import settings
 from nocout.settings import MAX_USER_LOGIN_LIMIT
 from session_management.models import Visitor
 
+if settings.DEBUG:
+    import logging
+
+    logger = logging.getLogger(__name__)
+
 
 @csrf_protect
 def login(request):
@@ -16,6 +21,31 @@ def login(request):
         return HttpResponseRedirect('/home/')
 
     return render(request, 'nocout/login.html')
+
+
+def get_client_ip(request):
+    """
+    get the client ip from the request
+
+    :param request:
+    """
+    remote_address = request.META.get('REMOTE_ADDR')
+    # set the default value of the ip to be the REMOTE_ADDR if available
+    # else None
+    ip = remote_address
+    # try to get the first non-proxy ip (not a private ip) from the
+    # HTTP_X_FORWARDED_FOR
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        proxies = x_forwarded_for.split(',')
+        # remove the private ips from the beginning
+        while len(proxies) > 0 and proxies[0].startswith(settings.PRIVATE_IPS_PREFIX):
+            proxies.pop(0)
+        # take the first ip which is not a private one (of a proxy)
+        if len(proxies) > 0:
+            ip = proxies[0]
+
+    return ip
 
 
 def auth_view(request):
@@ -30,6 +60,11 @@ def auth_view(request):
             "meta": {},
             "objects": {}
         }
+    }
+
+    user_audit = {
+        "user": User.objects.get(pk=1),
+        "verb": "User Login Attempt"
     }
 
     objects_values = dict(url='/login/')
@@ -62,19 +97,18 @@ def auth_view(request):
                 objects_values = dict(dialog=True, url=next_url)
 
             else:
-                #User Log Activity
-                action.send(request.user, verb=u'username : %s loggedin from server name: %s, server port: %s' \
-                                               % (
-                username, request.META.get('SERVER_NAME'), request.META.get('SERVER_PORT')))
                 objects_values = dict(url=next_url)
 
         else:
             Visitor.objects.create(user=request.user, session_key=key_from_cookie)
-            #User Log Activity
-            action.send(request.user, verb=u'username : %s loggedin from server name: %s, server port: %s' \
-                                           % (
-            username, request.META.get('SERVER_NAME'), request.META.get('SERVER_PORT')))
             objects_values = dict(url=next_url)
+
+        # values to store in user audit logs
+        user_audit = {
+            "user": request.user,
+            "verb": u'username : %s loggedin from IP address : %s'
+                    % (username, get_client_ip(request))
+        }
 
         result = {
             "success": 1,  # 0 - fail, 1 - success, 2 - exception
@@ -86,9 +120,12 @@ def auth_view(request):
         }
 
     elif user is not None and not user.is_active:
-        action.send(User.objects.get(pk=1), verb=u'a locked user is loggedin using username : %s from server name: %s, '
-                                                 u'server port: %s' % (username, request.META.get('SERVER_NAME'),
-                                                                       request.META.get('SERVER_PORT')))
+        # values to store in user audit logs
+        user_audit = {
+            "user": User.objects.get(pk=1),
+            "verb": u'a locked user is loggedin using username : %s from IP address, '
+                    % (username, get_client_ip(request))
+        }
 
         objects_values = dict(url='/login/')
 
@@ -103,10 +140,14 @@ def auth_view(request):
         }
 
     else:
-        #User Log Activity
-        action.send(User.objects.get(pk=1), verb=u'invalid loggedin using username : %s from server name: %s, '
-                                                 u'server port: %s' % (username, request.META.get('SERVER_NAME'),
-                                                                       request.META.get('SERVER_PORT')))
+        # User Log Activity
+
+        # values to store in user audit logs
+        user_audit = {
+            "user": User.objects.get(pk=1),
+            "verb": u'a locked user is loggedin using username : %s from IP address, '
+                    % (username, get_client_ip(request))
+        }
 
         objects_values = dict(url='/login/')
 
@@ -119,6 +160,13 @@ def auth_view(request):
                 "objects": objects_values
             }
         }
+
+    try:
+        action.send(user_audit["user"], verb=user_audit["verb"])
+    except Exception as general_exception:
+        if settings.DEBUG:
+            logger.error(general_exception)
+        pass  # log nothing
 
     return HttpResponse(json.dumps(result), mimetype='application/json')
 
