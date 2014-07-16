@@ -653,6 +653,8 @@ def add_service(request, service_data):
     result['message'] = ""
     result['data']['meta'] = {}
     result['data']['objects'] = {}
+
+    # messages variable collects message coming from service addition api response
     messages = ""
 
     for sd in service_data:
@@ -663,9 +665,13 @@ def add_service(request, service_data):
             result['message'] = ""
             result['data']['meta'] = {}
             result['data']['objects'] = {}
+
             device = Device.objects.get(pk=int(sd['device_id']))
             service = Service.objects.get(pk=int(sd['service_id']))
-            service_para = ServiceParameters.objects.get(pk=int(sd['template_id']))
+            try:
+                service_para = ServiceParameters.objects.get(pk=int(sd['template_id']))
+            except:
+                service_para = service.parameters
 
             # mode
             result['data']['objects']['mode'] = "addservice"
@@ -690,9 +696,9 @@ def add_service(request, service_data):
             result['data']['objects']['snmp_port'] = str(service_para.protocol.port)
             # agent tag
             result['data']['objects']['agent_tag'] = str(DeviceType.objects.get(pk=device.device_type).agent_tag)
-            # payload data
+            # payload data for post request
             service_data = result['data']['objects']
-
+            # master site on which service needs to be added
             master_site = SiteInstance.objects.get(name='master_UA')
             # url for nocout.py
             # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
@@ -702,18 +708,21 @@ def add_service(request, service_data):
                                                                     master_site.machine.machine_ip,
                                                                     master_site.web_service_port,
                                                                     master_site.name)
-
+            # encoding service_data
             encoded_data = urllib.urlencode(service_data)
 
+            # sending post request to nocout device app to add single service at a time
             r = requests.post(url , data=encoded_data)
 
+            # converting post response data into python dict expression
             response_dict = ast.literal_eval(r.text)
-            print "********************************* service_data **********************"
-            print service_data
 
+            # if response(r) is given by post request than process it further to get success/failure messages
             if r:
                 result['data'] = service_data
                 result['success'] = 1
+
+                # if response_dict doesn't have key 'success'
                 if not response_dict.get('success'):
                     logger.info(response_dict.get('error_message'))
                     result['message'] += "Failed to add service '%s'. <br />" % (service.name)
@@ -730,6 +739,8 @@ def add_service(request, service_data):
         except:
             result['message'] += "Failed to add service '%s'. <br />" % (service.name)
             messages += result['message']
+
+    # assign messages to result dict message key
     result['message'] = messages
     return json.dumps({'result': result})
 
