@@ -10,13 +10,23 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceType
 from inventory.models import SubStation, Circuit, Sector, BaseStation
 from performance.models import PerformanceService, PerformanceNetwork
-from service.models import ServiceDataSource
+from service.models import ServiceDataSource, Service
 from operator import is_not
 from functools import partial
 from django.utils.dateformat import format
 
 import logging
 log=logging.getLogger(__name__)
+
+SERVICE_DATA_SOURCE = {
+    "uas": {"type" : "spline"},
+    "rssi": {"type": "column"},
+    "uptime": {"type": "spline"},
+    "rta": {"type": "spline"},
+    "pl": {"type": "column"}
+}
+
+
 class Live_Performance(ListView):
 
     model= PerformanceNetwork
@@ -283,6 +293,7 @@ class Inventory_Device_Service_Data_Source(View):
                 'objects' : []
             }
         }
+        inventory_device_type_id=None
         if page_type =='customer':
             inventory_device= SubStation.objects.get(id= device_id)
             inventory_device_type_id= Device.objects.get(id= inventory_device.device_id).device_type
@@ -291,28 +302,43 @@ class Inventory_Device_Service_Data_Source(View):
             #for basestation we need to fetch sector_configured_on device field from the device
             inventory_device_type_id= Device.objects.get(id=int(device_id)).device_type
 
-        inventory_device_service_data_sources_ids= DeviceType.objects.get(id= inventory_device_type_id) \
-            .service.values_list('service_data_sources', flat=True)
-        inventory_device_service_data_sources_ids= filter(partial(is_not, None), inventory_device_service_data_sources_ids)
-        if inventory_device_service_data_sources_ids:
+        inventory_device_service_name= DeviceType.objects.get(id= inventory_device_type_id) \
+            .service.values_list('name', flat=True)
 
-            for inventory_device_service_data_sources_id in inventory_device_service_data_sources_ids:
-                service_data_source=ServiceDataSource.objects.get(id= inventory_device_service_data_sources_id)
+        for service_name in inventory_device_service_name:
+            service_data_sources= Service.objects.get(name= service_name).service_data_sources.all()
+            for service_data_source in service_data_sources:
                 result['data']['objects'].append({
                     'name':service_data_source.name,
-                    'title':service_data_source.alias,
-                    'url':'performance/service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
-                    'active':1
+                    'title':service_data_source.alias +' ('+service_name+')',
+                    #@TODO: all the ursl must end with a / - django style
+                    'url':'performance/service/'+service_name+'/service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
+                    'active':0
                 })
 
-            result['success']=1
-            result['message']='Substation Devices Services Data Source Fetched Successfully.'
+        ##also append PD and RTA as latency and packet drop
+        result['data']['objects'].append({
+                'name':"pl",
+                'title':"Packet Drop",
+                #@TODO: all the ursl must end with a / - django style
+                'url':'performance/service/ping/service_data_source/pl/'+page_type+'/device/'+str(device_id),
+                'active':0
+            })
+        result['data']['objects'].append({
+                'name':"rta",
+                'title':"Latency",
+                #@TODO: all the ursl must end with a / - django style
+                'url':'performance/service/ping/service_data_source/rta/'+page_type+'/device/'+str(device_id),
+                'active':0
+            })
+        result['success']=1
+        result['message']='Substation Devices Services Data Source Fetched Successfully.'
         return HttpResponse(json.dumps(result))
 
 
 class Get_Service_Type_Performance_Data(View):
 
-    def get(self, request, page_type, service_data_source_type, device_id):
+    def get(self, request, page_type, service_name, service_data_source_type, device_id):
         result={
         'success' : 0,
         'message' : 'Substation Service Not Fetched Successfully.',
@@ -333,26 +359,64 @@ class Get_Service_Type_Performance_Data(View):
 
         now=format(datetime.datetime.now(),'U')
         now_minus_30_min=format(datetime.datetime.now() + datetime.timedelta(minutes=-30), 'U')
-        # performance_data=PerformanceService.objects.filter(device_name='bs_switch_dv_1', data_source='execution_time', sys_timestamp__gte='1404728700', sys_timestamp__lte='1404916800')
+
         if service_data_source_type in ['pl', 'rta']:
-            performance_data=PerformanceNetwork.objects.filter(device_name=inventory_device_name, \
-                           data_source=service_data_source_type, sys_timestamp__gte=now_minus_30_min, sys_timestamp__lte=now)
+
+            performance_data=PerformanceNetwork.objects.filter(device_name=inventory_device_name,
+                                                                service_name=service_name,
+                                                                data_source=service_data_source_type,
+                                                                sys_timestamp__gte=now_minus_30_min,
+                                                                sys_timestamp__lte=now)
             # log.info("network performance data %s device name" %(performance_data, inventory_device_name))
         else:
-            performance_data=PerformanceService.objects.filter(device_name=inventory_device_name, \
-                           data_source=service_data_source_type, sys_timestamp__gte=now_minus_30_min, sys_timestamp__lte=now)
-
+            performance_data=PerformanceService.objects.filter(device_name=inventory_device_name,
+                                                               service_name=service_name,
+                                                               data_source=service_data_source_type,
+                                                               sys_timestamp__gte=now_minus_30_min,
+                                                               sys_timestamp__lte=now)
 
         if performance_data:
-            result['data']['objects']['type']='line'
             data_list=[]
+            warn_data_list=[]
+            crit_data_list=[]
+            aggregate_data = {}
             for data in performance_data:
-                #data_list.append([data.sys_timestamp, data.avg_value ])
-                data_list.append([data.sys_timestamp, float(data.avg_value) if data.avg_value else None])
-                result['success']=1
-                result['message']='Substation Service Fetched Successfully.'
+                temp_time = data.sys_timestamp
 
-            result['data']['objects']['chart_data']=[{'name': 'Latency', 'color':'#70AFC4', 'data': data_list } ]
+                if temp_time in aggregate_data:
+                    continue
+                else:
+                    aggregate_data[temp_time] = data.sys_timestamp
+                    result['data']['objects']['type']= SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"]
+                    #data_list.append([data.sys_timestamp, data.avg_value ])
+
+                    data_list.append([data.sys_timestamp*1000, float(data.avg_value) if data.avg_value else None])
+
+                    warn_data_list.append([data.sys_timestamp*1000, float(data.warning_threshold)
+                                                                    if data.critical_threshold else None])
+
+                    crit_data_list.append([data.sys_timestamp*1000, float(data.critical_threshold)
+                                                                    if data.critical_threshold else None])
+
+                    result['success']=1
+                    result['message']='Device Performance Data Fetched Successfully.'
+                    result['data']['objects']['chart_data']=[{'name': str(data.data_source).upper(),
+                                                              'color': '#70AFC4',
+                                                              'data': data_list,
+                                                              'type': SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"]
+                                                              },
+                                                             {'name': str("warning threshold").title(),
+                                                              'color': '#FFE90D',
+                                                              'data': warn_data_list,
+                                                              'type': 'line'
+                                                            },
+                                                             {'name': str("critical threshold").title(),
+                                                              'color': '#FF193B',
+                                                              'data': crit_data_list,
+                                                              'type': 'line'
+                                                             }
+                    ]
+
         return HttpResponse(json.dumps(result), mimetype="application/json")
 
 

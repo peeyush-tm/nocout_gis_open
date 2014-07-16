@@ -654,11 +654,24 @@ def add_service(request, service_data):
     result['data']['meta'] = {}
     result['data']['objects'] = {}
 
+    # messages variable collects message coming from service addition api response
+    messages = ""
+
     for sd in service_data:
         try:
+            result = dict()
+            result['data'] = {}
+            result['success'] = 0
+            result['message'] = ""
+            result['data']['meta'] = {}
+            result['data']['objects'] = {}
+
             device = Device.objects.get(pk=int(sd['device_id']))
             service = Service.objects.get(pk=int(sd['service_id']))
-            service_para = ServiceParameters.objects.get(pk=int(sd['template_id']))
+            try:
+                service_para = ServiceParameters.objects.get(pk=int(sd['template_id']))
+            except:
+                service_para = service.parameters
 
             # mode
             result['data']['objects']['mode'] = "addservice"
@@ -668,9 +681,9 @@ def add_service(request, service_data):
             result['data']['objects']['service_name'] = str(service.name)
             # service parameters
             result['data']['objects']['serv_params'] = {}
-            result['data']['objects']['serv_params']['normal_check_interval'] = str(service_para.normal_check_interval)
-            result['data']['objects']['serv_params']['retry_check_interval'] = str(service_para.retry_check_interval)
-            result['data']['objects']['serv_params']['max_check_attempts'] = str(service_para.max_check_attempts)
+            result['data']['objects']['serv_params']['normal_check_interval'] = int(service_para.normal_check_interval)
+            result['data']['objects']['serv_params']['retry_check_interval'] = int(service_para.retry_check_interval)
+            result['data']['objects']['serv_params']['max_check_attempts'] = int(service_para.max_check_attempts)
             # snmp parameters
             result['data']['objects']['snmp_community'] = {}
             result['data']['objects']['snmp_community']['version'] = str(service_para.protocol.version)
@@ -683,9 +696,9 @@ def add_service(request, service_data):
             result['data']['objects']['snmp_port'] = str(service_para.protocol.port)
             # agent tag
             result['data']['objects']['agent_tag'] = str(DeviceType.objects.get(pk=device.device_type).agent_tag)
-            # payload data
+            # payload data for post request
             service_data = result['data']['objects']
-
+            # master site on which service needs to be added
             master_site = SiteInstance.objects.get(name='master_UA')
             # url for nocout.py
             # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
@@ -695,21 +708,29 @@ def add_service(request, service_data):
                                                                     master_site.machine.machine_ip,
                                                                     master_site.web_service_port,
                                                                     master_site.name)
-
+            # encoding service_data
             encoded_data = urllib.urlencode(service_data)
 
+            # sending post request to nocout device app to add single service at a time
             r = requests.post(url , data=encoded_data)
 
+            # converting post response data into python dict expression
             response_dict = ast.literal_eval(r.text)
 
+            # if response(r) is given by post request than process it further to get success/failure messages
             if r:
                 result['data'] = service_data
                 result['success'] = 1
+
+                # if response_dict doesn't have key 'success'
                 if not response_dict.get('success'):
-                    result['message'] += response_dict.get('error_message')
+                    logger.info(response_dict.get('error_message'))
+                    result['message'] += "Failed to add service '%s'. <br />" % (service.name)
+                    messages += result['message']
                 else:
                     result['message'] += "Successfully added service '%s'. <br />" % (service.name)
                     device = Device.objects.get(pk=int(sd['device_id']))
+                    messages += result['message']
 
                     # set 'is_monitored_on_nms' to 1 if service is added successfully
                     device.is_monitored_on_nms = 1
@@ -717,5 +738,9 @@ def add_service(request, service_data):
 
         except:
             result['message'] += "Failed to add service '%s'. <br />" % (service.name)
+            messages += result['message']
+
+    # assign messages to result dict message key
+    result['message'] = messages
     return json.dumps({'result': result})
 
