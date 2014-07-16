@@ -158,6 +158,14 @@ var perf_that = "",
 					/*Call getServiceData function to fetch the data for currently active service*/
 					perf_that.getServiceData(active_tab_url,active_tab_id,device_id);
 
+                    /*Bind click event on tabs*/
+                    $('#services_tab_container .nav-tabs li a').click(function(e) {
+                        var serviceId = e.currentTarget.id.slice(0, -4);
+                        //@TODO: all the ursl must end with a / - django style
+                        var serviceDataUrl = window.location.origin + "/" + $.trim(e.currentTarget.attributes.url.nodeValue);
+                        perfInstance.getServiceData(serviceDataUrl,serviceId,current_device);
+                    });
+
 				} else {
 					$("#services_tab_container").html("<p>"+result.message+"</p>");
 					console.log(result.message);
@@ -200,7 +208,7 @@ var perf_that = "",
 			                type: single_service_data.type
 			            },
 			            title: {
-			                text: ''
+			                text: single_service_data.name
 			            },
 			            legend: {
 				            align: 'right',
@@ -212,14 +220,13 @@ var perf_that = "",
 				            backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
 				        },
 			            tooltip: {
-			                pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b> ({point.percentage:.0f}%)<br/>',
+			                pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
 			                shared: true
 			            },
 			            xAxis: {
 		            		type: 'datetime',
 			                dateTimeLabelFormats: {
 			                    day: '%e. %b',
-								week: '%e. %b',
 								month: '%b \'%y',
 								year: '%Y'
 			                }

@@ -17,6 +17,16 @@ from django.utils.dateformat import format
 
 import logging
 log=logging.getLogger(__name__)
+
+SERVICE_DATA_SOURCE = {
+    "uas": {"type" : "spline"},
+    "rssi": {"type": "column"},
+    "uptime": {"type": "spline"},
+    "rta": {"type": "spline"},
+    "pl": {"type": "column"}
+}
+
+
 class Live_Performance(ListView):
 
     model= PerformanceNetwork
@@ -300,9 +310,26 @@ class Inventory_Device_Service_Data_Source(View):
                 service_data_source=ServiceDataSource.objects.get(id= inventory_device_service_data_sources_id)
                 result['data']['objects'].append({
                     'name':service_data_source.name,
-                    'title':service_data_source.alias,
+                    'title':str(service_data_source.alias).title(),
+                    #@TODO: all the ursl must end with a / - django style
                     'url':'performance/service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
-                    'active':1
+                    'active':0
+                })
+
+            ##also append PD and RTA as latency and packet drop
+            result['data']['objects'].append({
+                    'name':"pl",
+                    'title':"Packet Drop",
+                    #@TODO: all the ursl must end with a / - django style
+                    'url':'performance/service_data_source/pd/'+page_type+'/device/'+str(device_id),
+                    'active':0
+                })
+            result['data']['objects'].append({
+                    'name':"rta",
+                    'title':"Latency",
+                    #@TODO: all the ursl must end with a / - django style
+                    'url':'performance/service_data_source/rta/'+page_type+'/device/'+str(device_id),
+                    'active':0
                 })
 
             result['success']=1
@@ -335,24 +362,29 @@ class Get_Service_Type_Performance_Data(View):
         now_minus_30_min=format(datetime.datetime.now() + datetime.timedelta(minutes=-30), 'U')
         # performance_data=PerformanceService.objects.filter(device_name='bs_switch_dv_1', data_source='execution_time', sys_timestamp__gte='1404728700', sys_timestamp__lte='1404916800')
         if service_data_source_type in ['pl', 'rta']:
-            performance_data=PerformanceNetwork.objects.filter(device_name=inventory_device_name, \
-                           data_source=service_data_source_type, sys_timestamp__gte=now_minus_30_min, sys_timestamp__lte=now)
+            performance_data=PerformanceNetwork.objects.filter(device_name=inventory_device_name,
+                                                                data_source=service_data_source_type,
+                                                                sys_timestamp__gte=now_minus_30_min,
+                                                                sys_timestamp__lte=now)
             # log.info("network performance data %s device name" %(performance_data, inventory_device_name))
         else:
-            performance_data=PerformanceService.objects.filter(device_name=inventory_device_name, \
-                           data_source=service_data_source_type, sys_timestamp__gte=now_minus_30_min, sys_timestamp__lte=now)
-
-
+            performance_data=PerformanceService.objects.filter(device_name=inventory_device_name,
+                                                               data_source=service_data_source_type,
+                                                               sys_timestamp__gte=now_minus_30_min,
+                                                               sys_timestamp__lte=now)
+            data_list=[]
         if performance_data:
-            result['data']['objects']['type']='line'
+            result['data']['objects']['type']='spline'
             data_list=[]
             for data in performance_data:
                 #data_list.append([data.sys_timestamp, data.avg_value ])
                 data_list.append([data.sys_timestamp, float(data.avg_value) if data.avg_value else None])
                 result['success']=1
-                result['message']='Substation Service Fetched Successfully.'
+                result['message']='Device Performance Data Fetched Successfully.'
+                result['data']['objects']['chart_data']=[{'name': str(data.data_source).upper(),
+                                                          'color': '#70AFC4',
+                                                          'data': data_list } ]
 
-            result['data']['objects']['chart_data']=[{'name': 'Latency', 'color':'#70AFC4', 'data': data_list } ]
         return HttpResponse(json.dumps(result), mimetype="application/json")
 
 
