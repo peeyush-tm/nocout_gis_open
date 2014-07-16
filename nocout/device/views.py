@@ -38,6 +38,7 @@ class DeviceList(ListView):
     def get_context_data(self, **kwargs):
         context=super(DeviceList, self).get_context_data(**kwargs)
         datatable_headers = [
+            {'mData':'is_added',            'sTitle' : '',              'sWidth':'null',},
             {'mData':'device_name',         'sTitle' : 'Device Name',   'sWidth':'null',},
             {'mData':'device_alias',        'sTitle' : 'Alias',         'sWidth':'null',},
             {'mData':'site_instance__name', 'sTitle' : 'Site Instance', 'sWidth':'null','sClass':'hidden-xs'},
@@ -45,7 +46,7 @@ class DeviceList(ListView):
             {'mData':'ip_address',          'sTitle' : 'IP Address',    'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'mac_address',         'sTitle' : 'MAC Address',   'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'parent__device_name', 'sTitle' : 'Parent',        'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'device_type',   'sTitle' : 'Device Type',        'sWidth':'null','sClass':'hidden-xs'},]
+            {'mData':'device_type',         'sTitle' : 'Device Type',   'sWidth':'null','sClass':'hidden-xs'},]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
@@ -68,7 +69,7 @@ def create_device_tree(request):
 class DeviceListingTable(BaseDatatableView):
     model = Device
     columns = ['device_name', 'device_alias', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name', 'device_type']
-    order_columns = ['device_name', 'device_alias', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name', 'device_type']
+    order_columns = ['device_name', 'device_alias', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name', '']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -106,6 +107,21 @@ class DeviceListingTable(BaseDatatableView):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
+            # current device in loop
+            current_device = Device.objects.get(pk=dct['id'])
+
+            # adding device type key to 'dct'
+            if current_device.device_type:
+                dct['device_type'] = DeviceType.objects.get(pk=current_device.device_type).name
+            else:
+                dct['device_type'] = ''
+
+            # if device is already added to nms core than show icon in device table
+            if current_device.is_added_to_nms == 1:
+                dct.update(is_added='<i class="fa fa-check-circle text-success"></i>')
+            else:
+                dct.update(is_added='')
+
             # There are two set of links in device list table
             # 1. Device Actions --> device detail, edit, delete from inventory. They are always present in device table if user role is 'Admin'
             # 2. NMS Actions --> device add, sync, service add etc. form nocout nms core. They are only present
@@ -117,16 +133,10 @@ class DeviceListingTable(BaseDatatableView):
                <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
                <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(dct['id']))
             dct.update(nms_actions='')
-
-            current_device = Device.objects.get(device_name=dct['device_name'])
-
             # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
             # checking whether device is 'backhaul configured on' or not
             try:
                 if Backhaul.objects.get(bh_configured_on=current_device):
-                    dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-                        <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-                        <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(dct['id']))
                     dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
                         <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
                         <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
@@ -136,9 +146,6 @@ class DeviceListingTable(BaseDatatableView):
             # checking whether device is 'sector configured on' or not
             try:
                 if Sector.objects.get(sector_configured_on=current_device):
-                    dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-                        <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-                        <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(dct['id']))
                     dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
                         <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
                         <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
@@ -148,9 +155,6 @@ class DeviceListingTable(BaseDatatableView):
             # checking whether device is 'sub station' or not
             try:
                 if SubStation.objects.get(device=current_device):
-                    dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-                        <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-                        <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(dct['id']))
                     dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
                         <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
                         <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
@@ -183,7 +187,7 @@ class DeviceListingTable(BaseDatatableView):
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
-               'aaData': aaData
+               'aaData': aaData,
                }
         return ret
 
@@ -280,7 +284,7 @@ class DeviceCreate(CreateView):
             device.site_instance = SiteInstance.objects.get(name=form.cleaned_data['site_instance'])
             device.save()
         except:
-            print "No instance to add."
+            logger.info("No instance to add.")
 
         # # saving associated ports  --> M2M Relation (Model: DevicePort)
         # for port in form.cleaned_data['ports']:
@@ -300,7 +304,7 @@ class DeviceCreate(CreateView):
             device.parent = parent_device
             device.save()
         except:
-            print "Device has no parent."
+            logger.info("Device has no parent.")
 
         # fetching device extra fields associated with 'device type'
         try:
@@ -308,7 +312,7 @@ class DeviceCreate(CreateView):
             # it gives all device fields associated with device_type object
             device_type.devicetypefields_set.all()
         except:
-            print "No device type exists."
+            logger.info("No device type exists.")
 
         # saving eav relation data i.e. device extra fields those depends on device type
         for field in all_non_empty_post_fields:
