@@ -58,11 +58,11 @@ def mongo_db_insert(db,event_dict,flag):
                 return failure
 
 
-def get_latest_entry(db_type=None, db=None, site=None,table_name=None, serv='_HOST_', ds='rta'):
+def get_latest_entry(db_type=None, db=None, site=None,table_name=None, host=None, serv='_HOST_', ds='rta'):
     latest_time = None
     if db_type == 'mongodb':
         if serv == "_HOST_":
-            cur = db.network_perf.find({"service": serv}, {"check_time": 1, "ds": 1}).sort("_id", -1).limit(1)
+            cur = db.network_perf.find({"service": serv, "host": host}, {"check_time": 1, "ds": 1}).sort("_id", -1).limit(1)
             for c in cur:
                 	entry = c
                 	data = entry.get('ds').get(ds).get('data')
@@ -72,7 +72,7 @@ def get_latest_entry(db_type=None, db=None, site=None,table_name=None, serv='_HO
                     	except IndexError, e:
                     		return latest_time
         else:
-            cur = db.service_perf.find({"service": serv}, {"check_time": 1, "ds": 1}).sort("_id", -1).limit(1)
+            cur = db.service_perf.find({"service": serv, "host": host}, {"check_time": 1, "ds": 1}).sort("_id", -1).limit(1)
             for c in cur:
 			entry = c
                     	data = entry.get('ds').get(ds).get('data')
