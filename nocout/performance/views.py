@@ -310,7 +310,7 @@ class Inventory_Device_Service_Data_Source(View):
                 service_data_source=ServiceDataSource.objects.get(id= inventory_device_service_data_sources_id)
                 result['data']['objects'].append({
                     'name':service_data_source.name,
-                    'title':service_data_source.alias,
+                    'title':str(service_data_source.alias).title(),
                     #@TODO: all the ursl must end with a / - django style
                     'url':'performance/service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
                     'active':0
