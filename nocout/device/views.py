@@ -22,7 +22,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.conf import settings #Importing settings for logger
 from site_instance.models import SiteInstance
-from inventory.models import Backhaul, SubStation
+from inventory.models import Backhaul, SubStation, Sector
 
 if settings.DEBUG:
     import logging
@@ -44,11 +44,13 @@ class DeviceList(ListView):
             {'mData':'organization__name',  'sTitle' : 'Organization',  'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'ip_address',          'sTitle' : 'IP Address',    'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'mac_address',         'sTitle' : 'MAC Address',   'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'parent__device_name', 'sTitle' : 'Parent',        'sWidth':'null','sClass':'hidden-xs'},]
+            {'mData':'parent__device_name', 'sTitle' : 'Parent',        'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'device_type',   'sTitle' : 'Device Type',        'sWidth':'null','sClass':'hidden-xs'},]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'8%'})
+            datatable_headers.append({'mData':'actions', 'sTitle':'Device Actions', 'sWidth':'9%'})
+            datatable_headers.append({'mData':'nms_actions', 'sTitle':'NMS Actions', 'sWidth':'8%'})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -65,8 +67,8 @@ def create_device_tree(request):
 
 class DeviceListingTable(BaseDatatableView):
     model = Device
-    columns = ['device_name', 'device_alias', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name']
-    order_columns = ['device_name', 'device_alias', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name']
+    columns = ['device_name', 'device_alias', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name', 'device_type']
+    order_columns = ['device_name', 'device_alias', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name', 'device_type']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -104,27 +106,52 @@ class DeviceListingTable(BaseDatatableView):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
+            # There are two set of links in device list table
+            # 1. Device Actions --> device detail, edit, delete from inventory. They are always present in device table if user role is 'Admin'
+            # 2. NMS Actions --> device add, sync, service add etc. form nocout nms core. They are only present
+            # in device table if device id one of the following:
+            # a. backhaul configured on (from model Backhaul)
+            # b. sector configures on (from model Sector)
+            # c. sub-station configured on (from model SubStation)
             dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
                <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(dct['id']))
+            dct.update(nms_actions='')
 
             current_device = Device.objects.get(device_name=dct['device_name'])
+
+            # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
+            # checking whether device is 'backhaul configured on' or not
             try:
                 if Backhaul.objects.get(bh_configured_on=current_device):
                     dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                         <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-                        <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>\
-                        <a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+                        <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(dct['id']))
+                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
                         <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
                         <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             except:
                 logger.info("Device is not basestation")
+
+            # checking whether device is 'sector configured on' or not
+            try:
+                if Sector.objects.get(sector_configured_on=current_device):
+                    dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+                        <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+                        <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(dct['id']))
+                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+                        <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            except:
+                logger.info("Device is not basestation")
+
+            # checking whether device is 'sub station' or not
             try:
                 if SubStation.objects.get(device=current_device):
                     dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                         <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-                        <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>\
-                        <a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+                        <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(dct['id']))
+                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
                         <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
                         <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             except:
