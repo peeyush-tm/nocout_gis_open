@@ -112,6 +112,12 @@
 
 
 		$(document).ready(function(e) {
+
+            Highcharts.setOptions({
+                global: {
+                    useUTC: false
+                }
+            });
 			
 			/*Initialize Datepicker*/
 			$(".datepicker").datepicker();

@@ -374,11 +374,11 @@ class Get_Service_Type_Performance_Data(View):
                                                                sys_timestamp__lte=now)
             data_list=[]
         if performance_data:
-            result['data']['objects']['type']='spline'
             data_list=[]
             for data in performance_data:
+                result['data']['objects']['type']= SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"]
                 #data_list.append([data.sys_timestamp, data.avg_value ])
-                data_list.append([data.sys_timestamp, float(data.avg_value) if data.avg_value else None])
+                data_list.append([data.sys_timestamp*1000, float(data.avg_value) if data.avg_value else None])
                 result['success']=1
                 result['message']='Device Performance Data Fetched Successfully.'
                 result['data']['objects']['chart_data']=[{'name': str(data.data_source).upper(),
