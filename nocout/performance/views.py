@@ -21,7 +21,9 @@ log=logging.getLogger(__name__)
 SERVICE_DATA_SOURCE = {
     "uas": {"type" : "spline"},
     "rssi": {"type": "column"},
-    "uptime": {"type": "spline"}
+    "uptime": {"type": "spline"},
+    "rta": {"type": "spline"},
+    "pl": {"type": "column"}
 }
 
 
@@ -311,6 +313,22 @@ class Inventory_Device_Service_Data_Source(View):
                     'title':service_data_source.alias,
                     #@TODO: all the ursl must end with a / - django style
                     'url':'performance/service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
+                    'active':0
+                })
+
+            ##also append PD and RTA as latency and packet drop
+            result['data']['objects'].append({
+                    'name':"pl",
+                    'title':"Packet Drop",
+                    #@TODO: all the ursl must end with a / - django style
+                    'url':'performance/service_data_source/pd/'+page_type+'/device/'+str(device_id),
+                    'active':0
+                })
+            result['data']['objects'].append({
+                    'name':"rta",
+                    'title':"Latency",
+                    #@TODO: all the ursl must end with a / - django style
+                    'url':'performance/service_data_source/rta/'+page_type+'/device/'+str(device_id),
                     'active':0
                 })
 
