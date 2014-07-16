@@ -377,16 +377,24 @@ class Get_Service_Type_Performance_Data(View):
 
         if performance_data:
             data_list=[]
+            aggregate_data = {}
             for data in performance_data:
+                temp_time = data.sys_timestamp
 
-                result['data']['objects']['type']= SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"]
-                #data_list.append([data.sys_timestamp, data.avg_value ])
-                data_list.append([data.sys_timestamp*1000, float(data.avg_value) if data.avg_value else None])
-                result['success']=1
-                result['message']='Device Performance Data Fetched Successfully.'
-                result['data']['objects']['chart_data']=[{'name': str(data.data_source).upper(),
-                                                          'color': '#70AFC4',
-                                                          'data': data_list } ]
+                if temp_time in aggregate_data:
+                    continue
+                else:
+                    aggregate_data[temp_time] = data.sys_timestamp
+                    result['data']['objects']['type']= SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"]
+                    #data_list.append([data.sys_timestamp, data.avg_value ])
+
+                    data_list.append([data.sys_timestamp*1000, float(data.avg_value) if data.avg_value else None])
+
+                    result['success']=1
+                    result['message']='Device Performance Data Fetched Successfully.'
+                    result['data']['objects']['chart_data']=[{'name': str(data.data_source).upper(),
+                                                              'color': '#70AFC4',
+                                                              'data': data_list } ]
 
         return HttpResponse(json.dumps(result), mimetype="application/json")
 
