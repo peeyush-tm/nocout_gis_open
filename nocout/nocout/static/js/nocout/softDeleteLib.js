@@ -65,9 +65,7 @@ function get_soft_delete_form(content) {
                 label: "No!",
                 className: "btn-danger",
                 callback: function () {
-                    bootbox.alert("Ok! You choose to not delete this device right now.", function () {
-                        $(".bootbox").modal("hide");
-                    });
+                    $(".bootbox").modal("hide");
                 }
             }
         }
@@ -101,9 +99,7 @@ function add_device(device_id) {
                 label: "No!",
                 className: "btn-danger",
                 callback: function () {
-                    bootbox.alert("Ok! You choose to not add this device right now for monitoring.", function () {
-                        $(".bootbox").modal("hide");
-                    });
+                    $(".bootbox").modal("hide");
                 }
             }
         }
@@ -134,9 +130,7 @@ function sync_devices(device_id) {
                 label: "No!",
                 className: "btn-danger",
                 callback: function () {
-                    bootbox.alert("Ok! You choose to not sync devices right now for monitoring.", function () {
-                        $(".bootbox").modal("hide");
-                    });
+                    $(".bootbox").modal("hide");
                 }
             }
         }
@@ -217,9 +211,7 @@ function get_service_add_form(content) {
                 label: "No!",
                 className: "btn-danger",
                 callback: function () {
-                    bootbox.alert("Ok! You choose to not to add service right now for monitoring.", function () {
-                        $(".bootbox").modal("hide");
-                    });
+                    $(".bootbox").modal("hide");
                 }
             }
         }
