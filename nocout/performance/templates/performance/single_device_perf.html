@@ -65,7 +65,7 @@
 	    </div>
 	    <div class='box-body'>
 	    	<!--Device Staus Block Start-->
-	    	<button class="btn btn-info btn-xs pull-right" title="Show Status" id="show_status_btn">Show Status</button>
+	    	<button class="btn btn-info btn-xs" title="Hide Status" id="show_status_btn">Hide Status</button>
 	    	<div class="clearfix"></div>
 	        <div class="well well-sm" id="status_container" style="margin:10px;">
 	        	<table id="status_table" class="table table-bordered">
@@ -135,17 +135,18 @@
 			/*To populate the services tabs*/
 			perfInstance.getServices(serviceUrl,current_device);
 
-			/*Bind click event on tabs*/
-			$('#services_tab_container .nav-tabs li a').bind('click', function(e) {
-		        var serviceId = e.currentTarget.id.slice(0, -4);
-		        var serviceDataUrl = window.location.origin + "/" + $.trim(e.currentTarget.attributes.url.nodeValue) + "/";
-		        perfInstance.getServiceData(serviceDataUrl,serviceId,current_device);
-		    });
+
 		});
 
 		$("#show_status_btn").click(function(e) {
 
 			$("#status_container").slideToggle();
+            if ( $("#show_status_btn").text() == "Hide Status") {
+                $("#show_status_btn").text("Show Status");
+            }
+            else{
+                $("#show_status_btn").text("Hide Status");
+            }
 		})
 
 	</script>
