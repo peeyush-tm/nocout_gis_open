@@ -193,18 +193,24 @@ function get_service_add_form(content) {
                 label: "Yes!",
                 className: "btn-success",
                 callback: function () {
-                    var service_data = [];
-                    $(".service").each(function (index) {
-                        var $this = $(this);
-                        //console.log($this.text());
-                        $this.children(".checkbox").find("input:checked").each(function () {
-                            service_temp_id = $(this).prop("value");
-                            svc_val = $("#service_" + service_temp_id).val();
-                            svc = {"device_id": $("#device_id").val(), "service_id": $(this).prop("value"), "template_id": svc_val};
-                            service_data.push(svc);
+                    //if services are present on then send the call to add service else just hide the bootbox
+                    if (!(typeof content.result.data.objects.services === 'undefined') && !(Object.keys(content.result.data.objects.services).length === 0)) {
+                        var service_data = [];
+                        $(".service").each(function (index) {
+                            var $this = $(this);
+                            //console.log($this.text());
+                            $this.children(".checkbox").find("input:checked").each(function () {
+                                service_temp_id = $(this).prop("value");
+                                svc_val = $("#service_" + service_temp_id).val();
+                                svc = {"device_id": $("#device_id").val(), "service_id": $(this).prop("value"), "template_id": svc_val};
+                                service_data.push(svc);
+                            });
                         });
-                    });
-                    Dajaxice.device.add_service(add_services_message, {'service_data': service_data});
+                        Dajaxice.device.add_service(add_services_message, {'service_data': service_data});
+                    }
+                    else{
+                        $(".bootbox").modal("hide");
+                    }
                 }
             },
             danger: {
