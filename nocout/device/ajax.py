@@ -656,16 +656,30 @@ def add_service(request, service_data):
 
     for sd in service_data:
         try:
+            result = dict()
+            result['data'] = {}
+            result['success'] = 0
+            result['message'] = ""
+            result['data']['meta'] = {}
+            result['data']['objects'] = {}
             device = Device.objects.get(pk=int(sd['device_id']))
             service = Service.objects.get(pk=int(sd['service_id']))
             service_para = ServiceParameters.objects.get(pk=int(sd['template_id']))
+            print "************************************** sd *********************************************"
+            print sd
+
+            print "&&&&&&&&&&&&&&&&&&&&&&&&&&&& Enter &&&&&&&&&&&&&&&&&&&&&&&&&&&&&"
 
             # mode
             result['data']['objects']['mode'] = "addservice"
+            print "**************************** result['data']['objects']['mode'] *********************"
+            print result['data']
             # device name
             result['data']['objects']['device_name'] = str(device.device_name)
             # service name
             result['data']['objects']['service_name'] = str(service.name)
+            print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& result['data']['objects']['service_name'] *********************"
+            print result['data']['objects']['service_name']
             # service parameters
             result['data']['objects']['serv_params'] = {}
             result['data']['objects']['serv_params']['normal_check_interval'] = str(service_para.normal_check_interval)
@@ -677,6 +691,8 @@ def add_service(request, service_data):
             result['data']['objects']['snmp_community']['read_community'] = str(service_para.protocol.read_community)
             # command parameters
             result['data']['objects']['cmd_params'] = {}
+            print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ result['data']['objects']['cmd_params'] ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+            print result['data']['objects']['cmd_params']
             for sds in service.service_data_sources.all():
                 result['data']['objects']['cmd_params'][str(sds.name)] = {'warning': str(sds.warning), 'critical': str(sds.critical)}
             # snmp port
@@ -685,6 +701,8 @@ def add_service(request, service_data):
             result['data']['objects']['agent_tag'] = str(DeviceType.objects.get(pk=device.device_type).agent_tag)
             # payload data
             service_data = result['data']['objects']
+            print "***************************************service_data ***********************************"
+            print service_data
 
             master_site = SiteInstance.objects.get(name='master_UA')
             # url for nocout.py
@@ -701,12 +719,15 @@ def add_service(request, service_data):
             r = requests.post(url , data=encoded_data)
 
             response_dict = ast.literal_eval(r.text)
+            print "********************************* response_dict.get('error_message')**********************"
+            print response_dict.get('error_message')
 
             if r:
                 result['data'] = service_data
                 result['success'] = 1
                 if not response_dict.get('success'):
-                    result['message'] += response_dict.get('error_message')
+                    logger.info(response_dict.get('error_message'))
+                    result['message'] += "Failed to add service '%s'. <br />" % (service.name)
                 else:
                     result['message'] += "Successfully added service '%s'. <br />" % (service.name)
                     device = Device.objects.get(pk=int(sd['device_id']))
