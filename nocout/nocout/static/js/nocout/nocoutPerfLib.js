@@ -229,7 +229,8 @@ var perf_that = "",
 			                    day: '%e. %b',
 								month: '%b \'%y',
 								year: '%Y'
-			                }
+			                },
+                            tickPixelInterval: 300
 			            },
 			            plotOptions: {
 			                column: {

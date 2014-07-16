@@ -105,13 +105,19 @@
             desired_url_string = "https://";
         }
 
-        if (window.location.protocol != "https:") {
-            window.location.href = "https:" + window.location.href.substring(window.location.protocol.length);
+ if (window.location.protocol == "https:") {
+            //window.location.href = "https:" + window.location.href.substring(window.location.protocol.length);
             window.location.origin = "https:" + window.location.origin.substring(window.location.protocol.length);
         }
 
 
 		$(document).ready(function(e) {
+
+            Highcharts.setOptions({
+                global: {
+                    useUTC: false
+                }
+            });
 			
 			/*Initialize Datepicker*/
 			$(".datepicker").datepicker();
