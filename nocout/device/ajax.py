@@ -653,9 +653,16 @@ def add_service(request, service_data):
     result['message'] = ""
     result['data']['meta'] = {}
     result['data']['objects'] = {}
+    messages = ""
 
     for sd in service_data:
         try:
+            result = dict()
+            result['data'] = {}
+            result['success'] = 0
+            result['message'] = ""
+            result['data']['meta'] = {}
+            result['data']['objects'] = {}
             device = Device.objects.get(pk=int(sd['device_id']))
             service = Service.objects.get(pk=int(sd['service_id']))
             service_para = ServiceParameters.objects.get(pk=int(sd['template_id']))
@@ -668,9 +675,9 @@ def add_service(request, service_data):
             result['data']['objects']['service_name'] = str(service.name)
             # service parameters
             result['data']['objects']['serv_params'] = {}
-            result['data']['objects']['serv_params']['normal_check_interval'] = str(service_para.normal_check_interval)
-            result['data']['objects']['serv_params']['retry_check_interval'] = str(service_para.retry_check_interval)
-            result['data']['objects']['serv_params']['max_check_attempts'] = str(service_para.max_check_attempts)
+            result['data']['objects']['serv_params']['normal_check_interval'] = int(service_para.normal_check_interval)
+            result['data']['objects']['serv_params']['retry_check_interval'] = int(service_para.retry_check_interval)
+            result['data']['objects']['serv_params']['max_check_attempts'] = int(service_para.max_check_attempts)
             # snmp parameters
             result['data']['objects']['snmp_community'] = {}
             result['data']['objects']['snmp_community']['version'] = str(service_para.protocol.version)
@@ -701,15 +708,20 @@ def add_service(request, service_data):
             r = requests.post(url , data=encoded_data)
 
             response_dict = ast.literal_eval(r.text)
+            print "********************************* service_data **********************"
+            print service_data
 
             if r:
                 result['data'] = service_data
                 result['success'] = 1
                 if not response_dict.get('success'):
-                    result['message'] += response_dict.get('error_message')
+                    logger.info(response_dict.get('error_message'))
+                    result['message'] += "Failed to add service '%s'. <br />" % (service.name)
+                    messages += result['message']
                 else:
                     result['message'] += "Successfully added service '%s'. <br />" % (service.name)
                     device = Device.objects.get(pk=int(sd['device_id']))
+                    messages += result['message']
 
                     # set 'is_monitored_on_nms' to 1 if service is added successfully
                     device.is_monitored_on_nms = 1
@@ -717,5 +729,7 @@ def add_service(request, service_data):
 
         except:
             result['message'] += "Failed to add service '%s'. <br />" % (service.name)
+            messages += result['message']
+    result['message'] = messages
     return json.dumps({'result': result})
 
