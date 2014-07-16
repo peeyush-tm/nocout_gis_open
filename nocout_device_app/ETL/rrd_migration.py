@@ -58,7 +58,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 			data_dict['service'] = 'ping'
 		else:
 			data_dict['service'] = serv_disc
-		if serv_disc.endswith('_status'):
+		if serv_disc.endswith('_status') or serv_disc == 'Check_MK':
 			continue			
 		threshold_values = get_threshold(perf_data)
 		for ds in root.findall('DATASOURCE'):
@@ -67,7 +67,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		for path in file_paths:
 			m = -1
 		
-			data_series = do_export(site, path,params[file_paths.index(path)], db, data_dict['service'])
+			data_series = do_export(site, host, path,params[file_paths.index(path)], db, data_dict['service'])
 			data_dict.update({
 				"check_time": data_series.get('check_time'),
 				"local_timestamp": data_series.get('local_timestamp'),
@@ -102,14 +102,14 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		}
 
 
-def do_export(site, file_name,data_source, db, serv):
+def do_export(site, host, file_name,data_source, db, serv):
     data_series = {}
     cmd_output ={}
     CF = 'AVERAGE'
     resolution = '-300sec';
 
     # Data will be exported from last inserted entry in mongodb uptill current time
-    start_time = mongo_functions.get_latest_entry(db_type='mongodb', db=db,table_name=None, serv=serv, ds=data_source)
+    start_time = mongo_functions.get_latest_entry(db_type='mongodb', db=db,table_name=None, host=host, serv=serv, ds=data_source)
     # Get India times (GMT+5.30)
     utc_time = datetime(1970, 1,1, 5, 30)
     end_time = datetime.now()
@@ -131,7 +131,7 @@ def do_export(site, file_name,data_source, db, serv):
     #start_epoch -= 19800
     #end_epoch -= 19800
 
-    cmd = '/omd/sites/%s/bin/rrdtool xport --json --daemon unix:/omd/sites/%s/tmp/run/rrdcached.sock -s %s -e %s '\
+    cmd = '/omd/sites/%s/bin/rrdtool xport --json --daemon unix:/omd/sites/%s/tmp/run/rrdcached.sock -s %s -e %s --step 300 '\
         %(site,site, str(start_epoch), str(end_epoch))
     RRAs = ['MIN','MAX','AVERAGE']
 
