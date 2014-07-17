@@ -1,6 +1,7 @@
 from django import forms
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
     Country, State, City, StateGeoInfo, DevicePort, DeviceFrequency
+from django.core.exceptions import ValidationError
 from nocout.widgets import MultipleToSingleSelectionWidget, IntReturnModelChoiceField
 from device.models import DeviceTypeFields
 import pyproj
@@ -9,6 +10,8 @@ from shapely.ops import transform
 from functools import partial
 from django.forms.util import ErrorList
 
+import logging
+logger=logging.getLogger(__name__)
 
 # *************************************** Device Form ***********************************************
 class DeviceForm(forms.ModelForm):
@@ -37,7 +40,11 @@ class DeviceForm(forms.ModelForm):
         self.base_fields['device_model'].label = 'Device Model'
         self.base_fields['device_type'].label = 'Device Type'
         # self.base_fields['service'].label = 'Services'
-
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except:
+            logger.info("No id exist.")
         initial = kwargs.setdefault('initial', {})
 
         super(DeviceForm, self).__init__(*args, **kwargs)
@@ -114,6 +121,18 @@ class DeviceForm(forms.ModelForm):
         if longitude!='' and len(longitude)>2 and longitude[2] != '.':
             raise forms.ValidationError("Please enter correct value for longitude.")
         return self.cleaned_data.get('longitude')
+    
+    def clean_device_name(self):
+        device_name = self.cleaned_data['device_name']
+        devices = Device.objects.filter(device_name=device_name)
+        try:
+            if self.id:
+                devices = devices.exclude(pk=self.id)
+        except:
+            logger.info("This is not an update form.")
+        if devices.count() > 0:
+            raise ValidationError('This device name is already in use.')
+        return device_name
 
     def clean(self):
         latitude = self.cleaned_data.get('latitude')
