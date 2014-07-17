@@ -232,12 +232,7 @@ var perf_that = "",
 			                },
                             tickPixelInterval: 300
 			            },
-			            plotOptions: {
-			                column: {
-			                    stacking: 'percent'
-			                }
-			            },
-			                series: single_service_data.chart_data
+                        series: single_service_data.chart_data
 			        });
 
 					/*Hide Highcharts.com Name*/

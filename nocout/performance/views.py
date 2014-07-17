@@ -358,21 +358,21 @@ class Get_Service_Type_Performance_Data(View):
         #                 group by sys_timestamp order by id desc limit 6;'.format(service_data_source_type, substation_name))
 
         now=format(datetime.datetime.now(),'U')
-        now_minus_30_min=format(datetime.datetime.now() + datetime.timedelta(minutes=-30), 'U')
+        now_minus_60_min=format(datetime.datetime.now() + datetime.timedelta(minutes=-60), 'U')
 
         if service_data_source_type in ['pl', 'rta']:
 
             performance_data=PerformanceNetwork.objects.filter(device_name=inventory_device_name,
                                                                 service_name=service_name,
                                                                 data_source=service_data_source_type,
-                                                                sys_timestamp__gte=now_minus_30_min,
+                                                                sys_timestamp__gte=now_minus_60_min,
                                                                 sys_timestamp__lte=now)
             # log.info("network performance data %s device name" %(performance_data, inventory_device_name))
         else:
             performance_data=PerformanceService.objects.filter(device_name=inventory_device_name,
                                                                service_name=service_name,
                                                                data_source=service_data_source_type,
-                                                               sys_timestamp__gte=now_minus_30_min,
+                                                               sys_timestamp__gte=now_minus_60_min,
                                                                sys_timestamp__lte=now)
 
         if performance_data:
