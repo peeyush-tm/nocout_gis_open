@@ -121,7 +121,7 @@ class DeviceForm(forms.ModelForm):
         if longitude!='' and len(longitude)>2 and longitude[2] != '.':
             raise forms.ValidationError("Please enter correct value for longitude.")
         return self.cleaned_data.get('longitude')
-    
+
     def clean_device_name(self):
         device_name = self.cleaned_data['device_name']
         devices = Device.objects.filter(device_name=device_name)
