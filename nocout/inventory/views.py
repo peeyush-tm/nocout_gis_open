@@ -21,49 +21,52 @@ from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, Custom
 
 
 
-#**************************************** Inventory *********************************************
+# **************************************** Inventory *********************************************
 def inventory(request):
-    return render(request,'inventory/inventory.html')
+    return render(request, 'inventory/inventory.html')
+
 
 class InventoryListing(ListView):
     model = Inventory
     template_name = 'inventory/inventory_list.html'
 
     def get_context_data(self, **kwargs):
-        context=super(InventoryListing, self).get_context_data(**kwargs)
+        context = super(InventoryListing, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',                'sTitle' : 'Name',             'sWidth':'null',},
-            {'mData':'alias',               'sTitle' : 'Alias',            'sWidth':'null',},
-            {'mData':'user_group__name',    'sTitle' : 'User Group',       'sWidth':'null',},
-            {'mData':'organization__name',  'sTitle' : 'Organization',     'sWidth':'null',},
-            {'mData':'city',                'sTitle' : 'City',             'sWidth':'null',},
-            {'mData':'state',               'sTitle' : 'State',            'sWidth':'null',},
-            {'mData':'country',             'sTitle' : 'Country',          'sWidth':'null',},
-            {'mData':'description',         'sTitle' : 'Description',      'sWidth':'null',},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
+            {'mData': 'user_group__name', 'sTitle': 'User Group', 'sWidth': 'null', },
+            {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'null', },
+            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', },
+            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', },
+            {'mData': 'country', 'sTitle': 'Country', 'sWidth': 'null', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', },
             ]
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%' ,})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
+
 class InventoryListingTable(BaseDatatableView):
     model = Inventory
-    columns = ['name', 'alias', 'user_group__name','organization__name', 'city', 'state', 'country', 'description']
-    order_columns = ['name', 'alias', 'user_group__name','organization__name', 'city', 'state', 'country', 'description']
+    columns = ['name', 'alias', 'user_group__name', 'organization__name', 'city', 'state', 'country', 'description']
+    order_columns = ['name', 'alias', 'user_group__name', 'organization__name', 'city', 'state', 'country',
+                     'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
         ##TODO:Need to optimise with the query making login.
         if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -73,15 +76,17 @@ class InventoryListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        organization_descendants_ids= self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True)
-        return Inventory.objects.filter(organization__in = organization_descendants_ids).values(*self.columns+['id'])
+        organization_descendants_ids = self.request.user.userprofile.organization.get_descendants(
+            include_self=True).values_list('id', flat=True)
+        return Inventory.objects.filter(organization__in=organization_descendants_ids).values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             dct.update(actions='<a href="/inventory/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                       <a href="/inventory/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                       <a href="/inventory/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                dct.pop('id')))
 
         return qs
 
@@ -103,7 +108,7 @@ class InventoryListingTable(BaseDatatableView):
         qs = self.paging(qs)
         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
+            qs = list(qs)
 
         # prepare output data
         aaData = self.prepare_results(qs)
@@ -111,7 +116,7 @@ class InventoryListingTable(BaseDatatableView):
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
                'aaData': aaData
-               }
+        }
         return ret
 
 
@@ -125,10 +130,10 @@ class InventoryCreate(CreateView):
     def dispatch(self, *args, **kwargs):
         return super(InventoryCreate, self).dispatch(*args, **kwargs)
 
-    def form_valid( self, form):
-        self.object= form.save()
-        action.send( self.request.user, verb='Created', action_object = self.object)
-        return HttpResponseRedirect( InventoryCreate.success_url )
+    def form_valid(self, form):
+        self.object = form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
+        return HttpResponseRedirect(InventoryCreate.success_url)
 
 
 class InventoryUpdate(UpdateView):
@@ -141,10 +146,11 @@ class InventoryUpdate(UpdateView):
     def dispatch(self, *args, **kwargs):
         return super(InventoryUpdate, self).dispatch(*args, **kwargs)
 
-    def form_valid( self, form):
-        self.object= form.save()
-        action.send( self.request.user, verb='Created', action_object = self.object)
-        return HttpResponseRedirect( InventoryCreate.success_url )
+    def form_valid(self, form):
+        self.object = form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
+        return HttpResponseRedirect(InventoryCreate.success_url)
+
 
 class InventoryDelete(DeleteView):
     model = Inventory
@@ -156,22 +162,27 @@ class InventoryDelete(DeleteView):
         return super(InventoryDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        action.send(request.user, verb='deleting inventory: %s'%(self.get_object().name))
+        action.send(request.user, verb='deleting inventory: %s' % (self.get_object().name))
         return super(InventoryDelete, self).delete(request, *args, **kwargs)
 
-def inventory_details_wrt_organization(request):
-    organization_id= request.GET['organization']
-    organization_descendants_ids= Organization.objects.get(id= organization_id).get_descendants(include_self=True).values_list('id', flat=True)
-    user_group= UserGroup.objects.filter(organization__in = organization_descendants_ids, is_deleted=0).values_list('id','name')
-    device_groups= DeviceGroup.objects.filter(organization__in = organization_descendants_ids, is_deleted=0).values_list('id','name')
-    response_device_groups=response_user_group=''
-    for index in range(len(device_groups)):
-        response_device_groups+='<option value={0}>{1}</option>'.format(*map(str, device_groups[index]))
-    for index in range(len(user_group)):
-        response_user_group+='<option value={0}>{1}</option>'.format(*map(str, user_group[index]))
 
-    return HttpResponse( json.dumps({'response': {'device_groups': response_device_groups , 'user_groups': response_user_group} }), \
-                        mimetype='application/json')
+def inventory_details_wrt_organization(request):
+    organization_id = request.GET['organization']
+    organization_descendants_ids = Organization.objects.get(id=organization_id).get_descendants(
+        include_self=True).values_list('id', flat=True)
+    user_group = UserGroup.objects.filter(organization__in=organization_descendants_ids, is_deleted=0).values_list('id',
+                                                                                                                   'name')
+    device_groups = DeviceGroup.objects.filter(organization__in=organization_descendants_ids, is_deleted=0).values_list(
+        'id', 'name')
+    response_device_groups = response_user_group = ''
+    for index in range(len(device_groups)):
+        response_device_groups += '<option value={0}>{1}</option>'.format(*map(str, device_groups[index]))
+    for index in range(len(user_group)):
+        response_user_group += '<option value={0}>{1}</option>'.format(*map(str, user_group[index]))
+
+    return HttpResponse(
+        json.dumps({'response': {'device_groups': response_device_groups, 'user_groups': response_user_group}}), \
+        mimetype='application/json')
 
 
 #**************************************** Antenna *********************************************
@@ -180,22 +191,23 @@ class AntennaList(ListView):
     template_name = 'antenna/antenna_list.html'
 
     def get_context_data(self, **kwargs):
-        context=super(AntennaList, self).get_context_data(**kwargs)
+        context = super(AntennaList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',              'sTitle' : 'Name',             'sWidth':'null',},
-            {'mData':'alias',             'sTitle' : 'Alias',            'sWidth':'null',},
-            {'mData':'height',            'sTitle' : 'Height',           'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'polarization',      'sTitle' : 'Polarization',     'sWidth':'null',},
-            {'mData':'tilt',              'sTitle' : 'Tilt',             'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'beam_width',        'sTitle' : 'Beam Width',       'sWidth':'10%' ,},
-            {'mData':'azimuth_angle',     'sTitle' : 'Azimuth Angle',    'sWidth':'10%' ,},]
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
+            {'mData': 'height', 'sTitle': 'Height', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'polarization', 'sTitle': 'Polarization', 'sWidth': 'null', },
+            {'mData': 'tilt', 'sTitle': 'Tilt', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'beam_width', 'sTitle': 'Beam Width', 'sWidth': '10%', },
+            {'mData': 'azimuth_angle', 'sTitle': 'Azimuth Angle', 'sWidth': '10%', }, ]
 
         #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role=self.request.user.userprofile.role.values_list('role_name', flat=True)
+        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
         if 'admin' in user_role or 'operator' in user_role:
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
+
 
 class AntennaListingTable(BaseDatatableView):
     model = Antenna
@@ -206,13 +218,13 @@ class AntennaListingTable(BaseDatatableView):
         sSearch = self.request.GET.get('sSearch', None)
         ##TODO:Need to optimise with the query making login.
         if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -222,11 +234,11 @@ class AntennaListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Antenna.objects.values(*self.columns+['id'])
+        return Antenna.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             dct.update(actions='<a href="/antenna/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/antenna/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
@@ -250,7 +262,7 @@ class AntennaListingTable(BaseDatatableView):
         qs = self.paging(qs)
         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
+            qs = list(qs)
 
         # prepare output data
         aaData = self.prepare_results(qs)
@@ -258,8 +270,9 @@ class AntennaListingTable(BaseDatatableView):
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
                'aaData': aaData
-               }
+        }
         return ret
+
 
 class AntennaDetail(DetailView):
     model = Antenna
@@ -277,8 +290,8 @@ class AntennaCreate(CreateView):
         return super(AntennaCreate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        self.object=form.save()
-        action.send(self.request.user, verb='Created', action_object = self.object)
+        self.object = form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(AntennaCreate.success_url)
 
 
@@ -294,19 +307,21 @@ class AntennaUpdate(UpdateView):
 
 
     def form_valid(self, form):
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
+        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of Antenna : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
-            self.object=form.save()
-            action.send( self.request.user, verb=verb_string )
-        return HttpResponseRedirect( AntennaUpdate.success_url )
+            verb_string = 'Changed values of Antenna : %s from initial values ' % (self.object.name) + ', '.join(
+                ['%s: %s' % (k, initial_field_dict[k]) \
+                 for k in changed_fields_dict]) + \
+                          ' to ' + \
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string) >= 255:
+                verb_string = verb_string[:250] + '...'
+            self.object = form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(AntennaUpdate.success_url)
+
 
 class AntennaDelete(DeleteView):
     model = Antenna
@@ -317,46 +332,51 @@ class AntennaDelete(DeleteView):
     def dispatch(self, *args, **kwargs):
         return super(AntennaDelete, self).dispatch(*args, **kwargs)
 
+
 #****************************************** Base Station ********************************************
 class BaseStationList(ListView):
     model = BaseStation
     template_name = 'base_station/base_stations_list.html'
 
     def get_context_data(self, **kwargs):
-        context=super(BaseStationList, self).get_context_data(**kwargs)
+        context = super(BaseStationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',                      'sTitle' : 'Name',                'sWidth':'null',},
-            {'mData':'alias',                     'sTitle' : 'Alias',               'sWidth':'null',},
-            {'mData':'bs_site_id',                'sTitle' : 'Base Site ID',        'sWidth':'null',},
-            {'mData':'bs_switch__device_name',    'sTitle' : 'Base Switch Name',    'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'backhaul__name',           'sTitle' : 'Backhaul',            'sWidth':'null',},
-            {'mData':'bs_type',                   'sTitle' : 'Base Station Type',   'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'building_height',           'sTitle' : 'Building Height',     'sWidth':'null',},
-            {'mData':'description',               'sTitle' : 'Description',         'sWidth':'null','sClass':'hidden-xs'},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
+            {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'null', },
+            {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'null', },
+            {'mData': 'bs_switch__device_name', 'sTitle': 'BS Switch', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'backhaul__name', 'sTitle': 'Backhaul', 'sWidth': 'null', },
+            {'mData': 'bs_type', 'sTitle': 'BS Type', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'null', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role=self.request.user.userprofile.role.values_list('role_name', flat=True)
+        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
         if 'admin' in user_role or 'operator' in user_role:
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
+
 class BaseStationListingTable(BaseDatatableView):
     model = BaseStation
-    columns = ['name', 'alias', 'bs_site_id', 'bs_switch__device_name', 'backhaul__name', 'bs_type', 'building_height', 'description']
-    order_columns = ['name', 'alias', 'bs_site_id', 'bs_switch__device_name', 'backhaul__name', 'bs_type', 'building_height', 'description']
+    columns = ['name', 'alias', 'bs_technology__alias', 'bs_site_id',
+               'bs_switch__device_name', 'backhaul__name', 'bs_type', 'building_height', 'description']
+    order_columns = ['name', 'alias', 'bs_technology__alias', 'bs_site_id',
+                     'bs_switch__device_name', 'backhaul__name', 'bs_type', 'building_height', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
         ##TODO:Need to optimise with the query making login.
         if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -366,11 +386,11 @@ class BaseStationListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return BaseStation.objects.values(*self.columns+['id'])
+        return BaseStation.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             dct.update(actions='<a href="/base_station/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/base_station/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
@@ -394,7 +414,7 @@ class BaseStationListingTable(BaseDatatableView):
         qs = self.paging(qs)
         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
+            qs = list(qs)
 
         # prepare output data
         aaData = self.prepare_results(qs)
@@ -402,8 +422,9 @@ class BaseStationListingTable(BaseDatatableView):
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
                'aaData': aaData
-               }
+        }
         return ret
+
 
 class BaseStationDetail(DetailView):
     model = BaseStation
@@ -421,8 +442,8 @@ class BaseStationCreate(CreateView):
         return super(BaseStationCreate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        self.object=form.save()
-        action.send(self.request.user, verb='Created', action_object = self.object)
+        self.object = form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(BaseStationCreate.success_url)
 
 
@@ -437,29 +458,30 @@ class BaseStationUpdate(UpdateView):
         return super(BaseStationUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
+        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of Base Station : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
-            self.object=form.save()
-            action.send( self.request.user, verb=verb_string )
-        return HttpResponseRedirect( BaseStationUpdate.success_url )
+            verb_string = 'Changed values of Base Station : %s from initial values ' % (self.object.name) + ', '.join(
+                ['%s: %s' % (k, initial_field_dict[k]) \
+                 for k in changed_fields_dict]) + \
+                          ' to ' + \
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string) >= 255:
+                verb_string = verb_string[:250] + '...'
+            self.object = form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(BaseStationUpdate.success_url)
+
 
 class BaseStationDelete(DeleteView):
     model = BaseStation
     template_name = 'base_station/base_station_delete.html'
     success_url = reverse_lazy('base_stations_list')
-    
+
     @method_decorator(permission_required('inventory.delete_basestation', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         return super(BaseStationDelete, self).dispatch(*args, **kwargs)
-
 
 
 #**************************************** Backhaul *********************************************
@@ -468,43 +490,46 @@ class BackhaulList(ListView):
     template_name = 'backhaul/backhauls_list.html'
 
     def get_context_data(self, **kwargs):
-        context=super(BackhaulList, self).get_context_data(**kwargs)
+        context = super(BackhaulList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',                    'sTitle' : 'Name',                         'sWidth':'null',},
-            {'mData':'alias',                   'sTitle' : 'Alias',                        'sWidth':'null',},
-            {'mData':'bh_configured_on__device_name',        'sTitle' : 'Backhaul Configured On',       'sWidth':'null',},
-            {'mData':'bh_port',                 'sTitle' : 'Backhaul Port',                'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'bh_type',                 'sTitle' : 'Backhaul Type',                'sWidth':'null',},
-            {'mData':'pop__device_name',                     'sTitle' : 'POP',                          'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'pop_port',                'sTitle' : 'POP Port',                     'sWidth':'null',},
-            {'mData':'bh_connectivity',         'sTitle' : 'Connectivity',                 'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'bh_circuit_id',           'sTitle' : 'Circuit ID',                   'sWidth':'null',},
-            {'mData':'bh_capacity',             'sTitle' : 'Capacity',                     'sWidth':'null','sClass':'hidden-xs'},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
+            {'mData': 'bh_configured_on__device_name', 'sTitle': 'Backhaul Configured On', 'sWidth': 'null', },
+            {'mData': 'bh_port', 'sTitle': 'Backhaul Port', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'bh_type', 'sTitle': 'Backhaul Type', 'sWidth': 'null', },
+            {'mData': 'pop__device_name', 'sTitle': 'POP', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'pop_port', 'sTitle': 'POP Port', 'sWidth': 'null', },
+            {'mData': 'bh_connectivity', 'sTitle': 'Connectivity', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'bh_circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null', },
+            {'mData': 'bh_capacity', 'sTitle': 'Capacity', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             ]
 
         #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role=self.request.user.userprofile.role.values_list('role_name', flat=True)
+        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
         if 'admin' in user_role or 'operator' in user_role:
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
+
 class BackhaulListingTable(BaseDatatableView):
     model = Backhaul
-    columns = ['name', 'alias', 'bh_configured_on__device_name', 'bh_port', 'bh_type', 'pop__device_name', 'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
-    order_columns = ['name', 'alias', 'bh_configured_on__device_name', 'bh_port', 'bh_type', 'pop__device_name', 'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
+    columns = ['name', 'alias', 'bh_configured_on__device_name', 'bh_port', 'bh_type', 'pop__device_name', 'pop_port',
+               'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
+    order_columns = ['name', 'alias', 'bh_configured_on__device_name', 'bh_port', 'bh_type', 'pop__device_name',
+                     'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
         ##TODO:Need to optimise with the query making login.
         if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -514,11 +539,11 @@ class BackhaulListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Backhaul.objects.values(*self.columns+['id'])
+        return Backhaul.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             dct.update(actions='<a href="/backhaul/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/backhaul/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
@@ -542,7 +567,7 @@ class BackhaulListingTable(BaseDatatableView):
         qs = self.paging(qs)
         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
+            qs = list(qs)
 
         # prepare output data
         aaData = self.prepare_results(qs)
@@ -550,8 +575,9 @@ class BackhaulListingTable(BaseDatatableView):
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
                'aaData': aaData
-               }
+        }
         return ret
+
 
 class BackhaulDetail(DetailView):
     model = Backhaul
@@ -569,8 +595,8 @@ class BackhaulCreate(CreateView):
         return super(BackhaulCreate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        self.object=form.save()
-        action.send(self.request.user, verb='Created', action_object = self.object)
+        self.object = form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(BackhaulCreate.success_url)
 
 
@@ -585,20 +611,22 @@ class BackhaulUpdate(UpdateView):
         return super(BackhaulUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
+        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
 
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of Backhaul : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
-            self.object=form.save()
-            action.send( self.request.user, verb=verb_string )
-        return HttpResponseRedirect( BackhaulUpdate.success_url )
+            verb_string = 'Changed values of Backhaul : %s from initial values ' % (self.object.name) + ', '.join(
+                ['%s: %s' % (k, initial_field_dict[k]) \
+                 for k in changed_fields_dict]) + \
+                          ' to ' + \
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string) >= 255:
+                verb_string = verb_string[:250] + '...'
+            self.object = form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(BackhaulUpdate.success_url)
+
 
 class BackhaulDelete(DeleteView):
     model = Backhaul
@@ -616,42 +644,46 @@ class SectorList(ListView):
     template_name = 'sector/sectors_list.html'
 
     def get_context_data(self, **kwargs):
-        context=super(SectorList, self).get_context_data(**kwargs)
+        context = super(SectorList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',                       'sTitle' : 'Name',             'sWidth':'null',},
-            {'mData':'alias',                      'sTitle' : 'Alias',            'sWidth':'null',},
-            {'mData':'sector_id',                  'sTitle' : 'ID',               'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'sector_configured_on__device_name',       'sTitle' : 'Sector Configured On',     'sWidth':'null',},
-            {'mData':'sector_configured_on_port__name',  'sTitle' : 'Sector Configured On Port',              'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'antenna__name',              'sTitle' : 'Antenna',          'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'mrc',                        'sTitle' : 'MRC',              'sWidth':'null',},
-            {'mData':'description',                'sTitle' : 'Description',      'sWidth':'null','sClass':'hidden-xs'},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
+            {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'sector_configured_on__device_name', 'sTitle': 'Sector Configured On', 'sWidth': 'null', },
+            {'mData': 'sector_configured_on_port__name', 'sTitle': 'Sector Configured On Port', 'sWidth': 'null',
+             'sClass': 'hidden-xs'},
+            {'mData': 'antenna__name', 'sTitle': 'Antenna', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'mrc', 'sTitle': 'MRC', 'sWidth': 'null', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             ]
 
         #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role=self.request.user.userprofile.role.values_list('role_name', flat=True)
+        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
         if 'admin' in user_role or 'operator' in user_role:
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
+
 class SectorListingTable(BaseDatatableView):
     model = Sector
-    columns = ['name', 'alias', 'sector_id', 'base_station__name', 'sector_configured_on__device_name', 'sector_configured_on_port__name', 'antenna__name', 'mrc', 'description']
-    order_columns = ['name', 'alias', 'sector_id', 'base_station__name', 'sector_configured_on__device_name', 'sector_configured_on_port__name', 'antenna__name', 'mrc', 'description']
+    columns = ['name', 'alias', 'sector_id', 'base_station__name', 'sector_configured_on__device_name',
+               'sector_configured_on_port__name', 'antenna__name', 'mrc', 'description']
+    order_columns = ['name', 'alias', 'sector_id', 'base_station__name', 'sector_configured_on__device_name',
+                     'sector_configured_on_port__name', 'antenna__name', 'mrc', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
         ##TODO:Need to optimise with the query making login.
         if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -661,11 +693,11 @@ class SectorListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Sector.objects.values(*self.columns+['id'])
+        return Sector.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             dct.update(actions='<a href="/sector/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/sector/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
@@ -689,7 +721,7 @@ class SectorListingTable(BaseDatatableView):
         qs = self.paging(qs)
         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
+            qs = list(qs)
 
         # prepare output data
         aaData = self.prepare_results(qs)
@@ -697,8 +729,9 @@ class SectorListingTable(BaseDatatableView):
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
                'aaData': aaData
-               }
+        }
         return ret
+
 
 class SectorDetail(DetailView):
     model = Sector
@@ -716,8 +749,8 @@ class SectorCreate(CreateView):
         return super(SectorCreate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        self.object=form.save()
-        action.send(self.request.user, verb='Created', action_object = self.object)
+        self.object = form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(SectorCreate.success_url)
 
 
@@ -732,19 +765,21 @@ class SectorUpdate(UpdateView):
         return super(SectorUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
+        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of Customer : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
-            self.object=form.save()
-            action.send( self.request.user, verb=verb_string )
-        return HttpResponseRedirect( SectorUpdate.success_url )
+            verb_string = 'Changed values of Customer : %s from initial values ' % (self.object.name) + ', '.join(
+                ['%s: %s' % (k, initial_field_dict[k]) \
+                 for k in changed_fields_dict]) + \
+                          ' to ' + \
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string) >= 255:
+                verb_string = verb_string[:250] + '...'
+            self.object = form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(SectorUpdate.success_url)
+
 
 class SectorDelete(DeleteView):
     model = Sector
@@ -762,21 +797,22 @@ class CustomerList(ListView):
     template_name = 'customer/customers_list.html'
 
     def get_context_data(self, **kwargs):
-        context=super(CustomerList, self).get_context_data(**kwargs)
+        context = super(CustomerList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',              'sTitle' : 'Name',             'sWidth':'null',},
-            {'mData':'alias',             'sTitle' : 'Alias',            'sWidth':'null',},
-            {'mData':'city',              'sTitle' : 'City',             'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'state',             'sTitle' : 'State',            'sWidth':'null',},
-            {'mData':'address',           'sTitle' : 'Address',          'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'description',       'sTitle' : 'Description',      'sWidth':'null',},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
+            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', },
+            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', },
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role=self.request.user.userprofile.role.values_list('role_name', flat=True)
+        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
         if 'admin' in user_role or 'operator' in user_role:
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
+
 
 class CustomerListingTable(BaseDatatableView):
     model = Customer
@@ -787,13 +823,13 @@ class CustomerListingTable(BaseDatatableView):
         sSearch = self.request.GET.get('sSearch', None)
         ##TODO:Need to optimise with the query making login.
         if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -803,11 +839,11 @@ class CustomerListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Customer.objects.values(*self.columns+['id'])
+        return Customer.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             dct.update(actions='<a href="/customer/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/customer/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
@@ -831,7 +867,7 @@ class CustomerListingTable(BaseDatatableView):
         qs = self.paging(qs)
         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
+            qs = list(qs)
 
         # prepare output data
         aaData = self.prepare_results(qs)
@@ -839,8 +875,9 @@ class CustomerListingTable(BaseDatatableView):
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
                'aaData': aaData
-               }
+        }
         return ret
+
 
 class CustomerDetail(DetailView):
     model = Customer
@@ -858,8 +895,8 @@ class CustomerCreate(CreateView):
         return super(CustomerCreate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        self.object=form.save()
-        action.send(self.request.user, verb='Created', action_object = self.object)
+        self.object = form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(CustomerCreate.success_url)
 
 
@@ -874,19 +911,21 @@ class CustomerUpdate(UpdateView):
         return super(CustomerUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
+        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of Customer : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
-            self.object=form.save()
-            action.send( self.request.user, verb=verb_string )
-        return HttpResponseRedirect( CustomerUpdate.success_url )
+            verb_string = 'Changed values of Customer : %s from initial values ' % (self.object.name) + ', '.join(
+                ['%s: %s' % (k, initial_field_dict[k]) \
+                 for k in changed_fields_dict]) + \
+                          ' to ' + \
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string) >= 255:
+                verb_string = verb_string[:250] + '...'
+            self.object = form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(CustomerUpdate.success_url)
+
 
 class CustomerDelete(DeleteView):
     model = Customer
@@ -896,7 +935,7 @@ class CustomerDelete(DeleteView):
     @method_decorator(permission_required('inventory.delete_customer', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         return super(CustomerDelete, self).dispatch(*args, **kwargs)
-    
+
 
 #**************************************** Sub Station *********************************************
 class SubStationList(ListView):
@@ -904,46 +943,49 @@ class SubStationList(ListView):
     template_name = 'sub_station/sub_stations_list.html'
 
     def get_context_data(self, **kwargs):
-        context=super(SubStationList, self).get_context_data(**kwargs)
+        context = super(SubStationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',                 'sTitle' : 'Name',               'sWidth':'null',},
-            {'mData':'alias',                'sTitle' : 'Alias',              'sWidth':'null',},
-            {'mData':'device__device_name',  'sTitle' : 'Device',             'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'antenna__name',        'sTitle' : 'Antenna',            'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'version',              'sTitle' : 'Version',            'sWidth':'null',},
-            {'mData':'serial_no',            'sTitle' : 'Serial No.',         'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'building_height',      'sTitle' : 'Building Height',    'sWidth':'null',},
-            {'mData':'tower_height',         'sTitle' : 'Tower Height',       'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'city',                 'sTitle' : 'City',               'sWidth':'null',},
-            {'mData':'state',                'sTitle' : 'State',              'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'address',              'sTitle' : 'Address',            'sWidth':'null',},
-            {'mData':'description',          'sTitle' : 'Description',        'sWidth':'null','sClass':'hidden-xs'},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
+            {'mData': 'device__device_name', 'sTitle': 'Device', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__name', 'sTitle': 'Antenna', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'null', },
+            {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'null', },
+            {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', },
+            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'null', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             ]
 
         #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role=self.request.user.userprofile.role.values_list('role_name', flat=True)
+        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
         if 'admin' in user_role or 'operator' in user_role:
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
+
 class SubStationListingTable(BaseDatatableView):
     model = SubStation
-    columns = ['name', 'alias', 'device__device_name', 'antenna__name', 'version', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
-    order_columns = ['name', 'alias', 'device__device_name', 'antenna__name', 'version', 'serial_no', 'building_height', 'tower_height', 'city', 'state', 'address', 'description']
+    columns = ['name', 'alias', 'device__device_name', 'antenna__name', 'version', 'serial_no', 'building_height',
+               'tower_height', 'city', 'state', 'address', 'description']
+    order_columns = ['name', 'alias', 'device__device_name', 'antenna__name', 'version', 'serial_no', 'building_height',
+                     'tower_height', 'city', 'state', 'address', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
         ##TODO:Need to optimise with the query making login.
         if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -953,11 +995,11 @@ class SubStationListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return SubStation.objects.values(*self.columns+['id'])
+        return SubStation.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             dct.update(actions='<a href="/sub_station/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/sub_station/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
@@ -981,7 +1023,7 @@ class SubStationListingTable(BaseDatatableView):
         qs = self.paging(qs)
         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
+            qs = list(qs)
 
         # prepare output data
         aaData = self.prepare_results(qs)
@@ -989,8 +1031,9 @@ class SubStationListingTable(BaseDatatableView):
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
                'aaData': aaData
-               }
+        }
         return ret
+
 
 class SubStationDetail(DetailView):
     model = SubStation
@@ -1008,8 +1051,8 @@ class SubStationCreate(CreateView):
         return super(SubStationCreate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        self.object=form.save()
-        action.send(self.request.user, verb='Created', action_object = self.object)
+        self.object = form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(SubStationCreate.success_url)
 
 
@@ -1024,19 +1067,21 @@ class SubStationUpdate(UpdateView):
         return super(SubStationUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
+        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of SubStation : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
-            self.object=form.save()
-            action.send( self.request.user, verb=verb_string )
-        return HttpResponseRedirect( SubStationUpdate.success_url )
+            verb_string = 'Changed values of SubStation : %s from initial values ' % (self.object.name) + ', '.join(
+                ['%s: %s' % (k, initial_field_dict[k]) \
+                 for k in changed_fields_dict]) + \
+                          ' to ' + \
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string) >= 255:
+                verb_string = verb_string[:250] + '...'
+            self.object = form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(SubStationUpdate.success_url)
+
 
 class SubStationDelete(DeleteView):
     model = SubStation
@@ -1054,41 +1099,45 @@ class CircuitList(ListView):
     template_name = 'circuit/circuits_list.html'
 
     def get_context_data(self, **kwargs):
-        context=super(CircuitList, self).get_context_data(**kwargs)
+        context = super(CircuitList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',                    'sTitle' : 'Name',                 'sWidth':'null',},
-            {'mData':'alias',                   'sTitle' : 'Alias',                'sWidth':'null',},
-            {'mData':'circuit_id',              'sTitle' : 'Circuit ID',           'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'sector__name',                  'sTitle' : 'Sector',               'sWidth':'null',},
-            {'mData':'customer__name',                'sTitle' : 'Customer',             'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'sub_station__name',             'sTitle' : 'Sub Station',          'sWidth':'null',},
-            {'mData':'date_of_acceptance',      'sTitle' : 'Date of Acceptance',   'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'description',             'sTitle' : 'Description',          'sWidth':'null',},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
+            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null'},
+            {'mData': 'sector__base_station__name', 'sTitle': 'Base Station', 'sWidth': 'null'},
+            {'mData': 'sector__name', 'sTitle': 'Sector', 'sWidth': 'null', },
+            {'mData': 'customer__name', 'sTitle': 'Customer', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'sub_station__name', 'sTitle': 'Sub Station', 'sWidth': 'null', },
+            {'mData': 'date_of_acceptance', 'sTitle': 'Date of Acceptance', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null',  'sClass': 'hidden-xs'},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role=self.request.user.userprofile.role.values_list('role_name', flat=True)
+        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
         if 'admin' in user_role or 'operator' in user_role:
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'10%' ,})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
+
 class CircuitListingTable(BaseDatatableView):
     model = Circuit
-    columns = ['name', 'alias', 'circuit_id', 'sector__name', 'customer__name', 'sub_station__name', 'date_of_acceptance', 'description']
-    order_columns = ['name', 'alias', 'circuit_id', 'sector__name', 'customer__name', 'sub_station__name', 'date_of_acceptance', 'description']
+    columns = ['name', 'alias', 'circuit_id','sector__base_station__name', 'sector__name', 'customer__name', 'sub_station__name',
+               'date_of_acceptance', 'description']
+    order_columns = ['name', 'alias', 'circuit_id','sector__base_station__name', 'sector__name', 'customer__name', 'sub_station__name',
+                     'date_of_acceptance', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
         ##TODO:Need to optimise with the query making login.
         if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -1098,11 +1147,11 @@ class CircuitListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Circuit.objects.values(*self.columns+['id'])
+        return Circuit.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             dct.update(actions='<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
@@ -1126,7 +1175,7 @@ class CircuitListingTable(BaseDatatableView):
         qs = self.paging(qs)
         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
+            qs = list(qs)
 
         # prepare output data
         aaData = self.prepare_results(qs)
@@ -1134,8 +1183,9 @@ class CircuitListingTable(BaseDatatableView):
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
                'aaData': aaData
-               }
+        }
         return ret
+
 
 class CircuitDetail(DetailView):
     model = Circuit
@@ -1153,8 +1203,8 @@ class CircuitCreate(CreateView):
         return super(CircuitCreate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        self.object=form.save()
-        action.send(self.request.user, verb='Created', action_object = self.object)
+        self.object = form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(CircuitCreate.success_url)
 
 
@@ -1169,19 +1219,21 @@ class CircuitUpdate(UpdateView):
         return super(CircuitUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
+        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of Circuit : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
-            self.object=form.save()
-            action.send( self.request.user, verb=verb_string )
-        return HttpResponseRedirect( CircuitUpdate.success_url )
+            verb_string = 'Changed values of Circuit : %s from initial values ' % (self.object.name) + ', '.join(
+                ['%s: %s' % (k, initial_field_dict[k]) \
+                 for k in changed_fields_dict]) + \
+                          ' to ' + \
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string) >= 255:
+                verb_string = verb_string[:250] + '...'
+            self.object = form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(CircuitUpdate.success_url)
+
 
 class CircuitDelete(DeleteView):
     model = Circuit
