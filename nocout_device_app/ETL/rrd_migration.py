@@ -65,7 +65,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 			params.append(ds.find('NAME').text)
 			file_paths.append(ds.find('RRDFILE').text)
 		for path in file_paths:
-			m = 0
+			m = -5
 		
 			data_series = do_export(site, host, path,params[file_paths.index(path)], db, data_dict['service'])
 			data_dict.update({
@@ -79,7 +79,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 			ds_values = data_series['data'][:-1]
 			for d in ds_values:
 				if d[-1] is not None:
-					#m += 1
+					m += 5
 					temp_dict = dict(
 						time=data_series.get('check_time') + timedelta(minutes=m),
 						value=d[-1]
@@ -121,7 +121,6 @@ def do_export(site, host, file_name,data_source, db, serv):
     minute = end_time.minute - (end_time.minute % 5)
     end_time = datetime(year, month, day, hour, minute)
 
-    #Sliding start_time back, by 1 min, to synchronize with rrd dump state
     if start_time is None:
         start_time = end_time - timedelta(minutes=6)
     else:
