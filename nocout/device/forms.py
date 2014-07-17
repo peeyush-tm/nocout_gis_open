@@ -299,6 +299,12 @@ class DeviceModelForm(forms.ModelForm):
 
 # ******************************************* Device Type *******************************************
 class DeviceTypeForm(forms.ModelForm):
+    AGENT_TAG = (
+            ('', 'Select'),
+            ('snmp', 'SNMP'),
+            ('ping', 'Ping')
+    )
+    agent_tag = forms.TypedChoiceField(choices=AGENT_TAG, required=True)
     def __init__(self, *args, **kwargs):
         # removing help text for device_port 'select' field
         self.base_fields['device_port'].help_text = ''
