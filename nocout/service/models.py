@@ -5,9 +5,9 @@ from command.models import Command
 class Protocol(models.Model):
     name = models.CharField('Parameters Name', max_length=255)
     protocol_name = models.CharField('Protocol Name', max_length=255)
-    port = models.IntegerField('Port', null=True, blank=True)
-    version = models.CharField('Version', max_length=10, blank=True, null=True)
-    read_community = models.CharField('Read Community', max_length=100, blank=True, null=True)
+    port = models.IntegerField('Port')
+    version = models.CharField('Version', max_length=10)
+    read_community = models.CharField('Read Community', max_length=100)
     write_community = models.CharField('Write Community', max_length=100, blank=True, null=True)
     auth_password = models.CharField('Auth Password', max_length=100, blank=True, null=True)
     auth_protocol = models.CharField('Auth Protocol', max_length=100, blank=True, null=True)
@@ -32,10 +32,10 @@ class ServiceDataSource(models.Model):
 
 class ServiceParameters(models.Model):
     parameter_description = models.CharField(max_length=250)
-    protocol = models.ForeignKey(Protocol, null=True, blank=True, verbose_name=" SNMP Parameters")
-    normal_check_interval = models.IntegerField(null=True, blank=True)
-    retry_check_interval = models.IntegerField(null=True, blank=True)
-    max_check_attempts = models.IntegerField(null=True, blank=True)
+    protocol = models.ForeignKey(Protocol, verbose_name=" SNMP Parameters")
+    normal_check_interval = models.IntegerField()
+    retry_check_interval = models.IntegerField()
+    max_check_attempts = models.IntegerField()
 
     '''
     max_check_attempts = models.IntegerField()
@@ -76,8 +76,8 @@ class ServiceParameters(models.Model):
 class Service(models.Model):
     name = models.CharField('Name', max_length=100)
     alias = models.CharField('Alias', max_length=100)
-    parameters = models.ForeignKey(ServiceParameters, null=True, blank=True)
-    service_data_sources = models.ManyToManyField(ServiceDataSource, null=True, blank=True)
+    parameters = models.ForeignKey(ServiceParameters)
+    service_data_sources = models.ManyToManyField(ServiceDataSource)
     command = models.ForeignKey(Command, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
 
