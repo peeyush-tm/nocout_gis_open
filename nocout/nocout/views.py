@@ -6,7 +6,6 @@ from django.contrib import auth
 from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.models import User
 from nocout import settings
-from nocout.settings import MAX_USER_LOGIN_LIMIT
 from session_management.models import Visitor
 
 if settings.DEBUG:
@@ -17,6 +16,11 @@ if settings.DEBUG:
 
 @csrf_protect
 def login(request):
+    """
+
+    :param request:
+    :return:
+    """
     if not request.user.is_anonymous():
         return HttpResponseRedirect('/home/')
 
@@ -69,13 +73,18 @@ def auth_view(request):
 
     objects_values = dict(url='/login/')
 
-    if Visitor.objects.all().__len__() > MAX_USER_LOGIN_LIMIT:
+    if Visitor.objects.all().__len__() > settings.MAX_USER_LOGIN_LIMIT:
         result = {
-            "success": 1,  # 0 - fail, 1 - success, 2 - exception
-            "message": "Success/Fail message.",
+            "success": 0,  # 0 - fail, 1 - success, 2 - exception
+            "message": "Limit for Maximum concurrent users have reached.",
             "data": {
                 "meta": {},
-                "objects": {'user_limit_exceed': True}
+                "objects": {
+                    "data": {
+                        "reason": "Maximum number of concurrent users logged in have exceeded, Please Wait.",
+                        'user_limit_exceed': True
+                    }
+                }
             }
         }
 
@@ -123,7 +132,7 @@ def auth_view(request):
         # values to store in user audit logs
         user_audit = {
             "user": User.objects.get(pk=1),
-            "verb": u'a locked user is loggedin using username : %s from IP address, '
+            "verb": u'a locked user is loggedin using username : %s from IP address %s, '
                     % (username, get_client_ip(request))
         }
 
@@ -131,11 +140,14 @@ def auth_view(request):
 
         result = {
             "success": 0,  # 0 - fail, 1 - success, 2 - exception
-            "message": "The account has been locked by the application administrator. \
-                        Please contact application administrator to continue.",
+            "message": "Account Locked By Administrator",
             "data": {
                 "meta": {},
-                "objects": objects_values
+                "objects": {
+                    "reason": "The account has been locked by the application administrator. \
+                                            Please contact application administrator to continue.",
+                    'actions': objects_values
+                }
             }
         }
 
@@ -153,11 +165,14 @@ def auth_view(request):
 
         result = {
             "success": 0,  # 0 - fail, 1 - success, 2 - exception
-            "message": "The credentials entered can not be verified by the system. \
-                        Please contact application administrator or retry",
+            "message": "Invalid Credentials",
             "data": {
                 "meta": {},
-                "objects": objects_values
+                "objects": {
+                    "reason": "The credentials entered can not be verified by the system. \
+                                            Please contact application administrator or retry",
+                    'actions': objects_values
+                }
             }
         }
 
