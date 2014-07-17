@@ -134,6 +134,18 @@ class DeviceForm(forms.ModelForm):
             raise ValidationError('This device name is already in use.')
         return device_name
 
+    def clean_ip_address(self):
+        ip_address = self.cleaned_data['ip_address']
+        devices = Device.objects.filter(ip_address=ip_address)
+        try:
+            if self.id:
+                devices = devices.exclude(pk=self.id)
+        except:
+            logger.info("This is not an update form.")
+        if devices.count() > 0:
+            raise ValidationError('This IP address is already in use.')
+        return ip_address
+
     def clean(self):
         latitude = self.cleaned_data.get('latitude')
         longitude = self.cleaned_data.get('longitude')
