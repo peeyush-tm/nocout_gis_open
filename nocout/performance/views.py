@@ -248,7 +248,7 @@ class Inventory_Device_Status(View):
                 'objects' : {}
             }
         }
-
+        result['data']['objects']['values']=list()
         if page_type =='customer':
 
             substation= SubStation.objects.get(id=device_id)
@@ -267,15 +267,16 @@ class Inventory_Device_Status(View):
             # base_station= BaseStation.objects.get(id=device_id)
             # sector_configured_on_device= Sector.objects.filter(base_station= base_station.id).values_list('sector_configured_on', flat=True)
             sector_configured_on_device= Device.objects.get(id=int(device_id))
-            result['data']['objects']['headers']= ['BS Name', 'SSName','Building Height', 'Tower Height',
+            result['data']['objects']['headers']= ['BS Name','Building Height', 'Tower Height',
                                                    'City', 'State', 'IP Address', 'MAC Address']
             base_station_list= Sector.objects.filter(sector_configured_on= sector_configured_on_device.id).values_list('base_station', flat=True)
             if base_station_list:
                 base_station=BaseStation.objects.get(id=base_station_list[0])
-                result['data']['objects']['values']= [ base_station.name, str(base_station.building_height), str(base_station.tower_height),
+                result['data']['objects']['values']= [ base_station.name, base_station.building_height, base_station.tower_height,
                                                        base_station.city, base_station.state, sector_configured_on_device.ip_address,
                                                        sector_configured_on_device.mac_address ]
 
+        result['data']['objects']['values']=map(lambda val : val if val else 'N/A', result['data']['objects']['values'])
         result['success']=1
         result['message']='Inventory Device Status Fetched Successfully.'
         return HttpResponse(json.dumps(result))
