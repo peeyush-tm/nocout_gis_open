@@ -420,4 +420,24 @@ class Get_Service_Type_Performance_Data(View):
 
         return HttpResponse(json.dumps(result), mimetype="application/json")
 
-
+###to draw each data point w.r.t threshold we would need to use the following
+# compare_point = lambda p1, p2, p3: '#70AFC4' if p1 < p2 else ('#FFE90D' if p2 < p1 <p3 else '#FF193B')
+# if data.avg_value:
+#     formatter_data_point = {
+#         "name": str(data.data_source).upper(),
+#         "color": compare_point(float(data.avg_value),
+#                                float(data.warning_threshold),
+#                                float(data.critical_threshold)
+#         ),
+#         "y": float(data.avg_value),
+#         "x": data.sys_timestamp*1000
+#     }
+# else:
+#     formatter_data_point = {
+#         "name": str(data.data_source).upper(),
+#         "color": '#70AFC4',
+#         "y": None,
+#         "x": data.sys_timestamp*1000
+#     }
+#this ensures a further good presentation of data w.r.t thresholds
+#
