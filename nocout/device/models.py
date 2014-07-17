@@ -133,7 +133,7 @@ class Device(MPTTModel, models.Model):
     device_type = models.IntegerField('Device Type')
     parent = models.ForeignKey('self', null=True, blank=True, related_name='device_children')
     #ports = models.ManyToManyField(DevicePort, null=True, blank=True)
-    ip_address = models.IPAddressField('IP Address')
+    ip_address = models.IPAddressField('IP Address', unique=True)
     mac_address = models.CharField('MAC Address', max_length=100, null=True, blank=True)
     netmask = models.IPAddressField('Netmask', null=True, blank=True)
     gateway = models.IPAddressField('Gateway', null=True, blank=True)
