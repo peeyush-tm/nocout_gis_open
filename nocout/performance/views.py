@@ -391,7 +391,7 @@ class Get_Service_Type_Performance_Data(View):
                         data.data_source in SERVICE_DATA_SOURCE else "spline"
                     #data_list.append([data.sys_timestamp, data.avg_value ])
 
-                    data_list.append([data.sys_timestamp*1000, float(data.avg_value) if data.avg_value else None])
+                    data_list.append([data.sys_timestamp*1000, float(data.avg_value) if data.avg_value else 0])
 
                     warn_data_list.append([data.sys_timestamp*1000, float(data.warning_threshold)
                                                                     if data.critical_threshold else None])

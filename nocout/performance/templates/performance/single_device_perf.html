@@ -93,6 +93,8 @@
 	<!--Highcharts Library-->
 	<script src={% static "js/highcharts.js" %}></script>
     <script src={% static "js/highcharttheme.js" %}></script>
+    <!-- PURL Liberary for parsing URLS -->
+    <script src={% static "js/purl.js" %}></script>
 	<!--Our Custom Script-->
 	<script src={% static "js/nocout/nocoutPerfLib.js" %}></script>
 
@@ -113,6 +115,16 @@
 
 
 		$(document).ready(function(e) {
+            //on change of selection element in device_name
+            // we should redirect user to the new page for the device
+            $("#device_name").on('change', function(){
+                var new_device = $(this).val();
+                var uri = $.url();
+                var path = uri.attr('path').split('/');
+                path[path.length-2] = new_device;
+                var new_url = uri.attr('protocol') + "://" + uri.attr('host') + ":" + uri.attr('port') + path.join("/");
+                window.location.href = new_url;
+            });
 
             Highcharts.setOptions({
                 global: {
