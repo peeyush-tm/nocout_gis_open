@@ -404,7 +404,7 @@ class Get_Service_Type_Performance_Data(View):
                     result['data']['objects']['chart_data']=[{'name': str(data.data_source).upper(),
                                                               'color': '#70AFC4',
                                                               'data': data_list,
-                                                              'type': SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"]
+                                                              'type': result['data']['objects']['type']
                                                               },
                                                              {'name': str("warning threshold").title(),
                                                               'color': '#FFE90D',
