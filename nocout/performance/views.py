@@ -248,7 +248,7 @@ class Inventory_Device_Status(View):
                 'objects' : {}
             }
         }
-
+        result['data']['objects']['values']=list()
         if page_type =='customer':
 
             substation= SubStation.objects.get(id=device_id)
@@ -258,7 +258,7 @@ class Inventory_Device_Status(View):
             result['data']['objects']['headers']= ['BS Name', 'SSName','Building Height', 'Tower Height',
                                                    'City', 'State', 'IP Address', 'MAC Address']
             result['data']['objects']['values']= [ base_station.name, substation.name,
-                                                   str(substation.building_height), str(substation.tower_height),
+                                                   substation.building_height, substation.tower_height,
                                                    substation.city, substation.state, substation_device.ip_address,
                                                    substation_device.mac_address ]
 
@@ -267,15 +267,16 @@ class Inventory_Device_Status(View):
             # base_station= BaseStation.objects.get(id=device_id)
             # sector_configured_on_device= Sector.objects.filter(base_station= base_station.id).values_list('sector_configured_on', flat=True)
             sector_configured_on_device= Device.objects.get(id=int(device_id))
-            result['data']['objects']['headers']= ['BS Name', 'SSName','Building Height', 'Tower Height',
+            result['data']['objects']['headers']= ['BS Name','Building Height', 'Tower Height',
                                                    'City', 'State', 'IP Address', 'MAC Address']
             base_station_list= Sector.objects.filter(sector_configured_on= sector_configured_on_device.id).values_list('base_station', flat=True)
             if base_station_list:
                 base_station=BaseStation.objects.get(id=base_station_list[0])
-                result['data']['objects']['values']= [ base_station.name, str(base_station.building_height), str(base_station.tower_height),
+                result['data']['objects']['values']= [ base_station.name, base_station.building_height, base_station.tower_height,
                                                        base_station.city, base_station.state, sector_configured_on_device.ip_address,
                                                        sector_configured_on_device.mac_address ]
 
+        result['data']['objects']['values']=map(lambda val : val if val else 'N/A', result['data']['objects']['values'])
         result['success']=1
         result['message']='Inventory Device Status Fetched Successfully.'
         return HttpResponse(json.dumps(result))
@@ -358,21 +359,21 @@ class Get_Service_Type_Performance_Data(View):
         #                 group by sys_timestamp order by id desc limit 6;'.format(service_data_source_type, substation_name))
 
         now=format(datetime.datetime.now(),'U')
-        now_minus_30_min=format(datetime.datetime.now() + datetime.timedelta(minutes=-30), 'U')
+        now_minus_60_min=format(datetime.datetime.now() + datetime.timedelta(minutes=-60), 'U')
 
         if service_data_source_type in ['pl', 'rta']:
 
             performance_data=PerformanceNetwork.objects.filter(device_name=inventory_device_name,
                                                                 service_name=service_name,
                                                                 data_source=service_data_source_type,
-                                                                sys_timestamp__gte=now_minus_30_min,
+                                                                sys_timestamp__gte=now_minus_60_min,
                                                                 sys_timestamp__lte=now)
             # log.info("network performance data %s device name" %(performance_data, inventory_device_name))
         else:
             performance_data=PerformanceService.objects.filter(device_name=inventory_device_name,
                                                                service_name=service_name,
                                                                data_source=service_data_source_type,
-                                                               sys_timestamp__gte=now_minus_30_min,
+                                                               sys_timestamp__gte=now_minus_60_min,
                                                                sys_timestamp__lte=now)
 
         if performance_data:
@@ -391,7 +392,7 @@ class Get_Service_Type_Performance_Data(View):
                         data.data_source in SERVICE_DATA_SOURCE else "spline"
                     #data_list.append([data.sys_timestamp, data.avg_value ])
 
-                    data_list.append([data.sys_timestamp*1000, float(data.avg_value) if data.avg_value else None])
+                    data_list.append([data.sys_timestamp*1000, float(data.avg_value) if data.avg_value else 0])
 
                     warn_data_list.append([data.sys_timestamp*1000, float(data.warning_threshold)
                                                                     if data.critical_threshold else None])
@@ -420,4 +421,24 @@ class Get_Service_Type_Performance_Data(View):
 
         return HttpResponse(json.dumps(result), mimetype="application/json")
 
-
+###to draw each data point w.r.t threshold we would need to use the following
+# compare_point = lambda p1, p2, p3: '#70AFC4' if p1 < p2 else ('#FFE90D' if p2 < p1 <p3 else '#FF193B')
+# if data.avg_value:
+#     formatter_data_point = {
+#         "name": str(data.data_source).upper(),
+#         "color": compare_point(float(data.avg_value),
+#                                float(data.warning_threshold),
+#                                float(data.critical_threshold)
+#         ),
+#         "y": float(data.avg_value),
+#         "x": data.sys_timestamp*1000
+#     }
+# else:
+#     formatter_data_point = {
+#         "name": str(data.data_source).upper(),
+#         "color": '#70AFC4',
+#         "y": None,
+#         "x": data.sys_timestamp*1000
+#     }
+#this ensures a further good presentation of data w.r.t thresholds
+#
