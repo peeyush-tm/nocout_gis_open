@@ -387,7 +387,8 @@ class Get_Service_Type_Performance_Data(View):
                     continue
                 else:
                     aggregate_data[temp_time] = data.sys_timestamp
-                    result['data']['objects']['type']= SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"]
+                    result['data']['objects']['type']= SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"] if \
+                        data.data_source in SERVICE_DATA_SOURCE else "spline"
                     #data_list.append([data.sys_timestamp, data.avg_value ])
 
                     data_list.append([data.sys_timestamp*1000, float(data.avg_value) if data.avg_value else None])
