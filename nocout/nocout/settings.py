@@ -283,3 +283,6 @@ ACTSTREAM_SETTINGS = {
 
 
 
+######################list of private IPs
+
+PRIVATE_IPS_PREFIX = ('10.', '172.', '192.', )

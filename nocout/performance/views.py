@@ -377,6 +377,8 @@ class Get_Service_Type_Performance_Data(View):
 
         if performance_data:
             data_list=[]
+            warn_data_list=[]
+            crit_data_list=[]
             aggregate_data = {}
             for data in performance_data:
                 temp_time = data.sys_timestamp
@@ -385,16 +387,36 @@ class Get_Service_Type_Performance_Data(View):
                     continue
                 else:
                     aggregate_data[temp_time] = data.sys_timestamp
-                    result['data']['objects']['type']= SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"]
+                    result['data']['objects']['type']= SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"] if \
+                        data.data_source in SERVICE_DATA_SOURCE else "spline"
                     #data_list.append([data.sys_timestamp, data.avg_value ])
 
                     data_list.append([data.sys_timestamp*1000, float(data.avg_value) if data.avg_value else None])
+
+                    warn_data_list.append([data.sys_timestamp*1000, float(data.warning_threshold)
+                                                                    if data.critical_threshold else None])
+
+                    crit_data_list.append([data.sys_timestamp*1000, float(data.critical_threshold)
+                                                                    if data.critical_threshold else None])
 
                     result['success']=1
                     result['message']='Device Performance Data Fetched Successfully.'
                     result['data']['objects']['chart_data']=[{'name': str(data.data_source).upper(),
                                                               'color': '#70AFC4',
-                                                              'data': data_list } ]
+                                                              'data': data_list,
+                                                              'type': result['data']['objects']['type']
+                                                              },
+                                                             {'name': str("warning threshold").title(),
+                                                              'color': '#FFE90D',
+                                                              'data': warn_data_list,
+                                                              'type': 'line'
+                                                            },
+                                                             {'name': str("critical threshold").title(),
+                                                              'color': '#FF193B',
+                                                              'data': crit_data_list,
+                                                              'type': 'line'
+                                                             }
+                    ]
 
         return HttpResponse(json.dumps(result), mimetype="application/json")
 

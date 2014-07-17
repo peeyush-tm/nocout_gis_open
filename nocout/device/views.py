@@ -111,10 +111,13 @@ class DeviceListingTable(BaseDatatableView):
             current_device = Device.objects.get(pk=dct['id'])
 
             # adding device type key to 'dct'
-            if current_device.device_type:
-                dct['device_type'] = DeviceType.objects.get(pk=current_device.device_type).name
-            else:
-                dct['device_type'] = ''
+            dct['device_type'] = ''
+            try:
+                if current_device.device_type:
+                    dct['device_type'] = DeviceType.objects.get(pk=current_device.device_type).name
+            except Exception as general_exception:
+                if settings.DEBUG:
+                    logger.error(general_exception)
 
             # if device is already added to nms core than show icon in device table
             if current_device.is_added_to_nms == 1:
@@ -480,49 +483,55 @@ class DeviceUpdate(UpdateView):
 
         cleaned_data_field_dict=cleaned_data_field()
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            initial_field_dict['parent'] = Device.objects.get(pk=initial_field_dict['parent']).device_name \
-                if initial_field_dict['parent'] else str(None)
-            initial_field_dict['organization'] = Organization.objects.get(pk=initial_field_dict['organization']).name \
-                if initial_field_dict['organization'] else str(None)
-            initial_field_dict['site_instance'] = SiteInstance.objects.get(pk=initial_field_dict['site_instance']).name \
-                if initial_field_dict['site_instance'] else str(None)
-            # initial_field_dict['service'] = ', '.join([Service.objects.get(pk=service).name for service in initial_field_dict['service']])\
-            #     if initial_field_dict['service'] else str(None)
-            initial_field_dict['device_model'] = DeviceModel.objects.get(pk=initial_field_dict['device_model']).name \
-                if initial_field_dict['device_model'] else str(None)
-            initial_field_dict['device_type'] = DeviceType.objects.get(pk=initial_field_dict['device_type']).name \
-                if initial_field_dict['device_type'] else str(None)
-            initial_field_dict['device_vendor'] = DeviceVendor.objects.get(pk=initial_field_dict['device_vendor']).name \
-                if initial_field_dict['device_vendor'] else str(None)
-            initial_field_dict['device_technology'] = DeviceTechnology.objects.get(pk=initial_field_dict['device_technology']).name \
-                if initial_field_dict['device_technology'] else str(None)
+        try:
+            if changed_fields_dict:
+                initial_field_dict['parent'] = Device.objects.get(pk=initial_field_dict['parent']).device_name \
+                    if initial_field_dict['parent'] else str(None)
+                initial_field_dict['organization'] = Organization.objects.get(pk=initial_field_dict['organization']).name \
+                    if initial_field_dict['organization'] else str(None)
+                initial_field_dict['site_instance'] = SiteInstance.objects.get(pk=initial_field_dict['site_instance']).name \
+                    if initial_field_dict['site_instance'] else str(None)
+                # initial_field_dict['service'] = ', '.join([Service.objects.get(pk=service).name for service in initial_field_dict['service']])\
+                #     if initial_field_dict['service'] else str(None)
+                initial_field_dict['device_model'] = DeviceModel.objects.get(pk=initial_field_dict['device_model']).name \
+                    if initial_field_dict['device_model'] else str(None)
+                initial_field_dict['device_type'] = DeviceType.objects.get(pk=initial_field_dict['device_type']).name \
+                    if initial_field_dict['device_type'] else str(None)
+                initial_field_dict['device_vendor'] = DeviceVendor.objects.get(pk=initial_field_dict['device_vendor']).name \
+                    if initial_field_dict['device_vendor'] else str(None)
+                initial_field_dict['device_technology'] = DeviceTechnology.objects.get(pk=initial_field_dict['device_technology']).name \
+                    if initial_field_dict['device_technology'] else str(None)
 
-            cleaned_data_field_dict['parent'] = Device.objects.get(pk=cleaned_data_field_dict['parent']).device_name \
-                if cleaned_data_field_dict['parent'] else str(None)
-            cleaned_data_field_dict['organization'] = Organization.objects.get(pk=cleaned_data_field_dict['organization']).name \
-                if cleaned_data_field_dict['organization'] else str(None)
-            cleaned_data_field_dict['site_instance'] = SiteInstance.objects.get(pk=cleaned_data_field_dict['site_instance']).name \
-                if cleaned_data_field_dict['site_instance'] else str(None)
-            # cleaned_data_field_dict['service'] = ', '.join([Service.objects.get(pk=service).name for service in cleaned_data_field_dict['service'] \
-            #     if cleaned_data_field_dict['service']])
-            cleaned_data_field_dict['device_model'] = DeviceModel.objects.get(pk=cleaned_data_field_dict['device_model']).name \
-                if cleaned_data_field_dict['device_model'] else str(None)
-            cleaned_data_field_dict['device_type'] = DeviceType.objects.get(pk=cleaned_data_field_dict['device_type']).name \
-                if cleaned_data_field_dict['device_type'] else str(None)
-            cleaned_data_field_dict['device_vendor'] = DeviceVendor.objects.get(pk=cleaned_data_field_dict['device_vendor']).name \
-                if cleaned_data_field_dict['device_vendor'] else str(None)
-            cleaned_data_field_dict['device_technology'] = DeviceTechnology.objects.get(pk=cleaned_data_field_dict['device_technology']).name \
-                if cleaned_data_field_dict['device_technology'] else str(None)
+                cleaned_data_field_dict['parent'] = Device.objects.get(pk=cleaned_data_field_dict['parent']).device_name \
+                    if cleaned_data_field_dict['parent'] else str(None)
+                cleaned_data_field_dict['organization'] = Organization.objects.get(pk=cleaned_data_field_dict['organization']).name \
+                    if cleaned_data_field_dict['organization'] else str(None)
+                cleaned_data_field_dict['site_instance'] = SiteInstance.objects.get(pk=cleaned_data_field_dict['site_instance']).name \
+                    if cleaned_data_field_dict['site_instance'] else str(None)
+                # cleaned_data_field_dict['service'] = ', '.join([Service.objects.get(pk=service).name for service in cleaned_data_field_dict['service'] \
+                #     if cleaned_data_field_dict['service']])
+                cleaned_data_field_dict['device_model'] = DeviceModel.objects.get(pk=cleaned_data_field_dict['device_model']).name \
+                    if cleaned_data_field_dict['device_model'] else str(None)
+                cleaned_data_field_dict['device_type'] = DeviceType.objects.get(pk=cleaned_data_field_dict['device_type']).name \
+                    if cleaned_data_field_dict['device_type'] else str(None)
+                cleaned_data_field_dict['device_vendor'] = DeviceVendor.objects.get(pk=cleaned_data_field_dict['device_vendor']).name \
+                    if cleaned_data_field_dict['device_vendor'] else str(None)
+                cleaned_data_field_dict['device_technology'] = DeviceTechnology.objects.get(pk=cleaned_data_field_dict['device_technology']).name \
+                    if cleaned_data_field_dict['device_technology'] else str(None)
 
-            verb_string = 'Changed values of Device %s from initial values '%(self.object.device_name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
+                verb_string = 'Changed values of Device %s from initial values '%(self.object.device_name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
+                                   for k in changed_fields_dict])+\
+                                   ' to '+\
+                                   ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+                if len(verb_string)>=255:
+                    verb_string=verb_string[:250] + '...'
 
-            action.send(self.request.user, verb=verb_string)
+                action.send(self.request.user, verb=verb_string)
+        except Exception as user_audit_exeption:
+            action.send(self.request.user, verb="Changed the Physical Device Inventory")
+            if settings.DEBUG:
+                logger.error(user_audit_exeption)
+
         return HttpResponseRedirect(DeviceCreate.success_url)
 
 

@@ -589,10 +589,9 @@ def sync():
     nocout_sites = nocout_distributed_sites()
 
     for site, attrs in nocout_sites.items():
-        if attrs.get("replication") == "slave":
-            response_text = nocout_synchronize_site(site, attrs, True)
-            if response_text is True:
-                sites_affected.append(site)
+        response_text = nocout_synchronize_site(site, attrs, True)
+        if response_text is True:
+            sites_affected.append(site)
     if len(sites_affected):
         response.update({
             "message": "Config pushed to " + ','.join(sites_affected)
