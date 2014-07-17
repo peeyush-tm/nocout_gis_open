@@ -136,8 +136,6 @@ def auth_view(request):
                     % (username, get_client_ip(request))
         }
 
-        objects_values = dict(url='/login/')
-
         result = {
             "success": 0,  # 0 - fail, 1 - success, 2 - exception
             "message": "Account Locked By Administrator",
@@ -146,7 +144,6 @@ def auth_view(request):
                 "objects": {
                     "reason": "The account has been locked by the application administrator. \
                                             Please contact application administrator to continue.",
-                    'actions': objects_values
                 }
             }
         }
@@ -157,11 +154,9 @@ def auth_view(request):
         # values to store in user audit logs
         user_audit = {
             "user": User.objects.get(pk=1),
-            "verb": u'a locked user is loggedin using username : %s from IP address %s, '
+            "verb": u'login attempt failed for the username : %s from IP address %s, '
                     % (username, get_client_ip(request))
         }
-
-        objects_values = dict(url='/login/')
 
         result = {
             "success": 0,  # 0 - fail, 1 - success, 2 - exception
@@ -171,7 +166,6 @@ def auth_view(request):
                 "objects": {
                     "reason": "The credentials entered can not be verified by the system. \
                                             Please contact application administrator or retry",
-                    'actions': objects_values
                 }
             }
         }
