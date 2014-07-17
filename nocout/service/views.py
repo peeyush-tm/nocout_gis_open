@@ -13,41 +13,51 @@ from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm, Pr
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
 
+# ########################################################
+from django.conf import settings
 
-#**************************************** Service *********************************************
+if settings.DEBUG:
+    import logging
+
+    logger = logging.getLogger(__name__)
+#########################################################
+
+
+# **************************************** Service *********************************************
 class ServiceList(ListView):
     model = Service
     template_name = 'service/services_list.html'
 
     def get_context_data(self, **kwargs):
-        context=super(ServiceList, self).get_context_data(**kwargs)
+        context = super(ServiceList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',                               'sTitle' : 'Name',          'sWidth':'null',},
-            {'mData':'alias',                              'sTitle' : 'Alias',         'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'parameters__parameter_description',  'sTitle' : 'Parameters',    'sWidth':'null',},
-            {'mData':'command__name',                      'sTitle' : 'Command',       'sWidth':'null',},
-            {'mData':'description',                        'sTitle' : 'Description',   'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',                            'sTitle':'Actions',         'sWidth':'5%' ,}]
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'parameters__parameter_description', 'sTitle': 'Default Parameters', 'sWidth': 'null', },
+            {'mData': 'service_data_sources__alias', 'sTitle': 'Data Sources', 'sWidth': 'null', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', }]
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
+
 class ServiceListingTable(BaseDatatableView):
     model = Service
-    columns = ['name', 'alias', 'parameters__parameter_description', 'command__name', 'description']
-    order_columns = ['name', 'alias', 'parameters__parameter_description', 'command__name', 'description']
+    columns = ['name', 'alias', 'parameters__parameter_description', 'service_data_sources__alias', 'description']
+    order_columns = ['name', 'alias', 'parameters__parameter_description', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
         ##TODO:Need to optimise with the query making login.
         if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
         return qs
@@ -55,11 +65,33 @@ class ServiceListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Service.objects.values(*self.columns+['id'])
+        return Service.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
+        ##joining the multiple data sources in one
+        new_qs = []
+        temp_dict = {}
+        delete_list = []
+        for ds in qs:
+            if ds["id"] not in temp_dict:
+                temp_dict[ds["id"]] = []
+            temp_dict[ds["id"]].append(ds["service_data_sources__alias"])
+
+        for q in qs:
+            if q["id"] not in delete_list:
+                delete_list.append(q["id"])
+                for sid in temp_dict:
+                    if sid == q["id"]:
+                        q["service_data_sources__alias"] = ", ".join(temp_dict[sid])
+                        new_qs.append(q)
+        ##joining the multiple data sources in one.
+        ## replacing old one
+        qs = new_qs
+        ## replacing old one
+
         for dct in qs:
             dct.update(actions='<a href="/service/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/service/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
@@ -83,7 +115,7 @@ class ServiceListingTable(BaseDatatableView):
         qs = self.paging(qs)
         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
+            qs = list(qs)
 
         # prepare output data
         aaData = self.prepare_results(qs)
@@ -91,8 +123,9 @@ class ServiceListingTable(BaseDatatableView):
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
                'aaData': aaData
-               }
+        }
         return ret
+
 
 class ServiceDetail(DetailView):
     model = Service
@@ -111,8 +144,8 @@ class ServiceCreate(CreateView):
 
 
     def form_valid(self, form):
-        self.object=form.save()
-        action.send(self.request.user, verb='Created', action_object = self.object)
+        self.object = form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(ServiceCreate.success_url)
 
 
@@ -128,19 +161,21 @@ class ServiceUpdate(UpdateView):
 
 
     def form_valid(self, form):
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
+        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of Service : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
-            self.object=form.save()
-            action.send( self.request.user, verb=verb_string )
-        return HttpResponseRedirect( ServiceUpdate.success_url )
+            verb_string = 'Changed values of Service : %s from initial values ' % (self.object.name) + ', '.join(
+                ['%s: %s' % (k, initial_field_dict[k]) \
+                 for k in changed_fields_dict]) + \
+                          ' to ' + \
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string) >= 255:
+                verb_string = verb_string[:250] + '...'
+            self.object = form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(ServiceUpdate.success_url)
+
 
 class ServiceDelete(DeleteView):
     model = Service
@@ -152,7 +187,7 @@ class ServiceDelete(DeleteView):
         return super(ServiceDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        action.send(request.user, verb='deleting services: %s'%(self.get_object().name))
+        action.send(request.user, verb='deleting services: %s' % (self.get_object().name))
         return super(ServiceDelete, self).delete(request, *args, **kwargs)
 
 
@@ -162,34 +197,38 @@ class ServiceParametersList(ListView):
     template_name = 'service_parameter/services_parameter_list.html'
 
     def get_context_data(self, **kwargs):
-        context=super(ServiceParametersList, self).get_context_data(**kwargs)
+        context = super(ServiceParametersList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'parameter_description',     'sTitle' : 'Parameter Description',      'sWidth':'null',},
-            {'mData':'protocol__name',            'sTitle' : 'Protocol',                   'sWidth':'null',},
-            {'mData':'normal_check_interval',     'sTitle' : 'Normal Check Intervals',     'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'retry_check_interval',      'sTitle' : 'Retry Check Intervals',      'sWidth':'null',},
-            {'mData':'max_check_attempts',        'sTitle' : 'Max Check Attempts',         'sWidth':'null',},
-            {'mData':'actions',                   'sTitle' : 'Actions',                    'sWidth':'5%' ,}
-            ]
+            {'mData': 'parameter_description', 'sTitle': 'Parameter Description', 'sWidth': 'null', },
+            {'mData': 'protocol__name', 'sTitle': 'Protocol', 'sWidth': 'null', },
+            {'mData': 'normal_check_interval', 'sTitle': 'Normal Check Intervals', 'sWidth': 'null',
+             'sClass': 'hidden-xs'},
+            {'mData': 'retry_check_interval', 'sTitle': 'Retry Check Intervals', 'sWidth': 'null', },
+            {'mData': 'max_check_attempts', 'sTitle': 'Max Check Attempts', 'sWidth': 'null', },
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', }
+        ]
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
+
 class ServiceParametersListingTable(BaseDatatableView):
     model = ServiceParameters
-    columns = ['parameter_description', 'protocol__name', 'normal_check_interval', 'retry_check_interval', 'max_check_attempts']
-    order_columns = ['parameter_description', 'protocol__name', 'normal_check_interval', 'retry_check_interval', 'max_check_attempts']
+    columns = ['parameter_description', 'protocol__name', 'normal_check_interval', 'retry_check_interval',
+               'max_check_attempts']
+    order_columns = ['parameter_description', 'protocol__name', 'normal_check_interval', 'retry_check_interval',
+                     'max_check_attempts']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
         ##TODO:Need to optimise with the query making login.
         if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -199,14 +238,15 @@ class ServiceParametersListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return ServiceParameters.objects.values(*self.columns+['id'])
+        return ServiceParameters.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             dct.update(actions='<a href="/service_parameter/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/service_parameter/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                <a href="/service_parameter/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -227,7 +267,7 @@ class ServiceParametersListingTable(BaseDatatableView):
         qs = self.paging(qs)
         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
+            qs = list(qs)
 
         # prepare output data
         aaData = self.prepare_results(qs)
@@ -235,8 +275,9 @@ class ServiceParametersListingTable(BaseDatatableView):
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
                'aaData': aaData
-               }
+        }
         return ret
+
 
 class ServiceParametersDetail(DetailView):
     model = ServiceParameters
@@ -254,9 +295,10 @@ class ServiceParametersCreate(CreateView):
         return super(ServiceParametersCreate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        self.object=form.save()
-        action.send(self.request.user, verb='Created', action_object = self.object)
+        self.object = form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(ServiceParametersCreate.success_url)
+
 
 class ServiceParametersUpdate(UpdateView):
     template_name = 'service_parameter/service_parameter_update.html'
@@ -270,21 +312,20 @@ class ServiceParametersUpdate(UpdateView):
 
 
     def form_valid(self, form):
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
+        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
 
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
 
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-
-            verb_string = 'Changed values of Service Paramters: %s from initial values '%(self.object.parameter_description)\
-                          + ', '.join(['%s: %s' %(k, initial_field_dict[k]) for k in changed_fields_dict])\
-                          +  ' to '\
+            verb_string = 'Changed values of Service Paramters: %s from initial values ' % (
+                self.object.parameter_description) \
+                          + ', '.join(['%s: %s' % (k, initial_field_dict[k]) for k in changed_fields_dict]) \
+                          + ' to ' \
                           + ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            self.object=form.save()
-            action.send( self.request.user, verb=verb_string )
-        return HttpResponseRedirect( ServiceParametersUpdate.success_url )
-
+            self.object = form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(ServiceParametersUpdate.success_url)
 
 
 class ServiceParametersDelete(DeleteView):
@@ -297,9 +338,9 @@ class ServiceParametersDelete(DeleteView):
         return super(ServiceParametersDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        action.send(request.user, verb='deleting services parameters: %s'%(self.get_object().parameter_description))
-        return super(ServiceParametersDelete, self).delete( request, *args, **kwargs)
-    
+        action.send(request.user, verb='deleting services parameters: %s' % (self.get_object().parameter_description))
+        return super(ServiceParametersDelete, self).delete(request, *args, **kwargs)
+
 
 #********************************** Service Data Source ***************************************
 class ServiceDataSourceList(ListView):
@@ -307,16 +348,17 @@ class ServiceDataSourceList(ListView):
     template_name = 'service_data_source/service_data_sources_list.html'
 
     def get_context_data(self, **kwargs):
-        context=super(ServiceDataSourceList, self).get_context_data(**kwargs)
+        context = super(ServiceDataSourceList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',             'sTitle' : 'Name',                'sWidth':'null',},
-            {'mData':'alias',            'sTitle' : 'Alias',               'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'warning',          'sTitle' : 'Warning',             'sWidth':'null',},
-            {'mData':'critical',         'sTitle' : 'Critical',            'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',          'sTitle' : 'Actions',             'sWidth':'10%' ,}
-            ]
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'warning', 'sTitle': 'Warning', 'sWidth': 'null', },
+            {'mData': 'critical', 'sTitle': 'Critical', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', }
+        ]
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
+
 
 class ServiceDataSourceListingTable(BaseDatatableView):
     model = ServiceDataSourceList
@@ -327,13 +369,13 @@ class ServiceDataSourceListingTable(BaseDatatableView):
         sSearch = self.request.GET.get('sSearch', None)
         ##TODO:Need to optimise with the query making login.
         if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -343,14 +385,15 @@ class ServiceDataSourceListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return ServiceDataSource.objects.values(*self.columns+['id'])
+        return ServiceDataSource.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             dct.update(actions='<a href="/service_data_source/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/service_data_source/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                <a href="/service_data_source/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
+                dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -371,7 +414,7 @@ class ServiceDataSourceListingTable(BaseDatatableView):
         qs = self.paging(qs)
         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
+            qs = list(qs)
 
         # prepare output data
         aaData = self.prepare_results(qs)
@@ -379,8 +422,9 @@ class ServiceDataSourceListingTable(BaseDatatableView):
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
                'aaData': aaData
-               }
+        }
         return ret
+
 
 class ServiceDataSourceDetail(DetailView):
     model = ServiceDataSource
@@ -399,8 +443,8 @@ class ServiceDataSourceCreate(CreateView):
 
 
     def form_valid(self, form):
-        self.object=form.save()
-        action.send(self.request.user, verb='Created', action_object = self.object)
+        self.object = form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(ServiceDataSourceCreate.success_url)
 
 
@@ -415,17 +459,19 @@ class ServiceDataSourceUpdate(UpdateView):
         return super(ServiceDataSourceUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
+        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of ServiceDataSource : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            self.object=form.save()
-            action.send( self.request.user, verb=verb_string )
-        return HttpResponseRedirect( ServiceDataSourceUpdate.success_url )
+            verb_string = 'Changed values of ServiceDataSource : %s from initial values ' % (
+                self.object.name) + ', '.join(['%s: %s' % (k, initial_field_dict[k]) \
+                                               for k in changed_fields_dict]) + \
+                          ' to ' + \
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            self.object = form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(ServiceDataSourceUpdate.success_url)
+
 
 class ServiceDataSourceDelete(DeleteView):
     model = ServiceDataSource
@@ -437,8 +483,8 @@ class ServiceDataSourceDelete(DeleteView):
         return super(ServiceDataSourceDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        action.send(request.user, verb='deleting services data source: %s'%(self.get_object().name))
-        return super(ServiceDataSourceDelete, self).delete( request, *args, **kwargs)
+        action.send(request.user, verb='deleting services data source: %s' % (self.get_object().name))
+        return super(ServiceDataSourceDelete, self).delete(request, *args, **kwargs)
 
 
 #********************************** Protocol ***************************************
@@ -447,41 +493,44 @@ class ProtocolList(ListView):
     template_name = 'protocol/protocols_list.html'
 
     def get_context_data(self, **kwargs):
-        context=super(ProtocolList, self).get_context_data(**kwargs)
+        context = super(ProtocolList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',                'sTitle' : 'Name',                'sWidth':'null',},
-            {'mData':'protocol_name',       'sTitle' : 'Protocol Name',       'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'port',                'sTitle' : 'Port',                'sWidth':'null',},
-            {'mData':'version',             'sTitle' : 'Version',             'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'read_community',      'sTitle' : 'Read Community',      'sWidth':'null',},
-            {'mData':'write_community',     'sTitle' : 'Write Community',     'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'auth_password',       'sTitle' : 'Auth Password',       'sWidth':'null',},
-            {'mData':'auth_protocol',       'sTitle' : 'Auth Protocol',       'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'security_name',       'sTitle' : 'Security Name',       'sWidth':'null',},
-            {'mData':'security_level',      'sTitle' : 'Security Level',      'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'private_phase',       'sTitle' : 'Private Phase',       'sWidth':'null',},
-            {'mData':'private_pass_phase',  'sTitle' : 'Private Pass Phase',  'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',             'sTitle' : 'Actions',             'sWidth':'10%' ,}
-            ]
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
+            {'mData': 'protocol_name', 'sTitle': 'Protocol Name', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'port', 'sTitle': 'Port', 'sWidth': 'null', },
+            {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'read_community', 'sTitle': 'Read Community', 'sWidth': 'null', },
+            {'mData': 'write_community', 'sTitle': 'Write Community', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'auth_password', 'sTitle': 'Auth Password', 'sWidth': 'null', },
+            {'mData': 'auth_protocol', 'sTitle': 'Auth Protocol', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'security_name', 'sTitle': 'Security Name', 'sWidth': 'null', },
+            {'mData': 'security_level', 'sTitle': 'Security Level', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'private_phase', 'sTitle': 'Private Phase', 'sWidth': 'null', },
+            {'mData': 'private_pass_phase', 'sTitle': 'Private Pass Phase', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', }
+        ]
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
+
 class ProtocolListingTable(BaseDatatableView):
     model = ProtocolList
-    columns = ['name', 'protocol_name', 'port', 'version', 'read_community', 'write_community', 'auth_password', 'auth_protocol', 'security_name', 'security_level', 'private_phase', 'private_pass_phase']
-    order_columns = ['name', 'protocol_name', 'port', 'version', 'read_community', 'write_community', 'auth_password', 'auth_protocol', 'security_name', 'security_level', 'private_phase', 'private_pass_phase']
+    columns = ['name', 'protocol_name', 'port', 'version', 'read_community', 'write_community', 'auth_password',
+               'auth_protocol', 'security_name', 'security_level', 'private_phase', 'private_pass_phase']
+    order_columns = ['name', 'protocol_name', 'port', 'version', 'read_community', 'write_community', 'auth_password',
+                     'auth_protocol', 'security_name', 'security_level', 'private_phase', 'private_pass_phase']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
         ##TODO:Need to optimise with the query making login.
         if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
             # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
@@ -491,11 +540,11 @@ class ProtocolListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Protocol.objects.values(*self.columns+['id'])
+        return Protocol.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             dct.update(actions='<a href="/protocol/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/protocol/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
@@ -519,7 +568,7 @@ class ProtocolListingTable(BaseDatatableView):
         qs = self.paging(qs)
         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
-            qs=list(qs)
+            qs = list(qs)
 
         # prepare output data
         aaData = self.prepare_results(qs)
@@ -527,8 +576,9 @@ class ProtocolListingTable(BaseDatatableView):
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
                'aaData': aaData
-               }
+        }
         return ret
+
 
 class ProtocolDetail(DetailView):
     model = Protocol
@@ -547,8 +597,8 @@ class ProtocolCreate(CreateView):
 
 
     def form_valid(self, form):
-        self.object=form.save()
-        action.send(self.request.user, verb='Created', action_object = self.object)
+        self.object = form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(ProtocolCreate.success_url)
 
 
@@ -563,17 +613,19 @@ class ProtocolUpdate(UpdateView):
         return super(ProtocolUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
-        cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
+        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
+        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of Protocol : %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            self.object=form.save()
-            action.send( self.request.user, verb=verb_string )
-        return HttpResponseRedirect( ProtocolUpdate.success_url )
+            verb_string = 'Changed values of Protocol : %s from initial values ' % (self.object.name) + ', '.join(
+                ['%s: %s' % (k, initial_field_dict[k]) \
+                 for k in changed_fields_dict]) + \
+                          ' to ' + \
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            self.object = form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(ProtocolUpdate.success_url)
+
 
 class ProtocolDelete(DeleteView):
     model = Protocol
@@ -585,5 +637,5 @@ class ProtocolDelete(DeleteView):
         return super(ProtocolDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        action.send(request.user, verb='deleting services data source: %s'%(self.get_object().name))
-        return super(ProtocolDelete, self).delete( request, *args, **kwargs)
+        action.send(request.user, verb='deleting services data source: %s' % (self.get_object().name))
+        return super(ProtocolDelete, self).delete(request, *args, **kwargs)
