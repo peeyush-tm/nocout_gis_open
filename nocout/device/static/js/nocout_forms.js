@@ -7,14 +7,14 @@ $(document).ready(function (e) {
 
     /*Initialize the variables*/
     var hasError = 0,
-        inputContainers = $(".formContainer .col-sm-9 .col-md-8"),
-        labelContainer = $(".formContainer label.col-sm-3");
-        errorMessage = '<ul class="list-unstyled">';
-    console.log(inputContainers);
+        inputContainers = $(".formContainer .col-sm-7"),
+        labelContainer = $(".formContainer label.col-sm-5");
+        errorMessage = '<ul class="list-unstyled">';    
+
     for (var i = 0; i < inputContainers.length; i++) {    	
         /*Total no. of childrens in col-sm-7 class*/
         var childrenCount = inputContainers[i].children.length;
-        console.log(childrenCount);
+
         if (childrenCount == 2) {
 
             /*Error class from server side validation check*/
@@ -58,7 +58,7 @@ $(document).ready(function (e) {
 
 /*It removes the error class from fields if exists*/
 function resetForm() {    
-    var inputContainers = $(".formContainer .col-md-3");
+    var inputContainers = $(".formContainer .col-sm-7");
     /*Remove the error class from all the fields.*/
     for (var i = 0; i < inputContainers.length; i++) {
         var childrenCount = inputContainers[i].children.length;

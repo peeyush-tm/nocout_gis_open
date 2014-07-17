@@ -29,9 +29,8 @@
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">{% if field.field.required %}<span class="mandatory">* </span>{% endif %}{{ field.label|title }}</label>
                                                     <div class="col-sm-9">
                                                         <div class="col-md-8">
-                                                            {{ field }}
+                                                            {{ field }} {{ field.errors }}
                                                         </div>
-                                                        {{ field.errors }}
                                                         <div class="col-md-4 help_text">
                                                             {{ field.help_text }}
                                                         </div>

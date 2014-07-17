@@ -21,20 +21,16 @@
 
                             <form action="" method="post" class="form-horizontal" role="form">{% csrf_token %}
                                 <div class="col-md-12">
-                                    <!--Form 1-->
-                                    <div class="col-md-8">
+                                   <!--Form 1-->
+                                    <div class="col-md-6">
                                         {% for field in form %}
                                             {% if field.field.widget.attrs.class == 'form-control' or field.field.widget.attrs.class == 'col-md-12 select2select' %}
                                                 <div class="form-group">
-                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">{% if field.field.required %}<span class="mandatory">* </span>{% endif %}{{ field.label|title }}</label>
-                                                    <div class="col-sm-9">
-                                                        <div class="col-md-8">
-                                                            {{ field }}
-                                                        </div>
-                                                        {{ field.errors }}
-                                                        <div class="col-md-4 help_text">
-                                                            {{ field.help_text }}
-                                                        </div>
+                                                    <label for="{{ field.id_for_label }}"
+                                                           class="col-sm-5 control-label">{{ field.label }}</label>
+
+                                                    <div class="col-sm-7">
+                                                        {{ field }} {{ field.errors }}
                                                     </div>
                                                 </div>
                                             {% endif %}
@@ -42,22 +38,18 @@
                                     </div>
                                     <!--Form 1 End-->
                                     <!--Form 2-->
-                                    <div class="col-md-8">
+                                    <div class="col-md-6">
                                         <span id="extra_fields">
                                             {% for field in form %}
                                                 {% if field.field.widget.attrs.class == 'extra form-control' %}
                                                     <div class="form-group">
-                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">{% if field.field.required %}<span class="mandatory">* </span>{% endif %}{{ field.label|title }}</label>
-                                                    <div class="col-sm-9">
-                                                        <div class="col-md-8">
-                                                            {{ field }}
-                                                        </div>
-                                                        {{ field.errors }}
-                                                        <div class="col-md-4 help_text">
-                                                            {{ field.help_text }}
+                                                        <label for="{{ field.id_for_label }}"
+                                                               class="col-sm-5 control-label">{{ field.label }}</label>
+
+                                                        <div class="col-sm-7">
+                                                            {{ field }} {{ field.errors }}
                                                         </div>
                                                     </div>
-                                                </div>
                                                 {% endif %}
                                             {% endfor %}
                                         </span>
@@ -90,7 +82,7 @@
         </div>
     </div>
     {% block content_js %}
-        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+        <script type="text/javascript" src={% static "js/nocout_forms.js" %}></script>
     {% endblock %}
     <script>
         $(document).ready(function () {
