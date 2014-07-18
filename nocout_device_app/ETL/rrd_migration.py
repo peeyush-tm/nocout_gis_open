@@ -8,7 +8,7 @@ Teramatrix Pollers.
 
 
 import os
-import demjson
+import demjson,json
 import re
 from datetime import datetime, timedelta
 from xml.etree import ElementTree as ET
@@ -32,8 +32,8 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		"host": host,
 		"service": None,
 		"ds": {},
-		"ip_address": ip
-
+		"ip_address": ip,
+		"severity":None
 	}
     	perf_db = None
 	threshold_values = {}
@@ -56,10 +56,33 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		serv_disc = root.find("NAGIOS_SERVICEDESC").text.strip()
 		if serv_disc == '_HOST_':
 			data_dict['service'] = 'ping'
+			serv_disc = 'ping'
 		else:
 			data_dict['service'] = serv_disc
 		if serv_disc.endswith('_status') or serv_disc == 'Check_MK':
-			continue			
+			continue
+		if serv_disc == 'ping':
+			query_string = "GET services\nColumns: host_state\nFilter: host_name = %s\nOutputFormat: json\n" % (host)
+			query_output = json.loads(rrd_main.get_from_socket(site,query_string).strip())
+			service_state = (query_output[0][0])
+			if service_state == 0:
+				service_state = "up"
+			elif service_state == 1:
+				service_state = "down"
+		else:
+			query_string = "GET services\nColumns: service_state\nFilter: " + \
+			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (serv_disc,host)
+			query_output = json.loads(rrd_main.get_from_socket(site,query_string).strip())
+			service_state = (query_output[0][0])
+			if service_state == 0:
+				service_state = "OK"
+			elif service_state == 1:
+				service_state = "WARNING"
+			elif service_state == 2:
+				service_state = "CRITICAL"
+			elif service_state == 3:
+				service_state = "UNKNOWN"
+		
 		threshold_values = get_threshold(perf_data)
 		for ds in root.findall('DATASOURCE'):
 			params.append(ds.find('NAME').text)
@@ -86,6 +109,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 					)
 					data_dict.get('ds').get(ds_index).get('data').append(temp_dict)
 			data_dict.get('ds').get(ds_index)['meta'] = threshold_values.get(ds_index)
+		data_dict['severity'] = service_state
 		if xml_file == '_HOST_.xml':
 			mongo_functions.mongo_db_insert(db,data_dict,"network_perf_data")
 		else:
