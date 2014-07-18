@@ -224,6 +224,13 @@ def addservice():
                 g_service_vars['extra_service_conf'][param].append(t)
                 t = ()
 
+            # Changing SNMP polling period from default 1 to 5 mins
+            n_c_i = g_service_vars['extra_service_conf']['normal_check_interval']
+            n_c_i = sorted(n_c_i, key=lambda x: x[3])
+            if not filter(lambda x: 'Check_MK' in x[3], n_c_i):
+                n_c_i.append((5, [], ALL_HOSTS, 'Check_MK'))
+                g_service_vars['extra_service_conf']['normal_check_interval'] = n_c_i
+
         snmp_port_tuple = None
         if payload.get('snmp_port'):
             snmp_port_tuple = (int(payload.get('snmp_port')), [], [payload.get('host')])
