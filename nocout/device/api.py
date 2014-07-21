@@ -1,17 +1,12 @@
-import operator
-import json
-import copy
+import json, logging
 from django.db.models import Q, Count
-from django.core.exceptions import ObjectDoesNotExist
 from django.views.generic.base import View
 from django.http import HttpResponse
-from django.contrib.auth.models import User
-# from user_profile.models import Department
 from inventory.models import BaseStation, Sector, Circuit, SubStation, Customer
-from user_group.models import Organization
 from device.models import Device, DeviceType, DeviceVendor, \
     DeviceTechnology, DeviceModel, State, Country, City
 
+logger=logging.getLogger(__name__)
 # class DeviceStatsApi(View):
 #     """
 #     Api calls :wq!initiated for device stats
@@ -348,6 +343,7 @@ class DeviceStatsApi(View):
 
         if organizations:
             for organization in organizations:
+
                 base_stations_and_sector_configured_on_devices= Sector.objects.filter(sector_configured_on__id__in= organization.device_set.values_list('id', flat=True))\
                     .values_list('base_station').annotate(dcount=Count('base_station'))
                 self.result['data']['meta']['total_count']=0
@@ -358,279 +354,281 @@ class DeviceStatsApi(View):
                                                     }
                     self.result['data']['objects']['children']=list()
                     for base_station_id, dcount in base_stations_and_sector_configured_on_devices:
-                        base_station=BaseStation.objects.get(id=base_station_id)
-                        # sector_configured_on_device=Device.objects.get(id=sector_configured_on_device)
-                        base_station_info={
-                            'id':base_station.id,
-                            'name':base_station.name,
-                            'data':{
-                                    'lat':base_station.latitude,
-                                    'lon':base_station.longitude,
-                                    "markerUrl" : "static/img/marker/icon2_small.png",
-                                    'technology':base_station.bs_technology.name,
-                                    'antena_height':None,
-                                    'vendor':','.join(base_station.bs_technology.device_vendors.values_list('name', flat=True)),
-                                    'city':City.objects.get(id=base_station.city).city_name if base_station.city else None ,
-                                    'state':State.objects.get(id=base_station.state).state_name if base_station.state else None,
-                                    'param':{
-                                        'base_station':[
-                                                    {
-                                                     'name':'alias',
-                                                     'title':'Alias',
-                                                     'show':1,
-                                                     'value':base_station.alias
-                                                    },
-                                                    {
-                                                     'name':'building_height',
-                                                     'title':'Building Height',
-                                                     'show':1,
-                                                     'value':base_station.building_height if base_station.building_height else 'N/A'
-                                                    },
-                                                    {
-                                                     'name':'tower_height',
-                                                     'title':'Tower Height',
-                                                     'show':1,
-                                                     'value':base_station.tower_height if base_station.tower_height else 'N/A'
-                                                    },
-                                                    {
-                                                     'name':'bs_technology',
-                                                     'title':'BS Technology',
-                                                     'show':1,
-                                                     'value':base_station.bs_technology.name if base_station.bs_technology else 'N/A'
-                                                    }],
-                                          'backhual':[
-                                                       {
-                                                        'name':'bh_configured_on',
-                                                        'title':'BH Configured On',
-                                                        'show':1,
-                                                        'value':base_station.backhaul.bh_configured_on.device_name if base_station.backhaul.bh_configured_on.device_name else 'N/A'
-                                                       },
-                                                       {
-                                                        'name':'bh_capacity',
-                                                        'title':'BH Capacity',
-                                                        'show':1,
-                                                        'value':base_station.backhaul.bh_capacity if base_station.backhaul.bh_capacity else 'N/A'
-                                                       },
-                                                       {
-                                                        'name':'bh_type',
-                                                        'title':'BH Type',
-                                                        'show':1,
-                                                        'value':base_station.backhaul.bh_type if base_station.backhaul.bh_type else 'N/A'
-                                                       },
-                                                       {
-                                                        'name':'pe_ip',
-                                                        'title':'PE IP',
-                                                        'show':1,
-                                                        'value':base_station.backhaul.pe_ip if base_station.backhaul.pe_ip else 'N/A'
-                                                       },
-                                                       {
-                                                        'name':'bh_connectivity',
-                                                        'title':'BH Connectivity',
-                                                        'show':1,
-                                                        'value':base_station.backhaul.bh_connectivity if base_station.backhaul.bh_connectivity else 'N/A'
-                                                       },
-                                   ]}
+                        try:
 
-                                   },
-                            }
+                            base_station=BaseStation.objects.get(id=base_station_id)
+                            # sector_configured_on_device=Device.objects.get(id=sector_configured_on_device)
+                            base_station_info={
+                                'id':base_station.id,
+                                'name':base_station.name,
+                                'data':{
+                                        'lat':base_station.latitude,
+                                        'lon':base_station.longitude,
+                                        "markerUrl" : "static/img/marker/icon2_small.png",
+                                        'technology':base_station.bs_technology.name,
+                                        'antena_height':None,
+                                        'vendor':','.join(base_station.bs_technology.device_vendors.values_list('name', flat=True)),
+                                        'city':City.objects.get(id=base_station.city).city_name if base_station.city else None ,
+                                        'state':State.objects.get(id=base_station.state).state_name if base_station.state else None,
+                                        'param':{
+                                            'base_station':[
+                                                        {
+                                                         'name':'alias',
+                                                         'title':'Alias',
+                                                         'show':1,
+                                                         'value':base_station.alias
+                                                        },
+                                                        {
+                                                         'name':'building_height',
+                                                         'title':'Building Height',
+                                                         'show':1,
+                                                         'value':base_station.building_height if base_station.building_height else 'N/A'
+                                                        },
+                                                        {
+                                                         'name':'tower_height',
+                                                         'title':'Tower Height',
+                                                         'show':1,
+                                                         'value':base_station.tower_height if base_station.tower_height else 'N/A'
+                                                        },
+                                                        {
+                                                         'name':'bs_technology',
+                                                         'title':'BS Technology',
+                                                         'show':1,
+                                                         'value':base_station.bs_technology.name if base_station.bs_technology else 'N/A'
+                                                        }],
+                                              'backhual':[
+                                                           {
+                                                            'name':'bh_configured_on',
+                                                            'title':'BH Configured On',
+                                                            'show':1,
+                                                            'value':base_station.backhaul.bh_configured_on.device_name if base_station.backhaul.bh_configured_on.device_name else 'N/A'
+                                                           },
+                                                           {
+                                                            'name':'bh_capacity',
+                                                            'title':'BH Capacity',
+                                                            'show':1,
+                                                            'value':base_station.backhaul.bh_capacity if base_station.backhaul.bh_capacity else 'N/A'
+                                                           },
+                                                           {
+                                                            'name':'bh_type',
+                                                            'title':'BH Type',
+                                                            'show':1,
+                                                            'value':base_station.backhaul.bh_type if base_station.backhaul.bh_type else 'N/A'
+                                                           },
+                                                           {
+                                                            'name':'pe_ip',
+                                                            'title':'PE IP',
+                                                            'show':1,
+                                                            'value':base_station.backhaul.pe_ip if base_station.backhaul.pe_ip else 'N/A'
+                                                           },
+                                                           {
+                                                            'name':'bh_connectivity',
+                                                            'title':'BH Connectivity',
+                                                            'show':1,
+                                                            'value':base_station.backhaul.bh_connectivity if base_station.backhaul.bh_connectivity else 'N/A'
+                                                           },
+                                       ]}
 
-                        base_station_info['data']['param']['sector']=[]
-                        sectors= Sector.objects.filter(base_station = base_station.id)
-                        for sector in sectors:
-                            try:
-                                base_station_info['data']['param']['sector']+=[{
-                                "color" : sector.frequency.color_hex_value if hasattr(sector, 'frequency')  and sector.frequency else 'rgba(74,72,94,0.58)',
-                                'radius':sector.cell_radius,
-                                'azimuth_angle':sector.antenna.azimuth_angle,
-                                'beam_width' : sector.antenna.beam_width,
-                                'orientation' : sector.antenna.polarization,
-                                'info':[   {
-                                            'name':'sector_name',
-                                            'title':'Sector Name',
-                                            'show':1,
-                                            'value':sector.name
-                                            },
-                                           {
-                                            'name':'type_of_bs',
-                                            'title':'Type of BS',
-                                            'show':1,
-                                            'value':sector.base_station.bs_type \
-                                                if sector.base_station.bs_type else 'N/A'
-                                            },
-                                           {
-                                            'name':'building_height',
-                                            'title':'Building Height',
-                                            'show':1,
-                                            'value':base_station.building_height \
-                                                if base_station.building_height else 'N/A'
-                                            },
-                                           {
-                                            'name':'tower_height',
-                                            'title':'Tower Height',
-                                            'show':1,
-                                            'value':base_station.tower_height if base_station.tower_height else 'N/A'
-                                            },
-                                           {
-                                            'name':'type_of_antenna',
-                                            'title':'Antenna Type',
-                                            'show':1,
-                                            'value':sector.antenna.mount_type if sector.antenna.mount_type else 'N/A'
-                                            },
-                                           {
-                                            'name':'antenna_tilt',
-                                            'title':'Antenna Tilt',
-                                            'show':1,
-                                            'value':sector.antenna.tilt if sector.antenna.tilt else 'N/A'
-                                            },
-                                           {
-                                            'name':'antenna_ht',
-                                            'title':'Antenna Height',
-                                            'show':1,
-                                            'value':sector.antenna.height if sector.antenna.height else 'N/A'
-                                            },
-                                           {
-                                            'name':'antenna_bw',
-                                            'title':'Antenna Beam Width',
-                                            'show':1,
-                                            'value':sector.antenna.beam_width if sector.antenna.beam_width else 'N/A'
-                                            },
-                                           {
-                                            'name':'antenna_azimuth',
-                                            'title':'Antenna Azimuth Angle',
-                                            'show':1,
-                                            'value':sector.antenna.azimuth_angle if sector.antenna.azimuth_angle else 'N/A'
-                                            },
-                                           {
-                                            'name':'antenna_splitter_installed',
-                                            'title':'Installation of Splitter',
-                                            'show':1,
-                                            'value':sector.antenna.splitter_installed if sector.antenna.splitter_installed else 'N/A'
-                                            },
-                                           {
-                                            'name':'city',
-                                            'title':'City',
-                                            'show':1,
-                                            'value':City.objects.get(id=base_station.city).city_name  \
-                                                if sector.base_station.city else 'N/A'
-                                            },
-                                           {
-                                            'name':'state',
-                                            'title':'State',
-                                            'show':1,
-                                            'value':State.objects.get(id=base_station.state).state_name \
-                                                if base_station.state else 'N/A'
-                                            },
-                                ],
-                                'sub_station':[]
+                                       },
+                                }
 
-                                }]
+                            base_station_info['data']['param']['sector']=[]
+                            sectors= Sector.objects.filter(base_station = base_station.id)
+                            for sector in sectors:
+                                    base_station_info['data']['param']['sector']+=[{
+                                    "color" : sector.frequency.color_hex_value if hasattr(sector, 'frequency')  and sector.frequency else 'rgba(74,72,94,0.58)',
+                                    'radius':sector.cell_radius,
+                                    'azimuth_angle':sector.antenna.azimuth_angle,
+                                    'beam_width' : sector.antenna.beam_width,
+                                    'orientation' : sector.antenna.polarization,
+                                    'info':[   {
+                                                'name':'sector_name',
+                                                'title':'Sector Name',
+                                                'show':1,
+                                                'value':sector.name
+                                                },
+                                               {
+                                                'name':'type_of_bs',
+                                                'title':'Type of BS',
+                                                'show':1,
+                                                'value':sector.base_station.bs_type \
+                                                    if sector.base_station.bs_type else 'N/A'
+                                                },
+                                               {
+                                                'name':'building_height',
+                                                'title':'Building Height',
+                                                'show':1,
+                                                'value':base_station.building_height \
+                                                    if base_station.building_height else 'N/A'
+                                                },
+                                               {
+                                                'name':'tower_height',
+                                                'title':'Tower Height',
+                                                'show':1,
+                                                'value':base_station.tower_height if base_station.tower_height else 'N/A'
+                                                },
+                                               {
+                                                'name':'type_of_antenna',
+                                                'title':'Antenna Type',
+                                                'show':1,
+                                                'value':sector.antenna.mount_type if sector.antenna.mount_type else 'N/A'
+                                                },
+                                               {
+                                                'name':'antenna_tilt',
+                                                'title':'Antenna Tilt',
+                                                'show':1,
+                                                'value':sector.antenna.tilt if sector.antenna.tilt else 'N/A'
+                                                },
+                                               {
+                                                'name':'antenna_ht',
+                                                'title':'Antenna Height',
+                                                'show':1,
+                                                'value':sector.antenna.height if sector.antenna.height else 'N/A'
+                                                },
+                                               {
+                                                'name':'antenna_bw',
+                                                'title':'Antenna Beam Width',
+                                                'show':1,
+                                                'value':sector.antenna.beam_width if sector.antenna.beam_width else 'N/A'
+                                                },
+                                               {
+                                                'name':'antenna_azimuth',
+                                                'title':'Antenna Azimuth Angle',
+                                                'show':1,
+                                                'value':sector.antenna.azimuth_angle if sector.antenna.azimuth_angle else 'N/A'
+                                                },
+                                               {
+                                                'name':'antenna_splitter_installed',
+                                                'title':'Installation of Splitter',
+                                                'show':1,
+                                                'value':sector.antenna.splitter_installed if sector.antenna.splitter_installed else 'N/A'
+                                                },
+                                               {
+                                                'name':'city',
+                                                'title':'City',
+                                                'show':1,
+                                                'value':City.objects.get(id=base_station.city).city_name  \
+                                                    if sector.base_station.city else 'N/A'
+                                                },
+                                               {
+                                                'name':'state',
+                                                'title':'State',
+                                                'show':1,
+                                                'value':State.objects.get(id=base_station.state).state_name \
+                                                    if base_station.state else 'N/A'
+                                                },
+                                    ],
+                                    'sub_station':[]
 
-                                circuits= Circuit.objects.filter(sector = sector.id)
-                                for circuit in circuits:
-                                    substation= SubStation.objects.get(id = circuit.sub_station.id)
-                                    substation_device= Device.objects.get(id= substation.device.id)
-                                    base_station_info['data']['param']['sector'][-1]['sub_station']+=[{
-                                                      'id'  : substation.id,
-                                                      'name': substation.name,
-                                                      'data': {
-                                                          "lat":substation_device.latitude,
-                                                          "lon":substation_device.longitude,
-                                                          "antenmaina_height" : sector.antenna.height,
-                                                          "markerUrl" : "static/img/marker/icon4_small.png",
-                                                          "show_link" : 1,
-                                                          "link_color" : sector.frequency.color_hex_value if hasattr(sector, 'frequency')  and sector.frequency else 'rgba(74,72,94,0.58)',
-                                                          'param':{
-                                                                  'sub_station':[
-                                                                      {
-                                                                       'name':'alias',
-                                                                       'title':'Alias',
-                                                                       'show':1,
-                                                                       'value':substation_device.device_alias if substation_device.device_alias else 'N/A'
-                                                                      },
-                                                                      {
-                                                                       'name':'cktid',
-                                                                       'title':'Circuit ID',
-                                                                       'show':1,
-                                                                       'value':circuit.id if circuit.id else 'N/A'
-                                                                      },
-                                                                      {
-                                                                       'name':'qos_bandwidth',
-                                                                       'title':'QOS(BW)',
-                                                                       'show':1,
-                                                                       'value':circuit.qos_bandwidth if circuit.qos_bandwidth else 'N/A'
-                                                                      },
-                                                                      {
-                                                                       'name':'latitude',
-                                                                       'title':'Latitude',
-                                                                       'show':1,
-                                                                       'value':substation_device.latitude if substation_device.latitude else 'N/A'
-                                                                      },
-                                                                      {
-                                                                       'name':'longitude',
-                                                                       'title':'Longitude',
-                                                                       'show':1,
-                                                                       'value':substation.device.longitude if substation.device.longitude else 'N/A'
-                                                                      },
-                                                                      {
-                                                                       'name':'antenna_height',
-                                                                       'title':'Antenna Height',
-                                                                       'show':1,
-                                                                       'value':sector.antenna.height if sector.antenna.height else 'N/A'
-                                                                      },
-                                                                      {
-                                                                       'name':'polarisation',
-                                                                       'title':'Polarisation',
-                                                                       'show':1,
-                                                                       'value':sector.antenna.polarization \
-                                                                           if sector.antenna.polarization else 'N/A'
-                                                                      },
-                                                                      {
-                                                                       'name':'mount_type',
-                                                                       'title':'SS MountType',
-                                                                       'show':1,
-                                                                       'value':sector.antenna.mount_type if sector.antenna.mount_type else 'N/A'
-                                                                      },
-                                                                      {
-                                                                       'name':'antenna_type',
-                                                                       'title':'Antenna Type',
-                                                                       'show':1,
-                                                                       'value':sector.antenna.antenna_type if sector.antenna.antenna_type else 'N/A'
-                                                                      },
-                                                                      {
-                                                                       'name':'ethernet_extender',
-                                                                       'title':'Ethernet Extender',
-                                                                       'show':1,
-                                                                       'value':sector.antenna.ethernet_extender \
-                                                                           if hasattr(sector.antenna, 'ethernet_extender') and sector.antenna.ethernet_extender  else 'N/A'
-                                                                      },
-                                                                      {
-                                                                       'name':'cable_length',
-                                                                       'title':'Cable Length',
-                                                                       'show':1,
-                                                                       'value':sector.antenna.cable_length \
-                                                                           if hasattr(sector.antenna, 'cable_length') and sector.antenna.cable_length else 'N/A'
-                                                                      },
-                                                                      {
-                                                                       'name':'customer_address',
-                                                                       'title':'Customer Address',
-                                                                       'show':1,
-                                                                       'value': Customer.objects.get(id=sector.circuit_set.values('customer')).address \
-                                                                           if 'customer' in sector.circuit_set.values() else 'N/A'
-                                                                      },
-                                                                      {
-                                                                       'name':'date_of_acceptance',
-                                                                       'title':'Date of Acceptance',
-                                                                       'show':1,
-                                                                       'value':Customer.objects.get(id=sector.circuit_set.values('customer')).date_of_acceptance \
-                                                                           if 'date_of_acceptance' in sector.circuit_set.values('date_of_acceptance') else 'N/A'
-                                                                      }
-                                                                  ],
+                                    }]
+
+                                    circuits= Circuit.objects.filter(sector = sector.id)
+                                    for circuit in circuits:
+                                        substation= SubStation.objects.get(id = circuit.sub_station.id)
+                                        substation_device= Device.objects.get(id= substation.device.id)
+                                        base_station_info['data']['param']['sector'][-1]['sub_station']+=[{
+                                                          'id'  : substation.id,
+                                                          'name': substation.name,
+                                                          'data': {
+                                                              "lat":substation_device.latitude,
+                                                              "lon":substation_device.longitude,
+                                                              "antenmaina_height" : sector.antenna.height,
+                                                              "markerUrl" : "static/img/marker/icon4_small.png",
+                                                              "show_link" : 1,
+                                                              "link_color" : sector.frequency.color_hex_value if hasattr(sector, 'frequency')  and sector.frequency else 'rgba(74,72,94,0.58)',
+                                                              'param':{
+                                                                      'sub_station':[
+                                                                          {
+                                                                           'name':'alias',
+                                                                           'title':'Alias',
+                                                                           'show':1,
+                                                                           'value':substation_device.device_alias if substation_device.device_alias else 'N/A'
+                                                                          },
+                                                                          {
+                                                                           'name':'cktid',
+                                                                           'title':'Circuit ID',
+                                                                           'show':1,
+                                                                           'value':circuit.id if circuit.id else 'N/A'
+                                                                          },
+                                                                          {
+                                                                           'name':'qos_bandwidth',
+                                                                           'title':'QOS(BW)',
+                                                                           'show':1,
+                                                                           'value':circuit.qos_bandwidth if circuit.qos_bandwidth else 'N/A'
+                                                                          },
+                                                                          {
+                                                                           'name':'latitude',
+                                                                           'title':'Latitude',
+                                                                           'show':1,
+                                                                           'value':substation_device.latitude if substation_device.latitude else 'N/A'
+                                                                          },
+                                                                          {
+                                                                           'name':'longitude',
+                                                                           'title':'Longitude',
+                                                                           'show':1,
+                                                                           'value':substation.device.longitude if substation.device.longitude else 'N/A'
+                                                                          },
+                                                                          {
+                                                                           'name':'antenna_height',
+                                                                           'title':'Antenna Height',
+                                                                           'show':1,
+                                                                           'value':sector.antenna.height if sector.antenna.height else 'N/A'
+                                                                          },
+                                                                          {
+                                                                           'name':'polarisation',
+                                                                           'title':'Polarisation',
+                                                                           'show':1,
+                                                                           'value':sector.antenna.polarization \
+                                                                               if sector.antenna.polarization else 'N/A'
+                                                                          },
+                                                                          {
+                                                                           'name':'mount_type',
+                                                                           'title':'SS MountType',
+                                                                           'show':1,
+                                                                           'value':sector.antenna.mount_type if sector.antenna.mount_type else 'N/A'
+                                                                          },
+                                                                          {
+                                                                           'name':'antenna_type',
+                                                                           'title':'Antenna Type',
+                                                                           'show':1,
+                                                                           'value':sector.antenna.antenna_type if sector.antenna.antenna_type else 'N/A'
+                                                                          },
+                                                                          {
+                                                                           'name':'ethernet_extender',
+                                                                           'title':'Ethernet Extender',
+                                                                           'show':1,
+                                                                           'value':sector.antenna.ethernet_extender \
+                                                                               if hasattr(sector.antenna, 'ethernet_extender') and sector.antenna.ethernet_extender  else 'N/A'
+                                                                          },
+                                                                          {
+                                                                           'name':'cable_length',
+                                                                           'title':'Cable Length',
+                                                                           'show':1,
+                                                                           'value':sector.antenna.cable_length \
+                                                                               if hasattr(sector.antenna, 'cable_length') and sector.antenna.cable_length else 'N/A'
+                                                                          },
+                                                                          {
+                                                                           'name':'customer_address',
+                                                                           'title':'Customer Address',
+                                                                           'show':1,
+                                                                           'value': Customer.objects.get(id=sector.circuit_set.values('customer')).address \
+                                                                               if 'customer' in sector.circuit_set.values() else 'N/A'
+                                                                          },
+                                                                          {
+                                                                           'name':'date_of_acceptance',
+                                                                           'title':'Date of Acceptance',
+                                                                           'show':1,
+                                                                           'value':Customer.objects.get(id=sector.circuit_set.values('customer')).date_of_acceptance \
+                                                                               if 'date_of_acceptance' in sector.circuit_set.values('date_of_acceptance') else 'N/A'
+                                                                          }
+                                                                      ],
+                                                                  }
                                                               }
-                                                          }
-                                                          }]
-                            except Exception as e:
-                                print e.message
-                        self.result['data']['objects']['children'].append(base_station_info)
+                                                              }]
+                            self.result['data']['objects']['children'].append(base_station_info)
+                        except Exception as e:
+                            logger.error("API Error Message: %s"%(e.message))
+                            pass
                     self.result['message']='Data Fetched Successfully.'
                     self.result['success']=1
         return HttpResponse(json.dumps(self.result))
