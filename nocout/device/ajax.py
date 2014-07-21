@@ -742,10 +742,11 @@ def add_service(request, service_data):
                                                            port=str(service_para.protocol.port),
                                                            version=str(service_para.protocol.version),
                                                            read_community=str(service_para.protocol.read_community),
-                                                           data_source=data_source.name,
+                                                           svc_template=str(service_para.parameter_description),
                                                            normal_check_interval=int(service_para.normal_check_interval),
                                                            retry_check_interval=int(service_para.retry_check_interval),
                                                            max_check_attempts=int(service_para.max_check_attempts),
+                                                           data_source=data_source.name,
                                                            warning=data_source.warning,
                                                            critical=data_source.critical
                                                       )

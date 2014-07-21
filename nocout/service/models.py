@@ -95,6 +95,7 @@ class ServiceHistory(models.Model):
     data_source = models.CharField('Data Source', max_length=200, null=True, blank=True)
     version = models.CharField('Version', max_length=10, blank=True, null=True)
     read_community = models.CharField('Read Community', max_length=100, blank=True, null=True)
+    svc_template = models.CharField('Service Template', max_length=200, blank=True, null=True)
     normal_check_interval = models.IntegerField('Normal Check Interval', null=True, blank=True)
     retry_check_interval = models.IntegerField('Retry Check Interval', null=True, blank=True)
     max_check_attempts = models.IntegerField('Max Check Attempts', null=True, blank=True)
@@ -103,9 +104,15 @@ class ServiceHistory(models.Model):
     added_on = models.DateTimeField('Added On', null=True, blank=True)
     modified_on = models.DateTimeField('Modified On', null=True, blank=True)
 
+    class Meta:
+        ordering = ["added_on"]
+
     def save(self, *args, **kwargs):
         ''' On save, update timestamps '''
         if not self.id:
             self.added_on = datetime.datetime.today()
         self.modified_on = datetime.datetime.today()
         return super(ServiceHistory, self).save(*args, **kwargs)
+
+    def __unicode__(self):
+        return "{} - {} - {}".format(self.device_name, self.service_name, self.added_on)
