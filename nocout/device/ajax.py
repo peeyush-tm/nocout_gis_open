@@ -6,7 +6,7 @@ from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, D
     DeviceTypeFieldsValue, Country, State, City, DevicePort
 import requests
 import logging
-from service.models import Service, ServiceDataSource, ServiceParameters
+from service.models import Service, ServiceDataSource, ServiceParameters, ServiceHistory
 import urllib
 from site_instance.models import SiteInstance
 
@@ -698,6 +698,8 @@ def add_service(request, service_data):
             result['data']['objects']['agent_tag'] = str(DeviceType.objects.get(pk=device.device_type).agent_tag)
             # payload data for post request
             service_data = result['data']['objects']
+            print "******************service_data **********************"
+            print service_data
             # master site on which service needs to be added
             master_site = SiteInstance.objects.get(name='master_UA')
             # url for nocout.py
@@ -732,11 +734,27 @@ def add_service(request, service_data):
                     device = Device.objects.get(pk=int(sd['device_id']))
                     messages += result['message']
 
+                    # save service to service_history table
+                    for data_source in service.service_data_sources.all():
+                        sh = ServiceHistory.objects.create(device_name=str(Device.objects.get(pk=int(sd['device_id'])).device_name),
+                                                           service_name=str(Service.objects.get(pk=int(sd['service_id'])).name),
+                                                           agent_tag=str(DeviceType.objects.get(pk=device.device_type).agent_tag),
+                                                           port=str(service_para.protocol.port),
+                                                           version=str(service_para.protocol.version),
+                                                           read_community=str(service_para.protocol.read_community),
+                                                           data_source=data_source.name,
+                                                           normal_check_interval=int(service_para.normal_check_interval),
+                                                           retry_check_interval=int(service_para.retry_check_interval),
+                                                           max_check_attempts=int(service_para.max_check_attempts),
+                                                           warning=data_source.warning,
+                                                           critical=data_source.critical
+                                                      )
                     # set 'is_monitored_on_nms' to 1 if service is added successfully
                     device.is_monitored_on_nms = 1
                     device.save()
 
-        except:
+        except Exception as e:
+            logger.info(e)
             result['message'] += "Failed to add service '%s'. <br />" % (service.name)
             messages += result['message']
 
