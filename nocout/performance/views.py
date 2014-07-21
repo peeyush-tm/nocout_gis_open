@@ -263,7 +263,7 @@ class Inventory_Device_Status(View):
             result['data']['objects']['headers']= ['BS Name', 'SSName','Building Height', 'Tower Height',
                                                    'City', 'State', 'IP Address', 'MAC Address']
             result['data']['objects']['values']= [ base_station.name, substation.name,
-                                                   str(substation.building_height), str(substation.tower_height),
+                                                   substation.building_height, substation.tower_height,
                                                    substation.city, substation.state, substation_device.ip_address,
                                                    substation_device.mac_address ]
 
