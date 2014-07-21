@@ -1,4 +1,5 @@
 import json
+import time
 from actstream import action
 from django.contrib.auth.decorators import permission_required
 from django.db.models.query import ValuesQuerySet
@@ -649,25 +650,27 @@ class ServiceHistoryList(ListView):
         context=super(ServiceHistoryList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData':'device_name',             'sTitle' : 'Device',                'sWidth':'null',},
-            {'mData':'service_name',            'sTitle' : 'Service',                 'sWidth':'null',},
+            {'mData':'service_name',            'sTitle' : 'Service',               'sWidth':'null',},
             {'mData':'agent_tag',               'sTitle' : 'Agent Tag',             'sWidth':'null',},
             {'mData':'port',                    'sTitle' : 'Port',                  'sWidth':'null',},
             {'mData':'version',                 'sTitle' : 'Version',               'sWidth':'null',},
-            {'mData':'data_source',             'sTitle' : 'DS',                    'sWidth':'null' ,},
+            {'mData':'data_source',             'sTitle' : 'DS',                    'sWidth':'null',},
             {'mData':'read_community',          'sTitle' : 'Read Community',        'sWidth':'null',},
             {'mData':'normal_check_interval',   'sTitle' : 'Normal CI',             'sWidth':'null',},
             {'mData':'retry_check_interval',    'sTitle' : 'Retry CI',              'sWidth':'null',},
             {'mData':'max_check_attempts',      'sTitle' : 'Max Attempts',          'sWidth':'null',},
             {'mData':'warning',                 'sTitle' : 'Warning',               'sWidth':'null',},
-            {'mData':'critical',                'sTitle' : 'Critical',              'sWidth':'null',}]
+            {'mData':'critical',                'sTitle' : 'Critical',              'sWidth':'null',},
+            {'mData':'added_on',                'sTitle' : 'Added On',              'sWidth':'null',},
+            {'mData':'modified_on',             'sTitle' : 'Updated On',            'sWidth':'null',}]
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class ServiceHistoryListingTable(BaseDatatableView):
     model = ServiceHistory
-    columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'data_source', 'read_community', 'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'warning', 'critical']
-    order_columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'data_source', 'read_community', 'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'warning', 'critical']
+    columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'data_source', 'read_community', 'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'warning', 'critical', 'added_on', 'modified_on']
+    order_columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'data_source', 'read_community', 'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'warning', 'critical', 'added_on', 'modified_on']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
