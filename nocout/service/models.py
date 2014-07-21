@@ -1,5 +1,6 @@
 from django.db import models
 from command.models import Command
+import datetime
 
 
 class Protocol(models.Model):
@@ -27,7 +28,7 @@ class ServiceDataSource(models.Model):
     critical = models.CharField('Critical', max_length=255, null=True, blank=True)
 
     def __unicode__(self):
-        return  self.name
+        return self.name
 
 
 class ServiceParameters(models.Model):
@@ -91,14 +92,20 @@ class ServiceHistory(models.Model):
     service_name = models.CharField('Service Name', max_length=200, null=True, blank=True)
     agent_tag = models.CharField('Agent Tag', max_length=50, null=True, blank=True)
     port = models.IntegerField('Port', null=True, blank=True)
-    version = models.CharField('Version', max_length=10, blank=True, null=True)
     data_source = models.CharField('Data Source', max_length=200, null=True, blank=True)
+    version = models.CharField('Version', max_length=10, blank=True, null=True)
     read_community = models.CharField('Read Community', max_length=100, blank=True, null=True)
     normal_check_interval = models.IntegerField('Normal Check Interval', null=True, blank=True)
     retry_check_interval = models.IntegerField('Retry Check Interval', null=True, blank=True)
     max_check_attempts = models.IntegerField('Max Check Attempts', null=True, blank=True)
     warning = models.CharField('Warning', max_length=20, null=True, blank=True)
     critical = models.CharField('Critical', max_length=20, null=True, blank=True)
+    added_on = models.DateTimeField('Added On', null=True, blank=True)
+    modified_on = models.DateTimeField('Modified On', null=True, blank=True)
 
-
-
+    def save(self, *args, **kwargs):
+        ''' On save, update timestamps '''
+        if not self.id:
+            self.added_on = datetime.datetime.today()
+        self.modified_on = datetime.datetime.today()
+        return super(ServiceHistory, self).save(*args, **kwargs)
