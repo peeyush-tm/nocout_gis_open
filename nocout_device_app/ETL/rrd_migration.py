@@ -8,7 +8,7 @@ Teramatrix Pollers.
 
 
 import os
-import demjson
+import demjson,json
 import re
 from datetime import datetime, timedelta
 from xml.etree import ElementTree as ET
@@ -32,8 +32,8 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		"host": host,
 		"service": None,
 		"ds": {},
-		"ip_address": ip
-
+		"ip_address": ip,
+		"severity":None
 	}
     	perf_db = None
 	threshold_values = {}
@@ -56,16 +56,39 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		serv_disc = root.find("NAGIOS_SERVICEDESC").text.strip()
 		if serv_disc == '_HOST_':
 			data_dict['service'] = 'ping'
+			serv_disc = 'ping'
 		else:
 			data_dict['service'] = serv_disc
 		if serv_disc.endswith('_status') or serv_disc == 'Check_MK':
-			continue			
+			continue
+		if serv_disc == 'ping':
+			query_string = "GET services\nColumns: host_state\nFilter: host_name = %s\nOutputFormat: json\n" % (host)
+			query_output = json.loads(rrd_main.get_from_socket(site,query_string).strip())
+			service_state = (query_output[0][0])
+			if service_state == 0:
+				service_state = "up"
+			elif service_state == 1:
+				service_state = "down"
+		else:
+			query_string = "GET services\nColumns: service_state\nFilter: " + \
+			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (serv_disc,host)
+			query_output = json.loads(rrd_main.get_from_socket(site,query_string).strip())
+			service_state = (query_output[0][0])
+			if service_state == 0:
+				service_state = "OK"
+			elif service_state == 1:
+				service_state = "WARNING"
+			elif service_state == 2:
+				service_state = "CRITICAL"
+			elif service_state == 3:
+				service_state = "UNKNOWN"
+		
 		threshold_values = get_threshold(perf_data)
 		for ds in root.findall('DATASOURCE'):
 			params.append(ds.find('NAME').text)
 			file_paths.append(ds.find('RRDFILE').text)
 		for path in file_paths:
-			m = -1
+			m = -5
 		
 			data_series = do_export(site, host, path,params[file_paths.index(path)], db, data_dict['service'])
 			data_dict.update({
@@ -78,13 +101,15 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 			
 			ds_values = data_series['data'][:-1]
 			for d in ds_values:
-					m += 1
+				if d[-1] is not None:
+					m += 5
 					temp_dict = dict(
 						time=data_series.get('check_time') + timedelta(minutes=m),
 						value=d[-1]
 					)
 					data_dict.get('ds').get(ds_index).get('data').append(temp_dict)
 			data_dict.get('ds').get(ds_index)['meta'] = threshold_values.get(ds_index)
+		data_dict['severity'] = service_state
 		if xml_file == '_HOST_.xml':
 			mongo_functions.mongo_db_insert(db,data_dict,"network_perf_data")
 		else:
@@ -115,12 +140,15 @@ def do_export(site, host, file_name,data_source, db, serv):
     end_time = datetime.now()
 
     year, month, day = end_time.year, end_time.month, end_time.day
-    hour, minute = end_time.hour, end_time.minute
-    #Tag : Subtracting 1 min as rrd doesn't write the current data, instantly
-    end_time = datetime(year, month, day, hour, minute-1)
+    hour = end_time.hour
+    #Pivoting minutes to multiple of 5, to synchronize with rrd dump
+    minute = end_time.minute - (end_time.minute % 5)
+    end_time = datetime(year, month, day, hour, minute)
 
     if start_time is None:
-        start_time = end_time - timedelta(minutes=5)
+        start_time = end_time - timedelta(minutes=6)
+    else:
+	start_time = start_time - timedelta(minutes=1)
 
     #end_time = datetime.now() - timedelta(minutes=10)
     #start_time = end_time - timedelta(minutes=5)
@@ -142,7 +170,6 @@ def do_export(site, host, file_name,data_source, db, serv):
 
     p=subprocess.Popen(cmd,stdout=subprocess.PIPE, shell=True)
     cmd_output, err = p.communicate()
-
     try:
         cmd_output = demjson.decode(cmd_output)
     except demjson.JSONDecodeError, e:

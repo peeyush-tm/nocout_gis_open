@@ -106,7 +106,8 @@ def build_data(doc):
                 doc.get('ds').get(ds).get('meta').get('cric'),
                 local_time_epoch,
                 check_time_epoch,
-		doc.get('ip_address')
+		doc.get('ip_address'),
+		doc.get('severity')
             )
             values_list.append(t)
             t = ()
@@ -120,8 +121,8 @@ def insert_data(table, data_values, **kwargs):
             (device_name, service_name, machine_name, 
             site_name, data_source, current_value, min_value, 
             max_value, avg_value, warning_threshold, 
-            critical_threshold, sys_timestamp, check_timestamp,ip_address) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s)
+            critical_threshold, sys_timestamp, check_timestamp,ip_address,severity) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,%s)
             """
     cursor = db.cursor()
     try:

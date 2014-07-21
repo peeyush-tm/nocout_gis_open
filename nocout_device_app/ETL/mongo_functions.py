@@ -69,6 +69,8 @@ def get_latest_entry(db_type=None, db=None, site=None,table_name=None, host=None
                 	data = sorted(data, key=itemgetter('time'), reverse=True)
                 	try:
                     		latest_time = data[0].get('time')
+				print 'host_get_latest_entry %s'% ( host)
+				print latest_time
                     	except IndexError, e:
                     		return latest_time
         else:
@@ -79,6 +81,8 @@ def get_latest_entry(db_type=None, db=None, site=None,table_name=None, host=None
                     	data = sorted(data, key=itemgetter('time'), reverse=True)
                     	try:
                         	latest_time = data[0].get('time')
+				print 'service_get_latest_entry %s' % (host)
+				print latest_time
                     	except IndexError, e:
                         	return latest_time
     elif db_type == 'mysql':
@@ -90,6 +94,8 @@ def get_latest_entry(db_type=None, db=None, site=None,table_name=None, host=None
         try:
             latest_time = entry[0]
             latest_time = datetime.fromtimestamp(latest_time)
+	    print 'get_latest_entry'
+	    print latest_time
         except TypeError, e:
             cursor.close()
             return latest_time
