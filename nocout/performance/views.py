@@ -96,13 +96,18 @@ class LivePerformanceListing(BaseDatatableView):
                                                                         ['device_name', device_association])
         for device in devices:
             if device[device_association]:
-                performance_data= PerformanceNetwork.objects.raw('''select id, device_name, avg_value, sys_timestamp from \
+                performance_data_pl= PerformanceNetwork.objects.raw('''select id, device_name, avg_value, sys_timestamp from \
                                   performance_performancenetwork where id = (select MAX(id) from \
                                   performance_performancenetwork where (device_name=%s and data_source=%s))''' \
                                                             ,[ device['device_name'], 'pl'])
-                for data in performance_data:
-                    device.update({'latency':data.avg_value, 'packet_loss':'pl', 'last_updated':
-                                   str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
+                for data in performance_data_pl:
+                    performance_data_rta=PerformanceNetwork.objects.raw('''select id, avg_value from  performance_performancenetwork
+                                          where device_name=%s and sys_timestamp = %s  and data_source=%s '''
+                                          ,[ data.device_name, data.sys_timestamp, 'rta'])
+                    device.update({
+                                   'packet_loss':data.avg_value,
+                                   'latency': performance_data_rta[0].avg_value,
+                                   'last_updated': str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
                                    'city':City.objects.get(id=device['city']).city_name,
                                    'state':State.objects.get(id=device['state']).state_name
                                  })
