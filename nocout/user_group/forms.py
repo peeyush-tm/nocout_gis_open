@@ -47,4 +47,4 @@ class UserGroupForm(forms.ModelForm):
 
     class Meta:
         model = UserGroup
-        fields = ('name', 'alias', 'parent', 'location', 'address', 'organization','users',)
+        fields = ('name', 'alias', 'parent', 'address', 'organization','users',)
