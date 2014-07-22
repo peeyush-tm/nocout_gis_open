@@ -26,7 +26,6 @@ class UserGroupList(ListView):
         datatable_headers=[
             {'mData':'name',                   'sTitle' : 'Name',                  'sWidth':'null',},
             {'mData':'alias',                  'sTitle' : 'Alias',                 'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'address',                'sTitle' : 'Address',               'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'users__first_name',      'sTitle' : 'Users',                 'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'organization__name',     'sTitle' : 'Organization',          'sWidth':'null','sClass':'hidden-xs'},]
 
@@ -38,8 +37,8 @@ class UserGroupList(ListView):
 
 class UserGroupListingTable(BaseDatatableView):
     model = UserGroup
-    columns = ['name', 'alias', 'address', 'organization__name']
-    order_columns = ['name', 'alias', 'address']
+    columns = ['name', 'alias', 'organization__name']
+    order_columns = ['name', 'alias']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -63,7 +62,6 @@ class UserGroupListingTable(BaseDatatableView):
             qs.append( {'id':ug.id,
                         'name': ug.name,
                         'alias': ug.alias,
-                        'address': ug.address,
                         'organization__name':ug.organization.name,
                         'users__first_name': ', '.join( ug.users.values_list('first_name', flat=True)) },
                        )
