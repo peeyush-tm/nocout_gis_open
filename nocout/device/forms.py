@@ -35,6 +35,7 @@ class DeviceForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         # setting foreign keys field label
         self.base_fields['site_instance'].label = 'Site Instance'
+        self.base_fields['machine'].label = 'Machine'
         self.base_fields['device_technology'].label = 'Device Technology'
         self.base_fields['device_vendor'].label = 'Device Vendor'
         self.base_fields['device_model'].label = 'Device Model'
@@ -56,6 +57,8 @@ class DeviceForm(forms.ModelForm):
         self.fields['parent'].widget.choices = self.fields['parent'].choices
         self.fields['site_instance'].empty_label = "Select"
         self.fields['site_instance'].widget.choices = self.fields['site_instance'].choices
+        self.fields['machine'].empty_label = "Select"
+        self.fields['machine'].widget.choices = self.fields['machine'].choices
         self.fields['device_technology'].empty_label = "Select"
         self.fields['device_technology'].widget.choices = self.fields['device_technology'].choices
         self.fields['device_vendor'].empty_label = "Select"
@@ -70,6 +73,14 @@ class DeviceForm(forms.ModelForm):
         self.fields['state'].widget.choices = self.fields['state'].choices
         self.fields['city'].empty_label = "Select"
         self.fields['city'].widget.choices = self.fields['city'].choices
+        self.fields['site_instance'].required = True
+        self.fields['machine'].required = True
+        self.fields['latitude'].required = True
+        self.fields['longitude'].required = True
+        self.fields['country'].required = True
+        self.fields['state'].required = True
+        self.fields['city'].required = True
+
         #self.fields['latitude'].widget.attrs['data-mask'] = '99.99999999999999999999'
         #self.fields['longitude'].widget.attrs['data-mask'] = '99.99999999999999999999'
 

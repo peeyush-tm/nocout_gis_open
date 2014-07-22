@@ -38,15 +38,16 @@ class DeviceList(ListView):
     def get_context_data(self, **kwargs):
         context=super(DeviceList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'is_added',            'sTitle' : '',              'sWidth':'null',},
-            {'mData':'device_name',         'sTitle' : 'Device Name',   'sWidth':'null',},
-            {'mData':'device_alias',        'sTitle' : 'Alias',         'sWidth':'null',},
-            {'mData':'site_instance__name', 'sTitle' : 'Site Instance', 'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'organization__name',  'sTitle' : 'Organization',  'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'ip_address',          'sTitle' : 'IP Address',    'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'mac_address',         'sTitle' : 'MAC Address',   'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'parent__device_name', 'sTitle' : 'Parent',        'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'device_type',         'sTitle' : 'Device Type',   'sWidth':'null','sClass':'hidden-xs'},]
+            {'mData':'is_added',               'sTitle' : '',              'sWidth':'null',},
+            {'mData':'organization__name',     'sTitle' : 'Organization',  'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'device_alias',           'sTitle' : 'Alias',         'sWidth':'null',},
+            {'mData':'site_instance__name',    'sTitle' : 'Site Instance', 'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'machine__name',          'sTitle' : 'Machine',       'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'device_technology__name','sTitle' : 'Device Technology',   'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'device_type__name',      'sTitle' : 'Device Type',   'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'ip_address',             'sTitle' : 'IP Address',    'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'mac_address',            'sTitle' : 'MAC Address',   'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'state__name',            'sTitle' : 'State',   'sWidth':'null','sClass':'hidden-xs'},]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
@@ -68,8 +69,10 @@ def create_device_tree(request):
 
 class DeviceListingTable(BaseDatatableView):
     model = Device
-    columns = ['device_name', 'device_alias', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name', 'device_type']
-    order_columns = ['device_name', 'device_alias', 'site_instance__name', 'organization__name', 'ip_address', 'mac_address', 'parent__device_name', '']
+    columns = [ 'device_alias', 'site_instance__name', 'machine__name', 'organization__name','device_technology',
+                'device_type', 'ip_address', 'mac_address', 'state']
+    order_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name','device_technology',
+                'device_type', 'ip_address', 'mac_address', 'state']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -100,8 +103,10 @@ class DeviceListingTable(BaseDatatableView):
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        organization_descendants_ids= self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True)
-        return Device.objects.filter(organization__in = organization_descendants_ids, is_deleted=0).values(*self.columns+['id'])
+        organization_descendants_ids= self.request.user.userprofile.organization.get_descendants(include_self=True)\
+                                      .values_list('id', flat=True)
+        return Device.objects.filter(organization__in = organization_descendants_ids, is_deleted=0) \
+                                     .values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         if qs:
@@ -110,15 +115,13 @@ class DeviceListingTable(BaseDatatableView):
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
 
-            # adding device type key to 'dct'
-            dct['device_type'] = ''
-            try:
-                if current_device.device_type:
-                    dct['device_type'] = DeviceType.objects.get(pk=current_device.device_type).name
-            except Exception as general_exception:
-                if settings.DEBUG:
-                    logger.error(general_exception)
-
+            dct['device_type__name']= DeviceType.objects.get(pk=int(dct['device_type'])).name if dct['device_type'] else ''
+            dct['device_technology__name']=DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
+                                            if dct['device_technology'] else ''
+            dct['state__name']= State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
+            # dct['device_type__name']= ''
+            # dct['device_technology__name']=''
+            # dct['state__name']= ''
             # if device is already added to nms core than show icon in device table
             if current_device.is_added_to_nms == 1:
                 dct.update(is_added='<i class="fa fa-check-circle text-success"></i>')
