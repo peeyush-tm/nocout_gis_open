@@ -1,3 +1,4 @@
+from operator import itemgetter
 from actstream import action
 from django.contrib.auth.decorators import permission_required
 from django.db.models import Q
@@ -25,9 +26,8 @@ class UserGroupList(ListView):
         datatable_headers=[
             {'mData':'name',                   'sTitle' : 'Name',                  'sWidth':'null',},
             {'mData':'alias',                  'sTitle' : 'Alias',                 'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'address',                'sTitle' : 'Address',                'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'location',               'sTitle' : 'Location',              'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'parent__name',           'sTitle' : 'Parent Name',           'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'address',                'sTitle' : 'Address',               'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'users__first_name',      'sTitle' : 'Users',                 'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'organization__name',     'sTitle' : 'Organization',          'sWidth':'null','sClass':'hidden-xs'},]
 
         #if the user role is Admin then the action column will appear on the datatable
@@ -38,22 +38,18 @@ class UserGroupList(ListView):
 
 class UserGroupListingTable(BaseDatatableView):
     model = UserGroup
-    columns = ['name', 'alias', 'address', 'location', 'parent__name','organization__name']
-    order_columns = ['name', 'alias', 'address', 'location', 'parent__name', 'organization__name']
+    columns = ['name', 'alias', 'address', 'organization__name']
+    order_columns = ['name', 'alias', 'address']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
-            exec exec_query
+            result_list=list()
+            for dictionary in qs:
+                for key in dictionary.keys():
+                    if str(dictionary[key])==sSearch:
+                        result_list.append(dictionary)
+            return result_list
 
         return qs
 
@@ -61,14 +57,59 @@ class UserGroupListingTable(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         organization_descendants_ids= self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True)
-        return UserGroup.objects.filter(organization__in = organization_descendants_ids, is_deleted=0).values(*self.columns+['id'])
+        qs_query= UserGroup.objects.filter(organization__in = organization_descendants_ids, is_deleted=0).prefetch_related()
+        qs=list()
+        for ug in qs_query:
+            qs.append( {'id':ug.id,
+                        'name': ug.name,
+                        'alias': ug.alias,
+                        'address': ug.address,
+                        'organization__name':ug.organization.name,
+                        'users__first_name': ', '.join( ug.users.values_list('first_name', flat=True)) },
+                       )
+        return qs
 
     def prepare_results(self, qs):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
             dct.update(actions='<a href="/user_group/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="#" onclick="Dajaxice.user_group.user_group_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                <a href="#" onclick="Dajaxice.user_group.user_group_soft_delete_form(get_soft_delete_form, {{\'value\': \
+                {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return qs
+
+    def ordering(self, qs):
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except ValueError:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.get_order_columns()
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except ValueError:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ''
+            try:
+                sortcol = order_columns[i_sort_col]
+            except IndexError:
+                return qs
+            #for the mutiple sorting of the columns at a time
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            return sorted(qs, key=itemgetter('name'), reverse= True if '-' in order else False)
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -78,12 +119,12 @@ class UserGroupListingTable(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.count()
+        total_records = len(qs)
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.count()
+        total_display_records = len(qs)
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
