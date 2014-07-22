@@ -45,6 +45,7 @@ class DeviceList(ListView):
             {'mData':'machine__name',          'sTitle' : 'Machine',       'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'device_technology__name','sTitle' : 'Device Technology',   'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'device_type__name',      'sTitle' : 'Device Type',   'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'host_state',             'sTitle' : 'Host State',    'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'ip_address',             'sTitle' : 'IP Address',    'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'mac_address',            'sTitle' : 'MAC Address',   'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'state__name',            'sTitle' : 'State',   'sWidth':'null','sClass':'hidden-xs'},]
@@ -70,9 +71,9 @@ def create_device_tree(request):
 class DeviceListingTable(BaseDatatableView):
     model = Device
     columns = [ 'device_alias', 'site_instance__name', 'machine__name', 'organization__name','device_technology',
-                'device_type', 'ip_address', 'mac_address', 'state']
+                'device_type', 'host_state','ip_address', 'mac_address', 'state']
     order_columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name','device_technology',
-                'device_type', 'ip_address', 'mac_address', 'state']
+                'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -119,9 +120,6 @@ class DeviceListingTable(BaseDatatableView):
             dct['device_technology__name']=DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
                                             if dct['device_technology'] else ''
             dct['state__name']= State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
-            # dct['device_type__name']= ''
-            # dct['device_technology__name']=''
-            # dct['state__name']= ''
             # if device is already added to nms core than show icon in device table
             if current_device.is_added_to_nms == 1:
                 dct.update(is_added='<i class="fa fa-check-circle text-success"></i>')
