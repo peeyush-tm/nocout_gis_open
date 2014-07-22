@@ -152,8 +152,13 @@ class SubStation(models.Model):
     tower_height = models.FloatField('Tower Height', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
     ethernet_extender = models.CharField('Ethernet Extender', max_length=250, null=True, blank=True)
     cable_length = models.FloatField('Cable Length', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
-    city = models.CharField('City', max_length=250, null=True, blank=True)
-    state = models.CharField('State', max_length=250, null=True, blank=True)
+    #selection dropdown for city state
+    # city = models.CharField('City', max_length=250, null=True, blank=True)
+    # state = models.CharField('State', max_length=250, null=True, blank=True)
+    #
+    country = models.IntegerField('Country', null=True, blank=True)
+    state = models.IntegerField('State', null=True, blank=True)
+    city = models.IntegerField('City', null=True, blank=True)
     address = models.CharField('Address', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 

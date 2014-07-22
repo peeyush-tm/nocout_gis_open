@@ -18,7 +18,7 @@ from organization.models import Organization
 from user_group.models import UserGroup
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
 from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm, CircuitForm
-
+from device.models import Country, State, City
 
 
 # **************************************** Inventory *********************************************
@@ -953,8 +953,8 @@ class SubStationList(ListView):
             {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'null', },
             {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', },
-            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'null', },
+            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'null', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             ]
@@ -1001,6 +1001,8 @@ class SubStationListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            dct['city__name']= City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
+            dct['state__name']= State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
             dct.update(actions='<a href="/sub_station/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/sub_station/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
