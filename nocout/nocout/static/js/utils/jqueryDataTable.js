@@ -28,7 +28,8 @@ function ourDataTableWidget()
             bProcessing : true,
             bServerSide: true,
             sAjaxSource: ajax_url,
-            aoColumns:tableheaders
+            aoColumns:tableheaders,
+            autoWidth: false
  		});
     };
 }

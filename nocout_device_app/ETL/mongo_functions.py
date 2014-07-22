@@ -57,34 +57,45 @@ def mongo_db_insert(db,event_dict,flag):
                 print "Mongo_db insertion failed"
                 return failure
 
+def mongo_db_update(db,matching_criteria,event_dict,flag):
+        success = 0
+        failure = 1
+        if db:
+		try:
+			if flag == "inventory_services":
+				db.device_inventory_status.update(matching_criteria,event_dict,upsert=True)
+			elif flag == "serv_perf_data":
+				db.device_service_status.update(matching_criteria,event_dict,upsert=True)
+			elif flag == "network_perf_data":
+				db.device_network_status.update(matching_criteria,event_dict,upsert=True)
+			elif flag == "status_services":
+				db.device_status_serices_status.update(matching_criteria,event_dict,upsert=True)
+                	return success
+		except Exception, ReferenceError:
+        		print "Mongodb updation failed"
+
+				
+        else:
+                print "Mongo_db updatation failed"
+                return failure
+
+
 
 def get_latest_entry(db_type=None, db=None, site=None,table_name=None, host=None, serv='_HOST_', ds='rta'):
     latest_time = None
     if db_type == 'mongodb':
-        if serv == "_HOST_":
+        if serv == "ping":
             cur = db.network_perf.find({"service": serv, "host": host}, {"check_time": 1, "ds": 1}).sort("_id", -1).limit(1)
+	else:
+            cur = db.service_perf.find({"service": serv, "host": host}, {"check_time": 1, "ds": 1}).sort("_id", -1).limit(1)
             for c in cur:
                 	entry = c
                 	data = entry.get('ds').get(ds).get('data')
                 	data = sorted(data, key=itemgetter('time'), reverse=True)
                 	try:
                     		latest_time = data[0].get('time')
-				print 'host_get_latest_entry %s'% ( host)
-				print latest_time
                     	except IndexError, e:
                     		return latest_time
-        else:
-            cur = db.service_perf.find({"service": serv, "host": host}, {"check_time": 1, "ds": 1}).sort("_id", -1).limit(1)
-            for c in cur:
-			entry = c
-                    	data = entry.get('ds').get(ds).get('data')
-                    	data = sorted(data, key=itemgetter('time'), reverse=True)
-                    	try:
-                        	latest_time = data[0].get('time')
-				print 'service_get_latest_entry %s' % (host)
-				print latest_time
-                    	except IndexError, e:
-                        	return latest_time
     elif db_type == 'mysql':
         query = "SELECT `check_timestamp` FROM `%s` WHERE" % table_name +\
             " `site_name` = '%s' ORDER BY `id` DESC LIMIT 1" % (site)
@@ -94,8 +105,6 @@ def get_latest_entry(db_type=None, db=None, site=None,table_name=None, host=None
         try:
             latest_time = entry[0]
             latest_time = datetime.fromtimestamp(latest_time)
-	    print 'get_latest_entry'
-	    print latest_time
         except TypeError, e:
             cursor.close()
             return latest_time
