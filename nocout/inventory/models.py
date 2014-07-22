@@ -118,9 +118,11 @@ class Sector(models.Model):
     cell_radius = models.FloatField('Cell Radius', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
     frequency = models.ForeignKey(DeviceFrequency, null=True, blank=True)
     modulation = models.CharField('Modulation', max_length=250, null=True, blank=True)
-    city = models.CharField('City', max_length=250, null=True, blank=True)
-    state = models.CharField('State', max_length=250, null=True, blank=True)
-    address = models.CharField('Address', max_length=250, null=True, blank=True)
+    #sectors city state are same as base station's city and state
+    # city = models.CharField('City', max_length=250, null=True, blank=True)
+    # state = models.CharField('State', max_length=250, null=True, blank=True)
+    # address = models.CharField('Address', max_length=250, null=True, blank=True)
+    #sectors city state are same as base station's city and state
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
