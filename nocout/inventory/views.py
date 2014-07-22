@@ -801,8 +801,8 @@ class CustomerList(ListView):
         datatable_headers = [
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', },
+            # {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            # {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', },
             {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', },
             ]
@@ -816,8 +816,8 @@ class CustomerList(ListView):
 
 class CustomerListingTable(BaseDatatableView):
     model = Customer
-    columns = ['name', 'alias', 'city', 'state', 'address', 'description']
-    order_columns = ['name', 'alias', 'city', 'state', 'address', 'description']
+    columns = ['name', 'alias', 'address', 'description']
+    order_columns = ['name', 'alias', 'address', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)

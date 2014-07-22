@@ -132,8 +132,10 @@ class Sector(models.Model):
 class Customer(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
-    city = models.CharField('City', max_length=250, null=True, blank=True)
-    state = models.CharField('State', max_length=250, null=True, blank=True)
+    #customer's city state would always be same as that of sector's city state
+    # city = models.CharField('City', max_length=250, null=True, blank=True)
+    # state = models.CharField('State', max_length=250, null=True, blank=True)
+    #customer's city state would always be same as that of sector's city state
     address = models.CharField('Address', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
