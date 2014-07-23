@@ -1370,6 +1370,7 @@ class DeviceTypeList(ListView):
         datatable_headers = [
             {'mData':'name',                   'sTitle' : 'Name',       'sWidth':'null',},
             {'mData':'alias',                  'sTitle' : 'Alias',      'sWidth':'null',},
+            {'mData':'agent_tag',              'sTitle' : 'Agent tag',  'sWidth':'null',},
             {'mData':'actions',                'sTitle' : 'Actions',    'sWidth':'10%' ,}
             ]
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -1377,8 +1378,8 @@ class DeviceTypeList(ListView):
 
 class DeviceTypeListingTable(BaseDatatableView):
     model = DeviceType
-    columns = ['name', 'alias']
-    order_columns = ['name', 'alias']
+    columns = ['name', 'alias', 'agent_tag']
+    order_columns = ['name', 'alias', 'agent_tag']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
