@@ -663,7 +663,8 @@ class ServiceHistoryList(ListView):
             {'mData':'warning',                 'sTitle' : 'Warning',               'sWidth':'null',},
             {'mData':'critical',                'sTitle' : 'Critical',              'sWidth':'null',},
             {'mData':'added_on',                'sTitle' : 'Added On',              'sWidth':'null',},
-            {'mData':'modified_on',             'sTitle' : 'Updated On',            'sWidth':'null',}]
+            {'mData':'modified_on',             'sTitle' : 'Updated On',            'sWidth':'null',},
+            {'mData':'actions',                 'sTitle' : 'Actions',               'sWidth':'null',}]
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -696,8 +697,8 @@ class ServiceHistoryListingTable(BaseDatatableView):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
-            dct.update(actions='<a href="/service/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/service/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            dct.update(actions='<a href="#" onclick="Dajaxice.device.edit_single_service_form(get_single_service_edit_form, {{\'sh_id\': {0}}})"><i class="fa fa-pencil text-dark"></i></a>\
+                                <a href="#" onclick="Dajaxice.device.service_delete_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):
