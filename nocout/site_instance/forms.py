@@ -6,6 +6,10 @@ class SiteInstanceForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(SiteInstanceForm, self).__init__(*args, **kwargs)
         self.fields['machine'].empty_label = 'Select'
+        self.fields['machine'].required = True
+        self.fields['username'].required = True
+        self.fields['password'].required = True
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
