@@ -69,7 +69,7 @@ def mongo_db_update(db,matching_criteria,event_dict,flag):
 			elif flag == "network_perf_data":
 				db.device_network_status.update(matching_criteria,event_dict,upsert=True)
 			elif flag == "status_services":
-				db.device_status_serices_status.update(matching_criteria,event_dict,upsert=True)
+				db.device_status_services_status.update(matching_criteria,event_dict,upsert=True)
                 	return success
 		except Exception, ReferenceError:
         		print "Mongodb updation failed"
@@ -78,7 +78,6 @@ def mongo_db_update(db,matching_criteria,event_dict,flag):
         else:
                 print "Mongo_db updatation failed"
                 return failure
-
 
 
 def get_latest_entry(db_type=None, db=None, site=None,table_name=None, host=None, serv='_HOST_', ds='rta'):
