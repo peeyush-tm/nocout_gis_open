@@ -37,11 +37,8 @@ class InventoryListing(ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
             {'mData': 'user_group__name', 'sTitle': 'User Group', 'sWidth': 'null', },
             {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'null', },
-            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', },
-            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', },
-            {'mData': 'country', 'sTitle': 'Country', 'sWidth': 'null', },
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', },
-            ]
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', },]
+
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', })
@@ -52,9 +49,8 @@ class InventoryListing(ListView):
 
 class InventoryListingTable(BaseDatatableView):
     model = Inventory
-    columns = ['name', 'alias', 'user_group__name', 'organization__name', 'city', 'state', 'country', 'description']
-    order_columns = ['name', 'alias', 'user_group__name', 'organization__name', 'city', 'state', 'country',
-                     'description']
+    columns = ['name', 'alias', 'user_group__name', 'organization__name', 'description']
+    order_columns = ['name', 'alias', 'user_group__name', 'organization__name', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)

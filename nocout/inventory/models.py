@@ -13,9 +13,6 @@ class Inventory(models.Model):
     organization = models.ForeignKey(Organization)
     user_group = models.ForeignKey(UserGroup)
     device_groups = models.ManyToManyField(DeviceGroup, null=True, blank=True)
-    city = models.CharField('City', max_length=200, null=True, blank=True)
-    state = models.CharField('State', max_length=200, null=True, blank=True)
-    country = models.CharField('Country', max_length=200, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
