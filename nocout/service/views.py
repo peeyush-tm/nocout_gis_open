@@ -72,26 +72,27 @@ class ServiceListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
-        ##joining the multiple data sources in one
-        new_qs = []
-        temp_dict = {}
-        delete_list = []
-        for ds in qs:
-            if ds["id"] not in temp_dict:
-                temp_dict[ds["id"]] = []
-            temp_dict[ds["id"]].append(ds["service_data_sources__alias"])
-
-        for q in qs:
-            if q["id"] not in delete_list:
-                delete_list.append(q["id"])
-                for sid in temp_dict:
-                    if sid == q["id"]:
-                        q["service_data_sources__alias"] = ", ".join(temp_dict[sid])
-                        new_qs.append(q)
-        ##joining the multiple data sources in one.
-        ## replacing old one
-        qs = new_qs
-        ## replacing old one
+        #in correct behaviour on GUI. need to be redone. @TODO
+        # ##joining the multiple data sources in one
+        # new_qs = []
+        # temp_dict = {}
+        # delete_list = []
+        # for ds in qs:
+        #     if ds["id"] not in temp_dict:
+        #         temp_dict[ds["id"]] = []
+        #     temp_dict[ds["id"]].append(ds["service_data_sources__alias"])
+        #
+        # for q in qs:
+        #     if q["id"] not in delete_list:
+        #         delete_list.append(q["id"])
+        #         for sid in temp_dict:
+        #             if sid == q["id"]:
+        #                 q["service_data_sources__alias"] = ", ".join(temp_dict[sid])
+        #                 new_qs.append(q)
+        # ##joining the multiple data sources in one.
+        # ## replacing old one
+        # qs = new_qs
+        # ## replacing old one
 
         for dct in qs:
             dct.update(actions='<a href="/service/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
