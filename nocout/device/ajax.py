@@ -698,8 +698,6 @@ def add_service(request, service_data):
             result['data']['objects']['agent_tag'] = str(DeviceType.objects.get(pk=device.device_type).agent_tag)
             # payload data for post request
             service_data = result['data']['objects']
-            print "******************service_data **********************"
-            print service_data
             # master site on which service needs to be added
             master_site = SiteInstance.objects.get(name='master_UA')
             # url for nocout.py
@@ -735,21 +733,42 @@ def add_service(request, service_data):
                     messages += result['message']
 
                     # save service to service_history table
-                    for data_source in service.service_data_sources.all():
-                        sh = ServiceHistory.objects.create(device_name=str(Device.objects.get(pk=int(sd['device_id'])).device_name),
-                                                           service_name=str(Service.objects.get(pk=int(sd['service_id'])).name),
-                                                           agent_tag=str(DeviceType.objects.get(pk=device.device_type).agent_tag),
-                                                           port=str(service_para.protocol.port),
-                                                           version=str(service_para.protocol.version),
-                                                           read_community=str(service_para.protocol.read_community),
-                                                           svc_template=str(service_para.parameter_description),
-                                                           normal_check_interval=int(service_para.normal_check_interval),
-                                                           retry_check_interval=int(service_para.retry_check_interval),
-                                                           max_check_attempts=int(service_para.max_check_attempts),
-                                                           data_source=data_source.name,
-                                                           warning=data_source.warning,
-                                                           critical=data_source.critical
-                                                      )
+                    try:
+                        # if service exist in 'service history' table than update service else create it
+                        for data_source in service.service_data_sources.all():
+                            sh = ServiceHistory.objects.get(device_name=Device.objects.get(pk=int(sd['device_id'])).device_name,
+                                                       service_name=Service.objects.get(pk=int(sd['service_id'])).name,
+                                                       data_source=data_source.name)
+                            sh.agent_tag=str(DeviceType.objects.get(pk=device.device_type).agent_tag)
+                            sh.port=str(service_para.protocol.port)
+                            sh.version=str(service_para.protocol.version)
+                            sh.read_community=str(service_para.protocol.read_community)
+                            sh.svc_template=str(service_para.parameter_description)
+                            sh.normal_check_interval=int(service_para.normal_check_interval)
+                            sh.retry_check_interval=int(service_para.retry_check_interval)
+                            sh.max_check_attempts=int(service_para.max_check_attempts)
+                            sh.warning=data_source.warning
+                            sh.critical=data_source.critical
+                            sh.save()
+                    except Exception as e:
+                        logger.info(e)
+                        for data_source in service.service_data_sources.all():
+                            # create service if it is not existing in 'service history' table
+                            sh = ServiceHistory.objects.create(device_name=str(Device.objects.get(pk=int(sd['device_id'])).device_name),
+                                                               service_name=str(Service.objects.get(pk=int(sd['service_id'])).name),
+                                                               agent_tag=str(DeviceType.objects.get(pk=device.device_type).agent_tag),
+                                                               port=str(service_para.protocol.port),
+                                                               version=str(service_para.protocol.version),
+                                                               read_community=str(service_para.protocol.read_community),
+                                                               svc_template=str(service_para.parameter_description),
+                                                               normal_check_interval=int(service_para.normal_check_interval),
+                                                               retry_check_interval=int(service_para.retry_check_interval),
+                                                               max_check_attempts=int(service_para.max_check_attempts),
+                                                               data_source=data_source.name,
+                                                               warning=data_source.warning,
+                                                               critical=data_source.critical)
+
+
                     # set 'is_monitored_on_nms' to 1 if service is added successfully
                     device.is_monitored_on_nms = 1
                     device.save()
@@ -763,3 +782,200 @@ def add_service(request, service_data):
     result['message'] = messages
     return json.dumps({'result': result})
 
+@dajaxice_register
+def edit_single_service_form(request, sh_id):
+    # service history object
+    sh = ServiceHistory.objects.get(id=sh_id)
+
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = ""
+    result['data']['meta'] = {}
+    result['data']['objects'] = {}
+
+    try:
+        device = Device.objects.get(device_name=sh.device_name)
+        service_data = result['data']['objects']
+        service_data['sh_id'] = sh_id
+        service_data['device_name'] = sh.device_name
+        service_data['device_alias'] = device.device_alias
+        service_data['service_name'] = sh.service_name
+        service_data['current_template'] = sh.svc_template
+        service_data['normal_check_interval'] = sh.normal_check_interval
+        service_data['retry_check_interval'] = sh.retry_check_interval
+        service_data['max_check_attempts'] = sh.max_check_attempts
+        service_data['data_source'] = sh.data_source
+        service_data['warning'] = sh.warning
+        service_data['critical'] = sh.critical
+        service_data['agent_tag'] = sh.agent_tag
+        service_data['version'] = sh.version
+        service_data['read_community'] = sh.read_community
+        service_data['port'] = sh.port
+        service_data['templates'] = []
+        service_templates = ServiceParameters.objects.all()
+        for svc_template in service_templates:
+            temp_dict = {}
+            temp_dict['key'] = svc_template.id
+            temp_dict['value'] = svc_template.parameter_description
+            service_data['templates'].append(temp_dict)
+    except Exception as e:
+        logger.info(e)
+
+    return json.dumps({'result': result})
+
+# get service parameters and data source tables for service addition form
+@dajaxice_register
+def get_service_para_table(request, device_name, service_name, template_id=""):
+    dajax = Dajax()
+    params = []
+    if template_id and template_id != "":
+        svc_template = ServiceParameters.objects.get(id=template_id)
+        params.append("<br />")
+        params.append("<div class=''><div class='box border red'><div class='box-title'><h4><i class='fa fa-table'></i>Modified Service Parameters</h4></div>")
+        params.append("<div class='box-body'><table class='table'>")
+        params.append("<thead><tr><th>Normal Check Interval</th><th>Retry Check Interval</th><th>Max Check Attemps</th></tr></thead>")
+        params.append("<tbody><tr><td>%d</td><td>%d</td><td>%d</td></tr>" % (svc_template.normal_check_interval,
+                                                                             svc_template.retry_check_interval,
+                                                                             svc_template.max_check_attempts)
+        )
+        params.append("</tbody>")
+        params.append("<thead><tr><th>DS Name</th><th>Warning</th><th>Critical</th></tr></thead><tbody>")
+        for sds in ServiceHistory.objects.filter(device_name=device_name, service_name=service_name):
+            params.append("<tr class='data_source_field'><td class='ds_name'>%s</td>\
+                          <td contenteditable='true' class='ds_warning'>%d</td>\
+                          <td contenteditable='true' class='ds_critical'>%d</td></tr>" % (sds.data_source , int(sds.warning), int(sds.critical))
+            )
+        params.append("</tbody></table></div></div></div>")
+    else:
+        params.append("<h5 class='text-danger'>No data to show.</h5> ")
+    dajax.assign("#modified_info", 'innerHTML', ''.join(params))
+    return dajax.json()
+
+
+# edit single service for nocout core
+@dajaxice_register
+def edit_single_service(request, sh_id, svc_temp_id, data_sources):
+    # service format for nocout core
+    # {
+    #     "snmp_community": {
+    #         "read_community": "public",
+    #         "version": "v2c"
+    #     },
+    #     "agent_tag": "snmp",
+    #     "service_name": "radwin_rssi",
+    #     "snmp_port": 161,
+    #     "serv_params": {
+    #         "normal_check_interval": 5,
+    #         "max_check_attempts": 5,
+    #         "retry_check_interval": 5
+    #     },
+    #     "device_name": "radwin",
+    #     "mode": "addservice",
+    #     "cmd_params": {
+    #         "rssi": {
+    #             "warning": "-50",
+    #             "critical": "-80"
+    #         }
+    #     }
+    # }
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = ""
+    result['data']['meta'] = {}
+    result['data']['objects'] = {}
+    try:
+        # service history object
+        sh = ServiceHistory.objects.get(id=sh_id)
+        try:
+            # payload data for post request
+            service_data = result['data']['objects']
+            service_para = ServiceParameters.objects.get(pk=svc_temp_id)
+            # mode
+            service_data['mode'] = "editservice"
+            # device name
+            service_data['device_name'] = str(sh.device_name)
+            # service name
+            service_data['service_name'] = str(sh.service_name)
+            # service parameters
+            service_data['serv_params'] = {}
+            service_data['serv_params']['normal_check_interval'] = int(service_para.normal_check_interval)
+            service_data['serv_params']['retry_check_interval'] = int(service_para.retry_check_interval)
+            service_data['serv_params']['max_check_attempts'] = int(service_para.max_check_attempts)
+            # snmp parameters
+            service_data['snmp_community'] = {}
+            service_data['snmp_community']['version'] = str(service_para.protocol.version)
+            service_data['snmp_community']['read_community'] = str(service_para.protocol.read_community)
+            # command parameters
+            service_data['cmd_params'] = {}
+
+            # looping through data sources add them to 'cmd_params' dictionary
+            for sds in data_sources:
+                service_data['cmd_params'][str(sds['data_source'])] = {'warning': str(sds['warning']), 'critical': str(sds['critical'])}
+
+            # snmp port
+            service_data['snmp_port'] = str(sh.port)
+            # agent tag
+            service_data['agent_tag'] = str(sh.agent_tag)
+
+            # master site on which service needs to be added
+            master_site = SiteInstance.objects.get(name='master_UA')
+            # url for nocout.py
+            # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+            # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
+            url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                                    master_site.password,
+                                                                    master_site.machine.machine_ip,
+                                                                    master_site.web_service_port,
+                                                                    master_site.name)
+            # encoding service_data
+            encoded_data = urllib.urlencode(service_data)
+
+            # sending post request to nocout device app to add single service at a time
+            r = requests.post(url , data=encoded_data)
+
+            # converting post response data into python dict expression
+            response_dict = ast.literal_eval(r.text)
+
+            # if response(r) is given by post request than process it further to get success/failure messages
+            if r:
+                result['data'] = service_data
+                result['success'] = 1
+
+                # if response_dict doesn't have key 'success'
+                if not response_dict.get('success'):
+                    logger.info(response_dict.get('error_message'))
+                    result['message'] += "Failed to updated service '%s'. <br />" % (sh.service_name)
+                else:
+                    result['message'] += "Successfully updated service '%s'. <br />" % (sh.service_name)
+                    device = Device.objects.get(device_name=sh.device_name)
+
+                    # save service to service_history table
+                    try:
+                        # if service exist in 'service history' table than update it
+                        for data_source in data_sources:
+                            sh_obj = ServiceHistory.objects.get(device_name=sh.device_name,
+                                                                service_name=sh.service_name,
+                                                                data_source=data_source['data_source'])
+                            sh_obj.agent_tag = str(sh.agent_tag)
+                            sh_obj.port = str(service_para.protocol.port)
+                            sh_obj.version = str(service_para.protocol.version)
+                            sh_obj.read_community = str(service_para.protocol.read_community)
+                            sh_obj.svc_template = str(service_para.parameter_description)
+                            sh_obj.normal_check_interval = int(service_para.normal_check_interval)
+                            sh_obj.retry_check_interval = int(service_para.retry_check_interval)
+                            sh_obj.max_check_attempts = int(service_para.max_check_attempts)
+                            sh_obj.warning = data_source['warning']
+                            sh_obj.critical = data_source['critical']
+                            sh_obj.save()
+                    except Exception as e:
+                        logger.info(e)
+        except Exception as e:
+            logger.info(e)
+            result['message'] = "Failed to updated service '%s'. <br />" % (sh.service_name)
+    except Exception as e:
+        logger.info(e)
+        result['message'] = "Failed to updated service '%s'. <br />" % (sh.service_name)
+    # assign messages to result dict message key
+    return json.dumps({'result': result})
