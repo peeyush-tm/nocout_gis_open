@@ -93,6 +93,8 @@ class AntennaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(AntennaForm, self).__init__(*args, **kwargs)
+        self.fields['height'].initial =0
+        self.fields['azimuth_angle'].initial = 0
         self.fields['height'].required = True
         self.fields['azimuth_angle'].required = True
         self.fields['polarization'].required = True
@@ -196,6 +198,8 @@ class BaseStationForm(forms.ModelForm):
         self.fields['country'].empty_label = 'Select'
         self.fields['state'].empty_label = 'Select'
         self.fields['city'].empty_label = 'Select'
+        self.fields['building_height'].initial =0
+        self.fields['tower_height'].initial =0
 
         self.fields['bs_technology'].required =True
         self.fields['latitude'].required =True
@@ -300,13 +304,14 @@ class SubStationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(SubStationForm, self).__init__(*args, **kwargs)
+        self.fields['tower_height'].initial = 0
+        self.fields['building_height'].initial = 0
         self.fields['country'].empty_label = 'Select'
         self.fields['state'].empty_label = 'Select'
         self.fields['city'].empty_label = 'Select'
         self.fields['device'].empty_label = 'Select'
         self.fields['antenna'].required = True
         self.fields['building_height'].required = True
-        self.fields['tower_height'].required = True
         self.fields['tower_height'].required = True
         self.fields['country'].required = True
         self.fields['state'].required = True
