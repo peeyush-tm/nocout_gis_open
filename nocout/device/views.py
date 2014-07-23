@@ -934,10 +934,11 @@ class DeviceVendorList(ListView):
     def get_context_data(self, **kwargs):
             context=super(DeviceVendorList, self).get_context_data(**kwargs)
             datatable_headers = [
-            {'mData':'name',                   'sTitle' : 'Name',       'sWidth':'null',},
-            {'mData':'alias',                  'sTitle' : 'Alias',      'sWidth':'null',},
-            {'mData':'actions',                'sTitle' : 'Actions',    'sWidth':'10%' ,}
-            ]
+            {'mData':'name',                   'sTitle' : 'Name',               'sWidth':'null',},
+            {'mData':'alias',                  'sTitle' : 'Alias',              'sWidth':'null',},
+            {'mData':'device_models',          'sTitle' : 'Device Models',      'sWidth':'null',},
+            {'mData':'device_types',           'sTitle' : 'Device Types',       'sWidth':'null',},
+            {'mData':'actions',                'sTitle' : 'Actions',            'sWidth':'10%' ,} ]
             context['datatable_headers'] = json.dumps(datatable_headers)
             return context
 
@@ -966,7 +967,55 @@ class DeviceVendorListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return DeviceVendor.objects.values(*self.columns+['id'])
+        qs=list()
+
+        qs_query= DeviceVendor.objects.prefetch_related()
+        for dvendor in qs_query:
+            dct=dict()
+            dct={
+                'id':dvendor.id,
+                'name':dvendor.name,
+                'alias':dvendor.alias,
+                'device_models':', '.join(dvendor.device_models.values_list('name', flat=True)),
+                 }
+            for dmodels in dvendor.device_models.prefetch_related():
+                dct['device_types']=', '.join(dmodels.device_types.values_list('name', flat=True))
+            qs.append(dct)
+
+        return qs
+
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except ValueError:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.get_order_columns()
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except ValueError:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ' '
+
+            sortcol = order_columns[i_sort_col]
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            return sorted(qs, key=itemgetter(order[0][1:]), reverse= True if '-' in order[0] else False)
+        return qs
 
     def prepare_results(self, qs):
         if qs:
@@ -983,12 +1032,12 @@ class DeviceVendorListingTable(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.count()
+        total_records = len(qs)
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.count()
+        total_display_records = len(qs)
 
         qs = self.ordering(qs)
         qs = self.paging(qs)

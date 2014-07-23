@@ -263,8 +263,9 @@ class DeviceVendorForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         # removing help text for device_models 'select' field
         self.base_fields['device_models'].help_text = ''
-
         super(DeviceVendorForm, self).__init__(*args, **kwargs)
+
+        self.fields['device_models'].required = True
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
