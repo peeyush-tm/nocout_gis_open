@@ -26,9 +26,7 @@ class DeviceGroupList(ListView):
             {'mData':'name',                   'sTitle' : 'Name',              'sWidth':'null',},
             {'mData':'alias',                  'sTitle' : 'Alias',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'parent__name',           'sTitle' : 'Parent ',           'sWidth':'null',},
-            {'mData':'organization__name',     'sTitle' : 'Organization',      'sWidth':'null',},
-            {'mData':'location',               'sTitle' : 'Location',          'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'address',                'sTitle' : 'Address',           'sWidth':'null','sClass':'hidden-xs'},]
+            {'mData':'organization__name',     'sTitle' : 'Organization',      'sWidth':'null',},]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
@@ -39,8 +37,8 @@ class DeviceGroupList(ListView):
 
 class DeviceGroupListingTable(BaseDatatableView):
     model = DeviceGroup
-    columns = ['name', 'alias', 'parent__name','organization__name', 'location','address']
-    order_columns = ['name', 'alias', 'parent__name','organization__name', 'location','address']
+    columns = ['name', 'alias', 'parent__name','organization__name']
+    order_columns = ['name', 'alias', 'parent__name','organization__name']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
