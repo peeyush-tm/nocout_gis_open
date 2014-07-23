@@ -39,10 +39,12 @@ def inventory_perf_data(site,hostlist):
 			elif service_state == 3:
 				service_state = "UNKNOWN"
 			host_ip = str(query_output[0][2])
+			ds=service.split('_')[1:-1]
+			ds = ('_').join(ds)
 			current_time = int(time.time())
 			invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host[0]),
 						service_name=service,current_value=plugin_output,min_value=0,max_value=0,avg_value=0,
-						data_source=service,severity=service_state,site_name=site,warning_threshold=0,
+						data_source=ds,severity=service_state,site_name=site,warning_threshold=0,
 						critical_threshold=0,ip_address=host_ip)
 			matching_criteria.update({'device_name':str(host[0]),'service_name':service,'site_name':site})
 			mongo_functions.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
