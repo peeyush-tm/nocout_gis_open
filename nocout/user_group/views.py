@@ -95,7 +95,7 @@ class UserGroupListingTable(BaseDatatableView):
             # sorting order
             s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
 
-            sdir = '-' if s_sort_dir == 'desc' else ''
+            sdir = '-' if s_sort_dir == 'desc' else ' '
             try:
                 sortcol = order_columns[i_sort_col]
             except IndexError:
@@ -107,7 +107,7 @@ class UserGroupListingTable(BaseDatatableView):
             else:
                 order.append('%s%s' % (sdir, sortcol))
         if order:
-            return sorted(qs, key=itemgetter('name'), reverse= True if '-' in order else False)
+            return sorted(qs, key=itemgetter(order[0][1:]), reverse= True if '-' in order[0] else False)
         return qs
 
     def get_context_data(self, *args, **kwargs):
