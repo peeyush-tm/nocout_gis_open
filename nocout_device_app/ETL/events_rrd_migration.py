@@ -38,6 +38,9 @@ def get_latest_event_entry(db_type=None, db=None, site=None,table_name=None):
 	return time
 
 def service_perf_data_live_query(db,site,log_split):
+	# Adding check for not storing data for check_mk service
+	if log_split[5] == 'Check_MK':
+		return
 	if log_split[0] == "CURRENT SERVICE STATE":
 		host_ip = log_split[12]
 		description=log_split[11]
@@ -48,21 +51,32 @@ def service_perf_data_live_query(db,site,log_split):
 		host_ip = log_split[11]
 		description=log_split[9]
 	if 'invent' not in log_split[5]:
-		query = "GET services\nColumns: service_perf_data\nFilter: service_description ~ %s\n" %(log_split[5]) 
+		query = "GET services\nColumns: service_perf_data\nFilter: service_description ~ %s\nFilter: host_name = %s\n" % ( 
+		log_split[5],log_split[4]) 
 		perf_data= rrd_main.get_from_socket(site, query)
 		perf_data = rrd_migration.get_threshold(perf_data)
+		
 		for ds in perf_data.iterkeys():
+			# Adding check for not storing data for rtmin and rtmax data source of ping services
+			if ds =='rtmin' or ds == 'rtmax':
+				continue
 			cur =perf_data.get(ds).get('cur')
 			war =perf_data.get(ds).get('war')
 			crit =perf_data.get(ds).get('cric')
+				
 			serv_event_dict=dict(sys_timestamp=int(log_split[1]),device_name=log_split[4],severity=log_split[8],
 					description=log_split[11],min_value=0,max_value=0,avg_value =0,current_value=cur,
 					data_source = ds,warning_threshold=war,
 					critical_threshold =crit ,check_timestamp = int(log_split[1]),
 					ip_address=host_ip,service_name=log_split[5],site_name=site)
-               		mongo_functions.mongo_db_insert(db,serv_event_dict,"serv_event")
-	else:
-		query = "GET services\nColumns: service_plugin_output\nFilter: service_description ~ %s\n" %(log_split[5]) 
+			if log_split[5] == 'PING':
+				serv_event_dict.update({"service_name":"ping"})
+                		mongo_functions.mongo_db_insert(db,serv_event_dict,"host_event")
+			else:
+				mongo_functions.mongo_db_insert(db,serv_event_dict,"serv_event")
+	elif 'invent' in log_split[5]:
+		query = "GET services\nColumns: service_plugin_output\nFilter: service_description ~ %s\nFilter: host_name = %s\n" %(
+		log_split[5]) 
 		perf_data= rrd_main.get_from_socket(site, query)
 		current_value = perf_data.split('- ')[1].strip('\n')
 		serv_event_dict=dict(sys_timestamp=int(log_split[1]),device_name=log_split[4],severity=log_split[8],
@@ -74,19 +88,21 @@ def service_perf_data_live_query(db,site,log_split):
 		mongo_functions.mongo_db_insert(db,serv_event_dict,"serv_event")
 
 def network_perf_data_live_query(db,site,log_split):
+	query = "GET services\nColumns: service_perf_data\nFilter: service_description ~ %s\nFilter: host_name = %s\n" % ('PING',log_split[4]) 
+	perf_data= rrd_main.get_from_socket(site, query)
+	host_perf_data = rrd_migration.get_threshold(perf_data)
 	if log_split[0] == "CURRENT HOST STATE":
 		host_ip = log_split[12]
 		description=log_split[11]
-		host_perf_data = rrd_migration.get_threshold(log_split[13])
 	elif log_split[0] == "HOST ALERT" or log_split[0] == "INITIAL HOST STATE":
 		host_ip = log_split[11]
 		description=log_split[10]
-		host_perf_data = rrd_migration.get_threshold(log_split[12])
 	elif log_split[0] == "HOST FLAPPING ALERT":
 		host_ip = log_split[9]
 		description=log_split[8]
-		host_perf_data = rrd_migration.get_threshold(log_split[10])
 	for ds in host_perf_data.iterkeys():
+		if ds == 'rtmin' or ds == 'rtmax':
+			continue
 		host_cur =host_perf_data.get(ds).get('cur')
 		host_war =host_perf_data.get(ds).get('war')
 		host_crit =host_perf_data.get(ds).get('cric')
