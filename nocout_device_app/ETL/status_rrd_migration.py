@@ -14,6 +14,7 @@ def status_perf_data(site,hostlist):
 
 	status_check_list = []
 	status_service_dict = {}
+	matching_criteria = {}
 	db = mongo_functions.mongo_db_conn(site,"nocout")
 	for host in hostlist:
 		query = "GET hosts\nColumns: host_services\nFilter: host_name = %s\n" %(host[0])
@@ -47,9 +48,11 @@ def status_perf_data(site,hostlist):
                                                 service_name=service,current_value=cur,min_value=0,max_value=0,avg_value=0,
                                                 data_source=ds,severity=service_state,site_name=site,warning_threshold=war,
                                                 critical_threshold=crit,ip_address=host_ip)
+				matching_criteria.update({'device_name':str(host[0]),'service_name':service,'site_name':site,'data_source':ds})
+				mongo_functions.mongo_db_update(db,matching_criteria,status_service_dict,"status_services")
                         	mongo_functions.mongo_db_insert(db,status_service_dict,"status_services")
-
-			query_output = json.loads(rrd_main.get_from_socket(site,query_string).strip())
+				matching_criteria = {}
+			#query_output = json.loads(rrd_main.get_from_socket(site,query_string).strip())
 		status_service_dict = {}
 		status_check_list = [] 
 

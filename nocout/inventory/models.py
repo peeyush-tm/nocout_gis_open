@@ -118,9 +118,11 @@ class Sector(models.Model):
     cell_radius = models.FloatField('Cell Radius', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
     frequency = models.ForeignKey(DeviceFrequency, null=True, blank=True)
     modulation = models.CharField('Modulation', max_length=250, null=True, blank=True)
-    city = models.CharField('City', max_length=250, null=True, blank=True)
-    state = models.CharField('State', max_length=250, null=True, blank=True)
-    address = models.CharField('Address', max_length=250, null=True, blank=True)
+    #sectors city state are same as base station's city and state
+    # city = models.CharField('City', max_length=250, null=True, blank=True)
+    # state = models.CharField('State', max_length=250, null=True, blank=True)
+    # address = models.CharField('Address', max_length=250, null=True, blank=True)
+    #sectors city state are same as base station's city and state
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
@@ -130,8 +132,10 @@ class Sector(models.Model):
 class Customer(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
-    city = models.CharField('City', max_length=250, null=True, blank=True)
-    state = models.CharField('State', max_length=250, null=True, blank=True)
+    #customer's city state would always be same as that of sector's city state
+    # city = models.CharField('City', max_length=250, null=True, blank=True)
+    # state = models.CharField('State', max_length=250, null=True, blank=True)
+    #customer's city state would always be same as that of sector's city state
     address = models.CharField('Address', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
@@ -150,8 +154,13 @@ class SubStation(models.Model):
     tower_height = models.FloatField('Tower Height', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
     ethernet_extender = models.CharField('Ethernet Extender', max_length=250, null=True, blank=True)
     cable_length = models.FloatField('Cable Length', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
-    city = models.CharField('City', max_length=250, null=True, blank=True)
-    state = models.CharField('State', max_length=250, null=True, blank=True)
+    #selection dropdown for city state
+    # city = models.CharField('City', max_length=250, null=True, blank=True)
+    # state = models.CharField('State', max_length=250, null=True, blank=True)
+    #
+    country = models.IntegerField('Country', null=True, blank=True)
+    state = models.IntegerField('State', null=True, blank=True)
+    city = models.IntegerField('City', null=True, blank=True)
     address = models.CharField('Address', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
