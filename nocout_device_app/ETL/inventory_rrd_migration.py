@@ -14,9 +14,10 @@ def inventory_perf_data(site,hostlist):
 
 	invent_check_list = []
 	invent_service_dict = {}
+	matching_criteria = {}
 	db = mongo_functions.mongo_db_conn(site,"nocout")
-	for host in hostlist[0]:
-		query = "GET hosts\nColumns: host_services\nFilter: host_name = %s\n" %(host)
+	for host in hostlist:
+		query = "GET hosts\nColumns: host_services\nFilter: host_name = %s\n" %(host[0])
 		query_output = rrd_main.get_from_socket(site,query).strip()
 		service_list = [service_name for service_name in query_output.split(',')]
 		for service in service_list:
@@ -25,7 +26,7 @@ def inventory_perf_data(site,hostlist):
 
 		for service in invent_check_list:
 			query_string = "GET services\nColumns: service_state plugin_output host_address\nFilter: " + \
-			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" 	 	% (service,host)
+			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" 	 	% (service,host[0])
 			query_output = json.loads(rrd_main.get_from_socket(site,query_string).strip())
 			plugin_output = str(query_output[0][1].split('- ')[1])
 			service_state = (query_output[0][0])
@@ -39,12 +40,15 @@ def inventory_perf_data(site,hostlist):
 				service_state = "UNKNOWN"
 			host_ip = str(query_output[0][2])
 			current_time = int(time.time())
-			invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host),
+			invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host[0]),
 						service_name=service,current_value=plugin_output,min_value=0,max_value=0,avg_value=0,
-						data_source=service_name,severity=service_state,site_name=site,warning_threshold=0,
+						data_source=service,severity=service_state,site_name=site,warning_threshold=0,
 						critical_threshold=0,ip_address=host_ip)
+			matching_criteria.update({'device_name':str(host[0]),'service_name':service,'site_name':site})
+			mongo_functions.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
 			mongo_functions.mongo_db_insert(db,invent_service_dict,"inventory_services")
 			invent_service_dict = {}
+			matching_criteria ={}
 
 def inventory_perf_data_main():
 	try:
