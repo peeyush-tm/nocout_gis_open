@@ -258,3 +258,4 @@ function show_param_tables(value){
     para_value = $("#service_"+value).val();
     Dajaxice.device.get_service_para_and_data_source_tables(Dajax.process, {'service_value': service_value, 'para_value': para_value});
 }
+
