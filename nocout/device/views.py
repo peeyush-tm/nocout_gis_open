@@ -1,4 +1,5 @@
 import json
+from operator import itemgetter
 from actstream import action
 from django.contrib.auth.decorators import permission_required
 from django.core.exceptions import ValidationError
@@ -709,9 +710,12 @@ class DeviceTechnologyList(ListView):
     def get_context_data(self, **kwargs):
         context=super(DeviceTechnologyList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',       'sTitle' : 'Name',       'sWidth':'null'},
-            {'mData':'alias',      'sTitle' : 'Alias',      'sWidth':'null'},
-            {'mData':'actions',    'sTitle' : 'Actions',    'sWidth':'10%' ,},
+            {'mData':'name',                               'sTitle' : 'Name',             'sWidth':'null'},
+            {'mData':'alias',                              'sTitle' : 'Alias',            'sWidth':'null'},
+            {'mData':'device_vendor',                      'sTitle' : 'Device Vendor',    'sWidth':'10%' },
+            {'mData':'device_vendor__model__name',         'sTitle' : 'Device Model',     'sWidth':'10%' ,},
+            {'mData':'device_vendor__model_type__name',    'sTitle' : 'Device Type',      'sWidth':'10%' ,},
+            {'mData':'actions',                            'sTitle':'Actions',            'sWidth':'10%' ,}
             ]
         context['datatable_headers'] = json.dumps( datatable_headers )
         return context
@@ -723,25 +727,37 @@ class DeviceTechnologyListingTable(BaseDatatableView):
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
-            exec exec_query
+            result_list=list()
+            for dictionary in qs:
+                for key in dictionary.keys():
+                    if str(dictionary[key])==sSearch:
+                        result_list.append(dictionary)
+            return result_list
 
         return qs
 
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return DeviceTechnology.objects.values(*self.columns+['id'])
+        qs_query= DeviceTechnology.objects.prefetch_related()
+        qs=list()
+        for dtechnology in qs_query:
+            dct=dict()
+            for dtechnology_vendor in dtechnology.device_vendors.values_list('name', flat=True):
+                dct={
+                    'id':dtechnology.id, 'name': dtechnology.name, 'alias': dtechnology.alias,
+                    'device_vendor':dtechnology_vendor
+                    }
+                dvendor=DeviceVendor.objects.get(name=dtechnology_vendor)
+
+                dct['device_vendor__model__name']=', '.join( dvendor.device_models.values_list('name', flat=True) )
+
+                for dmodel in dvendor.device_models.prefetch_related():
+                        dct['device_vendor__model_type__name']= ', '.join(dmodel.device_types.values_list('name', flat=True))
+
+                qs.append(dct)
+        return qs
 
     def prepare_results(self, qs):
         if qs:
@@ -751,6 +767,40 @@ class DeviceTechnologyListingTable(BaseDatatableView):
                         <a href="/technology/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except ValueError:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.get_order_columns()
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except ValueError:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ' '
+
+            sortcol = order_columns[i_sort_col]
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            return sorted(qs, key=itemgetter(order[0][1:]), reverse= True if '-' in order[0] else False)
+        return qs
+
+
     def get_context_data(self, *args, **kwargs):
         request = self.request
         self.initialize(*args, **kwargs)
@@ -758,12 +808,12 @@ class DeviceTechnologyListingTable(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.count()
+        total_records = len(qs)
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.count()
+        total_display_records = len(qs)
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
@@ -884,10 +934,11 @@ class DeviceVendorList(ListView):
     def get_context_data(self, **kwargs):
             context=super(DeviceVendorList, self).get_context_data(**kwargs)
             datatable_headers = [
-            {'mData':'name',                   'sTitle' : 'Name',       'sWidth':'null',},
-            {'mData':'alias',                  'sTitle' : 'Alias',      'sWidth':'null',},
-            {'mData':'actions',                'sTitle' : 'Actions',    'sWidth':'10%' ,}
-            ]
+            {'mData':'name',                   'sTitle' : 'Name',               'sWidth':'null',},
+            {'mData':'alias',                  'sTitle' : 'Alias',              'sWidth':'null',},
+            {'mData':'device_models',          'sTitle' : 'Device Models',      'sWidth':'null',},
+            {'mData':'device_types',           'sTitle' : 'Device Types',       'sWidth':'null',},
+            {'mData':'actions',                'sTitle' : 'Actions',            'sWidth':'10%' ,} ]
             context['datatable_headers'] = json.dumps(datatable_headers)
             return context
 
@@ -898,25 +949,68 @@ class DeviceVendorListingTable(BaseDatatableView):
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
-            exec exec_query
+            result_list=list()
+            for dictionary in qs:
+                for key in dictionary.keys():
+                    if str(dictionary[key])==sSearch:
+                        result_list.append(dictionary)
+            return result_list
 
         return qs
 
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return DeviceVendor.objects.values(*self.columns+['id'])
+        qs=list()
+
+        qs_query= DeviceVendor.objects.prefetch_related()
+        for dvendor in qs_query:
+            dct=dict()
+            dct={
+                'id':dvendor.id,
+                'name':dvendor.name,
+                'alias':dvendor.alias,
+                'device_models':', '.join(dvendor.device_models.values_list('name', flat=True)),
+                 }
+            for dmodels in dvendor.device_models.prefetch_related():
+                dct['device_types']=', '.join(dmodels.device_types.values_list('name', flat=True))
+            qs.append(dct)
+
+        return qs
+
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except ValueError:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.get_order_columns()
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except ValueError:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ' '
+
+            sortcol = order_columns[i_sort_col]
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            return sorted(qs, key=itemgetter(order[0][1:]), reverse= True if '-' in order[0] else False)
+        return qs
 
     def prepare_results(self, qs):
         if qs:
@@ -933,12 +1027,12 @@ class DeviceVendorListingTable(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.count()
+        total_records = len(qs)
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.count()
+        total_display_records = len(qs)
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
@@ -954,10 +1048,6 @@ class DeviceVendorListingTable(BaseDatatableView):
                'aaData': aaData
                }
         return ret
-
-
-
-
 
 class DeviceVendorDetail(DetailView):
     model = DeviceVendor
@@ -1062,10 +1152,10 @@ class DeviceModelList(ListView):
     def get_context_data(self, **kwargs):
         context=super(DeviceModelList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',       'sTitle' : 'Name',       'sWidth':'null',},
-            {'mData':'alias',      'sTitle' : 'Alias',      'sWidth':'null',},
-            {'mData':'actions',    'sTitle' : 'Actions',    'sWidth':'10%' ,}
-            ]
+            {'mData':'name',              'sTitle' : 'Name',              'sWidth':'null',},
+            {'mData':'alias',             'sTitle' : 'Alias',             'sWidth':'null',},
+            {'mData':'device_types',      'sTitle' : 'Device Types',      'sWidth':'null',},
+            {'mData':'actions',           'sTitle' : 'Actions',           'sWidth':'10%' ,} ]
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -1076,25 +1166,31 @@ class DeviceModelListingTable(BaseDatatableView):
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
-            query=[]
-            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
-            exec exec_query
+            result_list=list()
+            for dictionary in qs:
+                for key in dictionary.keys():
+                    if str(dictionary[key])==sSearch:
+                        result_list.append(dictionary)
+            return result_list
 
         return qs
 
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return DeviceModel.objects.values(*self.columns+['id'])
+        qs_query=DeviceModel.objects.prefetch_related()
+        qs=list()
+        for dmodel in qs_query:
+            dct=dict()
+            dct={
+                'id':dmodel.id,
+                'name':dmodel.name,
+                'alias':dmodel.alias,
+                'device_types':', '.join(dmodel.device_types.values_list('name', flat=True)),
+                }
+            qs.append(dct)
+        return qs
 
     def prepare_results(self, qs):
         if qs:
@@ -1104,6 +1200,40 @@ class DeviceModelListingTable(BaseDatatableView):
                         <a href="/model/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except ValueError:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.get_order_columns()
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except ValueError:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ' '
+
+            sortcol = order_columns[i_sort_col]
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            return sorted(qs, key= itemgetter(order[0][1:]), reverse= True if '-' in order[0] else False)
+        return qs
+
+
     def get_context_data(self, *args, **kwargs):
         request = self.request
         self.initialize(*args, **kwargs)
@@ -1111,12 +1241,12 @@ class DeviceModelListingTable(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.count()
+        total_records = len(qs)
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.count()
+        total_display_records = len(qs)
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
@@ -1240,6 +1370,7 @@ class DeviceTypeList(ListView):
         datatable_headers = [
             {'mData':'name',                   'sTitle' : 'Name',       'sWidth':'null',},
             {'mData':'alias',                  'sTitle' : 'Alias',      'sWidth':'null',},
+            {'mData':'agent_tag',              'sTitle' : 'Agent tag',  'sWidth':'null',},
             {'mData':'actions',                'sTitle' : 'Actions',    'sWidth':'10%' ,}
             ]
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -1247,8 +1378,8 @@ class DeviceTypeList(ListView):
 
 class DeviceTypeListingTable(BaseDatatableView):
     model = DeviceType
-    columns = ['name', 'alias']
-    order_columns = ['name', 'alias']
+    columns = ['name', 'alias', 'agent_tag']
+    order_columns = ['name', 'alias', 'agent_tag']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
