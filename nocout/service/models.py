@@ -86,8 +86,8 @@ class Service(models.Model):
         return self.name
 
 
-# service history --> it contains history of already running service
-class ServiceHistory(models.Model):
+# device service configuration --> it contains services those are already running
+class DeviceServiceConfiguration(models.Model):
     device_name = models.CharField('Device Name', max_length=200, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=200, null=True, blank=True)
     agent_tag = models.CharField('Agent Tag', max_length=50, null=True, blank=True)
@@ -112,7 +112,7 @@ class ServiceHistory(models.Model):
         if not self.id:
             self.added_on = datetime.datetime.today()
         self.modified_on = datetime.datetime.today()
-        return super(ServiceHistory, self).save(*args, **kwargs)
+        return super(DeviceServiceConfiguration, self).save(*args, **kwargs)
 
     def __unicode__(self):
         return "{} - {} - {}".format(self.device_name, self.service_name, self.added_on)

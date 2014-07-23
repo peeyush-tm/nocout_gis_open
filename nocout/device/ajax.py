@@ -6,7 +6,7 @@ from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, D
     DeviceTypeFieldsValue, Country, State, City, DevicePort
 import requests
 import logging
-from service.models import Service, ServiceDataSource, ServiceParameters, ServiceHistory
+from service.models import Service, ServiceDataSource, ServiceParameters, DeviceServiceConfiguration
 import urllib
 from site_instance.models import SiteInstance
 
@@ -736,25 +736,25 @@ def add_service(request, service_data):
                     try:
                         # if service exist in 'service history' table than update service else create it
                         for data_source in service.service_data_sources.all():
-                            sh = ServiceHistory.objects.get(device_name=Device.objects.get(pk=int(sd['device_id'])).device_name,
+                            dsc = DeviceServiceConfiguration.objects.get(device_name=Device.objects.get(pk=int(sd['device_id'])).device_name,
                                                        service_name=Service.objects.get(pk=int(sd['service_id'])).name,
                                                        data_source=data_source.name)
-                            sh.agent_tag=str(DeviceType.objects.get(pk=device.device_type).agent_tag)
-                            sh.port=str(service_para.protocol.port)
-                            sh.version=str(service_para.protocol.version)
-                            sh.read_community=str(service_para.protocol.read_community)
-                            sh.svc_template=str(service_para.parameter_description)
-                            sh.normal_check_interval=int(service_para.normal_check_interval)
-                            sh.retry_check_interval=int(service_para.retry_check_interval)
-                            sh.max_check_attempts=int(service_para.max_check_attempts)
-                            sh.warning=data_source.warning
-                            sh.critical=data_source.critical
-                            sh.save()
+                            dsc.agent_tag=str(DeviceType.objects.get(pk=device.device_type).agent_tag)
+                            dsc.port=str(service_para.protocol.port)
+                            dsc.version=str(service_para.protocol.version)
+                            dsc.read_community=str(service_para.protocol.read_community)
+                            dsc.svc_template=str(service_para.parameter_description)
+                            dsc.normal_check_interval=int(service_para.normal_check_interval)
+                            dsc.retry_check_interval=int(service_para.retry_check_interval)
+                            dsc.max_check_attempts=int(service_para.max_check_attempts)
+                            dsc.warning=data_source.warning
+                            dsc.critical=data_source.critical
+                            dsc.save()
                     except Exception as e:
                         logger.info(e)
                         for data_source in service.service_data_sources.all():
                             # create service if it is not existing in 'service history' table
-                            sh = ServiceHistory.objects.create(device_name=str(Device.objects.get(pk=int(sd['device_id'])).device_name),
+                            dsc = DeviceServiceConfiguration.objects.create(device_name=str(Device.objects.get(pk=int(sd['device_id'])).device_name),
                                                                service_name=str(Service.objects.get(pk=int(sd['service_id'])).name),
                                                                agent_tag=str(DeviceType.objects.get(pk=device.device_type).agent_tag),
                                                                port=str(service_para.protocol.port),
@@ -783,9 +783,9 @@ def add_service(request, service_data):
     return json.dumps({'result': result})
 
 @dajaxice_register
-def edit_single_service_form(request, sh_id):
+def edit_single_service_form(request, dsc_id):
     # service history object
-    sh = ServiceHistory.objects.get(id=sh_id)
+    dsc = DeviceServiceConfiguration.objects.get(id=dsc_id)
 
     result = dict()
     result['data'] = {}
@@ -795,23 +795,23 @@ def edit_single_service_form(request, sh_id):
     result['data']['objects'] = {}
 
     try:
-        device = Device.objects.get(device_name=sh.device_name)
+        device = Device.objects.get(device_name=dsc.device_name)
         service_data = result['data']['objects']
-        service_data['sh_id'] = sh_id
-        service_data['device_name'] = sh.device_name
+        service_data['dsc_id'] = dsc_id
+        service_data['device_name'] = dsc.device_name
         service_data['device_alias'] = device.device_alias
-        service_data['service_name'] = sh.service_name
-        service_data['current_template'] = sh.svc_template
-        service_data['normal_check_interval'] = sh.normal_check_interval
-        service_data['retry_check_interval'] = sh.retry_check_interval
-        service_data['max_check_attempts'] = sh.max_check_attempts
-        service_data['data_source'] = sh.data_source
-        service_data['warning'] = sh.warning
-        service_data['critical'] = sh.critical
-        service_data['agent_tag'] = sh.agent_tag
-        service_data['version'] = sh.version
-        service_data['read_community'] = sh.read_community
-        service_data['port'] = sh.port
+        service_data['service_name'] = dsc.service_name
+        service_data['current_template'] = dsc.svc_template
+        service_data['normal_check_interval'] = dsc.normal_check_interval
+        service_data['retry_check_interval'] = dsc.retry_check_interval
+        service_data['max_check_attempts'] = dsc.max_check_attempts
+        service_data['data_source'] = dsc.data_source
+        service_data['warning'] = dsc.warning
+        service_data['critical'] = dsc.critical
+        service_data['agent_tag'] = dsc.agent_tag
+        service_data['version'] = dsc.version
+        service_data['read_community'] = dsc.read_community
+        service_data['port'] = dsc.port
         service_data['templates'] = []
         service_templates = ServiceParameters.objects.all()
         for svc_template in service_templates:
@@ -841,7 +841,7 @@ def get_service_para_table(request, device_name, service_name, template_id=""):
         )
         params.append("</tbody>")
         params.append("<thead><tr><th>DS Name</th><th>Warning</th><th>Critical</th></tr></thead><tbody>")
-        for sds in ServiceHistory.objects.filter(device_name=device_name, service_name=service_name):
+        for sds in DeviceServiceConfiguration.objects.filter(device_name=device_name, service_name=service_name):
             params.append("<tr class='data_source_field'><td class='ds_name'>%s</td>\
                           <td contenteditable='true' class='ds_warning'>%d</td>\
                           <td contenteditable='true' class='ds_critical'>%d</td></tr>" % (sds.data_source , int(sds.warning), int(sds.critical))
@@ -855,7 +855,7 @@ def get_service_para_table(request, device_name, service_name, template_id=""):
 
 # edit single service for nocout core
 @dajaxice_register
-def edit_single_service(request, sh_id, svc_temp_id, data_sources):
+def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
     # service format for nocout core
     # {
     #     "snmp_community": {
@@ -887,7 +887,7 @@ def edit_single_service(request, sh_id, svc_temp_id, data_sources):
     result['data']['objects'] = {}
     try:
         # service history object
-        sh = ServiceHistory.objects.get(id=sh_id)
+        dsc = DeviceServiceConfiguration.objects.get(id=dsc_id)
         try:
             # payload data for post request
             service_data = result['data']['objects']
@@ -895,9 +895,9 @@ def edit_single_service(request, sh_id, svc_temp_id, data_sources):
             # mode
             service_data['mode'] = "editservice"
             # device name
-            service_data['device_name'] = str(sh.device_name)
+            service_data['device_name'] = str(dsc.device_name)
             # service name
-            service_data['service_name'] = str(sh.service_name)
+            service_data['service_name'] = str(dsc.service_name)
             # service parameters
             service_data['serv_params'] = {}
             service_data['serv_params']['normal_check_interval'] = int(service_para.normal_check_interval)
@@ -915,9 +915,9 @@ def edit_single_service(request, sh_id, svc_temp_id, data_sources):
                 service_data['cmd_params'][str(sds['data_source'])] = {'warning': str(sds['warning']), 'critical': str(sds['critical'])}
 
             # snmp port
-            service_data['snmp_port'] = str(sh.port)
+            service_data['snmp_port'] = str(dsc.port)
             # agent tag
-            service_data['agent_tag'] = str(sh.agent_tag)
+            service_data['agent_tag'] = str(dsc.agent_tag)
 
             # master site on which service needs to be added
             master_site = SiteInstance.objects.get(name='master_UA')
@@ -946,36 +946,36 @@ def edit_single_service(request, sh_id, svc_temp_id, data_sources):
                 # if response_dict doesn't have key 'success'
                 if not response_dict.get('success'):
                     logger.info(response_dict.get('error_message'))
-                    result['message'] += "Failed to updated service '%s'. <br />" % (sh.service_name)
+                    result['message'] += "Failed to updated service '%s'. <br />" % (dsc.service_name)
                 else:
-                    result['message'] += "Successfully updated service '%s'. <br />" % (sh.service_name)
-                    device = Device.objects.get(device_name=sh.device_name)
+                    result['message'] += "Successfully updated service '%s'. <br />" % (dsc.service_name)
+                    device = Device.objects.get(device_name=dsc.device_name)
 
                     # save service to service_history table
                     try:
                         # if service exist in 'service history' table than update it
                         for data_source in data_sources:
-                            sh_obj = ServiceHistory.objects.get(device_name=sh.device_name,
-                                                                service_name=sh.service_name,
+                            dsc_obj = DeviceServiceConfiguration.objects.get(device_name=dsc.device_name,
+                                                                service_name=dsc.service_name,
                                                                 data_source=data_source['data_source'])
-                            sh_obj.agent_tag = str(sh.agent_tag)
-                            sh_obj.port = str(service_para.protocol.port)
-                            sh_obj.version = str(service_para.protocol.version)
-                            sh_obj.read_community = str(service_para.protocol.read_community)
-                            sh_obj.svc_template = str(service_para.parameter_description)
-                            sh_obj.normal_check_interval = int(service_para.normal_check_interval)
-                            sh_obj.retry_check_interval = int(service_para.retry_check_interval)
-                            sh_obj.max_check_attempts = int(service_para.max_check_attempts)
-                            sh_obj.warning = data_source['warning']
-                            sh_obj.critical = data_source['critical']
-                            sh_obj.save()
+                            dsc_obj.agent_tag = str(dsc.agent_tag)
+                            dsc_obj.port = str(service_para.protocol.port)
+                            dsc_obj.version = str(service_para.protocol.version)
+                            dsc_obj.read_community = str(service_para.protocol.read_community)
+                            dsc_obj.svc_template = str(service_para.parameter_description)
+                            dsc_obj.normal_check_interval = int(service_para.normal_check_interval)
+                            dsc_obj.retry_check_interval = int(service_para.retry_check_interval)
+                            dsc_obj.max_check_attempts = int(service_para.max_check_attempts)
+                            dsc_obj.warning = data_source['warning']
+                            dsc_obj.critical = data_source['critical']
+                            dsc_obj.save()
                     except Exception as e:
                         logger.info(e)
         except Exception as e:
             logger.info(e)
-            result['message'] = "Failed to updated service '%s'. <br />" % (sh.service_name)
+            result['message'] = "Failed to updated service '%s'. <br />" % (dsc.service_name)
     except Exception as e:
         logger.info(e)
-        result['message'] = "Failed to updated service '%s'. <br />" % (sh.service_name)
+        result['message'] = "Failed to updated service '%s'. <br />" % (dsc.service_name)
     # assign messages to result dict message key
     return json.dumps({'result': result})
