@@ -9,7 +9,7 @@ from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from models import Service, ServiceParameters, ServiceDataSource, Protocol, ServiceHistory
+from models import Service, ServiceParameters, ServiceDataSource, Protocol, DeviceServiceConfiguration
 from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm, ProtocolForm
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
@@ -641,13 +641,13 @@ class ProtocolDelete(DeleteView):
         return super(ProtocolDelete, self).delete( request, *args, **kwargs)
 
     
-#**************************************** ServiceHistory *********************************************
-class ServiceHistoryList(ListView):
-    model = ServiceHistory
-    template_name = 'service_history/services_list.html'
+#**************************************** DeviceServiceConfiguration *********************************************
+class DeviceServiceConfigurationList(ListView):
+    model = DeviceServiceConfiguration
+    template_name = 'device_service_configuration/device_service_configuration_list.html'
 
     def get_context_data(self, **kwargs):
-        context=super(ServiceHistoryList, self).get_context_data(**kwargs)
+        context=super(DeviceServiceConfigurationList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData':'device_name',             'sTitle' : 'Device',                'sWidth':'null',},
             {'mData':'service_name',            'sTitle' : 'Service',               'sWidth':'null',},
@@ -669,8 +669,8 @@ class ServiceHistoryList(ListView):
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
-class ServiceHistoryListingTable(BaseDatatableView):
-    model = ServiceHistory
+class DeviceServiceConfigurationListingTable(BaseDatatableView):
+    model = DeviceServiceConfiguration
     columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'data_source', 'read_community', 'svc_template', 'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'warning', 'critical', 'added_on', 'modified_on']
     order_columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'data_source', 'read_community', 'svc_template', 'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'warning', 'critical', 'added_on', 'modified_on']
 
@@ -691,14 +691,14 @@ class ServiceHistoryListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return ServiceHistory.objects.values(*self.columns+['id']).order_by('-added_on')
+        return DeviceServiceConfiguration.objects.values(*self.columns+['id']).order_by('-added_on')
 
     def prepare_results(self, qs):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
-            dct.update(actions='<a href="#" onclick="Dajaxice.device.edit_single_service_form(get_single_service_edit_form, {{\'sh_id\': {0}}})"><i class="fa fa-pencil text-dark"></i></a>\
-                                <a href="#" onclick="Dajaxice.device.service_delete_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            dct.update(actions='<a href="#" onclick="Dajaxice.device.edit_single_service_form(get_single_service_edit_form, {{\'dsc_id\': {0}}})"><i class="fa fa-pencil text-dark"></i></a>\
+                                <a href="#" onclick="Dajaxice.device.delete_single_service_form(get_single_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):

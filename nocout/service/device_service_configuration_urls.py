@@ -2,6 +2,6 @@ from django.conf.urls import patterns, url
 from service import views
 
 urlpatterns = patterns('',
-  url(r'^$', views.ServiceHistoryList.as_view(), name='service_history_list'),
-  url(r'^serviceparameterslist/', views.ServiceHistoryListingTable.as_view(), name='ServiceHistoryListingTable'),
+  url(r'^$', views.DeviceServiceConfigurationList.as_view(), name='device_service_configuration_list'),
+  url(r'^deviceserviceconfigurationlist/', views.DeviceServiceConfigurationListingTable.as_view(), name='DeviceServiceConfigurationListingTable'),
 )

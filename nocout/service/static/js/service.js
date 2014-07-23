@@ -3,7 +3,7 @@
 function get_single_service_edit_form(content) {
     // service_add_html --> contains content for bootbox
     var service_add_html = "";
-    service_add_html += '<input type="hidden" id="sh_id" value="' + content.result.data.objects.sh_id + '" />';
+    service_add_html += '<input type="hidden" id="dsc_id" value="' + content.result.data.objects.dsc_id + '" />';
     service_add_html += '<input type="hidden" id="service_id" value="' + content.result.data.objects.service_name + '" />';
     service_add_html += '<input type="hidden" id="device_id" value="' + content.result.data.objects.device_name + '" />';
 
@@ -71,7 +71,7 @@ function get_single_service_edit_form(content) {
                             // appending data source dictionary to data_sources array
                             data_sources.push(ds);
                         });
-                        Dajaxice.device.edit_single_service(edit_single_service_message, {'sh_id': $("#sh_id").val(),
+                        Dajaxice.device.edit_single_service(edit_single_service_message, {'dsc_id': $("#dsc_id").val(),
                                                                                           'svc_temp_id': $('#id_svc_templates').val(),
                                                                                           'data_sources': data_sources});
                         // return true, so that bootbox close if success call goes successfully
