@@ -18,7 +18,7 @@ from organization.models import Organization
 from user_group.models import UserGroup
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
 from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm, CircuitForm
-
+from device.models import Country, State, City
 
 
 # **************************************** Inventory *********************************************
@@ -37,11 +37,8 @@ class InventoryListing(ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
             {'mData': 'user_group__name', 'sTitle': 'User Group', 'sWidth': 'null', },
             {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'null', },
-            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', },
-            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', },
-            {'mData': 'country', 'sTitle': 'Country', 'sWidth': 'null', },
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', },
-            ]
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', },]
+
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', })
@@ -52,9 +49,8 @@ class InventoryListing(ListView):
 
 class InventoryListingTable(BaseDatatableView):
     model = Inventory
-    columns = ['name', 'alias', 'user_group__name', 'organization__name', 'city', 'state', 'country', 'description']
-    order_columns = ['name', 'alias', 'user_group__name', 'organization__name', 'city', 'state', 'country',
-                     'description']
+    columns = ['name', 'alias', 'user_group__name', 'organization__name', 'description']
+    order_columns = ['name', 'alias', 'user_group__name', 'organization__name', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -801,8 +797,8 @@ class CustomerList(ListView):
         datatable_headers = [
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', },
+            # {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            # {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', },
             {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', },
             ]
@@ -816,8 +812,8 @@ class CustomerList(ListView):
 
 class CustomerListingTable(BaseDatatableView):
     model = Customer
-    columns = ['name', 'alias', 'city', 'state', 'address', 'description']
-    order_columns = ['name', 'alias', 'city', 'state', 'address', 'description']
+    columns = ['name', 'alias', 'address', 'description']
+    order_columns = ['name', 'alias', 'address', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -953,8 +949,8 @@ class SubStationList(ListView):
             {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'null', },
             {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', },
-            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'null', },
+            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'null', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             ]
@@ -1001,6 +997,8 @@ class SubStationListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            dct['city__name']= City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
+            dct['state__name']= State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
             dct.update(actions='<a href="/sub_station/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/sub_station/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs

@@ -261,6 +261,14 @@ class CustomerForm(forms.ModelForm):
         
 #*********************************** Sub Station *************************************
 class SubStationForm(forms.ModelForm):
+
+    country = IntReturnModelChoiceField(queryset=Country.objects.all(),
+                                        required=False)
+    state = IntReturnModelChoiceField(queryset=State.objects.all(),
+                                      required=False)
+    city = IntReturnModelChoiceField(queryset=City.objects.all(),
+                                     required=False)
+
     ETHERNET_EXTENDER = (
         ('', 'Select'),
         ('Yes', 'Yes'),
@@ -271,6 +279,9 @@ class SubStationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(SubStationForm, self).__init__(*args, **kwargs)
+        self.fields['country'].empty_label = 'Select'
+        self.fields['state'].empty_label = 'Select'
+        self.fields['city'].empty_label = 'Select'
         self.fields['device'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):

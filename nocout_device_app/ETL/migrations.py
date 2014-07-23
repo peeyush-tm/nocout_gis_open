@@ -38,7 +38,8 @@ def main():
 		user=options.get('user'), port=options.get('port'),
             	sql_passwd=options.get('sql_passwd'),
             	nosql_db=options.get('service_event').get('nosql_db'),
-            	sql_db=options.get('service_event').get('sql_db'), table_name=options.get('service_event').get('table_name'), ip=options.get('ip')
+            	sql_db=options.get('service_event').get('sql_db'), table_name=options.get('service_event').get('table_name'),
+		ip=options.get('ip')
 	)	
 	status_script = options.get('status').get('script')
 	status_service_migration_script = __import__(status_script)
@@ -55,6 +56,43 @@ def main():
             	sql_passwd=options.get('sql_passwd'),
             	nosql_db=options.get('inventory').get('nosql_db'),
             	sql_db=options.get('inventory').get('sql_db'), table_name=options.get('inventory').get('table_name'), ip=options.get('ip')
+        )
+	service_status_tables_script = options.get('service_status_tables').get('script')
+        service_status_tables_migration_script = __import__(service_status_tables_script)
+        service_status_tables_migration_script.main(site=options.get('site'), host=options.get('host'),
+        	user=options.get('user'), port=options.get('port'),
+             	sql_passwd=options.get('sql_passwd'),
+                nosql_db=options.get('service_status_tables').get('nosql_db'),
+                sql_db=options.get('service_status_tables').get('sql_db'), table_name=options.get('service_status_tables').get('table_name'), 
+		ip=options.get('ip')
+        )
+
+	network_status_tables_script = options.get('network_status_tables').get('script')
+        network_status_tables_migration_script = __import__(network_status_tables_script)
+        network_status_tables_migration_script.main(site=options.get('site'), host=options.get('host'),
+        	user=options.get('user'), port=options.get('port'),
+             	sql_passwd=options.get('sql_passwd'),
+                nosql_db=options.get('network_status_tables').get('nosql_db'),
+                sql_db=options.get('network_status_tables').get('sql_db'), table_name=options.get('network_status_tables').get('table_name'), 
+		ip=options.get('ip')
+        )
+	status_services_status_tables_script = options.get('status_services_status_tables').get('script')
+        status_services_status_tables_migration_script = __import__(status_services_status_tables_script)
+        status_services_status_tables_migration_script.main(site=options.get('site'), host=options.get('host'),
+        	user=options.get('user'), port=options.get('port'),
+             	sql_passwd=options.get('sql_passwd'),
+                nosql_db=options.get('status_services_status_tables').get('nosql_db'),
+                sql_db=options.get('status_services_status_tables').get('sql_db'),
+		 table_name=options.get('status_services_status_tables').get('table_name'),ip=options.get('ip')
+        )
+	inventory_status_tables_script = options.get('inventory_status_tables').get('script')
+        inventory_status_tables_migration_script = __import__(inventory_status_tables_script)
+        inventory_status_tables_migration_script.main(site=options.get('site'), host=options.get('host'),
+        	user=options.get('user'), port=options.get('port'),
+             	sql_passwd=options.get('sql_passwd'),
+                nosql_db=options.get('inventory_status_tables').get('nosql_db'),
+                sql_db=options.get('inventory_status_tables').get('sql_db'),
+		 table_name=options.get('inventory_status_tables').get('table_name'),ip=options.get('ip')
         )
         
 

@@ -52,8 +52,11 @@ def main(**configs):
         'check_timestamp',
 	'ip_address'
     ]
-    insert_data(configs.get('table_name'), data_values, configs=configs)
-    print "Data inserted into mysql db"
+    if data_values:
+    	insert_data(configs.get('table_name'), data_values, configs=configs)
+    	print "Data inserted into mysql db"
+    else:
+	print "No data in the mongo db in this time frame"
     
 
 def read_data(start_time, end_time, **kwargs):

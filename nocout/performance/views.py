@@ -96,13 +96,18 @@ class LivePerformanceListing(BaseDatatableView):
                                                                         ['device_name', device_association])
         for device in devices:
             if device[device_association]:
-                performance_data= PerformanceNetwork.objects.raw('''select id, device_name, avg_value, sys_timestamp from \
+                performance_data_pl= PerformanceNetwork.objects.raw('''select id, device_name, avg_value, sys_timestamp from \
                                   performance_performancenetwork where id = (select MAX(id) from \
                                   performance_performancenetwork where (device_name=%s and data_source=%s))''' \
                                                             ,[ device['device_name'], 'pl'])
-                for data in performance_data:
-                    device.update({'latency':data.avg_value, 'packet_loss':'pl', 'last_updated':
-                                   str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
+                for data in performance_data_pl:
+                    performance_data_rta=PerformanceNetwork.objects.raw('''select id, avg_value from  performance_performancenetwork
+                                          where device_name=%s and sys_timestamp = %s  and data_source=%s '''
+                                          ,[ data.device_name, data.sys_timestamp, 'rta'])
+                    device.update({
+                                   'packet_loss':data.avg_value,
+                                   'latency': performance_data_rta[0].avg_value,
+                                   'last_updated': str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
                                    'city':City.objects.get(id=device['city']).city_name,
                                    'state':State.objects.get(id=device['state']).state_name
                                  })
@@ -259,7 +264,9 @@ class Inventory_Device_Status(View):
                                                    'City', 'State', 'IP Address', 'MAC Address']
             result['data']['objects']['values']= [ base_station.name, substation.name,
                                                    substation.building_height, substation.tower_height,
-                                                   substation.city, substation.state, substation_device.ip_address,
+                                                   City.objects.get(id=substation.city).city_name,
+                                                   State.objects.get(id=substation.state).state_name,
+                                                   substation_device.ip_address,
                                                    substation_device.mac_address ]
 
         elif page_type =='network':
@@ -273,7 +280,9 @@ class Inventory_Device_Status(View):
             if base_station_list:
                 base_station=BaseStation.objects.get(id=base_station_list[0])
                 result['data']['objects']['values']= [ base_station.name, base_station.building_height, base_station.tower_height,
-                                                       base_station.city, base_station.state, sector_configured_on_device.ip_address,
+                                                       City.objects.get(id=base_station.city).city_name,
+                                                       State.objects.get(id=base_station.state).state_name,
+                                                       sector_configured_on_device.ip_address,
                                                        sector_configured_on_device.mac_address ]
 
         result['data']['objects']['values']=map(lambda val : val if val else 'N/A', result['data']['objects']['values'])

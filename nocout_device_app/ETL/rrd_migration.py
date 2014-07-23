@@ -29,12 +29,20 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 	file_paths = []
 	temp_dict = {}
 	data_dict = {
-		"host": host,
+		"host": str(host),
 		"service": None,
 		"ds": {},
-		"ip_address": ip,
+		"ip_address": str(ip),
 		"severity":None
 	}
+	status_dict = {
+		"host": str(host),
+		"service": None,
+		"ds": {},
+		"ip_address": str(ip),
+		"severity":None
+	}
+	matching_criteria ={}
     	perf_db = None
 	threshold_values = {}
 	db = mongo_conn(
@@ -56,9 +64,11 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		serv_disc = root.find("NAGIOS_SERVICEDESC").text.strip()
 		if serv_disc == '_HOST_':
 			data_dict['service'] = 'ping'
+			status_dict['service'] = 'ping'
 			serv_disc = 'ping'
 		else:
 			data_dict['service'] = serv_disc
+			status_dict['service'] = serv_disc
 		if serv_disc.endswith('_status') or serv_disc == 'Check_MK':
 			continue
 		if serv_disc == 'ping':
@@ -96,9 +106,16 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 				"local_timestamp": data_series.get('local_timestamp'),
 				"site": data_series.get('site')
 				})
+			
+			status_dict.update({
+				"check_time": data_series.get('check_time'),
+				"local_timestamp": data_series.get('local_timestamp'),
+				"site": data_series.get('site')
+				})
 			ds_index = params[file_paths.index(path)]
 			data_dict.get('ds')[ds_index] = {"meta": {}, "data": []}
-			
+
+			status_dict.get('ds')[ds_index]={"meta":{},"data":[]}			
 			ds_values = data_series['data'][:-1]
 			for d in ds_values:
 				if d[-1] is not None:
@@ -109,10 +126,18 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 					)
 					data_dict.get('ds').get(ds_index).get('data').append(temp_dict)
 			data_dict.get('ds').get(ds_index)['meta'] = threshold_values.get(ds_index)
+			# dictionariers to hold values for the service status tables
+			status_dict.get('ds').get(ds_index).get('data').append(temp_dict)	
+			status_dict.get('ds').get(ds_index)['meta'] = threshold_values.get(ds_index)
+			status_dict.update({"local_timestamp":temp_dict.get('time'),"check_time":temp_dict.get('time')})
 		data_dict['severity'] = service_state
+		status_dict['severity'] = service_state
+		matching_criteria.update({'host':str(host),'service':data_dict['service'],'site':site})
 		if xml_file == '_HOST_.xml':
+			mongo_functions.mongo_db_update(db,matching_criteria,status_dict,"network_perf_data")
 			mongo_functions.mongo_db_insert(db,data_dict,"network_perf_data")
 		else:
+			mongo_functions.mongo_db_update(db,matching_criteria,status_dict,"serv_perf_data")
 			mongo_functions.mongo_db_insert(db,data_dict,"serv_perf_data")
 
 		#status = insert_data(data_dict)
@@ -120,10 +145,17 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		params = []
 		file_paths = []
 		data_dict = {
-				"host": host,
+				"host": str(host),
 				"service": None,
 				"ds": {},
-				"ip_address": ip
+				"ip_address": str(ip)
+		}
+		matching_criteria = {}
+		status_dict = {
+				"host": str(host),
+				"service": None,
+				"ds": {},
+				"ip_address": str(ip)
 		}
 
 

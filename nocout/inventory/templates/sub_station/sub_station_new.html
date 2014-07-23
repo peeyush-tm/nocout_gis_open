@@ -56,9 +56,51 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
     {% endblock %}
     <script>
-        $(document).ready(function(){
+    $(document).ready(function () {
+
             // Initialize the select2 selectbox.
             $(".select2select").select2();
-        })
+
+            // if none of the value from 'country' is selected than empty 'state' & 'city' selection too.
+            // or update value of 'state' corresponding to the selected 'country'
+
+            if ($("#id_country").val() == "") {
+                $("#id_state").empty();
+                $("#id_city").empty();
+            }
+            else {
+                Dajaxice.inventory.update_states_after_invalid_form(Dajax.process, {'option': $("#id_country").val(), 'state_id': $("#id_state").val()});
+            }
+
+            // if 'state' has no value than empty 'city' selection menu
+            // or update 'city' corresponding to selected 'state'
+            if (!$("#id_state").val()) {
+                $("#id_city").empty();
+            }
+            else {
+                Dajaxice.inventory.update_cities_after_invalid_form(Dajax.process, {'option': $("#id_state").val(), 'city_id': $("#id_city").val()});
+            }
+
+
+    });//end ready
+    // update 'states' on selecting 'country'
+        $("#id_country").change(function () {
+            if ($("#id_country").val() != "") {
+                Dajaxice.inventory.update_states(Dajax.process, {'option': $("#id_country").val()});
+                $("#id_city").empty();
+            }
+            else {
+                $("#id_state").select2("val","");
+                $("#id_state").empty();
+                $("#id_city").select2("val","");
+                $("#id_city").empty();
+            }
+        });
+
+        // update 'cities' on selecting 'state'
+        $("#id_state").change(function () {
+            $("#id_city").select2("val","");
+            Dajaxice.inventory.update_cities(Dajax.process, {'option': $("#id_state").val()});
+        });
     </script>
 {% endblock %}
