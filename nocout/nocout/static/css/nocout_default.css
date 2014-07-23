@@ -104,3 +104,7 @@ span.dept {
   font-weight: 300;
   text-shadow: none;
 }
+
+#svc_template_error_msg {
+    padding-bottom: 5px;
+}
