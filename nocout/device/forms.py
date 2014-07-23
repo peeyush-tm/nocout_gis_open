@@ -292,6 +292,7 @@ class DeviceModelForm(forms.ModelForm):
         self.base_fields['device_types'].help_text = ''
 
         super(DeviceModelForm, self).__init__(*args, **kwargs)
+        self.fields['device_types'].required = True
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
