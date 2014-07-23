@@ -1,12 +1,3 @@
-"""
-status_services_tables_migration.py
-==========================
-
-Script to bulk insert current status data from teramatrix pollers to mysql in 5 min interval
-
-"""
-
-
 import os
 import MySQLdb
 import pymongo
@@ -26,7 +17,7 @@ def main(**configs):
 
 
     end_time = datetime.now()
-    start_time = end_time - timedelta(minutes=60)
+    start_time = end_time - timedelta(minutes=1440)
     start_epoch = int((start_time - utc_time).total_seconds())
     end_epoch =  int((end_time - utc_time).total_seconds())
     docs = read_data(start_epoch, end_epoch, configs=configs)
@@ -34,31 +25,28 @@ def main(**configs):
         values_list = build_data(doc)
         data_values.extend(values_list)
     field_names = [
-        'device_name',
-        'service_name',
-        'machine_name',
-        'site_name',
-        'data_source',
-        'current_value',
-        'min_value',
-        'max_value',
-        'avg_value',
-        'warning_threshold',
-        'critical_threshold',
-        'sys_timestamp',
-        'check_timestamp',
-	'ip_address'
+        'host_name',
+        'service',
+        'host_address',
+        'site_id',
+        'value',
+        'war',
+        'crit',
+	'service_state',
+        'time',
     ]
     if data_values:
     	insert_data(configs.get('table_name'), data_values, configs=configs)
-   	print "Data inserted into my mysql db"
+    	print "Data inserted into my mysql db"
     else:
-    	print "No data in mongodb in this time frame for table %s" % (configs.get('table_name'))
+	print "Data is not present in mongodb in this time frame in %s" % (configs.get('table_name') )
+    
 
 def read_data(start_time, end_time, **kwargs):
 
     db = None
     port = None
+    docs = []
     #end_time = datetime(2014, 6, 26, 18, 30)
     #start_time = end_time - timedelta(minutes=10)
     docs = [] 
@@ -68,11 +56,12 @@ def read_data(start_time, end_time, **kwargs):
         db_name=kwargs.get('configs').get('nosql_db')
     )
     if db:
-        cur = db.device_status_services_status.find({
+        cur = db.device_inventory_status.find({
             "check_timestamp": {"$gt": start_time, "$lt": end_time}
         })
         for doc in cur:
             docs.append(doc)
+     
     return docs
 
 def build_data(doc):
@@ -94,7 +83,7 @@ def build_data(doc):
         doc.get('sys_timestamp'),
         doc.get('check_timestamp'),
         doc.get('ip_address'),
-        doc.get('severity'),
+        doc.get('severity')
         )
 	values_list.append(t)
 	t = ()
@@ -103,7 +92,7 @@ def build_data(doc):
 def insert_data(table, data_values, **kwargs):
 	db = mysql_conn(configs=kwargs.get('configs'))
 	query = "SELECT * FROM %s " % table +\
-                "WHERE `device_name`='%s' AND `site_name`='%s' AND `service_name`='%s' AND `data_source`='%s'" %(str(data_values[0][0]),data_values[0][3],data_values[0][1],data_values[0][4])
+                "WHERE `device_name`='%s' AND `site_name`='%s' AND `service_name`='%s'" %(str(data_values[0][0]),data_values[0][3],data_values[0][1])
         cursor = db.cursor()
         try:
                 cursor.execute(query)
@@ -119,10 +108,10 @@ def insert_data(table, data_values, **kwargs):
 		`min_value`=%s,`max_value`=%s, `avg_value`=%s, `warning_threshold`=%s,
 		`critical_threshold`=%s, `sys_timestamp`=%s,`check_timestamp`=%s,
 		`ip_address`=%s,`severity`=%s
-		WHERE `device_name`=%s AND `site_name`=%s AND `service_name`=%s AND `data_source`=%s 
+		WHERE `device_name`=%s AND `site_name`=%s AND `service_name`=%s
 		""" 
 		try:
-			data_values = map(lambda x: x + (x[0], x[3], x[1],x[4],), data_values)
+			data_values = map(lambda x: x + (x[0], x[3], x[1],), data_values)
                 	cursor.executemany(query, data_values)
 		except MySQLdb.Error, e:
                         raise MySQLdb.Error, e
@@ -156,12 +145,8 @@ def get_epoch_time(datetime_obj):
 
 def mysql_conn(db=None, **kwargs):
     try:
-        db = MySQLdb.connect(
-                host=kwargs.get('configs').get('host'),
-                user=kwargs.get('configs').get('user'),
-                passwd=kwargs.get('configs').get('sql_passwd'),
-                db=kwargs.get('configs').get('sql_db')
-        )
+        db = MySQLdb.connect(host=kwargs.get('configs').get('host'), user=kwargs.get('configs').get('user'),
+            passwd=kwargs.get('configs').get('sql_passwd'), db=kwargs.get('configs').get('sql_db'))
     except MySQLdb.Error, e:
         raise MySQLdb.Error, e
 
