@@ -76,7 +76,7 @@ def check_radwin_autonegotiation_status(item, _no_params, info):
             port_status = info[index][0]
             port_status_string = portstatus(str(port_status))
             if port_status_string == None:
-                port_status_string = "unknown port auto status"
+                port_status_string = "unknown_port_status"
             port_status_list.append((str(index + 1), port_status_string))
 
         for index, status in port_status_list:

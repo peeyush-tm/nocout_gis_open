@@ -23,22 +23,24 @@ def inventory_perf_data(site,hostlist):
 		for service in service_list:
 			if service.endswith('_invent'):
 				invent_check_list.append(service)
-
 		for service in invent_check_list:
 			query_string = "GET services\nColumns: service_state plugin_output host_address\nFilter: " + \
 			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" 	 	% (service,host[0])
 			query_output = json.loads(rrd_main.get_from_socket(site,query_string).strip())
-			plugin_output = str(query_output[0][1].split('- ')[1])
-			service_state = (query_output[0][0])
-			if service_state == 0:
-				service_state = "OK"
-			elif service_state == 1:
-				service_state = "WARNING"
-			elif service_state == 2:
-				service_state = "CRITICAL"
-			elif service_state == 3:
-				service_state = "UNKNOWN"
-			host_ip = str(query_output[0][2])
+			if query_output[0][1]:
+				plugin_output = str(query_output[0][1].split('- ')[1])
+				service_state = (query_output[0][0])
+				if service_state == 0:
+					service_state = "OK"
+				elif service_state == 1:
+					service_state = "WARNING"
+				elif service_state == 2:
+					service_state = "CRITICAL"
+				elif service_state == 3:
+					service_state = "UNKNOWN"
+				host_ip = str(query_output[0][2])
+			else:
+				continue
 			ds=service.split('_')[1:-1]
 			ds = ('_').join(ds)
 			current_time = int(time.time())
@@ -49,8 +51,9 @@ def inventory_perf_data(site,hostlist):
 			matching_criteria.update({'device_name':str(host[0]),'service_name':service,'site_name':site})
 			mongo_functions.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
 			mongo_functions.mongo_db_insert(db,invent_service_dict,"inventory_services")
-			invent_service_dict = {}
 			matching_criteria ={}
+			invent_service_dict = {}
+		invent_check_list = []
 
 def inventory_perf_data_main():
 	try:
