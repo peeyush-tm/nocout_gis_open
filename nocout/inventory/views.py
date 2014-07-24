@@ -12,8 +12,8 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.db.models import Q
 from device_group.models import DeviceGroup
 from nocout.utils.util import DictDiffer
-from models import Inventory, IconSettings, LivePollingSettings
-from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm
+from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfiguration
+from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm
 from organization.models import Organization
 from user_group.models import UserGroup
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
@@ -1533,19 +1533,19 @@ class LivePollingSettingsDelete(DeleteView):
         return super(LivePollingSettingsDelete, self).dispatch(*args, **kwargs)
 
 
-#**************************************** LivePollingSettings *********************************************
-class LivePollingSettingsList(ListView):
-    model = LivePollingSettings
-    template_name = 'live_polling_settings/live_polling_settings_list.html'
+#**************************************** ThresholdConfiguration *********************************************
+class ThresholdConfigurationList(ListView):
+    model = ThresholdConfiguration
+    template_name = 'threshold_configuration/threshold_configuration_list.html'
 
     def get_context_data(self, **kwargs):
-        context = super(LivePollingSettingsList, self).get_context_data(**kwargs)
+        context = super(ThresholdConfigurationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name',                    'sTitle': 'Name',              'sWidth': 'null'},
-            {'mData': 'alias',                   'sTitle': 'Alias',             'sWidth': 'null'},
-            {'mData': 'technology__alias',       'sTitle': 'Technology',        'sWidth': 'null'},
-            {'mData': 'service__alias',          'sTitle': 'Service',           'sWidth': 'null'},
-            {'mData': 'data_source__alias',      'sTitle': 'Data Source',       'sWidth': 'null'},
+            {'mData': 'name',                           'sTitle': 'Name',                   'sWidth': 'null'},
+            {'mData': 'alias',                          'sTitle': 'Alias',                  'sWidth': 'null'},
+            {'mData': 'live_polling_template__alias',   'sTitle': 'Live Polling Template',  'sWidth': 'null'},
+            {'mData': 'warning',                        'sTitle': 'Warning',                'sWidth': 'null'},
+            {'mData': 'critical',                       'sTitle': 'Critical',               'sWidth': 'null'},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
@@ -1556,10 +1556,10 @@ class LivePollingSettingsList(ListView):
         return context
 
 
-class LivePollingSettingsListingTable(BaseDatatableView):
-    model = LivePollingSettings
-    columns = ['name', 'alias', 'technology__alias', 'service__alias', 'data_source__alias']
-    order_columns = ['name', 'alias', 'technology__alias', 'service__alias', 'data_source__alias']
+class ThresholdConfigurationListingTable(BaseDatatableView):
+    model = ThresholdConfiguration
+    columns = ['name', 'alias', 'live_polling_template__alias', 'warning', 'critical']
+    order_columns = ['name', 'alias', 'live_polling_template__alias', 'warning', 'critical']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -1581,14 +1581,14 @@ class LivePollingSettingsListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return LivePollingSettings.objects.values(*self.columns + ['id'])
+        return ThresholdConfiguration.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/live_polling_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/live_polling_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            dct.update(actions='<a href="/threshold_configuration/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/threshold_configuration/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -1621,43 +1621,43 @@ class LivePollingSettingsListingTable(BaseDatatableView):
         return ret
 
 
-class LivePollingSettingsDetail(DetailView):
-    model = LivePollingSettings
-    template_name = 'live_polling_settings/live_polling_settings_detail.html'
+class ThresholdConfigurationDetail(DetailView):
+    model = ThresholdConfiguration
+    template_name = 'threshold_configuration/threshold_configuration_detail.html'
 
 
-class LivePollingSettingsCreate(CreateView):
-    template_name = 'live_polling_settings/live_polling_settings_new.html'
-    model = LivePollingSettings
-    form_class = LivePollingSettingsForm
-    success_url = reverse_lazy('live_polling_settings_list')
+class ThresholdConfigurationCreate(CreateView):
+    template_name = 'threshold_configuration/threshold_configuration_new.html'
+    model = ThresholdConfiguration
+    form_class = ThresholdConfigurationForm
+    success_url = reverse_lazy('threshold_configuration_list')
 
-    @method_decorator(permission_required('inventory.add_live_polling_settings', raise_exception=True))
+    @method_decorator(permission_required('inventory.add_threshold_configuration', raise_exception=True))
     def dispatch(self, *args, **kwargs):
-        return super(LivePollingSettingsCreate, self).dispatch(*args, **kwargs)
+        return super(ThresholdConfigurationCreate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         self.object = form.save()
         action.send(self.request.user, verb='Created', action_object=self.object)
-        return HttpResponseRedirect(LivePollingSettingsCreate.success_url)
+        return HttpResponseRedirect(ThresholdConfigurationCreate.success_url)
 
 
-class LivePollingSettingsUpdate(UpdateView):
-    template_name = 'live_polling_settings/live_polling_settings_update.html'
-    model = LivePollingSettings
-    form_class = LivePollingSettingsForm
-    success_url = reverse_lazy('live_polling_settings_list')
+class ThresholdConfigurationUpdate(UpdateView):
+    template_name = 'threshold_configuration/threshold_configuration_update.html'
+    model = ThresholdConfiguration
+    form_class = ThresholdConfigurationForm
+    success_url = reverse_lazy('threshold_configuration_list')
 
-    @method_decorator(permission_required('inventory.change_live_polling_settings', raise_exception=True))
+    @method_decorator(permission_required('inventory.change_threshold_configuration', raise_exception=True))
     def dispatch(self, *args, **kwargs):
-        return super(LivePollingSettingsUpdate, self).dispatch(*args, **kwargs)
+        return super(ThresholdConfigurationUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of LivePollingSettings : %s from initial values ' % (self.object.name) + ', '.join(
+            verb_string = 'Changed values of ThresholdConfiguration : %s from initial values ' % (self.object.name) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
                           ' to ' + \
@@ -1666,14 +1666,14 @@ class LivePollingSettingsUpdate(UpdateView):
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
             action.send(self.request.user, verb=verb_string)
-        return HttpResponseRedirect(LivePollingSettingsUpdate.success_url)
+        return HttpResponseRedirect(ThresholdConfigurationUpdate.success_url)
 
 
-class LivePollingSettingsDelete(DeleteView):
-    model = LivePollingSettings
-    template_name = 'live_polling_settings/live_polling_settings_delete.html'
-    success_url = reverse_lazy('live_polling_settings_list')
+class ThresholdConfigurationDelete(DeleteView):
+    model = ThresholdConfiguration
+    template_name = 'threshold_configuration/threshold_configuration_delete.html'
+    success_url = reverse_lazy('threshold_configuration_list')
 
-    @method_decorator(permission_required('inventory.delete_live_polling_settings', raise_exception=True))
+    @method_decorator(permission_required('inventory.delete_threshold_configuration', raise_exception=True))
     def dispatch(self, *args, **kwargs):
-        return super(LivePollingSettingsDelete, self).dispatch(*args, **kwargs)
+        return super(ThresholdConfigurationDelete, self).dispatch(*args, **kwargs)
