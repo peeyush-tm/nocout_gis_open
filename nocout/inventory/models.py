@@ -185,6 +185,10 @@ class IconSettings(models.Model):
     def __unicode__(self):
         return self.name
 
+    def delete(self, *args, **kwargs):
+        self.upload_image.delete()
+        super(IconSettings, self).delete(*args, **kwargs)
+
 
 # live polling settings model
 class LivePollingSettings(models.Model):
