@@ -1,4 +1,5 @@
 from django.db import models
+from service.models import Service, ServiceDataSource
 from user_group.models import UserGroup
 from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency
 from device_group.models import DeviceGroup
@@ -151,7 +152,7 @@ class SubStation(models.Model):
     tower_height = models.FloatField('Tower Height', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
     ethernet_extender = models.CharField('Ethernet Extender', max_length=250, null=True, blank=True)
     cable_length = models.FloatField('Cable Length', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
-    #selection dropdown for city state
+    # selection dropdown for city state
     # city = models.CharField('City', max_length=250, null=True, blank=True)
     # state = models.CharField('State', max_length=250, null=True, blank=True)
     #
@@ -183,3 +184,51 @@ class Circuit(models.Model):
 
     def __unicode__(self):
         return self.name
+
+
+# icon settings model
+class IconSettings(models.Model):
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250)
+    upload_image = models.ImageField(upload_to='icons/')
+
+    def __unicode__(self):
+        return self.name
+
+
+# live polling settings model
+class LivePollingSettings(models.Model):
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250)
+    technology = models.ForeignKey(DeviceTechnology)
+    service = models.ForeignKey(Service)
+    data_source = models.ForeignKey(ServiceDataSource)
+
+    def __unicode__(self):
+        return self.name
+
+
+# threshold configuration model
+class ThresholdConfiguration(models.Model):
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250)
+    live_polling_template = models.ForeignKey(LivePollingSettings)
+    warning = models.CharField('Warning', max_length=20, null=True, blank=True)
+    critical = models.CharField('Critical', max_length=20, null=True, blank=True)
+
+    def __unicode__(self):
+        return self.name
+
+
+# thematic settings
+class ThematicSettings(models.Model):
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250)
+    threshold_template = models.ForeignKey(ThresholdConfiguration)
+    gt_warning = models.CharField('> Warning', max_length=200)
+    bt_w_c = models.CharField('Warning > > Critical', max_length=200)
+    gt_critical = models.CharField('> Critical', max_length=200)
+
+    def __unicode__(self):
+        return self.name
+

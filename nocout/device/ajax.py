@@ -732,9 +732,9 @@ def add_service(request, service_data):
                     device = Device.objects.get(pk=int(sd['device_id']))
                     messages += result['message']
 
-                    # save service to service_history table
+                    # save service to 'service_deviceserviceconfiguration' table
                     try:
-                        # if service exist in 'service history' table than update service else create it
+                        # if service exist in 'service_deviceserviceconfiguration' table than update service else create it
                         for data_source in service.service_data_sources.all():
                             dsc = DeviceServiceConfiguration.objects.get(device_name=Device.objects.get(pk=int(sd['device_id'])).device_name,
                                                        service_name=Service.objects.get(pk=int(sd['service_id'])).name,
@@ -753,7 +753,7 @@ def add_service(request, service_data):
                     except Exception as e:
                         logger.info(e)
                         for data_source in service.service_data_sources.all():
-                            # create service if it is not existing in 'service history' table
+                            # create service if it is not existing in 'service_deviceserviceconfiguration' table
                             dsc = DeviceServiceConfiguration.objects.create(device_name=str(Device.objects.get(pk=int(sd['device_id'])).device_name),
                                                                service_name=str(Service.objects.get(pk=int(sd['service_id'])).name),
                                                                agent_tag=str(DeviceType.objects.get(pk=device.device_type).agent_tag),
@@ -784,7 +784,7 @@ def add_service(request, service_data):
 
 @dajaxice_register
 def edit_single_service_form(request, dsc_id):
-    # service history object
+    # device service configuration object
     dsc = DeviceServiceConfiguration.objects.get(id=dsc_id)
 
     result = dict()
@@ -821,7 +821,6 @@ def edit_single_service_form(request, dsc_id):
             service_data['templates'].append(temp_dict)
     except Exception as e:
         logger.info(e)
-
     return json.dumps({'result': result})
 
 # get service parameters and data source tables for service addition form
@@ -886,7 +885,7 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
     result['data']['meta'] = {}
     result['data']['objects'] = {}
     try:
-        # service history object
+        # service device service configuration object
         dsc = DeviceServiceConfiguration.objects.get(id=dsc_id)
         try:
             # payload data for post request
@@ -951,9 +950,9 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
                     result['message'] += "Successfully updated service '%s'. <br />" % (dsc.service_name)
                     device = Device.objects.get(device_name=dsc.device_name)
 
-                    # save service to service_history table
+                    # save service to 'service_deviceserviceconfiguration' table
                     try:
-                        # if service exist in 'service history' table than update it
+                        # if service exist in 'service_deviceserviceconfiguration' table than update it
                         for data_source in data_sources:
                             dsc_obj = DeviceServiceConfiguration.objects.get(device_name=dsc.device_name,
                                                                 service_name=dsc.service_name,
@@ -979,3 +978,33 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
         result['message'] = "Failed to updated service '%s'. <br />" % (dsc.service_name)
     # assign messages to result dict message key
     return json.dumps({'result': result})
+
+
+# delete single service form
+@dajaxice_register
+def delete_single_service_form(request, dsc_id):
+    # device service configuration object
+    dsc = DeviceServiceConfiguration.objects.get(id=dsc_id)
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = ""
+    result['data']['meta'] = {}
+    result['data']['objects'] = {}
+
+    try:
+        service_data = result['data']['objects']
+        service_data['service_name'] = dsc.service_name
+        service_data['device_name'] = dsc.device_name
+        service_data['data_sources'] = []
+        try:
+            dsc_for_data_sources = DeviceServiceConfiguration.objects.filter(device_name=dsc.device_name,
+                                                                     service_name=dsc.service_name)
+            for dsc_for_data_source in dsc_for_data_sources:
+                service_data['data_sources'].append(dsc_for_data_source.data_source)
+        except Exception as e:
+            logger.info(e)
+    except Exception as e:
+        logger.info(e)
+    return json.dumps({'result': result})
+
