@@ -219,9 +219,9 @@ class ThematicSettings(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     threshold_template = models.ForeignKey(ThresholdConfiguration)
-    gt_warning = models.CharField('> Warning', max_length=200)
-    bt_w_c = models.CharField('Warning > > Critical', max_length=200)
-    gt_critical = models.CharField('> Critical', max_length=200)
+    gt_warning = models.ForeignKey(IconSettings, null=True, blank=True, related_name='gt_warning')
+    bt_w_c = models.ForeignKey(IconSettings, null=True, blank=True, related_name='bt_w_c')
+    gt_critical = models.ForeignKey(IconSettings, null=True, blank=True, related_name='gt_critical')
 
     def __unicode__(self):
         return self.name

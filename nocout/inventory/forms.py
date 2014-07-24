@@ -1,7 +1,7 @@
 from django import forms
 from device.models import Country, State, City
 from device_group.models import DeviceGroup
-from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfiguration
+from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings
 from nocout.widgets import IntReturnModelChoiceField
 from organization.models import Organization
 from user_group.models import UserGroup
@@ -428,3 +428,33 @@ class ThresholdConfigurationForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
         model = ThresholdConfiguration
+
+
+
+#*********************************** LivePollingSettings ***************************************
+class ThematicSettingsForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        self.base_fields['gt_warning'].label = '> Warning'
+        self.base_fields['bt_w_c'].label = 'Warning > > Critical'
+        self.base_fields['gt_critical'].label = '> Critical'
+
+        super(ThematicSettingsForm, self).__init__(*args, **kwargs)
+        self.fields['threshold_template'].empty_label = 'Select'
+        self.fields['gt_warning'].empty_label = 'Select'
+        self.fields['bt_w_c'].empty_label = 'Select'
+        self.fields['gt_critical'].empty_label = 'Select'
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+    class Meta:
+        model = ThematicSettings

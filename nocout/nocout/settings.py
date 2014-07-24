@@ -269,7 +269,7 @@ ACTSTREAM_SETTINGS = {
                 'inventory.antenna', 'inventory.basestation', 'inventory.sector', 'inventory.backhaul', 'inventory.customer',
                 'inventory.substation', 'inventory.circuit', 'machine.machine', 'service.servicedatasource', 'device.deviceport',
                 'device.devicefrequency', 'service.protocol', 'inventory.iconsettings', 'inventory.livepollingsettings',
-                'inventory.thresholdconfiguration'),
+                'inventory.thresholdconfiguration', 'inventory.thematicsettings'),
 
 
 
