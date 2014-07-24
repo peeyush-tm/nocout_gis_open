@@ -2,9 +2,7 @@
 """
 
 import nocout
-import nocout_live
 
 pagehandlers.update({
-    "nocout": nocout.main,
-    "nocout_live": nocout_live.main
+    "nocout": nocout.main
 })
