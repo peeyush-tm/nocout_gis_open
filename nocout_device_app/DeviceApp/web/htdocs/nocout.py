@@ -13,6 +13,7 @@ import pprint
 import os
 import ast
 from itertools import ifilterfalse
+from nocout_live import nocout_log
 
 
 hosts_file = root_dir + "hosts.mk"
@@ -68,6 +69,8 @@ g_service_vars = {
     "snmp_ports": [],
     "snmp_communities": []
 }
+
+logger = nocout_log()
 
 
 def main():
