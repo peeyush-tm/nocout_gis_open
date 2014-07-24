@@ -1,16 +1,16 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
 {% block breadcrumb_title %}
-    <li>Inventory</li>
-    <li>Circuit</li>
+    <li>Settings</li>
+    <li>Icon Settings</li>
     <li>Edit</li>
 {% endblock %}
 {% block css %}
 	<!-- JQUERY UI-->
     <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
 {% endblock %}
-{% block content_title %}Edit Circuit{% endblock %}
-{% block content_description %}Edit circuit{% endblock %}
+{% block content_title %}Edit Icon Settings{% endblock %}
+{% block content_description %}Edit icon settings{% endblock %}
 {% block content %}
     <div class="row formContainer">
         <div class="col-md-12">
@@ -18,11 +18,11 @@
                 <div class="col-md-12">
                     <div class="box border lite">
                         <div class="box-title">
-                            <h4><i class="fa fa-bars"></i> CIRCUIT : {{ object.name }}</h4>
+                            <h4><i class="fa fa-bars"></i>ICON SETTINGS : {{ object.name }}</h4>
                         </div>
                             <div class="box-body">
                                 <div class="col-md-8"><br />
-                                    <form action="" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                                    <form action="" method="post" class="form-horizontal" role="form" enctype="multipart/form-data">{% csrf_token %}
                                         <div class="form-group">
                                             {% for field in form %}
                                                 <div class="form-group">
@@ -42,7 +42,7 @@
                                             <div class="col-sm-offset-3 col-sm-9">
                                                 <button type="submit" class="btn btn-info"><i class="fa fa-edit"></i> Update</button>
                                                 &nbsp;
-                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/circuit/')"><i class="fa fa-times"></i> Cancel</button>
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/icon_settings/')"><i class="fa fa-times"></i> Cancel</button>
                                             </div>
                                         </div>
                                     </form>
@@ -56,9 +56,15 @@
     </div>
     {% block content_js %}
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+        <script type="text/javascript" src={% static "js/bootstrap-file-input/bootstrap-file-input.js" %}></script>
     {% endblock %}
     <script>
         $(document).ready(function(){
+            // modify image upload field
+            var image_uploader = "#id_upload_image";
+            $(image_uploader).bootstrapFileInput();
+            $(image_uploader).prev().text("Search for a file to add");
+
             // Initialize the select2 selectbox.
             $(".select2select").select2();
 

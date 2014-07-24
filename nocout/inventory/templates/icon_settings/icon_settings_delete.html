@@ -1,11 +1,11 @@
 {% extends "inventory/inventory.html" %}
 {% block breadcrumb_title %}
-	<li>Inventory</li>
-    <li>Circuit</li>
+	<li>Settings</li>
+    <li>Icon Settings</li>
     <li>Delete</li>
 {% endblock %}
-{% block content_title %}Delete Circuit{% endblock %}
-{% block content_description %}Delete circuit{% endblock %}
+{% block content_title %}Delete Icon Settings{% endblock %}
+{% block content_description %}Delete icon settings{% endblock %}
 {% block content %}
     <form action="" method="post">{% csrf_token %}
         <p>Are you sure you want to delete "{{ object }}" ?</p>
