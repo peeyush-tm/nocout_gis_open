@@ -268,7 +268,7 @@ ACTSTREAM_SETTINGS = {
                 'service.serviceparameters','command.command','organization.organization','inventory.inventory',
                 'inventory.antenna', 'inventory.basestation', 'inventory.sector', 'inventory.backhaul', 'inventory.customer',
                 'inventory.substation', 'inventory.circuit', 'machine.machine', 'service.servicedatasource', 'device.deviceport',
-                'device.devicefrequency', 'service.protocol', 'inventory.iconsettings'),
+                'device.devicefrequency', 'service.protocol', 'inventory.iconsettings', 'inventory.livepollingsettings'),
 
 
 

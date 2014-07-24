@@ -1,7 +1,7 @@
 from django import forms
 from device.models import Country, State, City
 from device_group.models import DeviceGroup
-from models import Inventory
+from models import Inventory, IconSettings, LivePollingSettings
 from nocout.widgets import IntReturnModelChoiceField
 from organization.models import Organization
 from user_group.models import UserGroup
@@ -361,3 +361,72 @@ class CircuitForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
         model = Circuit
+
+
+#*********************************** IconSettings ***************************************
+class IconSettingsForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(IconSettingsForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+    class Meta:
+        model = IconSettings
+        
+        
+#*********************************** LivePollingSettings ***************************************
+class LivePollingSettingsForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(LivePollingSettingsForm, self).__init__(*args, **kwargs)
+        self.fields['technology'].empty_label = 'Select'
+        self.fields['service'].empty_label = 'Select'
+        self.fields['data_source'].empty_label = 'Select'
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+    class Meta:
+        model = LivePollingSettings
+
+
+#*********************************** LivePollingSettings ***************************************
+class LivePollingSettingsForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(LivePollingSettingsForm, self).__init__(*args, **kwargs)
+        self.fields['technology'].empty_label = 'Select'
+        self.fields['service'].empty_label = 'Select'
+        self.fields['data_source'].empty_label = 'Select'
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+    class Meta:
+        model = LivePollingSettings
