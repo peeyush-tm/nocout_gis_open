@@ -2,6 +2,8 @@ from dajax.core import Dajax
 from dajaxice.decorators import dajaxice_register
 from device.models import Country, State, DeviceTechnology, VendorModel, ModelType
 import logging
+from service.models import Service
+
 logger=logging.getLogger(__name__)
 
 
@@ -94,8 +96,6 @@ def update_services_as_per_technology(request, tech_id=""):
                         services.append(svc)
             # some devices have same services, so here we are making list of distinct services
             distinct_service = set(services)
-            for svc in distinct_service:
-                print "{} - {}".format(svc.name, svc.id)
             out = ["<option value=''>Select</option>"]
             for svc in distinct_service:
                 out.append("<option value='%d'>%s</option>" % (svc.id, svc.name))
@@ -105,4 +105,26 @@ def update_services_as_per_technology(request, tech_id=""):
         out = ["<option value=''>Select</option>"]
     dajax.assign('#id_service', 'innerHTML', ''.join(out))
     return dajax.json()
+
+
+# update data sources as per service
+@dajaxice_register
+def update_data_sources_as_per_service(request, svc_id=""):
+    dajax = Dajax()
+    out = []
+    if svc_id and svc_id != "":
+        try:
+            # getting data sources associated with the selected service
+            data_sources = Service.objects.get(id=svc_id).service_data_sources.all()
+            out = ["<option value=''>Select</option>"]
+            for data_source in data_sources:
+                out.append("<option value='%d'>%s</option>" % (data_source.id, data_source.name))
+        except Exception as e:
+            logger.info(e)
+    else:
+        out = ["<option value=''>Select</option>"]
+    dajax.assign('#id_data_source', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
 

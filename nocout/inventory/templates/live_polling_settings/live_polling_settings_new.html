@@ -60,28 +60,54 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
     {% endblock %}
     <script>
+        var id_technology = "#id_technology";
+        var id_data_source = "#id_data_source";
+        var id_service = "#id_service";
         $(document).ready(function(){
             // Initialize the select2 selectbox.
             $(".select2select").select2();
+
+            if ($(id_technology).val()){
+                $(id_data_source).select2("val","Select");
+                $(id_data_source).empty();
+                Dajaxice.inventory.update_services_as_per_technology(Dajax.process, {'tech_id': $(id_technology).val()});
+            }
+            else{
+                $(id_service).select2("val","Select");
+                $(id_service).empty();
+                $(id_data_source).select2("val","Select");
+                $(id_data_source).empty();
+            }
+            if ($(id_service).val()){
+                Dajaxice.inventory.update_data_sources_as_per_service(Dajax.process, {'svc_id': $(id_service).val()});
+            }
+            else{
+                $(id_data_source).select2("val","");
+                $(id_data_source).empty();
+            }
         });
         // update 'device vendor' on selecting 'device technology'
         $("#id_technology").change(function () {
-            if ($("#id_technology").val()) {
-                $("#id_data_source").select2("val","");
-                Dajaxice.inventory.update_services_as_per_technology(Dajax.process, {'tech_id': $('#id_technology').val()});
+            if ($(id_technology).val()) {
+                $(id_data_source).select2("val","Select");
+                $(id_data_source).empty();
+                Dajaxice.inventory.update_services_as_per_technology(Dajax.process, {'tech_id': $(id_technology).val()});
             }
             else{
-                $("#id_data_source").empty();
+                $(id_service).select2("val","Select");
+                $(id_service).empty();
+                $(id_data_source).select2("val","Select");
+                $(id_data_source).empty();
             }
         });
         // update 'data sources' on selecting 'service'
-        // update 'device vendor' on selecting 'device technology'
-        $("#id_service").change(function () {
-            if ($("#id_service").val()) {
-                Dajaxice.inventory.update_data_sources_as_per_service(Dajax.process, {'svc_id': $('#id_service').val()});
+        $(id_service).change(function () {
+            if ($(id_service).val()) {
+                Dajaxice.inventory.update_data_sources_as_per_service(Dajax.process, {'svc_id': $(id_service).val()});
             }
             else{
-                $("#id_data_source").empty();
+                $(id_data_source).select2("val","");
+                $(id_data_source).empty();
             }
         });
 
