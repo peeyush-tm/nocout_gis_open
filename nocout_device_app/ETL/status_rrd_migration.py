@@ -27,19 +27,23 @@ def status_perf_data(site,hostlist):
 			query_string = "GET services\nColumns: service_state service_perf_data host_address\nFilter: " + \
 			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" 	 	% (service,host[0])
 			query_output = json.loads(rrd_main.get_from_socket(site,query_string).strip())
-			perf_data_output = str(query_output[0][1])
-			service_state = (query_output[0][0])
-			host_ip = str(query_output[0][2])
-                        current_time = int(time.time())
-			if service_state == 0:
-				service_state = "OK"
-			elif service_state == 1:
-				service_state = "WARNING"
-			elif service_state == 2:
-				service_state = "CRITICAL"
-			elif service_state == 3:
-				service_state = "UNKNOWN"
-                	perf_data = rrd_migration.get_threshold(perf_data_output)
+
+			if query_output[0][1]:
+				perf_data_output = str(query_output[0][1])
+				service_state = (query_output[0][0])
+				host_ip = str(query_output[0][2])
+                        	current_time = int(time.time())
+				if service_state == 0:
+					service_state = "OK"
+				elif service_state == 1:
+					service_state = "WARNING"
+				elif service_state == 2:
+					service_state = "CRITICAL"
+				elif service_state == 3:
+					service_state = "UNKNOWN"
+                		perf_data = rrd_migration.get_threshold(perf_data_output)
+			else:
+				continue
                 	for ds in perf_data.iterkeys():
                         	cur =perf_data.get(ds).get('cur')
                         	war =perf_data.get(ds).get('war')
