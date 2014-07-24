@@ -93,6 +93,12 @@ class AntennaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(AntennaForm, self).__init__(*args, **kwargs)
+        self.fields['height'].initial =0
+        self.fields['azimuth_angle'].initial = 0
+        self.fields['height'].required = True
+        self.fields['azimuth_angle'].required = True
+        self.fields['polarization'].required = True
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -141,6 +147,8 @@ class BackhaulForm(forms.ModelForm):
         self.fields['bh_switch'].empty_label = 'Select'
         self.fields['pop'].empty_label = 'Select'
         self.fields['aggregator'].empty_label = 'Select'
+        self.fields['bh_configured_on'].required = True
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -190,6 +198,20 @@ class BaseStationForm(forms.ModelForm):
         self.fields['country'].empty_label = 'Select'
         self.fields['state'].empty_label = 'Select'
         self.fields['city'].empty_label = 'Select'
+        self.fields['building_height'].initial =0
+        self.fields['tower_height'].initial =0
+
+        self.fields['bs_technology'].required =True
+        self.fields['latitude'].required =True
+        self.fields['longitude'].required =True
+        self.fields['country'].required = True
+        self.fields['city'].required =True
+        self.fields['state'].required =True
+        self.fields['building_height'].required =True
+        self.fields['tower_height'].required =True
+        self.fields['state'].required= True
+        self.fields['city'].required= True
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -222,6 +244,9 @@ class SectorForm(forms.ModelForm):
         self.fields['sector_configured_on'].empty_label = 'Select'
         self.fields['sector_configured_on_port'].empty_label = 'Select'
         self.fields['antenna'].empty_label = 'Select'
+        self.fields['antenna'].empty_label = 'Select'
+        self.fields['sector_id'].empty_label = True
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -279,10 +304,22 @@ class SubStationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(SubStationForm, self).__init__(*args, **kwargs)
+        self.fields['tower_height'].initial = 0
+        self.fields['building_height'].initial = 0
         self.fields['country'].empty_label = 'Select'
         self.fields['state'].empty_label = 'Select'
         self.fields['city'].empty_label = 'Select'
         self.fields['device'].empty_label = 'Select'
+        self.fields['antenna'].required = True
+        self.fields['building_height'].required = True
+        self.fields['tower_height'].required = True
+        self.fields['country'].required = True
+        self.fields['state'].required = True
+        self.fields['city'].required = True
+        self.fields['latitude'].required = True
+        self.fields['longitude'].required = True
+        self.fields['mac_address'].required = True
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):

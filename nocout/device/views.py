@@ -117,10 +117,22 @@ class DeviceListingTable(BaseDatatableView):
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
 
-            dct['device_type__name']= DeviceType.objects.get(pk=int(dct['device_type'])).name if dct['device_type'] else ''
-            dct['device_technology__name']=DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
+            try:
+                dct['device_type__name']= DeviceType.objects.get(pk=int(dct['device_type'])).name if dct['device_type'] else ''
+            except Exception as device_type_exp:
+                dct['device_type__name'] = ""
+
+            try:
+                dct['device_technology__name']=DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
                                             if dct['device_technology'] else ''
-            dct['state__name']= State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
+            except Exception as device_tech_exp:
+                dct['device_technology__name'] = ""
+
+            try:
+                dct['state__name']= State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
+            except Exception as device_state_exp:
+                dct['state__name'] = ""
+                
             # if device is already added to nms core than show icon in device table
             if current_device.is_added_to_nms == 1:
                 dct.update(is_added='<i class="fa fa-check-circle text-success"></i>')
