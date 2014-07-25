@@ -9,7 +9,7 @@ from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceType
 from inventory.models import SubStation, Circuit, Sector, BaseStation
-from performance.models import PerformanceService, PerformanceNetwork
+from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
 from operator import is_not
 from functools import partial
@@ -54,7 +54,7 @@ class Live_Performance(ListView):
 
 
 class LivePerformanceListing(BaseDatatableView):
-    model = PerformanceNetwork
+    model = PerformanceNetwork #TODO change to NETWORK STATUS. PROBLEM is with DA, DA is not puttin gin RTA just PL
     columns = ['site_instance', 'id', 'device_alias', 'ip_address', 'device_type', 'city', 'state']
 
     def filter_queryset(self, qs):
