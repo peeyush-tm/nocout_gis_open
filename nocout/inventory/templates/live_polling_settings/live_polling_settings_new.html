@@ -67,17 +67,22 @@
             // Initialize the select2 selectbox.
             $(".select2select").select2();
 
+            // reset data sources and service if technology is not selected, else if it has value
+            // then update service and reset data sources
             if ($(id_technology).val()){
-                $(id_data_source).select2("val","Select");
                 $(id_data_source).empty();
+                $(id_data_source).select2("val","Select");
                 Dajaxice.inventory.update_services_as_per_technology(Dajax.process, {'tech_id': $(id_technology).val()});
             }
             else{
-                $(id_service).select2("val","Select");
                 $(id_service).empty();
-                $(id_data_source).select2("val","Select");
+                $(id_service).select2("val","Select");
                 $(id_data_source).empty();
+                $(id_data_source).select2("val","Select");
             }
+
+            // reset data sources if service is not selected, else if it has value
+            // then update data sources
             if ($(id_service).val()){
                 Dajaxice.inventory.update_data_sources_as_per_service(Dajax.process, {'svc_id': $(id_service).val()});
             }
