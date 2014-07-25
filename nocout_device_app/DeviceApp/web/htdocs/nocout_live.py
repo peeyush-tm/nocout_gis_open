@@ -58,16 +58,17 @@ def poll_device():
         data_source_list = literal_eval(html.var('ds'))
     except Exception:
         data_source_list = ['']
+        logger.error('No ds provided in request object', exc_info=True)
     if not data_source_list:
         data_source_list = ['']
     logger.debug('data_source_list : %s' % data_source_list)
-    for ds in data_source_list:
-        current_values.extend(get_current_value(device, service, ds))
+    
+    current_values = get_current_value(device, service, data_source_list)
 
     return current_values
 
 
-def get_current_value(device, service=None, ds=None):
+def get_current_value(device, service=None, data_source_list=None):
     response = []
     site_name = get_site_name()
     cmd = '/opt/omd/sites/%s/bin/cmk -nvp %s' % (site_name, device)
@@ -88,9 +89,11 @@ def get_current_value(device, service=None, ds=None):
         logger.debug('desired_service_ds_pair : %s' % desired_service_ds_pair)
         if desired_service_ds_pair:
             ds_values = desired_service_ds_pair[0][1].split(' ')
-            desired_ds = filter(lambda x: ds in x, ds_values)
-            logger.debug('desired_ds : %s' % desired_ds)
-            response = map(lambda x: x.split('=')[1].split(';')[0], desired_ds)
+            logger.info('ds_values : %s' % ds_values)
+            for ds in data_source_list:
+                desired_ds = filter(lambda x: ds in x.split('=')[0], ds_values)
+                logger.debug('desired_ds : %s' % desired_ds)
+                response.extend(map(lambda x: x.split('=')[1].split(';')[0], desired_ds))
             logger.info('response : %s' % response)
             logger.info('[Polling Iteration End]')
 
