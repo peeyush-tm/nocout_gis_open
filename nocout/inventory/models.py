@@ -1,4 +1,5 @@
 from django.db import models
+from service.models import Service, ServiceDataSource
 from user_group.models import UserGroup
 from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency
 from device_group.models import DeviceGroup
@@ -173,3 +174,55 @@ class Circuit(models.Model):
 
     def __unicode__(self):
         return self.name
+
+
+# icon settings model
+class IconSettings(models.Model):
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250)
+    upload_image = models.ImageField(upload_to='icons/')
+
+    def __unicode__(self):
+        return self.name
+
+    def delete(self, *args, **kwargs):
+        self.upload_image.delete()
+        super(IconSettings, self).delete(*args, **kwargs)
+
+
+# live polling settings model
+class LivePollingSettings(models.Model):
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250)
+    technology = models.ForeignKey(DeviceTechnology)
+    service = models.ForeignKey(Service)
+    data_source = models.ForeignKey(ServiceDataSource)
+
+    def __unicode__(self):
+        return self.name
+
+
+# threshold configuration model
+class ThresholdConfiguration(models.Model):
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250)
+    live_polling_template = models.ForeignKey(LivePollingSettings)
+    warning = models.CharField('Warning', max_length=20, null=True, blank=True)
+    critical = models.CharField('Critical', max_length=20, null=True, blank=True)
+
+    def __unicode__(self):
+        return self.name
+
+
+# thematic settings
+class ThematicSettings(models.Model):
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250)
+    threshold_template = models.ForeignKey(ThresholdConfiguration)
+    gt_warning = models.ForeignKey(IconSettings, null=True, blank=True, related_name='gt_warning')
+    bt_w_c = models.ForeignKey(IconSettings, null=True, blank=True, related_name='bt_w_c')
+    gt_critical = models.ForeignKey(IconSettings, null=True, blank=True, related_name='gt_critical')
+
+    def __unicode__(self):
+        return self.name
+

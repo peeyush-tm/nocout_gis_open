@@ -14,8 +14,10 @@ class Migration(SchemaMigration):
             ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=200)),
             ('alias', self.gf('django.db.models.fields.CharField')(max_length=255)),
             ('machine', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['machine.Machine'], null=True, blank=True)),
-            ('site_ip', self.gf('django.db.models.fields.IPAddressField')(max_length=15)),
             ('live_status_tcp_port', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
+            ('web_service_port', self.gf('django.db.models.fields.IntegerField')(default=80)),
+            ('username', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
+            ('password', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
             ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
         ))
         db.send_create_signal(u'site_instance', ['SiteInstance'])
@@ -44,7 +46,9 @@ class Migration(SchemaMigration):
             'live_status_tcp_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'machine': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['machine.Machine']", 'null': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '200'}),
-            'site_ip': ('django.db.models.fields.IPAddressField', [], {'max_length': '15'})
+            'password': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'username': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'web_service_port': ('django.db.models.fields.IntegerField', [], {'default': '80'})
         }
     }
 

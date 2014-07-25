@@ -122,8 +122,9 @@ class Migration(SchemaMigration):
             ('device_model', self.gf('django.db.models.fields.IntegerField')()),
             ('device_type', self.gf('django.db.models.fields.IntegerField')()),
             ('parent', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='device_children', null=True, to=orm['device.Device'])),
+            ('machine', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['machine.Machine'], null=True, blank=True)),
             ('ip_address', self.gf('django.db.models.fields.IPAddressField')(unique=True, max_length=15)),
-            ('mac_address', self.gf('django.db.models.fields.CharField')(max_length=100)),
+            ('mac_address', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
             ('netmask', self.gf('django.db.models.fields.IPAddressField')(max_length=15, null=True, blank=True)),
             ('gateway', self.gf('django.db.models.fields.IPAddressField')(max_length=15, null=True, blank=True)),
             ('dhcp_state', self.gf('django.db.models.fields.CharField')(default='Disable', max_length=200)),
@@ -290,7 +291,8 @@ class Migration(SchemaMigration):
             u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'longitude': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'mac_address': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
+            'mac_address': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'machine': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['machine.Machine']", 'null': 'True', 'blank': 'True'}),
             'netmask': ('django.db.models.fields.IPAddressField', [], {'max_length': '15', 'null': 'True', 'blank': 'True'}),
             'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
             'parent': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'device_children'", 'null': 'True', 'to': u"orm['device.Device']"}),
@@ -420,14 +422,14 @@ class Migration(SchemaMigration):
             'auth_protocol': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'port': ('django.db.models.fields.IntegerField', [], {}),
             'private_pass_phase': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'private_phase': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'protocol_name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'read_community': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'read_community': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'security_level': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'security_name': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'version': ('django.db.models.fields.CharField', [], {'max_length': '10', 'null': 'True', 'blank': 'True'}),
+            'version': ('django.db.models.fields.CharField', [], {'max_length': '10'}),
             'write_community': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'})
         },
         u'service.service': {
@@ -437,8 +439,8 @@ class Migration(SchemaMigration):
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'parameters': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['service.ServiceParameters']", 'null': 'True', 'blank': 'True'}),
-            'service_data_sources': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['service.ServiceDataSource']", 'null': 'True', 'blank': 'True'})
+            'parameters': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['service.ServiceParameters']"}),
+            'service_data_sources': ('django.db.models.fields.related.ManyToManyField', [], {'to': u"orm['service.ServiceDataSource']", 'symmetrical': 'False'})
         },
         u'service.servicedatasource': {
             'Meta': {'object_name': 'ServiceDataSource'},
@@ -451,11 +453,11 @@ class Migration(SchemaMigration):
         u'service.serviceparameters': {
             'Meta': {'object_name': 'ServiceParameters'},
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'max_check_attempts': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'normal_check_interval': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'max_check_attempts': ('django.db.models.fields.IntegerField', [], {}),
+            'normal_check_interval': ('django.db.models.fields.IntegerField', [], {}),
             'parameter_description': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            'protocol': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['service.Protocol']", 'null': 'True', 'blank': 'True'}),
-            'retry_check_interval': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'})
+            'protocol': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['service.Protocol']"}),
+            'retry_check_interval': ('django.db.models.fields.IntegerField', [], {})
         },
         u'site_instance.siteinstance': {
             'Meta': {'object_name': 'SiteInstance'},
@@ -465,7 +467,9 @@ class Migration(SchemaMigration):
             'live_status_tcp_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'machine': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['machine.Machine']", 'null': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '200'}),
-            'site_ip': ('django.db.models.fields.IPAddressField', [], {'max_length': '15'})
+            'password': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'username': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'web_service_port': ('django.db.models.fields.IntegerField', [], {'default': '80'})
         }
     }
 

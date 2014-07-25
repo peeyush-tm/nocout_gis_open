@@ -12,8 +12,9 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.db.models import Q
 from device_group.models import DeviceGroup
 from nocout.utils.util import DictDiffer
-from models import Inventory
-from forms import InventoryForm
+from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings
+from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
+    ThematicSettingsForm
 from organization.models import Organization
 from user_group.models import UserGroup
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
@@ -1218,3 +1219,585 @@ class CircuitDelete(DeleteView):
     @method_decorator(permission_required('inventory.delete_circuit', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         return super(CircuitDelete, self).dispatch(*args, **kwargs)
+
+
+#**************************************** IconSettings *********************************************
+class IconSettingsList(ListView):
+    model = IconSettings
+    template_name = 'icon_settings/icon_settings_list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(IconSettingsList, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'name',             'sTitle': 'Name',               'sWidth': 'null'},
+            {'mData': 'alias',            'sTitle': 'Alias',              'sWidth': 'null'},
+            {'mData': 'upload_image',     'sTitle': 'Upload Image',       'sWidth': 'null'},
+            ]
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
+        if 'admin' in user_role or 'operator' in user_role:
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+
+class IconSettingsListingTable(BaseDatatableView):
+    model = IconSettings
+    columns = ['name', 'alias', 'upload_image']
+    order_columns = ['name', 'alias', 'upload_image']
+
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        ##TODO:Need to optimise with the query making login.
+        if sSearch:
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            for column in self.columns[:-1]:
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
+            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return IconSettings.objects.values(*self.columns + ['id'])
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in qs:
+            dct.update(actions='<a href="/icon_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/icon_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+        }
+        return ret
+
+
+class IconSettingsDetail(DetailView):
+    model = IconSettings
+    template_name = 'icon_settings/icon_settings_detail.html'
+
+
+class IconSettingsCreate(CreateView):
+    template_name = 'icon_settings/icon_settings_new.html'
+    model = IconSettings
+    form_class = IconSettingsForm
+    success_url = reverse_lazy('icon_settings_list')
+
+    @method_decorator(permission_required('inventory.add_icon_settings', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(IconSettingsCreate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        self.object = form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
+        return HttpResponseRedirect(IconSettingsCreate.success_url)
+
+
+class IconSettingsUpdate(UpdateView):
+    template_name = 'icon_settings/icon_settings_update.html'
+    model = IconSettings
+    form_class = IconSettingsForm
+    success_url = reverse_lazy('icon_settings_list')
+
+    @method_decorator(permission_required('inventory.change_icon_settings', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(IconSettingsUpdate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
+        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        if changed_fields_dict:
+            verb_string = 'Changed values of IconSettings : %s from initial values ' % (self.object.name) + ', '.join(
+                ['%s: %s' % (k, initial_field_dict[k]) \
+                 for k in changed_fields_dict]) + \
+                          ' to ' + \
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string) >= 255:
+                verb_string = verb_string[:250] + '...'
+            self.object = form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(IconSettingsUpdate.success_url)
+
+
+class IconSettingsDelete(DeleteView):
+    model = IconSettings
+    template_name = 'icon_settings/icon_settings_delete.html'
+    success_url = reverse_lazy('icon_settings_list')
+
+    @method_decorator(permission_required('inventory.delete_icon_settings', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(IconSettingsDelete, self).dispatch(*args, **kwargs)
+    
+    
+#**************************************** LivePollingSettings *********************************************
+class LivePollingSettingsList(ListView):
+    model = LivePollingSettings
+    template_name = 'live_polling_settings/live_polling_settings_list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(LivePollingSettingsList, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'name',                    'sTitle': 'Name',              'sWidth': 'null'},
+            {'mData': 'alias',                   'sTitle': 'Alias',             'sWidth': 'null'},
+            {'mData': 'technology__alias',       'sTitle': 'Technology',        'sWidth': 'null'},
+            {'mData': 'service__alias',          'sTitle': 'Service',           'sWidth': 'null'},
+            {'mData': 'data_source__alias',      'sTitle': 'Data Source',       'sWidth': 'null'},
+            ]
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
+        if 'admin' in user_role or 'operator' in user_role:
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+
+class LivePollingSettingsListingTable(BaseDatatableView):
+    model = LivePollingSettings
+    columns = ['name', 'alias', 'technology__alias', 'service__alias', 'data_source__alias']
+    order_columns = ['name', 'alias', 'technology__alias', 'service__alias', 'data_source__alias']
+
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        ##TODO:Need to optimise with the query making login.
+        if sSearch:
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            for column in self.columns[:-1]:
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
+            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return LivePollingSettings.objects.values(*self.columns + ['id'])
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in qs:
+            dct.update(actions='<a href="/live_polling_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/live_polling_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+        }
+        return ret
+
+
+class LivePollingSettingsDetail(DetailView):
+    model = LivePollingSettings
+    template_name = 'live_polling_settings/live_polling_settings_detail.html'
+
+
+class LivePollingSettingsCreate(CreateView):
+    template_name = 'live_polling_settings/live_polling_settings_new.html'
+    model = LivePollingSettings
+    form_class = LivePollingSettingsForm
+    success_url = reverse_lazy('live_polling_settings_list')
+
+    @method_decorator(permission_required('inventory.add_live_polling_settings', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(LivePollingSettingsCreate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        self.object = form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
+        return HttpResponseRedirect(LivePollingSettingsCreate.success_url)
+
+
+class LivePollingSettingsUpdate(UpdateView):
+    template_name = 'live_polling_settings/live_polling_settings_update.html'
+    model = LivePollingSettings
+    form_class = LivePollingSettingsForm
+    success_url = reverse_lazy('live_polling_settings_list')
+
+    @method_decorator(permission_required('inventory.change_live_polling_settings', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(LivePollingSettingsUpdate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
+        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        if changed_fields_dict:
+            verb_string = 'Changed values of LivePollingSettings : %s from initial values ' % (self.object.name) + ', '.join(
+                ['%s: %s' % (k, initial_field_dict[k]) \
+                 for k in changed_fields_dict]) + \
+                          ' to ' + \
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string) >= 255:
+                verb_string = verb_string[:250] + '...'
+            self.object = form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(LivePollingSettingsUpdate.success_url)
+
+
+class LivePollingSettingsDelete(DeleteView):
+    model = LivePollingSettings
+    template_name = 'live_polling_settings/live_polling_settings_delete.html'
+    success_url = reverse_lazy('live_polling_settings_list')
+
+    @method_decorator(permission_required('inventory.delete_live_polling_settings', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(LivePollingSettingsDelete, self).dispatch(*args, **kwargs)
+
+
+#**************************************** ThresholdConfiguration *********************************************
+class ThresholdConfigurationList(ListView):
+    model = ThresholdConfiguration
+    template_name = 'threshold_configuration/threshold_configuration_list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ThresholdConfigurationList, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'name',                           'sTitle': 'Name',                   'sWidth': 'null'},
+            {'mData': 'alias',                          'sTitle': 'Alias',                  'sWidth': 'null'},
+            {'mData': 'live_polling_template__alias',   'sTitle': 'Live Polling Template',  'sWidth': 'null'},
+            {'mData': 'warning',                        'sTitle': 'Warning',                'sWidth': 'null'},
+            {'mData': 'critical',                       'sTitle': 'Critical',               'sWidth': 'null'},
+            ]
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
+        if 'admin' in user_role or 'operator' in user_role:
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+
+class ThresholdConfigurationListingTable(BaseDatatableView):
+    model = ThresholdConfiguration
+    columns = ['name', 'alias', 'live_polling_template__alias', 'warning', 'critical']
+    order_columns = ['name', 'alias', 'live_polling_template__alias', 'warning', 'critical']
+
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        ##TODO:Need to optimise with the query making login.
+        if sSearch:
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            for column in self.columns[:-1]:
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
+            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return ThresholdConfiguration.objects.values(*self.columns + ['id'])
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in qs:
+            dct.update(actions='<a href="/threshold_configuration/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/threshold_configuration/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+        }
+        return ret
+
+
+class ThresholdConfigurationDetail(DetailView):
+    model = ThresholdConfiguration
+    template_name = 'threshold_configuration/threshold_configuration_detail.html'
+
+
+class ThresholdConfigurationCreate(CreateView):
+    template_name = 'threshold_configuration/threshold_configuration_new.html'
+    model = ThresholdConfiguration
+    form_class = ThresholdConfigurationForm
+    success_url = reverse_lazy('threshold_configuration_list')
+
+    @method_decorator(permission_required('inventory.add_threshold_configuration', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ThresholdConfigurationCreate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        self.object = form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
+        return HttpResponseRedirect(ThresholdConfigurationCreate.success_url)
+
+
+class ThresholdConfigurationUpdate(UpdateView):
+    template_name = 'threshold_configuration/threshold_configuration_update.html'
+    model = ThresholdConfiguration
+    form_class = ThresholdConfigurationForm
+    success_url = reverse_lazy('threshold_configuration_list')
+
+    @method_decorator(permission_required('inventory.change_threshold_configuration', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ThresholdConfigurationUpdate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
+        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        if changed_fields_dict:
+            verb_string = 'Changed values of ThresholdConfiguration : %s from initial values ' % (self.object.name) + ', '.join(
+                ['%s: %s' % (k, initial_field_dict[k]) \
+                 for k in changed_fields_dict]) + \
+                          ' to ' + \
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string) >= 255:
+                verb_string = verb_string[:250] + '...'
+            self.object = form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(ThresholdConfigurationUpdate.success_url)
+
+
+class ThresholdConfigurationDelete(DeleteView):
+    model = ThresholdConfiguration
+    template_name = 'threshold_configuration/threshold_configuration_delete.html'
+    success_url = reverse_lazy('threshold_configuration_list')
+
+    @method_decorator(permission_required('inventory.delete_threshold_configuration', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ThresholdConfigurationDelete, self).dispatch(*args, **kwargs)
+
+
+#**************************************** ThematicSettings *********************************************
+class ThematicSettingsList(ListView):
+    model = ThematicSettings
+    template_name = 'thematic_settings/thematic_settings_list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ThematicSettingsList, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'name',                    'sTitle': 'Name',                      'sWidth': 'null'},
+            {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'null'},
+            {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'null'},
+            {'mData': 'gt_warning__name',        'sTitle': '> Warning',                 'sWidth': 'null'},
+            {'mData': 'bt_w_c__name',            'sTitle': 'Warning > > Critical',      'sWidth': 'null'},
+            {'mData': 'gt_critical__name',       'sTitle': '> Critical',                'sWidth': 'null'},
+            ]
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
+        if 'admin' in user_role or 'operator' in user_role:
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        return context
+
+
+class ThematicSettingsListingTable(BaseDatatableView):
+    model = ThematicSettings
+    columns = ['name', 'alias', 'threshold_template', 'gt_warning__name', 'bt_w_c__name', 'gt_critical__name']
+    order_columns = ['name', 'alias', 'threshold_template', 'gt_warning__name', 'bt_w_c__name', 'gt_critical__name']
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        ##TODO:Need to optimise with the query making login.
+        if sSearch:
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            for column in self.columns[:-1]:
+                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
+            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
+            exec exec_query
+
+        return qs
+
+    def get_initial_queryset(self):
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        return ThematicSettings.objects.values(*self.columns + ['id'])
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in qs:
+            dct.update(actions='<a href="/thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                <a href="/thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = qs.count()
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+        }
+        return ret
+
+
+class ThematicSettingsDetail(DetailView):
+    model = ThematicSettings
+    template_name = 'thematic_settings/thematic_settings_detail.html'
+
+
+class ThematicSettingsCreate(CreateView):
+    template_name = 'thematic_settings/thematic_settings_new.html'
+    model = ThematicSettings
+    form_class = ThematicSettingsForm
+    success_url = reverse_lazy('thematic_settings_list')
+
+    @method_decorator(permission_required('inventory.add_thematic_settings', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ThematicSettingsCreate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        self.object = form.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
+        return HttpResponseRedirect(ThematicSettingsCreate.success_url)
+
+
+class ThematicSettingsUpdate(UpdateView):
+    template_name = 'thematic_settings/thematic_settings_update.html'
+    model = ThematicSettings
+    form_class = ThematicSettingsForm
+    success_url = reverse_lazy('thematic_settings_list')
+
+    @method_decorator(permission_required('inventory.change_thematic_settings', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ThematicSettingsUpdate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
+        cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
+        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        if changed_fields_dict:
+            verb_string = 'Changed values of ThematicSettings : %s from initial values ' % (self.object.name) + ', '.join(
+                ['%s: %s' % (k, initial_field_dict[k]) \
+                 for k in changed_fields_dict]) + \
+                          ' to ' + \
+                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            if len(verb_string) >= 255:
+                verb_string = verb_string[:250] + '...'
+            self.object = form.save()
+            action.send(self.request.user, verb=verb_string)
+        return HttpResponseRedirect(ThematicSettingsUpdate.success_url)
+
+
+class ThematicSettingsDelete(DeleteView):
+    model = ThematicSettings
+    template_name = 'thematic_settings/thematic_settings_delete.html'
+    success_url = reverse_lazy('thematic_settings_list')
+
+    @method_decorator(permission_required('inventory.delete_thematic_settings', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        return super(ThematicSettingsDelete, self).dispatch(*args, **kwargs)

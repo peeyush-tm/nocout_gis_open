@@ -10,7 +10,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceType
 from inventory.models import SubStation, Circuit, Sector, BaseStation
 from performance.models import PerformanceService, PerformanceNetwork
-from service.models import ServiceDataSource, Service
+from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
 from operator import is_not
 from functools import partial
 from django.utils.dateformat import format
@@ -309,8 +309,32 @@ class Inventory_Device_Service_Data_Source(View):
             #for basestation we need to fetch sector_configured_on device field from the device
             inventory_device_type_id= Device.objects.get(id=int(device_id)).device_type
 
-        inventory_device_service_name= DeviceType.objects.get(id= inventory_device_type_id) \
-            .service.values_list('name', flat=True)
+        #first check for the service configuration table
+        inventory_device_service_name = DeviceServiceConfiguration.objects.\
+            filter(device_name=Device.objects.get(id=int(device_id)).device_name).\
+            values_list('service_name', flat=True)
+
+        if not len(inventory_device_service_name):
+            inventory_device_service_name= DeviceType.objects.get(id= inventory_device_type_id) \
+                .service.values_list('name', flat=True)
+
+        ##also append PD and RTA as latency and packet drop
+
+        result['data']['objects'].append({
+                'name':"rta",
+                'title':"Latency",
+                #@TODO: all the ursl must end with a / - django style
+                'url':'performance/service/ping/service_data_source/rta/'+page_type+'/device/'+str(device_id),
+                'active':0
+            })
+
+        result['data']['objects'].append({
+                'name':"pl",
+                'title':"Packet Drop",
+                #@TODO: all the ursl must end with a / - django style
+                'url':'performance/service/ping/service_data_source/pl/'+page_type+'/device/'+str(device_id),
+                'active':0
+            })
 
         for service_name in inventory_device_service_name:
             service_data_sources= Service.objects.get(name= service_name).service_data_sources.all()
@@ -323,21 +347,6 @@ class Inventory_Device_Service_Data_Source(View):
                     'active':0
                 })
 
-        ##also append PD and RTA as latency and packet drop
-        result['data']['objects'].append({
-                'name':"pl",
-                'title':"Packet Drop",
-                #@TODO: all the ursl must end with a / - django style
-                'url':'performance/service/ping/service_data_source/pl/'+page_type+'/device/'+str(device_id),
-                'active':0
-            })
-        result['data']['objects'].append({
-                'name':"rta",
-                'title':"Latency",
-                #@TODO: all the ursl must end with a / - django style
-                'url':'performance/service/ping/service_data_source/rta/'+page_type+'/device/'+str(device_id),
-                'active':0
-            })
         result['success']=1
         result['message']='Substation Devices Services Data Source Fetched Successfully.'
         return HttpResponse(json.dumps(result))
