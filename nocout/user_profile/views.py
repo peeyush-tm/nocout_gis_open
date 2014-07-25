@@ -53,13 +53,15 @@ class UserListingTable(BaseDatatableView):
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
-            result_list=list()
-            for dictionary in qs:
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        break
-            return result_list
+            query=[]
+            exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            for column in self.columns[:-1]:
+                query.append("Q(%s__icontains="%column + "\"" +sSearch +"\"" +")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            exec exec_query
+
         return qs
 
     def get_initial_queryset(self):
@@ -96,12 +98,12 @@ class UserListingTable(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.count()
+        total_records = len(qs)
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.count()
+        total_display_records = len(qs)
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
@@ -127,7 +129,6 @@ class UserArchivedListingTable(BaseDatatableView):
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
             query=[]
             exec_query = "qs = %s.objects.filter("%(self.model.__name__)
@@ -136,8 +137,6 @@ class UserArchivedListingTable(BaseDatatableView):
 
             exec_query += " | ".join(query)
             exec_query += ").values(*"+str(self.columns+['id'])+")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
 
         return qs
@@ -170,12 +169,12 @@ class UserArchivedListingTable(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.count()
+        total_records = len(qs)
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.count()
+        total_display_records = len(qs)
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
