@@ -20,6 +20,9 @@ from user_group.models import UserGroup
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
 from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm, CircuitForm
 from device.models import Country, State, City
+from django.contrib.staticfiles.templatetags.staticfiles import static
+import logging
+logger = logging.getLogger(__name__)
 
 
 # **************************************** Inventory *********************************************
@@ -1254,7 +1257,7 @@ class IconSettingsList(ListView):
         datatable_headers = [
             {'mData': 'name',             'sTitle': 'Name',               'sWidth': 'null'},
             {'mData': 'alias',            'sTitle': 'Alias',              'sWidth': 'null'},
-            {'mData': 'upload_image',     'sTitle': 'Upload Image',       'sWidth': 'null'},
+            {'mData': 'upload_image',     'sTitle': 'Image',       'sWidth': 'null'},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
@@ -1296,6 +1299,12 @@ class IconSettingsListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            try:
+                img_url = static('img/{}'.format(dct['upload_image']))
+                dct.update(upload_image='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(img_url))
+            except Exception as e:
+                logger.info(e)
+
             dct.update(actions='<a href="/icon_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/icon_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
