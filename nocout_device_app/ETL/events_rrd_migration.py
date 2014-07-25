@@ -76,7 +76,7 @@ def service_perf_data_live_query(db,site,log_split):
 				mongo_functions.mongo_db_insert(db,serv_event_dict,"serv_event")
 	elif 'invent' in log_split[5]:
 		query = "GET services\nColumns: service_plugin_output\nFilter: service_description ~ %s\nFilter: host_name = %s\n" %(
-		log_split[5]) 
+		log_split[5],log_split[4]) 
 		perf_data= rrd_main.get_from_socket(site, query)
 		current_value = perf_data.split('- ')[1].strip('\n')
 		serv_event_dict=dict(sys_timestamp=int(log_split[1]),device_name=log_split[4],severity=log_split[8],
@@ -88,7 +88,7 @@ def service_perf_data_live_query(db,site,log_split):
 		mongo_functions.mongo_db_insert(db,serv_event_dict,"serv_event")
 
 def network_perf_data_live_query(db,site,log_split):
-	query = "GET services\nColumns: service_perf_data\nFilter: service_description ~ %s\nFilter: host_name = %s\n" % ('PING',log_split[4]) 
+	query = "GET hosts\nColumns: host_perf_data\nFilter: host_name = %s\n" % (log_split[4]) 
 	perf_data= rrd_main.get_from_socket(site, query)
 	host_perf_data = rrd_migration.get_threshold(perf_data)
 	if log_split[0] == "CURRENT HOST STATE":
