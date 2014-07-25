@@ -42,24 +42,25 @@ class AlertCenterNetworkListing(ListView):
         context=super(AlertCenterNetworkListing, self).get_context_data(**kwargs)
         datatable_headers_latency = [
             {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null',},
-            {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null',},
+            {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'machine_name',               'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null',},
+            {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'current_value',                  'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null',},]
+            {'mData':'current_value',              'sTitle' : 'Current Value',          'sWidth':'null', },
+            {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null',},
+            ]
 
         datatable_headers_packetdrop = [
             {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null',},
-            {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null',},
+            {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'machine_name',               'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null',},
+            {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'current_value',                  'sTitle' : 'Packet Drop',                'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'current_value',              'sTitle' : 'Current Value',          'sWidth':'null', },
             {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null',},
             ]
         # datatable_headers_down = [
@@ -200,15 +201,15 @@ class CustomerAlertList(ListView):
     def get_context_data(self, **kwargs):
         context=super(CustomerAlertList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null',},
-            {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null',},
-            {'mData':'machine_name',               'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null',},
-            {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'current_value',                  'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null',},
+            {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null', },
+            {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null', 'sClass':'hidden-xs'},
+            {'mData':'machine_name',               'sTitle' : 'Machine Name',           'sWidth':'null', 'sClass':'hidden-xs'},
+            {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null', 'sClass':'hidden-xs'},
+            {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null', 'sClass':'hidden-xs'},
+            {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null', 'sClass':'hidden-xs'},
+            {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null', 'sClass':'hidden-xs'},
+            {'mData':'current_value',              'sTitle' : 'Current Value',          'sWidth':'null', },
+            {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null', },
             ]
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['data_source'] = " ".join(self.kwargs['data_source'].split('_')).title()
