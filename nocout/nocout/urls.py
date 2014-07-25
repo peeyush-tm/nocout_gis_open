@@ -32,6 +32,10 @@ urlpatterns = patterns('',
     url(r'^model/', include('device.device_model_urls')),
     url(r'^type/', include('device.device_type_urls')),
     url(r'frequency/', include('device.device_frequency_urls')),
+    url(r'icon_settings/', include('inventory.icon_settings_urls')),
+    url(r'live_polling_settings/', include('inventory.live_polling_settings_urls')),
+    url(r'threshold_configuration/', include('inventory.threshold_configuration_urls')),
+    url(r'thematic_settings/', include('inventory.thematic_settings_urls')),
     url(r'^device_port/', include('device.device_ports_urls')),
     url(r'^antenna/', include('inventory.antenna_urls')),
     url(r'^base_station/', include('inventory.base_station_urls')),
@@ -62,3 +66,10 @@ if settings.DEBUG:
     urlpatterns += patterns('',
         url(r'^__debug__/', include(debug_toolbar.urls)),
     )
+
+if settings.DEBUG:
+    urlpatterns += patterns('',
+        url(r'^media/(?P<path>.*)$', 'django.views.static.serve', {
+            'document_root': settings.MEDIA_ROOT,
+        }),
+)
