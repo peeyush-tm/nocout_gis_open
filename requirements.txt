@@ -17,7 +17,6 @@ django-preventconcurrentlogins==0.3
 django-session-security==2.1.6
 django-staticfiles==1.2.1
 graphviz==0.3.3
-newrelic==2.20.0.17
 pydot==1.0.2
 pygraphviz==1.2
 pyparsing==1.5.7
