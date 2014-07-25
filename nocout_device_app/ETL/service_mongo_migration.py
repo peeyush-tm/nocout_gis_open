@@ -32,8 +32,9 @@ def main(**configs):
     )
 
     end_time = datetime.now()
-
+    print start_time,end_time
     docs = read_data(start_time, end_time, configs=configs)
+    # print docs
     for doc in docs:
         values_list = build_data(doc)
         data_values.extend(values_list)
@@ -53,11 +54,9 @@ def main(**configs):
         'check_timestamp',
 	'ip_address'
     ]
-    if data_values:	
-    	insert_data(configs.get('table_name'), data_values, configs=configs)
-    	print "Data inserted into my mysql db"
-    else:
-	print "No data in mongo db in this time frame"
+    insert_data(configs.get('table_name'), data_values, configs=configs)
+    print "Data inserted into performance_performanceservice table"
+    
 
 def read_data(start_time, end_time, **kwargs):
 
@@ -86,10 +85,11 @@ def build_data(doc):
     values_list = []
     #uuid = get_machineid()
     machine_name = get_machine_name()
-    local_time_epoch = get_epoch_time(doc.get('local_timestamp'))
+    #local_time_epoch = get_epoch_time(doc.get('local_timestamp'))
     for ds in doc.get('ds').iterkeys():
         for entry in doc.get('ds').get(ds).get('data'):
             check_time_epoch = get_epoch_time(entry.get('time'))
+	    local_time_epoch = check_time_epoch
             t = (
                 #uuid,
                 doc.get('host'),
@@ -105,8 +105,7 @@ def build_data(doc):
                 doc.get('ds').get(ds).get('meta').get('cric'),
                 local_time_epoch,
                 check_time_epoch,
-		doc.get('ip_address'),
-		doc.get('severity')
+		doc.get('ip_address')
             )
             values_list.append(t)
             t = ()
@@ -119,8 +118,8 @@ def insert_data(table, data_values, **kwargs):
             (device_name, service_name, machine_name, 
             site_name, data_source, current_value, min_value, 
             max_value, avg_value, warning_threshold, 
-            critical_threshold, sys_timestamp, check_timestamp,ip_address,severity) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s,%s)
+            critical_threshold, sys_timestamp, check_timestamp,ip_address) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s)
             """
     cursor = db.cursor()
     try:
