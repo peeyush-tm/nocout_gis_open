@@ -315,6 +315,24 @@ class Inventory_Device_Service_Data_Source(View):
         inventory_device_service_name= DeviceType.objects.get(id= inventory_device_type_id) \
             .service.values_list('name', flat=True)
 
+        ##also append PD and RTA as latency and packet drop
+
+        result['data']['objects'].append({
+                'name':"rta",
+                'title':"Latency",
+                #@TODO: all the ursl must end with a / - django style
+                'url':'performance/service/ping/service_data_source/rta/'+page_type+'/device/'+str(device_id),
+                'active':0
+            })
+
+        result['data']['objects'].append({
+                'name':"pl",
+                'title':"Packet Drop",
+                #@TODO: all the ursl must end with a / - django style
+                'url':'performance/service/ping/service_data_source/pl/'+page_type+'/device/'+str(device_id),
+                'active':0
+            })
+
         for service_name in inventory_device_service_name:
             service_data_sources= Service.objects.get(name= service_name).service_data_sources.all()
             for service_data_source in service_data_sources:
@@ -326,21 +344,6 @@ class Inventory_Device_Service_Data_Source(View):
                     'active':0
                 })
 
-        ##also append PD and RTA as latency and packet drop
-        result['data']['objects'].append({
-                'name':"pl",
-                'title':"Packet Drop",
-                #@TODO: all the ursl must end with a / - django style
-                'url':'performance/service/ping/service_data_source/pl/'+page_type+'/device/'+str(device_id),
-                'active':0
-            })
-        result['data']['objects'].append({
-                'name':"rta",
-                'title':"Latency",
-                #@TODO: all the ursl must end with a / - django style
-                'url':'performance/service/ping/service_data_source/rta/'+page_type+'/device/'+str(device_id),
-                'active':0
-            })
         result['success']=1
         result['message']='Substation Devices Services Data Source Fetched Successfully.'
         return HttpResponse(json.dumps(result))
