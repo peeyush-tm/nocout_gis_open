@@ -13,9 +13,9 @@ class ActionList(ListView):
 
     def get_context_data(self, **kwargs):
         context=super(ActionList, self).get_context_data(**kwargs)
-        # datatable_headers=('actions', 'timestamp')
-        context['datatable_headers'] = json.dumps([ {'mData':'actor', 'sTitle' : 'User','sWidth':'15%'},{'mData':'__unicode__', 'sTitle' : 'Actions'},
-                                                    {'mData':'timestamp', 'sTitle': 'Timestamp','sWidth':'17%'} ])
+        context['datatable_headers'] = json.dumps([ {'mData':'actor', 'sTitle' : 'User','sWidth':'15%','bSortable': False},
+                                                    {'mData':'__unicode__', 'sTitle' : 'Actions','bSortable': False},
+                                                    {'mData':'timestamp', 'sTitle': 'Timestamp','sWidth':'17%','bSortable': False} ])
         return context
 
 
@@ -27,8 +27,7 @@ class ActionListingTable(BaseDatatableView):
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
-            actor_objects = UserProfile.objects.filter(username__contains=sSearch).values_list('id')
-            actor_objects_ids_list=map(lambda actor_object_id_tuple:  actor_object_id_tuple[0], actor_objects)
+            actor_objects_ids_list = UserProfile.objects.filter(username__icontains=sSearch).values_list('id', flat=True)
             qs =Action.objects.filter( actor_object_id__in=actor_objects_ids_list ).values('id','timestamp')
         return qs
 
@@ -42,6 +41,7 @@ class ActionListingTable(BaseDatatableView):
         if qs:
             for dct in qs:
                 for key, val in dct.items():
+                    dct['timestamp']=dct['timestamp'].strftime("%Y-%m-%d %H:%M:%S")
                     if key=='id':
                         dct['__unicode__'] = Action.objects.get(pk= val).__unicode__()
                         dct['actor'] = Action.objects.get(pk= val).actor.username

@@ -26,19 +26,19 @@ class UserGroupList(ListView):
         datatable_headers=[
             {'mData':'name',                   'sTitle' : 'Name',                  'sWidth':'null',},
             {'mData':'alias',                  'sTitle' : 'Alias',                 'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'users__first_name',      'sTitle' : 'Users',                 'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'organization__name',     'sTitle' : 'Organization',          'sWidth':'null','sClass':'hidden-xs'},]
+            {'mData':'organization__name',     'sTitle' : 'Organization',          'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'users__first_name',      'sTitle' : 'Users',                 'sWidth':'null','sClass':'hidden-xs','bSortable': False},]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%' ,})
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%' ,'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class UserGroupListingTable(BaseDatatableView):
     model = UserGroup
-    columns = ['name', 'alias', 'organization__name']
-    order_columns = ['name', 'alias']
+    columns = ['name', 'alias', 'users__first_name','organization__name']
+    order_columns = ['name', 'alias','organization__name']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -46,8 +46,9 @@ class UserGroupListingTable(BaseDatatableView):
             result_list=list()
             for dictionary in qs:
                 for key in dictionary.keys():
-                    if str(dictionary[key])==sSearch:
+                    if sSearch.lower() in str(dictionary[key]).lower():
                         result_list.append(dictionary)
+                        break
             return result_list
 
         return qs
@@ -55,7 +56,8 @@ class UserGroupListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        organization_descendants_ids= self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True)
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
+                                      .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
         qs_query= UserGroup.objects.filter(organization__in = organization_descendants_ids, is_deleted=0).prefetch_related()
         qs=list()
         for ug in qs_query:

@@ -16,14 +16,14 @@
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i> USER LISTING</h4>
 
-            <div class="tools hidden-xs">
-                <a href="#box-config" data-toggle="modal" class="config">
-                    <i class="fa fa-cog"></i>
-                </a>
-                <a href="javascript:;" class="reload">
-                    <i class="fa fa-refresh"></i>
-                </a>
-            </div>
+{#            <div class="tools hidden-xs">#}
+{#                <a href="#box-config" data-toggle="modal" class="config">#}
+{#                    <i class="fa fa-cog"></i>#}
+{#                </a>#}
+{#                <a href="javascript:;" class="reload">#}
+{#                    <i class="fa fa-refresh"></i>#}
+{#                </a>#}
+{#            </div>#}
         </div>
     <div class="box-body">
         <div class="tabbable header-tabs">
@@ -62,11 +62,11 @@
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/
-            var ajax_url_user_listing = '{% url "UserListingTable" %}';
+            var ajax_url_user_listing = '{% url "UserListingTable" %}' + '?datatable_headers='+encodeURIComponent(JSON.stringify(gridHeadersObj));
             var ajax_url_user_archived_listing = '{% url "UserArchivedListingTable" %}';
             /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable("UserListingTable", gridHeadersObj, ajax_url_user_listing);
-            dataTableInstance.createDataTable("UserArchivedListingTable", gridHeadersObj, ajax_url_user_archived_listing);
+            dataTableInstance.createDataTable("UserListingTable", gridHeadersObj, ajax_url_user_listing, destroy=false);
+            dataTableInstance.createDataTable("UserArchivedListingTable", gridHeadersObj, ajax_url_user_archived_listing, destroy=false);
         });
     </script>
 {% endblock %}

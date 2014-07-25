@@ -37,7 +37,7 @@ class ServiceList(ListView):
             {'mData': 'parameters__parameter_description', 'sTitle': 'Default Parameters', 'sWidth': 'null', },
             {'mData': 'service_data_sources__alias', 'sTitle': 'Data Sources', 'sWidth': 'null', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', }]
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}]
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -46,16 +46,15 @@ class ServiceList(ListView):
 class ServiceListingTable(BaseDatatableView):
     model = Service
     columns = ['name', 'alias', 'parameters__parameter_description', 'service_data_sources__alias', 'description']
-    order_columns = ['name', 'alias', 'parameters__parameter_description', 'description']
+    order_columns = ['name', 'alias', 'parameters__parameter_description','service_data_sources__alias', 'description']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
+            for column in self.columns:
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
@@ -207,7 +206,7 @@ class ServiceParametersList(ListView):
              'sClass': 'hidden-xs'},
             {'mData': 'retry_check_interval', 'sTitle': 'Retry Check Intervals', 'sWidth': 'null', },
             {'mData': 'max_check_attempts', 'sTitle': 'Max Check Attempts', 'sWidth': 'null', },
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', }
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
         ]
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -222,17 +221,14 @@ class ServiceParametersListingTable(BaseDatatableView):
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
+            for column in self.columns:
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
 
         return qs
@@ -356,30 +352,27 @@ class ServiceDataSourceList(ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             {'mData': 'warning', 'sTitle': 'Warning', 'sWidth': 'null', },
             {'mData': 'critical', 'sTitle': 'Critical', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', }
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
         ]
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
 class ServiceDataSourceListingTable(BaseDatatableView):
-    model = ServiceDataSourceList
+    model = ServiceDataSource
     columns = ['name', 'alias', 'warning', 'critical']
     order_columns = ['name', 'alias', 'warning', 'critical']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
+            for column in self.columns:
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
 
         return qs
@@ -509,14 +502,14 @@ class ProtocolList(ListView):
             {'mData': 'security_level', 'sTitle': 'Security Level', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             {'mData': 'private_phase', 'sTitle': 'Private Phase', 'sWidth': 'null', },
             {'mData': 'private_pass_phase', 'sTitle': 'Private Pass Phase', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', }
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%','bSortable': False }
         ]
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 
 class ProtocolListingTable(BaseDatatableView):
-    model = ProtocolList
+    model = Protocol
     columns = ['name', 'protocol_name', 'port', 'version', 'read_community', 'write_community', 'auth_password',
                'auth_protocol', 'security_name', 'security_level', 'private_phase', 'private_pass_phase']
     order_columns = ['name', 'protocol_name', 'port', 'version', 'read_community', 'write_community', 'auth_password',
@@ -524,17 +517,14 @@ class ProtocolListingTable(BaseDatatableView):
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
+            for column in self.columns:
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
 
         return qs
@@ -665,23 +655,27 @@ class DeviceServiceConfigurationList(ListView):
             {'mData':'critical',                'sTitle' : 'Critical',              'sWidth':'null',},
             {'mData':'added_on',                'sTitle' : 'Added On',              'sWidth':'null',},
             {'mData':'modified_on',             'sTitle' : 'Updated On',            'sWidth':'null',},
-            {'mData':'actions',                 'sTitle' : 'Actions',               'sWidth':'null',}]
+            {'mData':'actions',                 'sTitle' : 'Actions',               'sWidth':'null','bSortable': False}]
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class DeviceServiceConfigurationListingTable(BaseDatatableView):
     model = DeviceServiceConfiguration
-    columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'data_source', 'read_community', 'svc_template', 'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'warning', 'critical', 'added_on', 'modified_on']
-    order_columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'data_source', 'read_community', 'svc_template', 'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'warning', 'critical', 'added_on', 'modified_on']
+    columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'data_source', 'read_community', \
+               'svc_template', 'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'warning', \
+               'critical', 'added_on', 'modified_on']
+    order_columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'data_source', 'read_community',\
+                     'svc_template', 'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'warning', \
+                     'critical', 'added_on', 'modified_on']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             query=[]
             exec_query = "qs = %s.objects.filter("%(self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+            for column in self.columns[:-2]:
+                query.append("Q(%s__icontains="%column + "\"" +sSearch +"\"" +")")
 
             exec_query += " | ".join(query)
             exec_query += ").values(*"+str(self.columns+['id'])+")"
@@ -692,14 +686,19 @@ class DeviceServiceConfigurationListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return DeviceServiceConfiguration.objects.values(*self.columns+['id']).order_by('-added_on')
+        return DeviceServiceConfiguration.objects.values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
-            dct.update(actions='<a href="#" onclick="Dajaxice.device.edit_single_service_form(get_single_service_edit_form, {{\'dsc_id\': {0}}})"><i class="fa fa-pencil text-dark"></i></a>\
-                                <a href="#" onclick="Dajaxice.device.delete_single_service_form(get_single_service_delete_form, {{\'dsc_id\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            dct.update(actions='<a href="#" onclick="Dajaxice.device.edit_single_service_form(get_single_service_edit_form,\
+                               {{\'dsc_id\': {0}}})"><i class="fa fa-pencil text-dark"></i></a>\
+                                <a href="#" onclick="Dajaxice.device.delete_single_service_form(get_single_service_delete_form,\
+                                {{\'dsc_id\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')),
+                       added_on=dct['added_on'].strftime("%Y-%m-%d %H:%M:%S"),
+                       modified_on=dct['modified_on'].strftime("%Y-%m-%d %H:%M:%S"))
+
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -711,7 +710,6 @@ class DeviceServiceConfigurationListingTable(BaseDatatableView):
         # number of records before filtering
         total_records = qs.count()
 
-        qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = qs.count()
@@ -723,7 +721,8 @@ class DeviceServiceConfigurationListingTable(BaseDatatableView):
             qs=list(qs)
 
         # prepare output data
-        aaData = self.prepare_results(qs)
+        qs = self.prepare_results(qs)
+        aaData = self.filter_queryset(qs)
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,

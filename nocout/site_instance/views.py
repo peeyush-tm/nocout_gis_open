@@ -7,6 +7,7 @@ from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from models import SiteInstance
 from forms import SiteInstanceForm
+from django.db.models import Q
 from django.http.response import HttpResponseRedirect
 from nocout.utils.util import DictDiffer
 from actstream import action
@@ -25,7 +26,7 @@ class SiteInstanceList(ListView):
             {'mData':'live_status_tcp_port',  'sTitle' : 'Live Status TCP Port',  'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'web_service_port',      'sTitle' : 'Web Service Port',      'sWidth':'null',},
             {'mData':'username',              'sTitle' : 'Username',              'sWidth':'null',},
-            {'mData':'actions',               'sTitle' : 'Actions',               'sWidth':'5%' ,}
+            {'mData':'actions',               'sTitle' : 'Actions',               'sWidth':'5%' ,'bSortable': False}
             ,]
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -37,17 +38,14 @@ class SiteInstanceListingTable(BaseDatatableView):
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
             query=[]
             exec_query = "qs = %s.objects.filter("%(self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+                query.append("Q(%s__icontains="%column + "\"" +sSearch +"\"" +")")
 
             exec_query += " | ".join(query)
             exec_query += ").values(*"+str(self.columns+['id'])+")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
 
         return qs
