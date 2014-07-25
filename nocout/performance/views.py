@@ -136,12 +136,9 @@ class LivePerformanceListing(BaseDatatableView):
                         d_src = str(data.data_source).strip().lower()
                         current_val = str(data.current_value)
                         if d_src == "pl":
-                            device["packet_loss"] = "PL"#data.current_value
                             device["packet_loss"] = current_val
                         if d_src == "rta":
-                            device["latency"] = "RTA"#data.current_value
                             device["latency"] = current_val
-
                         device["last_updated"] = str(datetime.datetime.fromtimestamp(float( data.sys_timestamp )))
                         device_list.append(device)
 
