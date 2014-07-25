@@ -18,17 +18,14 @@
                         </div>
                         <div class="box-body">
                             <br/>
-                            <form action="/device/new/" method="post" class="form-horizontal"
-                                  role="form">{% csrf_token %}
+                            <form action="/device/new/" method="post" class="form-horizontal" role="form">{% csrf_token %}
                                 <div class="col-md-12">
                                     <!--Form 1-->
                                     <div class="col-md-6">
                                         {% for field in form %}
                                             {% if field.field.widget.attrs.class == 'form-control' or field.field.widget.attrs.class == 'col-md-12 select2select' %}
                                                 <div class="form-group">
-                                                    <label for="{{ field.id_for_label }}"
-                                                           class="col-sm-5 control-label">{{ field.label }}</label>
-
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-5 control-label">{% if field.field.required %}<span class="mandatory">* </span>{% endif %}{{ field.label }}</label>
                                                     <div class="col-sm-7">
                                                         {{ field }} {{ field.errors }}
                                                     </div>

@@ -161,7 +161,6 @@
                         <ul class="sub-sub">
                             <li><a class="" href="/device/"><span class="sub-menu-text">Devices</span></a></li>
                             <li><a class="" href="/device_group/"><span class="sub-menu-text">Device Group</span></a></li>
-                            <li><a class="" href="/inventory/inventorylist/"><span class="sub-menu-text">Inventory List</span></a></li>
 
                             {% for group in user.groups.all %}
                             {% if group.name == 'group_admin' %}
@@ -176,6 +175,7 @@
                                 <li><a class="" href="/service/"><span class="sub-menu-text">Services</span></a></li>
                                 <li><a class="" href="/service_data_source/"><span class="sub-menu-text">Service Data Sources</span></a></li>
                                 <li><a class="" href="/service_parameter/"><span class="sub-menu-text">Service Parameters</span></a></li>
+                                <li><a class="" href="/device_service_configuration/"><span class="sub-menu-text">Service Configurations</span></a></li>
                                 <li><a class="" href="/protocol/"><span class="sub-menu-text">SNMP Parameters</span></a></li>
                                 <li><a class="" href="/command/"><span class="sub-menu-text">Commands</span></a></li>
                             {% endif %}
@@ -222,10 +222,11 @@
                     <span class="arrow"></span>
                 </a>
                 <ul class="sub">
+                    <li><a class="" href="/icon_settings/"><span class="sub-menu-text">Icon Settings</span></a></li>
                     <li><a class="" href="/frequency/"><span class="sub-menu-text">Device Frequency</span></a></li>
-                    <li><a class="" href="javascript:;"><span class="sub-menu-text">Threshold Settings</span></a></li>
-                    <li><a class="" href="javascript:;"><span class="sub-menu-text">Live Polling Settings</span></a></li>
-                    <li><a class="" href="javascript:;"><span class="sub-menu-text">Thematic Settings</span></a></li>
+                    <li><a class="" href="/threshold_configuration/"><span class="sub-menu-text">Threshold Configuration</span></a></li>
+                    <li><a class="" href="/live_polling_settings/"><span class="sub-menu-text">Live Polling Settings</span></a></li>
+                    <li><a class="" href="/thematic_settings/"><span class="sub-menu-text">Thematic Settings</span></a></li>
                 </ul>
             </li>
 

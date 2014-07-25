@@ -1,4 +1,5 @@
 from django.db import models
+from machine.models import Machine
 from organization.models import Organization
 from site_instance.models import SiteInstance
 from service.models import Service
@@ -132,8 +133,9 @@ class Device(MPTTModel, models.Model):
     device_model = models.IntegerField('Device Model')
     device_type = models.IntegerField('Device Type')
     parent = models.ForeignKey('self', null=True, blank=True, related_name='device_children')
+    machine = models.ForeignKey(Machine, null=True, blank=True)
     #ports = models.ManyToManyField(DevicePort, null=True, blank=True)
-    ip_address = models.IPAddressField('IP Address')
+    ip_address = models.IPAddressField('IP Address', unique=True)
     mac_address = models.CharField('MAC Address', max_length=100, null=True, blank=True)
     netmask = models.IPAddressField('Netmask', null=True, blank=True)
     gateway = models.IPAddressField('Gateway', null=True, blank=True)

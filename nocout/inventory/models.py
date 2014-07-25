@@ -1,4 +1,5 @@
 from django.db import models
+from service.models import Service, ServiceDataSource
 from user_group.models import UserGroup
 from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency
 from device_group.models import DeviceGroup
@@ -13,9 +14,6 @@ class Inventory(models.Model):
     organization = models.ForeignKey(Organization)
     user_group = models.ForeignKey(UserGroup)
     device_groups = models.ManyToManyField(DeviceGroup, null=True, blank=True)
-    city = models.CharField('City', max_length=200, null=True, blank=True)
-    state = models.CharField('State', max_length=200, null=True, blank=True)
-    country = models.CharField('Country', max_length=200, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
@@ -118,9 +116,6 @@ class Sector(models.Model):
     cell_radius = models.FloatField('Cell Radius', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
     frequency = models.ForeignKey(DeviceFrequency, null=True, blank=True)
     modulation = models.CharField('Modulation', max_length=250, null=True, blank=True)
-    city = models.CharField('City', max_length=250, null=True, blank=True)
-    state = models.CharField('State', max_length=250, null=True, blank=True)
-    address = models.CharField('Address', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
@@ -130,8 +125,6 @@ class Sector(models.Model):
 class Customer(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
-    city = models.CharField('City', max_length=250, null=True, blank=True)
-    state = models.CharField('State', max_length=250, null=True, blank=True)
     address = models.CharField('Address', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
@@ -150,8 +143,12 @@ class SubStation(models.Model):
     tower_height = models.FloatField('Tower Height', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
     ethernet_extender = models.CharField('Ethernet Extender', max_length=250, null=True, blank=True)
     cable_length = models.FloatField('Cable Length', null=True, blank=True, help_text=mark_safe('<span class="si_unit">(mtr)</span> Enter a number.'))
-    city = models.CharField('City', max_length=250, null=True, blank=True)
-    state = models.CharField('State', max_length=250, null=True, blank=True)
+    latitude = models.FloatField('Latitude', null=True, blank=True)
+    longitude = models.FloatField('Longitude', null=True, blank=True)
+    mac_address = models.CharField('MAC Address', max_length=100, null=True, blank=True)
+    country = models.IntegerField('Country', null=True, blank=True)
+    state = models.IntegerField('State', null=True, blank=True)
+    city = models.IntegerField('City', null=True, blank=True)
     address = models.CharField('Address', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
@@ -177,3 +174,55 @@ class Circuit(models.Model):
 
     def __unicode__(self):
         return self.name
+
+
+# icon settings model
+class IconSettings(models.Model):
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250)
+    upload_image = models.ImageField(upload_to='icons/')
+
+    def __unicode__(self):
+        return self.name
+
+    def delete(self, *args, **kwargs):
+        self.upload_image.delete()
+        super(IconSettings, self).delete(*args, **kwargs)
+
+
+# live polling settings model
+class LivePollingSettings(models.Model):
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250)
+    technology = models.ForeignKey(DeviceTechnology)
+    service = models.ForeignKey(Service)
+    data_source = models.ForeignKey(ServiceDataSource)
+
+    def __unicode__(self):
+        return self.name
+
+
+# threshold configuration model
+class ThresholdConfiguration(models.Model):
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250)
+    live_polling_template = models.ForeignKey(LivePollingSettings)
+    warning = models.CharField('Warning', max_length=20, null=True, blank=True)
+    critical = models.CharField('Critical', max_length=20, null=True, blank=True)
+
+    def __unicode__(self):
+        return self.name
+
+
+# thematic settings
+class ThematicSettings(models.Model):
+    name = models.CharField('Name', max_length=250, unique=True)
+    alias = models.CharField('Alias', max_length=250)
+    threshold_template = models.ForeignKey(ThresholdConfiguration)
+    gt_warning = models.ForeignKey(IconSettings, null=True, blank=True, related_name='gt_warning')
+    bt_w_c = models.ForeignKey(IconSettings, null=True, blank=True, related_name='bt_w_c')
+    gt_critical = models.ForeignKey(IconSettings, null=True, blank=True, related_name='gt_critical')
+
+    def __unicode__(self):
+        return self.name
+

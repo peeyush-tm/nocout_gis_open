@@ -15,8 +15,6 @@ class Migration(SchemaMigration):
             ('alias', self.gf('django.db.models.fields.CharField')(max_length=200)),
             ('parent', self.gf('mptt.fields.TreeForeignKey')(blank=True, related_name='devicegroup_children', null=True, to=orm['device_group.DeviceGroup'])),
             ('organization', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['organization.Organization'])),
-            ('location', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('address', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
             ('is_deleted', self.gf('django.db.models.fields.IntegerField')(default=0, max_length=1)),
             (u'lft', self.gf('django.db.models.fields.PositiveIntegerField')(db_index=True)),
             (u'rght', self.gf('django.db.models.fields.PositiveIntegerField')(db_index=True)),
@@ -69,7 +67,8 @@ class Migration(SchemaMigration):
             u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'longitude': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'mac_address': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
+            'mac_address': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'machine': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['machine.Machine']", 'null': 'True', 'blank': 'True'}),
             'netmask': ('django.db.models.fields.IPAddressField', [], {'max_length': '15', 'null': 'True', 'blank': 'True'}),
             'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
             'parent': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'device_children'", 'null': 'True', 'to': u"orm['device.Device']"}),
@@ -81,14 +80,12 @@ class Migration(SchemaMigration):
         },
         u'device_group.devicegroup': {
             'Meta': {'object_name': 'DeviceGroup'},
-            'address': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'alias': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
             'devices': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['device.Device']", 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'is_deleted': ('django.db.models.fields.IntegerField', [], {'default': '0', 'max_length': '1'}),
             u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'location': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50'}),
             'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
             'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "'devicegroup_children'", 'null': 'True', 'to': u"orm['device_group.DeviceGroup']"}),
@@ -127,7 +124,9 @@ class Migration(SchemaMigration):
             'live_status_tcp_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'machine': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['machine.Machine']", 'null': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '200'}),
-            'site_ip': ('django.db.models.fields.IPAddressField', [], {'max_length': '15'})
+            'password': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'username': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'web_service_port': ('django.db.models.fields.IntegerField', [], {'default': '80'})
         }
     }
 

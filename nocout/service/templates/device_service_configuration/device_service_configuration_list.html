@@ -1,0 +1,48 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+{% block breadcrumb_title %}
+    <li>Inventory</li>
+    <li>Device Service Configuration</li>
+{% endblock %}
+{% block content_title %}Device Service Configuration{% endblock %}
+{% block content_description %}List of running services{% endblock %}
+{% block content %}
+
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>DEVICE SERVICE CONFIGURATION</h4>
+            <div class="tools hidden-xs">
+                <a href="#box-config" data-toggle="modal" class="config">
+                    <i class="fa fa-cog"></i>
+                </a>
+                <a href="javascript:;" class="reload">
+                    <i class="fa fa-refresh"></i>
+                </a>
+            </div>
+        </div>
+
+        <div id="tableContainer" class="box-body">
+            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="DeviceServiceConfigurationListingTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript" src={% static "js/service.js" %}></script>
+    <script type="text/javascript">
+        $(document).ready(function (e) {
+            /*Make a instance of ourDataTableWidget class */
+            var dataTableInstance = new ourDataTableWidget();
+            /*Grid headers object*/
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            /*Ajax url to get grid data*/
+            var ajax_url = '{% url "DeviceServiceConfigurationListingTable" %}';
+            /*Call createDataTable function of ourDataTableWidget class*/
+            dataTableInstance.createDataTable("DeviceServiceConfigurationListingTable", gridHeadersObj, ajax_url);
+        });
+    </script>
+{% endblock %}

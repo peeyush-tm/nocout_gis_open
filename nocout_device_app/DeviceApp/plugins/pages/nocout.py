@@ -3,7 +3,6 @@
 
 import nocout
 
-
 pagehandlers.update({
     "nocout": nocout.main
 })

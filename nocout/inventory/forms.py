@@ -1,7 +1,7 @@
 from django import forms
 from device.models import Country, State, City
 from device_group.models import DeviceGroup
-from models import Inventory
+from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings
 from nocout.widgets import IntReturnModelChoiceField
 from organization.models import Organization
 from user_group.models import UserGroup
@@ -93,6 +93,12 @@ class AntennaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(AntennaForm, self).__init__(*args, **kwargs)
+        self.fields['height'].initial =0
+        self.fields['azimuth_angle'].initial = 0
+        self.fields['height'].required = True
+        self.fields['azimuth_angle'].required = True
+        self.fields['polarization'].required = True
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -141,6 +147,8 @@ class BackhaulForm(forms.ModelForm):
         self.fields['bh_switch'].empty_label = 'Select'
         self.fields['pop'].empty_label = 'Select'
         self.fields['aggregator'].empty_label = 'Select'
+        self.fields['bh_configured_on'].required = True
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -190,6 +198,20 @@ class BaseStationForm(forms.ModelForm):
         self.fields['country'].empty_label = 'Select'
         self.fields['state'].empty_label = 'Select'
         self.fields['city'].empty_label = 'Select'
+        self.fields['building_height'].initial =0
+        self.fields['tower_height'].initial =0
+
+        self.fields['bs_technology'].required =True
+        self.fields['latitude'].required =True
+        self.fields['longitude'].required =True
+        self.fields['country'].required = True
+        self.fields['city'].required =True
+        self.fields['state'].required =True
+        self.fields['building_height'].required =True
+        self.fields['tower_height'].required =True
+        self.fields['state'].required= True
+        self.fields['city'].required= True
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -222,6 +244,9 @@ class SectorForm(forms.ModelForm):
         self.fields['sector_configured_on'].empty_label = 'Select'
         self.fields['sector_configured_on_port'].empty_label = 'Select'
         self.fields['antenna'].empty_label = 'Select'
+        self.fields['antenna'].empty_label = 'Select'
+        self.fields['sector_id'].empty_label = True
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -261,6 +286,14 @@ class CustomerForm(forms.ModelForm):
         
 #*********************************** Sub Station *************************************
 class SubStationForm(forms.ModelForm):
+
+    country = IntReturnModelChoiceField(queryset=Country.objects.all(),
+                                        required=False)
+    state = IntReturnModelChoiceField(queryset=State.objects.all(),
+                                      required=False)
+    city = IntReturnModelChoiceField(queryset=City.objects.all(),
+                                     required=False)
+
     ETHERNET_EXTENDER = (
         ('', 'Select'),
         ('Yes', 'Yes'),
@@ -271,7 +304,22 @@ class SubStationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(SubStationForm, self).__init__(*args, **kwargs)
+        self.fields['tower_height'].initial = 0
+        self.fields['building_height'].initial = 0
+        self.fields['country'].empty_label = 'Select'
+        self.fields['state'].empty_label = 'Select'
+        self.fields['city'].empty_label = 'Select'
         self.fields['device'].empty_label = 'Select'
+        self.fields['antenna'].required = True
+        self.fields['building_height'].required = True
+        self.fields['tower_height'].required = True
+        self.fields['country'].required = True
+        self.fields['state'].required = True
+        self.fields['city'].required = True
+        self.fields['latitude'].required = True
+        self.fields['longitude'].required = True
+        self.fields['mac_address'].required = True
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -313,3 +361,100 @@ class CircuitForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
         model = Circuit
+
+
+#*********************************** IconSettings ***************************************
+class IconSettingsForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(IconSettingsForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+    class Meta:
+        model = IconSettings
+        
+        
+#*********************************** LivePollingSettings ***************************************
+class LivePollingSettingsForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(LivePollingSettingsForm, self).__init__(*args, **kwargs)
+        self.fields['technology'].empty_label = 'Select'
+        self.fields['service'].empty_label = 'Select'
+        self.fields['data_source'].empty_label = 'Select'
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+    class Meta:
+        model = LivePollingSettings
+
+
+#*********************************** LivePollingSettings ***************************************
+class ThresholdConfigurationForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(ThresholdConfigurationForm, self).__init__(*args, **kwargs)
+        self.fields['live_polling_template'].empty_label = 'Select'
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+    class Meta:
+        model = ThresholdConfiguration
+
+
+
+#*********************************** LivePollingSettings ***************************************
+class ThematicSettingsForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        self.base_fields['gt_warning'].label = '> Warning'
+        self.base_fields['bt_w_c'].label = 'Warning > > Critical'
+        self.base_fields['gt_critical'].label = '> Critical'
+
+        super(ThematicSettingsForm, self).__init__(*args, **kwargs)
+        self.fields['threshold_template'].empty_label = 'Select'
+        self.fields['gt_warning'].empty_label = 'Select'
+        self.fields['bt_w_c'].empty_label = 'Select'
+        self.fields['gt_critical'].empty_label = 'Select'
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+    class Meta:
+        model = ThematicSettings

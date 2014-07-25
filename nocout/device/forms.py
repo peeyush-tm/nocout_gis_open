@@ -35,6 +35,7 @@ class DeviceForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         # setting foreign keys field label
         self.base_fields['site_instance'].label = 'Site Instance'
+        self.base_fields['machine'].label = 'Machine'
         self.base_fields['device_technology'].label = 'Device Technology'
         self.base_fields['device_vendor'].label = 'Device Vendor'
         self.base_fields['device_model'].label = 'Device Model'
@@ -56,6 +57,8 @@ class DeviceForm(forms.ModelForm):
         self.fields['parent'].widget.choices = self.fields['parent'].choices
         self.fields['site_instance'].empty_label = "Select"
         self.fields['site_instance'].widget.choices = self.fields['site_instance'].choices
+        self.fields['machine'].empty_label = "Select"
+        self.fields['machine'].widget.choices = self.fields['machine'].choices
         self.fields['device_technology'].empty_label = "Select"
         self.fields['device_technology'].widget.choices = self.fields['device_technology'].choices
         self.fields['device_vendor'].empty_label = "Select"
@@ -70,6 +73,14 @@ class DeviceForm(forms.ModelForm):
         self.fields['state'].widget.choices = self.fields['state'].choices
         self.fields['city'].empty_label = "Select"
         self.fields['city'].widget.choices = self.fields['city'].choices
+        self.fields['site_instance'].required = True
+        self.fields['machine'].required = True
+        self.fields['latitude'].required = True
+        self.fields['longitude'].required = True
+        self.fields['country'].required = True
+        self.fields['state'].required = True
+        self.fields['city'].required = True
+
         #self.fields['latitude'].widget.attrs['data-mask'] = '99.99999999999999999999'
         #self.fields['longitude'].widget.attrs['data-mask'] = '99.99999999999999999999'
 
@@ -133,6 +144,18 @@ class DeviceForm(forms.ModelForm):
         if devices.count() > 0:
             raise ValidationError('This device name is already in use.')
         return device_name
+
+    def clean_ip_address(self):
+        ip_address = self.cleaned_data['ip_address']
+        devices = Device.objects.filter(ip_address=ip_address)
+        try:
+            if self.id:
+                devices = devices.exclude(pk=self.id)
+        except:
+            logger.info("This is not an update form.")
+        if devices.count() > 0:
+            raise ValidationError('This IP address is already in use.')
+        return ip_address
 
     def clean(self):
         latitude = self.cleaned_data.get('latitude')
@@ -216,6 +239,7 @@ class DeviceTechnologyForm(forms.ModelForm):
         self.base_fields['device_vendors'].help_text = ''
 
         super(DeviceTechnologyForm, self).__init__(*args, **kwargs)
+        self.fields['device_vendors'].required = True
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -239,8 +263,9 @@ class DeviceVendorForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         # removing help text for device_models 'select' field
         self.base_fields['device_models'].help_text = ''
-
         super(DeviceVendorForm, self).__init__(*args, **kwargs)
+
+        self.fields['device_models'].required = True
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -267,6 +292,7 @@ class DeviceModelForm(forms.ModelForm):
         self.base_fields['device_types'].help_text = ''
 
         super(DeviceModelForm, self).__init__(*args, **kwargs)
+        self.fields['device_types'].required = True
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -287,6 +313,12 @@ class DeviceModelForm(forms.ModelForm):
 
 # ******************************************* Device Type *******************************************
 class DeviceTypeForm(forms.ModelForm):
+    AGENT_TAG = (
+            ('', 'Select'),
+            ('snmp', 'SNMP'),
+            ('ping', 'Ping')
+    )
+    agent_tag = forms.TypedChoiceField(choices=AGENT_TAG, required=True)
     def __init__(self, *args, **kwargs):
         # removing help text for device_port 'select' field
         self.base_fields['device_port'].help_text = ''

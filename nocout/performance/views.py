@@ -10,7 +10,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceType
 from inventory.models import SubStation, Circuit, Sector, BaseStation
 from performance.models import PerformanceService, PerformanceNetwork
-from service.models import ServiceDataSource, Service
+from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
 from operator import is_not
 from functools import partial
 from django.utils.dateformat import format
@@ -96,13 +96,18 @@ class LivePerformanceListing(BaseDatatableView):
                                                                         ['device_name', device_association])
         for device in devices:
             if device[device_association]:
-                performance_data= PerformanceNetwork.objects.raw('''select id, device_name, avg_value, sys_timestamp from \
+                performance_data_pl= PerformanceNetwork.objects.raw('''select id, device_name, avg_value, sys_timestamp from \
                                   performance_performancenetwork where id = (select MAX(id) from \
                                   performance_performancenetwork where (device_name=%s and data_source=%s))''' \
                                                             ,[ device['device_name'], 'pl'])
-                for data in performance_data:
-                    device.update({'latency':data.avg_value, 'packet_loss':'pl', 'last_updated':
-                                   str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
+                for data in performance_data_pl:
+                    performance_data_rta=PerformanceNetwork.objects.raw('''select id, avg_value from  performance_performancenetwork
+                                          where device_name=%s and sys_timestamp = %s  and data_source=%s '''
+                                          ,[ data.device_name, data.sys_timestamp, 'rta'])
+                    device.update({
+                                   'packet_loss':data.avg_value,
+                                   'latency': performance_data_rta[0].avg_value,
+                                   'last_updated': str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
                                    'city':City.objects.get(id=device['city']).city_name,
                                    'state':State.objects.get(id=device['state']).state_name
                                  })
@@ -258,8 +263,10 @@ class Inventory_Device_Status(View):
             result['data']['objects']['headers']= ['BS Name', 'SSName','Building Height', 'Tower Height',
                                                    'City', 'State', 'IP Address', 'MAC Address']
             result['data']['objects']['values']= [ base_station.name, substation.name,
-                                                   str(substation.building_height), str(substation.tower_height),
-                                                   substation.city, substation.state, substation_device.ip_address,
+                                                   substation.building_height, substation.tower_height,
+                                                   City.objects.get(id=substation.city).city_name,
+                                                   State.objects.get(id=substation.state).state_name,
+                                                   substation_device.ip_address,
                                                    substation_device.mac_address ]
 
         elif page_type =='network':
@@ -273,7 +280,9 @@ class Inventory_Device_Status(View):
             if base_station_list:
                 base_station=BaseStation.objects.get(id=base_station_list[0])
                 result['data']['objects']['values']= [ base_station.name, base_station.building_height, base_station.tower_height,
-                                                       base_station.city, base_station.state, sector_configured_on_device.ip_address,
+                                                       City.objects.get(id=base_station.city).city_name,
+                                                       State.objects.get(id=base_station.state).state_name,
+                                                       sector_configured_on_device.ip_address,
                                                        sector_configured_on_device.mac_address ]
 
         result['data']['objects']['values']=map(lambda val : val if val else 'N/A', result['data']['objects']['values'])
@@ -303,8 +312,32 @@ class Inventory_Device_Service_Data_Source(View):
             #for basestation we need to fetch sector_configured_on device field from the device
             inventory_device_type_id= Device.objects.get(id=int(device_id)).device_type
 
-        inventory_device_service_name= DeviceType.objects.get(id= inventory_device_type_id) \
-            .service.values_list('name', flat=True)
+        #first check for the service configuration table
+        inventory_device_service_name = DeviceServiceConfiguration.objects.\
+            filter(device_name=Device.objects.get(id=int(device_id)).device_name).\
+            values_list('service_name', flat=True)
+
+        if not len(inventory_device_service_name):
+            inventory_device_service_name= DeviceType.objects.get(id= inventory_device_type_id) \
+                .service.values_list('name', flat=True)
+
+        ##also append PD and RTA as latency and packet drop
+
+        result['data']['objects'].append({
+                'name':"rta",
+                'title':"Latency",
+                #@TODO: all the ursl must end with a / - django style
+                'url':'performance/service/ping/service_data_source/rta/'+page_type+'/device/'+str(device_id),
+                'active':0
+            })
+
+        result['data']['objects'].append({
+                'name':"pl",
+                'title':"Packet Drop",
+                #@TODO: all the ursl must end with a / - django style
+                'url':'performance/service/ping/service_data_source/pl/'+page_type+'/device/'+str(device_id),
+                'active':0
+            })
 
         for service_name in inventory_device_service_name:
             service_data_sources= Service.objects.get(name= service_name).service_data_sources.all()
@@ -317,21 +350,6 @@ class Inventory_Device_Service_Data_Source(View):
                     'active':0
                 })
 
-        ##also append PD and RTA as latency and packet drop
-        result['data']['objects'].append({
-                'name':"pl",
-                'title':"Packet Drop",
-                #@TODO: all the ursl must end with a / - django style
-                'url':'performance/service/ping/service_data_source/pl/'+page_type+'/device/'+str(device_id),
-                'active':0
-            })
-        result['data']['objects'].append({
-                'name':"rta",
-                'title':"Latency",
-                #@TODO: all the ursl must end with a / - django style
-                'url':'performance/service/ping/service_data_source/rta/'+page_type+'/device/'+str(device_id),
-                'active':0
-            })
         result['success']=1
         result['message']='Substation Devices Services Data Source Fetched Successfully.'
         return HttpResponse(json.dumps(result))

@@ -31,7 +31,8 @@ class DeviceGroupForm(forms.ModelForm):
         elif Organization.objects.all():
             organization_id=Organization.objects.all()[0].id
         if organization_id:
-            organization_descendants_ids= Organization.objects.get(id= organization_id).get_descendants(include_self=True).values_list('id', flat=True)
+            organization_descendants_ids= Organization.objects.get(id= organization_id).get_descendants(include_self=True)\
+                .values_list('id', flat=True)
             self.fields['devices'].queryset= Device.objects.filter( organization__in = organization_descendants_ids, is_deleted=0)
 
         for name, field in self.fields.items():
@@ -49,4 +50,4 @@ class DeviceGroupForm(forms.ModelForm):
 
     class Meta:
         model = DeviceGroup
-        fields = ('name', 'alias', 'parent', 'location', 'address','organization','devices')
+        fields = ('name', 'alias', 'parent', 'organization', 'devices')
