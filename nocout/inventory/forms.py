@@ -347,6 +347,7 @@ class CircuitForm(forms.ModelForm):
         self.fields['sector'].empty_label = 'Select'
         self.fields['customer'].empty_label = 'Select'
         self.fields['sub_station'].empty_label = 'Select'
+        self.fields['date_of_acceptance'].required = True
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):

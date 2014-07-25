@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import json
+from operator import itemgetter
 from django.contrib.auth import logout
 from django.contrib.sessions.models import Session
 from django.db.models.query import ValuesQuerySet
@@ -23,11 +24,11 @@ class UserStatusList(ListView):
             {'mData': 'username', 'sTitle': 'Username', 'sWidth': 'null', },
             {'mData': 'full_name', 'sTitle': 'Full Name', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             {'mData': 'role__role_name', 'sTitle': 'Role', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'logged_in_status', 'sTitle': 'Logged in', 'sWidth': 'null', },]
+            {'mData': 'logged_in_status', 'sTitle': 'Logged in', 'sWidth': 'null','bSortable': False },]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'8%' ,})
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'8%' ,'bSortable': False })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -35,30 +36,30 @@ class UserStatusList(ListView):
 
 class UserStatusTable(BaseDatatableView):
     model = UserProfile
-    columns = ['username', 'first_name', 'last_name', 'role__role_name', 'is_active']
-    order_columns = ['username', 'first_name', 'last_name', 'role__role_name', 'is_active']
+    columns = ['username', 'first_name', 'last_name', 'role__role_name']
+    order_columns = ['username', 'first_name', 'role__role_name']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
-            query = []
-            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
-
-            exec_query += " | ".join(query)
-            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
-            exec exec_query
+            result_list=list()
+            for dictionary in qs:
+                for key in dictionary.keys():
+                    if sSearch.lower() in str(dictionary[key]).lower():
+                        result_list.append(dictionary)
+                        break
+            return result_list
 
         return qs
 
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return UserProfile.objects.values(*self.columns + ['id'])
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
+                                    .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+
+        return UserProfile.objects.filter(organization__in = organization_descendants_ids, is_deleted=0)\
+            .values(*self.columns+['id'])
 
     def prepare_results(self, qs):
         if qs:
@@ -76,6 +77,40 @@ class UserStatusTable(BaseDatatableView):
 
         return qs
 
+    def ordering(self, qs):
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except ValueError:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.get_order_columns()
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except ValueError:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ' '
+            try:
+                sortcol = order_columns[i_sort_col]
+            except IndexError:
+                return qs
+            #for the mutiple sorting of the columns at a time
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            return sorted(qs, key=itemgetter(order[0][1:]), reverse= True if '-' in order[0] else False)
+        return qs
+
     def get_context_data(self, *args, **kwargs):
         request = self.request
         self.initialize(*args, **kwargs)
@@ -83,12 +118,11 @@ class UserStatusTable(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.count()
+        total_records = len(qs)
 
-        qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.count()
+        total_display_records = len(qs)
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
@@ -97,7 +131,9 @@ class UserStatusTable(BaseDatatableView):
             qs = list(qs)
 
         # prepare output data
-        aaData = self.prepare_results(qs)
+        qs = self.prepare_results(qs)
+        aaData = self.filter_queryset(qs)
+
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,

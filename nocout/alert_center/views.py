@@ -41,26 +41,26 @@ class AlertCenterNetworkListing(ListView):
     def get_context_data(self, **kwargs):
         context=super(AlertCenterNetworkListing, self).get_context_data(**kwargs)
         datatable_headers_latency = [
-            {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null',},
-            {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null',},
-            {'mData':'machine_name',               'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null',},
-            {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'avg_value',                  'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null',},]
+            {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null','bSortable': False},
+            {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null','bSortable': False},
+            {'mData':'machine_name',               'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null','bSortable': False},
+            {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'avg_value',                  'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null','bSortable': False},]
 
         datatable_headers_packetdrop = [
-            {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null',},
-            {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null',},
-            {'mData':'machine_name',               'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null',},
-            {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'avg_value',                  'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null',},
+            {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null','bSortable': False},
+            {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null','bSortable': False},
+            {'mData':'machine_name',               'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null','bSortable': False},
+            {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'avg_value',                  'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null','bSortable': False},
             ]
         # datatable_headers_down = [
         #     {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null',},
@@ -94,8 +94,8 @@ class AlertCenterNetworkListing(ListView):
 
 class AlertCenterNetworkListingTable(BaseDatatableView):
     model = PerformanceNetwork
-    columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'severity', 'data_source', 'avg_value', 'sys_timestamp']
-    order_columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'severity', 'data_source', 'avg_value', 'sys_timestamp']
+    columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'severity', 'data_source',\
+               'avg_value', 'sys_timestamp']
 
     def filter_queryset(self, qs):
 
@@ -104,11 +104,10 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
             result_list=list()
             for dictionary in qs:
                 for key in dictionary.keys():
-                    if str(dictionary[key])==sSearch:
+                    if sSearch.lower() in str(dictionary[key]).lower():
                         result_list.append(dictionary)
-
+                        break
             return result_list
-
         return qs
 
     def get_initial_queryset(self):
@@ -116,8 +115,8 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
         if self.request.user.userprofile.role.values_list('role_name', flat=True)[0] =='admin':
-            organization_ids= self.request.user.userprofile.organization.get_descendants(include_self= True)\
-                                                                             .values_list('id', flat= True)
+            organization_ids= list(self.request.user.userprofile.organization.get_children()\
+                            .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
         else:
             organization_ids= [ self.request.user.userprofile.organization.id ]
 
@@ -165,7 +164,6 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         # number of records before filtering
         total_records = len(qs)
 
-        qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = len(qs)
@@ -177,7 +175,8 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
             qs=list(qs)
 
         # prepare output data
-        aaData = self.prepare_results(qs)
+        qs = self.prepare_results(qs)
+        aaData = self.filter_queryset(qs)
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
@@ -192,15 +191,15 @@ class CustomerAlertList(ListView):
     def get_context_data(self, **kwargs):
         context=super(CustomerAlertList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null',},
-            {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null',},
-            {'mData':'machine_name',               'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null',},
-            {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'avg_value',                  'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null',},
+            {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null','bSortable': False},
+            {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null','bSortable': False},
+            {'mData':'machine_name',               'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null','bSortable': False},
+            {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'avg_value',                  'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null','bSortable': False},
             ]
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['data_source'] = " ".join(self.kwargs['data_source'].split('_')).title()
@@ -209,7 +208,6 @@ class CustomerAlertList(ListView):
 class CustomerAlertListingTable(BaseDatatableView):
     model = PerformanceNetwork
     columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'severity', 'data_source', 'avg_value', 'sys_timestamp']
-    order_columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'severity', 'data_source', 'avg_value', 'sys_timestamp']
 
     def filter_queryset(self, qs):
 
@@ -230,8 +228,8 @@ class CustomerAlertListingTable(BaseDatatableView):
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
         if self.request.user.userprofile.role.values_list('role_name', flat=True)[0] =='admin':
-            organization_ids= self.request.user.userprofile.organization.get_descendants(include_self= True)\
-                                                                             .values_list('id', flat= True)
+            organization_ids= list(self.request.user.userprofile.organization.get_children()\
+                            .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
         else:
             organization_ids= [ self.request.user.userprofile.organization.id ]
 

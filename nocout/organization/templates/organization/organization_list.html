@@ -43,7 +43,8 @@ $(document).ready(function(e)
         /*Call createDataTable function of ourDataTableWidget class*/
 		var tableObject = $.parseJSON('{{ datatable_headers|safe }}');
         var ajax_url = '{% url "OrganizationListingTable" %}'
-        dataTableInstance.createDataTable("OrganizationTable", tableObject, ajax_url);
+        var destroy=false;
+        dataTableInstance.createDataTable("OrganizationTable", tableObject, ajax_url, destroy);
 
         $('.datatable').each(function(){
 			var datatable = $(this);

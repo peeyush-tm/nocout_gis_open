@@ -58,7 +58,8 @@
 
             var ajax_url_packet_drop = '{% url "CustomerAlertListingTable" %}'+'?data_source=' + ajax_url_get_parameter;
             /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable("customeralertlistingtable", gridHeadersObj_packetdrop, ajax_url_packet_drop);
+            var destroy=false;
+            dataTableInstance.createDataTable("customeralertlistingtable", gridHeadersObj_packetdrop, ajax_url_packet_drop, destroy);
         });
 
 </script>

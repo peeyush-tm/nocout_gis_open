@@ -35,17 +35,17 @@ class Live_Performance(ListView):
     def get_context_data(self, **kwargs):
         context= super(Live_Performance, self).get_context_data(**kwargs)
         datatable_headers=[
-            {'mData':'site_instance',      'sTitle' : 'Site ID',       'Width':'null',},
-            {'mData':'id',                 'sTitle' : 'Device ID',     'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'device_alias',       'sTitle' : 'Alias',         'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'ip_address',         'sTitle' : 'IP',            'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'device_type',        'sTitle' : 'Type',          'sWidth':'10%' ,'sClass':'hidden-xs'},
-            {'mData':'city',               'sTitle' : 'City',          'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'state',              'sTitle' : 'State',         'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'packet_loss',        'sTitle' : 'Packet Loss',   'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'latency',            'sTitle' : 'Latency',       'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'last_updated',       'sTitle' : 'Last Updated',  'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',            'sTitle':'Actions',         'sWidth':'5%' ,}
+            {'mData':'site_instance',      'sTitle' : 'Site ID',       'Width':'null', 'bSortable': False},
+            {'mData':'id',                 'sTitle' : 'Device ID',     'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'device_alias',       'sTitle' : 'Alias',         'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'ip_address',         'sTitle' : 'IP',            'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'device_type',        'sTitle' : 'Type',          'sWidth':'10%' ,'sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'city',               'sTitle' : 'City',          'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'state',              'sTitle' : 'State',         'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'packet_loss',        'sTitle' : 'Packet Loss',   'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'latency',            'sTitle' : 'Latency',       'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'last_updated',       'sTitle' : 'Last Updated',  'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'actions',            'sTitle':'Actions',         'sWidth':'5%' ,'bSortable': False}
             ]
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -58,17 +58,15 @@ class LivePerformanceListing(BaseDatatableView):
     columns = ['site_instance', 'id', 'device_alias', 'ip_address', 'device_type', 'city', 'state']
 
     def filter_queryset(self, qs):
-
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             result_list=list()
             for dictionary in qs:
                 for key in dictionary.keys():
-                    if str(dictionary[key])==sSearch:
+                    if sSearch.lower() in str(dictionary[key]).lower():
                         result_list.append(dictionary)
-
+                        break
             return result_list
-
         return qs
 
     def get_initial_queryset(self):
@@ -76,8 +74,8 @@ class LivePerformanceListing(BaseDatatableView):
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
             if self.request.user.userprofile.role.values_list('role_name', flat=True)[0] =='admin':
-                organization_ids= self.request.user.userprofile.organization.get_descendants(include_self= True)\
-                                                                             .values_list('id', flat= True)
+                organization_ids= list(self.request.user.userprofile.organization.get_children()\
+                            .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
             else:
                 organization_ids= [self.request.user.userprofile.organization.id]
 
@@ -87,7 +85,6 @@ class LivePerformanceListing(BaseDatatableView):
             elif self.request.GET['page_type'] == 'network':
                 return self.get_initial_query_set_data(device_association='sector_configured_on', organization_ids=organization_ids)
             else:
-                # return self.get_initial_query_set_data(device_association='', organization_ids=organization_ids)
                 return []
 
     def get_initial_query_set_data(self, device_association='', **kwargs):
@@ -136,7 +133,6 @@ class LivePerformanceListing(BaseDatatableView):
         # number of records before filtering
         total_records = len(qs)
 
-        qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = len(qs)
@@ -148,7 +144,8 @@ class LivePerformanceListing(BaseDatatableView):
             qs=list(qs)
 
         # prepare output data
-        aaData = self.prepare_results(qs)
+        qs = self.prepare_results(qs)
+        aaData = self.filter_queryset(qs)
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,

@@ -10,8 +10,9 @@ function ourDataTableWidget()
 	 * @param tableheaders {JSON Object} It contains the grid headers object
 	 * @param ajax_url "String" It contains the ajax url from which the data is to be loaded
 	 */
-	this.createDataTable = function(tableId, tableheaders, ajax_url)
+	this.createDataTable = function(tableId, tableheaders, ajax_url, destroy)
 	{
+        destroy = typeof destroy !== 'undefined' ? destroy : true;
 		$('.datatable').each(function () {
             var datatable = $(this);
             // SEARCH - Add the placeholder for Search and Turn this into in-line form control
@@ -22,7 +23,9 @@ function ourDataTableWidget()
             var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
             length_sel.addClass('form-control input-sm');
         });
-
+        if (destroy){
+            $("#"+tableId).dataTable().fnDestroy();
+        }
 	    $("#"+tableId).DataTable({
             bPaginate: true,
             bProcessing : true,

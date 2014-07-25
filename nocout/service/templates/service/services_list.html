@@ -42,7 +42,8 @@
             /*Ajax url to get grid data*/
             var ajax_url = '{% url "ServiceListingTable" %}';
             /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable("ServiceListingTable", gridHeadersObj, ajax_url);
+            var destroy=false;
+            dataTableInstance.createDataTable("ServiceListingTable", gridHeadersObj, ajax_url, destroy);
         });
     </script>
 {% endblock %}
