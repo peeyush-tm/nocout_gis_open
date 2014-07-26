@@ -62,7 +62,13 @@
     <script>
         $(document).ready(function(){
             // Initialize the select2 selectbox.
-            $(".select2select").select2();
+            //$(".select2select").select2();
+            if ($(id_gt_warning).val()){
+                    Dajaxice.inventory.gt_warning_choices(Dajax.process, {'option': $(id_gt_warning).val()});
+                }
+                else{
+                    Dajaxice.inventory.gt_warning_initial_choices(Dajax.process);
+            }
         })
     </script>
 {% endblock %}

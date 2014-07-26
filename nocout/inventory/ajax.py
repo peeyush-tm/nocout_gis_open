@@ -2,7 +2,9 @@ from dajax.core import Dajax
 from dajaxice.decorators import dajaxice_register
 from device.models import Country, State, DeviceTechnology, VendorModel, ModelType
 import logging
+from inventory.models import IconSettings
 from service.models import Service
+from django.contrib.staticfiles.templatetags.staticfiles import static
 
 logger=logging.getLogger(__name__)
 
@@ -187,6 +189,41 @@ def after_update_data_sources_as_per_service(request, svc_id="", selected=""):
     else:
         out = ["<option value=''>Select</option>"]
     dajax.assign('#id_data_source', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+# update 'gt_warning' field choices
+@dajaxice_register
+def gt_warning_choices(request, option):
+    dajax = Dajax()
+    icon_settings = IconSettings.objects.all()
+    out = []
+    out.append("<option value="">Select</option>")
+    for icon_setting in icon_settings:
+        img_url = static('img/{}'.format(icon_setting.upload_image))
+        if icon_setting.id == int(option):
+            out.append("<option value={} selected>{} <img src='{}' style='float:left; display:block; height:25px; width:25px;'></option>".format(icon_setting.id, icon_setting.alias, img_url))
+        else:
+            out.append("<option value={}>{} <img src='{}' style='float:left; display:block; height:25px; width:25px;'></option>".format(icon_setting.id, icon_setting.alias, img_url))
+    print "*********************************** out **************************************"
+    print out
+    dajax.assign("#id_gt_warning", 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+# update 'gt_warning' initial field choices
+@dajaxice_register
+def gt_warning_initial_choices(request):
+    dajax = Dajax()
+    icon_settings = IconSettings.objects.all()
+    out = []
+    out.append("<option value=''>Select</option>")
+    for icon_setting in icon_settings:
+        img_url = static('img/{}'.format(icon_setting.upload_image))
+        out.append("<option value={} style='background-image:url({}); float:left; height:30px; width:30px;'>{}</option>".format(icon_setting.id, img_url, icon_setting.alias))
+    print "*********************************** out **************************************"
+    print out
+    dajax.assign('#id_gt_warning', 'innerHTML', ''.join(out))
     return dajax.json()
 
 
