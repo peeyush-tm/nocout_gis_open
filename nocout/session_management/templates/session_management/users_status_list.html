@@ -41,8 +41,9 @@
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/
             var ajax_url = '{% url "UserStatusTable" %}';
-            /*Call createDataTable function of ourDataTableWidget class*/            
-            dataTableInstance.createDataTable("UserStatusList", gridHeadersObj, ajax_url);
+            /*Call createDataTable function of ourDataTableWidget class*/
+            var destroy=false;
+            dataTableInstance.createDataTable("UserStatusList", gridHeadersObj, ajax_url, destroy);
         });
         /**
          * This function change the status of loggedin user from unlock to lock and viceversa

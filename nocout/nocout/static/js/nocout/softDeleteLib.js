@@ -45,19 +45,27 @@ function get_soft_delete_form(content) {
                     /*Check that from where the softdelete is called*/
                     if($.trim(content.result.data.objects.form_type) == 'device') {
                         
-                        Dajaxice.device.device_soft_delete(show_response_message, {'device_id': $('#id_device').val(),'new_parent_id': $('#id_parent').val()});
+                         Dajaxice.device.device_soft_delete(show_response_message, {'device_id': $('#id_device').val(),
+                        'new_parent_id': $('#id_parent').val()})
 
                     } else if($.trim(content.result.data.objects.form_type) == 'device_group') {
 
-                        Dajaxice.device_group.device_group_soft_delete(show_response_message, {'device_group_id': $('#id_device_group').val(),'new_parent_id': $('#id_parent').val()});
+                        Dajaxice.device_group.device_group_soft_delete(show_response_message, {'device_group_id':
+                            $('#id_device_group').val(),'new_parent_id': $('#id_parent').val() });
 
                     } else if($.trim(content.result.data.objects.form_type) == 'user_group') {
 
-                        Dajaxice.user_group.user_group_soft_delete(show_response_message, {'user_group_id': $('#id_user_group').val(),'new_parent_id': $('#id_parent').val()});
+                        Dajaxice.user_group.user_group_soft_delete(show_response_message, {'user_group_id':
+                            $('#id_user_group').val(),'new_parent_id': $('#id_parent').val()});
                     
                     } else if($.trim(content.result.data.objects.form_type) == 'user') {
 
-                        Dajaxice.user_profile.user_soft_delete(show_response_message, {'user_id': $('#id_user').val(),'new_parent_id': $('#id_parent').val()});
+                        Dajaxice.user_profile.user_soft_delete(show_response_message, {
+                            'user_id': $('#id_user').val(),
+                            'new_parent_id': $('#id_parent').val(),
+                            'datatable_headers':content.result.data.objects.datatable_headers,
+                            'userlistingtable':'/user/userlistingtable/',
+                            'userarchivelisting':'/user/userarchivedlistingtable/'});
                     }
                 }
             },
@@ -79,6 +87,26 @@ function get_soft_delete_form(content) {
 // show message for soft deletion success/failure
 function show_response_message(responseResult) {
     bootbox.alert(responseResult.result.message);
+    datatable_headers=responseResult.result.data.objects.datatable_headers
+    for (i=0; i<datatable_headers.length; i++){
+
+        for (var key in datatable_headers[i]){
+            var obj = datatable_headers[i][key];
+            if(obj=='False'){
+                obj=false
+            }
+            else if (obj=='True'){
+                obj=true
+            }
+            datatable_headers[i][key]=obj
+        }
+    }
+    var gridHeadersObj = datatable_headers
+    var ajax_url_user_listing = responseResult.result.data.objects.userlistingtable
+    var ajax_url_user_archived_listing= responseResult.result.data.objects.userarchivelisting
+    var dataTableInstance = new ourDataTableWidget();
+    dataTableInstance.createDataTable("UserArchivedListingTable", gridHeadersObj, ajax_url_user_archived_listing, destroy=true);
+    dataTableInstance.createDataTable("UserListingTable", gridHeadersObj, ajax_url_user_listing, destroy=true);
 }
 
 

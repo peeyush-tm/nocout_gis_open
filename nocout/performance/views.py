@@ -9,8 +9,8 @@ from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceType
 from inventory.models import SubStation, Circuit, Sector, BaseStation
-from performance.models import PerformanceService, PerformanceNetwork
-from service.models import ServiceDataSource, Service
+from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus
+from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
 from operator import is_not
 from functools import partial
 from django.utils.dateformat import format
@@ -35,17 +35,17 @@ class Live_Performance(ListView):
     def get_context_data(self, **kwargs):
         context= super(Live_Performance, self).get_context_data(**kwargs)
         datatable_headers=[
-            {'mData':'site_instance',      'sTitle' : 'Site ID',       'Width':'null',},
-            {'mData':'id',                 'sTitle' : 'Device ID',     'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'device_alias',       'sTitle' : 'Alias',         'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'ip_address',         'sTitle' : 'IP',            'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'device_type',        'sTitle' : 'Type',          'sWidth':'10%' ,'sClass':'hidden-xs'},
-            {'mData':'city',               'sTitle' : 'City',          'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'state',              'sTitle' : 'State',         'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'packet_loss',        'sTitle' : 'Packet Loss',   'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'latency',            'sTitle' : 'Latency',       'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'last_updated',       'sTitle' : 'Last Updated',  'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'actions',            'sTitle':'Actions',         'sWidth':'5%' ,}
+            {'mData':'site_instance',      'sTitle' : 'Site ID',       'Width':'null', 'bSortable': False},
+            {'mData':'id',                 'sTitle' : 'Device ID',     'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'device_alias',       'sTitle' : 'Alias',         'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'ip_address',         'sTitle' : 'IP',            'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'device_type',        'sTitle' : 'Type',          'sWidth':'10%' ,'sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'city',               'sTitle' : 'City',          'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'state',              'sTitle' : 'State',         'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'packet_loss',        'sTitle' : 'Packet Loss',   'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'latency',            'sTitle' : 'Latency',       'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'last_updated',       'sTitle' : 'Last Updated',  'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'actions',            'sTitle':'Actions',         'sWidth':'5%' ,'bSortable': False}
             ]
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -54,21 +54,19 @@ class Live_Performance(ListView):
 
 
 class LivePerformanceListing(BaseDatatableView):
-    model = PerformanceNetwork
+    model = PerformanceNetwork #TODO change to NETWORK STATUS. PROBLEM is with DA, DA is not puttin gin RTA just PL
     columns = ['site_instance', 'id', 'device_alias', 'ip_address', 'device_type', 'city', 'state']
 
     def filter_queryset(self, qs):
-
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             result_list=list()
             for dictionary in qs:
                 for key in dictionary.keys():
-                    if str(dictionary[key])==sSearch:
+                    if sSearch.lower() in str(dictionary[key]).lower():
                         result_list.append(dictionary)
-
+                        break
             return result_list
-
         return qs
 
     def get_initial_queryset(self):
@@ -76,8 +74,8 @@ class LivePerformanceListing(BaseDatatableView):
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
             if self.request.user.userprofile.role.values_list('role_name', flat=True)[0] =='admin':
-                organization_ids= self.request.user.userprofile.organization.get_descendants(include_self= True)\
-                                                                             .values_list('id', flat= True)
+                organization_ids= list(self.request.user.userprofile.organization.get_children()\
+                            .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
             else:
                 organization_ids= [self.request.user.userprofile.organization.id]
 
@@ -87,31 +85,46 @@ class LivePerformanceListing(BaseDatatableView):
             elif self.request.GET['page_type'] == 'network':
                 return self.get_initial_query_set_data(device_association='sector_configured_on', organization_ids=organization_ids)
             else:
-                # return self.get_initial_query_set_data(device_association='', organization_ids=organization_ids)
                 return []
 
     def get_initial_query_set_data(self, device_association='', **kwargs):
         device_list=list()
         devices= Device.objects.filter( organization__in= kwargs['organization_ids']).values(*self.columns+ \
                                                                         ['device_name', device_association])
+
+        required_devices = []
+
         for device in devices:
             if device[device_association]:
-                performance_data_pl= PerformanceNetwork.objects.raw('''select id, device_name, avg_value, sys_timestamp from \
-                                  performance_performancenetwork where id = (select MAX(id) from \
-                                  performance_performancenetwork where (device_name=%s and data_source=%s))''' \
-                                                            ,[ device['device_name'], 'pl'])
-                for data in performance_data_pl:
-                    performance_data_rta=PerformanceNetwork.objects.raw('''select id, avg_value from  performance_performancenetwork
-                                          where device_name=%s and sys_timestamp = %s  and data_source=%s '''
-                                          ,[ data.device_name, data.sys_timestamp, 'rta'])
-                    device.update({
-                                   'packet_loss':data.avg_value,
-                                   'latency': performance_data_rta[0].avg_value,
-                                   'last_updated': str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
-                                   'city':City.objects.get(id=device['city']).city_name,
-                                   'state':State.objects.get(id=device['state']).state_name
-                                 })
-                    device_list.append(device)
+                required_devices.append(device["device_name"])
+
+        query = prepare_query(table_name="performance_performancenetwork",
+                              devices=required_devices,
+                              data_sources=["pl", "rta"]
+                              )
+        performance_data = PerformanceNetwork.objects.raw(query)
+
+        for device in devices:
+            if device[device_association]:
+                device.update({
+                    "packet_loss": "",
+                    "latency": "",
+                    "last_updated": "",
+                    "city": City.objects.get(id=device['city']).city_name,
+                    "state": State.objects.get(id=device['state']).state_name,
+                    "device_type": DeviceType.objects.get(pk=int(device['device_type'])).name
+                })
+                for data in performance_data:
+                    if str(data.device_name).strip().lower() == str(device["device_name"]).strip().lower():
+                        d_src = str(data.data_source).strip().lower()
+                        current_val = str(data.current_value)
+                        if d_src == "pl":
+                            device["packet_loss"] = current_val
+                        if d_src == "rta":
+                            device["latency"] = current_val
+                        device["last_updated"] = str(datetime.datetime.fromtimestamp(float( data.sys_timestamp )))
+                        device_list.append(device)
+
         return device_list
 
     def prepare_results(self, qs):
@@ -136,7 +149,6 @@ class LivePerformanceListing(BaseDatatableView):
         # number of records before filtering
         total_records = len(qs)
 
-        qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = len(qs)
@@ -148,7 +160,8 @@ class LivePerformanceListing(BaseDatatableView):
             qs=list(qs)
 
         # prepare output data
-        aaData = self.prepare_results(qs)
+        qs = self.prepare_results(qs)
+        aaData = self.filter_queryset(qs)
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
@@ -312,8 +325,32 @@ class Inventory_Device_Service_Data_Source(View):
             #for basestation we need to fetch sector_configured_on device field from the device
             inventory_device_type_id= Device.objects.get(id=int(device_id)).device_type
 
-        inventory_device_service_name= DeviceType.objects.get(id= inventory_device_type_id) \
-            .service.values_list('name', flat=True)
+        #first check for the service configuration table
+        inventory_device_service_name = DeviceServiceConfiguration.objects.\
+            filter(device_name=Device.objects.get(id=int(device_id)).device_name).\
+            values_list('service_name', flat=True)
+
+        if not len(inventory_device_service_name):
+            inventory_device_service_name= DeviceType.objects.get(id= inventory_device_type_id) \
+                .service.values_list('name', flat=True)
+
+        ##also append PD and RTA as latency and packet drop
+
+        result['data']['objects'].append({
+                'name':"rta",
+                'title':"Latency",
+                #@TODO: all the ursl must end with a / - django style
+                'url':'performance/service/ping/service_data_source/rta/'+page_type+'/device/'+str(device_id),
+                'active':0
+            })
+
+        result['data']['objects'].append({
+                'name':"pl",
+                'title':"Packet Drop",
+                #@TODO: all the ursl must end with a / - django style
+                'url':'performance/service/ping/service_data_source/pl/'+page_type+'/device/'+str(device_id),
+                'active':0
+            })
 
         for service_name in inventory_device_service_name:
             service_data_sources= Service.objects.get(name= service_name).service_data_sources.all()
@@ -326,21 +363,6 @@ class Inventory_Device_Service_Data_Source(View):
                     'active':0
                 })
 
-        ##also append PD and RTA as latency and packet drop
-        result['data']['objects'].append({
-                'name':"pl",
-                'title':"Packet Drop",
-                #@TODO: all the ursl must end with a / - django style
-                'url':'performance/service/ping/service_data_source/pl/'+page_type+'/device/'+str(device_id),
-                'active':0
-            })
-        result['data']['objects'].append({
-                'name':"rta",
-                'title':"Latency",
-                #@TODO: all the ursl must end with a / - django style
-                'url':'performance/service/ping/service_data_source/rta/'+page_type+'/device/'+str(device_id),
-                'active':0
-            })
         result['success']=1
         result['message']='Substation Devices Services Data Source Fetched Successfully.'
         return HttpResponse(json.dumps(result))
@@ -451,3 +473,18 @@ class Get_Service_Type_Performance_Data(View):
 #     }
 #this ensures a further good presentation of data w.r.t thresholds
 #
+
+#misc utility functions
+
+def prepare_query(table_name=None, devices=None, data_sources=["pl","rta"]):
+    in_string = lambda x: "'"+str(x)+"'"
+    query = None
+    if table_name and devices:
+        query = "SELECT * FROM `{0}` " \
+            "WHERE `{0}`.`device_name` in ( {1} ) " \
+            "AND `{0}`.`data_source` in ('pl', 'rta') " \
+            "GROUP BY `{0}`.`device_name`, `{0}`.`data_source`" \
+            "ORDER BY `{0}`.sys_timestamp DESC" \
+            .format(table_name, (",".join(map(in_string, devices))), (',').join(map(in_string, data_sources)))
+
+    return query

@@ -41,8 +41,9 @@
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/
             var ajax_url = '{% url "DeviceTypeListingTable" %}';
-            /*Call createDataTable function of ourDataTableWidget class*/            
-            dataTableInstance.createDataTable("DeviceTypeListingTable", gridHeadersObj, ajax_url);
+            /*Call createDataTable function of ourDataTableWidget class*/
+            var destroy=false;
+            dataTableInstance.createDataTable("DeviceTypeListingTable", gridHeadersObj, ajax_url, destroy);
         });
     </script>
 {% endblock %}
