@@ -111,3 +111,7 @@ function edit_single_service_message(responseResult) {
         location.reload();
     });
 }
+
+function delete_single_service_form(){
+
+}

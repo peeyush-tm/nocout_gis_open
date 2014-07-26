@@ -46,7 +46,8 @@
             /*Ajax url to get grid data*/
             var ajax_url = '{% url "DevicePortListingTable" %}';
             /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable("DevicePortListingTable", gridHeadersObj, ajax_url);
+            var destroy=false;
+            dataTableInstance.createDataTable("DevicePortListingTable", gridHeadersObj, ajax_url, destroy);
         });
 
     </script>

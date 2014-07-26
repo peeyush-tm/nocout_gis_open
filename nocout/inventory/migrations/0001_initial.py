@@ -15,9 +15,6 @@ class Migration(SchemaMigration):
             ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
             ('organization', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['organization.Organization'])),
             ('user_group', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['user_group.UserGroup'])),
-            ('city', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('state', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('country', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
             ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
         ))
         db.send_create_signal(u'inventory', ['Inventory'])
@@ -125,9 +122,6 @@ class Migration(SchemaMigration):
             ('cell_radius', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
             ('frequency', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device.DeviceFrequency'], null=True, blank=True)),
             ('modulation', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('city', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('state', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('address', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
             ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
         ))
         db.send_create_signal(u'inventory', ['Sector'])
@@ -137,8 +131,6 @@ class Migration(SchemaMigration):
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
             ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
-            ('city', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('state', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
             ('address', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
             ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
         ))
@@ -150,14 +142,19 @@ class Migration(SchemaMigration):
             ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
             ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
             ('device', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device.Device'])),
+            ('antenna', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.Antenna'], null=True, blank=True)),
             ('version', self.gf('django.db.models.fields.CharField')(max_length=40, null=True, blank=True)),
             ('serial_no', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
             ('building_height', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
             ('tower_height', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
             ('ethernet_extender', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
             ('cable_length', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('city', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('state', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
+            ('latitude', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
+            ('longitude', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
+            ('mac_address', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
+            ('country', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
+            ('state', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
+            ('city', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
             ('address', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
             ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
         ))
@@ -182,6 +179,49 @@ class Migration(SchemaMigration):
             ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
         ))
         db.send_create_signal(u'inventory', ['Circuit'])
+
+        # Adding model 'IconSettings'
+        db.create_table(u'inventory_iconsettings', (
+            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
+            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
+            ('upload_image', self.gf('django.db.models.fields.files.ImageField')(max_length=100)),
+        ))
+        db.send_create_signal(u'inventory', ['IconSettings'])
+
+        # Adding model 'LivePollingSettings'
+        db.create_table(u'inventory_livepollingsettings', (
+            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
+            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
+            ('technology', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device.DeviceTechnology'])),
+            ('service', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['service.Service'])),
+            ('data_source', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['service.ServiceDataSource'])),
+        ))
+        db.send_create_signal(u'inventory', ['LivePollingSettings'])
+
+        # Adding model 'ThresholdConfiguration'
+        db.create_table(u'inventory_thresholdconfiguration', (
+            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
+            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
+            ('live_polling_template', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.LivePollingSettings'])),
+            ('warning', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
+            ('critical', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
+        ))
+        db.send_create_signal(u'inventory', ['ThresholdConfiguration'])
+
+        # Adding model 'ThematicSettings'
+        db.create_table(u'inventory_thematicsettings', (
+            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
+            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
+            ('threshold_template', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.ThresholdConfiguration'])),
+            ('gt_warning', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='gt_warning', null=True, to=orm['inventory.IconSettings'])),
+            ('bt_w_c', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='bt_w_c', null=True, to=orm['inventory.IconSettings'])),
+            ('gt_critical', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='gt_critical', null=True, to=orm['inventory.IconSettings'])),
+        ))
+        db.send_create_signal(u'inventory', ['ThematicSettings'])
 
 
     def backwards(self, orm):
@@ -211,6 +251,18 @@ class Migration(SchemaMigration):
 
         # Deleting model 'Circuit'
         db.delete_table(u'inventory_circuit')
+
+        # Deleting model 'IconSettings'
+        db.delete_table(u'inventory_iconsettings')
+
+        # Deleting model 'LivePollingSettings'
+        db.delete_table(u'inventory_livepollingsettings')
+
+        # Deleting model 'ThresholdConfiguration'
+        db.delete_table(u'inventory_thresholdconfiguration')
+
+        # Deleting model 'ThematicSettings'
+        db.delete_table(u'inventory_thematicsettings')
 
 
     models = {
@@ -282,7 +334,8 @@ class Migration(SchemaMigration):
             u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'longitude': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'mac_address': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
+            'mac_address': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'machine': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['machine.Machine']", 'null': 'True', 'blank': 'True'}),
             'netmask': ('django.db.models.fields.IPAddressField', [], {'max_length': '15', 'null': 'True', 'blank': 'True'}),
             'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
             'parent': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'device_children'", 'null': 'True', 'to': u"orm['device.Device']"}),
@@ -357,14 +410,12 @@ class Migration(SchemaMigration):
         },
         u'device_group.devicegroup': {
             'Meta': {'object_name': 'DeviceGroup'},
-            'address': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'alias': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
             'devices': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['device.Device']", 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'is_deleted': ('django.db.models.fields.IntegerField', [], {'default': '0', 'max_length': '1'}),
             u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'location': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50'}),
             'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
             'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "'devicegroup_children'", 'null': 'True', 'to': u"orm['device_group.DeviceGroup']"}),
@@ -463,33 +514,42 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'Customer'},
             'address': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            'city': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'})
+        },
+        u'inventory.iconsettings': {
+            'Meta': {'object_name': 'IconSettings'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
-            'state': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'})
+            'upload_image': ('django.db.models.fields.files.ImageField', [], {'max_length': '100'})
         },
         u'inventory.inventory': {
             'Meta': {'object_name': 'Inventory'},
             'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            'city': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'country': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'device_groups': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['device_group.DeviceGroup']", 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '200'}),
             'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
-            'state': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'user_group': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['user_group.UserGroup']"})
+        },
+        u'inventory.livepollingsettings': {
+            'Meta': {'object_name': 'LivePollingSettings'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
+            'data_source': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['service.ServiceDataSource']"}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
+            'service': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['service.Service']"}),
+            'technology': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceTechnology']"})
         },
         u'inventory.sector': {
             'Meta': {'object_name': 'Sector'},
-            'address': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
             'antenna': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'sector'", 'null': 'True', 'to': u"orm['inventory.Antenna']"}),
             'base_station': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'sector'", 'to': u"orm['inventory.BaseStation']"}),
             'cell_radius': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'city': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'frame_length': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
             'frequency': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DeviceFrequency']", 'null': 'True', 'blank': 'True'}),
@@ -502,25 +562,48 @@ class Migration(SchemaMigration):
             'sector_configured_on': ('django.db.models.fields.related.ForeignKey', [], {'max_length': '250', 'related_name': "'sector_configured_on'", 'null': 'True', 'to': u"orm['device.Device']"}),
             'sector_configured_on_port': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.DevicePort']", 'null': 'True', 'blank': 'True'}),
             'sector_id': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
-            'state': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'tx_power': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'})
         },
         u'inventory.substation': {
             'Meta': {'object_name': 'SubStation'},
             'address': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
+            'antenna': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['inventory.Antenna']", 'null': 'True', 'blank': 'True'}),
             'building_height': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
             'cable_length': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'city': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
+            'city': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'country': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'device': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['device.Device']"}),
             'ethernet_extender': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'latitude': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
+            'longitude': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
+            'mac_address': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
             'serial_no': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
-            'state': ('django.db.models.fields.CharField', [], {'max_length': '250', 'null': 'True', 'blank': 'True'}),
+            'state': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'tower_height': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
             'version': ('django.db.models.fields.CharField', [], {'max_length': '40', 'null': 'True', 'blank': 'True'})
+        },
+        u'inventory.thematicsettings': {
+            'Meta': {'object_name': 'ThematicSettings'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
+            'bt_w_c': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'bt_w_c'", 'null': 'True', 'to': u"orm['inventory.IconSettings']"}),
+            'gt_critical': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'gt_critical'", 'null': 'True', 'to': u"orm['inventory.IconSettings']"}),
+            'gt_warning': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'gt_warning'", 'null': 'True', 'to': u"orm['inventory.IconSettings']"}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
+            'threshold_template': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['inventory.ThresholdConfiguration']"})
+        },
+        u'inventory.thresholdconfiguration': {
+            'Meta': {'object_name': 'ThresholdConfiguration'},
+            'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
+            'critical': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'live_polling_template': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['inventory.LivePollingSettings']"}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
+            'warning': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'})
         },
         u'machine.machine': {
             'Meta': {'object_name': 'Machine'},
@@ -552,14 +635,14 @@ class Migration(SchemaMigration):
             'auth_protocol': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'port': ('django.db.models.fields.IntegerField', [], {}),
             'private_pass_phase': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'private_phase': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'protocol_name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'read_community': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'read_community': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'security_level': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'security_name': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'version': ('django.db.models.fields.CharField', [], {'max_length': '10', 'null': 'True', 'blank': 'True'}),
+            'version': ('django.db.models.fields.CharField', [], {'max_length': '10'}),
             'write_community': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'})
         },
         u'service.service': {
@@ -569,8 +652,8 @@ class Migration(SchemaMigration):
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'parameters': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['service.ServiceParameters']", 'null': 'True', 'blank': 'True'}),
-            'service_data_sources': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['service.ServiceDataSource']", 'null': 'True', 'blank': 'True'})
+            'parameters': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['service.ServiceParameters']"}),
+            'service_data_sources': ('django.db.models.fields.related.ManyToManyField', [], {'to': u"orm['service.ServiceDataSource']", 'symmetrical': 'False'})
         },
         u'service.servicedatasource': {
             'Meta': {'object_name': 'ServiceDataSource'},
@@ -583,11 +666,11 @@ class Migration(SchemaMigration):
         u'service.serviceparameters': {
             'Meta': {'object_name': 'ServiceParameters'},
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'max_check_attempts': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'normal_check_interval': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'max_check_attempts': ('django.db.models.fields.IntegerField', [], {}),
+            'normal_check_interval': ('django.db.models.fields.IntegerField', [], {}),
             'parameter_description': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            'protocol': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['service.Protocol']", 'null': 'True', 'blank': 'True'}),
-            'retry_check_interval': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'})
+            'protocol': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['service.Protocol']"}),
+            'retry_check_interval': ('django.db.models.fields.IntegerField', [], {})
         },
         u'site_instance.siteinstance': {
             'Meta': {'object_name': 'SiteInstance'},
@@ -597,17 +680,17 @@ class Migration(SchemaMigration):
             'live_status_tcp_port': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'machine': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['machine.Machine']", 'null': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '200'}),
-            'site_ip': ('django.db.models.fields.IPAddressField', [], {'max_length': '15'})
+            'password': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'username': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
+            'web_service_port': ('django.db.models.fields.IntegerField', [], {'default': '80'})
         },
         u'user_group.usergroup': {
             'Meta': {'object_name': 'UserGroup'},
-            'address': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'alias': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'is_deleted': ('django.db.models.fields.IntegerField', [], {'default': '0', 'max_length': '1'}),
             u'level': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             u'lft': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
-            'location': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50'}),
             'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
             'parent': ('mptt.fields.TreeForeignKey', [], {'blank': 'True', 'related_name': "'usergroup_children'", 'null': 'True', 'to': u"orm['user_group.UserGroup']"}),

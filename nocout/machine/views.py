@@ -27,7 +27,7 @@ class MachineList(ListView):
             {'mData':'machine_ip',               'sTitle' : 'Machine IP',           'sWidth':'null',},
             {'mData':'agent_port',               'sTitle' : 'Agent Port',           'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'description',              'sTitle' : 'Description',          'sWidth':'null',},
-            {'mData':'actions',                  'sTitle' : 'Actions',              'sWidth':'10%' ,}
+            {'mData':'actions',                  'sTitle' : 'Actions',              'sWidth':'10%' ,'bSortable': False}
             ]
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -39,7 +39,6 @@ class MachineListingTable(BaseDatatableView):
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
             query=[]
             exec_query = "qs = %s.objects.filter("%(self.model.__name__)
@@ -48,8 +47,6 @@ class MachineListingTable(BaseDatatableView):
 
             exec_query += " | ".join(query)
             exec_query += ").values(*"+str(self.columns+['id'])+")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
 
         return qs

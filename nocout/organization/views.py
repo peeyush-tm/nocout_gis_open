@@ -28,40 +28,38 @@ class OrganizationList(ListView):
             {'mData':'city',                'sTitle' : 'City',          'sWidth':'null',},
             {'mData':'state',               'sTitle' : 'State',         'sWidth':'null',},
             {'mData':'country',             'sTitle' : 'Country',       'sWidth':'null',},
-            {'mData':'description',         'sTitle' : 'Description',   'sWidth':'null',},]
+            {'mData':'description',         'sTitle' : 'Description',   'sWidth':'null','bSortable': False},]
 
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%'})
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%','bSortable': False })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
 class OrganizationListingTable(BaseDatatableView):
     model = Organization
-    columns = ['name', 'alias', 'description','city','state','country', 'parent__name',]
-    order_columns = ['name',  'alias', 'description', 'state', 'country', 'parent__name']
+    columns = ['name', 'alias', 'parent__name','city','state','country', 'description']
+    order_columns = ['name',  'alias', 'parent__name', 'city', 'state', 'country']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
             query=[]
             exec_query = "qs = %s.objects.filter("%(self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+                query.append("Q(%s__icontains="%column + "\"" +sSearch +"\"" +")")
 
             exec_query += " | ".join(query)
             exec_query += ").values(*"+str(self.columns+['id'])+")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
-
         return qs
 
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Organization.objects.values(*self.columns + ['id'])
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
+                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        return Organization.objects.filter(pk__in=organization_descendants_ids).values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         if qs:
@@ -114,6 +112,7 @@ class OrganizationCreate(CreateView):
     def form_valid(self, form):
         self.object=form.save()
         action.send( self.request.user, verb='Created', action_object = self.object )
+        return super(ModelFormMixin, self).form_valid(form)
 
 class OrganizationUpdate(UpdateView):
     template_name = 'organization/organization_update.html'

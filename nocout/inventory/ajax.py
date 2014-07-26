@@ -1,6 +1,10 @@
 from dajax.core import Dajax
 from dajaxice.decorators import dajaxice_register
-from device.models import Country, State
+from device.models import Country, State, DeviceTechnology, VendorModel, ModelType
+import logging
+from service.models import Service
+
+logger=logging.getLogger(__name__)
 
 
 # updating states corresponding to the selected country
@@ -9,8 +13,6 @@ def update_states(request, option):
     dajax = Dajax()
     country = Country.objects.get(pk=int(option))
     states = country.state_set.all().order_by('state_name')
-    print "*****************************"
-    print states
     out = []
     out = ["<option value=''>Select State....</option>"]
     for state in states:
@@ -66,3 +68,127 @@ def update_cities_after_invalid_form(request, option, city_id):
             out.append("<option value='%d'>%s</option>" % (city.id, city.city_name))
     dajax.assign('#id_city', 'innerHTML', ''.join(out))
     return dajax.json()
+
+
+# update service according to the technology selected
+@dajaxice_register
+def update_services_as_per_technology(request, tech_id=""):
+    dajax = Dajax()
+    out = []
+    # process if tech_id is not empty
+    if tech_id and tech_id != "":
+        try:
+            # getting vendors for selected technology
+            vendors = DeviceTechnology.objects.get(pk=tech_id).device_vendors
+            # initialize list for device models
+            device_models = []
+            for vendor in vendors.all():
+                models = VendorModel.objects.filter(vendor=vendor)
+                device_models.append(models)
+            # initialize list of services
+            services = []
+            for model in device_models:
+                # get all device types associated with all models
+                types = ModelType.objects.filter(model=model)
+                for dt in types:
+                    # get all services associated with 'types'
+                    for svc in dt.type.service.all():
+                        services.append(svc)
+            # some devices have same services, so here we are making list of distinct services
+            distinct_service = set(services)
+            out = ["<option value=''>Select</option>"]
+            for svc in distinct_service:
+                out.append("<option value='%d'>%s</option>" % (svc.id, svc.alias))
+        except Exception as e:
+            logger.info(e)
+    else:
+        out = ["<option value=''>Select</option>"]
+    dajax.assign('#id_service', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+# update data sources as per service
+@dajaxice_register
+def update_data_sources_as_per_service(request, svc_id=""):
+    dajax = Dajax()
+    out = []
+    if svc_id and svc_id != "":
+        try:
+            # getting data sources associated with the selected service
+            data_sources = Service.objects.get(id=svc_id).service_data_sources.all()
+            out = ["<option value=''>Select</option>"]
+            for data_source in data_sources:
+                out.append("<option value='%d'>%s</option>" % (data_source.id, data_source.alias))
+        except Exception as e:
+            logger.info(e)
+    else:
+        out = ["<option value=''>Select</option>"]
+    dajax.assign('#id_data_source', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+# update service according to the technology selected
+@dajaxice_register
+def after_update_services_as_per_technology(request, tech_id="", selected=""):
+    dajax = Dajax()
+    out = []
+    # process if tech_id is not empty
+    if tech_id and tech_id != "":
+        try:
+            # getting vendors for selected technology
+            vendors = DeviceTechnology.objects.get(pk=tech_id).device_vendors
+            # initialize list for device models
+            device_models = []
+            for vendor in vendors.all():
+                models = VendorModel.objects.filter(vendor=vendor)
+                device_models.append(models)
+            # initialize list of services
+            services = []
+            for model in device_models:
+                # get all device types associated with all models
+                types = ModelType.objects.filter(model=model)
+                for dt in types:
+                    # get all services associated with 'types'
+                    for svc in dt.type.service.all():
+                        services.append(svc)
+            # some devices have same services, so here we are making list of distinct services
+            distinct_service = set(services)
+            out = ["<option value=''>Select</option>"]
+            for svc in distinct_service:
+                if svc.id == int(selected):
+                    out.append("<option value='%d' selected>%s</option>" % (svc.id, svc.alias))
+                else:
+                    out.append("<option value='%d'>%s</option>" % (svc.id, svc.alias))
+        except Exception as e:
+            logger.info(e)
+    else:
+        out = ["<option value=''>Select</option>"]
+    dajax.assign('#id_service', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+# update data sources as per service
+@dajaxice_register
+def after_update_data_sources_as_per_service(request, svc_id="", selected=""):
+    dajax = Dajax()
+    out = []
+    if svc_id and svc_id != "":
+        try:
+            # getting data sources associated with the selected service
+            data_sources = Service.objects.get(id=svc_id).service_data_sources.all()
+            out = ["<option value=''>Select</option>"]
+            for data_source in data_sources:
+                if data_source.id == int(selected):
+                    out.append("<option value='%d' selected>%s</option>" % (data_source.id, data_source.alias))
+                else:
+                    out.append("<option value='%d'>%s</option>" % (data_source.id, data_source.alias))
+        except Exception as e:
+            logger.info(e)
+    else:
+        out = ["<option value=''>Select</option>"]
+    dajax.assign('#id_data_source', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+
+

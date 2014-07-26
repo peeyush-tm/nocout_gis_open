@@ -1,4 +1,5 @@
 import json
+import pickle
 from django.contrib.auth.models import Group
 from django.db.models.query import ValuesQuerySet
 from django.utils.decorators import method_decorator
@@ -29,16 +30,15 @@ class UserList(ListView):
             {'mData':'username',           'sTitle' : 'Username',     'sWidth':'null',},
             {'mData':'full_name',          'sTitle' : 'Full Name',    'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'email',              'sTitle' : 'Email',        'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'organization__name', 'sTitle' : 'Organization', 'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'role__role_name',    'sTitle' : 'Role',         'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'manager_name',       'sTitle' : 'Manager',      'sWidth':'10%' ,'sClass':'hidden-xs'},
-            {'mData':'organization__name', 'sTitle' : 'Organization', 'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'phone_number',       'sTitle' : 'Phone Number', 'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'last_login',         'sTitle' : 'Last Login',   'sWidth':'null','sClass':'hidden-xs'},
-            ]
+            {'mData':'last_login',         'sTitle' : 'Last Login',   'sWidth':'null','sClass':'hidden-xs'},]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%' ,})
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -47,29 +47,29 @@ class UserListingTable(BaseDatatableView):
     model = UserProfile
     columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                'parent__last_name', 'organization__name','phone_number', 'last_login']
-    order_columns = ['username' , 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
-                     'parent__last_name', 'organization__name', 'phone_number', 'last_login']
+    order_columns = ['username' , 'first_name', 'email', 'organization__name', 'role__role_name', 'parent__first_name',
+                     'phone_number', 'last_login']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
             query=[]
             exec_query = "qs = %s.objects.filter("%(self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+                query.append("Q(%s__icontains="%column + "\"" +sSearch +"\"" +")")
 
             exec_query += " | ".join(query)
             exec_query += ").values(*"+str(self.columns+['id'])+")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
+
         return qs
 
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        organization_descendants_ids= self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True)
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
+                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+
         return UserProfile.objects.filter(organization__in = organization_descendants_ids, is_deleted=0).values(*self.columns+['id'])
 
     def prepare_results(self, qs):
@@ -80,9 +80,15 @@ class UserListingTable(BaseDatatableView):
             qs, qs_headers = Datatable_Generation( qs, sanity_dicts_list ).main()
         #if the user role is Admin then the action column_values will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers= self.request.GET.get('datatable_headers','').replace('false',"\"False\"")
+
             for dct in qs:
-                dct.update(actions='<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                            <a href="#" onclick="Dajaxice.user_profile.user_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                dct.update( actions='''<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                            <a href="#" onclick='Dajaxice.user_profile.user_soft_delete_form( get_soft_delete_form,\
+                            {{ \"value\": {0} , \"datatable_headers\": {1} }})'><i class="fa fa-trash-o text-danger">\
+                            </i></a>'''.format(dct['id'], datatable_headers),
+                            last_login=dct['last_login'].strftime("%Y-%m-%d %H:%M:%S")
+                           )
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -92,12 +98,12 @@ class UserListingTable(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.count()
+        total_records = len(qs)
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.count()
+        total_display_records = len(qs)
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
@@ -123,17 +129,14 @@ class UserArchivedListingTable(BaseDatatableView):
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
             query=[]
             exec_query = "qs = %s.objects.filter("%(self.model.__name__)
             for column in self.columns[:-1]:
-                query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
+                query.append("Q(%s__icontains="%column + "\"" +sSearch +"\"" +")")
 
             exec_query += " | ".join(query)
             exec_query += ").values(*"+str(self.columns+['id'])+")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
 
         return qs
@@ -141,7 +144,8 @@ class UserArchivedListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        organization_descendants_ids= self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True)
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
+                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
         return UserProfile.objects.filter(organization__in = organization_descendants_ids, is_deleted=1).values(*self.columns+['id'])
 
     def prepare_results(self, qs):
@@ -154,8 +158,8 @@ class UserArchivedListingTable(BaseDatatableView):
         #if the user role is Admin then the action column_values will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             for dct in qs:
-                dct.update(actions='<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="#" onclick="Dajaxice.user_profile.user_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                dct.update(actions='<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>')
+
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -165,12 +169,12 @@ class UserArchivedListingTable(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.count()
+        total_records = len(qs)
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.count()
+        total_display_records = len(qs)
 
         qs = self.ordering(qs)
         qs = self.paging(qs)

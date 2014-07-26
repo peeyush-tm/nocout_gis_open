@@ -86,10 +86,11 @@ def build_data(doc):
     values_list = []
     #uuid = get_machineid()
     machine_name = get_machine_name()
-    local_time_epoch = get_epoch_time(doc.get('local_timestamp'))
+    #local_time_epoch = get_epoch_time(doc.get('local_timestamp'))
     for ds in doc.get('ds').iterkeys():
         for entry in doc.get('ds').get(ds).get('data'):
             check_time_epoch = get_epoch_time(entry.get('time'))
+	    local_time_epoch = check_time_epoch
             t = (
                 #uuid,
                 doc.get('host'),

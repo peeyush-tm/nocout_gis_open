@@ -3,12 +3,12 @@ from django.db import models
 
 # performance tables
 class PerformanceMetric(models.Model):
-    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -16,7 +16,7 @@ class PerformanceMetric(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -24,12 +24,12 @@ class PerformanceMetric(models.Model):
 
 
 class PerformanceNetwork(models.Model):
-    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -37,7 +37,7 @@ class PerformanceNetwork(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -45,12 +45,12 @@ class PerformanceNetwork(models.Model):
 
 
 class PerformanceService(models.Model):
-    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -58,7 +58,7 @@ class PerformanceService(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -66,12 +66,12 @@ class PerformanceService(models.Model):
 
 
 class PerformanceStatus(models.Model):
-    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -79,7 +79,7 @@ class PerformanceStatus(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -87,12 +87,12 @@ class PerformanceStatus(models.Model):
 
 
 class PerformanceMachine(models.Model):
-    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -100,7 +100,7 @@ class PerformanceMachine(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -108,12 +108,12 @@ class PerformanceMachine(models.Model):
 
 
 class PerformanceInventory(models.Model):
-    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -121,7 +121,7 @@ class PerformanceInventory(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -130,12 +130,12 @@ class PerformanceInventory(models.Model):
 
 # events tables
 class EventNetwork(models.Model):
-    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -143,21 +143,20 @@ class EventNetwork(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
-    description = models.CharField('Event Description', max_length=255, null=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
 
 
 class EventService(models.Model):
-    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -165,7 +164,7 @@ class EventService(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
     description = models.CharField('Event Description', max_length=255, null=True, blank=True)
 
@@ -174,12 +173,12 @@ class EventService(models.Model):
 
 
 class EventStatus(models.Model):
-    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -187,7 +186,7 @@ class EventStatus(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
     description = models.CharField('Event Description', max_length=255, null=True, blank=True)
 
@@ -196,12 +195,12 @@ class EventStatus(models.Model):
 
 
 class EventMachine(models.Model):
-    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -209,7 +208,7 @@ class EventMachine(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
     description = models.CharField('Event Description', max_length=255, null=True, blank=True)
 
@@ -218,12 +217,12 @@ class EventMachine(models.Model):
 
 
 class EventInventory(models.Model):
-    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -231,7 +230,7 @@ class EventInventory(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
     description = models.CharField('Event Description', max_length=255, null=True, blank=True)
 
@@ -240,12 +239,12 @@ class EventInventory(models.Model):
 
 
 class NetworkStatus(models.Model):
-    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -253,7 +252,7 @@ class NetworkStatus(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -261,12 +260,12 @@ class NetworkStatus(models.Model):
 
 
 class ServiceStatus(models.Model):
-    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -274,7 +273,7 @@ class ServiceStatus(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -282,12 +281,12 @@ class ServiceStatus(models.Model):
 
 
 class MachineStatus(models.Model):
-    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -295,7 +294,7 @@ class MachineStatus(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -303,12 +302,12 @@ class MachineStatus(models.Model):
 
 
 class InventoryStatus(models.Model):
-    device_name = models.CharField('Device Name', max_length=100, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=100, null=True, blank=True)
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
     site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
-    ip_address = models.CharField('IP Address', max_length=20, null=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
     severity = models.CharField('Severity', max_length=20, null=True, blank=True)
     current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
     min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
@@ -316,8 +315,31 @@ class InventoryStatus(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
+
+
+class Status(models.Model):
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    severity = models.CharField('Severity', max_length=20, null=True, blank=True)
+    current_value = models.CharField('Current Value', max_length=20, null=True, blank=True)
+    min_value = models.CharField('Min Value', max_length=20, null=True, blank=True)
+    max_value = models.CharField('Max Value', max_length=20, null=True, blank=True)
+    avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
+    warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
+    critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
+
+
