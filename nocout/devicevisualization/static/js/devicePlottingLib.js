@@ -38,6 +38,7 @@ var mapInstance = "",
 	leftMargin = 0,
 	sectorArray = [],
 	circleArray = [],
+	servicesData = {},
 	/*Variables used in fresnel zone calculation*/
 	isDialogOpen = true,
 	fresnelLat1 = "",
@@ -127,7 +128,7 @@ function devicePlottingClass_gmap() {
 
 		oms.addListener('click', function(marker,e) {
 			
-			if($.trim(marker.pointType) == 'base_station') {				
+			if($.trim(marker.pointType) == 'base_station') {
 
 				/*Clear the existing SS for same point*/
 				for(var i=0;i<plottedSS.length;i++) {
@@ -259,7 +260,7 @@ function devicePlottingClass_gmap() {
 								if(devicesObject.data.objects.data.unspiderfy_icon == undefined) {
 									clusterIcon = "";
 								} else {
-									clusterIcon = "../../"+devicesObject.data.objects.data.unspiderfy_icon;
+									clusterIcon = window.location.origin+"/"+devicesObject.data.objects.data.unspiderfy_icon;
 								}
 
 								/*Check that any filter is applied or not*/
@@ -415,15 +416,14 @@ function devicePlottingClass_gmap() {
 							that.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child);
 
 						});
-		    		});
+		    		});		    		
 		    		/*In case of PTP*/
 				} else {
 
-					var has_ss = bs_ss_devices[i].data.param.sector[0].sub_station.length;
-
+					var has_ss = bs_ss_devices[i].data.param.sector[0].sub_station.length;					
 					if(has_ss > 0) {
 
-						var ss_marker_obj = bs_ss_devices[i].data.param.sector[0].sub_station[0];
+						var ss_marker_obj = bs_ss_devices[i].data.param.sector[0].sub_station[0];						
 
 						/*Create SS Marker Object*/
 						var ss_marker_object = {
@@ -438,6 +438,7 @@ function devicePlottingClass_gmap() {
 							dataset 	     : ss_marker_obj.data.param.sub_station,
 							bhInfo 			 : [],
 							antena_height    : ss_marker_obj.data.antena_height,
+							name 		 	 : ss_marker_obj.name,
 							zIndex 			 : 200
 						};
 
@@ -493,6 +494,7 @@ function devicePlottingClass_gmap() {
 				bsInfo 			 : bsInfo,
 				bhInfo 			 : bhInfo,
 				bs_name 		 : bs_ss_devices[i].name,
+				name 		 	 : bs_ss_devices[i].name,
 				antena_height    : bs_ss_devices[i].data.antena_height,
 				zIndex 			 : 200
 			};
@@ -538,7 +540,7 @@ function devicePlottingClass_gmap() {
 	    		linkColor = bs_ss_devices[i].data.link_color;
 	    		
 		    	/*Create the link between BS & SS or Sector & SS*/
-		    	var polyLineObj = that.createLink_gmaps(startEndObj,linkColor,bs_info,ss_info);
+		    	var polyLineObj = that.createLink_gmaps(startEndObj,linkColor,bs_info,ss_info);		    	
 
 		    	/*Push the created line in global line array*/
 		    	pathLineArray.push(polyLineObj);
@@ -591,7 +593,7 @@ function devicePlottingClass_gmap() {
 		var sectorObj = stationSectorObject.original_sectors;
 
 		if($.trim(stationSectorObject.technology) != "PTP" && $.trim(stationSectorObject.technology) != "P2P") {
-
+			
 			for(var i=0;i<sectorObj.length;i++) {
 
 				var rad = 4;
@@ -612,11 +614,46 @@ function devicePlottingClass_gmap() {
 				});
 
 				stationSectorObject["child_ss"] = sectorObj[i].sub_station;
-				// stationSectorObject["bhInfo"] = stationSectorObject["dataset"];
 				stationSectorObject["dataset"] = sectorObj[i].info;				
-				
+
 				that.plotDevices_gmap(stationSectorObject,"sub_station");
 			}
+		}
+	};
+
+
+	/**
+	 * This function plot all the BS & SS on google maps & bind events accordingly
+	 * @class devicePlottingLib
+	 * @method plotAllDevice_gmap. 
+	 */
+	this.plotAllDevice_gmap = function() {
+		
+		var isChecked = $("#showAllSS:checked").length;
+
+		if(isChecked == 1) {
+
+			$.grep(masterMarkersObj, function(plotedDevices) {
+				
+				if($.trim(plotedDevices.pointType) == 'base_station') {
+
+					that.plotSubStation_gmap(plotedDevices);
+				}
+			});
+		} else {
+
+			/*Clear the existing SS for same point*/
+			for(var i=0;i<plottedSS.length;i++) {
+				plottedSS[i].setMap(null);
+			}
+
+			/*Clear all the link between BS & SS  or Sector & SS*/
+			for(var j=0;j<pathLineArray.length;j++) {
+				pathLineArray[j].setMap(null);	
+			}
+			/*Reset global variables*/
+			plottedSS = [];
+			pathLineArray = [];
 		}
 	};
 
@@ -1815,26 +1852,42 @@ function devicePlottingClass_gmap() {
 
 				currentPolygon = e.overlay;
 				currentPolygon.type = e.type;
-				
-				for(var k=0;k<bs_ss_array.length;k++) {
-					
-					var point = bs_ss_array[k].position;
+				var allSS = [],
+					allSSIds = [];
 
-					if (google.maps.geometry.poly.containsLocation(point, polygon) && $.trim(bs_ss_array[k].pointType) == "base_station") {
-						polygonSelectedDevices.push(bs_ss_array[k]);
+
+				$.grep(main_devices_data_gmaps, function(bs) {
+					
+					$.grep(bs.data.param.sector, function(sector) {
+
+						$.grep(sector.sub_station, function(ss) {
+							allSS.push(ss);							
+						});
+					});
+				});
+
+				for(var k=0;k<allSS.length;k++) {
+						
+					var point = new google.maps.LatLng(allSS[k].data.lat,allSS[k].data.lon);
+
+					if (google.maps.geometry.poly.containsLocation(point, polygon)) {
+
+						allSSIds.push(allSS[k].name);
+						polygonSelectedDevices.push(allSS[k]);
 					}
 				}
+
 				selectedCount = polygonSelectedDevices.length;
 
 				if(selectedCount == 0) {
 					
-					bootbox.alert("No 'Base Station' are under the selected area.Please re-select");
+					bootbox.alert("No 'Sub-Station' are under the selected area.Please re-select");
 					/*Remove current polygon from map*/
 					that.clearPolygon();
 
 				} else if(selectedCount > 200) {
 					
-					bootbox.alert("Max. limit for selecting devices is 200.Please re-select");
+					bootbox.alert("Max. limit for selecting sub-stations is 200.Please re-select");
 					/*Remove current polygon from map*/
 					that.clearPolygon();
 
@@ -1842,20 +1895,18 @@ function devicePlottingClass_gmap() {
 					
 					var devicesTemplate = "<div class='deviceWellContainer'>";
 					for(var i=0;i<selectedCount;i++) {
-						devicesTemplate += '<div class="well well-sm"><h5>'+polygonSelectedDevices[i].bs_name+'</h5><ul class="list-unstyled list-inline">';
-						devicesTemplate += '<li><button id="play_'+i+'" onClick="that.startMonitoring('+i+')" class="btn btn-default btn-xs"><i class="fa fa-play"></i></button></li>';
-						devicesTemplate += '<li><button id="pause_'+i+'" onClick="that.pauseMonitoring('+i+')" class="btn btn-default btn-xs"><i class="fa fa-pause"></i></button></li>';
-						devicesTemplate += '<li><button id="stop_'+i+'" onClick="that.stopMonitoring('+i+')" class="btn btn-default btn-xs"><i class="fa fa-stop"></i></button></li>';
-						devicesTemplate += '</ul><div class="sparklineContainer"><span class="sparkline" id="sparkline_'+i+'">Loading...</span></div></div>';
+						devicesTemplate += '<div class="well well-sm" id="div_'+polygonSelectedDevices[i].name+'"><h5>'+(i+1)+'.) '+polygonSelectedDevices[i].name+'</h5>';
+						devicesTemplate += '<div style="min-height:60px;margin:15px 0px;" id="livePolling_'+polygonSelectedDevices[i].name+'"></div></div>';
 					}
 					devicesTemplate += "</div>";
 					
 
-					$("#sideInfo > .panel-body").html(devicesTemplate);					
+					$("#sideInfo > .panel-body").html(devicesTemplate);
 
 					if($("#sideInfoContainer").hasClass("hide")) {
 						$("#sideInfoContainer").removeClass("hide");
 					}
+
 					if(!$("#createPolygonBtn").hasClass("hide")) {
 						$("#createPolygonBtn").addClass("hide");
 					}
@@ -1865,6 +1916,63 @@ function devicePlottingClass_gmap() {
 					}
 
 					drawingManager.setDrawingMode(null);
+
+					/*Make ajax call to get the services & datasources.*/
+					$.ajax({
+						// url : window.location.origin+"/"+" ?devices="+JSON.stringify(allSSIds),
+						url : window.location.origin+"/"+"static/services.json",
+						type : "GET",
+						dataType : "json",
+						/*If data fetched successful*/
+						success : function(result) {
+
+							if(result.success == 1) {
+
+								servicesData = {};
+								servicesData = result.data;
+								var devicesName = Object.keys(servicesData);
+								var servicesOption = "";
+
+								for(var i=0;i<devicesName.length;i++) {
+
+									var allServices = result.data[devicesName[i]].services;
+									var deviceNameParam = '"'+devicesName[i]+'"';
+									servicesOption = "<ul class='list-unstyled'><li class='servicesContainer'><select class='form-control' onchange='that.serviceSeleted_gmap("+deviceNameParam+")' id='service_"+devicesName[i]+"'><option value=''>Select Service</option>";
+									/*Loop For Number of services*/
+									for(var j=0;j<allServices.length;j++) {
+
+										servicesOption += "<option value='"+allServices[j].value+"'>"+allServices[j].name+"</option>";
+									}
+									servicesOption += "</select></li><li class='divide-10'></li><li><select class='form-control' id='datasource_"+devicesName[i]+"'><option value=''>Select Service Datasource</option></select></li><li class='divide-10'></li><li><button class='btn btn-primary' onClick='that.pollDevice_gmap("+deviceNameParam+")'>Fetch</button></li></ul><div class='clearfix'><ul class='list-unstyled list-inline' id='pollVal_"+devicesName[i]+"'></ul></div>";
+
+									$("#livePolling_"+devicesName[i]).append(servicesOption);
+								}								
+
+							} else {
+
+								$.gritter.add({
+						            // (string | mandatory) the heading of the notification
+						            title: 'Live Polling - Error',
+						            // (string | mandatory) the text inside the notification
+						            text: result.message,
+						            // (bool | optional) if you want it to fade out on its own or just sit there
+						            sticky: true
+						        });
+							}
+						},
+						error : function(err) {
+
+							$.gritter.add({
+					            // (string | mandatory) the heading of the notification
+					            title: 'Live Polling - Server Error',
+					            // (string | mandatory) the text inside the notification
+					            text: err.statusText,
+					            // (bool | optional) if you want it to fade out on its own or just sit there
+					            sticky: true
+					        });
+						}
+					});					
+					
 				}
 
 				$("#createPolygonBtn").button("complete");
@@ -1880,6 +1988,143 @@ function devicePlottingClass_gmap() {
 			$("#resetFilters").button("complete");
     	}
 	};
+
+	/**
+	 * This function load the service datasource as per the selected service.
+	 * @class devicePlottingLib
+	 * @method serviceSeleted_gmap
+	 * @param deviceName "String", It contains the name of the device whose service is selected
+	 */
+	this.serviceSeleted_gmap = function(deviceName) {
+
+		var serviceVal = $.trim($("#service_"+deviceName).val());
+		var serviceName = $.trim($("#service_"+deviceName+" option:selected").text());
+		var dataSourceOption = "<option value=''>Select Service Datasource</option>";
+
+		/*If any service is selected*/
+		if(serviceVal != "") {
+
+			var activeServices = servicesData[deviceName].services;
+
+			for(var i=0;i<activeServices.length;i++) {
+
+				if($.trim(activeServices[i].name) == serviceName && $.trim(activeServices[i].value) == serviceVal) {
+
+					var serviceDataSource = activeServices[i].datasource;
+
+					for(var j=0;j<serviceDataSource.length;j++) {
+
+						dataSourceOption += "<option value='"+serviceDataSource[j].value+"'>"+serviceDataSource[j].name+"</option>";
+					}
+				}
+			}			
+		}
+
+		/*Append the datasource to select box as per the selected service*/
+		$("#datasource_"+deviceName).html(dataSourceOption);
+	};
+
+	/**
+	 * This function fetch the live polling value for particular device.
+	 * @class devicePlottingLib
+	 * @method pollDevice_gmap
+	 * @param deviceName "String", It contains the name of the device whose service is selected
+	 */
+	this.pollDevice_gmap = function(deviceName) {
+
+		var selectedServiceTxt = $.trim($("#service_"+deviceName+" option:selected").text());
+		var selectedServiceVal = $.trim($("#service_"+deviceName).val());
+		
+		var selectedDatasourceTxt = $.trim($("#datasource_"+deviceName+" option:selected").text());
+		var selectedDatasourceVal = $.trim($("#datasource_"+deviceName).val());
+
+		if(selectedServiceVal != "" && selectedDatasourceVal != "") {
+
+			/*Make ajax call to get the live polling data.*/
+			$.ajax({
+				// url : window.location.origin+"/"+" ?device=['"+deviceName+"']&service=['"+deviceName+"']&datasource=['"+deviceName+"'],
+				url : window.location.origin+"/"+"static/livePolling.json",
+				type : "GET",
+				dataType : "json",
+				/*If data fetched successful*/
+				success : function(result) {
+
+					if(result.success == 1) {
+
+						$("#pollVal_"+deviceName+" ").append("<li>"+result.data.value[0]+"</li>");
+						var isPlotted = 0;
+						var newIcon = window.location.origin+"/"+result.data.icon[0];
+
+						$.grep(masterMarkersObj,function(markers) {
+
+							var plottedMarkerName = $.trim(markers.name);
+
+							if(plottedMarkerName == deviceName) {
+
+								isPlotted = 1;
+								markers.icon = newIcon;
+								markers.oldIcon = newIcon;
+							}
+						});
+
+						if(isPlotted == 0) {
+
+							$.grep(plottedSS,function(markers) {
+
+								var plottedSSName = $.trim(markers.name);
+
+								if(plottedSSName == deviceName) {
+									markers.icon = newIcon;
+									markers.oldIcon = newIcon;
+								}
+							});							
+							// end if statement
+						}
+
+						$.grep(main_devices_data_gmaps,function(devices) {
+							var sectors = devices.data.param.sector;
+
+							$.grep(sectors, function(sector) {
+
+								var sub_station = sector.sub_station;
+								
+								$.grep(sub_station,function(ss) {
+
+									if($.trim(ss.name) == $.trim(deviceName)) {
+
+										ss.data.markerUrl = result.data.icon[0];
+									}
+								});
+							});
+						});
+
+					} else {
+
+						$.gritter.add({
+				            // (string | mandatory) the heading of the notification
+				            title: 'Live Polling - Error',
+				            // (string | mandatory) the text inside the notification
+				            text: result.message,
+				            // (bool | optional) if you want it to fade out on its own or just sit there
+				            sticky: true
+				        });
+					}
+				},
+				error : function(err) {
+
+					$.gritter.add({
+			            // (string | mandatory) the heading of the notification
+			            title: 'Live Polling - Server Error',
+			            // (string | mandatory) the text inside the notification
+			            text: err.statusText,
+			            // (bool | optional) if you want it to fade out on its own or just sit there
+			            sticky: true
+			        });
+				}
+			});
+		} // End if Statement
+	};
+
 
 	/**
 	 * This function clear the polygon selection from the map
@@ -1909,7 +2154,21 @@ function devicePlottingClass_gmap() {
 		pathArray = [];
 		polygon = "";
 		pointsArray = [];
-		// currentPolygon = {};
+		
+		/*Clear the existing SS for same point*/
+		for(var i=0;i<plottedSS.length;i++) {
+			plottedSS[i].setMap(null);
+		}
+
+		/*Clear all the link between BS & SS  or Sector & SS*/
+		for(var j=0;j<pathLineArray.length;j++) {
+			pathLineArray[j].setMap(null);	
+		}
+		/*Reset global variables*/
+		plottedSS = [];
+		pathLineArray = [];
+
+		$('#showAllSS').attr('checked',false);
 	};
 
 	/**
