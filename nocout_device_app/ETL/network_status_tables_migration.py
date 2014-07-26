@@ -134,10 +134,10 @@ def insert_data(table, data_values, **kwargs):
 		`min_value`=%s,`max_value`=%s, `avg_value`=%s, `warning_threshold`=%s,
 		`critical_threshold`=%s, `sys_timestamp`=%s,`check_timestamp`=%s,
 		`ip_address`=%s,`severity`=%s
-		WHERE `device_name`=%s AND `site_name`=%s AND `service_name`=%s
+		WHERE `device_name`=%s AND `site_name`=%s AND `service_name`=%s AND `data_source`=%s
 		""" 
 		try:
-			data_values = map(lambda x: x + (x[0], x[3], x[1],), data_values)
+			data_values = map(lambda x: x + (x[0], x[3], x[1],x[4]), data_values)
                 	cursor.executemany(query, data_values)
 		except MySQLdb.Error, e:
                         raise MySQLdb.Error, e
