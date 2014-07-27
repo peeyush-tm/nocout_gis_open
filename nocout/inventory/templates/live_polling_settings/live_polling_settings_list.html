@@ -36,7 +36,8 @@
             /*Ajax url to get grid data*/
             var ajax_url = '{% url "LivePollingSettingsListingTable" %}';
             /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable("LivePollingSettingsListingTable", gridHeadersObj, ajax_url);
+            var destroy = false;
+            dataTableInstance.createDataTable("LivePollingSettingsListingTable", gridHeadersObj, ajax_url, destroy);
         });
     </script>
 {% endblock %}

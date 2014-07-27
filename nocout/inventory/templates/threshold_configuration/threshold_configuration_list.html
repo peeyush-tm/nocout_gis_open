@@ -36,7 +36,8 @@
             /*Ajax url to get grid data*/
             var ajax_url = '{% url "ThresholdConfigurationListingTable" %}';
             /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable("ThresholdConfigurationListingTable", gridHeadersObj, ajax_url);
+            var destroy = false;
+            dataTableInstance.createDataTable("ThresholdConfigurationListingTable", gridHeadersObj, ajax_url, destroy);
         });
     </script>
 {% endblock %}
