@@ -202,10 +202,11 @@ def gt_warning_choices(request, option):
     for icon_setting in icon_settings:
         img_url = static('img/{}'.format(icon_setting.upload_image))
         if icon_setting.id == int(option):
-            out.append("<option value={} style='background-image:url({}); background-size: 24px 24px;' selected>{}</option>".format(icon_setting.id, img_url, icon_setting.alias))
+            out.append("<option value={} style='background-image:url({}); background-size: 24px 24px;' selected>{}</option>"
+                       .format(icon_setting.id, img_url, icon_setting.alias))
         else:
-            out.append("<option value={} style='background-image:url({}); background-size: 24px 24px;'>{}</option>".format(icon_setting.id, img_url, icon_setting.alias))
-    print "*********************************** out **************************************"
+            out.append("<option value={} style='background-image:url({}); background-size: 24px 24px;'>{}</option>"
+                       .format(icon_setting.id, img_url, icon_setting.alias))
     print out
     dajax.assign("#id_gt_warning", 'innerHTML', ''.join(out))
     return dajax.json()
@@ -220,10 +221,79 @@ def gt_warning_initial_choices(request):
     out.append("<option value=''>Select</option>")
     for icon_setting in icon_settings:
         img_url = static('img/{}'.format(icon_setting.upload_image))
-        out.append("<option value={} style='background-image:url({}); background-size: 24px 24px;'>{}</option>".format(icon_setting.id, img_url, icon_setting.alias))
-    print "*********************************** out **************************************"
-    print out
+        out.append("<option value={} style='background-image:url({}); background-size: 24px 24px;'>{}</option>"
+                   .format(icon_setting.id, img_url, icon_setting.alias))
     dajax.assign('#id_gt_warning', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+# update 'bt_w_c' field choices
+@dajaxice_register
+def bt_w_c_choices(request, option):
+    dajax = Dajax()
+    icon_settings = IconSettings.objects.all()
+    out = []
+    out.append("<option value="">Select</option>")
+    for icon_setting in icon_settings:
+        img_url = static('img/{}'.format(icon_setting.upload_image))
+        if icon_setting.id == int(option):
+            out.append("<option value={} style='background-image:url({}); background-size: 24px 24px;' selected>{}</option>"
+                       .format(icon_setting.id, img_url, icon_setting.alias))
+        else:
+            out.append("<option value={} style='background-image:url({}); background-size: 24px 24px;'>{}</option>"
+                       .format(icon_setting.id, img_url, icon_setting.alias))
+    print out
+    dajax.assign("#id_bt_w_c", 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+# update 'bt_w_c' initial field choices
+@dajaxice_register
+def bt_w_c_initial_choices(request):
+    dajax = Dajax()
+    icon_settings = IconSettings.objects.all()
+    out = []
+    out.append("<option value=''>Select</option>")
+    for icon_setting in icon_settings:
+        img_url = static('img/{}'.format(icon_setting.upload_image))
+        out.append("<option value={} style='background-image:url({}); background-size: 24px 24px;'>{}</option>"
+                   .format(icon_setting.id, img_url, icon_setting.alias))
+    dajax.assign('#id_bt_w_c', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+# update 'gt_critical' field choices
+@dajaxice_register
+def gt_critical_choices(request, option):
+    dajax = Dajax()
+    icon_settings = IconSettings.objects.all()
+    out = []
+    out.append("<option value="">Select</option>")
+    for icon_setting in icon_settings:
+        img_url = static('img/{}'.format(icon_setting.upload_image))
+        if icon_setting.id == int(option):
+            out.append("<option value={} style='background-image:url({}); background-size: 24px 24px;' selected>{}</option>"
+                       .format(icon_setting.id, img_url, icon_setting.alias))
+        else:
+            out.append("<option value={} style='background-image:url({}); background-size: 24px 24px;'>{}</option>"
+                       .format(icon_setting.id, img_url, icon_setting.alias))
+    print out
+    dajax.assign("#id_gt_critical", 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+# update 'gt_critical' initial field choices
+@dajaxice_register
+def gt_critical_initial_choices(request):
+    dajax = Dajax()
+    icon_settings = IconSettings.objects.all()
+    out = []
+    out.append("<option value=''>Select</option>")
+    for icon_setting in icon_settings:
+        img_url = static('img/{}'.format(icon_setting.upload_image))
+        out.append("<option value={} style='background-image:url({}); background-size: 24px 24px;'>{}</option>"
+                   .format(icon_setting.id, img_url, icon_setting.alias))
+    dajax.assign('#id_gt_critical', 'innerHTML', ''.join(out))
     return dajax.json()
 
 

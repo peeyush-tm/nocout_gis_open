@@ -183,7 +183,7 @@ class IconSettings(models.Model):
     upload_image = models.ImageField(upload_to='icons/')
 
     def __unicode__(self):
-        return self.name
+        return self.alias
 
     def delete(self, *args, **kwargs):
         self.upload_image.delete()
@@ -199,7 +199,7 @@ class LivePollingSettings(models.Model):
     data_source = models.ForeignKey(ServiceDataSource)
 
     def __unicode__(self):
-        return self.name
+        return self.alias
 
 
 # threshold configuration model
@@ -211,7 +211,7 @@ class ThresholdConfiguration(models.Model):
     critical = models.CharField('Critical', max_length=20, null=True, blank=True)
 
     def __unicode__(self):
-        return self.name
+        return self.alias
 
 
 # thematic settings
@@ -224,5 +224,5 @@ class ThematicSettings(models.Model):
     gt_critical = models.ForeignKey(IconSettings, null=True, blank=True, related_name='gt_critical')
 
     def __unicode__(self):
-        return self.name
+        return self.alias
 

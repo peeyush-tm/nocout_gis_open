@@ -75,3 +75,19 @@ select
     margin-right:30px;
     height: 24px;
 }
+
+#id_bt_w_c option {
+    background-repeat:no-repeat;
+    background-position:bottom left;
+    padding-left:30px;
+    margin-right:30px;
+    height: 24px;
+}
+
+#id_gt_critical option {
+    background-repeat:no-repeat;
+    background-position:bottom left;
+    padding-left:30px;
+    margin-right:30px;
+    height: 24px;
+}
