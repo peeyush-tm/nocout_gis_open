@@ -43,11 +43,17 @@ class UserStatusTable(BaseDatatableView):
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             result_list=list()
+            logged_in_users_ids = [visitor.user_id for visitor in Visitor.objects.all()]
             for dictionary in qs:
+                #Adding the logged_in_status key to search in the dictionary.
+                dictionary['logged_in_status']= 'YES' if dictionary['id'] in logged_in_users_ids else 'NO'
                 for key in dictionary.keys():
                     if sSearch.lower() in str(dictionary[key]).lower():
                         result_list.append(dictionary)
+                        dictionary.pop('logged_in_status')
                         break
+
+                if 'logged_in_status' in dictionary: dictionary.pop('logged_in_status')
             return result_list
 
         return qs
@@ -69,8 +75,8 @@ class UserStatusTable(BaseDatatableView):
             logged_in_users_ids = [visitor.user_id for visitor in Visitor.objects.all()]
             for dct in qs:
                 dct.update(actions='<h3 class="fa fa-lock text-danger" onclick="change_user_status(this);"> &nbsp;</h3>'
-                if dct.get('is_active') else '<h3 class="fa fa-unlock text-success" \
-                            onclick="change_user_status(this);"> &nbsp;</h3>', logged_in_status='NO')
+                           if dct.get('is_active') else '<h3 class="fa fa-unlock text-success" \
+                           onclick="change_user_status(this);"> &nbsp;</h3>', logged_in_status='NO')
                 if dct.pop('id') in logged_in_users_ids:
                     dct['actions'] += '<h3 class="fa fa-sign-out text-danger" onclick="logout_user(this);"> &nbsp;</h3>'
                     dct['logged_in_status'] = 'YES'
@@ -120,6 +126,7 @@ class UserStatusTable(BaseDatatableView):
         # number of records before filtering
         total_records = len(qs)
 
+        qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = len(qs)
@@ -131,8 +138,7 @@ class UserStatusTable(BaseDatatableView):
             qs = list(qs)
 
         # prepare output data
-        qs = self.prepare_results(qs)
-        aaData = self.filter_queryset(qs)
+        aaData = self.prepare_results(qs)
 
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,

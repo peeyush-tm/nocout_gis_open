@@ -133,6 +133,7 @@ class LivePerformanceListing(BaseDatatableView):
         # number of records before filtering
         total_records = len(qs)
 
+        qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = len(qs)
@@ -144,8 +145,7 @@ class LivePerformanceListing(BaseDatatableView):
             qs=list(qs)
 
         # prepare output data
-        qs = self.prepare_results(qs)
-        aaData = self.filter_queryset(qs)
+        aaData = self.prepare_results(qs)
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,

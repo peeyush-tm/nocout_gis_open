@@ -41,7 +41,7 @@ class ActionListingTable(BaseDatatableView):
         if qs:
             for dct in qs:
                 for key, val in dct.items():
-                    dct['timestamp']=dct['timestamp'].strftime("%Y-%m-%d %H:%M:%S")
+                    dct['timestamp']= dct['timestamp'].strftime("%Y-%m-%d %H:%M:%S")
                     if key=='id':
                         dct['__unicode__'] = Action.objects.get(pk= val).__unicode__()
                         dct['actor'] = Action.objects.get(pk= val).actor.username
@@ -57,7 +57,7 @@ class ActionListingTable(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.count()
+        total_records = len(qs)
         qs = self.filter_queryset(qs)
 
         # number of records after filtering

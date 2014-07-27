@@ -11,7 +11,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from models import Command
 from .forms import CommandForm
 from nocout.utils.util import DictDiffer
-
+from django.db.models import Q
 
 class CommandList(ListView):
     model = Command
