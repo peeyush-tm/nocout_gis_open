@@ -1,0 +1,8 @@
+{
+	"success" : 1,
+	"message" : "Live Polling Data Fetched Successfully",
+	"data" : {
+		"value" : ["50"],
+		"icon" : ["static/img/marker/icon1_small.png"]
+	}
+}

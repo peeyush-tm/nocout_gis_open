@@ -17,6 +17,7 @@
     <span class="date-range pull-right">
         <div class="btn-group">
             <ul class="list-unstyled list-inline">
+                <li>Show All Connected SS <input type="checkbox" name="showAllSS" id="showAllSS" onclick="networkMapInstance.plotAllDevice_gmap()" style="vertical-align: sub;" /></li>
                 <li>
                     <button id="advFilterBtn" class="btn btn-info" onclick="showAdvFilters();" data-complete-text="<i class='fa fa-filter'></i> Advance Filters" data-loading-text="Please Wait...">
                         <i class='fa fa-filter'></i> Advance Filters
@@ -28,7 +29,7 @@
                 <li>
                     <button class="btn btn-info" id="createPolygonBtn"  data-complete-text="<i class='fa fa-location-arrow'></i> Select Devices" data-loading-text="Please Wait..."><i class="fa fa-location-arrow"></i> Select Devices</button>
                     <button class="btn btn-xs btn-danger hide" id="clearPolygonBtn"><i class="fa fa-times"></i> Clear Selection</button>
-                </li>
+                </li>                
             </ul>            
         </div>
     </span>

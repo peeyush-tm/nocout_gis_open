@@ -9,7 +9,7 @@ from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceType
 from inventory.models import SubStation, Circuit, Sector, BaseStation
-from performance.models import PerformanceService, PerformanceNetwork
+from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
 from operator import is_not
 from functools import partial
@@ -54,7 +54,7 @@ class Live_Performance(ListView):
 
 
 class LivePerformanceListing(BaseDatatableView):
-    model = PerformanceNetwork
+    model = PerformanceNetwork #TODO change to NETWORK STATUS. PROBLEM is with DA, DA is not puttin gin RTA just PL
     columns = ['site_instance', 'id', 'device_alias', 'ip_address', 'device_type', 'city', 'state']
 
     def filter_queryset(self, qs):
@@ -91,24 +91,40 @@ class LivePerformanceListing(BaseDatatableView):
         device_list=list()
         devices= Device.objects.filter( organization__in= kwargs['organization_ids']).values(*self.columns+ \
                                                                         ['device_name', device_association])
+
+        required_devices = []
+
         for device in devices:
             if device[device_association]:
-                performance_data_pl= PerformanceNetwork.objects.raw('''select id, device_name, avg_value, sys_timestamp from \
-                                  performance_performancenetwork where id = (select MAX(id) from \
-                                  performance_performancenetwork where (device_name=%s and data_source=%s))''' \
-                                                            ,[ device['device_name'], 'pl'])
-                for data in performance_data_pl:
-                    performance_data_rta=PerformanceNetwork.objects.raw('''select id, avg_value from  performance_performancenetwork
-                                          where device_name=%s and sys_timestamp = %s  and data_source=%s '''
-                                          ,[ data.device_name, data.sys_timestamp, 'rta'])
-                    device.update({
-                                   'packet_loss':data.avg_value,
-                                   'latency': performance_data_rta[0].avg_value,
-                                   'last_updated': str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
-                                   'city':City.objects.get(id=device['city']).city_name,
-                                   'state':State.objects.get(id=device['state']).state_name
-                                 })
-                    device_list.append(device)
+                required_devices.append(device["device_name"])
+
+        query = prepare_query(table_name="performance_performancenetwork",
+                              devices=required_devices,
+                              data_sources=["pl", "rta"]
+                              )
+        performance_data = PerformanceNetwork.objects.raw(query)
+
+        for device in devices:
+            if device[device_association]:
+                device.update({
+                    "packet_loss": "",
+                    "latency": "",
+                    "last_updated": "",
+                    "city": City.objects.get(id=device['city']).city_name,
+                    "state": State.objects.get(id=device['state']).state_name,
+                    "device_type": DeviceType.objects.get(pk=int(device['device_type'])).name
+                })
+                for data in performance_data:
+                    if str(data.device_name).strip().lower() == str(device["device_name"]).strip().lower():
+                        d_src = str(data.data_source).strip().lower()
+                        current_val = str(data.current_value)
+                        if d_src == "pl":
+                            device["packet_loss"] = current_val
+                        if d_src == "rta":
+                            device["latency"] = current_val
+                        device["last_updated"] = str(datetime.datetime.fromtimestamp(float( data.sys_timestamp )))
+                        device_list.append(device)
+
         return device_list
 
     def prepare_results(self, qs):
@@ -457,3 +473,18 @@ class Get_Service_Type_Performance_Data(View):
 #     }
 #this ensures a further good presentation of data w.r.t thresholds
 #
+
+#misc utility functions
+
+def prepare_query(table_name=None, devices=None, data_sources=["pl","rta"]):
+    in_string = lambda x: "'"+str(x)+"'"
+    query = None
+    if table_name and devices:
+        query = "SELECT * FROM `{0}` " \
+            "WHERE `{0}`.`device_name` in ( {1} ) " \
+            "AND `{0}`.`data_source` in ('pl', 'rta') " \
+            "GROUP BY `{0}`.`device_name`, `{0}`.`data_source`" \
+            "ORDER BY `{0}`.sys_timestamp DESC" \
+            .format(table_name, (",".join(map(in_string, devices))), (',').join(map(in_string, data_sources)))
+
+    return query
