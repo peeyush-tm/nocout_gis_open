@@ -41,24 +41,30 @@ class OrganizationListingTable(BaseDatatableView):
     columns = ['name', 'alias', 'parent__name','city','state','country', 'description']
     order_columns = ['name',  'alias', 'parent__name', 'city', 'state', 'country']
 
+    def logged_in_user_organization_ids(self):
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
+                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        return organization_descendants_ids
+
+
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             query=[]
+            organization_descendants_ids= self.logged_in_user_organization_ids()
             exec_query = "qs = %s.objects.filter("%(self.model.__name__)
             for column in self.columns[:-1]:
                 query.append("Q(%s__icontains="%column + "\"" +sSearch +"\"" +")")
 
-            exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            exec_query += " | ".join(query) + ", id__in = %s"%organization_descendants_ids + \
+                          ").values(*"+str(self.columns+['id'])+")"
             exec exec_query
         return qs
 
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
-                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        organization_descendants_ids= self.logged_in_user_organization_ids()
         return Organization.objects.filter(pk__in=organization_descendants_ids).values(*self.columns + ['id'])
 
     def prepare_results(self, qs):

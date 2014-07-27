@@ -41,7 +41,7 @@ class SiteInstanceListingTable(BaseDatatableView):
         if sSearch:
             query=[]
             exec_query = "qs = %s.objects.filter("%(self.model.__name__)
-            for column in self.columns[:-1]:
+            for column in self.columns:
                 query.append("Q(%s__icontains="%column + "\"" +sSearch +"\"" +")")
 
             exec_query += " | ".join(query)

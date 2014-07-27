@@ -75,16 +75,43 @@ class DeviceListingTable(BaseDatatableView):
                 'device_type', 'host_state','ip_address', 'mac_address', 'state']
     order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
 
+    def pop_filter_keys(self, dct):
+        keys_list=['device_type__name', 'device_technology__name', 'state__name']
+        for k in keys_list:
+            dct.pop(k)
+
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             result_list=list()
+
             for dictionary in qs:
+                try:
+                    dictionary['device_type__name']= DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
+                        if dictionary['device_type'] else ''
+                except Exception as device_type_exp:
+                    dictionary['device_type__name'] = ""
+
+                try:
+                    dictionary['device_technology__name']=DeviceTechnology.objects.get(pk=int(dictionary['device_technology'])).name \
+                                                if dictionary['device_technology'] else ''
+                except Exception as device_tech_exp:
+                    dictionary['device_technology__name'] = ""
+
+                try:
+                    dictionary['state__name']= State.objects.get(pk=int(dictionary['state'])).state_name if dictionary['state'] else ''
+                except Exception as device_state_exp:
+                    dictionary['state__name'] = ""
+
+
                 for key in dictionary.keys():
                     if sSearch.lower() in str(dictionary[key]).lower():
                         result_list.append(dictionary)
+                        self.pop_filter_keys(dictionary)
                         break
+                map(lambda x:  dictionary.pop(x) if x in dictionary else None, ['device_type__name', 'device_technology__name', 'state__name'])
+
             return result_list
 
         if settings.DEBUG:
@@ -125,6 +152,10 @@ class DeviceListingTable(BaseDatatableView):
             return sorted(qs, key=itemgetter(order[0][1:]), reverse= True if '-' in order[0] else False)
         return qs
 
+    def logged_in_user_organization_ids(self):
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
+                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        return organization_descendants_ids
 
     def get_initial_queryset(self):
         if not self.model:
@@ -135,8 +166,7 @@ class DeviceListingTable(BaseDatatableView):
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
-                                      .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        organization_descendants_ids= self.logged_in_user_organization_ids()
         return Device.objects.filter(organization__in = organization_descendants_ids, is_deleted=0) \
                                      .values(*self.columns+['id'])
 
@@ -218,6 +248,7 @@ class DeviceListingTable(BaseDatatableView):
         # number of records before filtering
         total_records = len(qs)
 
+        qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = len(qs)
@@ -229,8 +260,7 @@ class DeviceListingTable(BaseDatatableView):
             qs=list(qs)
 
         # prepare output data
-        qs = self.prepare_results(qs)
-        aaData = self.filter_queryset(qs)
+        aaData = self.prepare_results(qs)
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
@@ -1023,7 +1053,7 @@ class DeviceVendorListingTable(BaseDatatableView):
             result_list=list()
             for dictionary in qs:
                 for key in dictionary.keys():
-                    if str(dictionary[key])==sSearch:
+                    if sSearch.lower() in str(dictionary[key]).lower():
                         result_list.append(dictionary)
             return result_list
 
@@ -1240,7 +1270,7 @@ class DeviceModelListingTable(BaseDatatableView):
             result_list=list()
             for dictionary in qs:
                 for key in dictionary.keys():
-                    if str(dictionary[key])==sSearch:
+                    if sSearch.lower() in str(dictionary[key]).lower():
                         result_list.append(dictionary)
             return result_list
 
@@ -1457,7 +1487,7 @@ class DeviceTypeListingTable(BaseDatatableView):
             result_list=list()
             for dictionary in qs:
                 for key in dictionary.keys():
-                    if str(dictionary[key])==sSearch:
+                    if sSearch.lower() in str(dictionary[key]).lower():
                         result_list.append(dictionary)
             return result_list
 
@@ -1536,7 +1566,7 @@ class DeviceTypeListingTable(BaseDatatableView):
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
                'aaData': aaData
-               }
+              }
         return ret
 
 class DeviceTypeDetail(DetailView):
@@ -1658,12 +1688,12 @@ class DevicePortListingTable(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.count()
+        total_records = len(qs)
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.count()
+        total_display_records = len(qs)
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
@@ -1752,7 +1782,7 @@ class DeviceFrequencyListing(ListView):
         datatable_headers = [
             {'mData':'value',            'sTitle' : 'Value',        'sWidth':'null', },
             {'mData':'color_hex_value',  'sTitle' : 'Hex Value',     'sWidth':'null', },
-            {'mData':'actions',          'sTitle' : 'Actions',       'sWidth':'10%',  },
+            {'mData':'actions',          'sTitle' : 'Actions',       'sWidth':'10%', 'bSortable': False },
             ]
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -1767,7 +1797,7 @@ class DeviceFrequencyListingTable(BaseDatatableView):
         if sSearch:
             query=[]
             exec_query = "qs = %s.objects.filter("%(self.model.__name__)
-            for column in self.columns[:-1]:
+            for column in self.columns:
                 query.append("Q(%s__contains="%column + "\"" +sSearch +"\"" +")")
 
             exec_query += " | ".join(query)
@@ -1801,12 +1831,12 @@ class DeviceFrequencyListingTable(BaseDatatableView):
         qs = self.get_initial_queryset()
 
         # number of records before filtering
-        total_records = qs.count()
+        total_records = len(qs)
 
         qs = self.filter_queryset(qs)
 
         # number of records after filtering
-        total_display_records = qs.count()
+        total_display_records = len(qs)
 
         qs = self.ordering(qs)
         qs = self.paging(qs)

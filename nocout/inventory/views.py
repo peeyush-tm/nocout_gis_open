@@ -514,7 +514,7 @@ class BackhaulListingTable(BaseDatatableView):
         if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
+            for column in self.columns:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
@@ -1249,7 +1249,6 @@ class IconSettingsListingTable(BaseDatatableView):
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
@@ -1258,8 +1257,6 @@ class IconSettingsListingTable(BaseDatatableView):
 
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
 
         return qs
@@ -1395,17 +1392,14 @@ class LivePollingSettingsListingTable(BaseDatatableView):
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
+            for column in self.columns:
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
 
         return qs
@@ -1541,17 +1535,14 @@ class ThresholdConfigurationListingTable(BaseDatatableView):
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
+            for column in self.columns:
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
 
         return qs
@@ -1687,17 +1678,14 @@ class ThematicSettingsListingTable(BaseDatatableView):
     order_columns = ['name', 'alias', 'threshold_template', 'gt_warning__name', 'bt_w_c__name', 'gt_critical__name']
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
-        ##TODO:Need to optimise with the query making login.
         if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
-            for column in self.columns[:-1]:
-                query.append("Q(%s__contains=" % column + "\"" + sSearch + "\"" + ")")
+            for column in self.columns:
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
-            # qs=qs.filter( reduce( lambda q, column: q | Q(column__contains=sSearch), self.columns, Q() ))
-            # qs = qs.filter(Q(username__contains=sSearch) | Q(first_name__contains=sSearch) | Q() )
             exec exec_query
 
         return qs
