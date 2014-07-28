@@ -145,6 +145,7 @@ class EventNetwork(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    description = models.CharField('Event Description', max_length=255, null=True, blank=True)
 
     def __unicode__(self):
         return self.device_name
