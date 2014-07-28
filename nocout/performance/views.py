@@ -137,10 +137,11 @@ class LivePerformanceListing(BaseDatatableView):
                 device_result[device] = perf_result
 
 
-        for data in performance_data:
-            for device in device_result:
+        for device in device_result:
+            perf_result = {"packet_loss": "N/A", "latency": "N/A", "last_updated": "N/A"}
+
+            for data in performance_data:
                 if str(data.device_name).strip().lower() == str(device).strip().lower():
-                    perf_result = {"packet_loss": "N/A", "latency": "N/A", "last_updated": "N/A"}
 
                     d_src = str(data.data_source).strip().lower()
                     current_val = str(data.current_value)
