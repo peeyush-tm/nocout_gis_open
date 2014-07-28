@@ -52,7 +52,7 @@ class AlertCenterNetworkListing(ListView):
             {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null','bSortable': False},
             {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null','bSortable': False},
             {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
-            {'mData':'current_value',              'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'current_value',               'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
             {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null','bSortable': False},]
 
         datatable_headers_packetdrop = [

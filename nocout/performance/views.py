@@ -123,6 +123,12 @@ class LivePerformanceListing(BaseDatatableView):
                         if d_src == "rta":
                             device["latency"] = current_val
                         device["last_updated"] = str(datetime.datetime.fromtimestamp(float( data.sys_timestamp )))
+
+                        #deduplication
+                        # TODO: improve this logic. Take this performance loop out of the
+                        # device loop and de deuplicate
+                        if device in device_list:
+                            device_list.remove(device)
                         device_list.append(device)
 
         return device_list

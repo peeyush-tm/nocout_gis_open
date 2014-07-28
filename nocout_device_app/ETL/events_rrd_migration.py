@@ -63,7 +63,8 @@ def service_perf_data_live_query(db,site,log_split):
 			cur =perf_data.get(ds).get('cur')
 			war =perf_data.get(ds).get('war')
 			crit =perf_data.get(ds).get('cric')
-				
+			if ds == 'pl':
+				cur=cur.strip('%')				
 			serv_event_dict=dict(sys_timestamp=int(log_split[1]),device_name=log_split[4],severity=log_split[8],
 					description=log_split[11],min_value=0,max_value=0,avg_value =0,current_value=cur,
 					data_source = ds,warning_threshold=war,
@@ -106,6 +107,8 @@ def network_perf_data_live_query(db,site,log_split):
 		host_cur =host_perf_data.get(ds).get('cur')
 		host_war =host_perf_data.get(ds).get('war')
 		host_crit =host_perf_data.get(ds).get('cric')
+		if ds == 'pl':
+			host_cur=host_cur.strip('%')				
 		host_event_dict=dict(sys_timestamp=int(log_split[1]),device_name=log_split[4],severity=log_split[7],
                 		description=description,min_value=0,max_value=0,avg_value=0,current_value=host_cur,
 				data_source=ds,warning_threshold=host_war,critical_threshold=host_crit,
