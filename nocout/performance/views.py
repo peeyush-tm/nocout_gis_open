@@ -29,7 +29,7 @@ SERVICE_DATA_SOURCE = {
 
 class Live_Performance(ListView):
 
-    model= PerformanceNetwork
+    model= NetworkStatus
     template_name = 'performance/live_perf.html'
 
     def get_context_data(self, **kwargs):
@@ -37,6 +37,7 @@ class Live_Performance(ListView):
         datatable_headers=[
             {'mData':'site_instance',      'sTitle' : 'Site ID',       'Width':'null', 'bSortable': False},
             {'mData':'id',                 'sTitle' : 'Device ID',     'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'device_name',       'sTitle' :  'Name',          'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
             {'mData':'device_alias',       'sTitle' : 'Alias',         'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
             {'mData':'ip_address',         'sTitle' : 'IP',            'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
             {'mData':'device_type',        'sTitle' : 'Type',          'sWidth':'10%' ,'sClass':'hidden-xs', 'bSortable': False},
@@ -54,8 +55,8 @@ class Live_Performance(ListView):
 
 
 class LivePerformanceListing(BaseDatatableView):
-    model = PerformanceNetwork #TODO change to NETWORK STATUS. PROBLEM is with DA, DA is not puttin gin RTA just PL
-    columns = ['site_instance', 'id', 'device_alias', 'ip_address', 'device_type', 'city', 'state']
+    model = NetworkStatus #TODO change to NETWORK STATUS. PROBLEM is with DA, DA is not puttin gin RTA just PL
+    columns = ['site_instance', 'id', 'device_alias', 'device_alias', 'ip_address', 'device_type', 'city', 'state']
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -89,8 +90,9 @@ class LivePerformanceListing(BaseDatatableView):
 
     def get_initial_query_set_data(self, device_association='', **kwargs):
         device_list=list()
-        devices= Device.objects.filter( organization__in= kwargs['organization_ids']).values(*self.columns+ \
-                                                                        ['device_name', device_association])
+        #get only devices added to NMS and none other
+        devices= Device.objects.filter(is_added_to_nms=1, organization__in=kwargs['organization_ids']).\
+            values(*self.columns + ['device_name', device_association])
 
         required_devices = []
 
@@ -98,11 +100,7 @@ class LivePerformanceListing(BaseDatatableView):
             if device[device_association]:
                 required_devices.append(device["device_name"])
 
-        query = prepare_query(table_name="performance_performancenetwork",
-                              devices=required_devices,
-                              data_sources=["pl", "rta"]
-                              )
-        performance_data = PerformanceNetwork.objects.raw(query)
+
 
         for device in devices:
             if device[device_association]:
@@ -114,26 +112,57 @@ class LivePerformanceListing(BaseDatatableView):
                     "state": State.objects.get(id=device['state']).state_name,
                     "device_type": DeviceType.objects.get(pk=int(device['device_type'])).name
                 })
-                for data in performance_data:
-                    if str(data.device_name).strip().lower() == str(device["device_name"]).strip().lower():
-                        d_src = str(data.data_source).strip().lower()
-                        current_val = str(data.current_value)
-                        if d_src == "pl":
-                            device["packet_loss"] = current_val
-                        if d_src == "rta":
-                            device["latency"] = current_val
-                        device["last_updated"] = str(datetime.datetime.fromtimestamp(float( data.sys_timestamp )))
-
-                        #deduplication
-                        # TODO: improve this logic. Take this performance loop out of the
-                        # device loop and de deuplicate
-                        if device in device_list:
-                            device_list.remove(device)
-                        device_list.append(device)
+                device_list.append(device)
 
         return device_list
 
+    def get_performance_data(self, device_list):
+        """
+
+        :param device_list:
+        :return:
+        """
+
+        device_result = {}
+        perf_result = {"packet_loss": "N/A", "latency": "N/A", "last_updated": "N/A"}
+
+        query = prepare_query(table_name="performance_networkstatus",
+                              devices=device_list,
+                              data_sources=["pl", "rta"]
+                              )
+        performance_data = self.model.objects.raw(query)
+
+        for device in device_list:
+            if device not in device_result:
+                device_result[device] = perf_result
+
+
+        for data in performance_data:
+            for device in device_result:
+                if str(data.device_name).strip().lower() == str(device).strip().lower():
+                    perf_result = {"packet_loss": "N/A", "latency": "N/A", "last_updated": "N/A"}
+
+                    d_src = str(data.data_source).strip().lower()
+                    current_val = str(data.current_value)
+
+                    if d_src == "pl":
+                        perf_result["packet_loss"] = current_val
+                    if d_src == "rta":
+                        perf_result["latency"] = current_val
+
+                    perf_result["last_updated"] = str(datetime.datetime.fromtimestamp(float( data.sys_timestamp )))
+
+                    device_result[device] = perf_result
+
+        # log.debug(device_result)
+
+        return device_result
+
+
     def prepare_results(self, qs):
+
+        device_list = []
+
         if qs:
             for dct in qs:
                 if self.request.GET['page_type']=='customer':
@@ -143,6 +172,17 @@ class LivePerformanceListing(BaseDatatableView):
                 elif self.request.GET['page_type'] == 'network':
                     dct.update(actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-list-alt text-info"></i></a>'\
                                .format( self.request.GET['page_type'], dct['id']))
+
+                device_list.append(dct["device_name"])
+
+            perf_result = self.get_performance_data(device_list)
+
+            for dct in qs:
+                for result in perf_result:
+                    if dct["device_name"] == result:
+                        dct["packet_loss"] = perf_result[result]["packet_loss"]
+                        dct["latency"] = perf_result[result]["latency"]
+                        dct["last_updated"] = perf_result[result]["last_updated"]
 
         return qs
 
