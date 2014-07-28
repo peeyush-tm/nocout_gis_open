@@ -662,11 +662,11 @@ class DeviceServiceConfigurationList(ListView):
 
 class DeviceServiceConfigurationListingTable(BaseDatatableView):
     model = DeviceServiceConfiguration
-    columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'data_source', 'read_community', \
-               'svc_template', 'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'warning', \
+    columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version','read_community', 'svc_template',
+               'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning', \
                'critical', 'added_on', 'modified_on']
-    order_columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version', 'data_source', 'read_community',\
-                     'svc_template', 'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'warning', \
+    order_columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version','read_community', 'svc_template',
+                     'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning', \
                      'critical', 'added_on', 'modified_on']
 
     def filter_queryset(self, qs):
