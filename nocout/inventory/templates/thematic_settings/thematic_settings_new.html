@@ -62,7 +62,31 @@
     <script>
         $(document).ready(function(){
             // Initialize the select2 selectbox.
-            $(".select2select").select2();
+            //$(".select2select").select2();
+
+            // shows images in 'gt_warning' select menu
+            if ($(id_gt_warning).val()){
+                    Dajaxice.inventory.gt_warning_choices(Dajax.process, {'option': $(id_gt_warning).val()});
+                }
+                else{
+                    Dajaxice.inventory.gt_warning_initial_choices(Dajax.process);
+            }
+
+            // shows images in 'gt_warning' select menu
+            if ($(id_bt_w_c).val()){
+                    Dajaxice.inventory.bt_w_c_choices(Dajax.process, {'option': $(id_bt_w_c).val()});
+                }
+                else{
+                    Dajaxice.inventory.bt_w_c_initial_choices(Dajax.process);
+            }
+
+            // shows images in 'gt_critical' select menu
+            if ($(id_gt_critical).val()){
+                    Dajaxice.inventory.gt_critical_choices(Dajax.process, {'option': $(id_gt_critical).val()});
+                }
+                else{
+                    Dajaxice.inventory.gt_critical_initial_choices(Dajax.process);
+            }
         })
     </script>
 {% endblock %}
