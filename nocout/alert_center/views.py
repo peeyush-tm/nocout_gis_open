@@ -132,7 +132,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
             sector_configured_on_devices_ids+= Sector.objects.filter( sector_configured_on__id__in= organization.device_set\
             .values_list('id', flat=True)).values_list('sector_configured_on', flat=True).annotate(dcount=Count('base_station'))
 
-        sector_configured_on_devices_name= Device.objects.filter(id__in= sector_configured_on_devices_ids)\
+        sector_configured_on_devices_name= Device.objects.filter(is_added_to_nms=1, id__in= sector_configured_on_devices_ids)\
                                            .values_list('device_name', flat=True)
 
         device_list, performance_data, data_sources_list = list(), list(), list()
@@ -277,7 +277,8 @@ class CustomerAlertListingTable(BaseDatatableView):
 
         organization_devices=list()
         for organization in organizations:
-            organization_devices+=Device.objects.filter(organization__id= organization.id)
+            organization_devices+=Device.objects.filter(is_added_to_nms=1, organization__id= organization.id)
+            #get the devices in an organisation which are added for monitoring
 
         organization_substations_devices_name= [ device.device_name for device in organization_devices if device.substation_set.exists() ]
 
