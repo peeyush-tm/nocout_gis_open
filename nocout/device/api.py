@@ -1,10 +1,16 @@
+import ast
 import json, logging
+import urllib
 from django.db.models import Q, Count
 from django.views.generic.base import View
 from django.http import HttpResponse
-from inventory.models import BaseStation, Sector, Circuit, SubStation, Customer
+from inventory.models import BaseStation, Sector, Circuit, SubStation, Customer, LivePollingSettings, \
+    ThresholdConfiguration, ThematicSettings
 from device.models import Device, DeviceType, DeviceVendor, \
     DeviceTechnology, DeviceModel, State, Country, City
+import requests
+from service.models import DeviceServiceConfiguration, Service, ServiceDataSource
+from django.contrib.staticfiles.templatetags.staticfiles import static
 
 logger=logging.getLogger(__name__)
 # class DeviceStatsApi(View):
@@ -671,6 +677,107 @@ class DeviceFilterApi(View):
 
         return HttpResponse(json.dumps(self.result))
 
+
+class LPServicesApi(View):
+    def get(self, request):
+        self.result = {
+            "success": 0,
+            "message": "No Service Data",
+            "data": {
+            }
+        }
+        devices = eval(str(self.request.GET.get('devices',None)))
+        if devices:
+            for dv in devices:
+                device = Device.objects.get(device_name=dv)
+                device_sdc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name)
+                self.result['data'][str(dv)] = {}
+                self.result['data'][str(dv)]['services'] = []
+                for dsc in device_sdc:
+                    svc_dict = {}
+                    svc_dict['name'] = str(dsc.service_name)
+                    svc_dict['value'] = Service.objects.get(name=dsc.service_name).id
+                    svc_dict['datasource'] = []
+                    service_data_sources = DeviceServiceConfiguration.objects.filter(device_name=dv, service_name=dsc.service_name)
+                    for sds in service_data_sources:
+                        sds_dict = {}
+                        sds_dict['name'] = sds.data_source
+                        sds_dict['value'] = ServiceDataSource.objects.get(name=sds.data_source).id
+                        svc_dict['datasource'].append(sds_dict)
+                    self.result['data'][str(dv)]['services'].append(svc_dict)
+        return HttpResponse(json.dumps(self.result))
+
+
+class FetchLPDataApi(View):
+    def get(self, request):
+        devices = eval(str(self.request.GET.get('device',None)))
+        services = eval(str(self.request.GET.get('service',None)))
+        datasources = eval(str(self.request.GET.get('datasource',None)))
+
+        self.result = {
+            "success": 0,
+            "message": "",
+            "data": {
+            }
+        }
+
+        self.result['data']['value'] = []
+        self.result['data']['icon'] = []
+
+        for dv, svc, ds in zip(devices, services, datasources):
+            lp_data = {}
+            lp_data['mode'] = "live"
+            lp_data['device'] = dv
+            lp_data['service'] = svc
+            lp_data['ds'] = []
+            lp_data['ds'].append(ds)
+
+            device = Device.objects.get(device_name=dv)
+            service= Service.objects.get(name=svc)
+            data_source = ServiceDataSource.objects.get(name=ds)
+            machine_ip = device.machine.machine_ip
+            site_name = device.site_instance.name
+
+            url = "http://{}:{}@{}:{}/{}/check_mk/nocout_live.py".format(device.site_instance.username,
+                                                                    device.site_instance.password,
+                                                                    device.machine.machine_ip,
+                                                                    device.site_instance.web_service_port,
+                                                                    device.site_instance.name)
+
+            encoded_data = urllib.urlencode(lp_data)
+            r = requests.post(url , data=encoded_data)
+
+            # converting post response data into python dict expression
+            response_dict = ast.literal_eval(r.text)
+            # if response(r) is given by post request than process it further to get success/failure messages
+            if r:
+                self.result['success'] = 1
+                self.result['data']['value'].append(response_dict.get('value')[0])
+
+
+                tech = DeviceTechnology.objects.get(pk=device.device_technology)
+                lps = LivePollingSettings.objects.get(technology=tech, service=service, data_source=data_source)
+                tc = ThresholdConfiguration.objects.get(live_polling_template=lps)
+                ts = ThematicSettings.objects.get(threshold_template=tc)
+                value = int(response_dict.get('value')[0])
+                if int(value) > int(tc.warning):
+                    icon = static('img/{}'.format(ts.gt_warning.upload_image))
+                elif int(tc.warning) >= int(value) >= int(tc.critical):
+                    icon = static('img/{}'.format(ts.bt_w_c.upload_image))
+                elif int(value) > int(tc.critical):
+                    icon = static('img/{}'.format(ts.gt_critical.upload_image))
+                else:
+                    icon = static('img/icons/wifi7.png')
+
+                self.result['data']['icon'].append(icon)
+                # if response_dict doesn't have key 'success'
+                if not response_dict.get('success'):
+                    logger.info(response_dict.get('error_message'))
+                    self.result['message'] += "Failed to fetch data for '%s'. <br />" % (svc)
+                else:
+                    self.result['message'] += "Successfully fetch data for '%s'. <br />" % (svc)
+
+        return HttpResponse(json.dumps(self.result))
 
 
 

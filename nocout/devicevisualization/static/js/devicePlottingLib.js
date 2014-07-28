@@ -1919,8 +1919,8 @@ function devicePlottingClass_gmap() {
 
 					/*Make ajax call to get the services & datasources.*/
 					$.ajax({
-						// url : window.location.origin+"/"+" ?devices="+JSON.stringify(allSSIds),
-						url : window.location.origin+"/"+"static/services.json",
+						url : window.location.origin+"/device/lp_services/"+" ?devices="+JSON.stringify(allSSIds),
+						//url : window.location.origin+"/"+"static/services.json",
 						type : "GET",
 						dataType : "json",
 						/*If data fetched successful*/
@@ -2042,7 +2042,7 @@ function devicePlottingClass_gmap() {
 
 			/*Make ajax call to get the live polling data.*/
 			$.ajax({
-				// url : window.location.origin+"/"+" ?device=['"+deviceName+"']&service=['"+deviceName+"']&datasource=['"+deviceName+"'],
+				// url : window.location.origin+"/device/lp_service_data/"+" ?device=['"+deviceName+"']&service=['"+deviceName+"']&datasource=['"+deviceName+"'],
 				url : window.location.origin+"/"+"static/livePolling.json",
 				type : "GET",
 				dataType : "json",
