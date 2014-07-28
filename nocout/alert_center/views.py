@@ -2,13 +2,15 @@ import json
 import logging
 import time
 import datetime
+from django.db.models import Count
 from django.db.models.query import ValuesQuerySet
 from django.shortcuts import render_to_response
 from django.views.generic import ListView
 from django.views.generic.base import View
 from django.template import RequestContext
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from device.models import Device
+from device.models import Device, City, State
+from inventory.models import BaseStation, Sector, SubStation
 from performance.models import PerformanceNetwork, EventNetwork, EventService
 
 logger=logging.getLogger(__name__)
@@ -42,25 +44,27 @@ class AlertCenterNetworkListing(ListView):
         context=super(AlertCenterNetworkListing, self).get_context_data(**kwargs)
         datatable_headers_latency = [
 
+            {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'base_station',               'sTitle' : 'Base Station',           'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'base_station__city',         'sTitle' : 'City',                   'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'base_station__state',        'sTitle' : 'State',                  'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
             {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null','bSortable': False},
             {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null','bSortable': False},
-            {'mData':'machine_name',               'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs','bSortable': False},
-            {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null','bSortable': False},
-            {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
-            {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
             {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
-            {'mData':'avg_value',                  'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'current_value',               'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
             {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null','bSortable': False},]
 
         datatable_headers_packetdrop = [
+            {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'base_station',               'sTitle' : 'Base Station',           'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'base_station__city',         'sTitle' : 'City',                   'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'base_station__state',        'sTitle' : 'State',                  'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
             {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null','bSortable': False},
             {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null','bSortable': False},
-            {'mData':'machine_name',               'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs','bSortable': False},
-            {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null','bSortable': False},
-            {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs','bSortable': False},
-            {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs','bSortable': False},
             {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs','bSortable': False},
-            {'mData':'avg_value',                  'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'current_value',              'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs','bSortable': False},
             {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null','bSortable': False},
             ]
         # datatable_headers_down = [
@@ -116,53 +120,78 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        if self.request.user.userprofile.role.values_list('role_name', flat=True)[0] =='admin':
-            organization_ids= list(self.request.user.userprofile.organization.get_children()\
-                            .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        logged_in_user= self.request.user.userprofile
+
+        if logged_in_user.role.values_list('role_name', flat=True)[0] =='admin':
+            organizations= list(logged_in_user.organization.get_children()) + [ logged_in_user.organization ]
         else:
-            organization_ids= [ self.request.user.userprofile.organization.id ]
+            organizations= [ logged_in_user.organization ]
+        sector_configured_on_devices_ids=list()
 
-        devices= Device.objects.filter( organization__in= organization_ids).values_list('device_name', flat=True)
-        device_list=list()
-        performance_data=list()
+        for organization in organizations:
+            sector_configured_on_devices_ids+= Sector.objects.filter( sector_configured_on__id__in= organization.device_set\
+            .values_list('id', flat=True)).values_list('sector_configured_on', flat=True).annotate(dcount=Count('base_station'))
 
-        query = prepare_query(table_name="performance_eventnetwork", devices=devices, data_sources=["pl","rta"])
+        sector_configured_on_devices_name= Device.objects.filter(id__in= sector_configured_on_devices_ids)\
+                                           .values_list('device_name', flat=True)
 
+        device_list, performance_data, data_sources_list = list(), list(), list()
+
+        if 'latency' in self.request.path_info:
+                data_sources_list.append('rta')
+        elif 'packetdrop' in self.request.path_info:
+                data_sources_list.append('pl')
+
+        query = prepare_query(table_name="performance_eventnetwork", devices=sector_configured_on_devices_name, \
+                              data_sources=data_sources_list)
         if query:
             performance_data = self.model.objects.raw(query)
 
-            device_latency_data = []
-            device_packet_drop_data = []
+            device_data= list()
 
             for data in performance_data:
+                device_base_station= Sector.objects.get( sector_configured_on__id=Device.objects.get(device_name=\
+                                     data.device_name).id).base_station
                 ddata = {
+                        'severity':data.severity,
+                        'ip_address':data.ip_address,
+                        'base_station':device_base_station.name,
+                        'base_station__city':City.objects.get(id=device_base_station.city).city_name,
+                        'base_station__state':State.objects.get(id=device_base_station.state).state_name,
                         'device_name' : data.device_name,
                         'service_name':data.service_name,
-                        'machine_name':data.machine_name,
-                        'site_name':data.site_name,
-                        'ip_address':data.ip_address,
-                        'severity':data.severity,
                         'data_source':data.data_source,
                         'current_value':data.current_value,
                         'sys_timestamp':str(datetime.datetime.fromtimestamp(float( data.sys_timestamp )))
                         }
-                if data.data_source == "pl":
-                    device_packet_drop_data.append(ddata)
-                elif data.data_source == "rta":
-                    device_latency_data.append(ddata)
-                else:
-                    pass
+                device_data.append(ddata)
 
-            if 'latency' in self.request.path_info:
-                return device_latency_data
-            elif 'packetdrop' in self.request.path_info:
-                return device_packet_drop_data
+            return device_data
 
         return device_list
 
     def prepare_results(self, qs):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+
+        for dct in qs:
+            if dct['severity']=='DOWN':
+               dct['severity']='<span class="text-danger">DOWN</span>'
+               dct['current_value']='<span class="text-danger">%s</span>'%(dct['current_value'])
+
+            elif dct['severity']=='CRITICAL':
+                dct['severity']='<span style="color:#d9534f">CRITICAL</span>'
+                dct['current_value']='<span style="color:#d9534f">%s</span>'%(dct['current_value'])
+
+            elif dct['severity']=='WARNING':
+                dct['severity']='<span style="color:#FFA500">WARNING</span>'
+                dct['current_value']='<span style="color:#FFA500">%s</span>'%(dct['current_value'])
+
+            elif dct['severity']=='UP':
+                dct['severity']='<span style="color:#008000">UP</span>'
+                dct['current_value']='<span style="color:#008000">%s</span>'%(dct['current_value'])
+
+
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -174,6 +203,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         # number of records before filtering
         total_records = len(qs)
 
+        qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = len(qs)
@@ -185,13 +215,12 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
             qs=list(qs)
 
         # prepare output data
-        qs = self.prepare_results(qs)
-        aaData = self.filter_queryset(qs)
+        aaData = self.prepare_results(qs)
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
                'aaData': aaData
-               }
+              }
         return ret
     
 class CustomerAlertList(ListView):
@@ -202,14 +231,14 @@ class CustomerAlertList(ListView):
         context=super(CustomerAlertList, self).get_context_data(**kwargs)
         datatable_headers = [
 
-            {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null','bSortable': False},
-            {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null','bSortable': False},
-            {'mData':'machine_name',               'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs','bSortable': False},
-            {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null','bSortable': False},
-            {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs','bSortable': False},
             {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'sub_station',                'sTitle' : 'Base Station',           'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'sub_station__city',          'sTitle' : 'City',                   'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'sub_station__state',         'sTitle' : 'State',                  'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null','bSortable': False},
             {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs','bSortable': False},
-            {'mData':'avg_value',                  'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'current_value',              'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs','bSortable': False},
             {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null','bSortable': False},
             ]
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -228,7 +257,7 @@ class CustomerAlertListingTable(BaseDatatableView):
             result_list=list()
             for dictionary in qs:
                 for key in dictionary.keys():
-                    if str(dictionary[key])==sSearch:
+                    if sSearch.lower() in str(dictionary[key]).lower():
                         result_list.append(dictionary)
 
             return result_list
@@ -239,55 +268,73 @@ class CustomerAlertListingTable(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        if self.request.user.userprofile.role.values_list('role_name', flat=True)[0] =='admin':
-            organization_ids= list(self.request.user.userprofile.organization.get_children()\
-                            .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        logged_in_user= self.request.user.userprofile
+
+        if logged_in_user.role.values_list('role_name', flat=True)[0] =='admin':
+            organizations= list(logged_in_user.organization.get_children()) + [ logged_in_user.organization ]
         else:
-            organization_ids= [ self.request.user.userprofile.organization.id ]
+            organizations= [ logged_in_user.organization ]
 
-        devices= Device.objects.filter( organization__in= organization_ids)
-        device_list=list()
-        performance_data=list()
+        organization_devices=list()
+        for organization in organizations:
+            organization_devices+=Device.objects.filter(organization__id= organization.id)
 
-        query = prepare_query(table_name="performance_eventnetwork", devices=devices, data_sources=["pl","rta"])
+        organization_substations_devices_name= [ device.device_name for device in organization_devices if device.substation_set.exists() ]
+
+        device_list, performance_data, data_sources_list=list(), list(), list()
+
+        if self.request.GET['data_source'] == 'latency':
+            data_sources_list.append('rta')
+        elif self.request.GET['data_source'] == 'packet_drop':
+            data_sources_list.append('pl')
+
+        query = prepare_query(table_name="performance_eventnetwork", devices=organization_substations_devices_name, \
+                              data_sources=data_sources_list)
 
         if query:
             performance_data = self.model.objects.raw(query)
-
-            device_latency_data = []
-            device_packet_drop_data = []
+            device_data=list()
 
             for data in performance_data:
+                device_substation= SubStation.objects.get(device__device_name= data.device_name)
                 ddata = {
-                        'device_name' : data.device_name,
-                        'service_name':data.service_name,
-                        'machine_name':data.machine_name,
-                        'site_name':data.site_name,
-                        'ip_address':data.ip_address,
                         'severity':data.severity,
+                        'ip_address':data.ip_address,
+                        'sub_station': device_substation.name,
+                        'sub_station__city':City.objects.get(id= device_substation.city).city_name,
+                        'sub_station__state':State.objects.get(id= device_substation.state).state_name,
+                        'service_name':data.service_name,
                         'data_source':data.data_source,
                         'current_value':data.current_value,
                         'sys_timestamp':str(datetime.datetime.fromtimestamp(float( data.sys_timestamp )))
                         }
-                if data.data_source == "pl":
-                    device_packet_drop_data.append(ddata)
-                elif data.data_source == "rta":
-                    device_latency_data.append(ddata)
-                else:
-                    pass
+                device_data.append(ddata)
 
-        if self.request.GET['data_source'] == 'latency':
-            return device_latency_data
-        elif self.request.GET['data_source'] == 'packet_drop':
-            return device_packet_drop_data
-        else:
-            pass
+            return device_data
 
         return device_list
 
     def prepare_results(self, qs):
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+
+        for dct in qs:
+            if dct['severity']=='DOWN':
+               dct['severity']='<span class="text-danger">DOWN</span>'
+               dct['current_value']='<span class="text-danger">%s</span>'%(dct['current_value'])
+
+            elif dct['severity']=='CRITICAL':
+                dct['severity']='<span style="color:#d9534f">CRITICAL</span>'
+                dct['current_value']='<span style="color:#d9534f">%s</span>'%(dct['current_value'])
+
+            elif dct['severity']=='WARNING':
+                dct['severity']='<span style="color:#FFA500">WARNING</span>'
+                dct['current_value']='<span style="color:#FFA500">%s</span>'%(dct['current_value'])
+
+            elif dct['severity']=='UP':
+                dct['severity']='<span style="color:#008000">UP</span>'
+                dct['current_value']='<span style="color:#008000">%s</span>'%(dct['current_value'])
+
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -328,7 +375,7 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl","rta"]):
     if table_name and devices:
         query = "SELECT * FROM `{0}` " \
             "WHERE `{0}`.`device_name` in ( {1} ) " \
-            "AND `{0}`.`data_source` in ('pl', 'rta') " \
+            "AND `{0}`.`data_source` in ( {2}) " \
             "GROUP BY `{0}`.`device_name`, `{0}`.`data_source`" \
             "ORDER BY `{0}`.sys_timestamp DESC" \
             .format(table_name, (",".join(map(in_string, devices))), (',').join(map(in_string, data_sources)))

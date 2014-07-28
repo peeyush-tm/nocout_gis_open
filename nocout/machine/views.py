@@ -12,7 +12,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from machine.forms import MachineForm
 from models import Machine
 from nocout.utils.util import DictDiffer
-
+from django.db.models import Q
 
 #************************************** Machine *****************************************
 class MachineList(ListView):
@@ -33,7 +33,7 @@ class MachineList(ListView):
         return context
 
 class MachineListingTable(BaseDatatableView):
-    model = MachineList
+    model = Machine
     columns = ['name', 'alias', 'machine_ip',  'agent_port', 'description']
     order_columns = ['name', 'alias', 'machine_ip',  'agent_port', 'description']
 
