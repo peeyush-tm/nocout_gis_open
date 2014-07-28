@@ -49,7 +49,7 @@ class AlertCenterNetworkListing(ListView):
             {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
             {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
             {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
-            {'mData':'avg_value',                  'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'current_value',               'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
             {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null','bSortable': False},]
 
         datatable_headers_packetdrop = [
@@ -60,7 +60,7 @@ class AlertCenterNetworkListing(ListView):
             {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs','bSortable': False},
             {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs','bSortable': False},
             {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs','bSortable': False},
-            {'mData':'avg_value',                  'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'current_value',              'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs','bSortable': False},
             {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null','bSortable': False},
             ]
         # datatable_headers_down = [
@@ -209,7 +209,7 @@ class CustomerAlertList(ListView):
             {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs','bSortable': False},
             {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs','bSortable': False},
             {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs','bSortable': False},
-            {'mData':'avg_value',                  'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs','bSortable': False},
+            {'mData':'current_value',              'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs','bSortable': False},
             {'mData':'sys_timestamp',              'sTitle' : 'Timestamp',              'sWidth':'null','bSortable': False},
             ]
         context['datatable_headers'] = json.dumps(datatable_headers)
