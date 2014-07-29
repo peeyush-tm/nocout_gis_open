@@ -470,7 +470,7 @@ class Get_Service_Type_Performance_Data(View):
                         data.data_source in SERVICE_DATA_SOURCE else "spline"
                     #data_list.append([data.sys_timestamp, data.avg_value ])
 
-                    data_list.append([data.sys_timestamp*1000, float(data.avg_value) if data.avg_value else 0])
+                    # data_list.append([data.sys_timestamp*1000, float(data.avg_value) if data.avg_value else 0])
 
                     warn_data_list.append([data.sys_timestamp*1000, float(data.warning_threshold)
                                                                     if data.critical_threshold else None])
@@ -478,10 +478,38 @@ class Get_Service_Type_Performance_Data(View):
                     crit_data_list.append([data.sys_timestamp*1000, float(data.critical_threshold)
                                                                     if data.critical_threshold else None])
 
+                    compare_point = lambda p1, p2, p3: '#70AFC4' if abs(p1) < abs(p2) \
+                                    else ('#FFE90D'
+                                          if abs(p2) < abs(p1) < abs(p3)
+                                          else ('#FF193B'
+                                                # if abs(p3) < abs(p1)
+                                                # else "#70AFC4"
+                                          )
+                                    )
+
+                    if data.avg_value:
+                        formatter_data_point = {
+                            "name": str(data.data_source).upper(),
+                            "color": compare_point(float(data.avg_value) if data.avg_value else 0,
+                                                   float(data.warning_threshold) if data.warning_threshold else 0,
+                                                   float(data.critical_threshold) if data.critical_threshold else 0
+                            ),
+                            "y": float(data.avg_value),
+                            "x": data.sys_timestamp*1000
+                        }
+                    else:
+                        formatter_data_point = {
+                            "name": str(data.data_source).upper(),
+                            "color": '#70AFC4',
+                            "y": None,
+                            "x": data.sys_timestamp*1000
+                        }
+
+                    data_list.append(formatter_data_point)
+
                     result['success']=1
                     result['message']='Device Performance Data Fetched Successfully.'
                     result['data']['objects']['chart_data']=[{'name': str(data.data_source).upper(),
-                                                              'color': '#70AFC4',
                                                               'data': data_list,
                                                               'type': result['data']['objects']['type']
                                                               },
