@@ -210,7 +210,10 @@ var perf_that = "",
 
 					$('#'+service_id+'_chart').highcharts({
 			            chart: {
-			                type: single_service_data.type
+			                type: single_service_data.type,
+//                            events:{
+//                                load: Highcharts.drawTable //@TODO: here in we need to draw canvas table with data table data
+//                            }
 			            },
 			            title: {
 			                text: single_service_data.name
