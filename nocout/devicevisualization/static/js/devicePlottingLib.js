@@ -127,23 +127,28 @@ function devicePlottingClass_gmap() {
 		infowindow = new google.maps.InfoWindow();		
 
 		oms.addListener('click', function(marker,e) {
+
+			var isChecked = $("#showAllSS:checked").length;			
 			
 			if($.trim(marker.pointType) == 'base_station') {
 
-				/*Clear the existing SS for same point*/
-				for(var i=0;i<plottedSS.length;i++) {
-					plottedSS[i].setMap(null);
-				}
+				if(isChecked != 1) {
 
-				/*Clear all the link between BS & SS  or Sector & SS*/
-				for(var j=0;j<pathLineArray.length;j++) {
-					pathLineArray[j].setMap(null);	
-				}
-				/*Reset global variables*/
-				plottedSS = [];
-				pathLineArray = [];
+					/*Clear the existing SS for same point*/
+					for(var i=0;i<plottedSS.length;i++) {
+						plottedSS[i].setMap(null);
+					}
 
-				that.plotSubStation_gmap(marker);
+					/*Clear all the link between BS & SS  or Sector & SS*/
+					for(var j=0;j<pathLineArray.length;j++) {
+						pathLineArray[j].setMap(null);	
+					}
+					/*Reset global variables*/
+					plottedSS = [];
+					pathLineArray = [];
+
+					that.plotSubStation_gmap(marker);
+				}
 			}
 
 			var windowPosition = new google.maps.LatLng(marker.ptLat,marker.ptLon);
@@ -2094,52 +2099,61 @@ function devicePlottingClass_gmap() {
 
 					if(result.success == 1) {
 
-						$("#pollVal_"+deviceName+" ").append("<li>"+result.data.value[0]+"</li>");
-						var isPlotted = 0;
-						var newIcon = window.location.origin+"/"+result.data.icon[0];
+						/*Check that polling value exist or not*/
+						if(result.data.value.length > 0) {
 
-						$.grep(masterMarkersObj,function(markers) {
+							$("#pollVal_"+deviceName+" ").append("<li>"+result.data.value[0]+"</li>");
+						}
 
-							var plottedMarkerName = $.trim(markers.name);
+						/*Check that markerurl exist or not*/
+						if(result.data.icon.length > 0) {
 
-							if(plottedMarkerName == deviceName) {
+							var isPlotted = 0;
+							var newIcon = window.location.origin+"/"+result.data.icon[0];
 
-								isPlotted = 1;
-								markers.icon = newIcon;
-								markers.oldIcon = newIcon;
-							}
-						});
+							$.grep(masterMarkersObj,function(markers) {
 
-						if(isPlotted == 0) {
+								var plottedMarkerName = $.trim(markers.name);
 
-							$.grep(plottedSS,function(markers) {
+								if(plottedMarkerName == deviceName) {
 
-								var plottedSSName = $.trim(markers.name);
-
-								if(plottedSSName == deviceName) {
+									isPlotted = 1;
 									markers.icon = newIcon;
 									markers.oldIcon = newIcon;
 								}
-							});							
-							// end if statement
-						}
+							});
 
-						$.grep(main_devices_data_gmaps,function(devices) {
-							var sectors = devices.data.param.sector;
+							if(isPlotted == 0) {
 
-							$.grep(sectors, function(sector) {
+								$.grep(plottedSS,function(markers) {
 
-								var sub_station = sector.sub_station;
-								
-								$.grep(sub_station,function(ss) {
+									var plottedSSName = $.trim(markers.name);
 
-									if($.trim(ss.name) == $.trim(deviceName)) {
-
-										ss.data.markerUrl = result.data.icon[0];
+									if(plottedSSName == deviceName) {
+										markers.icon = newIcon;
+										markers.oldIcon = newIcon;
 									}
+								});							
+								// end if statement
+							}
+
+							$.grep(main_devices_data_gmaps,function(devices) {
+								var sectors = devices.data.param.sector;
+
+								$.grep(sectors, function(sector) {
+
+									var sub_station = sector.sub_station;
+									
+									$.grep(sub_station,function(ss) {
+
+										if($.trim(ss.name) == $.trim(deviceName)) {
+
+											ss.data.markerUrl = result.data.icon[0];
+										}
+									});
 								});
 							});
-						});
+						}
 
 					} else {
 
