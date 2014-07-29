@@ -1,7 +1,7 @@
 {% extends "nocout/base.html" %}
 {% block breadcrumb_title %}
-	<li>Performance Reports</li>
-	<li>{{ page_type|title }} Live</li>
+    <li>Performance Reports</li>
+    <li>{{ page_type|title }} Live</li>
 {% endblock %}
 {% block content_title %}{{ page_type }} Live{% endblock %}
 {% block content_description %} {% endblock %}
@@ -9,50 +9,55 @@
 
 {% block content %}
 
-	<div class="box border lite">
-        <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i> {{ page_type|upper }} LISTING</h4>
+    <div class="box border lite">
+    <div id="tableContainer_div" class="box-title">
+        <h4><i class="fa fa-table"></i> {{ page_type|upper }} LISTING</h4>
+    </div>
+
+    {% ifequal page_type 'network' %}
+
+        <div id="tableContainer" class="box-body">
+            <table cellpadding="0" cellspacing="0" border="0"
+                   class="datatable table table-striped table-bordered table-hover" id="PerformanceLiveTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
         </div>
 
-        {% ifequal page_type 'network' %}
-
-            <div id="tableContainer" class="box-body">
-                <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="PerformanceLiveTable">
+    {% else %}
+        <div class="tabbable header-tabs">
+        <ul class="nav nav-tabs">
+            <li><a href="#customer_p2p_block" data-toggle="tab"><span class="hidden-inline-mobile">P2P</span></a></li>
+            <li><a href="#customer_pmp_block" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
+            <li class="active"><a href="#customer_wifi_block" data-toggle="tab"><span
+                    class="hidden-inline-mobile">WiMAX</span></a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane fade in active" id="customer_wifi_block">
+                <table id="customer_wifi_performancelistingtable" cellpadding="0" cellspacing="0" border="0"
+                       class="datatable table table-striped table-bordered table-hover">
                     <thead></thead>
                     <tbody></tbody>
                 </table>
             </div>
+            <div class="tab-pane fade" id="customer_pmp_block">
+                <table id="customer_pmp_performancelistingtable" cellpadding="0" cellspacing="0" border="0"
+                       class="datatable table table-striped table-bordered table-hover">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="tab-pane fade" id="customer_p2p_block">
+                <table id="customer_p2p_performancelistingtable" cellpadding="0" cellspacing="0" border="0"
+                       class="datatable table table-striped table-bordered table-hover">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
 
-        {% else %}
-            <div class="tabbable header-tabs">
-                <ul class="nav nav-tabs">
-                        <li><a href="#customer_p2p_block" data-toggle="tab"><span class="hidden-inline-mobile">P2P</span></a></li>
-                        <li><a href="#customer_pmp_block" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
-                        <li class="active"><a href="#customer_wifi_block" data-toggle="tab"><span class="hidden-inline-mobile">WiMAX</span></a></li>
-                </ul>
-                <div class="tab-content">
-                    <div class="tab-pane fade in active" id="customer_wifi_block">
-                        <table id="customer_wifi_performancelistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
-                            <thead></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                    <div class="tab-pane fade" id="customer_pmp_block">
-                        <table id="customer_pmp_performancelistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
-                            <thead></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                    <div class="tab-pane fade" id="customer_p2p_block">
-                        <table id="customer_p2p_performancelistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
-                            <thead></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
+    {% endifequal %}
 
-        {% endifequal %}
-    </div>
     <div class="clearfix"></div>
 
 {% endblock %}
@@ -69,24 +74,26 @@
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
 
-            ajax_url_get_parameter=0
-            if(/customer/i.test(window.location.pathname))
-            { ajax_url_get_parameter='customer' }
-            else if(/network/i.test(window.location.pathname))
-            { ajax_url_get_parameter='network' }
+            ajax_url_get_parameter = 0
+            if (/customer/i.test(window.location.pathname)) {
+                ajax_url_get_parameter = 'customer'
+            }
+            else if (/network/i.test(window.location.pathname)) {
+                ajax_url_get_parameter = 'network'
+            }
 
             /*Ajax url to get grid data*/
-            var destroy=false;
+            var destroy = false;
             {% ifequal page_type 'network' %}
-                var ajax_url = '{% url "LivePerformanceListing" %}'+'?page_type=' + ajax_url_get_parameter;
+                var ajax_url = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter;
                 dataTableInstance.createDataTable("PerformanceLiveTable", gridHeadersObj, ajax_url, destroy);
             {% else %}
-                var ajax_url_wifi = '{% url "LivePerformanceListing" %}'+'?page_type=' + ajax_url_get_parameter+'&data_tab=' + 'WiMAX';
-                var ajax_url_pmp = '{% url "LivePerformanceListing" %}'+'?page_type=' + ajax_url_get_parameter+'&data_tab=' + 'PMP';
-                var ajax_url_p2p = '{% url "LivePerformanceListing" %}'+'?page_type=' + ajax_url_get_parameter+'&data_tab=' + 'P2P';
+                var ajax_url_wifi = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'WiMAX';
+                var ajax_url_pmp = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'PMP';
+                var ajax_url_p2p = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'P2P';
                 dataTableInstance.createDataTable("customer_wifi_performancelistingtable", gridHeadersObj, ajax_url_wifi, destroy);
-                dataTableInstance.createDataTable("customer_pmp_performancelistingtable",  gridHeadersObj, ajax_url_pmp, destroy);
-                dataTableInstance.createDataTable("customer_p2p_performancelistingtable",  gridHeadersObj, ajax_url_p2p, destroy);
+                dataTableInstance.createDataTable("customer_pmp_performancelistingtable", gridHeadersObj, ajax_url_pmp, destroy);
+                dataTableInstance.createDataTable("customer_p2p_performancelistingtable", gridHeadersObj, ajax_url_p2p, destroy);
             {% endifequal %}
             /*Call createDataTable function of ourDataTableWidget class*/
 
@@ -95,15 +102,15 @@
 {% endblock %}
 
 {% block load_js %}
-<!-- /JAVASCRIPTS -->
+    <!-- /JAVASCRIPTS -->
 
 
 
 
-<script>
-    jQuery(document).ready(function () {
-        App.setPage("");  //Set current page
-        App.init(); //Initialise plugins and elements
-    });
-</script>
+    <script>
+        jQuery(document).ready(function () {
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+        });
+    </script>
 {% endblock %}
