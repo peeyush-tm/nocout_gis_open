@@ -535,6 +535,7 @@ class DeviceStatsApi(View):
                                         base_station_info['data']['param']['sector'][-1]['sub_station']+=[{
                                                           'id'  : substation.id,
                                                           'name': substation.name,
+                                                          'device_name':substation.device.device_name,
                                                           'data': {
                                                               "lat":substation_device.latitude,
                                                               "lon":substation_device.longitude,
