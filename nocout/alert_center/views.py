@@ -164,6 +164,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
             data_sources_list.append('pl')
 
         required_data_columns = ["id",
+                                 "ip_address",
                                  "service_name",
                                  "device_name",
                                  "data_source",
@@ -185,6 +186,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                 device_base_station= Sector.objects.get( sector_configured_on__id=Device.objects.get(device_name=\
                                      data.device_name).id).base_station
                 ddata = {
+                        'device_name':data.device_name,
                         'severity':data.severity,
                         'ip_address':data.ip_address,
                         'base_station':device_base_station.name,
@@ -326,13 +328,14 @@ class CustomerAlertListingTable(BaseDatatableView):
             data_sources_list.append('pl')
 
         required_data_columns = ["id",
-                 "service_name",
-                 "device_name",
-                 "data_source",
-                 "severity",
-                 "current_value",
-                 "sys_timestamp",
-                 "description"
+                                 "ip_address",
+                                 "service_name",
+                                 "device_name",
+                                 "data_source",
+                                 "severity",
+                                 "current_value",
+                                 "sys_timestamp",
+                                 "description"
         ]
 
         for device in organization_substations_devices_name:
@@ -375,7 +378,6 @@ class CustomerAlertListingTable(BaseDatatableView):
                     device['description'] =data.description
                 else:
                     continue
-
 
         return device_list
 
