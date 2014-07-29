@@ -191,14 +191,16 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         :return:
         """
 
+        columns = ["id", "service_name", "device_name", "data_source", "severity", "current_value", "sys_timestamp"]
+
         query = prepare_query(table_name="performance_networkstatus",
             # performance_eventnetwork changed to performance_networkstatus
             # as here we are showing the current status of the network for now
             # need to change it to performance_eventnetwork to display events properly
             devices=device_list,
-            data_sources=data_sources_list
+            data_sources=data_sources_list,
+            columns=columns
         )
-
         device_result = {}
         perf_result = {"severity": "N/A", "current_value": "N/A", "sys_timestamp": "N/A"}
 
