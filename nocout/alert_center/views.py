@@ -7,7 +7,7 @@ from django.shortcuts import render_to_response
 from django.views.generic import ListView
 from django.template import RequestContext
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from device.models import Device, City, State
+from device.models import Device, City, State, DeviceTechnology
 from inventory.models import BaseStation, Sector, SubStation, Circuit
 from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
 
@@ -308,8 +308,11 @@ class CustomerAlertListingTable(BaseDatatableView):
             organizations = [logged_in_user.organization]
 
         organization_devices = list()
+        device_tab_technology = self.request.GET.get('data_tab')
+        device_technology_id= DeviceTechnology.objects.get(name=device_tab_technology).id
         for organization in organizations:
-            organization_devices += Device.objects.filter(is_added_to_nms=1, organization__id=organization.id)
+            organization_devices += Device.objects.filter(is_added_to_nms=1, organization__id=organization.id,
+                                                          device_technology=device_technology_id)
             # get the devices in an organisation which are added for monitoring
 
         organization_substations_devices_name = [device.device_name for device in organization_devices if
@@ -335,32 +338,46 @@ class CustomerAlertListingTable(BaseDatatableView):
                                  "description"
         ]
 
+        for device in organization_substations_devices_name:
+            device_substation = SubStation.objects.get(device__device_name=device)
+            try:
+                #try exception if the device does not have any association with the circuit
+                device_substation_base_station= Circuit.objects.get(sub_station__id= device_substation.id).sector.base_station
+                device_substation_base_station_name=device_substation_base_station.name
+            except:
+                device_substation_base_station_name='N/A'
+
+            ddata = {
+                    'device_name': device,
+                    'severity': "",
+                    'ip_address': Device.objects.get(device_name=device).ip_address,
+                    'sub_station': device_substation.name,
+                    'sub_station__city': City.objects.get(id=device_substation.city).city_name,
+                    'sub_station__state': State.objects.get(id=device_substation.state).state_name,
+                    'base_station':device_substation_base_station_name,
+                    'service_name': "ping",
+                    'data_source': data_sources_list[0],
+                    'current_value': "",
+                    'sys_timestamp': ""
+                }
+            device_list.append(ddata)
+
+
         query = prepare_query(table_name="performance_eventnetwork", devices=organization_substations_devices_name, \
                               data_sources=data_sources_list, columns=required_data_columns)
 
         if query:
             performance_data = self.model.objects.raw(query)
-            device_data=list()
 
-            for data in performance_data:
-                device_substation= SubStation.objects.get(device__device_name= data.device_name)
-                ddata = {
-                        'device_name':data.device_name,
-                        'severity':data.severity,
-                        'ip_address':data.ip_address,
-                        'base_station':Circuit.objects.get(sub_station=device_substation.id).sector.base_station.name,
-                        'sub_station': device_substation.name,
-                        'sub_station__city':City.objects.get(id= device_substation.city).city_name,
-                        'sub_station__state':State.objects.get(id= device_substation.state).state_name,
-                        'service_name':data.service_name,
-                        'data_source':data.data_source,
-                        'current_value':data.current_value,
-                        'sys_timestamp':str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
-                        'description': data.description
-                        }
-                device_data.append(ddata)
-
-            return device_data
+        for data in performance_data:
+            for device in device_list:
+                if device["device_name"] == data.device_name:
+                    device['severity'] =data.severity
+                    device['current_value'] =data.current_value
+                    device['sys_timestamp'] =str(datetime.datetime.fromtimestamp(float( data.sys_timestamp )))
+                    device['description'] =data.description
+                else:
+                    continue
 
         return device_list
 
