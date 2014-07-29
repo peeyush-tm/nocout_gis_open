@@ -163,23 +163,42 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         elif 'packetdrop' in self.request.path_info:
             data_sources_list.append('pl')
 
-        for device in sector_configured_on_devices_name:
-            device_base_station = Sector.objects.get(sector_configured_on__id=Device.objects.get(device_name= \
-                                                                                                     device).id).base_station
-            ddata = {
-                'device_name': device,
-                'severity': "",
-                'ip_address': Device.objects.get(device_name=device).ip_address,
-                'base_station': device_base_station.name,
-                'base_station__city': City.objects.get(id=device_base_station.city).city_name,
-                'base_station__state': State.objects.get(id=device_base_station.state).state_name,
-                'service_name': "ping",
-                'data_source': data_sources_list[0],
-                'current_value': "",
-                'sys_timestamp': "",
-                'description': ""
-            }
-            device_list.append(ddata)
+        required_data_columns = ["id",
+                                 "service_name",
+                                 "device_name",
+                                 "data_source",
+                                 "severity",
+                                 "current_value",
+                                 "sys_timestamp",
+                                 "description"
+        ]
+
+        query = prepare_query(table_name="performance_eventnetwork", devices=sector_configured_on_devices_name, \
+                              data_sources=data_sources_list, columns=required_data_columns)
+
+        if query:
+            performance_data = self.model.objects.raw(query)
+
+            device_data= list()
+
+            for data in performance_data:
+                device_base_station= Sector.objects.get( sector_configured_on__id=Device.objects.get(device_name=\
+                                     data.device_name).id).base_station
+                ddata = {
+                        'severity':data.severity,
+                        'ip_address':data.ip_address,
+                        'base_station':device_base_station.name,
+                        'base_station__city':City.objects.get(id=device_base_station.city).city_name,
+                        'base_station__state':State.objects.get(id=device_base_station.state).state_name,
+                        'device_name' : data.device_name,
+                        'service_name':data.service_name,
+                        'data_source':data.data_source,
+                        'current_value':data.current_value,
+                        'sys_timestamp':str(datetime.datetime.fromtimestamp(float( data.sys_timestamp )))
+                        }
+                device_data.append(ddata)
+
+                return device_data
 
         return device_list
 
@@ -202,43 +221,26 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
     def prepare_results(self, qs):
 
-        device_list = []
-        data_source = ["pl"]
         if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
 
-            for dct in qs:
-                device_list.append(dct["device_name"])
-                data_source[0] = dct["data_source"]
+        for dct in qs:
+            if dct['severity']=='DOWN':
+               dct['severity']='<span class="text-danger">DOWN</span>'
+               dct['current_value']='<span class="text-danger">%s</span>'%(dct['current_value'])
 
-            perf_result = self.get_performance_data(device_list=device_list, data_sources_list=data_source)
+            elif dct['severity']=='CRITICAL':
+                dct['severity']='<span style="color:#d9534f">CRITICAL</span>'
+                dct['current_value']='<span style="color:#d9534f">%s</span>'%(dct['current_value'])
 
-            for dct in qs:
-                for result in perf_result:
-                    if dct["device_name"] == result:
-                        dct["severity"] = perf_result[result]["severity"]
-                        dct["current_value"] = perf_result[result]["current_value"]
-                        dct["sys_timestamp"] = perf_result[result]["sys_timestamp"]
-                        dct["description"] = perf_result[result]["description"]
+            elif dct['severity']=='WARNING':
+                dct['severity']='<span style="color:#FFA500">WARNING</span>'
+                dct['current_value']='<span style="color:#FFA500">%s</span>'%(dct['current_value'])
 
-                if str(dct['severity']).strip().upper() == 'DOWN':
-                    dct['severity'] = '<span class="text-danger">DOWN</span>'
-                    dct['current_value'] = '<span class="text-danger">%s</span>' % (dct['current_value'])
+            elif dct['severity']=='UP':
+                dct['severity']='<span style="color:#008000">UP</span>'
+                dct['current_value']='<span style="color:#008000">%s</span>'%(dct['current_value'])
 
-                elif str(dct['severity']).strip().upper() == 'CRITICAL':
-                    dct['severity'] = '<span style="color:#d9534f">CRITICAL</span>'
-                    dct['current_value'] = '<span style="color:#d9534f">%s</span>' % (dct['current_value'])
-
-                elif str(dct['severity']).strip().upper() == 'WARNING':
-                    dct['severity'] = '<span style="color:#FFA500">WARNING</span>'
-                    dct['current_value'] = '<span style="color:#FFA500">%s</span>' % (dct['current_value'])
-
-                elif str(dct['severity']).strip().upper() == 'UP':
-                    dct['severity'] = '<span style="color:#008000">UP</span>'
-                    dct['current_value'] = '<span style="color:#008000">%s</span>' % (dct['current_value'])
-                else:
-                    dct['severity'] = '<span style="color:#AAA">N/A</span>'
-                    dct['current_value'] = '<span style="color:#AAA">%s</span>' % (dct['current_value'])
 
         return qs
 
