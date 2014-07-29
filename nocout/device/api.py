@@ -809,6 +809,7 @@ class LPServicesApi(View):
                         # appending service dict to services list of current device(dv)
                         self.result['data'][str(dv)]['services'].append(svc_dict)
                         self.result['success'] = 1
+                        self.result['message'] = "Successfully fetched services and data sources."
         except Exception as e:
             self.result['message'] = e.message
             logger.info(e)
