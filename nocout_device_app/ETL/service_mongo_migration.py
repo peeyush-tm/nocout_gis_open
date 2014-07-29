@@ -73,7 +73,8 @@ def read_data(start_time, end_time, **kwargs):
     )
     if db:
 	if start_time is None:
-		cur = db.service_perf.find()
+		start_time = end_time - timedelta(minutes=15)
+		cur = db.service_perf.find({"check_time":{"$gt":start_time,"$lt":end_time}})
 	else:
         	cur = db.service_perf.find({
             	"check_time": {"$gt": start_time, "$lt": end_time}
