@@ -679,37 +679,165 @@ class DeviceFilterApi(View):
 
 
 class LPServicesApi(View):
+    """
+        API for fetching the services and data sources for list of devices.
+        :Parameters:
+            - 'devices' (list) - list of devices
+
+        :Returns:
+           - 'result' (dict) - dictionary of devices with associates services and data sources
+           {
+                "success" : 1,
+                "message" : "Services Fetched Successfully",
+                "data" : {
+                    "device1" : {
+                        "services" : [
+                            {
+                                "name" : "any_service_name2",
+                                "value" : "65",
+                                "datasource" : [
+                                    {
+                                        "name" : "any_service_datasource_name1",
+                                        "value" : "651"
+                                    },
+                                    {
+                                        "name" : "any_service_datasource_name2",
+                                        "value" : "652"
+                                    },
+                                    {
+                                        "name" : "any_service_datasource_name3",
+                                        "value" : "653"
+                                    }
+                                ]
+                            },
+                            {
+                                "name" : "any_service_name3",
+                                "value" : "66",
+                                "datasource" : [
+                                    {
+                                        "name" : "any_service_datasource_name4",
+                                        "value" : "654"
+                                    },
+                                    {
+                                        "name" : "any_service_datasource_name5",
+                                        "value" : "655"
+                                    },
+                                    {
+                                        "name" : "any_service_datasource_name6",
+                                        "value" : "656"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "device2" : {
+                        "services" : [
+                            {
+                                "name" : "any_service_name4",
+                                "value" : "6545",
+                                "datasource" : [
+                                    {
+                                        "name" : "any_service_datasource_name7",
+                                        "value" : "657"
+                                    },
+                                    {
+                                        "name" : "any_service_datasource_name8",
+                                        "value" : "658"
+                                    },
+                                    {
+                                        "name" : "any_service_datasource_name9",
+                                        "value" : "659"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+    """
+
     def get(self, request):
+        """Returns json containing devices, services and data sources"""
+
         self.result = {
             "success": 0,
             "message": "No Service Data",
             "data": {
             }
         }
-        devices = eval(str(self.request.GET.get('devices',None)))
-        if devices:
-            for dv in devices:
-                device = Device.objects.get(device_name=dv)
-                device_sdc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name)
-                self.result['data'][str(dv)] = {}
-                self.result['data'][str(dv)]['services'] = []
-                for dsc in device_sdc:
-                    svc_dict = {}
-                    svc_dict['name'] = str(dsc.service_name)
-                    svc_dict['value'] = Service.objects.get(name=dsc.service_name).id
-                    svc_dict['datasource'] = []
-                    service_data_sources = DeviceServiceConfiguration.objects.filter(device_name=dv, service_name=dsc.service_name)
-                    for sds in service_data_sources:
-                        sds_dict = {}
-                        sds_dict['name'] = sds.data_source
-                        sds_dict['value'] = ServiceDataSource.objects.get(name=sds.data_source).id
-                        svc_dict['datasource'].append(sds_dict)
-                    self.result['data'][str(dv)]['services'].append(svc_dict)
+
+        # list of devices for which service and data sources needs to be fetched
+        # i.e. ['device1', 'device2']
+        try:
+            devices = eval(str(self.request.GET.get('devices',None)))
+            if devices:
+                for dv in devices:
+                    device = Device.objects.get(device_name=dv)
+
+                    # fetching all rows form 'service_deviceserviceconfiguration' where device_name is
+                    # is name of device currently in loop; to get all associated services
+                    device_sdc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name)
+
+                    # initializing dict for current device
+                    self.result['data'][str(dv)] = {}
+
+                    # initializing list for services associated to current device(dv)
+                    self.result['data'][str(dv)]['services'] = []
+
+                    # loop through all services of current device(dv)
+                    for dsc in device_sdc:
+                        svc_dict = {}
+                        svc_dict['name'] = str(dsc.service_name)
+                        svc_dict['value'] = Service.objects.get(name=dsc.service_name).id
+
+                        # initializing list of data sources
+                        svc_dict['datasource'] = []
+
+                        # fetching all rows form 'service_deviceserviceconfiguration' where device_name and service_name
+                        # are names of current device and service in loop; to get all associated data sources
+                        service_data_sources = DeviceServiceConfiguration.objects.filter(device_name=dv, service_name=dsc.service_name)
+
+                        # loop through all the data sources associated with current service(dsc)
+                        for sds in service_data_sources:
+                            sds_dict = {}
+                            sds_dict['name'] = sds.data_source
+                            sds_dict['value'] = ServiceDataSource.objects.get(name=sds.data_source).id
+                            # appending data source dict to data sources list for current service(dsc) data source list
+                            svc_dict['datasource'].append(sds_dict)
+
+                        # appending service dict to services list of current device(dv)
+                        self.result['data'][str(dv)]['services'].append(svc_dict)
+                        self.result['success'] = 1
+        except Exception as e:
+            self.result['message'] = e.message
+            logger.info(e)
+
         return HttpResponse(json.dumps(self.result))
 
 
 class FetchLPDataApi(View):
+    """
+        API for fetching the service live polled value
+        :Parameters:
+            - 'device' (list) - list of devices
+            - 'service' (list) - list of services
+            - 'datasource' (list) - list of data sources
+
+        :Returns:
+           - 'result' (dict) - dictionary containing list of live polled values and icon urls
+            {
+                "success" : 1,
+                "message" : "Live Polling Data Fetched Successfully",
+                "data" : {
+                    "value" : ["50"],
+                    "icon" : ["static/img/marker/icon1_small.png"]
+                }
+            }
+    """
+
     def get(self, request):
+        """Returns json containing live polling value and icon url"""
+
         devices = eval(str(self.request.GET.get('device',None)))
         services = eval(str(self.request.GET.get('service',None)))
         datasources = eval(str(self.request.GET.get('datasource',None)))
@@ -723,59 +851,78 @@ class FetchLPDataApi(View):
 
         self.result['data']['value'] = []
         self.result['data']['icon'] = []
+        try:
+            for dv, svc, ds in zip(devices, services, datasources):
+                lp_data = {}
+                lp_data['mode'] = "live"
+                lp_data['device'] = dv
+                lp_data['service'] = svc
+                lp_data['ds'] = []
+                lp_data['ds'].append(ds)
 
-        for dv, svc, ds in zip(devices, services, datasources):
-            lp_data = {}
-            lp_data['mode'] = "live"
-            lp_data['device'] = dv
-            lp_data['service'] = svc
-            lp_data['ds'] = []
-            lp_data['ds'].append(ds)
+                device = Device.objects.get(device_name=dv)
+                service= Service.objects.get(name=svc)
+                data_source = ServiceDataSource.objects.get(name=ds)
+                machine_ip = device.machine.machine_ip
+                site_name = device.site_instance.name
 
-            device = Device.objects.get(device_name=dv)
-            service= Service.objects.get(name=svc)
-            data_source = ServiceDataSource.objects.get(name=ds)
-            machine_ip = device.machine.machine_ip
-            site_name = device.site_instance.name
+                url = "http://{}:{}@{}:{}/{}/check_mk/nocout_live.py".format(device.site_instance.username,
+                                                                        device.site_instance.password,
+                                                                        device.machine.machine_ip,
+                                                                        device.site_instance.web_service_port,
+                                                                        device.site_instance.name)
 
-            url = "http://{}:{}@{}:{}/{}/check_mk/nocout_live.py".format(device.site_instance.username,
-                                                                    device.site_instance.password,
-                                                                    device.machine.machine_ip,
-                                                                    device.site_instance.web_service_port,
-                                                                    device.site_instance.name)
+                # encoding 'lp_data'
+                encoded_data = urllib.urlencode(lp_data)
 
-            encoded_data = urllib.urlencode(lp_data)
-            r = requests.post(url , data=encoded_data)
+                # sending post request to nocout device app to fetch service live polling value
+                r = requests.post(url , data=encoded_data)
 
-            # converting post response data into python dict expression
-            response_dict = ast.literal_eval(r.text)
-            # if response(r) is given by post request than process it further to get success/failure messages
-            if r:
-                self.result['success'] = 1
-                self.result['data']['value'].append(response_dict.get('value')[0])
+                # converting post response data into python dict expression
+                response_dict = ast.literal_eval(r.text)
 
+                # if response(r) is given by post request than process it further to get success/failure messages
+                if r:
+                    self.result['success'] = 1
+                    self.result['data']['value'].append(response_dict.get('value')[0])
 
-                tech = DeviceTechnology.objects.get(pk=device.device_technology)
-                lps = LivePollingSettings.objects.get(technology=tech, service=service, data_source=data_source)
-                tc = ThresholdConfiguration.objects.get(live_polling_template=lps)
-                ts = ThematicSettings.objects.get(threshold_template=tc)
-                value = int(response_dict.get('value')[0])
-                if int(value) > int(tc.warning):
-                    icon = static('img/{}'.format(ts.gt_warning.upload_image))
-                elif int(tc.warning) >= int(value) >= int(tc.critical):
-                    icon = static('img/{}'.format(ts.bt_w_c.upload_image))
-                elif int(value) > int(tc.critical):
-                    icon = static('img/{}'.format(ts.gt_critical.upload_image))
-                else:
-                    icon = static('img/icons/wifi7.png')
+                    # device technology
+                    tech = DeviceTechnology.objects.get(pk=device.device_technology)
 
-                self.result['data']['icon'].append(icon)
-                # if response_dict doesn't have key 'success'
-                if not response_dict.get('success'):
-                    logger.info(response_dict.get('error_message'))
-                    self.result['message'] += "Failed to fetch data for '%s'. <br />" % (svc)
-                else:
-                    self.result['message'] += "Successfully fetch data for '%s'. <br />" % (svc)
+                    # live polling settings for getting associates service and data sources
+                    lps = LivePollingSettings.objects.get(technology=tech, service=service, data_source=data_source)
+
+                    # threshold configuration for getting warning, critical comparison values
+                    tc = ThresholdConfiguration.objects.get(live_polling_template=lps)
+
+                    # thematic settings for getting icon url
+                    ts = ThematicSettings.objects.get(threshold_template=tc)
+
+                    # comparing threshold values to get icon
+                    try:
+                        value = int(response_dict.get('value')[0])
+                        if int(value) > int(tc.warning):
+                            icon = static('img/{}'.format(ts.gt_warning.upload_image))
+                        elif int(tc.warning) >= int(value) >= int(tc.critical):
+                            icon = static('img/{}'.format(ts.bt_w_c.upload_image))
+                        elif int(value) > int(tc.critical):
+                            icon = static('img/{}'.format(ts.gt_critical.upload_image))
+                        else:
+                            icon = static('img/icons/wifi7.png')
+                    except Exception as e:
+                        icon = static('img/icons/wifi7.png')
+                        logger.info(e.message)
+
+                    self.result['data']['icon'].append(icon)
+                    self.result['data']['success'] = 1
+                    # if response_dict doesn't have key 'success'
+                    if not response_dict.get('success'):
+                        logger.info(response_dict.get('error_message'))
+                        self.result['message'] += "Failed to fetch data for '%s'. <br />" % (svc)
+                    else:
+                        self.result['message'] += "Successfully fetch data for '%s'. <br />" % (svc)
+        except Exception as e:
+            logger.info(e)
 
         return HttpResponse(json.dumps(self.result))
 
