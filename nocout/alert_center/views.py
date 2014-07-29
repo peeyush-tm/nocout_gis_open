@@ -55,9 +55,6 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': False},
             {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
-            {'mData': 'service_name', 'sTitle': 'Service Name', 'sWidth': 'null', 'bSortable': False},
-            {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': False},
             {'mData': 'current_value', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'description', 'sTitle': 'Alert Description', 'sWidth': 'null', 'bSortable': False},
@@ -75,10 +72,7 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': False},
             {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
-            {'mData': 'service_name', 'sTitle': 'Service Name', 'sWidth': 'null', 'bSortable': False},
-            {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': False},
-            {'mData': 'current_value', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'current_value', 'sTitle': 'Packet Drop', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'description', 'sTitle': 'Alert Description', 'sWidth': 'null', 'bSortable': False},
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False},
@@ -116,10 +110,10 @@ class AlertCenterNetworkListing(ListView):
 
 class AlertCenterNetworkListingTable(BaseDatatableView):
     model = EventNetwork
-    columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'severity', 'data_source',
+    columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
                'current_value', 'sys_timestamp', 'description']
-    order_columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'severity',
-                     'data_source', 'current_value', 'sys_timestamp', 'description']
+    order_columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
+                     'current_value', 'sys_timestamp', 'description']
 
     def filter_queryset(self, qs):
 
@@ -193,8 +187,6 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                         'base_station__city':City.objects.get(id=device_base_station.city).city_name,
                         'base_station__state':State.objects.get(id=device_base_station.state).state_name,
                         'device_name' : data.device_name,
-                        'service_name':data.service_name,
-                        'data_source':data.data_source,
                         'current_value':data.current_value,
                         'sys_timestamp':str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
                         'description':data.description
@@ -249,7 +241,6 @@ class CustomerAlertList(ListView):
     def get_context_data(self, **kwargs):
         context = super(CustomerAlertList, self).get_context_data(**kwargs)
         datatable_headers = [
-
             {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
@@ -262,10 +253,7 @@ class CustomerAlertList(ListView):
              'bSortable': False},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
-            {'mData': 'service_name', 'sTitle': 'Service Name', 'sWidth': 'null', 'bSortable': False},
-            {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': False},
-            {'mData': 'current_value', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'current_value', 'sTitle': 'Event Value', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'description', 'sTitle': 'Alert Description', 'sWidth': 'null', 'bSortable': False},
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False},
@@ -277,10 +265,10 @@ class CustomerAlertList(ListView):
 
 class CustomerAlertListingTable(BaseDatatableView):
     model = NetworkStatus #to be changed to EventNetwork
-    columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'severity', 'data_source',
+    columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
                'current_value', 'sys_timestamp', 'description']
-    order_columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'severity',
-                     'data_source', 'current_value', 'sys_timestamp', 'description']
+    order_columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
+                      'current_value', 'sys_timestamp', 'description']
 
     def filter_queryset(self, qs):
 
@@ -328,10 +316,7 @@ class CustomerAlertListingTable(BaseDatatableView):
             data_sources_list.append('pl')
 
         required_data_columns = ["id",
-                                 "ip_address",
-                                 "service_name",
                                  "device_name",
-                                 "data_source",
                                  "severity",
                                  "current_value",
                                  "sys_timestamp",
@@ -347,21 +332,6 @@ class CustomerAlertListingTable(BaseDatatableView):
             except:
                 device_substation_base_station_name='N/A'
 
-            ddata = {
-                    'device_name': device,
-                    'severity': "",
-                    'ip_address': Device.objects.get(device_name=device).ip_address,
-                    'sub_station': device_substation.name,
-                    'sub_station__city': City.objects.get(id=device_substation.city).city_name,
-                    'sub_station__state': State.objects.get(id=device_substation.state).state_name,
-                    'base_station':device_substation_base_station_name,
-                    'service_name': "ping",
-                    'data_source': data_sources_list[0],
-                    'current_value': "",
-                    'sys_timestamp': ""
-                }
-            device_list.append(ddata)
-
 
         query = prepare_query(table_name="performance_eventnetwork", devices=organization_substations_devices_name, \
                               data_sources=data_sources_list, columns=required_data_columns)
@@ -370,12 +340,21 @@ class CustomerAlertListingTable(BaseDatatableView):
             performance_data = self.model.objects.raw(query)
 
         for data in performance_data:
-            for device in device_list:
-                if device["device_name"] == data.device_name:
-                    device['severity'] =data.severity
-                    device['current_value'] =data.current_value
-                    device['sys_timestamp'] =str(datetime.datetime.fromtimestamp(float( data.sys_timestamp )))
-                    device['description'] =data.description
+            for device in organization_substations_devices_name:
+                if device == data.device_name:
+                    device_events = {
+                        'device_name': device,
+                        'severity': data.severity,
+                        'ip_address': Device.objects.get(device_name=device).ip_address,
+                        'sub_station': device_substation.name,
+                        'sub_station__city': City.objects.get(id=device_substation.city).city_name,
+                        'sub_station__state': State.objects.get(id=device_substation.state).state_name,
+                        'base_station':device_substation_base_station_name,
+                        'current_value': data.current_value,
+                        'sys_timestamp': str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
+                        'description':data.description
+                    }
+                    device_list.append(device_events)
                 else:
                     continue
 
