@@ -128,7 +128,14 @@ class LivePerformanceListing(BaseDatatableView):
 
         query = prepare_query(table_name="performance_networkstatus",
                               devices=device_list,
-                              data_sources=["pl", "rta"]
+                              data_sources=["pl", "rta"],
+                              columns=["id",
+                                       "service_name",
+                                       "device_name",
+                                       "data_source",
+                                       "current_value",
+                                       "sys_timestamp"
+                                    ]
                               )
         performance_data = self.model.objects.raw(query)
 
@@ -279,9 +286,12 @@ class Fetch_Inventory_Devices(View):
 
     def organization_devices_substations(self, organization):
         #To result back the all the substations from the given organization as an argument.
-        organization_substations= SubStation.objects.filter(device__in = Device.objects.filter(organization= organization.id).\
-                                  values_list('id', flat=True)).values_list('id', 'name', 'alias')
+        organization_substations= SubStation.objects.filter(device__in = Device.objects.filter(
+            is_added_to_nms=1,
+            organization= organization.id).values_list('id', flat=True)).values_list('id', 'name', 'alias')
+
         result=list()
+
         for substation in organization_substations:
             result.append({ 'id':substation[0], 'name':substation[1], 'alias':substation[2] })
 
@@ -293,7 +303,8 @@ class Fetch_Inventory_Devices(View):
                 values_list('id', flat=True)).values_list('sector_configured_on').annotate(dcount=Count('base_station'))
 
         sector_configured_on_devices_ids= map(lambda x: x[0], sector_configured_on_devices_list)
-        sector_configured_on_devices= Device.objects.filter(id__in= sector_configured_on_devices_ids)
+        sector_configured_on_devices= Device.objects.filter(is_added_to_nms=1,
+                                                            id__in= sector_configured_on_devices_ids)
         result=list()
         for sector_configured_on_device in sector_configured_on_devices:
             result.append({ 'id':sector_configured_on_device.id, 'name':sector_configured_on_device.device_name,
@@ -478,6 +489,8 @@ class Get_Service_Type_Performance_Data(View):
                     crit_data_list.append([data.sys_timestamp*1000, float(data.critical_threshold)
                                                                     if data.critical_threshold else None])
 
+                    ###to draw each data point w.r.t threshold we would need to use the following
+
                     compare_point = lambda p1, p2, p3: '#70AFC4' if abs(p1) < abs(p2) \
                                     else ('#FFE90D'
                                           if abs(p2) < abs(p1) < abs(p3)
@@ -507,6 +520,8 @@ class Get_Service_Type_Performance_Data(View):
 
                     data_list.append(formatter_data_point)
 
+                    #this ensures a further good presentation of data w.r.t thresholds
+
                     result['success']=1
                     result['message']='Device Performance Data Fetched Successfully.'
                     result['data']['objects']['chart_data']=[{'name': str(data.data_source).upper(),
@@ -527,39 +542,30 @@ class Get_Service_Type_Performance_Data(View):
 
         return HttpResponse(json.dumps(result), mimetype="application/json")
 
-###to draw each data point w.r.t threshold we would need to use the following
-# compare_point = lambda p1, p2, p3: '#70AFC4' if p1 < p2 else ('#FFE90D' if p2 < p1 <p3 else '#FF193B')
-# if data.avg_value:
-#     formatter_data_point = {
-#         "name": str(data.data_source).upper(),
-#         "color": compare_point(float(data.avg_value),
-#                                float(data.warning_threshold),
-#                                float(data.critical_threshold)
-#         ),
-#         "y": float(data.avg_value),
-#         "x": data.sys_timestamp*1000
-#     }
-# else:
-#     formatter_data_point = {
-#         "name": str(data.data_source).upper(),
-#         "color": '#70AFC4',
-#         "y": None,
-#         "x": data.sys_timestamp*1000
-#     }
-#this ensures a further good presentation of data w.r.t thresholds
-#
+# misc utility functions
 
-#misc utility functions
+def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None):
+    """
 
-def prepare_query(table_name=None, devices=None, data_sources=["pl","rta"]):
-    in_string = lambda x: "'"+str(x)+"'"
+    :param table_name:
+    :param devices:
+    :param data_sources:
+    :param columns:
+    :return:
+    """
+    in_string = lambda x: "'" + str(x) + "'"
+    col_string = lambda x: "`" + str(x) + "`"
     query = None
+    if columns:
+        columns = (",".join(map(col_string, columns)))
+    else:
+        columns = "*"
     if table_name and devices:
-        query = "SELECT * FROM `{0}` " \
-            "WHERE `{0}`.`device_name` in ( {1} ) " \
-            "AND `{0}`.`data_source` in ('pl', 'rta') " \
-            "GROUP BY `{0}`.`device_name`, `{0}`.`data_source`" \
-            "ORDER BY `{0}`.sys_timestamp DESC" \
-            .format(table_name, (",".join(map(in_string, devices))), (',').join(map(in_string, data_sources)))
+        query = "SELECT {0} FROM `{1}` " \
+                "WHERE `{1}`.`device_name` in ( {2} ) " \
+                "AND `{1}`.`data_source` in ( {3}) " \
+                "GROUP BY `{1}`.`device_name`, `{1}`.`data_source`" \
+                "ORDER BY `{1}`.sys_timestamp DESC" \
+            .format(columns, table_name, (",".join(map(in_string, devices))), (',').join(map(in_string, data_sources)))
 
     return query
