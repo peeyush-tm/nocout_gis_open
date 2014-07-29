@@ -21,6 +21,8 @@ def main(**configs):
             site=configs.get('site'),
             table_name=configs.get('table_name')
     )
+    if start_time is None:
+	start_time = end_time - timedelta(minutes=15)
     #start_time = end_time - timedelta(minutes=5)
     start_time = get_epoch_time(start_time)
     end_time = get_epoch_time(end_time)
@@ -41,14 +43,11 @@ def read_data(start_time, end_time, **kwargs):
         db_name=kwargs.get('configs').get('nosql_db')
     )
     if db:
-        if start_time is None:
-            cur = db.nocout_service_event_log.find()
-        else:
             cur = db.nocout_service_event_log.find({
                 "check_timestamp": {"$gt": start_time, "$lt": end_time}
             })
-        for doc in cur:
-            docs.append(doc)
+            for doc in cur:
+            	docs.append(doc)
     return docs
 
 def build_data(doc):
