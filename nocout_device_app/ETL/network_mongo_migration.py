@@ -75,11 +75,9 @@ def read_data(start_time, end_time, **kwargs):
     if db:
     	if start_time is None:
 	    start_time = end_time - timedelta(minutes=15)
-            cur = db.network_perf.find({"check_time":{"$gt":start_time,"$lt":end_time}})
+            cur = db.network_perf.find({"check_time":{"$gte":start_time,"$lt":end_time}})
 	else:
-        	cur = db.network_perf.find({
-            	"check_time": {"$gt": start_time, "$lt": end_time}
-        	})
+	    cur = db.network_perf.find({"check_time": {"$gte": start_time, "$lt": end_time}})
         for doc in cur:
             docs.append(doc)
      
