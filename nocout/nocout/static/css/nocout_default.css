@@ -112,37 +112,37 @@ span.dept {
 /*ERROR ICONS*/
 
 .alert_critical {
-    height: 60px;
-    width: 60px;
-    background: url("../img/severity/severity-icons-set-a-05.png");
-    background-size: 60px 60px;
+    height: 20px;
+    width: 20px;
+    background: url("../img/severity/status-1.png");
+    background-size: 20px 20px;
 }
 
 .alert_major {
-    height: 60px;
-    width: 60px;
-    background: url("../img/severity/severity-icons-set-a-04.png");
-    background-size: 60px 60px;
+    height: 20px;
+    width: 20px;
+    background: url("../img/severity/status-2.png");
+    background-size: 20px 20px;
 }
 
 .alert_minor {
-    height: 60px;
-    width: 60px;
-    background: url("../img/severity/severity-icons-set-a-03.png");
-    background-size: 60px 60px;
+    height: 20px;
+    width: 20px;
+    background: url("../img/severity/status-3.png");
+    background-size: 20px 20px;
 }
 
 .alert_normal {
-    height: 60px;
-    width: 60px;
-    background: url("../img/severity/severity-icons-set-a-02.png");
-    background-size: 60px 60px;
+    height: 20px;
+    width: 20px;
+    background: url("../img/severity/status-0.png");
+    background-size: 20px 20px;
 }
 
 .alert_informational {
-    height: 60px;
-    width: 60px;
-    background: url("../img/severity/severity-icons-set-a-01.png");
-    background-size: 60px 60px;
+    height: 20px;
+    width: 20px;
+    background: url("../img/severity/status-4.png");
+    background-size: 20px 20px;
 }
 
