@@ -11,7 +11,7 @@ from django.template import RequestContext
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State
 from inventory.models import BaseStation, Sector, SubStation
-from performance.models import PerformanceNetwork, EventNetwork, EventService
+from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ def getNetworkAlertDetail(request):
 
 # **************************************** Latency *********************************************
 class AlertCenterNetworkListing(ListView):
-    model = EventNetwork
+    model = NetworkStatus #to be changed to EventNetwork
     template_name = 'alert_center/network_alerts_list.html'
 
     def get_context_data(self, **kwargs):
@@ -85,7 +85,7 @@ class AlertCenterNetworkListing(ListView):
         ]
         # datatable_headers_down = [
         # {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null',},
-        #     {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null',},
+        # {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null',},
         #     {'mData':'machine_name',               'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs'},
         #     {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null',},
         #     {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs'},
@@ -115,7 +115,7 @@ class AlertCenterNetworkListing(ListView):
 
 
 class AlertCenterNetworkListingTable(BaseDatatableView):
-    model = EventNetwork
+    model = NetworkStatus #to be changed to EventNetwork
     columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'severity', 'data_source',
                'current_value', 'sys_timestamp']
     order_columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'severity',
@@ -191,42 +191,11 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         :return:
         """
 
-        columns = ["id", "service_name", "device_name", "data_source", "severity", "current_value", "sys_timestamp"]
-
-        query = prepare_query(table_name="performance_networkstatus",
-            # performance_eventnetwork changed to performance_networkstatus
-            # as here we are showing the current status of the network for now
-            # need to change it to performance_eventnetwork to display events properly
-            devices=device_list,
-            data_sources=data_sources_list,
-            columns=columns
-        )
-        device_result = {}
-        perf_result = {"severity": "N/A", "current_value": "N/A", "sys_timestamp": "N/A"}
-
-        performance_data = self.model.objects.raw(query)
-
-        for device in device_list:
-            if device not in device_result:
-                device_result[device] = perf_result
-
-        for device in device_result:
-            perf_result = {"severity": "N/A", "current_value": "N/A", "sys_timestamp": "N/A"}
-
-            for data in performance_data:
-                if str(data.device_name).strip().lower() == str(device).strip().lower():
-                    d_src = str(data.data_source).strip().lower()
-                    current_val = str(data.current_value)
-
-                    perf_result["severity"] = str(data.severity).strip().upper()
-
-                    perf_result["current_value"] = current_val
-
-                    perf_result["sys_timestamp"] = str(datetime.datetime.fromtimestamp(float(data.sys_timestamp)))
-
-                    device_result[device] = perf_result
-
-        # log.debug(device_result)
+        device_result = common_get_performance_data(model=self.model,
+                                                    table_name="performance_networkstatus",
+                                                    device_list=device_list,
+                                                    data_sources_list=data_sources_list,
+                                                    columns=None)
 
         return device_result
 
@@ -302,7 +271,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
 
 class CustomerAlertList(ListView):
-    model = EventNetwork
+    model = NetworkStatus #to be changed to EventNetwork
     template_name = 'alert_center/customer_alerts_list.html'
 
     def get_context_data(self, **kwargs):
@@ -332,7 +301,7 @@ class CustomerAlertList(ListView):
 
 
 class CustomerAlertListingTable(BaseDatatableView):
-    model = EventNetwork
+    model = NetworkStatus #to be changed to EventNetwork
     columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'severity', 'data_source',
                'current_value', 'sys_timestamp']
     order_columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'severity',
@@ -407,43 +376,11 @@ class CustomerAlertListingTable(BaseDatatableView):
         :return:
         """
 
-        columns = ["id", "service_name", "device_name", "data_source", "severity", "current_value", "sys_timestamp"]
-
-        query = prepare_query(table_name="performance_networkstatus",
-            # performance_eventnetwork changed to performance_networkstatus
-            # as here we are showing the current status of the network for now
-            # need to change it to performance_eventnetwork to display events properly
-            devices=device_list,
-            data_sources=data_sources_list,
-            columns=columns
-        )
-
-        device_result = {}
-        perf_result = {"severity": "N/A", "current_value": "N/A", "sys_timestamp": "N/A"}
-
-        performance_data = self.model.objects.raw(query)
-
-        for device in device_list:
-            if device not in device_result:
-                device_result[device] = perf_result
-
-        for device in device_result:
-            perf_result = {"severity": "N/A", "current_value": "N/A", "sys_timestamp": "N/A"}
-
-            for data in performance_data:
-                if str(data.device_name).strip().lower() == str(device).strip().lower():
-                    d_src = str(data.data_source).strip().lower()
-                    current_val = str(data.current_value)
-
-                    perf_result["severity"] = str(data.severity).strip().upper()
-
-                    perf_result["current_value"] = current_val
-
-                    perf_result["sys_timestamp"] = str(datetime.datetime.fromtimestamp(float(data.sys_timestamp)))
-
-                    device_result[device] = perf_result
-
-        # log.debug(device_result)
+        device_result = common_get_performance_data(model=self.model,
+                                                    table_name="performance_networkstatus",
+                                                    device_list=device_list,
+                                                    data_sources_list=data_sources_list,
+                                                    columns=None)
 
         return device_result
 
@@ -537,3 +474,56 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
             .format(columns, table_name, (",".join(map(in_string, devices))), (',').join(map(in_string, data_sources)))
 
     return query
+
+
+def common_get_performance_data(model=EventNetwork,
+                                table_name="performance_eventnetwork",
+                                device_list=[],
+                                data_sources_list=["pl", "rta"],
+                                columns=None):
+    """
+
+
+
+    :param model:
+    :param table_name:
+    :param columns:
+    :param data_sources_list:
+    :param device_list:
+    :return:
+    """
+    if not columns:
+        columns = ["id", "service_name", "device_name", "data_source", "severity", "current_value", "sys_timestamp"]
+
+    query = prepare_query(table_name=table_name,
+                          devices=device_list,
+                          data_sources=data_sources_list,
+                          columns=columns
+    )
+
+    device_result = {}
+    perf_result = {"severity": "N/A", "current_value": "N/A", "sys_timestamp": "N/A"}
+
+    performance_data = model.objects.raw(query)
+
+    for device in device_list:
+        if device not in device_result:
+            device_result[device] = perf_result
+
+    for device in device_result:
+        perf_result = {"severity": "N/A", "current_value": "N/A", "sys_timestamp": "N/A"}
+
+        for data in performance_data:
+            if str(data.device_name).strip().lower() == str(device).strip().lower():
+                d_src = str(data.data_source).strip().lower()
+                current_val = str(data.current_value)
+
+                perf_result["severity"] = str(data.severity).strip().upper()
+
+                perf_result["current_value"] = current_val
+
+                perf_result["sys_timestamp"] = str(datetime.datetime.fromtimestamp(float(data.sys_timestamp)))
+
+                device_result[device] = perf_result
+
+    return device_result
