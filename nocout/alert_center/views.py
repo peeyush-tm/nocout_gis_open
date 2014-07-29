@@ -191,9 +191,12 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         :return:
         """
 
-        query = prepare_query(table_name="performance_eventnetwork",
-                              devices=device_list,
-                              data_sources=data_sources_list
+        query = prepare_query(table_name="performance_networkstatus",
+            # performance_eventnetwork changed to performance_networkstatus
+            # as here we are showing the current status of the network for now
+            # need to change it to performance_eventnetwork to display events properly
+            devices=device_list,
+            data_sources=data_sources_list
         )
 
         device_result = {}
@@ -402,8 +405,16 @@ class CustomerAlertListingTable(BaseDatatableView):
         :return:
         """
 
-        query = prepare_query(table_name="performance_eventnetwork", devices=device_list, \
-                              data_sources=data_sources_list)
+        columns = ["id", "service_name", "device_name", "data_source", "severity", "current_value", "sys_timestamp"]
+
+        query = prepare_query(table_name="performance_networkstatus",
+            # performance_eventnetwork changed to performance_networkstatus
+            # as here we are showing the current status of the network for now
+            # need to change it to performance_eventnetwork to display events properly
+            devices=device_list,
+            data_sources=data_sources_list,
+            columns=columns
+        )
 
         device_result = {}
         perf_result = {"severity": "N/A", "current_value": "N/A", "sys_timestamp": "N/A"}
@@ -507,15 +518,20 @@ class CustomerAlertListingTable(BaseDatatableView):
 
 # misc utility functions
 
-def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"]):
+def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None):
     in_string = lambda x: "'" + str(x) + "'"
+    col_string = lambda x: "`" + str(x) + "`"
     query = None
+    if columns:
+        columns = (",".join(map(col_string, columns)))
+    else:
+        columns = "*"
     if table_name and devices:
-        query = "SELECT * FROM `{0}` " \
-                "WHERE `{0}`.`device_name` in ( {1} ) " \
-                "AND `{0}`.`data_source` in ( {2}) " \
-                "GROUP BY `{0}`.`device_name`, `{0}`.`data_source`" \
-                "ORDER BY `{0}`.sys_timestamp DESC" \
-            .format(table_name, (",".join(map(in_string, devices))), (',').join(map(in_string, data_sources)))
+        query = "SELECT {0} FROM `{1}` " \
+                "WHERE `{1}`.`device_name` in ( {2} ) " \
+                "AND `{1}`.`data_source` in ( {3}) " \
+                "GROUP BY `{1}`.`device_name`, `{1}`.`data_source`" \
+                "ORDER BY `{1}`.sys_timestamp DESC" \
+            .format(columns, table_name, (",".join(map(in_string, devices))), (',').join(map(in_string, data_sources)))
 
     return query
