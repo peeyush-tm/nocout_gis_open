@@ -194,7 +194,8 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                         'service_name':data.service_name,
                         'data_source':data.data_source,
                         'current_value':data.current_value,
-                        'sys_timestamp':str(datetime.datetime.fromtimestamp(float( data.sys_timestamp )))
+                        'sys_timestamp':str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
+                        'description':data.description
                         }
                 device_data.append(ddata)
 
@@ -202,47 +203,12 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
         return device_list
 
-    def get_performance_data(self, device_list, data_sources_list=["pl", "rta"]):
-        """
-
-
-        :param data_sources_list:
-        :param device_list:
-        :return:
-        """
-
-        device_result = common_get_performance_data(model=self.model,
-                                                    table_name="performance_eventnetwork",
-                                                    device_list=device_list,
-                                                    data_sources_list=data_sources_list,
-                                                    columns=None)
-
-        return device_result
-
     def prepare_results(self, qs):
 
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
 
-        for dct in qs:
-            if dct['severity']=='DOWN':
-               dct['severity']='<span class="text-danger">DOWN</span>'
-               dct['current_value']='<span class="text-danger">%s</span>'%(dct['current_value'])
-
-            elif dct['severity']=='CRITICAL':
-                dct['severity']='<span style="color:#d9534f">CRITICAL</span>'
-                dct['current_value']='<span style="color:#d9534f">%s</span>'%(dct['current_value'])
-
-            elif dct['severity']=='WARNING':
-                dct['severity']='<span style="color:#FFA500">WARNING</span>'
-                dct['current_value']='<span style="color:#FFA500">%s</span>'%(dct['current_value'])
-
-            elif dct['severity']=='UP':
-                dct['severity']='<span style="color:#008000">UP</span>'
-                dct['current_value']='<span style="color:#008000">%s</span>'%(dct['current_value'])
-
-
-        return qs
+        return common_prepare_results(qs)
 
     def get_context_data(self, *args, **kwargs):
         request = self.request
@@ -356,90 +322,50 @@ class CustomerAlertListingTable(BaseDatatableView):
         elif self.request.GET['data_source'] == 'packet_drop':
             data_sources_list.append('pl')
 
-        for device in organization_substations_devices_name:
-            device_substation = SubStation.objects.get(device__device_name=device)
-            try:
-                device_substation_base_station= Circuit.objects.get(sub_station__id= device_substation.id).sector.base_station
-                device_substation_base_station_name=device_substation_base_station.name
-            except:
-                device_substation_base_station_name='N/A'
+        required_data_columns = ["id",
+                                 "service_name",
+                                 "device_name",
+                                 "data_source",
+                                 "severity",
+                                 "current_value",
+                                 "sys_timestamp",
+                                 "description"
+        ]
 
-            ddata = {
-                    'device_name': device,
-                    'severity': "",
-                    'ip_address': Device.objects.get(device_name=device).ip_address,
-                    'sub_station': device_substation.name,
-                    'sub_station__city': City.objects.get(id=device_substation.city).city_name,
-                    'sub_station__state': State.objects.get(id=device_substation.state).state_name,
-                    'base_station':device_substation_base_station_name,
-                    'service_name': "ping",
-                    'data_source': data_sources_list[0],
-                    'current_value': "",
-                    'sys_timestamp': "",
-                    'description': ""
-                }
-            device_list.append(ddata)
+        query = prepare_query(table_name="performance_eventnetwork", devices=organization_substations_devices_name, \
+                              data_sources=data_sources_list, columns=required_data_columns)
+
+        if query:
+            performance_data = self.model.objects.raw(query)
+            device_data=list()
+
+            for data in performance_data:
+                device_substation= SubStation.objects.get(device__device_name= data.device_name)
+                ddata = {
+                        'severity':data.severity,
+                        'ip_address':data.ip_address,
+                        'sub_station': device_substation.name,
+                        'sub_station__city':City.objects.get(id= device_substation.city).city_name,
+                        'sub_station__state':State.objects.get(id= device_substation.state).state_name,
+                        'service_name':data.service_name,
+                        'data_source':data.data_source,
+                        'current_value':data.current_value,
+                        'sys_timestamp':str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
+                        'description': data.description
+                        }
+                device_data.append(ddata)
+
+            return device_data
 
         return device_list
 
-    def get_performance_data(self, device_list, data_sources_list=["pl", "rta"]):
-        """
-
-
-        :param data_sources_list:
-        :param device_list:
-        :return:
-        """
-
-        device_result = common_get_performance_data(model=self.model,
-                                                    table_name="performance_eventnetwork",
-                                                    device_list=device_list,
-                                                    data_sources_list=data_sources_list,
-                                                    columns=None)
-
-        return device_result
-
     def prepare_results(self, qs):
 
-        device_list = []
-        data_source = ["pl"]
         if qs:
-            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
 
-            for dct in qs:
-                device_list.append(dct["device_name"])
-                data_source[0] = dct["data_source"]
+        return common_prepare_results(qs)
 
-            perf_result = self.get_performance_data(device_list=device_list, data_sources_list=data_source)
-
-            for dct in qs:
-                for result in perf_result:
-                    if dct["device_name"] == result:
-                        dct["severity"] = perf_result[result]["severity"]
-                        dct["current_value"] = perf_result[result]["current_value"]
-                        dct["sys_timestamp"] = perf_result[result]["sys_timestamp"]
-                        dct["description"] = perf_result[result]["description"]
-
-                if str(dct['severity']).strip().upper() == 'DOWN':
-                    dct['severity'] = '<span class="text-danger">DOWN</span>'
-                    dct['current_value'] = '<span class="text-danger">%s</span>' % (dct['current_value'])
-
-                elif str(dct['severity']).strip().upper() == 'CRITICAL':
-                    dct['severity'] = '<span style="color:#d9534f">CRITICAL</span>'
-                    dct['current_value'] = '<span style="color:#d9534f">%s</span>' % (dct['current_value'])
-
-                elif str(dct['severity']).strip().upper() == 'WARNING':
-                    dct['severity'] = '<span style="color:#FFA500">WARNING</span>'
-                    dct['current_value'] = '<span style="color:#FFA500">%s</span>' % (dct['current_value'])
-
-                elif str(dct['severity']).strip().upper() == 'UP':
-                    dct['severity'] = '<span style="color:#008000">UP</span>'
-                    dct['current_value'] = '<span style="color:#008000">%s</span>' % (dct['current_value'])
-                else:
-                    dct['severity'] = '<span style="color:#AAA">N/A</span>'
-                    dct['current_value'] = '<span style="color:#AAA">%s</span>' % (dct['current_value'])
-
-        return qs
 
     def get_context_data(self, *args, **kwargs):
         request = self.request
@@ -546,3 +472,29 @@ def common_get_performance_data(model=EventNetwork,
                 device_result[device] = perf_result
 
     return device_result
+
+
+def common_prepare_results(qs):
+
+    for dct in qs:
+        if dct['severity']=='DOWN':
+           dct['severity']='<span class="text-danger">DOWN</span>'
+           dct['current_value']='<span class="text-danger">%s</span>'%(dct['current_value'])
+           dct['description']='<span class="text-danger">%s</span>'%(dct['description'])
+
+        elif dct['severity']=='CRITICAL':
+            dct['severity']='<span style="color:#d9534f">CRITICAL</span>'
+            dct['current_value']='<span style="color:#d9534f">%s</span>'%(dct['current_value'])
+            dct['description']='<span style="color:#d9534f">%s</span>'%(dct['description'])
+
+        elif dct['severity']=='WARNING':
+            dct['severity']='<span style="color:#FFA500">WARNING</span>'
+            dct['current_value']='<span style="color:#FFA500">%s</span>'%(dct['current_value'])
+            dct['description']='<span style="color:#FFA500">%s</span>'%(dct['description'])
+
+        elif dct['severity']=='UP':
+            dct['severity']='<span style="color:#008000">UP</span>'
+            dct['current_value']='<span style="color:#008000">%s</span>'%(dct['current_value'])
+            dct['description']='<span style="color:#008000">%s</span>'%(dct['description'])
+
+    return qs
