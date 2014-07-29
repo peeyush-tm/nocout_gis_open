@@ -44,7 +44,7 @@ class AlertCenterNetworkListing(ListView):
         context = super(AlertCenterNetworkListing, self).get_context_data(**kwargs)
         datatable_headers_latency = [
 
-            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': '60px', 'sClass': 'hidden-xs', 'bSortable': False},
+            {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': False},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -61,7 +61,7 @@ class AlertCenterNetworkListing(ListView):
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False}, ]
 
         datatable_headers_packetdrop = [
-            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': '60px', 'sClass': 'hidden-xs', 'bSortable': False},
+            {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': False},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -241,7 +241,7 @@ class CustomerAlertList(ListView):
     def get_context_data(self, **kwargs):
         context = super(CustomerAlertList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': '60px', 'sClass': 'hidden-xs', 'bSortable': False},
+            {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': False},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
