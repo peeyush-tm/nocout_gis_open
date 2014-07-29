@@ -32,7 +32,6 @@ def main(**configs):
     )
 
     end_time = datetime.now()
-
     docs = read_data(start_time, end_time, configs=configs)
     for doc in docs:
         values_list = build_data(doc)
@@ -74,10 +73,10 @@ def read_data(start_time, end_time, **kwargs):
     if db:
 	if start_time is None:
 		start_time = end_time - timedelta(minutes=15)
-		cur = db.service_perf.find({"check_time":{"$gt":start_time,"$lt":end_time}})
+		cur = db.service_perf.find({"check_time":{"$gte":start_time,"$lt":end_time}})
 	else:
         	cur = db.service_perf.find({
-            	"check_time": {"$gt": start_time, "$lt": end_time}
+            	"check_time": {"$gte": start_time, "$lt": end_time}
         	})
         for doc in cur:
             docs.append(doc)
@@ -126,7 +125,7 @@ def insert_data(table, data_values, **kwargs):
             """
     cursor = db.cursor()
     try:
-        cursor.executemany(query, data_values)
+    	cursor.executemany(query, data_values)
     except MySQLdb.Error, e:
         raise MySQLdb.Error, e
     db.commit()
