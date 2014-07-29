@@ -37,7 +37,7 @@ def getNetworkAlertDetail(request):
 
 # **************************************** Latency *********************************************
 class AlertCenterNetworkListing(ListView):
-    model = NetworkStatus #to be changed to EventNetwork
+    model = EventNetwork
     template_name = 'alert_center/network_alerts_list.html'
 
     def get_context_data(self, **kwargs):
@@ -60,6 +60,7 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': False},
             {'mData': 'current_value', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
+            {'mData': 'description', 'sTitle': 'Alert Description', 'sWidth': 'null', 'bSortable': False},
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False}, ]
 
         datatable_headers_packetdrop = [
@@ -79,6 +80,7 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': False},
             {'mData': 'current_value', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
+            {'mData': 'description', 'sTitle': 'Alert Description', 'sWidth': 'null', 'bSortable': False},
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False},
         ]
         # datatable_headers_down = [
@@ -113,11 +115,11 @@ class AlertCenterNetworkListing(ListView):
 
 
 class AlertCenterNetworkListingTable(BaseDatatableView):
-    model = NetworkStatus #to be changed to EventNetwork
+    model = EventNetwork
     columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'severity', 'data_source',
-               'current_value', 'sys_timestamp']
+               'current_value', 'sys_timestamp', 'description']
     order_columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'severity',
-                     'data_source', 'current_value', 'sys_timestamp']
+                     'data_source', 'current_value', 'sys_timestamp', 'description']
 
     def filter_queryset(self, qs):
 
@@ -174,7 +176,8 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                 'service_name': "ping",
                 'data_source': data_sources_list[0],
                 'current_value': "",
-                'sys_timestamp': ""
+                'sys_timestamp': "",
+                'description': ""
             }
             device_list.append(ddata)
 
@@ -190,7 +193,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         """
 
         device_result = common_get_performance_data(model=self.model,
-                                                    table_name="performance_networkstatus",
+                                                    table_name="performance_eventnetwork",
                                                     device_list=device_list,
                                                     data_sources_list=data_sources_list,
                                                     columns=None)
@@ -216,6 +219,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                         dct["severity"] = perf_result[result]["severity"]
                         dct["current_value"] = perf_result[result]["current_value"]
                         dct["sys_timestamp"] = perf_result[result]["sys_timestamp"]
+                        dct["description"] = perf_result[result]["description"]
 
                 if str(dct['severity']).strip().upper() == 'DOWN':
                     dct['severity'] = '<span class="text-danger">DOWN</span>'
@@ -293,6 +297,7 @@ class CustomerAlertList(ListView):
              'bSortable': False},
             {'mData': 'current_value', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
+            {'mData': 'description', 'sTitle': 'Alert Description', 'sWidth': 'null', 'bSortable': False},
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False},
         ]
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -303,9 +308,9 @@ class CustomerAlertList(ListView):
 class CustomerAlertListingTable(BaseDatatableView):
     model = NetworkStatus #to be changed to EventNetwork
     columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'severity', 'data_source',
-               'current_value', 'sys_timestamp']
+               'current_value', 'sys_timestamp', 'description']
     order_columns = ['device_name', 'service_name', 'machine_name', 'site_name', 'ip_address', 'severity',
-                     'data_source', 'current_value', 'sys_timestamp']
+                     'data_source', 'current_value', 'sys_timestamp', 'description']
 
     def filter_queryset(self, qs):
 
@@ -368,7 +373,8 @@ class CustomerAlertListingTable(BaseDatatableView):
                     'service_name': "ping",
                     'data_source': data_sources_list[0],
                     'current_value': "",
-                    'sys_timestamp': ""
+                    'sys_timestamp': "",
+                    'description': ""
                 }
             device_list.append(ddata)
 
@@ -384,7 +390,7 @@ class CustomerAlertListingTable(BaseDatatableView):
         """
 
         device_result = common_get_performance_data(model=self.model,
-                                                    table_name="performance_networkstatus",
+                                                    table_name="performance_eventnetwork",
                                                     device_list=device_list,
                                                     data_sources_list=data_sources_list,
                                                     columns=None)
@@ -410,6 +416,7 @@ class CustomerAlertListingTable(BaseDatatableView):
                         dct["severity"] = perf_result[result]["severity"]
                         dct["current_value"] = perf_result[result]["current_value"]
                         dct["sys_timestamp"] = perf_result[result]["sys_timestamp"]
+                        dct["description"] = perf_result[result]["description"]
 
                 if str(dct['severity']).strip().upper() == 'DOWN':
                     dct['severity'] = '<span class="text-danger">DOWN</span>'
@@ -500,7 +507,8 @@ def common_get_performance_data(model=EventNetwork,
     :return:
     """
     if not columns:
-        columns = ["id", "service_name", "device_name", "data_source", "severity", "current_value", "sys_timestamp"]
+        columns = ["id", "service_name", "device_name", "data_source", "severity", "current_value", "sys_timestamp", "description"]
+
 
     query = prepare_query(table_name=table_name,
                           devices=device_list,
@@ -509,7 +517,7 @@ def common_get_performance_data(model=EventNetwork,
     )
 
     device_result = {}
-    perf_result = {"severity": "N/A", "current_value": "N/A", "sys_timestamp": "N/A"}
+    perf_result = {"severity": "N/A", "current_value": "N/A", "sys_timestamp": "N/A", "description": "N/A"}
 
     performance_data = model.objects.raw(query)
 
@@ -518,7 +526,7 @@ def common_get_performance_data(model=EventNetwork,
             device_result[device] = perf_result
 
     for device in device_result:
-        perf_result = {"severity": "N/A", "current_value": "N/A", "sys_timestamp": "N/A"}
+        perf_result = {"severity": "N/A", "current_value": "N/A", "sys_timestamp": "N/A", "description": "N/A"}
 
         for data in performance_data:
             if str(data.device_name).strip().lower() == str(device).strip().lower():
@@ -530,6 +538,8 @@ def common_get_performance_data(model=EventNetwork,
                 perf_result["current_value"] = current_val
 
                 perf_result["sys_timestamp"] = str(datetime.datetime.fromtimestamp(float(data.sys_timestamp)))
+
+                perf_result["description"] = data.description
 
                 device_result[device] = perf_result
 
