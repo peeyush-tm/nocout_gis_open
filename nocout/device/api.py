@@ -885,7 +885,6 @@ class FetchLPDataApi(View):
 
                 # if response(r) is given by post request than process it further to get success/failure messages
                 if r:
-                    self.result['success'] = 1
                     self.result['data']['value'].append(response_dict.get('value')[0])
 
                     # device technology
@@ -916,13 +915,14 @@ class FetchLPDataApi(View):
                         logger.info(e.message)
 
                     self.result['data']['icon'].append(icon)
-                    self.result['data']['success'] = 1
                     # if response_dict doesn't have key 'success'
                     if not response_dict.get('success'):
                         logger.info(response_dict.get('error_message'))
-                        self.result['message'] += "Failed to fetch data for '%s'. <br />" % (svc)
+                        self.result['message'] += "Failed to fetch data for '%s'." % (svc)
                     else:
-                        self.result['message'] += "Successfully fetch data for '%s'. <br />" % (svc)
+                        self.result['message'] += "Successfully fetch data for '%s'." % (svc)
+
+            self.result['success'] = 1
         except Exception as e:
             logger.info(e)
 
