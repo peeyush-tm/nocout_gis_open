@@ -22,9 +22,9 @@ def main(**configs):
     start_time = end_time - timedelta(minutes=60)
     start_epoch = int((start_time - utc_time).total_seconds())
     end_epoch =  int((end_time - utc_time).total_seconds())
-    print start_time,end_time
+    #print start_time,end_time
     docs = read_data(start_epoch, end_epoch, configs=configs)
-    print docs
+    #print docs
     for doc in docs:
         values_list = build_data(doc)
         data_values.extend(values_list)
@@ -40,7 +40,7 @@ def main(**configs):
         'time',
     ]
     insert_data(configs.get('table_name'), data_values, configs=configs)
-    print "Data inserted into my mysql db"
+    print "Data inserted into performance_performancestatus table"
     
 
 def read_data(start_time, end_time, **kwargs):
