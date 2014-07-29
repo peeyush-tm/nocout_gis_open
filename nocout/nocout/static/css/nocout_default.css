@@ -108,3 +108,41 @@ span.dept {
 #svc_template_error_msg {
     padding-bottom: 5px;
 }
+
+/*ERROR ICONS*/
+
+.alert_critical {
+    height: 60px;
+    width: 60px;
+    background: url("../img/severity/severity-icons-set-a-05.png");
+    background-size: 60px 60px;
+}
+
+.alert_major {
+    height: 60px;
+    width: 60px;
+    background: url("../img/severity/severity-icons-set-a-04.png");
+    background-size: 60px 60px;
+}
+
+.alert_minor {
+    height: 60px;
+    width: 60px;
+    background: url("../img/severity/severity-icons-set-a-03.png");
+    background-size: 60px 60px;
+}
+
+.alert_normal {
+    height: 60px;
+    width: 60px;
+    background: url("../img/severity/severity-icons-set-a-02.png");
+    background-size: 60px 60px;
+}
+
+.alert_informational {
+    height: 60px;
+    width: 60px;
+    background: url("../img/severity/severity-icons-set-a-01.png");
+    background-size: 60px 60px;
+}
+

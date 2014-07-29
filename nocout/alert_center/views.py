@@ -44,7 +44,7 @@ class AlertCenterNetworkListing(ListView):
         context = super(AlertCenterNetworkListing, self).get_context_data(**kwargs)
         datatable_headers_latency = [
 
-            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': '60px', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -61,7 +61,7 @@ class AlertCenterNetworkListing(ListView):
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False}, ]
 
         datatable_headers_packetdrop = [
-            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': '60px', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -241,7 +241,7 @@ class CustomerAlertList(ListView):
     def get_context_data(self, **kwargs):
         context = super(CustomerAlertList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+            {'mData': 'severity', 'sTitle': 'Severity', 'sWidth': '60px', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
@@ -479,22 +479,22 @@ def common_prepare_results(qs):
 
     for dct in qs:
         if dct['severity']=='DOWN':
-           dct['severity']='<span class="text-danger">DOWN</span>'
+           dct['severity']='<div class="alert_critical"></div>'
            dct['current_value']='<span class="text-danger">%s</span>'%(dct['current_value'])
            dct['description']='<span class="text-danger">%s</span>'%(dct['description'])
 
         elif dct['severity']=='CRITICAL':
-            dct['severity']='<span style="color:#d9534f">CRITICAL</span>'
+            dct['severity']='<div class="alert_critical"></div>'
             dct['current_value']='<span style="color:#d9534f">%s</span>'%(dct['current_value'])
             dct['description']='<span style="color:#d9534f">%s</span>'%(dct['description'])
 
         elif dct['severity']=='WARNING':
-            dct['severity']='<span style="color:#FFA500">WARNING</span>'
+            dct['severity']='<div class="alert_major"></div>'
             dct['current_value']='<span style="color:#FFA500">%s</span>'%(dct['current_value'])
             dct['description']='<span style="color:#FFA500">%s</span>'%(dct['description'])
 
         elif dct['severity']=='UP':
-            dct['severity']='<span style="color:#008000">UP</span>'
+            dct['severity']='<div class="alert_normal"></div>'
             dct['current_value']='<span style="color:#008000">%s</span>'%(dct['current_value'])
             dct['description']='<span style="color:#008000">%s</span>'%(dct['description'])
 
