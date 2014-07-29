@@ -1,16 +1,14 @@
 import json
 import logging
-import time
 import datetime
 from django.db.models import Count
 from django.db.models.query import ValuesQuerySet
 from django.shortcuts import render_to_response
 from django.views.generic import ListView
-from django.views.generic.base import View
 from django.template import RequestContext
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State
-from inventory.models import BaseStation, Sector, SubStation
+from inventory.models import BaseStation, Sector, SubStation, Circuit
 from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
 
 logger = logging.getLogger(__name__)
@@ -282,11 +280,13 @@ class CustomerAlertList(ListView):
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'sub_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'sub_station', 'sTitle': 'Sub Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'sub_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'sub_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': False},
+            {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'service_name', 'sTitle': 'Service Name', 'sWidth': 'null', 'bSortable': False},
             {'mData': 'data_source', 'sTitle': 'Data Source', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -351,18 +351,25 @@ class CustomerAlertListingTable(BaseDatatableView):
 
         for device in organization_substations_devices_name:
             device_substation = SubStation.objects.get(device__device_name=device)
+            try:
+                device_substation_base_station= Circuit.objects.get(sub_station__id= device_substation.id).sector.base_station
+                device_substation_base_station_name=device_substation_base_station.name
+            except:
+                device_substation_base_station_name='N/A'
+
             ddata = {
-                'device_name': device,
-                'severity': "",
-                'ip_address': Device.objects.get(device_name=device).ip_address,
-                'sub_station': device_substation.name,
-                'sub_station__city': City.objects.get(id=device_substation.city).city_name,
-                'sub_station__state': State.objects.get(id=device_substation.state).state_name,
-                'service_name': "ping",
-                'data_source': data_sources_list[0],
-                'current_value': "",
-                'sys_timestamp': ""
-            }
+                    'device_name': device,
+                    'severity': "",
+                    'ip_address': Device.objects.get(device_name=device).ip_address,
+                    'sub_station': device_substation.name,
+                    'sub_station__city': City.objects.get(id=device_substation.city).city_name,
+                    'sub_station__state': State.objects.get(id=device_substation.state).state_name,
+                    'base_station':device_substation_base_station_name,
+                    'service_name': "ping",
+                    'data_source': data_sources_list[0],
+                    'current_value': "",
+                    'sys_timestamp': ""
+                }
             device_list.append(ddata)
 
         return device_list
