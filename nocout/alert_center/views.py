@@ -7,7 +7,7 @@ from django.shortcuts import render_to_response
 from django.views.generic import ListView
 from django.template import RequestContext
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from device.models import Device, City, State
+from device.models import Device, City, State, DeviceTechnology
 from inventory.models import BaseStation, Sector, SubStation, Circuit
 from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
 
@@ -333,8 +333,11 @@ class CustomerAlertListingTable(BaseDatatableView):
             organizations = [logged_in_user.organization]
 
         organization_devices = list()
+        device_tab_technology = self.request.GET.get('data_tab')
+        device_technology_id= DeviceTechnology.objects.get(name=device_tab_technology).id
         for organization in organizations:
-            organization_devices += Device.objects.filter(is_added_to_nms=1, organization__id=organization.id)
+            organization_devices += Device.objects.filter(is_added_to_nms=1, organization__id=organization.id,
+                                                          device_technology=device_technology_id)
             # get the devices in an organisation which are added for monitoring
 
         organization_substations_devices_name = [device.device_name for device in organization_devices if
@@ -352,6 +355,7 @@ class CustomerAlertListingTable(BaseDatatableView):
         for device in organization_substations_devices_name:
             device_substation = SubStation.objects.get(device__device_name=device)
             try:
+                #try exception if the device does not have any association with the circuit
                 device_substation_base_station= Circuit.objects.get(sub_station__id= device_substation.id).sector.base_station
                 device_substation_base_station_name=device_substation_base_station.name
             except:

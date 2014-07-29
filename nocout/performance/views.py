@@ -7,7 +7,7 @@ from django.shortcuts import render_to_response, render
 from django.views.generic import ListView
 from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from device.models import Device, City, State, DeviceType
+from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation
 from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
@@ -90,9 +90,16 @@ class LivePerformanceListing(BaseDatatableView):
 
     def get_initial_query_set_data(self, device_association='', **kwargs):
         device_list=list()
-        #get only devices added to NMS and none other
-        devices= Device.objects.filter(is_added_to_nms=1, organization__in=kwargs['organization_ids']).\
-            values(*self.columns + ['device_name', device_association])
+        if self.request.GET['page_type'] != 'network':
+            device_tab_technology = self.request.GET.get('data_tab')
+            device_technology_id= DeviceTechnology.objects.get(name=device_tab_technology).id
+            #get only devices added to NMS and none other
+            devices= Device.objects.filter(is_added_to_nms=1, organization__in=kwargs['organization_ids'], \
+                     device_technology=device_technology_id).values(*self.columns + ['device_name', device_association])
+        else:
+            #get only devices added to NMS and none other
+            devices= Device.objects.filter(is_added_to_nms=1, organization__in=kwargs['organization_ids']).\
+                values(*self.columns + ['device_name', device_association])
 
         required_devices = []
 
