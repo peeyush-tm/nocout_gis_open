@@ -350,8 +350,9 @@ class DeviceStatsApi(View):
         if organizations:
             for organization in organizations:
 
-                base_stations_and_sector_configured_on_devices= Sector.objects.filter(sector_configured_on__id__in= organization.device_set.values_list('id', flat=True))\
-                    .values_list('base_station').annotate(dcount=Count('base_station'))
+                base_stations_and_sector_configured_on_devices= Sector.objects.filter(sector_configured_on__id__in= \
+                organization.device_set.values_list('id', flat=True)).values_list('base_station').annotate(dcount=Count('base_station'))
+
                 self.result['data']['meta']['total_count']=0
 
                 if base_stations_and_sector_configured_on_devices:
@@ -362,7 +363,7 @@ class DeviceStatsApi(View):
                     for base_station_id, dcount in base_stations_and_sector_configured_on_devices:
                         try:
 
-                            base_station=BaseStation.objects.get(id=base_station_id)
+                            base_station= BaseStation.objects.get(id=base_station_id)
                             # sector_configured_on_device=Device.objects.get(id=sector_configured_on_device)
                             base_station_info={
                                 'id':base_station.id,
@@ -441,6 +442,8 @@ class DeviceStatsApi(View):
                             base_station_info['data']['param']['sector']=[]
                             sectors= Sector.objects.filter(base_station = base_station.id)
                             for sector in sectors:
+                                    if Sector.objects.get(id=sector.id).sector_configured_on.is_deleted==1:
+                                        continue
                                     base_station_info['data']['param']['sector']+=[{
                                     "color" : sector.frequency.color_hex_value if hasattr(sector, 'frequency')  and sector.frequency else 'rgba(74,72,94,0.58)',
                                     'radius':sector.cell_radius,
@@ -532,6 +535,8 @@ class DeviceStatsApi(View):
                                     for circuit in circuits:
                                         substation= SubStation.objects.get(id = circuit.sub_station.id)
                                         substation_device= Device.objects.get(id= substation.device.id)
+                                        if substation_device.is_deleted==1:
+                                            continue
                                         base_station_info['data']['param']['sector'][-1]['sub_station']+=[{
                                                           'id'  : substation.id,
                                                           'name': substation.name,
