@@ -493,7 +493,7 @@ class Get_Service_Type_Performance_Data(View):
                             else "spline"
 
                     result['data']['objects']['valuesuffix']= \
-                        SERVICE_DATA_SOURCE[str(data.data_source).lower()]["valuetext"] \
+                        SERVICE_DATA_SOURCE[str(data.data_source).lower()]["valuesuffix"] \
                             if data.data_source in SERVICE_DATA_SOURCE \
                             else ""
 
