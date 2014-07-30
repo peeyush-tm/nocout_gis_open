@@ -127,23 +127,28 @@ function devicePlottingClass_gmap() {
 		infowindow = new google.maps.InfoWindow();		
 
 		oms.addListener('click', function(marker,e) {
+
+			var isChecked = $("#showAllSS:checked").length;			
 			
 			if($.trim(marker.pointType) == 'base_station') {
 
-				/*Clear the existing SS for same point*/
-				for(var i=0;i<plottedSS.length;i++) {
-					plottedSS[i].setMap(null);
-				}
+				if(isChecked != 1) {
 
-				/*Clear all the link between BS & SS  or Sector & SS*/
-				for(var j=0;j<pathLineArray.length;j++) {
-					pathLineArray[j].setMap(null);	
-				}
-				/*Reset global variables*/
-				plottedSS = [];
-				pathLineArray = [];
+					/*Clear the existing SS for same point*/
+					for(var i=0;i<plottedSS.length;i++) {
+						plottedSS[i].setMap(null);
+					}
 
-				that.plotSubStation_gmap(marker);
+					/*Clear all the link between BS & SS  or Sector & SS*/
+					for(var j=0;j<pathLineArray.length;j++) {
+						pathLineArray[j].setMap(null);	
+					}
+					/*Reset global variables*/
+					plottedSS = [];
+					pathLineArray = [];
+
+					that.plotSubStation_gmap(marker);
+				}
 			}
 
 			var windowPosition = new google.maps.LatLng(marker.ptLat,marker.ptLon);
@@ -1872,7 +1877,7 @@ function devicePlottingClass_gmap() {
 
 					if (google.maps.geometry.poly.containsLocation(point, polygon)) {
 
-						allSSIds.push(allSS[k].name);
+						allSSIds.push(allSS[k].device_name);
 						polygonSelectedDevices.push(allSS[k]);
 					}
 				}
@@ -1895,9 +1900,20 @@ function devicePlottingClass_gmap() {
 					
 					var devicesTemplate = "<div class='deviceWellContainer'>";
 					for(var i=0;i<selectedCount;i++) {
-						devicesTemplate += '<div class="well well-sm" id="div_'+polygonSelectedDevices[i].name+'"><h5>'+(i+1)+'.) '+polygonSelectedDevices[i].name+'</h5>';
-						devicesTemplate += '<div style="min-height:60px;margin:15px 0px;" id="livePolling_'+polygonSelectedDevices[i].name+'"></div></div>';
+						
+						var new_device_name = "";
+
+						if(polygonSelectedDevices[i].device_name.indexOf(".") != -1) {
+							new_device_name = polygonSelectedDevices[i].device_name.split(".");
+							new_device_name = new_device_name.join("-");
+						} else {
+							new_device_name = polygonSelectedDevices[i].device_name;
+						}
+
+						devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+(i+1)+'.) '+polygonSelectedDevices[i].name+'</h5>';
+						devicesTemplate += '<div style="min-height:60px;margin:15px 0px;" id="livePolling_'+new_device_name+'"></div></div>';
 					}
+
 					devicesTemplate += "</div>";
 					
 
@@ -1932,20 +1948,28 @@ function devicePlottingClass_gmap() {
 								servicesData = result.data;
 								var devicesName = Object.keys(servicesData);
 								var servicesOption = "";
+								var replace_device_name = "";
 
 								for(var i=0;i<devicesName.length;i++) {
+									if(devicesName[i].indexOf(".") != -1) {
+
+										replace_device_name = devicesName[i].split('.');
+										replace_device_name = replace_device_name.join('-');
+									} else {
+										replace_device_name = devicesName[i];
+									}
 
 									var allServices = result.data[devicesName[i]].services;
-									var deviceNameParam = '"'+devicesName[i]+'"';
-									servicesOption = "<ul class='list-unstyled'><li class='servicesContainer'><select class='form-control' onchange='that.serviceSeleted_gmap("+deviceNameParam+")' id='service_"+devicesName[i]+"'><option value=''>Select Service</option>";
+									var deviceNameParam = '"'+replace_device_name+'"';
+									servicesOption = "<ul class='list-unstyled'><li class='servicesContainer'><select class='form-control' onchange='that.serviceSeleted_gmap("+deviceNameParam+")' id='service_"+replace_device_name+"'><option value=''>Select Service</option>";
 									/*Loop For Number of services*/
 									for(var j=0;j<allServices.length;j++) {
 
 										servicesOption += "<option value='"+allServices[j].value+"'>"+allServices[j].name+"</option>";
 									}
-									servicesOption += "</select></li><li class='divide-10'></li><li><select class='form-control' id='datasource_"+devicesName[i]+"'><option value=''>Select Service Datasource</option></select></li><li class='divide-10'></li><li><button class='btn btn-primary' onClick='that.pollDevice_gmap("+deviceNameParam+")'>Fetch</button></li></ul><div class='clearfix'><ul class='list-unstyled list-inline' id='pollVal_"+devicesName[i]+"'></ul></div>";
+									servicesOption += "</select></li><li class='divide-10'></li><li><select class='form-control' id='datasource_"+replace_device_name+"'><option value=''>Select Service Datasource</option></select></li><li class='divide-10'></li><li><button class='btn btn-primary' onClick='that.pollDevice_gmap("+deviceNameParam+")'>Fetch</button></li></ul><div class='clearfix'><ul class='list-unstyled list-inline' id='pollVal_"+replace_device_name+"'></ul></div>";
 
-									$("#livePolling_"+devicesName[i]).append(servicesOption);
+									$("#livePolling_"+replace_device_name).append(servicesOption);
 								}								
 
 							} else {
@@ -2004,7 +2028,21 @@ function devicePlottingClass_gmap() {
 		/*If any service is selected*/
 		if(serviceVal != "") {
 
-			var activeServices = servicesData[deviceName].services;
+			var updated_device_name = "";
+
+			var count = deviceName.match(/-/g); 
+
+			if(deviceName.indexOf("-") != -1 && count.length == 3) {
+				
+				updated_device_name = deviceName.split("-");
+				updated_device_name = updated_device_name.join(".");
+			} else {
+				updated_device_name = deviceName;
+			}
+			
+			// if(deviceName.indexOf("-"))
+
+			var activeServices = servicesData[updated_device_name].services;
 
 			for(var i=0;i<activeServices.length;i++) {
 
@@ -2028,7 +2066,7 @@ function devicePlottingClass_gmap() {
 	 * This function fetch the live polling value for particular device.
 	 * @class devicePlottingLib
 	 * @method pollDevice_gmap
-	 * @param deviceName "String", It contains the name of the device whose service is selected
+	 * @param deviceName "String", It contains the name of the device for which the polling value is to be fetched.
 	 */
 	this.pollDevice_gmap = function(deviceName) {
 
@@ -2038,12 +2076,22 @@ function devicePlottingClass_gmap() {
 		var selectedDatasourceTxt = $.trim($("#datasource_"+deviceName+" option:selected").text());
 		var selectedDatasourceVal = $.trim($("#datasource_"+deviceName).val());
 
+		var actual_device_name = "",
+			count = deviceName.match(/-/g);
+		if(deviceName.indexOf("-") != -1 && count.length == 3) {
+				
+			actual_device_name = deviceName.split("-");
+			actual_device_name = actual_device_name.join(".");
+		} else {
+			actual_device_name = deviceName;
+		}
+
 		if(selectedServiceVal != "" && selectedDatasourceVal != "") {
 
 			/*Make ajax call to get the live polling data.*/
 			$.ajax({
-				// url : window.location.origin+"/device/lp_service_data/"+" ?device=['"+deviceName+"']&service=['"+deviceName+"']&datasource=['"+deviceName+"'],
-				url : window.location.origin+"/"+"static/livePolling.json",
+				url : window.location.origin+"/device/lp_service_data/"+"?device=['"+actual_device_name+"']&service=['"+selectedServiceTxt+"']&datasource=['"+selectedDatasourceTxt+"']",
+				// url : window.location.origin+"/"+"static/livePolling.json",
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
@@ -2051,52 +2099,61 @@ function devicePlottingClass_gmap() {
 
 					if(result.success == 1) {
 
-						$("#pollVal_"+deviceName+" ").append("<li>"+result.data.value[0]+"</li>");
-						var isPlotted = 0;
-						var newIcon = window.location.origin+"/"+result.data.icon[0];
+						/*Check that polling value exist or not*/
+						if(result.data.value.length > 0) {
 
-						$.grep(masterMarkersObj,function(markers) {
+							$("#pollVal_"+deviceName+" ").append("<li>"+result.data.value[0]+"</li>");
+						}
 
-							var plottedMarkerName = $.trim(markers.name);
+						/*Check that markerurl exist or not*/
+						if(result.data.icon.length > 0) {
 
-							if(plottedMarkerName == deviceName) {
+							var isPlotted = 0;
+							var newIcon = window.location.origin+"/"+result.data.icon[0];
 
-								isPlotted = 1;
-								markers.icon = newIcon;
-								markers.oldIcon = newIcon;
-							}
-						});
+							$.grep(masterMarkersObj,function(markers) {
 
-						if(isPlotted == 0) {
+								var plottedMarkerName = $.trim(markers.name);
 
-							$.grep(plottedSS,function(markers) {
+								if(plottedMarkerName == deviceName) {
 
-								var plottedSSName = $.trim(markers.name);
-
-								if(plottedSSName == deviceName) {
+									isPlotted = 1;
 									markers.icon = newIcon;
 									markers.oldIcon = newIcon;
 								}
-							});							
-							// end if statement
-						}
+							});
 
-						$.grep(main_devices_data_gmaps,function(devices) {
-							var sectors = devices.data.param.sector;
+							if(isPlotted == 0) {
 
-							$.grep(sectors, function(sector) {
+								$.grep(plottedSS,function(markers) {
 
-								var sub_station = sector.sub_station;
-								
-								$.grep(sub_station,function(ss) {
+									var plottedSSName = $.trim(markers.name);
 
-									if($.trim(ss.name) == $.trim(deviceName)) {
-
-										ss.data.markerUrl = result.data.icon[0];
+									if(plottedSSName == deviceName) {
+										markers.icon = newIcon;
+										markers.oldIcon = newIcon;
 									}
+								});							
+								// end if statement
+							}
+
+							$.grep(main_devices_data_gmaps,function(devices) {
+								var sectors = devices.data.param.sector;
+
+								$.grep(sectors, function(sector) {
+
+									var sub_station = sector.sub_station;
+									
+									$.grep(sub_station,function(ss) {
+
+										if($.trim(ss.name) == $.trim(deviceName)) {
+
+											ss.data.markerUrl = result.data.icon[0];
+										}
+									});
 								});
 							});
-						});
+						}
 
 					} else {
 
@@ -2122,7 +2179,18 @@ function devicePlottingClass_gmap() {
 			        });
 				}
 			});
-		} // End if Statement
+ 		// End if Statement
+		} else {
+
+			$.gritter.add({
+	            // (string | mandatory) the heading of the notification
+	            title: 'Live Polling - Error',
+	            // (string | mandatory) the text inside the notification
+	            text: "Service & Service Datasource selection is mandatory.",
+	            // (bool | optional) if you want it to fade out on its own or just sit there
+	            sticky: true
+	        });
+		} // End else Statement
 	};
 
 
