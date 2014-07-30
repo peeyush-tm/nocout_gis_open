@@ -141,7 +141,7 @@ class Device(MPTTModel, models.Model):
     gateway = models.IPAddressField('Gateway', null=True, blank=True)
     dhcp_state = models.CharField('DHCP State', max_length=200, choices=DHCP_STATE, default=disable)
     host_priority = models.CharField('Host Priority', max_length=200, choices=PRIORITY, default=normal)
-    host_state = models.CharField('Host State', max_length=200, choices=HOST_STATE, default=enable)
+    host_state = models.CharField('Host Monitoring State', max_length=200, choices=HOST_STATE, default=enable)
     latitude = models.FloatField('Latitude', null=True, blank=True)
     longitude = models.FloatField('Longitude', null=True, blank=True)
     timezone = models.CharField('Timezone', max_length=100, default="Asia/Kolkata")
