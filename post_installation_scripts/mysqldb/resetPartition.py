@@ -38,9 +38,18 @@ table_column = "sys_timestamp"
 for ptable in partitionTableList:
     count += 1
     fwrite = open("resetPartition.sql", 'a')
+
+    # ##
+    # ALTER TABLE  `nocout_dev`.`performance_performancenetwork` DROP PRIMARY KEY ,
+    # ADD PRIMARY KEY (  `id` ,  `sys_timestamp` )
+    # ##
+
+    fwrite.write('ALTER TABLE `'+ptable+'` DROP PRIMARY KEY , \n')
+    fwrite.write('ADD PRIMARY KEY (  `id` ,  `sys_timestamp` ) ; \n')
+
     fwrite.write("ALTER TABLE " + ptable + "\n")
     fwrite.write(
-        "PARTITION BY RANGE(TO_DAYS(sys_timestamp) )" + "\n")
+        "PARTITION BY RANGE(sys_timestamp)" + "\n")
     fwrite.write("(" + "\n")
     j = 0
     i = cur_yer
@@ -57,8 +66,8 @@ for ptable in partitionTableList:
         while x < y:
             x += 1
             writeThis = "PARTITION p" + str(x * i + x - 1) + \
-                " VALUES LESS THAN (TO_DAYS(" + "'" + str(i) + "-"\
-                + str(x) + "-" + "01" + "'" + "))"
+                " VALUES LESS THAN (UNIX_TIMESTAMP(" + "'" + str(i) + "-"\
+                + str(x) + "-" + "01" + " 00:00:00'" + "))"
             fwrite.write(writeThis)
             if j == count_year - 1 and x == y:
                 fwrite.write("\n")
