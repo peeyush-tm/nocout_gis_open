@@ -1041,13 +1041,9 @@ def delete_single_service(request, device_name, service_name):
                                                                 master_site.machine.machine_ip,
                                                                 master_site.web_service_port,
                                                                 master_site.name)
-        print "**************************** url *************************"
-        print url
+
         # encoding service_data
         encoded_data = urllib.urlencode(service_data)
-
-        print "******************************** encoded _data *******************************"
-        print encoded_data
 
         # sending post request to nocout device app to add single service at a time
         r = requests.post(url , data=encoded_data)
@@ -1055,8 +1051,6 @@ def delete_single_service(request, device_name, service_name):
         # converting post response data into python dict expression
         response_dict = ast.literal_eval(r.text)
 
-        print "********************************* response_data ***********************"
-        print response_dict
 
         # if response(r) is given by post request than process it further to get success/failure messages
         if r:
@@ -1074,6 +1068,4 @@ def delete_single_service(request, device_name, service_name):
             DeviceServiceConfiguration.objects.filter(device_name=device_name, service_name=service_name).delete()
     except Exception as e:
         result['message'] += e.message
-    print "********************************** result ***********************************"
-    print result
     return json.dumps({'result': result})
