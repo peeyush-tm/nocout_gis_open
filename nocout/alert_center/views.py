@@ -77,32 +77,42 @@ class AlertCenterNetworkListing(ListView):
             {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': False},
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False},
         ]
-        # datatable_headers_down = [
-        # {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null',},
-        # {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null',},
-        #     {'mData':'machine_name',               'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs'},
-        #     {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null',},
-        #     {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs'},
-        #     {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs'},
-        #     {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs'},
-        #     {'mData':'current_value',                  'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs'},
-        #     {'mData':'check_timestamp',            'sTitle' : 'Timestamp',              'sWidth':'null',},
-        #     {'mData':'description',          'sTitle' : 'Event Description',      'sWidth':'null',},
-        #     ]
-        # datatable_headers_servicealerts = [
-        #     {'mData':'device_name',                'sTitle' : 'Device Name',            'sWidth':'null',},
-        #     {'mData':'service_name',               'sTitle' : 'Service Name',           'sWidth':'null',},
-        #     {'mData':'machine_name',               'sTitle' : 'Machine Name',           'sWidth':'null','sClass':'hidden-xs'},
-        #     {'mData':'site_name',                  'sTitle' : 'Site Name',              'sWidth':'null',},
-        #     {'mData':'ip_address',                 'sTitle' : 'IP Address',             'sWidth':'null','sClass':'hidden-xs'},
-        #     {'mData':'severity',                   'sTitle' : 'Severity',               'sWidth':'null','sClass':'hidden-xs'},
-        #     {'mData':'data_source',                'sTitle' : 'Data Source',            'sWidth':'null','sClass':'hidden-xs'},
-        #     {'mData':'current_value',                  'sTitle' : 'Latency',                'sWidth':'null','sClass':'hidden-xs'},
-        #     {'mData':'check_timestamp',            'sTitle' : 'Timestamp',              'sWidth':'null',},
-        #     {'mData':'description',          'sTitle' : 'Event Description',      'sWidth':'null',},
-        #     ]
-        # context['datatable_headers_servicealerts'] = json.dumps(datatable_headers_servicealerts)
-        # context['datatable_headers_down'] = json.dumps(datatable_headers_down)
+        datatable_headers_down = [
+            {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': False},
+            {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': False},
+            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': False},
+            {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': False},
+            {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': False},
+            {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': False},
+            {'mData': 'current_value', 'sTitle': 'Packet Drop', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': False},
+            {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': False},
+            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False},
+        ]
+        datatable_headers_servicealerts = [
+            {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': False},
+            {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': False},
+            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': False},
+            {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': False},
+            {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': False},
+            {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': False},
+            {'mData': 'current_value', 'sTitle': 'Packet Drop', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': False},
+            {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': False},
+            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False},
+        ]
+        context['datatable_headers_servicealerts'] = json.dumps(datatable_headers_servicealerts)
+        context['datatable_headers_down'] = json.dumps(datatable_headers_down)
         context['datatable_headers_packetdrop'] = json.dumps(datatable_headers_packetdrop)
         context['datatable_headers_latency'] = json.dumps(datatable_headers_latency)
         return context
@@ -151,11 +161,17 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
             .values_list('device_name', flat=True)
 
         device_list, performance_data, data_sources_list = list(), list(), list()
+        extra_query_condition=None
 
         if 'latency' in self.request.path_info:
             data_sources_list.append('rta')
         elif 'packetdrop' in self.request.path_info:
             data_sources_list.append('pl')
+        elif 'down' in self.request.path_info:
+            data_sources_list.append('pl')
+            extra_query_condition="AND (`{0}`.`current_value` = 100 OR `{0}`.`severity`='DOWN' ) "
+        elif 'service' in self.request.path_info:
+            return device_list
 
         required_data_columns = ["id",
                                  "ip_address",
@@ -166,10 +182,10 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                                  "current_value",
                                  "sys_timestamp",
                                  "description"
-        ]
+                                ]
 
         query = prepare_query(table_name="performance_eventnetwork", devices=sector_configured_on_devices_name, \
-                              data_sources=data_sources_list, columns=required_data_columns)
+                              data_sources=data_sources_list, columns=required_data_columns, condition=extra_query_condition)
 
         if query:
             performance_data = self.model.objects.raw(query)
@@ -186,14 +202,13 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                         'base_station':device_base_station.name,
                         'base_station__city':City.objects.get(id=device_base_station.city).city_name,
                         'base_station__state':State.objects.get(id=device_base_station.state).state_name,
-                        'device_name' : data.device_name,
                         'current_value':data.current_value,
                         'sys_timestamp':str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
                         'description':data.description
                         }
                 device_data.append(ddata)
 
-                return device_data
+            return device_data
 
         return device_list
 
@@ -235,7 +250,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
 
 class CustomerAlertList(ListView):
-    model = NetworkStatus #to be changed to EventNetwork
+    model = EventNetwork
     template_name = 'alert_center/customer_alerts_list.html'
 
     def get_context_data(self, **kwargs):
@@ -264,7 +279,7 @@ class CustomerAlertList(ListView):
 
 
 class CustomerAlertListingTable(BaseDatatableView):
-    model = NetworkStatus #to be changed to EventNetwork
+    model = EventNetwork
     columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
                'current_value', 'sys_timestamp', 'description']
     order_columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
@@ -323,16 +338,6 @@ class CustomerAlertListingTable(BaseDatatableView):
                                  "description"
         ]
 
-        for device in organization_substations_devices_name:
-            device_substation = SubStation.objects.get(device__device_name=device)
-            try:
-                #try exception if the device does not have any association with the circuit
-                device_substation_base_station= Circuit.objects.get(sub_station__id= device_substation.id).sector.base_station
-                device_substation_base_station_name=device_substation_base_station.name
-            except:
-                device_substation_base_station_name='N/A'
-
-
         query = prepare_query(table_name="performance_eventnetwork", devices=organization_substations_devices_name, \
                               data_sources=data_sources_list, columns=required_data_columns)
 
@@ -342,6 +347,13 @@ class CustomerAlertListingTable(BaseDatatableView):
         for data in performance_data:
             for device in organization_substations_devices_name:
                 if device == data.device_name:
+                    device_substation = SubStation.objects.get(device__device_name=device)
+                    try:
+                        #try exception if the device does not have any association with the circuit
+                        device_substation_base_station= Circuit.objects.get(sub_station__id= device_substation.id).sector.base_station
+                        device_substation_base_station_name= device_substation_base_station.name
+                    except:
+                        device_substation_base_station_name='N/A'
                     device_events = {
                         'device_name': device,
                         'severity': data.severity,
@@ -400,7 +412,7 @@ class CustomerAlertListingTable(BaseDatatableView):
 
 # misc utility functions
 
-def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None):
+def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None, condition=None):
     in_string = lambda x: "'" + str(x) + "'"
     col_string = lambda x: "`" + str(x) + "`"
     query = None
@@ -408,13 +420,15 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
         columns = (",".join(map(col_string, columns)))
     else:
         columns = "*"
+    extra_where_clause = condition if condition else ""
     if table_name and devices:
         query = "SELECT {0} FROM `{1}` " \
                 "WHERE `{1}`.`device_name` in ( {2} ) " \
-                "AND `{1}`.`data_source` in ( {3}) " \
+                "AND `{1}`.`data_source` in ( {3}) {4}"\
                 "GROUP BY `{1}`.`device_name`, `{1}`.`data_source`" \
                 "ORDER BY `{1}`.sys_timestamp DESC" \
-            .format(columns, table_name, (",".join(map(in_string, devices))), (',').join(map(in_string, data_sources)))
+            .format(columns, table_name, (",".join(map(in_string, devices))), \
+            (',').join(map(in_string, data_sources)), extra_where_clause.format(table_name))
 
     return query
 

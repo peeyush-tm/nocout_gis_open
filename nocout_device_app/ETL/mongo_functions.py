@@ -67,6 +67,7 @@ def mongo_db_update(db,matching_criteria,event_dict,flag):
 			elif flag == "serv_perf_data":
 				db.device_service_status.update(matching_criteria,event_dict,upsert=True)
 			elif flag == "network_perf_data":
+				print event_dict
 				db.device_network_status.update(matching_criteria,event_dict,upsert=True)
 			elif flag == "status_services":
 				db.device_status_services_status.update(matching_criteria,event_dict,upsert=True)
@@ -84,12 +85,12 @@ def get_latest_entry(db_type=None, db=None, site=None,table_name=None, host=None
     latest_time = None
     if db_type == 'mongodb':
         if serv == "ping":
-            cur = db.network_perf.find({"service": serv, "host": host}, {"check_time": 1, "ds": 1}).sort("_id", -1).limit(1)
+		cur = db.network_perf.find({"service": serv, "host": host}, {"check_time": 1, "ds": 1, "data": 1}).sort("_id", -1).limit(1)
 	else:
-            cur = db.service_perf.find({"service": serv, "host": host}, {"check_time": 1, "ds": 1}).sort("_id", -1).limit(1)
+		cur = db.service_perf.find({"service": serv, "host": host}, {"check_time": 1, "ds": 1, "data": 1}).sort("_id", -1).limit(1)
 	for c in cur:
 		entry = c
-                data = entry.get('ds').get(ds).get('data')
+                data = entry.get('data')
                 data = sorted(data, key=itemgetter('time'), reverse=True)
                 try:
 			latest_time = data[0].get('time')

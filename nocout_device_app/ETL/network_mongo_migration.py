@@ -75,9 +75,9 @@ def read_data(start_time, end_time, **kwargs):
     if db:
     	if start_time is None:
 	    start_time = end_time - timedelta(minutes=15)
-            cur = db.network_perf.find({"check_time":{"$gte":start_time,"$lt":end_time}})
+	    cur = db.network_perf.find({"data":{ "$elemMatch": { "time" : { "$gt": start_time, "$lt": end_time}}}})
 	else:
-	    cur = db.network_perf.find({"check_time": {"$gte": start_time, "$lt": end_time}})
+	    cur = db.network_perf.find({"data":{ "$elemMatch": { "time" : { "$gt": start_time, "$lt": end_time}}}})
         for doc in cur:
             docs.append(doc)
      
@@ -87,33 +87,31 @@ def build_data(doc):
     values_list = []
     #uuid = get_machineid()
     machine_name = get_machine_name()
-    #local_time_epoch = get_epoch_time(doc.get('local_timestamp'))
-    for ds in doc.get('ds').iterkeys():
-	if ds == 'rtmin' or ds == 'rtmax':
-		continue
-        for entry in doc.get('ds').get(ds).get('data'):
-            check_time_epoch = get_epoch_time(entry.get('time'))
-	    local_time_epoch = check_time_epoch
-            t = (
-                #uuid,
-                doc.get('host'),
-                doc.get('service'),
-                machine_name,
-                doc.get('site'),
-                ds,
-                entry.get('value'),
-                entry.get('value'),
-                entry.get('value'),
-                entry.get('value'),
-                doc.get('ds').get(ds).get('meta').get('war'),
-                doc.get('ds').get(ds).get('meta').get('cric'),
-                local_time_epoch,
-                check_time_epoch,
-		doc.get('ip_address'),
-		doc.get('severity')
-            )
-            values_list.append(t)
-            t = ()
+    for entry in doc.get('data'):
+	if doc.get('ds') == 'rtmin' or doc.get('ds') == 'rtmax':
+		break
+        check_time_epoch = get_epoch_time(entry.get('time'))
+	local_time_epoch = check_time_epoch
+        t = (
+            #uuid,
+            doc.get('host'),
+            doc.get('service'),
+            machine_name,
+            doc.get('site'),
+            doc.get('ds'),
+            entry.get('value'),
+            entry.get('value'),
+            entry.get('value'),
+            entry.get('value'),
+            doc.get('meta').get('war'),
+            doc.get('meta').get('cric'),
+            local_time_epoch,
+            check_time_epoch,
+            doc.get('ip_address'),
+	    doc.get('severity')
+        )
+        values_list.append(t)
+        t = ()
 
     return values_list
 
