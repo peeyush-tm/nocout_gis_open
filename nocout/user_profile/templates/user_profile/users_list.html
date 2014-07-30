@@ -13,41 +13,40 @@
         {% endif %}
     {% endfor %}
     <div class="box border lite">
-        <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i> USER LISTING</h4>
+    <div id="tableContainer_div" class="box-title">
+        <h4><i class="fa fa-table"></i> USER LISTING</h4>
 
-{#            <div class="tools hidden-xs">#}
-{#                <a href="#box-config" data-toggle="modal" class="config">#}
-{#                    <i class="fa fa-cog"></i>#}
-{#                </a>#}
-{#                <a href="javascript:;" class="reload">#}
-{#                    <i class="fa fa-refresh"></i>#}
-{#                </a>#}
-{#            </div>#}
-        </div>
+        {#            <div class="tools hidden-xs">#}
+        {#                <a href="#box-config" data-toggle="modal" class="config">#}
+        {#                    <i class="fa fa-cog"></i>#}
+        {#                </a>#}
+        {#                <a href="javascript:;" class="reload">#}
+        {#                    <i class="fa fa-refresh"></i>#}
+        {#                </a>#}
+        {#            </div>#}
+    </div>
     <div class="box-body">
         <div class="tabbable header-tabs">
-                    <ul class="nav nav-tabs">
-                        <li><a href="#UserArchivedListing" data-toggle="tab"><span class="hidden-inline-mobile">Archived User Listing</span></a></li>
-                        <li class="active"><a href="#UserListing" data-toggle="tab"><span class="hidden-inline-mobile">User Listing</span></a></li>
-
-                    </ul>
-                    <div class="tab-content">
-                        <div class="tab-pane fade in active" id="UserListing">
-                        <table id="UserListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
-                            <thead></thead>
-                            <tbody></tbody>
-                        </table>
-                         </div>
-                        <div class="tab-pane fade" id="UserArchivedListing">
-                        <table id="UserArchivedListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
-                            <thead></thead>
-                            <tbody></tbody>
-                        </table>
-                        </div>
-                    </div>
+            <ul class="nav nav-tabs">
+                <li><a href="#UserArchivedListing" data-toggle="tab"><span class="hidden-inline-mobile">Archived User Listing</span></a></li>
+                <li class="active"><a href="#UserListing" data-toggle="tab"><span class="hidden-inline-mobile">User Listing</span></a></li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane fade in active" id="UserListing">
+                    <table id="UserListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="tab-pane fade" id="UserArchivedListing">
+                    <table id="UserArchivedListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-        </div>
+    </div>
 {% endblock %}
 
 {% block jquery %}
@@ -62,11 +61,11 @@
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/
-            var ajax_url_user_listing = '{% url "UserListingTable" %}' + '?datatable_headers='+encodeURIComponent(JSON.stringify(gridHeadersObj));
+            var ajax_url_user_listing = '{% url "UserListingTable" %}' + '?datatable_headers=' + encodeURIComponent(JSON.stringify(gridHeadersObj));
             var ajax_url_user_archived_listing = '{% url "UserArchivedListingTable" %}';
             /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable("UserListingTable", gridHeadersObj, ajax_url_user_listing, destroy=false);
-            dataTableInstance.createDataTable("UserArchivedListingTable", gridHeadersObj, ajax_url_user_archived_listing, destroy=false);
+            dataTableInstance.createDataTable("UserListingTable", gridHeadersObj, ajax_url_user_listing, destroy = false);
+            dataTableInstance.createDataTable("UserArchivedListingTable", gridHeadersObj, ajax_url_user_archived_listing, destroy = false);
         });
     </script>
 {% endblock %}
