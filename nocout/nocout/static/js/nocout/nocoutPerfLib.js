@@ -229,9 +229,13 @@ var perf_that = "",
 				        },
 			            tooltip: {
 			                pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
-			                shared: true
+			                shared: true,
+                            valueSuffix: single_service_data.valuesuffix
 			            },
 			            xAxis: {
+                            title: {
+                                text: "time"
+                            },
 		            		type: 'datetime',
 			                dateTimeLabelFormats: {
 			                    day: '%e. %b',
@@ -240,6 +244,11 @@ var perf_that = "",
 			                },
                             tickPixelInterval: 120
 			            },
+                        yAxis: {
+                          title: {
+                                text: single_service_data.valuetext
+                            }
+                        },
                         series: single_service_data.chart_data
 			        });
 

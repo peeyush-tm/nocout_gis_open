@@ -19,11 +19,11 @@ import logging
 log=logging.getLogger(__name__)
 
 SERVICE_DATA_SOURCE = {
-    "uas": {"type" : "spline"},
-    "rssi": {"type": "column"},
-    "uptime": {"type": "spline"},
-    "rta": {"type": "spline"},
-    "pl": {"type": "column"}
+    "uas": {"type" : "spline", "valuesuffix": "seconds", "valuetext": "Seconds"},
+    "rssi": {"type": "column", "valuesuffix": "dB", "valuetext": "dB"},
+    "uptime": {"type": "spline", "valuesuffix": "ms", "valuetext": "milliseconds"},
+    "rta": {"type": "spline", "valuesuffix": "ms", "valuetext": "ms"},
+    "pl": {"type": "column", "valuesuffix": "%", "valuetext": "Percentage (%)"},
 }
 
 
@@ -486,6 +486,22 @@ class Get_Service_Type_Performance_Data(View):
                     aggregate_data[temp_time] = data.sys_timestamp
                     result['data']['objects']['type']= SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"] if \
                         data.data_source in SERVICE_DATA_SOURCE else "spline"
+
+                    result['data']['objects']['valuesuffix']= \
+                        SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"] \
+                            if data.data_source in SERVICE_DATA_SOURCE \
+                            else "spline"
+
+                    result['data']['objects']['valuesuffix']= \
+                        SERVICE_DATA_SOURCE[str(data.data_source).lower()]["valuesuffix"] \
+                            if data.data_source in SERVICE_DATA_SOURCE \
+                            else ""
+
+                    result['data']['objects']['valuetext']= \
+                        SERVICE_DATA_SOURCE[str(data.data_source).lower()]["valuetext"] \
+                            if data.data_source in SERVICE_DATA_SOURCE \
+                            else str(data.data_source).upper()
+
                     #data_list.append([data.sys_timestamp, data.avg_value ])
 
                     # data_list.append([data.sys_timestamp*1000, float(data.avg_value) if data.avg_value else 0])
@@ -533,7 +549,9 @@ class Get_Service_Type_Performance_Data(View):
                     result['message']='Device Performance Data Fetched Successfully.'
                     result['data']['objects']['chart_data']=[{'name': str(data.data_source).upper(),
                                                               'data': data_list,
-                                                              'type': result['data']['objects']['type']
+                                                              'type': result['data']['objects']['type'],
+                                                              'valuesuffix': result['data']['objects']['valuesuffix'],
+                                                              'valuetext': result['data']['objects']['valuetext']
                                                               },
                                                              {'name': str("warning threshold").title(),
                                                               'color': '#FFE90D',

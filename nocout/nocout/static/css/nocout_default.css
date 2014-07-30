@@ -114,35 +114,35 @@ span.dept {
 .alert_critical {
     height: 20px;
     width: 20px;
-    background: url("../img/severity/status-1.png");
+    background: url("../img/nms_icons/circle_red.png");
     background-size: 20px 20px;
 }
 
 .alert_major {
     height: 20px;
     width: 20px;
-    background: url("../img/severity/status-2.png");
+    background: url("../img/nms_icons/circle_orange.png");
     background-size: 20px 20px;
 }
 
 .alert_minor {
     height: 20px;
     width: 20px;
-    background: url("../img/severity/status-3.png");
+    background: url("../img/nms_icons/circle_yellow.png");
     background-size: 20px 20px;
 }
 
 .alert_normal {
     height: 20px;
     width: 20px;
-    background: url("../img/severity/status-0.png");
+    background: url("../img/nms_icons/circle_green.png");
     background-size: 20px 20px;
 }
 
 .alert_informational {
     height: 20px;
     width: 20px;
-    background: url("../img/severity/status-4.png");
+    background: url("../img/nms_icons/circle_grey.png");
     background-size: 20px 20px;
 }
 
