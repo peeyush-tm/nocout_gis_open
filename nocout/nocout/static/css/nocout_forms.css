@@ -63,11 +63,6 @@
     padding-right: 5px;
 }
 
-select
-{
-    -webkit-appearance: none;
-}
-
 #id_gt_warning option {
     background-repeat:no-repeat;
     background-position:bottom left;

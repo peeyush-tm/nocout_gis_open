@@ -929,6 +929,7 @@ class FetchLPDataApi(View):
 
             self.result['success'] = 1
         except Exception as e:
+            self.result['message'] = e.message
             logger.info(e)
 
         return HttpResponse(json.dumps(self.result))
