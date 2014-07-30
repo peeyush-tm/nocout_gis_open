@@ -21,8 +21,8 @@ log=logging.getLogger(__name__)
 SERVICE_DATA_SOURCE = {
     "uas": {"type" : "spline", "valuesuffix": "seconds", "valuetext": "Seconds"},
     "rssi": {"type": "column", "valuesuffix": "dB", "valuetext": "dB"},
-    "uptime": {"type": "spline", "valuesuffix": "milliseconds", "valuetext": "milliseconds"},
-    "rta": {"type": "spline", "valuesuffix": "milliseconds", "valuetext": "milliseconds"},
+    "uptime": {"type": "spline", "valuesuffix": "ms", "valuetext": "milliseconds"},
+    "rta": {"type": "spline", "valuesuffix": "ms", "valuetext": "ms"},
     "pl": {"type": "column", "valuesuffix": "%", "valuetext": "Percentage (%)"},
 }
 
