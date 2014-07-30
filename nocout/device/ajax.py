@@ -241,7 +241,7 @@ def device_soft_delete_form(request, value):
             if e_dv.is_deleted == 1: continue
             # for excluding devices from eligible device choices those are not from
             # same device_group as the device which we are deleting
-            if set(e_dv.device_group.all()) != set(device.device_group.all()): continue
+            # if set(e_dv.device_group.all()) != set(device.device_group.all()): continue
             result['data']['objects']['eligible'].append(e_dict)
         for c_dv in child_devices:
             c_dict = {}
@@ -270,6 +270,7 @@ def device_soft_delete(request, device_id, new_parent_id):
     result['data']['objects']['device_id'] = device_id
     result['data']['objects']['device_name'] = device.device_name
     # setting new parent device
+    new_parent = ""
     try:
         # new_parent: new parent device for associated devices
         new_parent = Device.objects.get(id=new_parent_id)
@@ -277,6 +278,7 @@ def device_soft_delete(request, device_id, new_parent_id):
         logger.info("No new device parent exist.")
 
     # fetching all child devices of device which needs to be deleted
+    child_devices = ""
     try:
         child_devices = Device.objects.filter(parent_id=device_id)
     except:
@@ -658,6 +660,7 @@ def add_service(request, service_data):
     messages = ""
 
     for sd in service_data:
+        service = ""
         try:
             result = dict()
             result['data'] = {}
@@ -884,6 +887,7 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
     result['message'] = ""
     result['data']['meta'] = {}
     result['data']['objects'] = {}
+    dsc=""
     try:
         # service device service configuration object
         dsc = DeviceServiceConfiguration.objects.get(id=dsc_id)
@@ -999,7 +1003,7 @@ def delete_single_service_form(request, dsc_id):
         service_data['data_sources'] = []
         try:
             dsc_for_data_sources = DeviceServiceConfiguration.objects.filter(device_name=dsc.device_name,
-                                                                     service_name=dsc.service_name)
+                                                                             service_name=dsc.service_name)
             for dsc_for_data_source in dsc_for_data_sources:
                 service_data['data_sources'].append(dsc_for_data_source.data_source)
         except Exception as e:
