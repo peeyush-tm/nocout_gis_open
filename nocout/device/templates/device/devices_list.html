@@ -5,6 +5,13 @@
 {% endblock %}
 {% block content_title %}Device Management{% endblock %}
 {% block content_description %}List of devices{% endblock %}
+{% block page_setting_block %}
+    <span class="pull-right">
+        <div class="btn-group">
+            <a class="js_update btn btn-default" href="#" onclick="sync_devices('1');"><i class="fa fa-refresh text-success" title="Sync device for monitoring"></i></a>
+        </div>
+    </span>
+{% endblock %}
 {% load staticfiles %}
 {% block content %}
     {% for group in user.groups.all %}
@@ -26,12 +33,48 @@
 {#                </a>#}
 {#            </div>#}
         </div>
-
-        <div id="tableContainer" class="box-body">
-            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="DeviceTable">
-                <thead></thead>
-                <tbody></tbody>
-            </table>
+    <div class="box-body">
+        <div class="tabbable header-tabs">
+            <ul class="nav nav-tabs">
+                <li></li>
+                <li><a href="#AllDeviceListing" data-toggle="tab"><span class="hidden-inline-mobile">All</span></a></li>
+                <li><a href="#ArchivedDeviceListing" data-toggle="tab"><span class="hidden-inline-mobile">Archived</span></a></li>
+                <li><a href="#DisabledDeviceListing" data-toggle="tab"><span class="hidden-inline-mobile">Disabled</span></a></li>
+                <li><a href="#NonOperationalDeviceListing" data-toggle="tab"><span class="hidden-inline-mobile">Non-Operational</span></a></li>
+                <li class="active"><a href="#OperationalDeviceListing" data-toggle="tab"><span class="hidden-inline-mobile">Operational</span></a></li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane fade" id="NonOperationalDeviceListing">
+                    <table id="NonOperationalDeviceListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="tab-pane fade" id="DisabledDeviceListing">
+                    <table id="DisabledDeviceListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="tab-pane fade" id="AllDeviceListing">
+                    <table id="AllDeviceListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="tab-pane fade" id="ArchivedDeviceListing">
+                    <table id="ArchivedDeviceListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="tab-pane fade in active" id="OperationalDeviceListing">
+                    <table id="OperationalDeviceListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -47,11 +90,21 @@
             var dataTableInstance = new ourDataTableWidget();
             /*Grid headers object*/            
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            var gridHeadersObj_no_nms_actions = $.parseJSON('{{ datatable_headers_no_nms_actions|safe }}');
             /*Ajax url to get grid data*/
-            var ajax_url = '{% url "DeviceListingTable" %}';
+            var ajax_url_operational_listing = '{% url "OperationalDeviceListingTable" %}';
+            var ajax_url_nonoperational_listing = '{% url "NonOperationalDeviceListingTable" %}';
+            var ajax_url_disabled_listing = '{% url "DisabledDeviceListingTable" %}';
+            var ajax_url_archived_listing = '{% url "ArchivedDeviceListingTable" %}';
+            var ajax_url_all_listing = '{% url "AllDeviceListingTable" %}';
             /*Call createDataTable function of ourDataTableWidget class*/
             var destroy=false;
-            dataTableInstance.createDataTable("DeviceTable", gridHeadersObj, ajax_url, destroy);
+
+            dataTableInstance.createDataTable("OperationalDeviceListingTable", gridHeadersObj, ajax_url_operational_listing, destroy);
+            dataTableInstance.createDataTable("NonOperationalDeviceListingTable", gridHeadersObj, ajax_url_nonoperational_listing, destroy);
+            dataTableInstance.createDataTable("DisabledDeviceListingTable", gridHeadersObj_no_nms_actions, ajax_url_disabled_listing, destroy);
+            dataTableInstance.createDataTable("ArchivedDeviceListingTable", gridHeadersObj_no_nms_actions, ajax_url_archived_listing, destroy);
+            dataTableInstance.createDataTable("AllDeviceListingTable", gridHeadersObj_no_nms_actions, ajax_url_all_listing, destroy);
         });
     </script>
 {% endblock %}

@@ -24,6 +24,7 @@ from django.template import RequestContext
 from django.conf import settings #Importing settings for logger
 from site_instance.models import SiteInstance
 from inventory.models import Backhaul, SubStation, Sector
+from django.contrib.staticfiles.templatetags.staticfiles import static
 
 if settings.DEBUG:
     import logging
@@ -39,7 +40,7 @@ class DeviceList(ListView):
     def get_context_data(self, **kwargs):
         context=super(DeviceList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'is_added',               'sTitle' : '',              'sWidth':'null',},
+            {'mData':'status_icon',               'sTitle' : '',              'sWidth':'null',},
             {'mData':'organization__name',     'sTitle' : 'Organization',  'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'device_alias',           'sTitle' : 'Alias',         'sWidth':'null',},
             {'mData':'site_instance__name',    'sTitle' : 'Site Instance', 'sWidth':'null','sClass':'hidden-xs'},
@@ -56,7 +57,25 @@ class DeviceList(ListView):
             datatable_headers.append({'mData':'actions', 'sTitle':'Device Actions', 'sWidth':'9%', 'bSortable': False})
             datatable_headers.append({'mData':'nms_actions', 'sTitle':'NMS Actions', 'sWidth':'8%', 'bSortable': False})
 
+        datatable_headers_no_nms_actions = [
+            {'mData':'status_icon',            'sTitle' : '',              'sWidth':'null',},
+            {'mData':'organization__name',     'sTitle' : 'Organization',  'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'device_alias',           'sTitle' : 'Alias',         'sWidth':'null',},
+            {'mData':'site_instance__name',    'sTitle' : 'Site Instance', 'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'machine__name',          'sTitle' : 'Machine',       'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'device_technology__name','sTitle' : 'Device Technology',   'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'device_type__name',      'sTitle' : 'Device Type',   'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'host_state',             'sTitle' : 'Host State',    'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'ip_address',             'sTitle' : 'IP Address',    'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'mac_address',            'sTitle' : 'MAC Address',   'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'state__name',            'sTitle' : 'State',   'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},]
+
+        #if the user role is Admin then the action column will appear on the datatable
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers_no_nms_actions.append({'mData':'actions', 'sTitle':'Device Actions', 'sWidth':'15%', 'bSortable': False})
+
         context['datatable_headers'] = json.dumps(datatable_headers)
+        context['datatable_headers_no_nms_actions'] = json.dumps(datatable_headers_no_nms_actions)
         return context
 
 
@@ -69,7 +88,7 @@ def create_device_tree(request):
     return render_to_response('device/devices_tree_view.html',templateData,context_instance=RequestContext(request))
 
 
-class DeviceListingTable(BaseDatatableView):
+class OperationalDeviceListingTable(BaseDatatableView):
     model = Device
     columns = [ 'device_alias', 'site_instance__name', 'machine__name', 'organization__name','device_technology',
                 'device_type', 'host_state','ip_address', 'mac_address', 'state']
@@ -159,7 +178,7 @@ class DeviceListingTable(BaseDatatableView):
 
     def get_initial_queryset(self):
         if not self.model:
-            
+
             if settings.DEBUG:
                 logger.error("Need to provide a model or implement get_initial_queryset!",
                                  extra={'stack': True, 'request': self.request})
@@ -167,7 +186,7 @@ class DeviceListingTable(BaseDatatableView):
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
         organization_descendants_ids= self.logged_in_user_organization_ids()
-        return Device.objects.filter(organization__in = organization_descendants_ids, is_deleted=0) \
+        return Device.objects.filter(organization__in = organization_descendants_ids, is_deleted=0, is_monitored_on_nms=1) \
                                      .values(*self.columns+['id'])
 
     def prepare_results(self, qs):
@@ -192,12 +211,9 @@ class DeviceListingTable(BaseDatatableView):
                 dct['state__name']= State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
             except Exception as device_state_exp:
                 dct['state__name'] = ""
-                
-            # if device is already added to nms core than show icon in device table
-            if current_device.is_added_to_nms == 1:
-                dct.update(is_added='<i class="fa fa-check-circle text-success"></i>')
-            else:
-                dct.update(is_added='')
+
+            img_url = static('img/nms_icons/circle_green.png')
+            dct.update(status_icon='<img src="{0}">'.format(img_url))
 
             # There are two set of links in device list table
             # 1. Device Actions --> device detail, edit, delete from inventory. They are always present in device table if user role is 'Admin'
@@ -214,27 +230,21 @@ class DeviceListingTable(BaseDatatableView):
             # checking whether device is 'backhaul configured on' or not
             try:
                 if Backhaul.objects.get(bh_configured_on=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-                        <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+                    dct.update(nms_actions='<a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             except:
                 logger.info("Device is not basestation")
 
             # checking whether device is 'sector configured on' or not
             try:
                 if Sector.objects.get(sector_configured_on=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-                        <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+                    dct.update(nms_actions='<a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             except:
                 logger.info("Device is not basestation")
 
             # checking whether device is 'sub station' or not
             try:
                 if SubStation.objects.get(device=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-                        <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+                    dct.update(nms_actions='<a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             except:
                 logger.info("Device is not substation.")
         return qs
@@ -268,6 +278,798 @@ class DeviceListingTable(BaseDatatableView):
                }
         return ret
 
+
+class NonOperationalDeviceListingTable(BaseDatatableView):
+    model = Device
+    columns = [ 'device_alias', 'site_instance__name', 'machine__name', 'organization__name','device_technology',
+                'device_type', 'host_state','ip_address', 'mac_address', 'state']
+    order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
+
+    def pop_filter_keys(self, dct):
+        keys_list=['device_type__name', 'device_technology__name', 'state__name']
+        for k in keys_list:
+            dct.pop(k)
+
+
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        if sSearch:
+            result_list=list()
+
+            for dictionary in qs:
+                try:
+                    dictionary['device_type__name']= DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
+                        if dictionary['device_type'] else ''
+                except Exception as device_type_exp:
+                    dictionary['device_type__name'] = ""
+
+                try:
+                    dictionary['device_technology__name']=DeviceTechnology.objects.get(pk=int(dictionary['device_technology'])).name \
+                                                if dictionary['device_technology'] else ''
+                except Exception as device_tech_exp:
+                    dictionary['device_technology__name'] = ""
+
+                try:
+                    dictionary['state__name']= State.objects.get(pk=int(dictionary['state'])).state_name if dictionary['state'] else ''
+                except Exception as device_state_exp:
+                    dictionary['state__name'] = ""
+
+
+                for key in dictionary.keys():
+                    if sSearch.lower() in str(dictionary[key]).lower():
+                        result_list.append(dictionary)
+                        self.pop_filter_keys(dictionary)
+                        break
+                map(lambda x:  dictionary.pop(x) if x in dictionary else None, ['device_type__name', 'device_technology__name', 'state__name'])
+
+            return result_list
+
+        if settings.DEBUG:
+            logger.debug(qs, exc_info=True, extra={'stack': True, 'request': self.request})
+
+        return qs
+
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except ValueError:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.get_order_columns()
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except ValueError:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ' '
+
+            sortcol = order_columns[i_sort_col-1]
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            return sorted(qs, key=itemgetter(order[0][1:]), reverse= True if '-' in order[0] else False)
+        return qs
+
+    def logged_in_user_organization_ids(self):
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
+                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        return organization_descendants_ids
+
+    def get_initial_queryset(self):
+        if not self.model:
+
+            if settings.DEBUG:
+                logger.error("Need to provide a model or implement get_initial_queryset!",
+                                 extra={'stack': True, 'request': self.request})
+
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        organization_descendants_ids= self.logged_in_user_organization_ids()
+        return Device.objects.filter(organization__in = organization_descendants_ids, is_deleted=0, is_monitored_on_nms=0) \
+                                     .values(*self.columns+['id'])
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in qs:
+            # current device in loop
+            current_device = Device.objects.get(pk=dct['id'])
+
+            try:
+                dct['device_type__name']= DeviceType.objects.get(pk=int(dct['device_type'])).name if dct['device_type'] else ''
+            except Exception as device_type_exp:
+                dct['device_type__name'] = ""
+
+            try:
+                dct['device_technology__name']=DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
+                                            if dct['device_technology'] else ''
+            except Exception as device_tech_exp:
+                dct['device_technology__name'] = ""
+
+            try:
+                dct['state__name']= State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
+            except Exception as device_state_exp:
+                dct['state__name'] = ""
+
+            img_url = static('img/nms_icons/circle_orange.png')
+            dct.update(status_icon='<img src="{0}">'.format(img_url))
+
+            # There are two set of links in device list table
+            # 1. Device Actions --> device detail, edit, delete from inventory. They are always present in device table if user role is 'Admin'
+            # 2. NMS Actions --> device add, sync, service add etc. form nocout nms core. They are only present
+            # in device table if device id one of the following:
+            # a. backhaul configured on (from model Backhaul)
+            # b. sector configures on (from model Sector)
+            # c. sub-station configured on (from model SubStation)
+            dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+               <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+               <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(dct['id']))
+            dct.update(nms_actions='')
+            # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
+            # checking whether device is 'backhaul configured on' or not
+            try:
+                if Backhaul.objects.get(bh_configured_on=current_device):
+                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            except:
+                logger.info("Device is not basestation")
+
+            # checking whether device is 'sector configured on' or not
+            try:
+                if Sector.objects.get(sector_configured_on=current_device):
+                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            except:
+                logger.info("Device is not basestation")
+
+            # checking whether device is 'sub station' or not
+            try:
+                if SubStation.objects.get(device=current_device):
+                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            except:
+                logger.info("Device is not substation.")
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = len(qs)
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = len(qs)
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs=list(qs)
+
+        # prepare output data
+
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData,
+               }
+        return ret
+
+
+class DisabledDeviceListingTable(BaseDatatableView):
+    model = Device
+    columns = [ 'device_alias', 'site_instance__name', 'machine__name', 'organization__name','device_technology',
+                'device_type', 'host_state','ip_address', 'mac_address', 'state']
+    order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
+
+    def pop_filter_keys(self, dct):
+        keys_list=['device_type__name', 'device_technology__name', 'state__name']
+        for k in keys_list:
+            dct.pop(k)
+
+
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        if sSearch:
+            result_list=list()
+
+            for dictionary in qs:
+                try:
+                    dictionary['device_type__name']= DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
+                        if dictionary['device_type'] else ''
+                except Exception as device_type_exp:
+                    dictionary['device_type__name'] = ""
+
+                try:
+                    dictionary['device_technology__name']=DeviceTechnology.objects.get(pk=int(dictionary['device_technology'])).name \
+                                                if dictionary['device_technology'] else ''
+                except Exception as device_tech_exp:
+                    dictionary['device_technology__name'] = ""
+
+                try:
+                    dictionary['state__name']= State.objects.get(pk=int(dictionary['state'])).state_name if dictionary['state'] else ''
+                except Exception as device_state_exp:
+                    dictionary['state__name'] = ""
+
+
+                for key in dictionary.keys():
+                    if sSearch.lower() in str(dictionary[key]).lower():
+                        result_list.append(dictionary)
+                        self.pop_filter_keys(dictionary)
+                        break
+                map(lambda x:  dictionary.pop(x) if x in dictionary else None, ['device_type__name', 'device_technology__name', 'state__name'])
+
+            return result_list
+
+        if settings.DEBUG:
+            logger.debug(qs, exc_info=True, extra={'stack': True, 'request': self.request})
+
+        return qs
+
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except ValueError:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.get_order_columns()
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except ValueError:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ' '
+
+            sortcol = order_columns[i_sort_col-1]
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            return sorted(qs, key=itemgetter(order[0][1:]), reverse= True if '-' in order[0] else False)
+        return qs
+
+    def logged_in_user_organization_ids(self):
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
+                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        return organization_descendants_ids
+
+    def get_initial_queryset(self):
+        if not self.model:
+
+            if settings.DEBUG:
+                logger.error("Need to provide a model or implement get_initial_queryset!",
+                                 extra={'stack': True, 'request': self.request})
+
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        organization_descendants_ids= self.logged_in_user_organization_ids()
+        return Device.objects.filter(organization__in = organization_descendants_ids, is_deleted=0, host_state="Disable") \
+                                     .values(*self.columns+['id'])
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in qs:
+            # current device in loop
+            current_device = Device.objects.get(pk=dct['id'])
+
+            try:
+                dct['device_type__name']= DeviceType.objects.get(pk=int(dct['device_type'])).name if dct['device_type'] else ''
+            except Exception as device_type_exp:
+                dct['device_type__name'] = ""
+
+            try:
+                dct['device_technology__name']=DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
+                                            if dct['device_technology'] else ''
+            except Exception as device_tech_exp:
+                dct['device_technology__name'] = ""
+
+            try:
+                dct['state__name']= State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
+            except Exception as device_state_exp:
+                dct['state__name'] = ""
+
+            img_url = static('img/nms_icons/circle_grey.png')
+            dct.update(status_icon='<img src="{0}">'.format(img_url))
+
+            # There are two set of links in device list table
+            # 1. Device Actions --> device detail, edit, delete from inventory. They are always present in device table if user role is 'Admin'
+            # 2. NMS Actions --> device add, sync, service add etc. form nocout nms core. They are only present
+            # in device table if device id one of the following:
+            # a. backhaul configured on (from model Backhaul)
+            # b. sector configures on (from model Sector)
+            # c. sub-station configured on (from model SubStation)
+            dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+               <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+               <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(dct['id']))
+            # dct.update(nms_actions='')
+            # # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
+            # # checking whether device is 'backhaul configured on' or not
+            # try:
+            #     if Backhaul.objects.get(bh_configured_on=current_device):
+            #         dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+            #             <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+            #             <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            # except:
+            #     logger.info("Device is not basestation")
+            #
+            # # checking whether device is 'sector configured on' or not
+            # try:
+            #     if Sector.objects.get(sector_configured_on=current_device):
+            #         dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+            #             <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+            #             <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            # except:
+            #     logger.info("Device is not basestation")
+            #
+            # # checking whether device is 'sub station' or not
+            # try:
+            #     if SubStation.objects.get(device=current_device):
+            #         dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+            #             <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+            #             <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            # except:
+            #     logger.info("Device is not substation.")
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = len(qs)
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = len(qs)
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs=list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData,
+               }
+        return ret
+
+
+class ArchivedDeviceListingTable(BaseDatatableView):
+    model = Device
+    columns = [ 'device_alias', 'site_instance__name', 'machine__name', 'organization__name','device_technology',
+                'device_type', 'host_state','ip_address', 'mac_address', 'state']
+    order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
+
+    def pop_filter_keys(self, dct):
+        keys_list=['device_type__name', 'device_technology__name', 'state__name']
+        for k in keys_list:
+            dct.pop(k)
+
+
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        if sSearch:
+            result_list=list()
+
+            for dictionary in qs:
+                try:
+                    dictionary['device_type__name']= DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
+                        if dictionary['device_type'] else ''
+                except Exception as device_type_exp:
+                    dictionary['device_type__name'] = ""
+
+                try:
+                    dictionary['device_technology__name']=DeviceTechnology.objects.get(pk=int(dictionary['device_technology'])).name \
+                                                if dictionary['device_technology'] else ''
+                except Exception as device_tech_exp:
+                    dictionary['device_technology__name'] = ""
+
+                try:
+                    dictionary['state__name']= State.objects.get(pk=int(dictionary['state'])).state_name if dictionary['state'] else ''
+                except Exception as device_state_exp:
+                    dictionary['state__name'] = ""
+
+
+                for key in dictionary.keys():
+                    if sSearch.lower() in str(dictionary[key]).lower():
+                        result_list.append(dictionary)
+                        self.pop_filter_keys(dictionary)
+                        break
+                map(lambda x:  dictionary.pop(x) if x in dictionary else None, ['device_type__name', 'device_technology__name', 'state__name'])
+
+            return result_list
+
+        if settings.DEBUG:
+            logger.debug(qs, exc_info=True, extra={'stack': True, 'request': self.request})
+
+        return qs
+
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except ValueError:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.get_order_columns()
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except ValueError:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ' '
+
+            sortcol = order_columns[i_sort_col-1]
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            return sorted(qs, key=itemgetter(order[0][1:]), reverse= True if '-' in order[0] else False)
+        return qs
+
+    def logged_in_user_organization_ids(self):
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
+                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        return organization_descendants_ids
+
+    def get_initial_queryset(self):
+        if not self.model:
+
+            if settings.DEBUG:
+                logger.error("Need to provide a model or implement get_initial_queryset!",
+                                 extra={'stack': True, 'request': self.request})
+
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        organization_descendants_ids= self.logged_in_user_organization_ids()
+        return Device.objects.filter(organization__in = organization_descendants_ids, is_deleted=1) \
+                                     .values(*self.columns+['id'])
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in qs:
+            # current device in loop
+            current_device = Device.objects.get(pk=dct['id'])
+
+            try:
+                dct['device_type__name']= DeviceType.objects.get(pk=int(dct['device_type'])).name if dct['device_type'] else ''
+            except Exception as device_type_exp:
+                dct['device_type__name'] = ""
+
+            try:
+                dct['device_technology__name']=DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
+                                            if dct['device_technology'] else ''
+            except Exception as device_tech_exp:
+                dct['device_technology__name'] = ""
+
+            try:
+                dct['state__name']= State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
+            except Exception as device_state_exp:
+                dct['state__name'] = ""
+
+            img_url = static('img/nms_icons/circle_red.png')
+            dct.update(status_icon='<img src="{0}">'.format(img_url))
+
+            # There are two set of links in device list table
+            # 1. Device Actions --> device detail, edit, delete from inventory. They are always present in device table if user role is 'Admin'
+            # 2. NMS Actions --> device add, sync, service add etc. form nocout nms core. They are only present
+            # in device table if device id one of the following:
+            # a. backhaul configured on (from model Backhaul)
+            # b. sector configures on (from model Sector)
+            # c. sub-station configured on (from model SubStation)
+            dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+               <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+               <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(dct['id']))
+            # dct.update(nms_actions='')
+            # # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
+            # # checking whether device is 'backhaul configured on' or not
+            # try:
+            #     if Backhaul.objects.get(bh_configured_on=current_device):
+            #         dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+            #             <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+            #             <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            # except:
+            #     logger.info("Device is not basestation")
+            #
+            # # checking whether device is 'sector configured on' or not
+            # try:
+            #     if Sector.objects.get(sector_configured_on=current_device):
+            #         dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+            #             <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+            #             <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            # except:
+            #     logger.info("Device is not basestation")
+            #
+            # # checking whether device is 'sub station' or not
+            # try:
+            #     if SubStation.objects.get(device=current_device):
+            #         dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+            #             <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+            #             <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            # except:
+            #     logger.info("Device is not substation.")
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = len(qs)
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = len(qs)
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs=list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData,
+               }
+        return ret
+
+
+class AllDeviceListingTable(BaseDatatableView):
+    model = Device
+    columns = [ 'device_alias', 'site_instance__name', 'machine__name', 'organization__name','device_technology',
+                'device_type', 'host_state','ip_address', 'mac_address', 'state']
+    order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
+
+    def pop_filter_keys(self, dct):
+        keys_list=['device_type__name', 'device_technology__name', 'state__name']
+        for k in keys_list:
+            dct.pop(k)
+
+
+    def filter_queryset(self, qs):
+        sSearch = self.request.GET.get('sSearch', None)
+        if sSearch:
+            result_list=list()
+
+            for dictionary in qs:
+                try:
+                    dictionary['device_type__name']= DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
+                        if dictionary['device_type'] else ''
+                except Exception as device_type_exp:
+                    dictionary['device_type__name'] = ""
+
+                try:
+                    dictionary['device_technology__name']=DeviceTechnology.objects.get(pk=int(dictionary['device_technology'])).name \
+                                                if dictionary['device_technology'] else ''
+                except Exception as device_tech_exp:
+                    dictionary['device_technology__name'] = ""
+
+                try:
+                    dictionary['state__name']= State.objects.get(pk=int(dictionary['state'])).state_name if dictionary['state'] else ''
+                except Exception as device_state_exp:
+                    dictionary['state__name'] = ""
+
+
+                for key in dictionary.keys():
+                    if sSearch.lower() in str(dictionary[key]).lower():
+                        result_list.append(dictionary)
+                        self.pop_filter_keys(dictionary)
+                        break
+                map(lambda x:  dictionary.pop(x) if x in dictionary else None, ['device_type__name', 'device_technology__name', 'state__name'])
+
+            return result_list
+
+        if settings.DEBUG:
+            logger.debug(qs, exc_info=True, extra={'stack': True, 'request': self.request})
+
+        return qs
+
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except ValueError:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.get_order_columns()
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except ValueError:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ' '
+
+            sortcol = order_columns[i_sort_col-1]
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            return sorted(qs, key=itemgetter(order[0][1:]), reverse= True if '-' in order[0] else False)
+        return qs
+
+    def logged_in_user_organization_ids(self):
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
+                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        return organization_descendants_ids
+
+    def get_initial_queryset(self):
+        if not self.model:
+
+            if settings.DEBUG:
+                logger.error("Need to provide a model or implement get_initial_queryset!",
+                                 extra={'stack': True, 'request': self.request})
+
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        organization_descendants_ids= self.logged_in_user_organization_ids()
+        return Device.objects.filter(organization__in = organization_descendants_ids, is_deleted=0) \
+                                     .values(*self.columns+['id'])
+
+    def prepare_results(self, qs):
+        if qs:
+            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+        for dct in qs:
+            # current device in loop
+            current_device = Device.objects.get(pk=dct['id'])
+
+            try:
+                dct['device_type__name']= DeviceType.objects.get(pk=int(dct['device_type'])).name if dct['device_type'] else ''
+            except Exception as device_type_exp:
+                dct['device_type__name'] = ""
+
+            try:
+                dct['device_technology__name']=DeviceTechnology.objects.get(pk=int(dct['device_technology'])).name \
+                                            if dct['device_technology'] else ''
+            except Exception as device_tech_exp:
+                dct['device_technology__name'] = ""
+
+            try:
+                dct['state__name']= State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
+            except Exception as device_state_exp:
+                dct['state__name'] = ""
+
+            # if device is already added to nms core than show icon in device table
+            img_url = ""
+            try:
+                if current_device.is_monitored_on_nms == 1:
+                    img_url = static('img/nms_icons/circle_green.png')
+                elif current_device.is_monitored_on_nms == 0 and current_device.host_state == "Enable":
+                    img_url = static('img/nms_icons/circle_orange.png')
+                elif current_device.is_monitored_on_nms == 0 and current_device.host_state == "Disable":
+                    img_url = static('img/nms_icons/circle_grey.png')
+                dct.update(status_icon='<img src="{0}">'.format(img_url))
+            except Exception as e:
+                logger.info(e.message)
+                dct.update(status_icon='<img src="">')
+            # There are two set of links in device list table
+            # 1. Device Actions --> device detail, edit, delete from inventory. They are always present in device table if user role is 'Admin'
+            # 2. NMS Actions --> device add, sync, service add etc. form nocout nms core. They are only present
+            # in device table if device id one of the following:
+            # a. backhaul configured on (from model Backhaul)
+            # b. sector configures on (from model Sector)
+            # c. sub-station configured on (from model SubStation)
+            dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+               <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+               <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(dct['id']))
+            dct.update(nms_actions='')
+            # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
+            # checking whether device is 'backhaul configured on' or not
+            try:
+                if Backhaul.objects.get(bh_configured_on=current_device):
+                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            except:
+                logger.info("Device is not basestation")
+
+            # checking whether device is 'sector configured on' or not
+            try:
+                if Sector.objects.get(sector_configured_on=current_device):
+                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            except:
+                logger.info("Device is not basestation")
+
+            # checking whether device is 'sub station' or not
+            try:
+                if SubStation.objects.get(device=current_device):
+                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            except:
+                logger.info("Device is not substation.")
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = len(qs)
+
+        qs = self.filter_queryset(qs)
+
+        # number of records after filtering
+        total_display_records = len(qs)
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs=list(qs)
+
+        # prepare output data
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData,
+               }
+        return ret
 
 
 class DeviceDetail(DetailView):
