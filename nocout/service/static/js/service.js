@@ -112,6 +112,53 @@ function edit_single_service_message(responseResult) {
     });
 }
 
-function delete_single_service_form(){
+function get_single_service_delete_form(content){
+    // service_delete_html --> contains content for bootbox
+    var service_delete_html = "";
+    service_delete_html += '<input type="hidden" id="service_id" value="' + content.result.data.objects.service_name + '" />';
+    service_delete_html += '<input type="hidden" id="device_id" value="' + content.result.data.objects.device_name + '" />';
 
+    // show service information
+    service_delete_html += '<h5 class="text-danger"><b>Service Delete Info:</b></h5>';
+    service_delete_html += '<dl class="dl-horizontal">';
+    service_delete_html += '<dt>Device</dt><dd>'+content.result.data.objects.device_alias+'</dd>';
+    service_delete_html += '<dt>Service</dt><dd>'+content.result.data.objects.service_alias+'</dd>';
+    service_delete_html += '<dt>Data Sources</dt>';
+    for (var i = 0, l = content.result.data.objects.data_sources.length; i < l; i++) {
+        service_delete_html += '<dd>'+content.result.data.objects.data_sources[i]+'</dd>';
+    }
+    service_delete_html += '</dl>';
+
+    // display bootbox with 'service_delete_html' value as content
+    bootbox.dialog({
+        message: service_delete_html,
+        title: "<span class='text-danger'><i class='fa fa-times'></i> Delete service: "+ content.result.data.objects.service_name +"</span>",
+        buttons: {
+            success: {
+                label: "Yes!",
+                className: "btn-success",
+                callback: function () {
+                        Dajaxice.device.delete_single_service(delete_single_service_message, {'device_name': $("#device_id").val(),
+                                                                                              'service_name': $('#service_id').val()});
+                }
+            },
+            danger: {
+                label: "No!",
+                className: "btn-danger",
+                callback: function () {
+                    $(".bootbox").modal("hide");
+                }
+            }
+        }
+    });
+}
+
+
+// show message for service deletion success/failure
+function delete_single_service_message(responseResult) {
+    bootbox.alert(responseResult.result.message, function(){
+        // reload page after clicking "OK!"
+        location = "http://localhost:8000/service_history/";
+        location.reload();
+    });
 }

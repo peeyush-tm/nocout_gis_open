@@ -999,7 +999,9 @@ def delete_single_service_form(request, dsc_id):
     try:
         service_data = result['data']['objects']
         service_data['service_name'] = dsc.service_name
+        service_data['service_alias'] = Service.objects.get(name=str(dsc.service_name)).alias
         service_data['device_name'] = dsc.device_name
+        service_data['device_alias'] = Device.objects.get(device_name=str(dsc.device_name)).device_alias
         service_data['data_sources'] = []
         try:
             dsc_for_data_sources = DeviceServiceConfiguration.objects.filter(device_name=dsc.device_name,
@@ -1012,3 +1014,66 @@ def delete_single_service_form(request, dsc_id):
         logger.info(e)
     return json.dumps({'result': result})
 
+
+# delete single service
+@dajaxice_register
+def delete_single_service(request, device_name, service_name):
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = ""
+    result['data']['meta'] = {}
+    result['data']['objects'] = {}
+
+    try:
+        service_data = {
+            'mode' : 'deleteservice',
+            'device_name' : str(device_name),
+            'service_name' : str(service_name)
+        }
+
+        master_site = SiteInstance.objects.get(name='master_UA')
+        # url for nocout.py
+        # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+        # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
+        url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                                master_site.password,
+                                                                master_site.machine.machine_ip,
+                                                                master_site.web_service_port,
+                                                                master_site.name)
+        print "**************************** url *************************"
+        print url
+        # encoding service_data
+        encoded_data = urllib.urlencode(service_data)
+
+        print "******************************** encoded _data *******************************"
+        print encoded_data
+
+        # sending post request to nocout device app to add single service at a time
+        r = requests.post(url , data=encoded_data)
+
+        # converting post response data into python dict expression
+        response_dict = ast.literal_eval(r.text)
+
+        print "********************************* response_data ***********************"
+        print response_dict
+
+        # if response(r) is given by post request than process it further to get success/failure messages
+        if r:
+            result['data'] = service_data
+            result['success'] = 1
+
+            # if response_dict doesn't have key 'success'
+            if not response_dict.get('success'):
+                logger.info(response_dict.get('error_message'))
+                result['message'] += "Failed to delete service '%s'. <br />" % (service_name)
+            else:
+                result['message'] += "Successfully updated service '%s'. <br />" % (service_name)
+
+            # delete service rows form 'service_deviceserviceconfiguration' table
+            DeviceServiceConfiguration.objects.filter(device_name=device_name, service_name=service_name).delete()
+    except Exception as e:
+        result['message'] += e.message
+    print "********************************** result ***********************************"
+    print result
+    return json.dumps({'result': result})
