@@ -233,6 +233,9 @@ var perf_that = "",
                             valueSuffix: single_service_data.valuesuffix
 			            },
 			            xAxis: {
+                            title: {
+                                text: "time"
+                            },
 		            		type: 'datetime',
 			                dateTimeLabelFormats: {
 			                    day: '%e. %b',
@@ -244,7 +247,7 @@ var perf_that = "",
                         yAxis: {
                           title: {
                                 text: single_service_data.valuetitle
-                            },
+                            }
                         },
                         series: single_service_data.chart_data
 			        });
