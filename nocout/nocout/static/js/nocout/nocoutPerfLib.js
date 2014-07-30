@@ -246,7 +246,7 @@ var perf_that = "",
 			            },
                         yAxis: {
                           title: {
-                                text: single_service_data.valuetitle
+                                text: single_service_data.valuetext
                             }
                         },
                         series: single_service_data.chart_data
