@@ -90,7 +90,7 @@ function get_single_service_edit_form(content) {
                         }
                     }
                     else{
-                        bootbox.alert("Service can't be edited.");
+                        bootbox.alert("Service can't be edited due to non existence of service templates.");
                     }
                 }
             },

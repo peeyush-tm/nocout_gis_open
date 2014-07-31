@@ -377,7 +377,7 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
         organization_descendants_ids= self.logged_in_user_organization_ids()
-        return Device.objects.filter(organization__in = organization_descendants_ids, is_deleted=0, is_monitored_on_nms=0) \
+        return Device.objects.filter(organization__in = organization_descendants_ids, is_deleted=0, is_monitored_on_nms=0, host_state="Enable") \
                                      .values(*self.columns+['id'])
 
     def prepare_results(self, qs):
