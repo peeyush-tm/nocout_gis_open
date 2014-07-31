@@ -87,7 +87,8 @@ def build_data(doc):
     #local_time_epoch = get_epoch_time(doc.get('local_timestamp'))
     for entry in doc.get('data'):
 	check_time_epoch = get_epoch_time(entry.get('time'))
-	local_time_epoch = check_time_epoch
+	# Advancing local_timestamp/sys_timestamp to next 5 mins time frame
+	local_time_epoch = check_time_epoch + 300
         t = (
         	#uuid,
                 doc.get('host'),

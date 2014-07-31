@@ -127,6 +127,8 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 
 			status_dict['ds'] = ds_index
 			ds_values = data_series['data'][:-1]
+			start_time = mongo_functions.get_latest_entry(db_type='mongodb', db=db, table_name=None,
+                                                                host=host, serv=data_dict['service'], ds=ds_index)
 			for d in ds_values:
 				if d[-1] is not None:
 					m += 5
@@ -134,6 +136,13 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 						time=data_series.get('check_time') + timedelta(minutes=m),
 						value=d[-1]
 					)
+					# forcing to not add deuplicate entry in mongo db. currenltly suppose at time 45.00 50.00 data comes in
+					# in one iteration then in second iteration 50.00 55.00 data comes .So Not adding second iteration
+					# 50.00 data again. 
+					if start_time == temp_dict.get('time'):
+						data_dict.update({"local_timestamp":temp_dict.get('time')+timedelta(minutes=5),
+						"check_time":temp_dict.get('time')+ timedelta(minutes=5)})
+						continue
 					data_dict.get('data').append(temp_dict)
 			data_dict['meta'] = threshold_values.get(ds_index)
 			# dictionariers to hold values for the service status tables
