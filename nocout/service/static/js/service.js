@@ -117,7 +117,7 @@ function on_svc_template_change(){
 function edit_single_service_message(responseResult) {
     bootbox.alert(responseResult.result.message, function(){
         // reload page after clicking "OK!"
-        location = "http://localhost:8000/service_history/";
+        location = window.location.origin+"/service_history/";
         location.reload();
     });
 }
@@ -168,7 +168,7 @@ function get_single_service_delete_form(content){
 function delete_single_service_message(responseResult) {
     bootbox.alert(responseResult.result.message, function(){
         // reload page after clicking "OK!"
-        location = "http://localhost:8000/service_history/";
+        location = window.location.origin+"/service_history/";
         location.reload();
     });
 }

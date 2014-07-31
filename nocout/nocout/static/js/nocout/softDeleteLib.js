@@ -137,8 +137,11 @@ function add_device(device_id) {
 
 // show message for device addition success/failure
 function device_add_message(responseResult) {
-    alert(window.location);
-    bootbox.alert(responseResult.result.message);
+    bootbox.alert(responseResult.result.message, function(){
+        // reload page after clicking "OK!"
+        location = window.location.origin+"/device/#NonOperationalDeviceListing";
+        location.reload();
+    });
 }
 
 
@@ -172,8 +175,7 @@ function delete_device(device_id) {
 function device_delete_message(responseResult) {
     bootbox.alert(responseResult.result.message, function(){
         // reload page after clicking "OK!"
-        alert(window.location);
-        location = "http://127.0.0.1:8000/device/#OperationalDeviceListing";
+        location = window.location.origin+"/device/#OperationalDeviceListing";
         location.reload();
     });
 }
