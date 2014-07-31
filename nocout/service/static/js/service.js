@@ -35,16 +35,20 @@ function get_single_service_edit_form(content) {
     // shows currently selected service information
     service_add_html += '<h5 class="text-danger"><b>Modified configuration:</b></h5>';
     service_add_html += '<h6><b>Select service template:</b></h6>';
-
-    // display error message for empty service template select menu
-    service_add_html += '<div id="svc_template_error_msg" class="text-danger"></div>';
-    service_add_html += '<select class="form-control" id="id_svc_templates" name="svc_templates" onchange="on_svc_template_change();">';
-    service_add_html += '<option value="">Select</option>';
-    for (var i = 0, l = content.result.data.objects.templates.length; i < l; i++) {
-        service_add_html += '<option value="' + content.result.data.objects.templates[i].key + '">' + content.result.data.objects.templates[i].value + '</option>';
+    if (!(typeof content.result.data.objects.templates === 'undefined') && !(Object.keys(content.result.data.objects.templates).length === 0)) {
+        // display error message for empty service template select menu
+        service_add_html += '<div id="svc_template_error_msg" class="text-danger"></div>';
+        service_add_html += '<select class="form-control" id="id_svc_templates" name="svc_templates" onchange="on_svc_template_change();">';
+        service_add_html += '<option value="">Select</option>';
+        for (var i = 0, l = content.result.data.objects.templates.length; i < l; i++) {
+            service_add_html += '<option value="' + content.result.data.objects.templates[i].key + '">' + content.result.data.objects.templates[i].value + '</option>';
+        }
+        service_add_html += '</select>';
+        service_add_html += '<div id="modified_info"></div>';
     }
-    service_add_html += '</select>';
-    service_add_html += '<div id="modified_info"></div>';
+    else{
+        service_add_html += '<p class="text-danger">No templates associated with this service.</p>';
+    }
 
     // display bootbox with 'service_add_html' value as content
     bootbox.dialog({
@@ -55,33 +59,38 @@ function get_single_service_edit_form(content) {
                 label: "Yes!",
                 className: "btn-success",
                 callback: function () {
-                    //if services are present on then send the call to add service else just hide the bootbox
-                    if ($("#id_svc_templates").val() != "") {
-                        // data_sources --> array which contains data sources dictionaries
-                        var data_sources = [];
-                        // loop through all the elements with class 'data_source_field'
-                        $('.data_source_field').each(function(index, obj){
-                            // fetching data source values from three columns of each row
-                            var $tds = $(this).find('td'),
-                                data_source = $tds.eq(0).text(),
-                                warning = $tds.eq(1).text(),
-                                critical = $tds.eq(2).text();
-                            // create data source dictionary
-                            ds = {"data_source": data_source, "warning": warning, "critical": critical};
-                            // appending data source dictionary to data_sources array
-                            data_sources.push(ds);
-                        });
-                        Dajaxice.device.edit_single_service(edit_single_service_message, {'dsc_id': $("#dsc_id").val(),
-                                                                                          'svc_temp_id': $('#id_svc_templates').val(),
-                                                                                          'data_sources': data_sources});
-                        // return true, so that bootbox close if success call goes successfully
-                        return true;
+                    if (!(typeof content.result.data.objects.templates === 'undefined') && !(Object.keys(content.result.data.objects.templates).length === 0)) {
+                        //if services are present on then send the call to add service else just hide the bootbox
+                        if ($("#id_svc_templates").val() != "") {
+                            // data_sources --> array which contains data sources dictionaries
+                            var data_sources = [];
+                            // loop through all the elements with class 'data_source_field'
+                            $('.data_source_field').each(function(index, obj){
+                                // fetching data source values from three columns of each row
+                                var $tds = $(this).find('td'),
+                                    data_source = $tds.eq(0).text(),
+                                    warning = $tds.eq(1).text(),
+                                    critical = $tds.eq(2).text();
+                                // create data source dictionary
+                                ds = {"data_source": data_source, "warning": warning, "critical": critical};
+                                // appending data source dictionary to data_sources array
+                                data_sources.push(ds);
+                            });
+                            Dajaxice.device.edit_single_service(edit_single_service_message, {'dsc_id': $("#dsc_id").val(),
+                                                                                              'svc_temp_id': $('#id_svc_templates').val(),
+                                                                                              'data_sources': data_sources});
+                            // return true, so that bootbox close if success call goes successfully
+                            return true;
+                        }
+                        else {
+                            // display this message if no service template is selected
+                            $("#svc_template_error_msg").text("* Service template must be selected.");
+                            // return false, so that bootbox doesn't close automatically
+                            return false;
+                        }
                     }
-                    else {
-                        // display this message if no service template is selected
-                        $("#svc_template_error_msg").text("* Service template must be selected.");
-                        // return false, so that bootbox doesn't close automatically
-                        return false;
+                    else{
+                        bootbox.alert("Service can't be edited.");
                     }
                 }
             },
