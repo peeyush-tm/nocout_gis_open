@@ -1,8 +1,6 @@
 import re
 import datetime
-
-# fread = open("complete_db_structure.sql", 'r')
-# filedata = fread.readlines()
+import calendar
 
 count = 0
 count_year = int(raw_input("how many years:>"))  # license validity
@@ -51,30 +49,63 @@ for ptable in partitionTableList:
     fwrite.write(
         "PARTITION BY RANGE(sys_timestamp)" + "\n")
     fwrite.write("(" + "\n")
-    j = 0
+
     i = cur_yer
-    while j < count_year:
-        if j == 0 and cur_mon != 1:
-            x = cur_mon - 1
-            y = 12
-        elif j == count_year - 1 and cur_mon != 1:
-            x = 0
-            y = cur_mon + 1
-        else:
-            x = 0
-            y = 12
-        while x < y:
-            x += 1
-            writeThis = "PARTITION p" + str(x * i + x - 1) + \
-                " VALUES LESS THAN (UNIX_TIMESTAMP(" + "'" + str(i) + "-"\
-                + str(x) + "-" + "01" + " 00:00:00'" + "))"
-            fwrite.write(writeThis)
-            if j == count_year - 1 and x == y:
-                fwrite.write("\n")
+
+    # while j < count_year:
+    #     c = calendar.Calendar()
+    #     c.setfirstweekday(calendar.SUNDAY)
+    #     weeks = c.yeardatescalendar(i)
+    #     count = 0
+    #     temp = {}
+    #     writeThis = []
+    #     for week in weeks:
+    #         for w in week:
+    #             for ws in w:
+    #                 if str(ws[-1]) not in temp:
+    #                     count += 1
+    #                     temp[str(ws[-1])] = ""
+    #                     temp[str(ws[-1])] = str(ws[-1]) + " " + "00:00:00"
+    #                     writeThis.append("PARTITION p" + str(count * (i + count - 1)) +
+    #                                      " VALUES LESS THAN (UNIX_TIMESTAMP('"+temp[str(ws[-1])]+"'))" + "\n")
+    #     fwrite.write(",".join(writeThis))
+    #     i += 1
+    #     j += 1
+
+    temp_partition = {}
+    for yearstocome in range(count_year):
+        if i not in temp_partition:
+            if i == cur_yer:
+                temp_partition[i] = range(cur_mon, 13)
+            elif i == cur_yer + count_year - 1:
+                temp_partition[i] = range(1, cur_mon+1)
             else:
-                fwrite.write(", \n")
+                temp_partition[i] = range(1, 13)
+        else:
+            pass
+
         i += 1
-        j += 1
+
+    i = cur_yer
+
+    c = calendar.Calendar()
+    c.setfirstweekday(calendar.SUNDAY)
+    writeThis = []
+    temp = {}
+    for year in temp_partition:
+        for month in temp_partition[year]:
+            weeks = c.monthdatescalendar(i, month)
+            count = 0
+            for week in weeks:
+                if str(week[-1]) not in temp:
+                    count += 1
+                    temp[str(week[-1])] = ""
+                    temp[str(week[-1])] = str(week[-1]) + " " + "00:00:00"
+                    writeThis.append("PARTITION p" + str(i) + str(month) + str(count) +
+                                     " VALUES LESS THAN (UNIX_TIMESTAMP('"+temp[str(week[-1])]+"'))" + "\n")
+        i += 1
+    fwrite.write(",".join(writeThis))
+
     fwrite.write("); \n")
     fwrite.write("\n")
     fwrite.write("\n")
