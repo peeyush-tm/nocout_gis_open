@@ -86,6 +86,8 @@ def build_data(doc):
     #uuid = get_machineid()
     machine_name = get_machine_name()
     local_time_epoch = get_epoch_time(doc.get('local_timestamp'))
+    # Advancing local_timestamp/sys_timetamp to next 5 mins time frame
+    local_time_epoch += 300
     for entry in doc.get('data'):
 	check_time_epoch = get_epoch_time(entry.get('time'))
         t = (
