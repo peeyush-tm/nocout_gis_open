@@ -91,6 +91,7 @@ function get_single_service_edit_form(content) {
                     }
                     else{
                         $(".bootbox").modal("hide");
+                        return true;
                     }
                 }
             },

@@ -511,9 +511,23 @@ def add_service_form(request, value):
             logger.info("Master site doesn't exist.")
         if device.is_added_to_nms == 1:
             if master_site_name == "master_UA":
+                dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name)
                 device_type = DeviceType.objects.get(id=device.device_type)
-                services = device_type.service.all()
-                for service in services:
+
+                # complete no. of services associated with this device
+                complete_services = []
+                for svc in device_type.service.all():
+                    complete_services.append(svc.name)
+
+                # services those are already running for this device
+                already_added_services = []
+                for svc in dsc:
+                    already_added_services.append(svc.service_name)
+
+                # services those are not currently running but associated with that device
+                services = set(complete_services) - set(already_added_services)
+                for svc in services:
+                    service = Service.objects.get(name=svc)
                     svc_dict = {}
                     svc_dict['key'] = service.id
                     svc_dict['value'] = service.alias
