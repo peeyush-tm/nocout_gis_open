@@ -31,14 +31,18 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 	data_dict = {
 		"host": str(host),
 		"service": None,
-		"ds": {},
+		"ds": None,
+		"data": [],
+		"meta": None,
 		"ip_address": str(ip),
 		"severity":None
 	}
 	status_dict = {
 		"host": str(host),
 		"service": None,
-		"ds": {},
+		"ds": None,
+		"data": [],
+		"meta": None,
 		"ip_address": str(ip),
 		"severity":None
 	}
@@ -69,6 +73,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		else:
 			data_dict['service'] = serv_disc
 			status_dict['service'] = serv_disc
+
 		if serv_disc.endswith('_status') or serv_disc == 'Check_MK':
 			continue
 		if serv_disc == 'ping':
@@ -97,10 +102,16 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		for ds in root.findall('DATASOURCE'):
 			params.append(ds.find('NAME').text)
 			file_paths.append(ds.find('RRDFILE').text)
-		for path in file_paths:
+		for i, path in enumerate(file_paths):
+			if params[file_paths.index(path)] == 'rtmin' or params[file_paths.index(path)] == 'rtmax':
+				continue
 			m = -5
-		
-			data_series = do_export(site, host, path,params[file_paths.index(path)], db, data_dict['service'])
+			ds_index = params[file_paths.index(path)]
+			if i == 0:
+	    			# Data will be exported from last inserted entry in mongodb uptill current time
+				start_time = mongo_functions.get_latest_entry(db_type='mongodb', db=db, table_name=None,
+								host=host, serv=data_dict['service'], ds=ds_index)
+			data_series = do_export(site, host, path, ds_index, start_time, data_dict['service'])
 			data_dict.update({
 				"check_time": data_series.get('check_time'),
 				"local_timestamp": data_series.get('local_timestamp'),
@@ -112,11 +123,12 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 				"local_timestamp": data_series.get('local_timestamp'),
 				"site": data_series.get('site')
 				})
-			ds_index = params[file_paths.index(path)]
-			data_dict.get('ds')[ds_index] = {"meta": {}, "data": []}
+			data_dict['ds'] = ds_index
 
-			status_dict.get('ds')[ds_index]={"meta":{},"data":[]}			
+			status_dict['ds'] = ds_index
 			ds_values = data_series['data'][:-1]
+			start_time = mongo_functions.get_latest_entry(db_type='mongodb', db=db, table_name=None,
+                                                                host=host, serv=data_dict['service'], ds=ds_index)
 			for d in ds_values:
 				if d[-1] is not None:
 					m += 5
@@ -124,49 +136,62 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 						time=data_series.get('check_time') + timedelta(minutes=m),
 						value=d[-1]
 					)
-					data_dict.get('ds').get(ds_index).get('data').append(temp_dict)
-			data_dict.get('ds').get(ds_index)['meta'] = threshold_values.get(ds_index)
+					# forcing to not add deuplicate entry in mongo db. currenltly suppose at time 45.00 50.00 data comes in
+					# in one iteration then in second iteration 50.00 55.00 data comes .So Not adding second iteration
+					# 50.00 data again. 
+					if start_time == temp_dict.get('time'):
+						data_dict.update({"local_timestamp":temp_dict.get('time')+timedelta(minutes=5),
+						"check_time":temp_dict.get('time')+ timedelta(minutes=5)})
+						continue
+					data_dict.get('data').append(temp_dict)
+			data_dict['meta'] = threshold_values.get(ds_index)
 			# dictionariers to hold values for the service status tables
-			status_dict.get('ds').get(ds_index).get('data').append(temp_dict)	
-			status_dict.get('ds').get(ds_index)['meta'] = threshold_values.get(ds_index)
+			status_dict.get('data').append(temp_dict)	
+			status_dict['meta'] = threshold_values.get(ds_index)
 			status_dict.update({"local_timestamp":temp_dict.get('time'),"check_time":temp_dict.get('time')})
-		data_dict['severity'] = service_state
-		status_dict['severity'] = service_state
-		matching_criteria.update({'host':str(host),'service':data_dict['service'],'site':site})
-		if xml_file == '_HOST_.xml':
-			mongo_functions.mongo_db_update(db,matching_criteria,status_dict,"network_perf_data")
-			mongo_functions.mongo_db_insert(db,data_dict,"network_perf_data")
-		else:
-			mongo_functions.mongo_db_update(db,matching_criteria,status_dict,"serv_perf_data")
-			mongo_functions.mongo_db_insert(db,data_dict,"serv_perf_data")
+			
+			data_dict['severity'] = service_state
+			status_dict['severity'] = service_state
+			matching_criteria.update({'host':str(host),'service':data_dict['service'],'site':site,'ds':ds_index})
+			if xml_file == '_HOST_.xml':
+				mongo_functions.mongo_db_update(db,matching_criteria,status_dict,"network_perf_data")
+				mongo_functions.mongo_db_insert(db,data_dict,"network_perf_data")
+			else:
+				mongo_functions.mongo_db_update(db,matching_criteria,status_dict,"serv_perf_data")
+				mongo_functions.mongo_db_insert(db,data_dict,"serv_perf_data")
 
 		#status = insert_data(data_dict)
 
+			data_dict = {
+					"host": str(host),
+					"service": serv_disc,
+					"ip_address": str(ip),
+					"data": [],
+					"meta": None,
+					"severity": None,
+					"ds": None
+			}
+			matching_criteria = {}
+			status_dict = {
+					"host": str(host),
+					"service": serv_disc,
+					"ip_address": str(ip),
+					"data": [],
+					"meta": None,
+					"severity": None,
+					"ds": None
+			}
+	
 		params = []
 		file_paths = []
-		data_dict = {
-				"host": str(host),
-				"service": None,
-				"ds": {},
-				"ip_address": str(ip)
-		}
-		matching_criteria = {}
-		status_dict = {
-				"host": str(host),
-				"service": None,
-				"ds": {},
-				"ip_address": str(ip)
-		}
 
 
-def do_export(site, host, file_name,data_source, db, serv):
+def do_export(site, host, file_name,data_source, start_time, serv):
     data_series = {}
     cmd_output ={}
     CF = 'AVERAGE'
     resolution = '-300sec';
 
-    # Data will be exported from last inserted entry in mongodb uptill current time
-    start_time = mongo_functions.get_latest_entry(db_type='mongodb', db=db,table_name=None, host=host, serv=serv, ds=data_source)
     # Get India times (GMT+5.30)
     utc_time = datetime(1970, 1,1, 5, 30)
     end_time = datetime.now()

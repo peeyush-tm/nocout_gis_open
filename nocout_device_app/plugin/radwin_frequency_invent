@@ -53,22 +53,22 @@ def check_radwin_frequency_invent(item, _no_params, info):
                             ValueError ,Exception
 """
     state = 3
-    infotext = "unknown output"
+    infotext = "unknown_output"
     try:
         logging.debug("radwin_frequency_invent SNMP Output %s", info)
         if info[0][0]:
             frequency = int(info[0][0])
             if frequency < 0:
                 state = 0
-                infotext = "illegal value of frequency %d" % frequency
+                infotext = "invalid_value_%d" % frequency
             else:
                 state = 0
-                infotext = "%d " % frequency
+                infotext = "%d" % frequency
     except ValueError:
-        infotext = "type mismatch value"
+        infotext = "type_mismatch_value"
         logging.critical("radwin_frequency_invent %s", infotext, exc_info=True)
     except:
-        infotext = "unknown value"
+        infotext = "unknown_value"
         logging.critical("radwin_frequency_invent %s", infotext, exc_info=True)
     return (state, infotext)
 
