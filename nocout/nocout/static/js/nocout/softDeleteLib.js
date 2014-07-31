@@ -137,7 +137,45 @@ function add_device(device_id) {
 
 // show message for device addition success/failure
 function device_add_message(responseResult) {
+    alert(window.location);
     bootbox.alert(responseResult.result.message);
+}
+
+
+
+// delete device to monitoring core
+function delete_device(device_id) {
+    bootbox.dialog({
+        message: "Delete device form nms core.",
+        title: "<span class='text-danger'><i class='fa fa-times'></i> Delete device form nms core.</span>",
+        buttons: {
+            success: {
+                label: "Yes!",
+                className: "btn-success",
+                callback: function () {
+                    Dajaxice.device.delete_device_from_nms_core(device_delete_message, {'device_id': device_id});
+                }
+            },
+            danger: {
+                label: "No!",
+                className: "btn-danger",
+                callback: function () {
+                    $(".bootbox").modal("hide");
+                }
+            }
+        }
+    });
+}
+
+
+// show message for device deletion success/failure
+function device_delete_message(responseResult) {
+    bootbox.alert(responseResult.result.message, function(){
+        // reload page after clicking "OK!"
+        alert(window.location);
+        location = "http://127.0.0.1:8000/device/#OperationalDeviceListing";
+        location.reload();
+    });
 }
 
 

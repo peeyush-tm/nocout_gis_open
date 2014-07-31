@@ -417,6 +417,62 @@ def add_device_to_nms_core(request, device_id):
     return json.dumps({'result': result})
 
 
+# add device to nms core
+@dajaxice_register
+def delete_device_from_nms_core(request, device_id):
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = "Device deletion failed."
+    result['data']['meta'] = ''
+    device = Device.objects.get(pk=device_id)
+    if device.host_state != "Disable":
+        # get 'agent_tag' from DeviceType model
+        agent_tag = ""
+        try :
+            agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
+        except:
+            logger.info("Device has no device type.")
+
+
+        device_data = {'mode' : 'deletehost', 'device_name': device.device_name,}
+
+        master_site = SiteInstance.objects.get(name='master_UA')
+        # url for nocout.py
+        # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+        # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
+        url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                                master_site.password,
+                                                                master_site.machine.machine_ip,
+                                                                master_site.web_service_port,
+                                                                master_site.name)
+
+        r = requests.post(url , data=device_data)
+        print "************************ r.text *********************************"
+        print r.text
+        response_dict = ast.literal_eval(r.text)
+        print "**************************** response_dict **************************"
+        print response_dict
+        if r:
+            result['data'] = device_data
+            result['success'] = 1
+            if response_dict['error_code'] != None:
+                result['message'] = response_dict['error_message'].capitalize()
+            else:
+                print "********************************** It enters **************************************"
+                result['message'] = response_dict['message'].capitalize()
+                # set 'is_added_to_nms' to 1 after device successfully added to nocout nms core
+                device.is_added_to_nms = 0
+                # set 'is_monitored_on_nms' to 1 if service is added successfully
+                device.is_monitored_on_nms = 0
+                device.save()
+                # remove device services from 'service_deviceserviceconfiguration' table
+                DeviceServiceConfiguration.objects.filter(device_name=device.device_name).delete()
+    else:
+        result['message'] = "Device state is disabled. First enable it than add it to nms core."
+    return json.dumps({'result': result})
+
+
 # sync devices with monitoring core
 @dajaxice_register
 def sync_device_with_nms_core(request, device_id):
@@ -766,30 +822,34 @@ def add_service(request, service_data):
                             dsc.max_check_attempts=int(service_para.max_check_attempts)
                             dsc.warning=data_source.warning
                             dsc.critical=data_source.critical
+                            dsc.is_added=1
                             dsc.save()
                     except Exception as e:
                         logger.info(e)
                         for data_source in service.service_data_sources.all():
                             # create service if it is not existing in 'service_deviceserviceconfiguration' table
                             dsc = DeviceServiceConfiguration.objects.create(device_name=str(Device.objects.get(pk=int(sd['device_id'])).device_name),
-                                                               service_name=str(Service.objects.get(pk=int(sd['service_id'])).name),
-                                                               agent_tag=str(DeviceType.objects.get(pk=device.device_type).agent_tag),
-                                                               port=str(service_para.protocol.port),
-                                                               version=str(service_para.protocol.version),
-                                                               read_community=str(service_para.protocol.read_community),
-                                                               svc_template=str(service_para.parameter_description),
-                                                               normal_check_interval=int(service_para.normal_check_interval),
-                                                               retry_check_interval=int(service_para.retry_check_interval),
-                                                               max_check_attempts=int(service_para.max_check_attempts),
-                                                               data_source=data_source.name,
-                                                               warning=data_source.warning,
-                                                               critical=data_source.critical)
+                                                                   service_name=str(Service.objects.get(pk=int(sd['service_id'])).name),
+                                                                   agent_tag=str(DeviceType.objects.get(pk=device.device_type).agent_tag),
+                                                                   port=str(service_para.protocol.port),
+                                                                   version=str(service_para.protocol.version),
+                                                                   read_community=str(service_para.protocol.read_community),
+                                                                   svc_template=str(service_para.parameter_description),
+                                                                   normal_check_interval=int(service_para.normal_check_interval),
+                                                                   retry_check_interval=int(service_para.retry_check_interval),
+                                                                   max_check_attempts=int(service_para.max_check_attempts),
+                                                                   data_source=data_source.name,
+                                                                   warning=data_source.warning,
+                                                                   critical=data_source.critical,
+                                                                   is_added=1
+                            )
 
 
                     # set 'is_monitored_on_nms' to 1 if service is added successfully
                     device.is_monitored_on_nms = 1
                     device.save()
-
+            else:
+                pass
         except Exception as e:
             logger.info(e)
             result['message'] += "Failed to add service '%s'. <br />" % (service.name)
