@@ -14,28 +14,28 @@ function get_single_service_edit_form(content) {
     service_add_html += '<dt>Service</dt><dd>'+content.result.data.objects.service_name+'</dd>';
     service_add_html += '<dt>Data Source</dt><dd>'+content.result.data.objects.data_source+'</dd></dl>';
     service_add_html += '<input type="hidden" id="device_id" value="' + content.result.data.objects.device_id + '" />';
-    service_add_html += '<div class="box border orange"><div class="box-title"><h4><i class="fa fa-table"></i>Service & Data Source Parameters</h4></div>';
-    service_add_html += '<div class="box-body"><table class="table">';
-    service_add_html += '<thead><tr><th>Normal Check Interval</th><th>Retry Check Interval</th><th>Max Check Attemps</th></tr></thead>';
-    service_add_html += '<tbody>';
-    service_add_html += '<tr>';
-    service_add_html += '<td>'+content.result.data.objects.normal_check_interval+'</td>';
-    service_add_html += '<td>'+content.result.data.objects.retry_check_interval+'</td>';
-    service_add_html += '<td>'+content.result.data.objects.max_check_attempts+'</td>';
-    service_add_html += '</tr></tbody>';
-    service_add_html += '<thead><tr><th>DS Name</th><th>Warning</th><th>Critical</th></tr></thead>';
-    service_add_html += '<tbody><tr>';
-    service_add_html += '<td>'+content.result.data.objects.data_source+'</td>';
-    service_add_html += '<td>'+content.result.data.objects.warning+'</td>';
-    service_add_html += '<td>'+content.result.data.objects.critical+'</td>';
-    service_add_html += '</tr>';
-    service_add_html += '</tbody></table>';
-    service_add_html += '</div></div></div>';
-
-    // shows currently selected service information
-    service_add_html += '<h5 class="text-danger"><b>Modified configuration:</b></h5>';
-    service_add_html += '<h6><b>Select service template:</b></h6>';
     if (!(typeof content.result.data.objects.templates === 'undefined') && !(Object.keys(content.result.data.objects.templates).length === 0)) {
+        service_add_html += '<div class="box border orange"><div class="box-title"><h4><i class="fa fa-table"></i>Service & Data Source Parameters</h4></div>';
+        service_add_html += '<div class="box-body"><table class="table">';
+        service_add_html += '<thead><tr><th>Normal Check Interval</th><th>Retry Check Interval</th><th>Max Check Attemps</th></tr></thead>';
+        service_add_html += '<tbody>';
+        service_add_html += '<tr>';
+        service_add_html += '<td>'+content.result.data.objects.normal_check_interval+'</td>';
+        service_add_html += '<td>'+content.result.data.objects.retry_check_interval+'</td>';
+        service_add_html += '<td>'+content.result.data.objects.max_check_attempts+'</td>';
+        service_add_html += '</tr></tbody>';
+        service_add_html += '<thead><tr><th>DS Name</th><th>Warning</th><th>Critical</th></tr></thead>';
+        service_add_html += '<tbody><tr>';
+        service_add_html += '<td>'+content.result.data.objects.data_source+'</td>';
+        service_add_html += '<td>'+content.result.data.objects.warning+'</td>';
+        service_add_html += '<td>'+content.result.data.objects.critical+'</td>';
+        service_add_html += '</tr>';
+        service_add_html += '</tbody></table>';
+        service_add_html += '</div></div></div>';
+
+        // shows currently selected service information
+        service_add_html += '<h5 class="text-danger"><b>Modified configuration:</b></h5>';
+        service_add_html += '<h6><b>Select service template:</b></h6>';
         // display error message for empty service template select menu
         service_add_html += '<div id="svc_template_error_msg" class="text-danger"></div>';
         service_add_html += '<select class="form-control" id="id_svc_templates" name="svc_templates" onchange="on_svc_template_change();">';
@@ -47,7 +47,7 @@ function get_single_service_edit_form(content) {
         service_add_html += '<div id="modified_info"></div>';
     }
     else{
-        service_add_html += '<p class="text-danger">No templates associated with this service.</p>';
+        service_add_html += '<p class="text-danger">No templates associated with this service.<br />Service can\'t be edited due to non existence of service templates.</p>';
     }
 
     // display bootbox with 'service_add_html' value as content
@@ -90,7 +90,7 @@ function get_single_service_edit_form(content) {
                         }
                     }
                     else{
-                        bootbox.alert("Service can't be edited due to non existence of service templates.");
+                        $(".bootbox").modal("hide");
                     }
                 }
             },
