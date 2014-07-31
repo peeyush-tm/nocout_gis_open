@@ -52,19 +52,18 @@ def check_radwin_cbw_invent(item, _no_params, info):
                                 ValueError ,Exception
     """
     state = 3
-    infotext = "unknown output"
+    infotext = "unknown_output"
     try:
         logging.debug("radwin_cbw_invent SNMP output %s", info)
         if info[0][0]:
             cbw = int(info[0][0])
             state = 0
-            cbw = cbw / 1000
-            infotext = "%d MHZ" % cbw
+            infotext = "%d" % cbw
     except ValueError:
-        infotext = "type mismatch value"
+        infotext = "type_mismatch_value"
         logging.critical("radwin_cbw_invent %s", infotext, exc_info=True)
     except:
-        infotext = "unkown value"
+        infotext = "unkown_value"
         logging.critical("radwin_cbw_invent %s", infotext, exc_info=True)
     return (state, infotext)
 
