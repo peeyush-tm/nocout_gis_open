@@ -1083,20 +1083,23 @@ class DeviceDetail(DetailView):
 
         context = super(DeviceDetail, self).get_context_data(**kwargs)
 
-        if kwargs['object'].device_technology:
-            context['device_technology'] = DeviceTechnology.objects.get(pk=kwargs['object'].device_technology).alias
-        if kwargs['object'].device_vendor:
-            context['device_vendor'] = DeviceVendor.objects.get(pk=kwargs['object'].device_vendor).alias
-        if kwargs['object'].device_model:
-            context['device_model'] = DeviceModel.objects.get(pk=kwargs['object'].device_model).alias
-        if kwargs['object'].device_type:
-            context['device_type'] = DeviceType.objects.get(pk=kwargs['object'].device_type).alias
-        if kwargs['object'].country:
-            context['country'] = Country.objects.get(pk=kwargs['object'].country).country_name
-        if kwargs['object'].state:
-            context['state'] = State.objects.get(pk=kwargs['object'].state).state_name
-        if kwargs['object'].city:
-            context['city'] = City.objects.get(pk=kwargs['object'].city).city_name
+        try:
+            if kwargs['object'].device_technology:
+                context['device_technology'] = DeviceTechnology.objects.get(pk=kwargs['object'].device_technology).alias
+            if kwargs['object'].device_vendor:
+                context['device_vendor'] = DeviceVendor.objects.get(pk=kwargs['object'].device_vendor).alias
+            if kwargs['object'].device_model:
+                context['device_model'] = DeviceModel.objects.get(pk=kwargs['object'].device_model).alias
+            if kwargs['object'].device_type:
+                context['device_type'] = DeviceType.objects.get(pk=kwargs['object'].device_type).alias
+            if kwargs['object'].country:
+                context['country'] = Country.objects.get(pk=kwargs['object'].country).country_name
+            if kwargs['object'].state:
+                context['state'] = State.objects.get(pk=kwargs['object'].state).state_name
+            if kwargs['object'].city:
+                context['city'] = City.objects.get(pk=kwargs['object'].city).city_name
+        except Exception as e:
+            logger.info(e.message)
 
         return context
 

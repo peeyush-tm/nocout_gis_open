@@ -241,7 +241,7 @@ def device_soft_delete_form(request, value):
             if e_dv.is_deleted == 1: continue
             # for excluding devices from eligible device choices those are not from
             # same device_group as the device which we are deleting
-            if set(e_dv.device_group.all()) != set(device.device_group.all()): continue
+            # if set(e_dv.device_group.all()) != set(device.device_group.all()): continue
             result['data']['objects']['eligible'].append(e_dict)
         for c_dv in child_devices:
             c_dict = {}
@@ -270,6 +270,7 @@ def device_soft_delete(request, device_id, new_parent_id):
     result['data']['objects']['device_id'] = device_id
     result['data']['objects']['device_name'] = device.device_name
     # setting new parent device
+    new_parent = ""
     try:
         # new_parent: new parent device for associated devices
         new_parent = Device.objects.get(id=new_parent_id)
@@ -277,6 +278,7 @@ def device_soft_delete(request, device_id, new_parent_id):
         logger.info("No new device parent exist.")
 
     # fetching all child devices of device which needs to be deleted
+    child_devices = ""
     try:
         child_devices = Device.objects.filter(parent_id=device_id)
     except:
@@ -658,6 +660,7 @@ def add_service(request, service_data):
     messages = ""
 
     for sd in service_data:
+        service = ""
         try:
             result = dict()
             result['data'] = {}
@@ -884,6 +887,7 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
     result['message'] = ""
     result['data']['meta'] = {}
     result['data']['objects'] = {}
+    dsc=""
     try:
         # service device service configuration object
         dsc = DeviceServiceConfiguration.objects.get(id=dsc_id)
@@ -995,11 +999,13 @@ def delete_single_service_form(request, dsc_id):
     try:
         service_data = result['data']['objects']
         service_data['service_name'] = dsc.service_name
+        service_data['service_alias'] = Service.objects.get(name=str(dsc.service_name)).alias
         service_data['device_name'] = dsc.device_name
+        service_data['device_alias'] = Device.objects.get(device_name=str(dsc.device_name)).device_alias
         service_data['data_sources'] = []
         try:
             dsc_for_data_sources = DeviceServiceConfiguration.objects.filter(device_name=dsc.device_name,
-                                                                     service_name=dsc.service_name)
+                                                                             service_name=dsc.service_name)
             for dsc_for_data_source in dsc_for_data_sources:
                 service_data['data_sources'].append(dsc_for_data_source.data_source)
         except Exception as e:
@@ -1008,3 +1014,58 @@ def delete_single_service_form(request, dsc_id):
         logger.info(e)
     return json.dumps({'result': result})
 
+
+# delete single service
+@dajaxice_register
+def delete_single_service(request, device_name, service_name):
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = ""
+    result['data']['meta'] = {}
+    result['data']['objects'] = {}
+
+    try:
+        service_data = {
+            'mode' : 'deleteservice',
+            'device_name' : str(device_name),
+            'service_name' : str(service_name)
+        }
+
+        master_site = SiteInstance.objects.get(name='master_UA')
+        # url for nocout.py
+        # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+        # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
+        url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                                master_site.password,
+                                                                master_site.machine.machine_ip,
+                                                                master_site.web_service_port,
+                                                                master_site.name)
+
+        # encoding service_data
+        encoded_data = urllib.urlencode(service_data)
+
+        # sending post request to nocout device app to add single service at a time
+        r = requests.post(url , data=encoded_data)
+
+        # converting post response data into python dict expression
+        response_dict = ast.literal_eval(r.text)
+
+
+        # if response(r) is given by post request than process it further to get success/failure messages
+        if r:
+            result['data'] = service_data
+            result['success'] = 1
+
+            # if response_dict doesn't have key 'success'
+            if not response_dict.get('success'):
+                logger.info(response_dict.get('error_message'))
+                result['message'] += "Failed to delete service '%s'. <br />" % (service_name)
+            else:
+                result['message'] += "Successfully updated service '%s'. <br />" % (service_name)
+
+            # delete service rows form 'service_deviceserviceconfiguration' table
+            DeviceServiceConfiguration.objects.filter(device_name=device_name, service_name=service_name).delete()
+    except Exception as e:
+        result['message'] += e.message
+    return json.dumps({'result': result})
