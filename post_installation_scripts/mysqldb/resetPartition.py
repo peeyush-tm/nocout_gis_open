@@ -63,7 +63,7 @@ for ptable in partitionTableList:
             else:
                 temp_partition[year] = range(1, 13)
 
-    print temp_partition
+    # print temp_partition
 
     c = calendar.Calendar()
     c.setfirstweekday(calendar.SUNDAY)
