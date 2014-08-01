@@ -15,6 +15,10 @@ from operator import is_not
 from functools import partial
 from django.utils.dateformat import format
 
+#sort the list of dictionaries
+# http://stackoverflow.com/questions/72899/how-do-i-sort-a-list-of-dictionaries-by-values-of-the-dictionary-in-python
+from operator import itemgetter
+
 import logging
 log=logging.getLogger(__name__)
 
@@ -26,6 +30,9 @@ SERVICE_DATA_SOURCE = {
     "pl": {"type": "column", "valuesuffix": "%", "valuetext": "Percentage (%)"},
 }
 
+SERVICES = {
+
+}
 
 class Live_Performance(ListView):
 
@@ -199,7 +206,8 @@ class LivePerformanceListing(BaseDatatableView):
                         dct["latency"] = perf_result[result]["latency"]
                         dct["last_updated"] = perf_result[result]["last_updated"]
 
-        return qs
+        sorted_qs = sorted(qs, key=itemgetter('last_updated'), reverse=True)
+        return sorted_qs
 
     def get_context_data(self, *args, **kwargs):
         request = self.request
