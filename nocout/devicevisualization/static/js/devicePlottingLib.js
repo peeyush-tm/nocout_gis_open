@@ -121,7 +121,7 @@ function devicePlottingClass_gmap() {
 		});
 
 		/*Create a instance of OverlappingMarkerSpiderfier*/
-		oms = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true});		
+		oms = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
 
 		/*Create a instance of google map info window*/
 		infowindow = new google.maps.InfoWindow();		
@@ -450,6 +450,9 @@ function devicePlottingClass_gmap() {
 
 						/*Create SS Marker*/
 					    var ss_marker = new google.maps.Marker(ss_marker_object);
+
+					    bsLatArray.push(ss_marker_obj.data.lat);
+						bsLonArray.push(ss_marker_obj.data.lon);
 					    
 					    var startEndObj = {},
 					    	ss_info = {},
@@ -2091,8 +2094,8 @@ function devicePlottingClass_gmap() {
 
 			/*Make ajax call to get the live polling data.*/
 			$.ajax({
-				url : window.location.origin+"/device/lp_service_data/"+"?device=['"+actual_device_name+"']&service=['"+selectedServiceTxt+"']&datasource=['"+selectedDatasourceTxt+"']",
-				// url : window.location.origin+"/"+"static/livePolling.json",
+				// url : window.location.origin+"/device/lp_service_data/"+"?device=['"+actual_device_name+"']&service=['"+selectedServiceTxt+"']&datasource=['"+selectedDatasourceTxt+"']",
+				url : window.location.origin+"/"+"static/livePolling.json",
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
@@ -2121,6 +2124,7 @@ function devicePlottingClass_gmap() {
 									isPlotted = 1;
 									markers.icon = newIcon;
 									markers.oldIcon = newIcon;
+									markers.setOptions({icon : newIcon, oldIcon : newIcon});
 								}
 							});
 
@@ -2134,6 +2138,7 @@ function devicePlottingClass_gmap() {
 
 										markers.icon = newIcon;
 										markers.oldIcon = newIcon;
+										markers.setOptions({icon : newIcon, oldIcon : newIcon});
 									}
 								});							
 								// end if statement
