@@ -444,6 +444,7 @@ function devicePlottingClass_gmap() {
 							bhInfo 			 : [],
 							antena_height    : ss_marker_obj.data.antena_height,
 							name 		 	 : ss_marker_obj.name,
+							device_name 	 : ss_marker_obj.device_name,
 							zIndex 			 : 200
 						};
 
@@ -2113,9 +2114,9 @@ function devicePlottingClass_gmap() {
 
 							$.grep(masterMarkersObj,function(markers) {
 
-								var plottedMarkerName = $.trim(markers.name);
+								var plottedMarkerName = $.trim(markers.device_name);
 
-								if(plottedMarkerName == deviceName) {
+								if(plottedMarkerName == actual_device_name) {
 
 									isPlotted = 1;
 									markers.icon = newIcon;
@@ -2129,7 +2130,8 @@ function devicePlottingClass_gmap() {
 
 									var plottedSSName = $.trim(markers.name);
 
-									if(plottedSSName == deviceName) {
+									if(plottedSSName == actual_device_name) {
+
 										markers.icon = newIcon;
 										markers.oldIcon = newIcon;
 									}
