@@ -11,6 +11,11 @@ from device.models import Device, City, State, DeviceTechnology
 from inventory.models import BaseStation, Sector, SubStation, Circuit
 from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
 
+#sort the list of dictionaries
+# http://stackoverflow.com/questions/72899/how-do-i-sort-a-list-of-dictionaries-by-values-of-the-dictionary-in-python
+from operator import itemgetter
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -208,7 +213,9 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                         }
                 device_data.append(ddata)
 
-            return device_data
+
+            sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
+            return sorted_device_data
 
         return device_list
 
@@ -370,8 +377,8 @@ class CustomerAlertListingTable(BaseDatatableView):
                     device_list.append(device_events)
                 else:
                     continue
-
-        return device_list
+        sorted_device_list = sorted(device_list, key=itemgetter('sys_timestamp'), reverse=True)
+        return sorted_device_list
 
     def prepare_results(self, qs):
 
