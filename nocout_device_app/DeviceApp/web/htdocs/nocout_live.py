@@ -76,12 +76,12 @@ def get_current_value(device, service=None, data_source_list=None):
     check_output, error = p.communicate()
     if check_output:
         reg_exp1 = re.compile(r'(?<=\()[^)]*(?=\)$)', re.MULTILINE)
-        reg_exp2 = re.compile(r'^\S+', re.MULTILINE)
+        reg_exp2 = re.compile(r'^ *\S+', re.MULTILINE)
         # Parse perfdata for all services running on that device
         ds_current_states = re.findall(reg_exp1, check_output)
         logger.info('ds_current_states : %s' % ds_current_states)
         # Get all the service names, currently running
-        current_services = re.findall(reg_exp2, check_output)[:-1]
+	current_services = map(lambda x: x.strip(), re.findall(reg_exp2, check_output)[:-1])
         logger.info('current_services : %s' % current_services)
 
         service_ds_pairs = zip(current_services, ds_current_states)
