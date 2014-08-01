@@ -422,11 +422,12 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
         columns = "*"
     extra_where_clause = condition if condition else ""
     if table_name and devices:
-        query = "SELECT {0} FROM `{1}` " \
+        query = "SELECT {0} FROM (" \
+                "SELECT {0} FROM `{1}` " \
                 "WHERE `{1}`.`device_name` in ( {2} ) " \
                 "AND `{1}`.`data_source` in ( {3}) {4}"\
-                "GROUP BY `{1}`.`device_name`, `{1}`.`data_source`" \
-                "ORDER BY `{1}`.sys_timestamp DESC" \
+                "ORDER BY `{1}`.sys_timestamp DESC) as `derived_table`" \
+                "GROUP BY `{derived_table}`.`device_name`, `{derived_table}`.`data_source`" \
             .format(columns, table_name, (",".join(map(in_string, devices))), \
             (',').join(map(in_string, data_sources)), extra_where_clause.format(table_name))
 
