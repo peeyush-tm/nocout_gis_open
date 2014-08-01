@@ -21,24 +21,13 @@ def if_statename(st):
     return names.get(st)
 
 # ####################################################################################
-#Function : check_radwin_link_ethernet_status
+# Function : check_radwin_link_ethernet_status
 #
 #Parameters: info (SNMP output ) _no_params ( No Parameters)
 #
 #Output: plugin output ,service state,performance data
 #####################################################################################
 
-import logging
-import inspect
-import os
-
-try:
-    log_file = "nocout/log_plugins.log"
-    with open(log_file, 'a+') as f:
-        pass
-    logging.basicConfig(filename=log_file, level=logging.CRITICAL)
-except:
-    pass
 
 
 def check_radwin_link_ethernet_status(item, _no_params, info):
@@ -69,32 +58,30 @@ def check_radwin_link_ethernet_status(item, _no_params, info):
     """
     state = 3
     status_list = ['']
-    infotext = "unknown output"
+    infotext = "unknown_value"
     try:
-        logging.debug("radwin_link_ethernet_status SNMP Output %s", info)
-        status_list = []
-        infotext = ""
-        for index in range(len(info)):
-            link_state = info[index][1]
-            if_name = info[index][0]
-            if if_name == None:
-                if_name = "unknown_name"
-            state = if_statename(str(link_state))
-            if state == None:
-                state = "unknown"
-            if ' ' in if_name:
-                if_name = str.replace(if_name, ' ', '_')
-            status_list.append((if_name, state))
-        state = 0
-        for name, status in status_list:
-            infotext += "[%s]%s " % (name, status)
+        if info:
+            status_list = []
+            infotext = ""
+            for index in range(len(info)):
+                link_state = info[index][1]
+                if_name = info[index][0]
+                if if_name == None:
+                    if_name = "unknown_name"
+                state = if_statename(str(link_state))
+                if state == None:
+                    state = "unknown"
+                if ' ' in if_name:
+                    if_name = str.replace(if_name, ' ', '_')
+                status_list.append((if_name, state))
+            state = 0
+            for name, status in status_list:
+                infotext += "[%s]%s " % (name, status)
 
     except ValueError:
-        infotext = "type mismatch value"
-        logging.critical("radwin_link_ethernet_status %s", infotext, exc_info=True)
+        infotext = "type_mismatch_value"
     except:
-        infotext = "unknown value"
-        logging.critical("radwin_link_ethernet_status %s", infotext, exc_info=True)
+        infotext = "unknown_value"
 
     return (state, infotext, status_list)
 

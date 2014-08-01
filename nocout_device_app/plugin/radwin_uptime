@@ -13,19 +13,8 @@ Radwin total uptime is sent to device application
 # Function : check_radwin_uptime
 # Parameters : Info (SNMP output) _no_params (currently poller script does not support parameters),item)
 # Output : Service state ,plugin output and performance data output
-#########################################################
-
-import logging
-
-import os
-
-try:
-    log_file = "nocout/log_plugins.log"
-    with open(log_file, 'a+') as f:
-        pass
-    logging.basicConfig(filename=log_file, level=logging.CRITICAL)
-except:
-    pass
+# ########################################################
+import time
 
 
 def check_radwin_uptime(item, _no_params, info):
@@ -56,34 +45,33 @@ def check_radwin_uptime(item, _no_params, info):
     """
     state = 3
     uptime = None
-    infotext = "unknown output"
+    infotext = "unknown_value"
     try:
-        logging.debug("radwin_uptime SNMP Output %s", info)
-        if info[0][0]:
-            uptime = int(info[0][0])
-            uptime = uptime / 100
-            seconds = uptime % 60
-            rem = uptime / 60
-            minutes = rem % 60
-            hours = (rem % 1440) / 60
-            days = rem / 1440
-            now = int(time.time())
-            since = time.strftime("%c", time.localtime(now - uptime))
-            state = 0
-            infotext = "up since %s (%dd %02d:%02d:%02d)" % (since, days, hours, minutes, seconds)
+        if info:
+            if info[0][0]:
+                uptime = int(info[0][0])
+                uptime = uptime / 100
+                seconds = uptime % 60
+                rem = uptime / 60
+                minutes = rem % 60
+                hours = (rem % 1440) / 60
+                days = rem / 1440
+                now = int(time.time())
+                since = time.strftime("%c", time.localtime(now - uptime))
+                state = 0
+                infotext = "up since %s (%dd %02d:%02d:%02d)" % (since, days, hours, minutes, seconds)
     except ValueError:
-        infotext = "type mismatch on value"
-        logging.critical("radwin_uptime %s", infotext, exc_info=True)
+        infotext = "type_mismatch_value"
     except:
-        infotext = "unkown value"
-        logging.critical("radwin_uptime %s", infotext, exc_info=True)
+        infotext = "unkown_value"
 
     return (state, infotext, [("uptime", uptime)])
 
+
 check_info["radwin_uptime"] = {
-'check_function': check_radwin_uptime,
-'service_description': 'radwin_uptime',
-'has_perfdata': True
+    'check_function': check_radwin_uptime,
+    'service_description': 'radwin_uptime',
+    'has_perfdata': True
 
 }
 
