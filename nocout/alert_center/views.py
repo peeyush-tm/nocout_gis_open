@@ -331,6 +331,7 @@ class CustomerAlertListingTable(BaseDatatableView):
             data_sources_list.append('pl')
 
         required_data_columns = ["id",
+                                 "data_source",
                                  "device_name",
                                  "severity",
                                  "current_value",
@@ -423,14 +424,14 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
     extra_where_clause = condition if condition else ""
     if table_name and devices:
         query = " SELECT {0} FROM ( " \
-                " SELECT * FROM `{1}` " \
+                " SELECT {0} FROM `{1}` " \
                 " WHERE `{1}`.`device_name` in ( {2} ) " \
                 " AND `{1}`.`data_source` in ( {3} ) {4} "\
                 " ORDER BY `{1}`.sys_timestamp DESC) as derived_table " \
                 " GROUP BY derived_table.`device_name`, derived_table.`data_source` " \
             .format(columns, table_name, (",".join(map(in_string, devices))), \
             (',').join(map(in_string, data_sources)), extra_where_clause.format(table_name))
-    
+
     return query
 
 
