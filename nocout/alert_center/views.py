@@ -422,22 +422,38 @@ class CustomerAlertListingTable(BaseDatatableView):
 
 def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None, condition=None):
     in_string = lambda x: "'" + str(x) + "'"
-    col_string = lambda x: "`" + str(x) + "`"
+    # col_string = lambda x,y: ("%s`" + str(x) + "`") %(y)
     query = None
-    if columns:
-        columns = (",".join(map(col_string, columns)))
-    else:
-        columns = "*"
+
+    if not columns:
+        return None
+
     extra_where_clause = condition if condition else ""
     if table_name and devices:
-        query = " SELECT {0} FROM ( " \
-                " SELECT {0} FROM `{1}` " \
-                " WHERE `{1}`.`device_name` in ( {2} ) " \
-                " AND `{1}`.`data_source` in ( {3} ) {4} "\
-                " ORDER BY `{1}`.sys_timestamp DESC) as derived_table " \
-                " GROUP BY derived_table.`device_name`, derived_table.`data_source` " \
-            .format(columns, table_name, (",".join(map(in_string, devices))), \
-            (',').join(map(in_string, data_sources)), extra_where_clause.format(table_name))
+        query = "SELECT {0} FROM {1} as original_table " \
+                "INNER JOIN ({1} as derived_table) " \
+                "ON ( " \
+                "    original_table.data_source = derived_table.data_source AND " \
+                "    original_table.device_name = derived_table.device_name AND " \
+                "    original_table.id < derived_table.id" \
+                ") " \
+                "WHERE ( " \
+                "    original_table.device_name in ( {2} ) AND " \
+                "    original_table.data_source in ( {3} )" \
+                "    {4}" \
+                ")" \
+                "GROUP BY original_table.device_name, original_table.data_source " \
+                "" \
+                "ORDER BY derived_table.id DESC" \
+                "".format(
+                    (',').join(["derived_table.`" + col_name + "`" for col_name in columns]),
+                    table_name,
+                    (",".join(map(in_string, devices))),
+                    (',').join(map(in_string, data_sources)),
+                    extra_where_clause.format("derived_table")
+                )
+
+    # logger.debug(query)
 
     return query
 
