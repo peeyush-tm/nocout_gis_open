@@ -442,9 +442,9 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
                 "    original_table.data_source in ( {3} )" \
                 "    {4}" \
                 ")" \
-                "GROUP BY original_table.device_name, original_table.data_source " \
+                "GROUP BY derived_table.device_name, derived_table.data_source " \
                 "" \
-                "ORDER BY derived_table.id DESC" \
+                "ORDER BY original_table.id DESC" \
                 "".format(
                     (',').join(["derived_table.`" + col_name + "`" for col_name in columns]),
                     table_name,
