@@ -569,7 +569,7 @@ class Get_Service_Type_Performance_Data(View):
 
 # misc utility functions
 
-def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None):
+def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None, condition=None):
     """
 
     :param table_name:
@@ -585,12 +585,17 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
         columns = (",".join(map(col_string, columns)))
     else:
         columns = "*"
+
+    extra_where_clause = condition if condition else ""
+
     if table_name and devices:
-        query = "SELECT {0} FROM `{1}` " \
-                "WHERE `{1}`.`device_name` in ( {2} ) " \
-                "AND `{1}`.`data_source` in ( {3}) " \
-                "GROUP BY `{1}`.`device_name`, `{1}`.`data_source`" \
-                "ORDER BY `{1}`.sys_timestamp DESC" \
-            .format(columns, table_name, (",".join(map(in_string, devices))), (',').join(map(in_string, data_sources)))
+        query = " SELECT {0} FROM ( " \
+                " SELECT {0} FROM `{1}` " \
+                " WHERE `{1}`.`device_name` in ( {2} ) " \
+                " AND `{1}`.`data_source` in ( {3} ) {4} "\
+                " ORDER BY `{1}`.sys_timestamp DESC) as `derived_table` " \
+                " GROUP BY `derived_table`.`device_name`, `derived_table`.`data_source` " \
+            .format(columns, table_name, (",".join(map(in_string, devices))), \
+            (',').join(map(in_string, data_sources)), extra_where_clause.format(table_name))
 
     return query
