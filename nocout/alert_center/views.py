@@ -514,4 +514,9 @@ def common_prepare_results(qs):
             dct['current_value']='<span style="color:#008000">%s</span>'%(dct['current_value'])
             dct['description']='<span style="color:#008000">%s</span>'%(dct['description'])
 
+        else:
+            dct['severity']='<div class="alert_informational"></div>'
+            dct['current_value']='<span style="color:#bba11f" >%s</span>'%(dct['current_value'])
+            dct['description']='<span style="color:#bba11f">%s</span>'%(dct['description'])
+
     return qs
