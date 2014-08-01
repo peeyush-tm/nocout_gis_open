@@ -10,23 +10,11 @@ Information of unavailable seconds is sent to device application
 """
 # #############################################################
 # Function :  check_radwin_uas
-#  
+#
 # Parameters : info(SNMP output of OID ) _no_params (Currently no params supported )
 #
 # Output  :  service state , Plugin output and performace data
 #############################################################
-
-import logging
-
-import os
-
-try:
-    log_file = "nocout/log_plugins.log"
-    with open(log_file, 'a+') as f:
-        pass
-    logging.basicConfig(filename=log_file, level=logging.CRITICAL)
-except:
-    pass
 
 
 def check_radwin_uas(item, _no_params, info):
@@ -59,24 +47,22 @@ def check_radwin_uas(item, _no_params, info):
     uas = None
     infotext = "unknown output"
     try:
-        logging.debug("radwin_uas SNMP Output %s", info)
-        if info[0][0]:
-            uas = int(info[0][0])
-            state = 0
-            infotext = "Device uas is %d " % uas
+        if info:
+            if info[0][0]:
+                uas = int(info[0][0])
+                state = 0
+                infotext = "Device uas is %d " % uas
     except ValueError:
         infotext = "type mismatch on value"
-        logging.critical("radwin_uas %s", infotext, exc_info=True)
     except:
         infotext = "unknown value"
-        logging.critical("radwin_uas %s", infotext, exc_info=True)
     return (state, infotext, [("uas", uas)])
 
 
 check_info["radwin_uas"] = {
-	'check_function': check_radwin_uas,
-	'service_description': 'radwin_uas',
-	'has_perfdata': True,
+'check_function': check_radwin_uas,
+'service_description': 'radwin_uas',
+'has_perfdata': True,
 }
 
 ##############################################################

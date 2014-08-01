@@ -14,19 +14,7 @@ Master slave sync state information is sent to device application
 # Parameters : info (SNMP output of OID) _no_params(currently no params supported)
 #
 # Ouptut : service state ,plugin output and performance_data
-####################################################################
-
-import logging
-
-import os
-
-try:
-    log_file = "nocout/log_plugins.log"
-    with open(log_file, 'a+') as f:
-        pass
-    logging.basicConfig(filename=log_file, level=logging.CRITICAL)
-except:
-    pass
+# ###################################################################
 
 
 def check_radwin_sync_state_status(item, _no_params, info):
@@ -57,32 +45,29 @@ def check_radwin_sync_state_status(item, _no_params, info):
     """
     state = 3
     sync_text = None
-    infotext = "unknown output"
+    infotext = "unknown_value"
     try:
-        logging.debug("radwin_sync_state_status SNMP Output %s", info)
-        if info[0][0]:
-            sync_state = int(info[0][0])
-            if sync_state == 1:
-                sync_text = "notSupported"
-            elif sync_state == 2:
-                sync_text = "independentUnit"
-            elif sync_state == 3:
-                sync_text = "hubSyncMaster"
-            elif sync_state == 4:
-                sync_text = "hubSyncClientContinueTx"
-            elif sync_state == 5:
-                sync_text = "hubSyncClientDisableTx"
-            else:
-                sync_text = "unknown value"
-            state = 0
-            infotext = "site sync state is %s" % (sync_text)
+        if info:
+            if info[0][0]:
+                sync_state = int(info[0][0])
+                if sync_state == 1:
+                    sync_text = "notSupported"
+                elif sync_state == 2:
+                    sync_text = "independentUnit"
+                elif sync_state == 3:
+                    sync_text = "hubSyncMaster"
+                elif sync_state == 4:
+                    sync_text = "hubSyncClientContinueTx"
+                elif sync_state == 5:
+                    sync_text = "hubSyncClientDisableTx"
+                else:
+                    sync_text = "unknown value"
+                state = 0
+                infotext = "site sync state is %s" % (sync_text)
     except ValueError:
-        infotext = "type mismatch value"
-        logging.critical("radwin_sync_state_status %s", infotext, exc_info=True)
+        infotext = "type_mismatch_value"
     except:
-        infotext = "unknown value"
-        logging.critical("radwin_sync_state_status %s", infotext, exc_info=True)
-#        return (state, infotext, [("site_sync_state", sync_text)])
+        infotext = "unknown_value"
 
     return (state, infotext, [("site_sync_state", sync_text)])
 

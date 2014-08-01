@@ -15,19 +15,7 @@ port service throughput information is sent to device application
 # Parameters : info (SNMP output), _no_params (scripts params)
 #
 # Output:   service state,plugin output ,peformance data
-###############################################################
-
-import logging
-
-import os
-
-try:
-    log_file = "nocout/log_plugins.log"
-    with open(log_file, 'a+') as f:
-        pass
-    logging.basicConfig(filename=log_file, level=logging.CRITICAL)
-except:
-    pass
+# ##############################################################
 
 def check_radwin_service_throughput(item, _no_params, info):
     """
@@ -57,29 +45,27 @@ def check_radwin_service_throughput(item, _no_params, info):
     """
     state = 3
     service_throughput = None
-    infotext = "unknown output"
+    infotext = "unknown_value"
     try:
-        logging.debug("radwin_service_throughput SNMP Output %s", info)
-        service_throughput = int(info[0][0])
-        if service_throughput == 0 or service_throughput < -1:
-            state = 0
-            infotext = "Device service throughput is Zero or negative"
-        else:
-            state = 0
-            infotext = "Device service_throughput is %d " % service_throughput
+        if info:
+            service_throughput = int(info[0][0])
+            if service_throughput == 0 or service_throughput < -1:
+                state = 0
+                infotext = "Device service throughput is Zero or negative"
+            else:
+                state = 0
+                infotext = "Device service_throughput is %d " % service_throughput
     except ValueError:
-        infotext = "type mismatch value"
-        logging.critical("radwin_service_throughput %s", infotext, exc_info=True)
+        infotext = "type_mismatch value"
     except:
-        infotext = "unknown value"
-        logging.critical("radwin_service_throughput %s", infotext, exc_info=True)
+        infotext = "unknown_value"
     return (state, infotext, [("service_throughput", service_throughput)])
 
 
 check_info["radwin_service_throughput"] = {
-'check_function': check_radwin_service_throughput,
-'service_description': 'radwin_service_throughput',
-'has_perfdata': True,
+    'check_function': check_radwin_service_throughput,
+    'service_description': 'radwin_service_throughput',
+    'has_perfdata': True,
 
 }
 

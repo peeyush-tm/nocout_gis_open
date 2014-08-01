@@ -16,20 +16,6 @@ Link distance informatio is sent to device application
 # 
 # Output: service state ,plugin output
 # ######################################################################
-
-import logging
-
-import os
-
-try:
-    log_file = "nocout/log_plugins.log"
-    with open(log_file, 'a+') as f:
-        pass
-    logging.basicConfig(filename=log_file, level=logging.CRITICAL)
-except:
-    pass
-
-
 def check_radwin_link_distance_invent(item, _no_params, info):
     """
                 check_radwin_link_distance_invent function calculates the link distance between BS.
@@ -54,28 +40,25 @@ def check_radwin_link_distance_invent(item, _no_params, info):
                                 ValueError ,Exception
     """
     state = 3
-
-
-    infotext = "unknown output"
+    infotext = "unknown_value"
     try:
-        logging.debug("radwin_link_distance_invent SNMP output %s", info)
-        link_distance = int(info[0][0])
-        if link_distance == -1:
-            infotex = "Device Link is not established "
-            state = 0
-        elif link_distance > 0:
-            state = 0
-            infotext = "%d" % link_distance
-        else:
-            infotext = "unknown value"
-            state = 0
+        if info:
+            link_distance = int(info[0][0])
+            if link_distance == -1:
+                infotext = "Device Link is not established "
+                state = 0
+            elif link_distance > 0:
+                state = 0
+                infotext = "%d" % link_distance
+            else:
+                infotext = "unknown_value"
+                state = 0
     except ValueError:
-        infotext = "type mismatch"
-        logging.critical("radwin_link_distance_invent %s", infotext, exc_info=True)
+        infotext = "type_mismatch_value"
     except:
-        infotext = "unknown value"
-        logging.critical("radwin_link_distance_invent %s", infotext, exc_info=True)
+        infotext = "unknown_value"
     return (state, infotext)
+
 
 check_info["radwin_link_distance_invent"] = {
     'check_function': check_radwin_link_distance_invent,
