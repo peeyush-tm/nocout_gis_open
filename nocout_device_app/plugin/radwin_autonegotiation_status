@@ -17,26 +17,15 @@ def portstatus(st):
              '16': 'forcefullDuplex100Mbps', '6556': 'unknown value'}
     return names.get(st)
 
+
 # ###############################################################################
 # Function : check_radwin_autonegotiation_status
 #
 # Parameters: info(SNMP Output ,_no_params(NO parameter))
 #
 # Output: service state,plugin output and performance data
-################################################################################
+# ###############################################################################
 
-
-import logging
-
-import os
-
-try:
-    log_file = "nocout/log_plugins.log"
-    with open(log_file, 'a+') as f:
-        pass
-    logging.basicConfig(filename=log_file, level=logging.CRITICAL)
-except:
-    pass
 
 
 def check_radwin_autonegotiation_status(item, _no_params, info):
@@ -66,35 +55,33 @@ def check_radwin_autonegotiation_status(item, _no_params, info):
                                 ValueError ,Exception
     """
     state = 3
-    infotext = "unknown output"
+    infotext = "unknown_value"
     port_status_list = ['']
     try:
-        port_status_list = []
-        infotext = ""
-        logging.debug("radwin_autonegotiation_status SNMP output %s", info)
-        for index in range(len(info)):
-            port_status = info[index][0]
-            port_status_string = portstatus(str(port_status))
-            if port_status_string == None:
-                port_status_string = "unknown_port_status"
-            port_status_list.append((str(index + 1), port_status_string))
+        if info:
+            port_status_list = []
+            infotext = ""
+            for index in range(len(info)):
+                port_status = info[index][0]
+                port_status_string = portstatus(str(port_status))
+                if port_status_string == None:
+                    port_status_string = "unknown_port_status"
+                port_status_list.append((str(index + 1), port_status_string))
 
-        for index, status in port_status_list:
-            infotext += "[port %s]%s " % (index, status)
-        state = 0
+            for index, status in port_status_list:
+                infotext += "[port %s]%s " % (index, status)
+            state = 0
     except ValueError:
-        infotext = "type mismatch value"
-        logging.critical("radwin_autonegotiation_status %s", infotext, exc_info=True)
+        infotext = "type_mismatch_value"
     except:
-        infotext = "unknown value"
-        logging.critical("radwin_autonegotiation_status %s", infotext, exc_info=True)
+        infotext = "unknown_value"
     return (state, infotext, port_status_list)
 
 
 check_info["radwin_autonegotiation_status"] = {
-	'check_function': check_radwin_autonegotiation_status,
-	'service_description': 'radwin_autonegotiation_status',
-	'has_perfdata': True,
+'check_function': check_radwin_autonegotiation_status,
+'service_description': 'radwin_autonegotiation_status',
+'has_perfdata': True,
 }
 ############################################################################
 #	SNMP OID for the port autonegotiation status

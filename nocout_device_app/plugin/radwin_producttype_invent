@@ -13,19 +13,7 @@ Radwin product type is sent to device application
 # Parameters : info(SNMP Output) _no_params(NO parameters)
 #
 # Output:  service state ,plugin output
-#####################################################################
-
-import logging
-
-import os
-
-try:
-    log_file = "nocout/log_plugins.log"
-    with open(log_file, 'a+') as f:
-        pass
-    logging.basicConfig(filename=log_file, level=logging.CRITICAL)
-except:
-    pass
+# ####################################################################
 
 
 def check_radwin_producttype_invent(item, _no_params, info):
@@ -51,19 +39,18 @@ def check_radwin_producttype_invent(item, _no_params, info):
                                 Exception
     """
     state = 3
-    infotext = "unknown output"
+    infotext = "unknown_value"
     try:
-        logging.debug("radwin_producttype_invent SNMP output %s", info)
-        if info[0][0]:
-            product_type = info[0][0]
-            state = 0
-            infotext = "%s" % product_type
-        else:
-            state = 0
-            infotext = "unknown value"
+        if info:
+            if info[0][0]:
+                product_type = info[0][0]
+                state = 0
+                infotext = "%s" % product_type
+            else:
+                state = 3
+                infotext = "unknown_value"
     except:
-        infotext = "unknown value"
-        logging.critical("radwin_producttype_invent %s", infotext, exc_info=True)
+        infotext = "unknown_value"
     return (state, infotext)
 
 
