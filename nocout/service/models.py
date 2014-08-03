@@ -103,6 +103,7 @@ class DeviceServiceConfiguration(models.Model):
     critical = models.CharField('Critical', max_length=20, null=True, blank=True)
     added_on = models.DateTimeField('Added On', null=True, blank=True)
     modified_on = models.DateTimeField('Modified On', null=True, blank=True)
+    is_added = models.IntegerField('Is Added', default=0)
 
     class Meta:
         ordering = ["added_on"]

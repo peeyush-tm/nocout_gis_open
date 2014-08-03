@@ -54,30 +54,30 @@ def user_soft_delete_form(request, value, datatable_headers):
 
     # future users parent is needs to find out only if our user is
     # associated with any other user i.e if child_users.count() > 0
-    # if child_users.count() > 0:
-    #     # eligible_users: these are the users which are not associated with
-    #     # the user which needs to be deleted in any way, & are eligible to be the
-    #     # parent of users in child_users
-    #     remaining_users = UserProfile.objects.exclude(parent_id=value)
-    #     selected_users = set(remaining_users) - set(child_user_descendants)
-    #     result['data']['objects']['eligible'] = []
-    #     for e_user in selected_users:
-    #         e_dict = dict()
-    #         e_dict['key'] = e_user.id
-    #         e_dict['value'] = e_user.username
-    #         # for excluding 'user' which we are deleting from eligible
-    #         # user choices
-    #         if e_user.id == user.id: continue
-    #         if e_user.is_deleted == 1: continue
-    #         # for excluding users from eligible user choices those are not from
-    #         # same user_group as the user which we are deleting
-    #         if set(e_user.user_group.all()) != set(user.user_group.all()): continue
-    #         result['data']['objects']['eligible'].append(e_dict)
-    #     for c_user in child_users:
-    #         c_dict = {}
-    #         c_dict['key'] = c_user.id
-    #         c_dict['value'] = c_user.username
-    #         result['data']['objects']['childs'].append(c_dict)
+    if child_users.count() > 0:
+        # eligible_users: these are the users which are not associated with
+        # the user which needs to be deleted in any way, & are eligible to be the
+        # parent of users in child_users
+        remaining_users = UserProfile.objects.exclude(parent_id=value)
+        selected_users = set(remaining_users) - set(child_user_descendants)
+        result['data']['objects']['eligible'] = []
+        for e_user in selected_users:
+            e_dict = dict()
+            e_dict['key'] = e_user.id
+            e_dict['value'] = e_user.username
+            # for excluding 'user' which we are deleting from eligible
+            # user choices
+            if e_user.id == user.id: continue
+            if e_user.is_deleted == 1: continue
+            # for excluding users from eligible user choices those are not from
+            # same user_group as the user which we are deleting
+            # if set(e_user.user_group.all()) != set(user.user_group.all()): continue
+            result['data']['objects']['eligible'].append(e_dict)
+        for c_user in child_users:
+            c_dict = {}
+            c_dict['key'] = c_user.id
+            c_dict['value'] = c_user.username
+            result['data']['objects']['childs'].append(c_dict)
     result['success'] = 1
     result['message'] = "Successfully render form."
     return json.dumps({'result': result})
