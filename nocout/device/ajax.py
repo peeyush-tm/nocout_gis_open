@@ -1550,3 +1550,153 @@ def edit_services(request, svc_data):
     # assign messages to result dict message key
     result['message'] = messages
     return json.dumps({'result': result})
+
+
+@dajaxice_register
+def delete_service_form(request, value):
+    """
+    Return:
+    {
+        "success": 1,     # 0 - fail, 1 - success, 2 - exception
+        "message": "Success/Fail message.",
+        "data": {
+            "meta": {},
+            "objects": {
+                 "device_name": <id>,
+                 "device_name": <name>,
+                 "device_alias": <name>,
+                 "services": [
+                          {
+                              "name': <id>,
+                              "value": <value>,
+                          },
+                          {
+                              "name': <id>,
+                              "value": <value>,
+                          }
+                 ]
+            }
+        }
+    }
+    """
+    # device to which services are associated
+    device = Device.objects.get(id=value)
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = "Failed to render form correctly."
+    result['data']['meta'] = ''
+    result['data']['objects'] = {}
+    result['data']['objects']['device_id'] = value
+    result['data']['objects']['device_name'] = device.device_name
+    result['data']['objects']['device_alias'] = device.device_alias
+    result['data']['objects']['services'] = []
+    result['data']['objects']['master_site'] = ""
+    result['data']['objects']['is_added'] = device.is_added_to_nms
+
+    # get services associated with device
+    try:
+        master_site_name = ""
+        try:
+            master_site_name = SiteInstance.objects.get(name='master_UA').name
+            result['data']['objects']['master_site'] = master_site_name
+        except:
+            logger.info("Master site doesn't exist.")
+        if device.is_added_to_nms == 1:
+            if master_site_name == "master_UA":
+                # fetching all services from 'service device configuration' table
+                dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name)
+
+                # services those are already running for this device
+                services = []
+                for svc in dsc:
+                    services.append(svc.service_name)
+
+                # extracting unique set of services form 'services' list
+                monitored_services = set(services)
+
+                result['data']['objects']['services'] = []
+                for svc in monitored_services:
+                    service = Service.objects.get(name=svc)
+                    svc_dict = {}
+                    svc_dict['key'] = service.id
+                    svc_dict['value'] = service.alias
+                    result['data']['objects']['services'].append(svc_dict)
+            else:
+                result['message'] = "Master site doesn't exist. <br /> Please first create master site with name 'master_UA'."
+        else:
+            result['message'] = "First add device in nms core."
+    except:
+        logger.info("No service to monitor.")
+
+    return json.dumps({'result': result})
+
+
+@dajaxice_register
+def delete_services(request, service_data):
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = ""
+    result['data']['meta'] = {}
+    result['data']['objects'] = {}
+
+    # messages variable collects message coming from service addition api response
+    messages = ""
+    for svc in service_data:
+        result = dict()
+        result['data'] = {}
+        result['success'] = 0
+        result['message'] = ""
+        result['data']['meta'] = {}
+        result['data']['objects'] = {}
+
+        try:
+            device = Device.objects.get(pk=svc['device_id'])
+            service = Service.objects.get(pk=svc['service_id'])
+            service_data = {
+                'mode' : 'deleteservice',
+                'device_name' : str(device.device_name),
+                'service_name' : str(service.name)
+            }
+
+            master_site = SiteInstance.objects.get(name='master_UA')
+            # url for nocout.py
+            # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+            # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
+            url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                                    master_site.password,
+                                                                    master_site.machine.machine_ip,
+                                                                    master_site.web_service_port,
+                                                                    master_site.name)
+
+            # encoding service_data
+            encoded_data = urllib.urlencode(service_data)
+
+            # sending post request to nocout device app to add single service at a time
+            r = requests.post(url , data=encoded_data)
+
+            # converting post response data into python dict expression
+            response_dict = ast.literal_eval(r.text)
+
+            # if response(r) is given by post request than process it further to get success/failure messages
+            if r:
+                result['data'] = service_data
+                result['success'] = 1
+
+                # if response_dict doesn't have key 'success'
+                if response_dict.get('success') != 1:
+                    logger.info(response_dict.get('error_message'))
+                    result['message'] += "Failed to delete service '%s'. <br />" % (service.name)
+                    messages += result['message']
+                else:
+                    result['message'] += "Successfully deleted service '%s'. <br />" % (service.name)
+                    messages += result['message']
+                    # delete service rows form 'service_deviceserviceconfiguration' table
+                    DeviceServiceConfiguration.objects.filter(device_name=device.device_name, service_name=service.name).delete()
+
+        except Exception as e:
+            logger.info(e.message)
+            result['message'] += e.message
+    result['message'] = messages
+    return json.dumps({'result': result})
