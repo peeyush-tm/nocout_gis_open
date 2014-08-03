@@ -230,26 +230,29 @@ class OperationalDeviceListingTable(BaseDatatableView):
             # checking whether device is 'backhaul configured on' or not
             try:
                 if Backhaul.objects.get(bh_configured_on=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="delete_device({0});"><i class="fa fa-plus-square text-danger"></i></a>\
-                                            <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+                    dct.update(nms_actions='<a href="#" onclick="delete_device({0});"><i class="fa fa-minus-square text-info" title="Delete Device"></i></a>\
+                                            <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-info" title="Add Service"></i></a>\
+                                            <a href="#" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-info" title="Edit Service"></i></a>'.format(dct['id']))
             except:
-                logger.info("Device is not basestation")
+                logger.info("Device is not a backhaul")
 
             # checking whether device is 'sector configured on' or not
             try:
                 if Sector.objects.get(sector_configured_on=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="delete_device({0});"><i class="fa fa-plus-square text-danger"></i></a>\
-                                            <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+                    dct.update(nms_actions='<a href="#" onclick="delete_device({0});"><i class="fa fa-minus-square text-success" title="Delete Device"></i></a>\
+                                            <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>\
+                                            <a href="#" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-success" title="Edit Service"></i></a>'.format(dct['id']))
             except:
-                logger.info("Device is not basestation")
+                logger.info("Device is not sector configured on.")
 
             # checking whether device is 'sub station' or not
             try:
                 if SubStation.objects.get(device=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="delete_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-                                            <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+                    dct.update(nms_actions='<a href="#" onclick="delete_device({0});"><i class="fa fa-minus-square text-danger" title="Delete Device"></i></a>\
+                                            <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-danger" title="Add Service"></i></a>\
+                                            <a href="#" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-danger" title="Edit Service"></i></a>'.format(dct['id']))
             except:
-                logger.info("Device is not substation.")
+                logger.info("Device is not a substation.")
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -424,26 +427,26 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             # checking whether device is 'backhaul configured on' or not
             try:
                 if Backhaul.objects.get(bh_configured_on=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-info" title="Add Device"></i></a>\
+                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-info" title="Add Service"></i></a>'.format(dct['id']))
             except:
-                logger.info("Device is not basestation")
+                logger.info("Device is not a backhaul.")
 
             # checking whether device is 'sector configured on' or not
             try:
                 if Sector.objects.get(sector_configured_on=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-success" title="Add Device"></i></a>\
                         <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             except:
-                logger.info("Device is not basestation")
+                logger.info("Device is not sector configured on.")
 
             # checking whether device is 'sub station' or not
             try:
                 if SubStation.objects.get(device=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-danger"></i></a>\
+                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-danger" title="Add Service"></i></a>'.format(dct['id']))
             except:
-                logger.info("Device is not substation.")
+                logger.info("Device is not a substation.")
         return qs
 
     def get_context_data(self, *args, **kwargs):
