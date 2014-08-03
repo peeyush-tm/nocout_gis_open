@@ -1264,10 +1264,6 @@ def service_current_info(request, option="", device_id=""):
 # get service templates for service addition form
 @dajaxice_register
 def get_old_configuration_for_svc_edit(request, option="", service_id="", device_id=""):
-    print "****************************** option *********************************"
-    print option
-    print device_id
-    print service_id
     dajax = Dajax()
     params = []
     svc_templates = []
@@ -1275,19 +1271,12 @@ def get_old_configuration_for_svc_edit(request, option="", service_id="", device
     template_options_id = "#template_options_id_{0}".format(option)
     if option and option != "":
         svc_params = ServiceParameters.objects.all()
-        print "******************************* svc_params *******************************"
-        print svc_params
         if svc_params:
             try:
                 if svc_params:
                     device = Device.objects.get(pk=device_id)
                     service = Service.objects.get(pk=service_id)
-                    print "********************************* device and service ****************************"
-                    print device
-                    print service
                     dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name, service_name=service.name)
-                    print "************************************ dsc ***********************************"
-                    print dsc
                     params.append("<br />")
                     params.append("<h5 class='text-warning'><b>Current configuration:</b></h5>")
                     params.append("<div class=''><div class='box border orange'><div class='box-title'><h4><i class='fa fa-table'></i>Current Service Parameters</h4></div>")
@@ -1310,8 +1299,6 @@ def get_old_configuration_for_svc_edit(request, option="", service_id="", device
                     svc_templates.append("<select class='form-control' id='service_template_%d'>" % option)
                     svc_templates.append("<option value='' selected>Select</option>")
                     for svc_param in svc_params:
-                        print "************************* svc_param ***************************"
-                        print svc_param
                         svc_templates.append("<option value='%d'>%s</option>" % (svc_param.id, svc_param.parameter_description))
                     svc_templates.append("</select>")
                 else:
@@ -1328,20 +1315,11 @@ def get_old_configuration_for_svc_edit(request, option="", service_id="", device
 # get service parameters and data source tables for service addition form
 @dajaxice_register
 def get_new_configuration_for_svc_edit(request, service_id="", template_id=""):
-    print "*********************** service_id **************************"
-    print service_id
-    print "*********************** template_id *****************************"
-    print template_id
     dajax = Dajax()
     field_id = "#show_new_configuration_{0}".format(service_id)
-    print "************************** field_id **********************"
-    print field_id
     params = []
     service = Service.objects.get(pk=service_id)
     template = ServiceParameters.objects.get(pk=template_id)
-    print "********************************* service and templates ****************************"
-    print service
-    print template
     params.append("<br />")
     params.append("<h5 class='text-danger'><b>Modified configuration:</b></h5>")
     params.append("<div class=''><div class='box border red'><div class='box-title'><h4><i class='fa fa-table'></i>Modified Service Parameters</h4></div>")
@@ -1354,8 +1332,6 @@ def get_new_configuration_for_svc_edit(request, service_id="", template_id=""):
     params.append("</tbody>")
     params.append("<thead><tr><th>DS Name</th><th>Warning</th><th>Critical</th></tr></thead><tbody>")
     data_sources = service.service_data_sources.all()
-    print "************************* data_sources *****************************"
-    print data_sources
     for sds in data_sources :
         params.append("<tr class='data_source_field'><td class='ds_name'>{}</td>\
                        <td contenteditable='true' class='ds_warning'>{}</td>\
@@ -1428,8 +1404,6 @@ def edit_services(request, svc_data):
         }
     }
     """
-    print "*********************** service_data ****************************"
-    print json.dumps(svc_data)
     result = dict()
     result['data'] = {}
     result['success'] = 0
@@ -1474,19 +1448,17 @@ def edit_services(request, svc_data):
             # command parameters
             result['data']['objects']['cmd_params'] = {}
             for sds in sd['data_source']:
-                result['data']['objects']['cmd_params'][str(sds['name'])] = {}
                 if sds['warning'] != "":
-                    result['data']['objects']['cmd_params'][str(sds['name'])]['warning'] = int(sds['warning'])
-                if sds['critical'] != "":
-                    result['data']['objects']['cmd_params'][str(sds['name'])]['critical'] = int(sds['critical'])
+                    result['data']['objects']['cmd_params'][str(sds['name'])] = {
+                        'warning': str(sds['warning']) if sds['warning'] != "" else "",
+                        'critical': str(sds['critical']) if sds['critical'] != "" else ""
+                    }
             # snmp port
-            result['data']['objects']['snmp_port'] = str(service_para.protocol.port)
+            # result['data']['objects']['snmp_port'] = str(service_para.protocol.port)
             # agent tag
-            result['data']['objects']['agent_tag'] = str(DeviceType.objects.get(pk=device.device_type).agent_tag)
+            # result['data']['objects']['agent_tag'] = str(DeviceType.objects.get(pk=device.device_type).agent_tag)
             # payload data for post request
             service_data = result['data']['objects']
-            print "&&&&&&&&&&&&&&&&&&&&&& service_data &&&&&&&&&&&&&&&&&&&&&&&&&&"
-            print service_data
             # master site on which service needs to be added
             master_site = SiteInstance.objects.get(name='master_UA')
             # url for nocout.py
@@ -1503,24 +1475,41 @@ def edit_services(request, svc_data):
             # sending post request to nocout device app to add single service at a time
             r = requests.post(url , data=encoded_data)
 
-            print "*******************r**********************"
-            print r.text
-
             # converting post response data into python dict expression
             response_dict = ast.literal_eval(r.text)
 
-            print "*******************response_dict**********************"
-            print response_dict
             # if response(r) is given by post request than process it further to get success/failure messages
             if r:
                 result['data'] = service_data
                 result['success'] = 1
-
                 # if response_dict doesn't have key 'success'
-                if not response_dict.get('success'):
+                if response_dict.get('success') != 1:
                     logger.info(response_dict.get('error_message'))
                     result['message'] += "Failed to edit service '%s'. <br />" % (service.name)
                     messages += result['message']
+
+                    try:
+                        # if service exist in 'service_deviceserviceconfiguration' table than update service else create it
+                        for data_source in sd['data_source']:
+                            dsc = DeviceServiceConfiguration.objects.get(device_name=device.device_name,
+                                                                         service_name=service.name,
+                                                                         data_source=data_source['name'])
+                            dsc.agent_tag = str(DeviceType.objects.get(pk = device.device_type).agent_tag)
+                            dsc.port = str(service_para.protocol.port)
+                            dsc.version = str(service_para.protocol.version)
+                            dsc.read_community = str(service_para.protocol.read_community)
+                            dsc.svc_template = str(service_para.parameter_description)
+                            dsc.normal_check_interval = int(service_para.normal_check_interval)
+                            dsc.retry_check_interval = int(service_para.retry_check_interval)
+                            dsc.max_check_attempts = int(service_para.max_check_attempts)
+                            if data_source['warning'] != "":
+                                dsc.warning = int(data_source['warning'])
+                            if data_source['critical'] != "":
+                                dsc.critical = int(data_source['critical'])
+                            dsc.is_added = 0
+                            dsc.save()
+                    except Exception as e:
+                        logger.info(e)
                 else:
                     result['message'] += "Successfully edited service '%s'. <br />" % (service.name)
                     device = Device.objects.get(pk=int(sd['device_id']))
@@ -1541,12 +1530,11 @@ def edit_services(request, svc_data):
                             dsc.normal_check_interval = int(service_para.normal_check_interval)
                             dsc.retry_check_interval = int(service_para.retry_check_interval)
                             dsc.max_check_attempts = int(service_para.max_check_attempts)
-                            if data_source['warning'] != "":
-                                dsc.warning = int(data_source['warning'])
-                            if data_source['critical'] != "":
-                                dsc.critical = int(data_source['critical'])
+                            # if data_source['warning'] != "":
+                            dsc.warning = int(data_source['warning']) if data_source['warning'] else ""
+                            # if data_source['critical'] != "":
+                            dsc.critical = int(data_source['critical']) if data_source['critical'] else ""
                             dsc.is_added = 1
-                            print dsc
                             dsc.save()
                     except Exception as e:
                         logger.info(e)
@@ -1554,30 +1542,6 @@ def edit_services(request, svc_data):
                     # set 'is_monitored_on_nms' to 1 if service is added successfully
                     device.is_monitored_on_nms = 1
                     device.save()
-            else:
-                try:
-                    # if service exist in 'service_deviceserviceconfiguration' table than update service else create it
-                    for data_source in sd['data_source']:
-                        dsc = DeviceServiceConfiguration.objects.get(device_name=device.device_name,
-                                                                     service_name=service.name,
-                                                                     data_source=data_source['name'])
-                        dsc.agent_tag = str(DeviceType.objects.get(pk = device.device_type).agent_tag)
-                        dsc.port = str(service_para.protocol.port)
-                        dsc.version = str(service_para.protocol.version)
-                        dsc.read_community = str(service_para.protocol.read_community)
-                        dsc.svc_template = str(service_para.parameter_description)
-                        dsc.normal_check_interval = int(service_para.normal_check_interval)
-                        dsc.retry_check_interval = int(service_para.retry_check_interval)
-                        dsc.max_check_attempts = int(service_para.max_check_attempts)
-                        if data_source['warning'] != "":
-                            dsc.warning = int(data_source['warning'])
-                        if data_source['critical'] != "":
-                            dsc.critical = int(data_source['critical'])
-                        dsc.is_added = 0
-                        print dsc
-                        dsc.save()
-                except Exception as e:
-                    logger.info(e)
         except Exception as e:
             logger.info(e)
             result['message'] += "Failed to edit service '%s'. <br />" % (service.name)

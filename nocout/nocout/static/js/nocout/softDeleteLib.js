@@ -417,7 +417,7 @@ function get_service_edit_form(content) {
                                 service_data.push(svc);
                             }
                         });
-                        alert(JSON.stringify(service_data));
+                        // alert(JSON.stringify(service_data));
 
                         // below is the 'service_data' we are passing through ajax
                         /*
