@@ -11,6 +11,11 @@ from device.models import Device, City, State, DeviceTechnology
 from inventory.models import BaseStation, Sector, SubStation, Circuit
 from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
 
+#sort the list of dictionaries
+# http://stackoverflow.com/questions/72899/how-do-i-sort-a-list-of-dictionaries-by-values-of-the-dictionary-in-python
+from operator import itemgetter
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -208,7 +213,9 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                         }
                 device_data.append(ddata)
 
-            return device_data
+
+            sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
+            return sorted_device_data
 
         return device_list
 
@@ -331,6 +338,7 @@ class CustomerAlertListingTable(BaseDatatableView):
             data_sources_list.append('pl')
 
         required_data_columns = ["id",
+                                 "data_source",
                                  "device_name",
                                  "severity",
                                  "current_value",
@@ -369,8 +377,8 @@ class CustomerAlertListingTable(BaseDatatableView):
                     device_list.append(device_events)
                 else:
                     continue
-
-        return device_list
+        sorted_device_list = sorted(device_list, key=itemgetter('sys_timestamp'), reverse=True)
+        return sorted_device_list
 
     def prepare_results(self, qs):
 
@@ -414,21 +422,38 @@ class CustomerAlertListingTable(BaseDatatableView):
 
 def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None, condition=None):
     in_string = lambda x: "'" + str(x) + "'"
-    col_string = lambda x: "`" + str(x) + "`"
+    # col_string = lambda x,y: ("%s`" + str(x) + "`") %(y)
     query = None
-    if columns:
-        columns = (",".join(map(col_string, columns)))
-    else:
-        columns = "*"
+
+    if not columns:
+        return None
+
     extra_where_clause = condition if condition else ""
     if table_name and devices:
-        query = "SELECT {0} FROM `{1}` " \
-                "WHERE `{1}`.`device_name` in ( {2} ) " \
-                "AND `{1}`.`data_source` in ( {3}) {4}"\
-                "GROUP BY `{1}`.`device_name`, `{1}`.`data_source`" \
-                "ORDER BY `{1}`.sys_timestamp DESC" \
-            .format(columns, table_name, (",".join(map(in_string, devices))), \
-            (',').join(map(in_string, data_sources)), extra_where_clause.format(table_name))
+        query = "SELECT {0} FROM {1} as original_table " \
+                "INNER JOIN ({1} as derived_table) " \
+                "ON ( " \
+                "    original_table.data_source = derived_table.data_source AND " \
+                "    original_table.device_name = derived_table.device_name AND " \
+                "    original_table.id < derived_table.id" \
+                ") " \
+                "WHERE ( " \
+                "    original_table.device_name in ( {2} ) AND " \
+                "    original_table.data_source in ( {3} )" \
+                "    {4}" \
+                ")" \
+                "GROUP BY derived_table.device_name, derived_table.data_source " \
+                "" \
+                "ORDER BY original_table.id DESC" \
+                "".format(
+                    (',').join(["derived_table.`" + col_name + "`" for col_name in columns]),
+                    table_name,
+                    (",".join(map(in_string, devices))),
+                    (',').join(map(in_string, data_sources)),
+                    extra_where_clause.format("derived_table")
+                )
+
+    # logger.debug(query)
 
     return query
 
@@ -511,5 +536,10 @@ def common_prepare_results(qs):
             dct['severity']='<div class="alert_normal"></div>'
             dct['current_value']='<span style="color:#008000">%s</span>'%(dct['current_value'])
             dct['description']='<span style="color:#008000">%s</span>'%(dct['description'])
+
+        else:
+            dct['severity']='<div class="alert_informational"></div>'
+            dct['current_value']='<span style="color:#bba11f" >%s</span>'%(dct['current_value'])
+            dct['description']='<span style="color:#bba11f">%s</span>'%(dct['description'])
 
     return qs

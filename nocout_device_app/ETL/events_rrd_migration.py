@@ -14,6 +14,22 @@ from configparser import parse_config_obj
 				
 
 def get_latest_event_entry(db_type=None, db=None, site=None,table_name=None):
+	"""
+                get_latest_event_entry function find the latest entry in monodb or mysql db.
+
+                Args:
+                        db_type: type of data connection 
+                
+                Kwargs:
+                        db,site,table_name(name for database table_name)
+
+                Returns:
+                        state (int) :
+                                        latest_time
+                        Raises:
+                               Exception
+	"""
+
 	time = None
     	if db_type == 'mongodb':
         	cur = db.nocout_host_event_log.find({}, {"check_timestamp": 1}).sort("_id", -1).limit(1)
@@ -38,6 +54,22 @@ def get_latest_event_entry(db_type=None, db=None, site=None,table_name=None):
 	return time
 
 def service_perf_data_live_query(db,site,log_split):
+	"""
+                service_perf_data_live_query function live query for service perf data.
+
+                Args: 
+                        db: data connection 
+                
+                Kwargs:
+                        site,nagios log
+
+                Returns:
+                        state (int) :
+                                        None
+                        Raises:
+                               Exception
+        """
+
 	# Adding check for not storing data for check_mk service
 	if log_split[5] == 'Check_MK':
 		return
@@ -89,6 +121,23 @@ def service_perf_data_live_query(db,site,log_split):
 		mongo_functions.mongo_db_insert(db,serv_event_dict,"serv_event")
 
 def network_perf_data_live_query(db,site,log_split):
+	"""
+                network_perf_data_live_query function live query for network perf data.
+
+                Args: 
+                        db: data connection 
+                
+                Kwargs:
+                        site,nagios log
+
+                Returns:
+                        state (int) :
+                                        None
+                        Raises:
+                               Exception
+        """
+
+
 	query = "GET hosts\nColumns: host_perf_data\nFilter: host_name = %s\n" % (log_split[4]) 
 	perf_data= rrd_main.get_from_socket(site, query)
 	host_perf_data = rrd_migration.get_threshold(perf_data)
@@ -119,6 +168,22 @@ def network_perf_data_live_query(db,site,log_split):
 
 
 def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
+	 """
+                extract_nagios_events_live function live query for events.
+
+                Args: 
+                        db: mongo_host (query for host) 
+                
+                Kwargs:
+                        mongo_db,mongo_port
+
+                Returns:
+                        state (int) :
+                                        None
+                        Raises:
+                               Exception
+        """
+
 	db = None
 	perf_data  = {}
         file_path = os.path.dirname(os.path.abspath(__file__))
@@ -177,6 +242,10 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
 			network_perf_data_live_query(db,site,log_split)	
 		
 if __name__ == '__main__':
+    """
+    Main function for this file
+
+    """
     configs = parse_config_obj()
     for section, options in configs.items():
 	extract_nagios_events_live(

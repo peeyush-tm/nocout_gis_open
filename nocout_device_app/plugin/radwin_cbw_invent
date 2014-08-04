@@ -14,20 +14,7 @@ Channel bandwidth information is sent to device application
 # Parameters: info (SNMP device) _no_params (No parameters)
 #
 # Output: service state,plugin output
-#########################################################################
-
-import logging
-
-import os
-
-try:
-    log_file = "nocout/log_plugins.log"
-    with open(log_file, 'a+') as f:
-        pass
-    logging.basicConfig(filename=log_file, level=logging.CRITICAL)
-except:
-    pass
-
+# ########################################################################
 
 def check_radwin_cbw_invent(item, _no_params, info):
     """
@@ -52,21 +39,18 @@ def check_radwin_cbw_invent(item, _no_params, info):
                                 ValueError ,Exception
     """
     state = 3
-    infotext = "unknown output"
+    infotext = "unknown_value"
     try:
-        logging.debug("radwin_cbw_invent SNMP output %s", info)
         if info[0][0]:
             cbw = int(info[0][0])
             state = 0
-            cbw = cbw / 1000
-            infotext = "%d MHZ" % cbw
+            infotext = "%d" % cbw
     except ValueError:
-        infotext = "type mismatch value"
-        logging.critical("radwin_cbw_invent %s", infotext, exc_info=True)
+        infotext = "type_mismatch_value"
     except:
-        infotext = "unkown value"
-        logging.critical("radwin_cbw_invent %s", infotext, exc_info=True)
+        infotext = "unkown_value"
     return (state, infotext)
+
 
 check_info["radwin_cbw_invent"] = {
     'check_function': check_radwin_cbw_invent,

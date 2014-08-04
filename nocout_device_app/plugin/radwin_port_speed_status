@@ -15,19 +15,7 @@ Ethernet port speed information is sent to device application
 # Parameters : info(SNMP output) _no_params (No parameters)
 #
 # Output: Plugin output ,service state and performance data
-#####################################################################
-import logging
-
-import os
-
-try:
-    log_file = "nocout/log_plugins.log"
-    with open(log_file, 'a+') as f:
-        pass
-    logging.basicConfig(filename=log_file, level=logging.CRITICAL)
-except:
-    pass
-
+# ####################################################################
 
 def port_speed(st):
     names = {'1': 'notConnected', '10': '10Mbps',
@@ -63,31 +51,26 @@ def check_radwin_port_speed_status(item, _no_params, info):
                                 ValueError ,Exception
     """
     state = 3
-    infotext = "unknown output"
+    infotext = "unknown_value"
     port_status_list = ['']
     try:
-        logging.debug("radwin_port_speed_status SNMP Output %s", info)
-        port_status_list = []
-        if not info[0]:
-            raise ValueError
-        port_status_list = []
-        infotext = ""
-        for index in range(len(info)):
-            port_speed_value = info[index][0]
-            port_speed_value = port_speed(str(port_speed_value))
-            if port_speed_value == None:
-                port_speed_value = "unknown_port_speed"
-            port_status_list.append((str(index + 1), port_speed_value))
+        if info:
+            port_status_list = []
+            infotext = ""
+            for index in range(len(info)):
+                port_speed_value = info[index][0]
+                port_speed_value = port_speed(str(port_speed_value))
+                if port_speed_value == None:
+                    port_speed_value = "unknown_port_speed"
+                port_status_list.append((str(index + 1), port_speed_value))
 
-        for index, port_status in port_status_list:
-            infotext += "[port %s] %s" % (index, port_status)
-        state = 0
+            for index, port_status in port_status_list:
+                infotext += "[port %s] %s" % (index, port_status)
+            state = 0
     except ValueError:
-        infotext = "interface status type mismatch"
-        logging.critical("radwin_port_speed_status %s", infotext, exc_info=True)
+        infotext = "type_mismatch_value"
     except:
-        infotext = "unknown value"
-        logging.critical("radwin_port_speed_status %s", infotext, exc_info=True)
+        infotext = "unknown_value"
     return (state, infotext, port_status_list)
 
 
