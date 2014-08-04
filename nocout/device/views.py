@@ -172,8 +172,8 @@ class OperationalDeviceListingTable(BaseDatatableView):
         return qs
 
     def logged_in_user_organization_ids(self):
-        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
-                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_descendants(include_self=True)\
+                                           .values_list('id', flat=True))
         return organization_descendants_ids
 
     def get_initial_queryset(self):
@@ -372,8 +372,8 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
         return qs
 
     def logged_in_user_organization_ids(self):
-        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
-                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_descendants(include_self=True)
+                                           .values_list('id', flat=True))
         return organization_descendants_ids
 
     def get_initial_queryset(self):
@@ -567,8 +567,8 @@ class DisabledDeviceListingTable(BaseDatatableView):
         return qs
 
     def logged_in_user_organization_ids(self):
-        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
-                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_descendants(include_self=True)
+                                           .values_list('id', flat=True))
         return organization_descendants_ids
 
     def get_initial_queryset(self):
@@ -764,8 +764,8 @@ class ArchivedDeviceListingTable(BaseDatatableView):
         return qs
 
     def logged_in_user_organization_ids(self):
-        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
-                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_descendants(include_self=True)
+                                           .values_list('id', flat=True))
         return organization_descendants_ids
 
     def get_initial_queryset(self):
@@ -961,8 +961,8 @@ class AllDeviceListingTable(BaseDatatableView):
         return qs
 
     def logged_in_user_organization_ids(self):
-        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
-                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_descendants(include_self=True)
+                                           .values_list('id', flat=True))
         return organization_descendants_ids
 
     def get_initial_queryset(self):

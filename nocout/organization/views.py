@@ -42,10 +42,7 @@ class OrganizationListingTable(BaseDatatableView):
     order_columns = ['name',  'alias', 'parent__name', 'city', 'state', 'country']
 
     def logged_in_user_organization_ids(self):
-        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
-                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
-        return organization_descendants_ids
-
+        return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -117,6 +114,7 @@ class OrganizationCreate(CreateView):
 
     def form_valid(self, form):
         self.object=form.save()
+        self.model.objects.rebuild()
         action.send( self.request.user, verb='Created', action_object = self.object )
         return super(ModelFormMixin, self).form_valid(form)
 
@@ -140,6 +138,7 @@ class OrganizationUpdate(UpdateView):
                 verb_string=verb_string[:250] + '...'
 
             self.object=form.save()
+            self.model.objects.rebuild()
             action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( OrganizationUpdate.success_url )
 
