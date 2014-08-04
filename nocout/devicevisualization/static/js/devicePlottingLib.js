@@ -128,7 +128,7 @@ function devicePlottingClass_gmap() {
 
 		oms.addListener('click', function(marker,e) {
 
-			var isChecked = $("#showAllSS:checked").length;			
+			var isChecked = $("#showAllSS:checked").length;
 			
 			if($.trim(marker.pointType) == 'base_station') {
 
@@ -642,6 +642,9 @@ function devicePlottingClass_gmap() {
 
 		if(isChecked == 1) {
 
+			/*Check "Show Connection Line" checkbox*/
+			$("#showConnLines").prop('checked', true);
+
 			$.grep(masterMarkersObj, function(plotedDevices) {
 				
 				if($.trim(plotedDevices.pointType) == 'base_station') {
@@ -663,6 +666,9 @@ function devicePlottingClass_gmap() {
 			/*Reset global variables*/
 			plottedSS = [];
 			pathLineArray = [];
+
+			/*Uncheck "Show Connection Line" checkbox*/
+			$("#showConnLines").prop('checked', false);
 		}
 	};
 
@@ -725,6 +731,41 @@ function devicePlottingClass_gmap() {
 
 		/*returns gmap polyline object */
 		return pathConnector;
+	};
+
+	/**
+	 * This function show/hide the connection line between BS & SS.
+	 * @class devicePlottingLib
+	 * @method createSectorData.
+	 */
+	this.showConnectionLines_gmap = function() {
+
+		var isLineChecked = $("#showConnLines:checked").length;
+
+		var isSSChecked = $("#showAllSS:checked").length;
+
+		var existing_lines = pathLineArray;
+
+		/*Unchecked case*/
+		if(isLineChecked == 0) {
+
+			for (var i = 0; i < pathLineArray.length; i++) {
+				pathLineArray[i].setMap(null);
+			}
+
+		} else {
+
+			if(isSSChecked == 1) {
+				for (var i = 0; i < existing_lines.length; i++) {
+					existing_lines[i].setMap(mapInstance);
+				}
+			} else {
+
+				bootbox.alert('Please select "Show Connected SS" first.');
+				$("#showConnLines").prop('checked', false);
+
+			}
+		}
 	};
 
 
@@ -1855,6 +1896,9 @@ function devicePlottingClass_gmap() {
 
 			google.maps.event.addListener(drawingManager, 'overlaycomplete', function(e) {
 
+				/*Remove drawing mode*/
+				drawingManager.setDrawingMode(null);
+
 				pathArray = e.overlay.getPath().getArray();
 				polygon = new google.maps.Polygon({"path" : pathArray});
 				bs_ss_array = masterMarkersObj;
@@ -1890,7 +1934,7 @@ function devicePlottingClass_gmap() {
 
 				if(selectedCount == 0) {
 					
-					bootbox.alert("No 'Sub-Station' are under the selected area.Please re-select");
+					bootbox.alert("No 'Sub-Station' under the selected area.Please re-select");
 					/*Remove current polygon from map*/
 					that.clearPolygon();
 
@@ -1933,9 +1977,7 @@ function devicePlottingClass_gmap() {
 
 					if($("#clearPolygonBtn").hasClass("hide")) {
 						$("#clearPolygonBtn").removeClass("hide");
-					}
-
-					drawingManager.setDrawingMode(null);
+					}					
 
 					/*Make ajax call to get the services & datasources.*/
 					$.ajax({
@@ -1971,7 +2013,7 @@ function devicePlottingClass_gmap() {
 
 										servicesOption += "<option value='"+allServices[j].value+"'>"+allServices[j].name+"</option>";
 									}
-									servicesOption += "</select></li><li class='divide-10'></li><li><select class='form-control' id='datasource_"+replace_device_name+"'><option value=''>Select Service Datasource</option></select></li><li class='divide-10'></li><li><button class='btn btn-primary' onClick='that.pollDevice_gmap("+deviceNameParam+")'>Fetch</button></li></ul><div class='clearfix'><ul class='list-unstyled list-inline' id='pollVal_"+replace_device_name+"'></ul></div>";
+									servicesOption += "</select></li><li class='divide-10'></li><li><select class='form-control' id='datasource_"+replace_device_name+"'><option value=''>Select Service Datasource</option></select></li><li class='divide-10'></li><li><button class='btn btn-primary' data-complete-text='Fetch' data-loading-text='Please Wait...' id='fetchBtn_"+replace_device_name+"' onClick='that.pollDevice_gmap("+deviceNameParam+")'>Fetch</button> <i class='fa fa-spinner fa fa-spin hide' id='fetch_spinner'>&nbsp;</i> </li></ul><div class='clearfix'><ul class='list-unstyled list-inline' id='pollVal_"+replace_device_name+"'></ul></div>";
 
 									$("#livePolling_"+replace_device_name).append(servicesOption);
 								}								
@@ -2074,6 +2116,8 @@ function devicePlottingClass_gmap() {
 	 */
 	this.pollDevice_gmap = function(deviceName) {
 
+		$("#fetchBtn_"+deviceName).button("loading");
+
 		var selectedServiceTxt = $.trim($("#service_"+deviceName+" option:selected").text());
 		var selectedServiceVal = $.trim($("#service_"+deviceName).val());
 		
@@ -2092,6 +2136,11 @@ function devicePlottingClass_gmap() {
 
 		if(selectedServiceVal != "" && selectedDatasourceVal != "") {
 
+			if($("#fetch_spinner").hasClass("hide")) {
+				$("#fetch_spinner").removeClass("hide");
+			}
+
+
 			/*Make ajax call to get the live polling data.*/
 			$.ajax({
 				url : window.location.origin+"/device/lp_service_data/"+"?device=['"+actual_device_name+"']&service=['"+selectedServiceTxt+"']&datasource=['"+selectedDatasourceTxt+"']",
@@ -2100,6 +2149,12 @@ function devicePlottingClass_gmap() {
 				dataType : "json",
 				/*If data fetched successful*/
 				success : function(result) {
+
+					$("#fetchBtn_"+deviceName).button("complete");
+
+					if(!($("#fetch_spinner").hasClass("hide"))) {
+						$("#fetch_spinner").addClass("hide");
+					}
 
 					if(result.success == 1) {
 
@@ -2176,6 +2231,12 @@ function devicePlottingClass_gmap() {
 				},
 				error : function(err) {
 
+					$("#fetchBtn_"+deviceName).button("complete");
+
+					if(!($("#fetch_spinner").hasClass("hide"))) {
+						$("#fetch_spinner").addClass("hide");
+					}
+
 					$.gritter.add({
 			            // (string | mandatory) the heading of the notification
 			            title: 'Live Polling - Server Error',
@@ -2243,7 +2304,7 @@ function devicePlottingClass_gmap() {
 		plottedSS = [];
 		pathLineArray = [];
 
-		$('#showAllSS').attr('checked',false);
+		$("#showAllSS").prop('checked', false);
 	};
 
 	/**
