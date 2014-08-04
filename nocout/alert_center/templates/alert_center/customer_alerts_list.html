@@ -18,9 +18,9 @@
         <div class="box-body">
             <div class="tabbable header-tabs">
                 <ul class="nav nav-tabs">
-                        <li><a href="#customer_wifi_block" data-toggle="tab"><span class="hidden-inline-mobile">WiMAX</span></a></li>
-                        <li><a href="#customer_pmp_block" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
-                        <li class="active"><a href="#customer_p2p_block" data-toggle="tab"><span class="hidden-inline-mobile">P2P</span></a></li>
+                        <li><a href="#customer_wifi_block" id="customer_wifi_tab" data-toggle="tab"><span class="hidden-inline-mobile">WiMAX</span></a></li>
+                        <li><a href="#customer_pmp_block" id="customer_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
+                        <li class="active"><a href="#customer_p2p_block" id="customer_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">P2P</span></a></li>
                 </ul>
                 <div class="tab-content">
                     <div class="tab-pane fade in active" id="customer_p2p_block">
@@ -50,30 +50,53 @@
 {% endblock %}
 {% block jquery %}
 <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+
+<!-- Library to load tab content on tab click-->
+<script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
+
 <script type="text/javascript">
+    var dataTableInstance = "";
     /*This is a temporary code which is replace when data for data table is provided*/
     $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget();
+            dataTableInstance = new ourDataTableWidget();
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/
-            ajax_url_get_parameter=0;
-            if(/latency/i.test(window.location.pathname))
-            { ajax_url_get_parameter='latency' }
-            else if(/packet_drop/i.test(window.location.pathname))
-            { ajax_url_get_parameter='packet_drop' }
+            ajax_url_get_parameter = "";
+            
+            if(/latency/i.test(window.location.pathname)) {
+                ajax_url_get_parameter='latency' 
+            } else if(/packet_drop/i.test(window.location.pathname)) {
+                ajax_url_get_parameter='packet_drop'
+            }
 
 
             var ajax_url_wifi= '{% url "CustomerAlertListingTable" %}'+'?data_source='+ ajax_url_get_parameter+'&data_tab=' + 'WiMAX';
             var ajax_url_pmp=  '{% url "CustomerAlertListingTable" %}'+'?data_source=' + ajax_url_get_parameter+'&data_tab=' + 'PMP';
             var ajax_url_p2p=  '{% url "CustomerAlertListingTable" %}'+'?data_source=' + ajax_url_get_parameter+'&data_tab=' + 'P2P';
-            var destroy=false;
-            /*Call createDataTable function of ourDataTableWidget class*/
+                
+            /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
 
-            dataTableInstance.createDataTable("customer_wifi_alertlistingtable", gridHeadersObj, ajax_url_wifi, destroy);
-            dataTableInstance.createDataTable("customer_pmp_alertlistingtable",  gridHeadersObj, ajax_url_pmp,  destroy);
-            dataTableInstance.createDataTable("customer_p2p_alertlistingtable",  gridHeadersObj, ajax_url_p2p,  destroy);
+            $("#customer_wifi_tab").attr("data_url",ajax_url_wifi);
+            $("#customer_wifi_tab").attr("data_header",'{{ datatable_headers|safe }}');
+
+            $("#customer_pmp_tab").attr("data_url",ajax_url_pmp);
+            $("#customer_pmp_tab").attr("data_header",'{{ datatable_headers|safe }}');
+
+            $("#customer_ptp_tab").attr("data_url",ajax_url_p2p);
+            $("#customer_ptp_tab").attr("data_header",'{{ datatable_headers|safe }}');
+
+
+            /*Trigger click event on active tab to load its data*/
+            $("#customer_ptp_tab").click();
+
+            // var destroy=false;
+            // /*Call createDataTable function of ourDataTableWidget class*/
+
+            // dataTableInstance.createDataTable("customer_wifi_alertlistingtable", gridHeadersObj, ajax_url_wifi, destroy);
+            // dataTableInstance.createDataTable("customer_pmp_alertlistingtable",  gridHeadersObj, ajax_url_pmp,  destroy);
+            // dataTableInstance.createDataTable("customer_p2p_alertlistingtable",  gridHeadersObj, ajax_url_p2p,  destroy);
         });
 
 </script>
