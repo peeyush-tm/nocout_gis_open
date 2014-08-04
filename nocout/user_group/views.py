@@ -56,8 +56,8 @@ class UserGroupListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
-                                      .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_descendants(include_self=True)
+                                      .values_list('id', flat=True))
         qs_query= UserGroup.objects.filter(organization__in = organization_descendants_ids, is_deleted=0).prefetch_related()
         qs=list()
         for ug in qs_query:

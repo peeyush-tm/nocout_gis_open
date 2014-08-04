@@ -51,9 +51,7 @@ class UserListingTable(BaseDatatableView):
                      'phone_number', 'last_login']
 
     def logged_in_user_organization_ids(self):
-        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
-                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
-        return organization_descendants_ids
+        return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
 
     def filter_queryset(self, qs):
         sSearch = self.request.GET.get('sSearch', None)
@@ -93,7 +91,7 @@ class UserListingTable(BaseDatatableView):
                             {{ \"value\": {0} , \"datatable_headers\": {1} }})'><i class="fa fa-trash-o text-danger">\
                             </i></a>'''.format(dct['id'], datatable_headers),
                             last_login=dct['last_login'].strftime("%Y-%m-%d %H:%M:%S")
-                           )
+                          )
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -149,8 +147,8 @@ class UserArchivedListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        organization_descendants_ids= list(self.request.user.userprofile.organization.get_children()\
-                                           .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+        organization_descendants_ids= list(self.request.user.userprofile.organization.get_descendants(include_self=True)
+                                           .values_list('id', flat=True))
         return UserProfile.objects.filter(organization__in = organization_descendants_ids, is_deleted=1).values(*self.columns+['id'])
 
     def prepare_results(self, qs):
@@ -163,7 +161,10 @@ class UserArchivedListingTable(BaseDatatableView):
         #if the user role is Admin then the action column_values will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             for dct in qs:
-                dct.update(actions='<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>')
+
+                dct.update( actions= '<a href="#" onclick= "add_confirmation(id={0})"<i class="fa fa-plus text-success"></i></a>    <a href="#"\
+                onclick= "hard_delete_confirmation(id={0})"<i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id'])
+                )
 
         return qs
 
@@ -310,6 +311,9 @@ class UserDelete(DeleteView):
     @method_decorator(permission_required('user_profile.delete_userprofile', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         return super(UserDelete, self).dispatch(*args, **kwargs)
+
+    def get(self, *args, **kwargs):
+        return self.post(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         action.send(request.user, verb='deleting user: %s'%(self.get_object().username))

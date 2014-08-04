@@ -150,7 +150,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         logged_in_user = self.request.user.userprofile
 
         if logged_in_user.role.values_list('role_name', flat=True)[0] == 'admin':
-            organizations = list(logged_in_user.organization.get_children()) + [logged_in_user.organization]
+            organizations = list(logged_in_user.organization.get_descendants(include_self=True))
         else:
             organizations = [logged_in_user.organization]
         sector_configured_on_devices_ids = list()
@@ -313,7 +313,7 @@ class CustomerAlertListingTable(BaseDatatableView):
         logged_in_user = self.request.user.userprofile
 
         if logged_in_user.role.values_list('role_name', flat=True)[0] == 'admin':
-            organizations = list(logged_in_user.organization.get_children()) + [logged_in_user.organization]
+            organizations = list(logged_in_user.organization.get_descendants(include_self=True))
         else:
             organizations = [logged_in_user.organization]
 

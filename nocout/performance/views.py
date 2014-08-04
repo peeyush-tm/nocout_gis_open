@@ -82,8 +82,8 @@ class LivePerformanceListing(BaseDatatableView):
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
             if self.request.user.userprofile.role.values_list('role_name', flat=True)[0] =='admin':
-                organization_ids= list(self.request.user.userprofile.organization.get_children()\
-                            .values_list('id', flat=True)) + [ self.request.user.userprofile.organization.id ]
+                organization_ids= list(self.request.user.userprofile.organization.get_descendants(include_self=True)
+                            .values_list('id', flat=True))
             else:
                 organization_ids= [self.request.user.userprofile.organization.id]
 
