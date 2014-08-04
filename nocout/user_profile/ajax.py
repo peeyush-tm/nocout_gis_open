@@ -1,8 +1,12 @@
 import json
 from dajaxice.decorators import dajaxice_register
+from django.db.models import Max
 from models import UserProfile
-
+from collections import namedtuple
 # generate content for soft delete popup form
+from nocout.settings import GISADMIN, ISOLATED_NODE
+
+
 @dajaxice_register
 def user_soft_delete_form(request, value, datatable_headers):
     # user which needs to be deleted
@@ -40,47 +44,29 @@ def user_soft_delete_form(request, value, datatable_headers):
 
     # child_users: these are the users which are associated with
     # the user which needs to be deleted in parent-child relationship
-    child_users = UserProfile.objects.filter(parent_id=value, is_deleted=0)
 
-    # child_user_descendants: set of all child users descendants (needs for
-    # filtering new parent users choice)
-    child_user_descendants = []
-    for child_user in child_users:
-        user_descendant = child_user.get_descendants()
-        for cu in user_descendant:
-            child_user_descendants.append(cu)
+    result['data']['objects']['eligible'] = []
+    if user.get_children():
+        user_parent=user.parent
 
-    result['data']['objects']['childs'] = []
+        if user_parent:
+            user_childrens = user_parent.get_children()
+            user_childrens = set(user_childrens) - set([user])
 
-    # future users parent is needs to find out only if our user is
-    # associated with any other user i.e if child_users.count() > 0
-    # if child_users.count() > 0:
-    #     # eligible_users: these are the users which are not associated with
-    #     # the user which needs to be deleted in any way, & are eligible to be the
-    #     # parent of users in child_users
-    #     remaining_users = UserProfile.objects.exclude(parent_id=value)
-    #     selected_users = set(remaining_users) - set(child_user_descendants)
-    #     result['data']['objects']['eligible'] = []
-    #     for e_user in selected_users:
-    #         e_dict = dict()
-    #         e_dict['key'] = e_user.id
-    #         e_dict['value'] = e_user.username
-    #         # for excluding 'user' which we are deleting from eligible
-    #         # user choices
-    #         if e_user.id == user.id: continue
-    #         if e_user.is_deleted == 1: continue
-    #         # for excluding users from eligible user choices those are not from
-    #         # same user_group as the user which we are deleting
-    #         if set(e_user.user_group.all()) != set(user.user_group.all()): continue
-    #         result['data']['objects']['eligible'].append(e_dict)
-    #     for c_user in child_users:
-    #         c_dict = {}
-    #         c_dict['key'] = c_user.id
-    #         c_dict['value'] = c_user.username
-    #         result['data']['objects']['childs'].append(c_dict)
+            if len(user_childrens) > 0:
+
+                for e_user in user_childrens:
+                    e_dict = dict()
+                    e_dict['key'] = e_user.id
+                    e_dict['value'] = e_user.username
+                    result['data']['objects']['eligible'].append(e_dict)
+            else:
+                #if user_childrens are empty then the user`s parent will be assigned the user`s children
+                result['data']['objects']['eligible'].append({ 'key':user_parent.id , 'value': user_parent.username })
+
     result['success'] = 1
     result['message'] = "Successfully render form."
-    return json.dumps({'result': result})
+    return json.dumps({'result': result })
 
 
 # soft delete user i.e. not deleting user from database, it just set
@@ -88,12 +74,9 @@ def user_soft_delete_form(request, value, datatable_headers):
 # & make some other user parent of associated user
 @dajaxice_register
 def user_soft_delete(request, user_id, new_parent_id, datatable_headers, userlistingtable, userarchivelisting):
-    # if new_parent is not available than make it default (id=2)
-    if not new_parent_id:
-        new_parent_id = 2
-    # user: user which needs to be deleted
-    user = UserProfile.objects.get(id=user_id)
-    # result: data dictionary send in ajax response
+
+    user = UserProfile.objects.get(id= user_id)
+
     result = dict()
     result['data'] = {}
     result['success'] = 0
@@ -106,33 +89,48 @@ def user_soft_delete(request, user_id, new_parent_id, datatable_headers, userlis
     result['data']['objects']['userlistingtable'] = userlistingtable
     result['data']['objects']['userarchivelisting'] = userarchivelisting
 
+    if new_parent_id:
+        new_parent = UserProfile.objects.get(id= new_parent_id)
+        user_childrens= user.get_children()
 
-    # setting new parent user
-    try:
-        # new_parent: new parent user for associated users
-        new_parent = UserProfile.objects.get(id=new_parent_id)
-    except:
-        print "No new user parent exist."
+        for user_children in user_childrens:
+            user_children.move_to(new_parent)
 
-    # fetching all child users of user which needs to be deleted
-    try:
-        child_users = UserProfile.objects.filter(parent_id=user_id)
-    except:
-        print "No child user exists."
+    max_tree_id = UserProfile.objects.aggregate(Max('tree_id'))['tree_id__max']
+    user.tree_id= max_tree_id+ 1
+    user.is_deleted = 1
+    user.lft= ISOLATED_NODE.lft
+    user.rght= ISOLATED_NODE.rght
+    user.level= ISOLATED_NODE.level
+    user.parent= None
+    user.save()
+    UserProfile._default_manager.rebuild()
 
-    # assign new parent user to all child users
-    if child_users.count() > 0:
-        for c_user in child_users:
-            c_user.parent = new_parent
-            c_user.save()
+    result['success'] = 1
+    result['message'] = "Successfully deleted."
+    return json.dumps({ 'result': result })
 
-    # setting 'is_deleted' bit of user to 1 which means user is soft deleted
-    if user.is_deleted == 0:
-        user.is_deleted = 1
-        user.save()
-        result['success'] = 1
-        result['message'] = "Successfully deleted."
-    else:
-        result['success'] = 0
-        result['message'] = "Already soft deleted."
-    return json.dumps({'result': result})
+@dajaxice_register
+def user_add( request, user_id):
+    UserProfile.objects.filter(id= user_id).update( **{'is_deleted':0 })
+    result = dict()
+    result['data'] = {}
+    result['success'] = 1
+    result['message'] = "User Successfully Added."
+    result['data']['meta'] = ''
+    result['data']['objects'] = {}
+    return json.dumps({ 'result': result })
+
+
+@dajaxice_register
+def user_hard_delete(request, user_id):
+    UserProfile.objects.filter(id= user_id).delete()
+    result = dict()
+    result['data'] = {}
+    result['success'] = 1
+    result['message'] = "User Successfully Deleted."
+    return json.dumps({ 'result': result })
+
+
+
+

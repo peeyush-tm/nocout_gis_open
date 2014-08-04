@@ -16,9 +16,6 @@ class UserProfile(MPTTModel, User):
     comment = models.TextField('Comment', null=True, blank=True)
     is_deleted = models.IntegerField('Is Deleted', max_length=1, default=0)
 
-    # Use UserManager to get the create_user method, etc.
-    objects = UserManager()
-
 # user roles class
 class Roles(models.Model):
     role_name = models.CharField('Role Name', max_length=100, null=True, blank=True)
