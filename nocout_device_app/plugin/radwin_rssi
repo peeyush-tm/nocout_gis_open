@@ -9,26 +9,12 @@ RSSI information is sent to device application
 
 """
 # ##################################################################
-#  Function : check_radwin_rssi
+# Function : check_radwin_rssi
 #
 #  Parameters: info(SNMP output) ,params(parameters to check the service state) 
 #
 #  Output: service state,plugin output ,performance data
 ##################################################################
-
-
-
-import logging
-
-import os
-
-try:
-    log_file = "nocout/log_plugins.log"
-    with open(log_file, 'a+') as f:
-        pass
-    logging.basicConfig(filename=log_file, level=logging.CRITICAL)
-except:
-    pass
 
 params = (-50, -85)
 
@@ -61,34 +47,30 @@ def check_radwin_rssi(item, params, info):
     """
     warn, crit = params
     state = 3
-    infotext = "unknown output"
+    infotext = "unknown_value"
     rssi = None
 
     try:
-        logging.debug("radwin_rssi SNMP Output %s", info)
-        if not len(info):
-            raise ValueError
-        rssi = int(info[0][0])
-        if rssi < crit:
-            state = 2
-        elif rssi > crit and rssi < warn:
-            state = 1
-        else:
-            state = 0
-        infotext = "Device received signal strength indication is %s " % rssi
+        if info:
+            rssi = int(info[0][0])
+            if rssi < crit:
+                state = 2
+            elif rssi > crit and rssi < warn:
+                state = 1
+            else:
+                state = 0
+            infotext = "Device received signal strength indication is %s " % rssi
     except ValueError:
-        infotext = "type mismatch value"
-        logging.critical("radwin_rssi %s", infotext, exc_info=True)
+        infotext = "type_mismatch_value"
     except:
-        infotext = "unknown value"
-        logging.critical("radwin_rssi %s", infotext, exc_info=True)
+        infotext = "unknown_value"
     return (state, infotext, [("rssi", rssi, warn, crit)])
 
 
 check_info["radwin_rssi"] = {
-'check_function': check_radwin_rssi,
-'service_description': 'radwin_rssi',
-'has_perfdata': True,
+    'check_function': check_radwin_rssi,
+    'service_description': 'radwin_rssi',
+    'has_perfdata': True,
 }
 
 #######################################################################

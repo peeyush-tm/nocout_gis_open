@@ -16,7 +16,7 @@ class PerformanceMetric(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -37,7 +37,7 @@ class PerformanceNetwork(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -58,7 +58,7 @@ class PerformanceService(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -79,7 +79,7 @@ class PerformanceStatus(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -100,7 +100,7 @@ class PerformanceMachine(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -121,7 +121,7 @@ class PerformanceInventory(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -143,7 +143,7 @@ class EventNetwork(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
     description = models.CharField('Event Description', max_length=255, null=True, blank=True)
 
@@ -165,7 +165,7 @@ class EventService(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
     description = models.CharField('Event Description', max_length=255, null=True, blank=True)
 
@@ -187,7 +187,7 @@ class EventStatus(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
     description = models.CharField('Event Description', max_length=255, null=True, blank=True)
 
@@ -209,7 +209,7 @@ class EventMachine(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
     description = models.CharField('Event Description', max_length=255, null=True, blank=True)
 
@@ -231,7 +231,7 @@ class EventInventory(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
     description = models.CharField('Event Description', max_length=255, null=True, blank=True)
 
@@ -253,7 +253,7 @@ class NetworkStatus(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -274,7 +274,7 @@ class ServiceStatus(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -295,7 +295,7 @@ class MachineStatus(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -316,7 +316,7 @@ class InventoryStatus(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
@@ -337,7 +337,7 @@ class Status(models.Model):
     avg_value = models.CharField('Avg Value', max_length=20, null=True, blank=True)
     warning_threshold = models.CharField('Warning Threshold', max_length=20, null=True, blank=True)
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
-    sys_timestamp = models.IntegerField('SYS Timestamp', null=True, db_index=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
 
     def __unicode__(self):
