@@ -723,7 +723,7 @@ function get_service_add_form(content) {
 
     bootbox.dialog({
         message: service_add_html,
-        title: "<span class='text-danger'><i class='fa fa-pencil'></i> Add services to nms core.</span>",
+        title: "<span class='text-danger'><i class='fa fa-plus'></i> Add services to nms core.</span>",
         buttons: {
             success: {
                 label: "Yes!",
