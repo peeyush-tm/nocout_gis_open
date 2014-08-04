@@ -10,6 +10,7 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 
 import os
 from django.conf import global_settings
+from collections import namedtuple
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_DIR = os.path.dirname(__file__)
@@ -246,6 +247,15 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_SECURITY_PASSIVE_URLS = ['dialog_for_page_refresh']
 
 MAX_USER_LOGIN_LIMIT=100
+
+DEFAULT_USERS= namedtuple('DEFAULT_USERS', 'USERNAME ID')
+GISADMIN= DEFAULT_USERS( USERNAME='gisadmin', ID=2)
+GISOPERATOR_ID= DEFAULT_USERS( USERNAME='gisoperator', ID=3)
+GISVIEWER_ID= DEFAULT_USERS( USERNAME='gisviewer', ID=3)
+
+MPTT_TREE= namedtuple('MPTT_TREE', 'lft rght level')
+
+ISOLATED_NODE= MPTT_TREE(lft=1, rght=2, level=0)
 ################################################################################
 #### TO : REMOVE ####
 

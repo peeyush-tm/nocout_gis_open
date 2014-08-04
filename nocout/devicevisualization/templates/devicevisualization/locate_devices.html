@@ -17,7 +17,8 @@
     <span class="date-range pull-right">
         <div class="btn-group">
             <ul class="list-unstyled list-inline">
-                <li>Show All Connected SS <input type="checkbox" name="showAllSS" id="showAllSS" onclick="networkMapInstance.plotAllDevice_gmap()" style="vertical-align: sub;" /></li>
+                <li>Show Connected SS <input type="checkbox" name="showAllSS" id="showAllSS" onclick="networkMapInstance.plotAllDevice_gmap()" style="vertical-align: sub;" /></li>
+                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines" onclick="networkMapInstance.showConnectionLines_gmap()" style="vertical-align: sub;" /></li>
                 <li>
                     <button id="advFilterBtn" class="btn btn-info" onclick="showAdvFilters();" data-complete-text="<i class='fa fa-filter'></i> Advance Filters" data-loading-text="Please Wait...">
                         <i class='fa fa-filter'></i> Advance Filters

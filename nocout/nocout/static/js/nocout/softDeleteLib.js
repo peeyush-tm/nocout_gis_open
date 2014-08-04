@@ -9,23 +9,17 @@
 function get_soft_delete_form(content) {
     // soft_delete_html: contains html for soft delete form
     var soft_delete_html = "";
-
-    if (!(typeof content.result.data.objects.childs === 'undefined') && !(Object.keys(content.result.data.objects.childs).length === 0)) {
-        soft_delete_html = '<h5 class="text-warning">This '+$.trim(content.result.data.objects.form_title)+' (' + content.result.data.objects.name + ') is parent of following '+$.trim(content.result.data.objects.form_title)+'s :</h5>';
-        for (var i = 0, l = content.result.data.objects.childs.length; i < l; i++) {
-            soft_delete_html += '<span class="text-warning">' + (i + 1) + ' : ' + content.result.data.objects.childs[i].value + ' </span><br />';
+    if ((content.result.data.objects.eligible.length > 0 )) {
+        soft_delete_html += '<h5 class="text-danger">Please first choose future parent of this '+$.trim(content.result.data.objects.form_title)+' from below choices:</h5>';
+        soft_delete_html += '<input type="hidden" id="id_'+$.trim(content.result.data.objects.form_type)+'" name="'+$.trim(content.result.data.objects.form_type)+'" value="' + content.result.data.objects.id + '" />';
+        soft_delete_html += '<select class="form-control" id="id_parent" name="parent">';
+        soft_delete_html += '<option value="">Select '+$.trim(content.result.data.objects.form_title)+'</option>';
+        for (var i = 0, l = content.result.data.objects.eligible.length; i < l; i++){
+            soft_delete_html += '<option value="' + content.result.data.objects.eligible[i].key + '">' + content.result.data.objects.eligible[i].value + '</option>';
         }
-        if (!(typeof content.result.data.objects.eligible === 'undefined')) {
-            soft_delete_html += '<h5 class="text-danger">Please first choose future parent of these '+$.trim(content.result.data.objects.form_title)+' from below choices:</h5>';
-            soft_delete_html += '<input type="hidden" id="id_'+$.trim(content.result.data.objects.form_type)+'" name="'+$.trim(content.result.data.objects.form_type)+'" value="' + content.result.data.objects.id + '" />';
-            soft_delete_html += '<select class="form-control" id="id_parent" name="parent">';
-            soft_delete_html += '<option value="">Select '+$.trim(content.result.data.objects.form_title)+'</option>';
-            for (var i = 0, l = content.result.data.objects.eligible.length; i < l; i++) {
-                soft_delete_html += '<option value="' + content.result.data.objects.eligible[i].key + '">' + content.result.data.objects.eligible[i].value + '</option>';
-            }
-            soft_delete_html += '</select>';
-        }
+        soft_delete_html += '</select>';
     }
+
     else {
         soft_delete_html = '<h5 class="text-warning">This '+$.trim(content.result.data.objects.form_title)+' (' + content.result.data.objects.name + ') is not associated with any other '+$.trim(content.result.data.objects.form_title)+'. So click on Yes! if you want to delete it.</h5>';
         soft_delete_html += '<input type="hidden" id="id_'+$.trim(content.result.data.objects.form_type)+'" name="'+$.trim(content.result.data.objects.form_type)+'" value="' + content.result.data.objects.id + '" />';
@@ -44,7 +38,7 @@ function get_soft_delete_form(content) {
 
                     /*Check that from where the softdelete is called*/
                     if($.trim(content.result.data.objects.form_type) == 'device') {
-                        
+
                          Dajaxice.device.device_soft_delete(show_response_message, {'device_id': $('#id_device').val(),
                         'new_parent_id': $('#id_parent').val()})
 
@@ -57,9 +51,8 @@ function get_soft_delete_form(content) {
 
                         Dajaxice.user_group.user_group_soft_delete(show_response_message, {'user_group_id':
                             $('#id_user_group').val(),'new_parent_id': $('#id_parent').val()});
-                    
-                    } else if($.trim(content.result.data.objects.form_type) == 'user') {
 
+                    } else if($.trim(content.result.data.objects.form_type) == 'user') {
                         Dajaxice.user_profile.user_soft_delete(show_response_message, {
                             'user_id': $('#id_user').val(),
                             'new_parent_id': $('#id_parent').val(),
@@ -80,6 +73,54 @@ function get_soft_delete_form(content) {
     });
 }
 
+function add_confirmation(id){
+    bootbox.dialog({
+      message:"Are you sure want to add this user ",
+      title: "<span class='text-danger'><i class='fa fa-times'></i>Confirmation</span>",
+      buttons: {
+          success: {
+          label: "Yes!",
+                className: "btn-success",
+                callback: function () {
+                Dajaxice.user_profile.user_add(show_response_message, { 'user_id': id })
+                }
+      },
+      danger: {
+            label: "No!",
+            className: "btn-danger",
+            callback: function () {
+                $(".bootbox").modal("hide");
+              }
+            }
+
+      }
+})
+}
+
+function hard_delete_confirmation(id){
+    bootbox.dialog({
+      message:"Are you sure want to delete this user",
+      title: "<span class='text-danger'><i class='fa fa-times'></i>Confirmation</span>",
+      buttons: {
+          success: {
+          label: "Yes!",
+                className: "btn-success",
+                callback: function () {
+                Dajaxice.user_profile.user_hard_delete(show_response_message, { 'user_id': id })
+                }
+      },
+      danger: {
+            label: "No!",
+            className: "btn-danger",
+            callback: function () {
+                $(".bootbox").modal("hide");
+              }
+            }
+      }
+})
+}
+
+
 /**
  * This function show the response message from the server in bootbox alert box
  * @param responseResult {JSON Object} It contains the json object passed from the server
@@ -87,26 +128,29 @@ function get_soft_delete_form(content) {
 // show message for soft deletion success/failure
 function show_response_message(responseResult) {
     bootbox.alert(responseResult.result.message);
-    datatable_headers=responseResult.result.data.objects.datatable_headers
-    for (i=0; i<datatable_headers.length; i++){
-
-        for (var key in datatable_headers[i]){
-            var obj = datatable_headers[i][key];
-            if(obj=='False'){
-                obj=false
-            }
-            else if (obj=='True'){
-                obj=true
-            }
-            datatable_headers[i][key]=obj
-        }
-    }
-    var gridHeadersObj = datatable_headers
-    var ajax_url_user_listing = responseResult.result.data.objects.userlistingtable
-    var ajax_url_user_archived_listing= responseResult.result.data.objects.userarchivelisting
-    var dataTableInstance = new ourDataTableWidget();
-    dataTableInstance.createDataTable("UserArchivedListingTable", gridHeadersObj, ajax_url_user_archived_listing, destroy=true);
-    dataTableInstance.createDataTable("UserListingTable", gridHeadersObj, ajax_url_user_listing, destroy=true);
+    location.reload(true);
+//    if (typeof responseResult.result.data.objects.datatable_headers == undefined){
+//        datatable_headers= responseResult.result.data.objects.datatable_headers
+//        for (i=0; i< datatable_headers.length; i++){
+//
+//            for (var key in datatable_headers[i]){
+//                var obj = datatable_headers[i][key];
+//                if(obj=='False'){
+//                    obj=false
+//                }
+//                else if (obj=='True'){
+//                    obj=true
+//                }
+//                datatable_headers[i][key]=obj
+//            }
+//        }
+//        var gridHeadersObj = datatable_headers
+//        var ajax_url_user_listing = responseResult.result.data.objects.userlistingtable
+//        var ajax_url_user_archived_listing= responseResult.result.data.objects.userarchivelisting
+//        var dataTableInstance = new ourDataTableWidget();
+//        dataTableInstance.createDataTable("UserArchivedListingTable", gridHeadersObj, ajax_url_user_archived_listing, destroy=true);
+//        dataTableInstance.createDataTable("UserListingTable", gridHeadersObj, ajax_url_user_listing, destroy=true);
+//    }
 }
 
 
@@ -625,7 +669,6 @@ function get_service_delete_form(content) {
 function delete_services_message(responseResult) {
     bootbox.alert(responseResult.result.message);
 }
-
 
 // ********************************** Service Add Functions ***************************************
 // add services on nms core

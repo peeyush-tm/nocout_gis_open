@@ -27,12 +27,12 @@ function ourDataTableWidget()
             $("#"+tableId).dataTable().fnDestroy();
         }
 	    $("#"+tableId).DataTable({
+            bAutoWidth: false,
             bPaginate: true,
             bProcessing : true,
             bServerSide: true,
             sAjaxSource: ajax_url,
-            aoColumns:tableheaders,
-            autoWidth: false
+            aoColumns:tableheaders            
  		});
     };
 }
