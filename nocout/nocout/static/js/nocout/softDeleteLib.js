@@ -211,7 +211,7 @@ function sync_devices_message(responseResult) {
     bootbox.alert(responseResult.result.message);
 }
 
-
+/*
 // add service to nms core
 function get_service_add_form(content) {
     var service_add_html = "";
@@ -327,6 +327,9 @@ function show_param_tables(value){
     Dajaxice.device.get_service_para_and_data_source_tables(Dajax.process, {'service_value': service_value, 'para_value': para_value});
 }
 
+*/
+
+
 // edit services on nms core
 function get_service_edit_form(content) {
     var service_edit_html = "";
@@ -350,7 +353,7 @@ function get_service_edit_form(content) {
 
                 // service display
                 if (!(typeof content.result.data.objects.services === 'undefined')) {
-                    service_edit_html += '<label class="control-label"><p class="text-warning"><b>Services:</b></p></label>';
+                    service_edit_html += '<label class="control-label"><h5 class="text-warning"><b>Services:</b></h5></label>';
                     for (var i = 0, l = content.result.data.objects.services.length; i < l; i++) {
                         service_edit_html += '<div class="service">';
                         service_edit_html += '<label class="checkbox">';
@@ -532,7 +535,7 @@ function get_service_delete_form(content) {
 
                 // service display
                 if (!(typeof content.result.data.objects.services === 'undefined')) {
-                    service_delete_html += '<label class="control-label"><p class="text-warning"><b>Services:</b></p></label>';
+                    service_delete_html += '<label class="control-label"><h5 class="text-warning"><b>Services:</b></h5></label>';
                     for (var i = 0, l = content.result.data.objects.services.length; i < l; i++) {
                         service_delete_html += '<div class="service">';
                         service_delete_html += '<label class="checkbox">';
@@ -620,5 +623,189 @@ function get_service_delete_form(content) {
 
 // show message for service deletion success/failure
 function delete_services_message(responseResult) {
+    bootbox.alert(responseResult.result.message);
+}
+
+
+// ********************************** Service Add Functions ***************************************
+// add services on nms core
+function get_service_add_form(content) {
+    var service_add_html = "";
+
+    if (content.result.data.objects.is_added == 1){
+        if (content.result.data.objects.master_site == "master_UA") {
+            if (!(typeof content.result.data.objects.services === 'undefined') && !(Object.keys(content.result.data.objects.services).length === 0)) {
+
+                // display port select menu
+                //service_add_html += '<h5 class="text-warning">You can add service for device ' + '"' + content.result.data.objects.device_alias + '" </h5>';
+                // show service information
+                service_add_html += '<h5 class="text-warning"><b>Device Info:</b></h5>';
+                service_add_html += '<dl class="dl-horizontal">';
+                service_add_html += '<dt>Device</dt><dd>'+content.result.data.objects.device_alias+'</dd>';
+                service_add_html += '<dt>Services</dt><dd>';
+                for (var i = 0, l = content.result.data.objects.services.length; i < l; i++) {
+                    service_add_html += content.result.data.objects.services[i].value+', ' ;
+                }
+                service_add_html += '</dd></dl>';
+                service_add_html += '<input type="hidden" id="device_id" value="' + content.result.data.objects.device_id + '" />';
+
+                // service display
+                if (!(typeof content.result.data.objects.services === 'undefined')) {
+                    service_add_html += '<label class="control-label"><h5 class="text-warning"><b>Services:</b></h5></label>';
+                    for (var i = 0, l = content.result.data.objects.services.length; i < l; i++) {
+                        service_add_html += '<div class="service">';
+                        service_add_html += '<label class="checkbox">';
+                        service_add_html += '<input class="uniform" id="svc_' + content.result.data.objects.services[i].key + '" type="checkbox" value="' + content.result.data.objects.services[i].key + '" onchange="show_old_configuration_for_svc_add(' + content.result.data.objects.services[i].key + ');">';
+                        service_add_html += '<p class="text-dark">'+content.result.data.objects.services[i].value+'</p>';
+                        service_add_html += '</label>';
+                        service_add_html += '<div id="template_options_id_' + content.result.data.objects.services[i].key + '" onchange="show_new_configuration_for_svc_add(' + content.result.data.objects.services[i].key + ');"></div>';
+                        service_add_html += '<div id="show_new_configuration_' + content.result.data.objects.services[i].key + '"></div>';
+                        service_add_html += '<hr />';
+                        service_add_html += '</div>';
+                    }
+                    service_add_html += '</div>';
+                }
+            }
+            else {
+                service_add_html += '<h5 class="text-warning">There are no services for device ' + '"' + content.result.data.objects.device_alias + '"to monitor. </h5>';
+            }
+        }
+        else{
+            service_add_html += content.result.message;
+        }
+    }
+    else{
+        service_add_html += content.result.message;
+    }
+
+    bootbox.dialog({
+        message: service_add_html,
+        title: "<span class='text-danger'><i class='fa fa-pencil'></i> Add services to nms core.</span>",
+        buttons: {
+            success: {
+                label: "Yes!",
+                className: "btn-success",
+                callback: function () {
+                    //if services are present on then send the call to add service else just hide the bootbox
+                    if (!(typeof content.result.data.objects.services === 'undefined') && !(Object.keys(content.result.data.objects.services).length === 0)) {
+                        var service_data = [];
+                        $(".service").each(function (index) {
+                            if ($(this).children(".checkbox").find("input:checked").prop('checked')==true) {
+                                var $this = $(this);
+                                var svc = {};
+                                $this.children(".checkbox").find("input:checked").each(function () {
+                                    service_id = $(this).prop("value");
+                                    svc_val = $("#service_template_" + service_id).val();
+                                    svc = {"device_id": $("#device_id").val(), "service_id": $(this).prop("value"), "template_id": svc_val};
+                                });
+                                var data_sources = [];
+                                // loop through all the elements with class 'data_source_field'
+                                $this.find(".data_source_field").each(function(index, obj){
+                                    // fetching data source values from three columns of each row
+                                    var $tds = $(this).find('td'),
+                                        name = $tds.eq(0).text(),
+                                        warning = $tds.eq(1).text(),
+                                        critical = $tds.eq(2).text();
+                                    // create data source dictionary
+                                    ds = {"name": name, "warning": warning, "critical": critical};
+                                    // appending data source dictionary to data_sources array
+                                    data_sources.push(ds);
+                                });
+                                if (typeof data_sources !== 'undefined' && data_sources.length > 0){
+                                    svc['data_source'] = data_sources;
+                                }
+                                service_data.push(svc);
+                            }
+                        });
+                        // alert(JSON.stringify(service_data));
+
+                        // below is the 'service_data' we are passing through ajax
+                        /*
+                        [
+                            {
+                                "device_id": "545",
+                                "service_id": "14",
+                                "template_id": "2",
+                                "data_source": [
+                                    {
+                                        "name": "odu_sn",
+                                        "warning": "",
+                                        "critical": ""
+                                    }
+                                ]
+                            },
+                            {
+                                "device_id": "545",
+                                "service_id": "10",
+                                "template_id": "3",
+                                "data_source": [
+                                    {
+                                        "name": "1",
+                                        "warning": "",
+                                        "critical": ""
+                                    },
+                                    {
+                                        "name": "2",
+                                        "warning": "",
+                                        "critical": ""
+                                    },
+                                    {
+                                        "name": "3",
+                                        "warning": "",
+                                        "critical": ""
+                                    },
+                                    {
+                                        "name": "4",
+                                        "warning": "",
+                                        "critical": ""
+                                    }
+                                ]
+                            }
+                        ]
+                         */
+                        Dajaxice.device.add_services(add_services_message, {'svc_data': service_data});
+                    }
+                    else{
+                        $(".bootbox").modal("hide");
+                    }
+                }
+            },
+            danger: {
+                label: "No!",
+                className: "btn-danger",
+                callback: function () {
+                    $(".bootbox").modal("hide");
+                }
+            }
+        }
+    });
+}
+
+
+// display service templates select menu
+function show_old_configuration_for_svc_add(value) {
+    id = "#svc_"+value;
+    if ($(id).is(":checked")){
+        //console.log($(id).prop("value"));
+        Dajaxice.device.get_old_configuration_for_svc_add(Dajax.process, {'option': value, 'service_id': $(id).prop("value"), 'device_id': $('#device_id').val()});
+    }
+    else {
+        $("#template_options_id_"+value+"").empty();
+        $("#show_old_configuration_"+value+"").empty();
+        $("#show_new_configuration_"+value+"").empty();
+    }
+}
+
+
+// display service parameters table
+function show_new_configuration_for_svc_add(value){
+    service_id = value;
+    template_id = $("#service_template_"+value).val();
+    Dajaxice.device.get_new_configuration_for_svc_add(Dajax.process, {'service_id': service_id, 'template_id': template_id});
+}
+
+
+// show message for service add success/failure
+function add_services_message(responseResult) {
     bootbox.alert(responseResult.result.message);
 }

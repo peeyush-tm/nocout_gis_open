@@ -109,7 +109,7 @@ class DeviceServiceConfiguration(models.Model):
         ordering = ["added_on"]
 
     def save(self, *args, **kwargs):
-        ''' On save, update timestamps '''
+        """ On save, update timestamps """
         if not self.id:
             self.added_on = datetime.datetime.today()
         self.modified_on = datetime.datetime.today()
