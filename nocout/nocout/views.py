@@ -181,6 +181,9 @@ def auth_view(request):
 
 
 def logout(request):
+    """
+    Logout the logged in user.
+    """
     auth.logout(request)
     return HttpResponseRedirect(settings.LOGIN_URL)
 

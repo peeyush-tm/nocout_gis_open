@@ -5,6 +5,9 @@ from organization.models import Organization
 
 
 class DeviceGroupForm(forms.ModelForm):
+    """
+    Device Group Models Form to create and update.
+    """
 
     def __init__(self, *args, **kwargs):
         initial = kwargs.setdefault('initial',{})
@@ -49,5 +52,8 @@ class DeviceGroupForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
+        """
+        Meta Information.
+        """
         model = DeviceGroup
         fields = ('name', 'alias', 'parent', 'organization', 'devices')

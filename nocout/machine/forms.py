@@ -4,6 +4,9 @@ from models import Machine
 
 #**************************************** Machine *********************************************
 class MachineForm(forms.ModelForm):
+    """
+    Class based Machine Model.
+    """
 
     def __init__(self, *args, **kwargs):
         super(MachineForm, self).__init__(*args, **kwargs)
@@ -21,4 +24,7 @@ class MachineForm(forms.ModelForm):
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
+        """
+        Meta Information.
+        """
         model = Machine
