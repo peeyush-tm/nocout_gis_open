@@ -14,10 +14,18 @@ from nocout.utils.util import DictDiffer
 from django.db.models import Q
 
 class CommandList(ListView):
+    """
+    Generic Class based View to List the Commands.
+    """
+
     model = Command
     template_name = 'command/commands_list.html'
 
     def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+
+        """
         context=super(CommandList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData':'name',             'sTitle' : 'Name',          'sWidth':'null', },
@@ -30,11 +38,21 @@ class CommandList(ListView):
 
 
 class CommandListingTable(BaseDatatableView):
+    """
+    A generic class based view for the command data table rendering.
+
+    """
     model = Command
     columns = ['name', 'alias', 'command_line']
     order_columns = ['name', 'alias', 'command_line']
 
     def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+        """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             query=[]
@@ -49,11 +67,21 @@ class CommandListingTable(BaseDatatableView):
         return qs
 
     def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         return Command.objects.values(*self.columns+['id'])
 
     def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
@@ -62,6 +90,10 @@ class CommandListingTable(BaseDatatableView):
         return qs
 
     def get_context_data(self, *args, **kwargs):
+        """
+        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
+
+        """
         request = self.request
         self.initialize(*args, **kwargs)
 
@@ -91,11 +123,19 @@ class CommandListingTable(BaseDatatableView):
         return ret
 
 class CommandDetail(DetailView):
+    """
+    Class Based Detail View
+
+    """
     model = Command
     template_name = 'command/command_detail.html'
 
 
 class CommandCreate(CreateView):
+    """
+    Class based View to create Command
+
+    """
     template_name = 'command/command_new.html'
     model = Command
     form_class = CommandForm
@@ -103,15 +143,27 @@ class CommandCreate(CreateView):
 
     @method_decorator(permission_required('command.add_command', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+
+        """
         return super(CommandCreate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
+        """
+        to check the validation of the form before submit.
+        and to log the activity in the user log
+        """
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
         return HttpResponseRedirect(CommandCreate.success_url)
 
 
 class CommandUpdate(UpdateView):
+    """
+    Class based View to update Command
+
+    """
     template_name = 'command/command_update.html'
     model = Command
     form_class = CommandForm
@@ -119,9 +171,17 @@ class CommandUpdate(UpdateView):
 
     @method_decorator(permission_required('command.change_command', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+
+        """
         return super(CommandUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
+        """
+        to check the validation of the form before submit.
+        and to log the activity in the user log
+        """
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
 
         cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
@@ -141,11 +201,19 @@ class CommandUpdate(UpdateView):
 
 
 class CommandDelete(DeleteView):
+    """
+    Class based View to delete Command
+
+    """
     model = Command
     template_name = 'command/command_delete.html'
     success_url = reverse_lazy('commands_list')
     
     @method_decorator(permission_required('command.delete_command', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+
+        """
         return super(CommandDelete, self).dispatch(*args, **kwargs)
 

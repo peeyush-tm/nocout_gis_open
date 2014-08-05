@@ -4,7 +4,14 @@ from models import Command
 
 # command form
 class CommandForm(forms.ModelForm):
+    """
+    The Class Based Command Model Form.
+    """
     def __init__(self, *args, **kwargs):
+        """
+        Initialize function to change attributes before rending the model form.
+
+        """
         super(CommandForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -20,4 +27,7 @@ class CommandForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
+        """
+        Model name required for the model form to generate in the meta information
+        """
         model = Command
