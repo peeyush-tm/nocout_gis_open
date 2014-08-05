@@ -4,6 +4,9 @@ import datetime
 
 
 class Protocol(models.Model):
+    """
+    Protocol Model Columns declaration
+    """
     name = models.CharField('Parameters Name', max_length=255)
     protocol_name = models.CharField('Protocol Name', max_length=255)
     port = models.IntegerField('Port')
@@ -18,20 +21,32 @@ class Protocol(models.Model):
     private_pass_phase = models.CharField('Private Pass Phase', max_length=100, null=True, blank=True)
 
     def __unicode__(self):
+        """
+        Protocol Object presentation
+        """
         return self.name
 
 
 class ServiceDataSource(models.Model):
+    """
+    Service Data Source Model Columns declaration
+    """
     name = models.CharField('Name', max_length=100)
     alias = models.CharField('Alias', max_length=250)
     warning = models.CharField('Warning', max_length=255, null=True, blank=True)
     critical = models.CharField('Critical', max_length=255, null=True, blank=True)
 
     def __unicode__(self):
+        """
+        Service Data Source Object presentation
+        """
         return self.name
 
 
 class ServiceParameters(models.Model):
+    """
+    Service Parameters Model Columns Declaration.
+    """
     parameter_description = models.CharField(max_length=250)
     protocol = models.ForeignKey(Protocol, verbose_name=" SNMP Parameters")
     normal_check_interval = models.IntegerField()
@@ -71,10 +86,16 @@ class ServiceParameters(models.Model):
     '''
 
     def __unicode__(self):
+        """
+        Service Parameters object presentation.
+        """
         return self.parameter_description
 
 
 class Service(models.Model):
+    """
+    Service Model Column Declaration.
+    """
     name = models.CharField('Name', max_length=100)
     alias = models.CharField('Alias', max_length=100)
     parameters = models.ForeignKey(ServiceParameters)
@@ -83,11 +104,17 @@ class Service(models.Model):
     description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
+        """
+        Service object presentation
+        """
         return self.name
 
 
 # device service configuration --> it contains services those are already running
 class DeviceServiceConfiguration(models.Model):
+    """
+    Device Service Configuration Model Declaration.
+    """
     device_name = models.CharField('Device Name', max_length=200, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=200, null=True, blank=True)
     agent_tag = models.CharField('Agent Tag', max_length=50, null=True, blank=True)
@@ -116,4 +143,7 @@ class DeviceServiceConfiguration(models.Model):
         return super(DeviceServiceConfiguration, self).save(*args, **kwargs)
 
     def __unicode__(self):
+        """
+        Device Service Configuration object presentation
+        """
         return "{} - {} - {}".format(self.device_name, self.service_name, self.added_on)
