@@ -1,14 +1,22 @@
-import os
+"""
+inventory_mongo_migration.py
+
+File contains the data migrations of mongodb to mysql db for inventory services. Inventory services run once a day.
+
+"""
 import MySQLdb
-import pymongo
 from datetime import datetime, timedelta
-from rrd_migration import mongo_conn, db_port
-from mongo_functions import get_latest_entry
-import subprocess
-import mongo_functions
+from rrd_migration import mongo_conn
 import socket
 
 def main(**configs):
+    """
+    Main function for reading the data from mongodb database for inventory services.After reading the data ,it is formatted according to mysql
+    table schema and inserted into mysql db
+    Args: Multiple argument fetched from config.ini
+    Return : None
+    Raises: No exception
+    """
     data_values = []
     values_list = []
     docs = []
@@ -44,6 +52,14 @@ def main(**configs):
 
 def read_data(start_time, end_time, **kwargs):
 
+    """
+    function for reading the data from mongodb database for inventory services.After reading the data
+    Args: start_time (time of last record enrty)
+    Kwargs: end_time(current time) ,multiple arguments fetched from config.ini
+    Return : None
+    Raises: No exception
+
+    """
     db = None
     port = None
     docs = []
@@ -65,6 +81,13 @@ def read_data(start_time, end_time, **kwargs):
     return docs
 
 def build_data(doc):
+	"""
+	function for building the data based on the collected record from mongodb database for inventory services.
+	Arg: doc (extracted doc from the mongodb )
+	Kwargs: None
+	Return : formatted record for the mysql
+	Raises: No exception
+	"""
 	values_list = []
 	time = doc.get('time')
 	machine_name = get_machine_name()
@@ -90,6 +113,13 @@ def build_data(doc):
 	return values_list
 
 def insert_data(table, data_values, **kwargs):
+	"""
+	function for building the data based on the collected record from mongodb database for inventory services.
+	Arg: table (mysql database table name)
+	Kwargs: data_values (formatted record)
+	Return : None
+	Raises: MySQLdb.error
+	"""
 	db = mysql_conn(configs=kwargs.get('configs'))
 	query = 'INSERT INTO `%s` ' % table
 	query += """
@@ -108,6 +138,13 @@ def insert_data(table, data_values, **kwargs):
     	cursor.close()
 
 def get_epoch_time(datetime_obj):
+    """
+	function for converting the datetime object into epoch_time.
+	Arg: datetime_obj (time object)
+	Kwargs: None
+	Return : epoch_time/datetimeobj
+	Raises: None
+    """
     # Get India times (GMT+5.30)
     utc_time = datetime(1970, 1,1, 5, 30)
     if isinstance(datetime_obj, datetime):
@@ -117,6 +154,13 @@ def get_epoch_time(datetime_obj):
         return datetime_obj
 
 def mysql_conn(db=None, **kwargs):
+    """
+	function for mysql connection.
+	Arg: db (database instance obj)
+	Kwargs: multiple arguments for mysql connections
+	Return : db object
+	Raises: MYSQLdb.error
+    """
     try:
         db = MySQLdb.connect(host=kwargs.get('configs').get('host'), user=kwargs.get('configs').get('user'),
             passwd=kwargs.get('configs').get('sql_passwd'), db=kwargs.get('configs').get('sql_db'))
@@ -125,6 +169,13 @@ def mysql_conn(db=None, **kwargs):
 
     return db
 def get_machine_name(machine_name=None):
+    """
+	function for getting machine_name.
+	Arg: machine_name
+	Kwargs: None
+	Return : machine_name
+	Raises: Exception
+    """
     try:
         machine_name = socket.gethostname()
     except Exception, e:
