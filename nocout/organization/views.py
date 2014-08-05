@@ -16,10 +16,17 @@ from user_group.models import UserGroup
 
 
 class OrganizationList(ListView):
+    """
+    Class Based View to render Organization List page.
+    """
+
     model = Organization
     template_name = 'organization/organization_list.html'
 
     def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
         context=super(OrganizationList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData':'name',                'sTitle' : 'Name',          'sWidth':'null',},
@@ -37,14 +44,26 @@ class OrganizationList(ListView):
         return context
 
 class OrganizationListingTable(BaseDatatableView):
+    """
+    Class based View to render Organization Data table.
+    """
     model = Organization
     columns = ['name', 'alias', 'parent__name','city','state','country', 'description']
     order_columns = ['name',  'alias', 'parent__name', 'city', 'state', 'country']
 
     def logged_in_user_organization_ids(self):
+        """
+        return the logged in user descendants organization ids.
+        """
         return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
 
     def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+        """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             query=[]
@@ -59,12 +78,22 @@ class OrganizationListingTable(BaseDatatableView):
         return qs
 
     def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         organization_descendants_ids= self.logged_in_user_organization_ids()
         return Organization.objects.filter(pk__in=organization_descendants_ids).values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+
+        """
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
@@ -73,6 +102,9 @@ class OrganizationListingTable(BaseDatatableView):
         return qs
 
     def get_context_data(self, *args, **kwargs):
+        """
+        The main function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
         request = self.request
         self.initialize(*args, **kwargs)
 
@@ -102,23 +134,35 @@ class OrganizationListingTable(BaseDatatableView):
         return ret
 
 class OrganizationDetail(DetailView):
+    """
+    Class based view to render the organization detail.
+    """
     model = Organization
     template_name = 'organization/organization_detail.html'
 
 
 class OrganizationCreate(CreateView):
+    """
+    Class based view to create new organization.
+    """
     template_name = 'organization/organization_new.html'
     model = Organization
     form_class = OrganizationForm
     success_url = reverse_lazy('organization_list')
 
     def form_valid(self, form):
+        """
+        Submit the form and to log the user activity.
+        """
         self.object=form.save()
         self.model.objects.rebuild()
         action.send( self.request.user, verb='Created', action_object = self.object )
         return super(ModelFormMixin, self).form_valid(form)
 
 class OrganizationUpdate(UpdateView):
+    """
+    Class based view to update organization.
+    """
     template_name = 'organization/organization_update.html'
     model = Organization
     form_class = OrganizationForm
@@ -126,6 +170,9 @@ class OrganizationUpdate(UpdateView):
 
 
     def form_valid(self, form):
+        """
+        Submit the form and to log the user activity.
+        """
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
         cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
@@ -144,6 +191,9 @@ class OrganizationUpdate(UpdateView):
 
 
 class OrganizationDelete(DeleteView):
+    """
+    Class based View to Delete the Organization.
+    """
     model = Organization
     template_name = 'organization/organization_delete.html'
     success_url = reverse_lazy('organization_list')
