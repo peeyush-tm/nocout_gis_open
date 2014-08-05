@@ -4,13 +4,11 @@ from models import DeviceGroup
 # from device.models import Inventory
 from user_group.models import Organization
 
-
-# generate content for soft delete popup form
 @dajaxice_register
 def device_group_soft_delete_form(request, value):
-    # device group which needs to be deleted
-    device_group = DeviceGroup.objects.get(id=value)
-
+    """
+    generate content for soft delete popup form
+    """
     # result: data dictionary send in ajax response
     #{
     #  "success": 1,     # 0 - fail, 1 - success, 2 - exception
@@ -30,6 +28,7 @@ def device_group_soft_delete_form(request, value):
     #                   }
     #           ]
     #}
+    device_group = DeviceGroup.objects.get(id=value)
     result = dict()
     result['data'] = {}
     result['success'] = 0
@@ -90,12 +89,13 @@ def device_group_soft_delete_form(request, value):
     result['message'] = "Successfully render form."
     return json.dumps({'result': result})
 
-
-# soft delete device group i.e. not deleting device group from database, it just set
-# it's is_deleted field value to 1 & remove it's relationship with any other device
-# group & make some other device group parent of associated device groups
 @dajaxice_register
 def device_group_soft_delete(request, device_group_id, new_parent_id):
+    """
+    soft delete device group i.e. not deleting device group from database, it just set
+    it's is_deleted field value to 1 & remove it's relationship with any other device
+    group & make some other device group parent of associated device groups
+    """
     # if new_parent is not available than make it default (id=1)
     if not new_parent_id:
         new_parent_id = 1

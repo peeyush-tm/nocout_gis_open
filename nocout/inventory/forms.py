@@ -10,6 +10,9 @@ from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation,
 
 #*************************************** Inventory ************************************
 class InventoryForm(forms.ModelForm):
+    """
+    Class Based View Inventory Model form to update and create.
+    """
 
     def __init__(self, *args, **kwargs):
         initial = kwargs.setdefault('initial',{})
@@ -54,12 +57,17 @@ class InventoryForm(forms.ModelForm):
             self.fields['user_group'].queryset = UserGroup.objects.filter( organization__in = organization_descendants_ids, is_deleted=0)
 
     class Meta:
+        """
+        Meta Information
+        """
         model = Inventory
 
 
 #*************************************** Antenna **************************************
 class AntennaForm(forms.ModelForm):
-
+    """
+    Class Based View Antenna Model form to update and create.
+    """
     POLARIZATION = (
         ('', 'Select'),
         ('Vertical', 'Vertical'),
@@ -113,11 +121,17 @@ class AntennaForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
+        """
+        Meta Information
+        """
         model = Antenna
 
 
 #************************************* Backhaul ****************************************
 class BackhaulForm(forms.ModelForm):
+    """
+        Class Based View Backhaul Model form to update and create.
+    """
     BH_TYPE = (
         ('', 'Select'),
         ('E1', 'E1'),
@@ -162,11 +176,17 @@ class BackhaulForm(forms.ModelForm):
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
+        """
+        Meta Information
+        """
         model = Backhaul
 
 
 #************************************ Base Station ****************************************
 class BaseStationForm(forms.ModelForm):
+    """
+    Class Based View Base Station Model form to update and create.
+    """
 
     country = IntReturnModelChoiceField(queryset=Country.objects.all(),
                                         required=False)
@@ -225,11 +245,17 @@ class BaseStationForm(forms.ModelForm):
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
+        """
+        Meta Information
+        """
         model = BaseStation
 
 
 #************************************* Sector *************************************
 class SectorForm(forms.ModelForm):
+    """
+    Class Based View Sector Model form to update and create.
+    """
     MRC = (
         ('', 'Select'),
         ('Yes', 'Yes'),
@@ -260,12 +286,17 @@ class SectorForm(forms.ModelForm):
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
+        """
+        Meta Information
+        """
         model = Sector
         
         
 #************************************* Customer ***************************************
 class CustomerForm(forms.ModelForm):
-
+    """
+        Class Based View Customer Model form to update and create.
+    """
     def __init__(self, *args, **kwargs):
         super(CustomerForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
@@ -281,11 +312,17 @@ class CustomerForm(forms.ModelForm):
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
+        """
+        Meta Information
+        """
         model = Customer
         
         
 #*********************************** Sub Station *************************************
 class SubStationForm(forms.ModelForm):
+    """
+    Class Based View SubStation Model form to update and create.
+    """
 
     country = IntReturnModelChoiceField(queryset=Country.objects.all(),
                                         required=False)
@@ -333,11 +370,17 @@ class SubStationForm(forms.ModelForm):
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
+        """
+        Meta Information
+        """
         model = SubStation
         
         
 #*********************************** Circuit ***************************************
 class CircuitForm(forms.ModelForm):
+    """
+    Class Based View Circuit Model form to update and create.
+    """
 
     date_of_acceptance = forms.DateField(input_formats=('%m/%d/%Y',), help_text='(mm-dd-yyyy) Enter a date.',
                                          required=False, widget=forms.widgets.DateInput(format="%m/%d/%Y", attrs={'class': 'datepicker'}))
@@ -361,11 +404,17 @@ class CircuitForm(forms.ModelForm):
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
+        """
+        Meta Information
+        """
         model = Circuit
 
 
 #*********************************** IconSettings ***************************************
 class IconSettingsForm(forms.ModelForm):
+    """
+    Class Based View IconSettings Model form to update and create.
+    """
 
     def __init__(self, *args, **kwargs):
         super(IconSettingsForm, self).__init__(*args, **kwargs)
@@ -382,11 +431,17 @@ class IconSettingsForm(forms.ModelForm):
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
+        """
+        Meta Information
+        """
         model = IconSettings
         
         
 #*********************************** LivePollingSettings ***************************************
 class LivePollingSettingsForm(forms.ModelForm):
+    """
+    Class Based View LivePollingSettings Model form to update and create.
+    """
 
     def __init__(self, *args, **kwargs):
         super(LivePollingSettingsForm, self).__init__(*args, **kwargs)
@@ -406,12 +461,18 @@ class LivePollingSettingsForm(forms.ModelForm):
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
+        """
+        Meta Information
+        """
         model = LivePollingSettings
 
 
 #*********************************** LivePollingSettings ***************************************
 class ThresholdConfigurationForm(forms.ModelForm):
 
+    """
+    Class Based View Threshold Configuration Model form to update and create.
+    """
     def __init__(self, *args, **kwargs):
         super(ThresholdConfigurationForm, self).__init__(*args, **kwargs)
         self.fields['live_polling_template'].empty_label = 'Select'
@@ -428,13 +489,18 @@ class ThresholdConfigurationForm(forms.ModelForm):
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
+        """
+        Meta Information
+        """
         model = ThresholdConfiguration
 
 
 
 #*********************************** LivePollingSettings ***************************************
 class ThematicSettingsForm(forms.ModelForm):
-
+    """
+    Class Based View Thematic Settings Model form to update and create.
+    """
     def __init__(self, *args, **kwargs):
         self.base_fields['gt_warning'].label = '> Warning'
         self.base_fields['bt_w_c'].label = 'Warning > > Critical'
@@ -457,4 +523,7 @@ class ThematicSettingsForm(forms.ModelForm):
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
+        """
+        Meta Information
+        """
         model = ThematicSettings
