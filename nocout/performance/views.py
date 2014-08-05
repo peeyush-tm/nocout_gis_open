@@ -78,7 +78,7 @@ class LivePerformanceListing(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
 
         :param qs:
-        :return:
+        :return result_list:
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
@@ -242,7 +242,7 @@ class LivePerformanceListing(BaseDatatableView):
 
     def get_context_data(self, *args, **kwargs):
         """
-        The maine function call to fetch, search, prepare and display the data on the data table.
+        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
         """
 
         request = self.request
@@ -711,7 +711,7 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
     :param devices:
     :param data_sources:
     :param columns:
-    :return:
+    :return query:
     """
     in_string = lambda x: "'" + str(x) + "'"
     col_string = lambda x: "`" + str(x) + "`"

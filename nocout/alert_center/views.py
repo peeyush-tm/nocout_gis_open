@@ -20,10 +20,23 @@ logger = logging.getLogger(__name__)
 
 
 def getNetworkAlert(request):
+    """
+    get request to render the network alert list
+
+    :params request object:
+    :return Http response object:
+    """
     return render_to_response('alert_center/network_alerts_list.html', context_instance=RequestContext(request))
 
 
 def getCustomerAlert(request, page_type="default_device_name"):
+    """
+    get request to render customer alert pages w.r.t page_type requested
+
+    :params request object:
+    :params page_type:
+    :return Http response object:
+    """
     if (page_type == "latency"):
         return render_to_response('alert_center/customer_latency_alerts_list.html',
                                   context_instance=RequestContext(request))
@@ -33,19 +46,39 @@ def getCustomerAlert(request, page_type="default_device_name"):
 
 
 def getCustomerAlertDetail(request):
+    """
+    get request to render customer detail list
+    :params request object:
+    :return Http Response Object::
+
+    """
     return render_to_response('alert_center/customer_details_list.html', context_instance=RequestContext(request))
 
 
 def getNetworkAlertDetail(request):
+    """
+    get request to render network detail list
+    :params request object:
+    :return Http Response Object:
+    """
     return render_to_response('alert_center/network_details_list.html', context_instance=RequestContext(request))
 
 
 # **************************************** Latency *********************************************
 class AlertCenterNetworkListing(ListView):
+    """
+    Class Based View to render Alert Center Network Listing page with latency, packet drop
+    down and service impact alert tabs.
+
+    """
     model = EventNetwork
     template_name = 'alert_center/network_alerts_list.html'
 
     def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+
+        """
         context = super(AlertCenterNetworkListing, self).get_context_data(**kwargs)
         datatable_headers_latency = [
 
@@ -124,6 +157,10 @@ class AlertCenterNetworkListing(ListView):
 
 
 class AlertCenterNetworkListingTable(BaseDatatableView):
+    """
+    Generic Class Based View for the Alert Center Network Listing Tables.
+
+    """
     model = EventNetwork
     columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
                'current_value', 'sys_timestamp', 'description']
@@ -131,6 +168,13 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                      'current_value', 'sys_timestamp', 'description']
 
     def filter_queryset(self, qs):
+
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return result_list:
+        """
 
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
@@ -144,6 +188,10 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         return qs
 
     def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
@@ -220,6 +268,12 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         return device_list
 
     def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return queryset.
+        """
 
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
@@ -227,6 +281,11 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         return common_prepare_results(qs)
 
     def get_context_data(self, *args, **kwargs):
+        """
+        The maine function call to fetch, search, prepare and display the data on the data table.
+
+        """
+
         request = self.request
         self.initialize(*args, **kwargs)
 
@@ -257,10 +316,18 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
 
 class CustomerAlertList(ListView):
+    """
+    Class Based View to render Alert Center Customer Listing page.
+
+    """
     model = EventNetwork
     template_name = 'alert_center/customer_alerts_list.html'
 
     def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+
+        """
         context = super(CustomerAlertList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': False},
@@ -286,6 +353,9 @@ class CustomerAlertList(ListView):
 
 
 class CustomerAlertListingTable(BaseDatatableView):
+    """
+    Generic Class Based View for the Alert Center Customer Listing Tables.
+    """
     model = EventNetwork
     columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
                'current_value', 'sys_timestamp', 'description']
@@ -293,7 +363,13 @@ class CustomerAlertListingTable(BaseDatatableView):
                       'current_value', 'sys_timestamp', 'description']
 
     def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
 
+        :param qs:
+        :return result_list:
+
+        """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             result_list = list()
@@ -307,6 +383,10 @@ class CustomerAlertListingTable(BaseDatatableView):
         return qs
 
     def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
@@ -381,6 +461,12 @@ class CustomerAlertListingTable(BaseDatatableView):
         return sorted_device_list
 
     def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return queryset
+        """
 
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
@@ -389,6 +475,11 @@ class CustomerAlertListingTable(BaseDatatableView):
 
 
     def get_context_data(self, *args, **kwargs):
+        """
+        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
+
+        """
+
         request = self.request
         self.initialize(*args, **kwargs)
 
@@ -421,6 +512,16 @@ class CustomerAlertListingTable(BaseDatatableView):
 # misc utility functions
 
 def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None, condition=None):
+    """
+    The raw query preparation.
+
+    :param table_name:
+    :param devices:
+    :param data_sources:
+    :param columns:
+    :param condition:
+    :return query:
+    """
     in_string = lambda x: "'" + str(x) + "'"
     # col_string = lambda x,y: ("%s`" + str(x) + "`") %(y)
     query = None
@@ -515,6 +616,12 @@ def common_get_performance_data(model=EventNetwork,
 
 
 def common_prepare_results(qs):
+    """
+    Common function to prepare result on query set
+
+    :params qs:
+    :return qs:
+    """
 
     for dct in qs:
         if dct['severity']=='DOWN':
