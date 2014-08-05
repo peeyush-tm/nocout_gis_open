@@ -1,5 +1,4 @@
 import json
-import time
 from actstream import action
 from django.contrib.auth.decorators import permission_required
 from django.db.models.query import ValuesQuerySet
@@ -26,10 +25,16 @@ if settings.DEBUG:
 
 # **************************************** Service *********************************************
 class ServiceList(ListView):
+    """
+    Class Based to render the Service Listing page.
+    """
     model = Service
     template_name = 'service/services_list.html'
 
     def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
         context = super(ServiceList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
@@ -44,11 +49,20 @@ class ServiceList(ListView):
 
 
 class ServiceListingTable(BaseDatatableView):
+    """
+    Class based View to render Service Listing Table.
+    """
     model = Service
     columns = ['name', 'alias', 'parameters__parameter_description', 'service_data_sources__alias', 'description']
     order_columns = ['name', 'alias', 'parameters__parameter_description','service_data_sources__alias', 'description']
 
     def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+        """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             query = []
@@ -63,11 +77,21 @@ class ServiceListingTable(BaseDatatableView):
         return qs
 
     def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         return Service.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+
+        """
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
@@ -99,6 +123,9 @@ class ServiceListingTable(BaseDatatableView):
         return qs
 
     def get_context_data(self, *args, **kwargs):
+        """
+        The main function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
         request = self.request
         self.initialize(*args, **kwargs)
 
@@ -129,11 +156,18 @@ class ServiceListingTable(BaseDatatableView):
 
 
 class ServiceDetail(DetailView):
+    """
+    Class Based View to render the Service Details
+
+    """
     model = Service
     template_name = 'service/service_detail.html'
 
 
 class ServiceCreate(CreateView):
+    """
+    Class Based View to Create the Service
+    """
     template_name = 'service/service_new.html'
     model = Service
     form_class = ServiceForm
@@ -141,16 +175,25 @@ class ServiceCreate(CreateView):
 
     @method_decorator(permission_required('service.add_service', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(ServiceCreate, self).dispatch(*args, **kwargs)
 
 
     def form_valid(self, form):
+        """
+        Submit the form and log the user activity.
+        """
         self.object = form.save()
         action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(ServiceCreate.success_url)
 
 
 class ServiceUpdate(UpdateView):
+    """
+    Class Based View to update the Service.
+    """
     template_name = 'service/service_update.html'
     model = Service
     form_class = ServiceForm
@@ -158,10 +201,16 @@ class ServiceUpdate(UpdateView):
 
     @method_decorator(permission_required('service.change_service', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(ServiceUpdate, self).dispatch(*args, **kwargs)
 
 
     def form_valid(self, form):
+        """
+        Submit the form and log the user activity.
+        """
         initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
@@ -179,25 +228,40 @@ class ServiceUpdate(UpdateView):
 
 
 class ServiceDelete(DeleteView):
+    """
+    Class Based View to Delete the Service.
+    """
     model = Service
     template_name = 'service/service_delete.html'
     success_url = reverse_lazy('services_list')
 
     @method_decorator(permission_required('service.delete_service', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(ServiceDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
+        """
+        Overriding the delete method to log the user activity.
+        """
         action.send(request.user, verb='deleting services: %s' % (self.get_object().name))
         return super(ServiceDelete, self).delete(request, *args, **kwargs)
 
 
 #************************************* Service Parameters *****************************************
 class ServiceParametersList(ListView):
+    """
+    Class Based View for the Service parameter Listing.
+    """
     model = ServiceParameters
     template_name = 'service_parameter/services_parameter_list.html'
 
     def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
         context = super(ServiceParametersList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'parameter_description', 'sTitle': 'Parameter Description', 'sWidth': 'null', },
@@ -213,6 +277,9 @@ class ServiceParametersList(ListView):
 
 
 class ServiceParametersListingTable(BaseDatatableView):
+    """
+    Class based View to render ServiceParameters Data table.
+    """
     model = ServiceParameters
     columns = ['parameter_description', 'protocol__name', 'normal_check_interval', 'retry_check_interval',
                'max_check_attempts']
@@ -220,6 +287,12 @@ class ServiceParametersListingTable(BaseDatatableView):
                      'max_check_attempts']
 
     def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+        """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             query = []
@@ -234,11 +307,22 @@ class ServiceParametersListingTable(BaseDatatableView):
         return qs
 
     def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         return ServiceParameters.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+
+        """
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
@@ -248,6 +332,9 @@ class ServiceParametersListingTable(BaseDatatableView):
         return qs
 
     def get_context_data(self, *args, **kwargs):
+        """
+        The main function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
         request = self.request
         self.initialize(*args, **kwargs)
 
@@ -278,11 +365,17 @@ class ServiceParametersListingTable(BaseDatatableView):
 
 
 class ServiceParametersDetail(DetailView):
+    """
+    Class Based View to render the details of the service parameters
+    """
     model = ServiceParameters
     template_name = 'service_parameter/service_parameter_detail.html'
 
 
 class ServiceParametersCreate(CreateView):
+    """
+    Class based View to create the service parameters
+    """
     template_name = 'service_parameter/service_parameter_new.html'
     model = ServiceParameters
     form_class = ServiceParametersForm
@@ -290,15 +383,25 @@ class ServiceParametersCreate(CreateView):
 
     @method_decorator(permission_required('service.add_serviceparameters', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(ServiceParametersCreate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
+        """
+        Submit the form and log the user activity.
+
+        """
         self.object = form.save()
         action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(ServiceParametersCreate.success_url)
 
 
 class ServiceParametersUpdate(UpdateView):
+    """
+    Class Based View to Update the Service Parameters.
+    """
     template_name = 'service_parameter/service_parameter_update.html'
     model = ServiceParameters
     form_class = ServiceParametersForm
@@ -306,10 +409,16 @@ class ServiceParametersUpdate(UpdateView):
 
     @method_decorator(permission_required('service.change_serviceparameters', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(ServiceParametersUpdate, self).dispatch(*args, **kwargs)
 
 
     def form_valid(self, form):
+        """
+        Submit the form and log the user activity.
+        """
         initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
 
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
@@ -327,25 +436,40 @@ class ServiceParametersUpdate(UpdateView):
 
 
 class ServiceParametersDelete(DeleteView):
+    """
+    Class Based View to Delete the ServiceParameters.
+    """
     model = ServiceParameters
     template_name = 'service_parameter/service_parameter_delete.html'
     success_url = reverse_lazy('services_parameter_list')
 
     @method_decorator(permission_required('service.delete_serviceparameters', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(ServiceParametersDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
+        """
+        Log the user activity before deleting the Service Parameters.
+        """
         action.send(request.user, verb='deleting services parameters: %s' % (self.get_object().parameter_description))
         return super(ServiceParametersDelete, self).delete(request, *args, **kwargs)
 
 
 #********************************** Service Data Source ***************************************
 class ServiceDataSourceList(ListView):
+    """
+    Class Based View to render the Service Data Source.
+    """
     model = ServiceDataSource
     template_name = 'service_data_source/service_data_sources_list.html'
 
     def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
         context = super(ServiceDataSourceList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
@@ -364,6 +488,12 @@ class ServiceDataSourceListingTable(BaseDatatableView):
     order_columns = ['name', 'alias', 'warning', 'critical']
 
     def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+        """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             query = []
@@ -378,11 +508,21 @@ class ServiceDataSourceListingTable(BaseDatatableView):
         return qs
 
     def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         return ServiceDataSource.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+
+        """
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
@@ -392,6 +532,9 @@ class ServiceDataSourceListingTable(BaseDatatableView):
         return qs
 
     def get_context_data(self, *args, **kwargs):
+        """
+        The main function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
         request = self.request
         self.initialize(*args, **kwargs)
 
@@ -422,11 +565,17 @@ class ServiceDataSourceListingTable(BaseDatatableView):
 
 
 class ServiceDataSourceDetail(DetailView):
+    """
+    Class Based View to render the Service Data Source Detail information.
+    """
     model = ServiceDataSource
     template_name = 'service_data_source/service_data_source_detail.html'
 
 
 class ServiceDataSourceCreate(CreateView):
+    """
+    Class Based View to Creater the Service Data Source Detail.
+    """
     template_name = 'service_data_source/service_data_source_new.html'
     model = ServiceDataSource
     form_class = ServiceDataSourceForm
@@ -434,16 +583,25 @@ class ServiceDataSourceCreate(CreateView):
 
     @method_decorator(permission_required('service.add_servicedatasource', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(ServiceDataSourceCreate, self).dispatch(*args, **kwargs)
 
 
     def form_valid(self, form):
+        """
+        Submit the form and log the user activity.
+        """
         self.object = form.save()
         action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(ServiceDataSourceCreate.success_url)
 
 
 class ServiceDataSourceUpdate(UpdateView):
+    """
+    Class based View to update the Service Data Source.
+    """
     template_name = 'service_data_source/service_data_source_update.html'
     model = ServiceDataSource
     form_class = ServiceDataSourceForm
@@ -451,9 +609,15 @@ class ServiceDataSourceUpdate(UpdateView):
 
     @method_decorator(permission_required('service.change_servicedatasource', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(ServiceDataSourceUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
+        """
+        Submit the form and log the user activity.
+        """
         initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
@@ -469,25 +633,40 @@ class ServiceDataSourceUpdate(UpdateView):
 
 
 class ServiceDataSourceDelete(DeleteView):
+    """
+    Class Based View to Delete the Service Data Source.
+    """
     model = ServiceDataSource
     template_name = 'service_data_source/service_data_source_delete.html'
     success_url = reverse_lazy('service_data_sources_list')
 
     @method_decorator(permission_required('service.delete_servicedatasource', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(ServiceDataSourceDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
+        """
+        Overriding delete method to log the user activity.
+        """
         action.send(request.user, verb='deleting services data source: %s' % (self.get_object().name))
         return super(ServiceDataSourceDelete, self).delete(request, *args, **kwargs)
 
 
 #********************************** Protocol ***************************************
 class ProtocolList(ListView):
+    """
+    Class Based View to render the List page.
+    """
     model = Protocol
     template_name = 'protocol/protocols_list.html'
 
     def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
         context = super(ProtocolList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
@@ -509,6 +688,9 @@ class ProtocolList(ListView):
 
 
 class ProtocolListingTable(BaseDatatableView):
+    """
+    Class Based View to render the protocol Data table.
+    """
     model = Protocol
     columns = ['name', 'protocol_name', 'port', 'version', 'read_community', 'write_community', 'auth_password',
                'auth_protocol', 'security_name', 'security_level', 'private_phase', 'private_pass_phase']
@@ -516,6 +698,13 @@ class ProtocolListingTable(BaseDatatableView):
                      'auth_protocol', 'security_name', 'security_level', 'private_phase', 'private_pass_phase']
 
     def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+
+        """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             query = []
@@ -530,11 +719,20 @@ class ProtocolListingTable(BaseDatatableView):
         return qs
 
     def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         return Protocol.objects.values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
@@ -543,6 +741,9 @@ class ProtocolListingTable(BaseDatatableView):
         return qs
 
     def get_context_data(self, *args, **kwargs):
+        """
+        The main function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
         request = self.request
         self.initialize(*args, **kwargs)
 
@@ -573,11 +774,17 @@ class ProtocolListingTable(BaseDatatableView):
 
 
 class ProtocolDetail(DetailView):
+    """
+    Class Based View to render the detail Protocol information
+    """
     model = Protocol
     template_name = 'protocol/protocol_detail.html'
 
 
 class ProtocolCreate(CreateView):
+    """
+    Class based View to Create the Protocol.
+    """
     template_name = 'protocol/protocol_new.html'
     model = Protocol
     form_class = ProtocolForm
@@ -585,16 +792,25 @@ class ProtocolCreate(CreateView):
 
     @method_decorator(permission_required('service.add_protocol', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(ProtocolCreate, self).dispatch(*args, **kwargs)
 
 
     def form_valid(self, form):
+        """
+        Submit the form and log the user activity.
+        """
         self.object = form.save()
         action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(ProtocolCreate.success_url)
 
 
 class ProtocolUpdate(UpdateView):
+    """
+    Class Based View to update the protocol.
+    """
     template_name = 'protocol/protocol_update.html'
     model = Protocol
     form_class = ProtocolForm
@@ -602,9 +818,15 @@ class ProtocolUpdate(UpdateView):
 
     @method_decorator(permission_required('service.change_protocol', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(ProtocolUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
+        """
+        Submit the form and log the user activity.
+        """
         initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
@@ -619,25 +841,40 @@ class ProtocolUpdate(UpdateView):
         return HttpResponseRedirect(ProtocolUpdate.success_url)
 
 class ProtocolDelete(DeleteView):
+    """
+    Class Based View to delete the protocol.
+    """
     model = Protocol
     template_name = 'protocol/protocol_delete.html'
     success_url = reverse_lazy('protocols_list')
 
     @method_decorator(permission_required('service.delete_protocol', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(ProtocolDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
+        """
+        Overriding the delete method to log the user activity.
+        """
         action.send(request.user, verb='deleting services data source: %s'%(self.get_object().name))
         return super(ProtocolDelete, self).delete( request, *args, **kwargs)
 
     
 #**************************************** DeviceServiceConfiguration *********************************************
 class DeviceServiceConfigurationList(ListView):
+    """
+    Class Based View to list the Device Service Configuration page.
+    """
     model = DeviceServiceConfiguration
     template_name = 'device_service_configuration/device_service_configuration_list.html'
 
     def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
         context=super(DeviceServiceConfigurationList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData':'device_name',             'sTitle' : 'Device',                'sWidth':'null',},
@@ -661,6 +898,9 @@ class DeviceServiceConfigurationList(ListView):
         return context
 
 class DeviceServiceConfigurationListingTable(BaseDatatableView):
+    """
+    Class based View render the Device Service Configuration Table.
+    """
     model = DeviceServiceConfiguration
     columns = ['device_name', 'service_name', 'agent_tag', 'port', 'version','read_community', 'svc_template',
                'normal_check_interval', 'retry_check_interval', 'max_check_attempts', 'data_source', 'warning', \
@@ -670,6 +910,13 @@ class DeviceServiceConfigurationListingTable(BaseDatatableView):
                      'critical', 'added_on', 'modified_on']
 
     def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+
+        """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             query=[]
@@ -684,11 +931,21 @@ class DeviceServiceConfigurationListingTable(BaseDatatableView):
         return qs
 
     def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         return DeviceServiceConfiguration.objects.values(*self.columns+['id'])
 
     def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
+
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
@@ -702,6 +959,9 @@ class DeviceServiceConfigurationListingTable(BaseDatatableView):
         return qs
 
     def get_context_data(self, *args, **kwargs):
+        """
+        The main function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
         request = self.request
         self.initialize(*args, **kwargs)
 

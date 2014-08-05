@@ -14,10 +14,16 @@ from actstream import action
 import json
 
 class SiteInstanceList(ListView):
+    """
+    Class Based View to render Site Instance List page.
+    """
     model = SiteInstance
     template_name = 'site_instance/site_instance_list.html'
 
     def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
         context=super(SiteInstanceList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData':'name',                  'sTitle' : 'Name',                  'sWidth':'null',},
@@ -32,11 +38,20 @@ class SiteInstanceList(ListView):
         return context
 
 class SiteInstanceListingTable(BaseDatatableView):
+    """
+    Class based View to render Site Instance Data table.
+    """
     model = SiteInstance
     columns = ['name', 'alias','machine__name', 'live_status_tcp_port', 'web_service_port', 'username']
     order_columns = ['name', 'alias','machine__name', 'live_status_tcp_port', 'web_service_port', 'username']
 
     def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+        """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             query=[]
@@ -51,11 +66,20 @@ class SiteInstanceListingTable(BaseDatatableView):
         return qs
 
     def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         return SiteInstance.objects.values(*self.columns+['id'])
 
     def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
@@ -64,6 +88,9 @@ class SiteInstanceListingTable(BaseDatatableView):
         return qs
 
     def get_context_data(self, *args, **kwargs):
+        """
+        The main function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
         request = self.request
         self.initialize(*args, **kwargs)
 
@@ -92,14 +119,18 @@ class SiteInstanceListingTable(BaseDatatableView):
                }
         return ret
 
-
-
 class SiteInstanceDetail(DetailView):
+    """
+    Class Based View to render Site Instance Detail.
+    """
     model = SiteInstance
     template_name = 'site_instance/site_instance_detail.html'
 
 
 class SiteInstanceCreate(CreateView):
+    """
+    Class Based View to Create a Site Instance.
+    """
     template_name = 'site_instance/site_instance_new.html'
     model = SiteInstance
     form_class = SiteInstanceForm
@@ -107,14 +138,23 @@ class SiteInstanceCreate(CreateView):
 
     @method_decorator(permission_required('site_instance.add_siteinstance', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(SiteInstanceCreate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
+        """
+        Submit the form and log the user activity.
+        """
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
         return HttpResponseRedirect(SiteInstanceCreate.success_url)
 
 class SiteInstanceUpdate(UpdateView):
+    """
+    Class Based View to Update the Site Instance.
+    """
     template_name = 'site_instance/site_instance_update.html'
     model = SiteInstance
     form_class = SiteInstanceForm
@@ -122,9 +162,15 @@ class SiteInstanceUpdate(UpdateView):
 
     @method_decorator(permission_required('site_instance.change_siteinstance', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(SiteInstanceUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
+        """
+        Submit the form and log the user activity.
+        """
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
         cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
         changed_fields_dict = DictDiffer( initial_field_dict, cleaned_data_field_dict ).changed()
@@ -144,14 +190,23 @@ class SiteInstanceUpdate(UpdateView):
 
 
 class SiteInstanceDelete(DeleteView):
+    """
+    Class Based View to Delete the Site Instance.
+    """
     model = SiteInstance
     template_name = 'site_instance/site_instance_delete.html'
     success_url = reverse_lazy('site_instance_list')
 
     @method_decorator(permission_required('site_instance.delete_siteinstance', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(SiteInstanceDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
+        """
+        Log the user activity before deleting the Site Instance.
+        """
         action.send(request.user, verb='deleting site instance: %s'%(self.get_object().name))
         return super(SiteInstanceDelete, self).delete(request, *args, **kwargs)

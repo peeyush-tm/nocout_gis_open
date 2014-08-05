@@ -4,6 +4,9 @@ from models import Service, ServiceParameters, ServiceDataSource, Protocol
 
 #************************************* Service ******************************************
 class ServiceForm(forms.ModelForm):
+    """
+    Class Based Service Model Form.
+    """
     def __init__(self, *args, **kwargs):
         # removing help text for service_data_sources 'select' field
         self.base_fields['service_data_sources'].help_text = ''
@@ -24,11 +27,17 @@ class ServiceForm(forms.ModelForm):
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
+        """
+        Meta Information
+        """
         model = Service
 
 
 #************************************** Service Data Source ****************************************
 class ServiceDataSourceForm(forms.ModelForm):
+    """
+    Class Based ServiceDataSource Model Form .
+    """
     def __init__(self, *args, **kwargs):
         super(ServiceDataSourceForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
@@ -44,11 +53,17 @@ class ServiceDataSourceForm(forms.ModelForm):
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
+        """
+        Meta Information.
+        """
         model = ServiceDataSource
 
 
 #************************************** Service Parameters *****************************************
 class ServiceParametersForm(forms.ModelForm):
+    """
+    Class Based Service Parameters Model Form .
+    """
     def __init__(self, *args, **kwargs):
         super(ServiceParametersForm, self).__init__(*args, **kwargs)
         self.fields['protocol'].empty_label = 'Select'
@@ -65,12 +80,17 @@ class ServiceParametersForm(forms.ModelForm):
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
+        """
+        Meta information.
+        """
         model = ServiceParameters
 
 
 #************************************** Protocol *****************************************
 class ProtocolForm(forms.ModelForm):
-
+    """
+    Class Based Protocol Model Form.
+    """
     AUTH_PROTOCOL = (
         ('', 'Select'),
         ('MD5', 'MD5'),
@@ -109,4 +129,7 @@ class ProtocolForm(forms.ModelForm):
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
     class Meta:
+        """
+        Meta Information.
+        """
         model = Protocol

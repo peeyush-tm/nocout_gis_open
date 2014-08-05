@@ -3,6 +3,9 @@ from machine.models import Machine
 
 
 class SiteInstance(models.Model):
+    """
+    Site Instance Model Columns Declaration.
+    """
     name = models.CharField('Name', max_length=200, unique=True)
     alias = models.CharField('Alias', max_length=255)
     machine = models.ForeignKey(Machine, null=True, blank=True)
@@ -13,4 +16,7 @@ class SiteInstance(models.Model):
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
+        """
+        Site Instance objects presentation.
+        """
         return self.name
