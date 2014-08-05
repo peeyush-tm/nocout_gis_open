@@ -6,6 +6,9 @@ from user_profile.models import UserProfile
 
 # user_group model
 class UserGroup(MPTTModel, models.Model):
+    """
+    User Group Models Columns Declaration.
+    """
     name = models.CharField('Name', max_length=50, unique=True)
     alias = models.CharField('Alias', max_length=50)
     users = models.ManyToManyField(UserProfile)
@@ -14,5 +17,8 @@ class UserGroup(MPTTModel, models.Model):
     is_deleted = models.IntegerField('Is Deleted', max_length=1, default=0)
 
     def __unicode__(self):
+        """
+        User Group objects presentation.
+        """
         return self.name
 

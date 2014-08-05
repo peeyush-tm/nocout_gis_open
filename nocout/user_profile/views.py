@@ -222,7 +222,7 @@ class UserArchivedListingTable(BaseDatatableView):
 
     def get_context_data(self, *args, **kwargs):
         """
-        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
+        The main function call to fetch, search, ordering , prepare and display the data on the data table.
         """
         request = self.request
         self.initialize(*args, **kwargs)
