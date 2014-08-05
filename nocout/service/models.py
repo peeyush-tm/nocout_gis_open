@@ -1,6 +1,6 @@
 from django.db import models
 from command.models import Command
-import datetime
+from datetime import datetime
 
 
 class Protocol(models.Model):
@@ -111,8 +111,8 @@ class DeviceServiceConfiguration(models.Model):
     def save(self, *args, **kwargs):
         """ On save, update timestamps """
         if not self.id:
-            self.added_on = datetime.datetime.today()
-        self.modified_on = datetime.datetime.today()
+            self.added_on = datetime.now()
+        self.modified_on = datetime.now()
         return super(DeviceServiceConfiguration, self).save(*args, **kwargs)
 
     def __unicode__(self):
