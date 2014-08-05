@@ -9,6 +9,9 @@ from django.utils.safestring import mark_safe
 
 # inventory model --> mapper of user_group & device groups
 class Inventory(models.Model):
+    """
+    Inventory Model Columns Declaration.
+    """
     name = models.CharField('Name', max_length=200, unique=True)
     alias = models.CharField('Alias', max_length=250)
     organization = models.ForeignKey(Organization)
@@ -22,6 +25,9 @@ class Inventory(models.Model):
 
 # gis antenna model
 class Antenna(models.Model):
+    """
+    Antenna Model Columns Declaration.
+    """
     name = models.CharField('Antenna Name', max_length=250, unique=True)
     alias = models.CharField('Antenna Alias', max_length=250)
     antenna_type = models.CharField('Antenna Type', max_length=100, null=True, blank=True)
@@ -44,6 +50,9 @@ class Antenna(models.Model):
 
 # gis backhaul model
 class Backhaul(models.Model):
+    """
+    Backhaul Model Columns Declaration.
+    """
     name = models.CharField('Backhaul Name', max_length=250, unique=True)
     alias = models.CharField('Backhaul Alias', max_length=250)
     bh_configured_on = models.ForeignKey(Device, null=True, blank=True, related_name='backhaul')
@@ -74,6 +83,9 @@ class Backhaul(models.Model):
 
 # gis base station model
 class BaseStation(models.Model):
+    """
+    BaseStation Model Columns Declaration.
+    """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     bs_technology = models.ForeignKey(DeviceTechnology, null=True, blank=True)
@@ -101,6 +113,9 @@ class BaseStation(models.Model):
 
 # gis sector model
 class Sector(models.Model):
+    """
+    Sector Model Columns Declaration.
+    """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     sector_id = models.CharField('Sector ID', max_length=250, null=True, blank=True)
@@ -123,6 +138,9 @@ class Sector(models.Model):
 
 # gis customer model
 class Customer(models.Model):
+    """
+    Customer Model Columns Declaration.
+    """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     address = models.CharField('Address', max_length=250, null=True, blank=True)
@@ -133,6 +151,9 @@ class Customer(models.Model):
 
 # gis sub-station
 class SubStation(models.Model):
+    """
+    SubStation Model Columns Declaration.
+    """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     device = models.ForeignKey(Device)
@@ -157,6 +178,9 @@ class SubStation(models.Model):
 
 # gis circuit model
 class Circuit(models.Model):
+    """
+    Circuit Model Columns Declaration.
+    """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     circuit_type = models.CharField('Type', max_length=250, null=True, blank=True)
@@ -178,6 +202,9 @@ class Circuit(models.Model):
 
 # icon settings model
 class IconSettings(models.Model):
+    """
+    IconSettings Model Columns Declaration.
+    """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     upload_image = models.ImageField(upload_to='icons/')
@@ -186,12 +213,18 @@ class IconSettings(models.Model):
         return self.alias
 
     def delete(self, *args, **kwargs):
+        """
+        Delete method: deletes the upload image.
+        """
         self.upload_image.delete()
         super(IconSettings, self).delete(*args, **kwargs)
 
 
 # live polling settings model
 class LivePollingSettings(models.Model):
+    """
+    LivePollingSettings Model Columns Declaration.
+    """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     technology = models.ForeignKey(DeviceTechnology)
@@ -204,6 +237,9 @@ class LivePollingSettings(models.Model):
 
 # threshold configuration model
 class ThresholdConfiguration(models.Model):
+    """
+    ThresholdConfiguration Model Columns Declaration.
+    """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     live_polling_template = models.ForeignKey(LivePollingSettings)
@@ -216,6 +252,9 @@ class ThresholdConfiguration(models.Model):
 
 # thematic settings
 class ThematicSettings(models.Model):
+    """
+    ThematicSettings Model Columns Declaration.
+    """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     threshold_template = models.ForeignKey(ThresholdConfiguration)

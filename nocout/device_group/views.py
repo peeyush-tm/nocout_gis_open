@@ -18,10 +18,16 @@ from organization.models import Organization
 
 
 class DeviceGroupList(ListView):
+    """
+    Class Based View to render DeviceGroup List Page.
+    """
     model = DeviceGroup
     template_name = 'device_group/dg_list.html'
 
     def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
         context=super(DeviceGroupList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData':'name',                   'sTitle' : 'Name',              'sWidth':'null',},
@@ -37,11 +43,20 @@ class DeviceGroupList(ListView):
         return context
 
 class DeviceGroupListingTable(BaseDatatableView):
+    """
+    Class based View to render Device Group Data table.
+    """
     model = DeviceGroup
     columns = ['name', 'alias', 'parent__name','organization__name']
     order_columns = ['name', 'alias', 'parent__name','organization__name']
 
     def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+        """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             result_list=list()
@@ -54,6 +69,9 @@ class DeviceGroupListingTable(BaseDatatableView):
         return qs
 
     def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         organization_descendants_ids= list(self.request.user.userprofile.organization.get_descendants(include_self=True)
@@ -61,6 +79,12 @@ class DeviceGroupListingTable(BaseDatatableView):
         return DeviceGroup.objects.filter(organization__in = organization_descendants_ids, is_deleted=0).values(*self.columns+['id'])
 
     def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
@@ -103,6 +127,9 @@ class DeviceGroupListingTable(BaseDatatableView):
 
 
     def get_context_data(self, *args, **kwargs):
+        """
+        The main method call to fetch, search, ordering , prepare and display the data on the data table.
+        """
         request = self.request
         self.initialize(*args, **kwargs)
 
@@ -132,11 +159,17 @@ class DeviceGroupListingTable(BaseDatatableView):
         return ret
 
 class DeviceGroupDetail(DetailView):
+    """
+    Class based view to render the Device group detail.
+    """
     model = DeviceGroup
     template_name = 'device_group/dg_detail.html'
 
 
 class DeviceGroupCreate(CreateView):
+    """
+    Class based view to create new Device group.
+    """
     template_name = 'device_group/dg_new.html'
     model = DeviceGroup
     form_class = DeviceGroupForm
@@ -144,15 +177,24 @@ class DeviceGroupCreate(CreateView):
 
     @method_decorator(permission_required('device_group.add_devicegroup', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
         return super(DeviceGroupCreate, self).dispatch(*args, **kwargs)
 
     def form_valid( self, form ):
+        """
+        Submit the form and to log the user activity.
+        """
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
         return HttpResponseRedirect( DeviceGroupCreate.success_url )
 
 
 class DeviceGroupUpdate(UpdateView):
+    """
+    Class based view to update machine.
+    """
     template_name = 'device_group/dg_update.html'
     model = DeviceGroup
     form_class = DeviceGroupForm
@@ -160,9 +202,15 @@ class DeviceGroupUpdate(UpdateView):
 
     @method_decorator(permission_required('device_group.change_devicegroup', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
         return super(DeviceGroupUpdate, self).dispatch(*args, **kwargs)
 
     def form_valid( self, form ):
+        """
+        Submit the form and to log the user activity.
+        """
 
         initial_field_dict = form.initial
 
@@ -207,19 +255,31 @@ class DeviceGroupUpdate(UpdateView):
 
 
 class DeviceGroupDelete(DeleteView):
+    """
+    Class based View to delete the Device Group
+    """
     model = DeviceGroup
     template_name = 'device_group/dg_delete.html'
     success_url = reverse_lazy('dg_list')
 
     @method_decorator(permission_required('device_group.delete_devicegroup', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
         return super(DeviceGroupDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
+        """
+        overriding the delete method to log the user activity.
+        """
         action.send(request.user, verb='deleting device group: %s'%(self.get_object().name))
         return super(DeviceGroupDelete, self).delete(request, *args, **kwargs)
 
 def device_group_devices_wrt_organization(request):
+    """
+    Fetches Device Group w.r.t to the organization and its descendants.
+    """
     organization_id= request.GET['organization']
     organization_descendants_ids= Organization.objects.get(id= organization_id).get_descendants(include_self=True).values_list('id', flat=True)
     devices=Device.objects.filter(organization__in = organization_descendants_ids, is_deleted=0).values_list('id','device_name')

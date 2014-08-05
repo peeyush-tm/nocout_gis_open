@@ -6,6 +6,9 @@ from organization.models import Organization
 
 # device_group model
 class DeviceGroup(MPTTModel, models.Model):
+    """
+    Device Group Model Columns Declaration.
+    """
     name = models.CharField('Name', max_length=50, unique=True)
     alias = models.CharField('Alias', max_length=200)
     devices = models.ManyToManyField(Device, null=True, blank=True)

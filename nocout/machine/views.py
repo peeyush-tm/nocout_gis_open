@@ -41,7 +41,7 @@ class MachineList(ListView):
 
 class MachineListingTable(BaseDatatableView):
     """
-    Class based View to render Machine Data table..
+    Class based View to render Machine Data table.
     """
     model = Machine
     columns = ['name', 'alias', 'machine_ip',  'agent_port', 'description']
@@ -71,7 +71,6 @@ class MachineListingTable(BaseDatatableView):
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
-
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
@@ -94,7 +93,7 @@ class MachineListingTable(BaseDatatableView):
 
     def get_context_data(self, *args, **kwargs):
         """
-        The main function call to fetch, search, ordering , prepare and display the data on the data table.
+        The main method call to fetch, search, ordering , prepare and display the data on the data table.
 
         """
         request = self.request
@@ -145,7 +144,7 @@ class MachineCreate(CreateView):
     @method_decorator(permission_required('machine.add_machine', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
-        The request dispatch function restricted with the permissions.
+        The request dispatch method restricted with the permissions.
         """
         return super(MachineCreate, self).dispatch(*args, **kwargs)
 
@@ -161,7 +160,7 @@ class MachineCreate(CreateView):
 
 class MachineUpdate(UpdateView):
     """
-    Class based view to update new machine.
+    Class based view to update machine.
     """
     template_name = 'machine/machine_update.html'
     model = Machine
@@ -171,7 +170,7 @@ class MachineUpdate(UpdateView):
     @method_decorator(permission_required('machine.change_machine', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
-        The request dispatch function restricted with the permissions.
+        The request dispatch method restricted with the permissions.
         """
         return super(MachineUpdate, self).dispatch(*args, **kwargs)
 
@@ -206,7 +205,7 @@ class MachineDelete(DeleteView):
     @method_decorator(permission_required('machine.delete_machine', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
-        The request dispatch function restricted with the permissions.
+        The request dispatch method restricted with the permissions.
         """
 
         return super(MachineDelete, self).dispatch(*args, **kwargs)
