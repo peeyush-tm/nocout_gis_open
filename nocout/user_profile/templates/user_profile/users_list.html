@@ -53,6 +53,7 @@
         var dataTableInstance = "";
 
         $(document).ready(function (e) {
+
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
 
@@ -72,8 +73,13 @@
             $("#user_tab").attr("data_url",ajax_url_user_listing);
             $("#user_tab").attr("data_header",'{{ datatable_headers|safe }}');
 
-            /*Trigger click event on active tab to load its data*/
-            $("#user_tab").trigger('click',true);
+            var location_array = window.location.href.split("#");
+
+            if(location_array.length == 1) {
+
+                /*Trigger click event on active tab to load its data*/
+                $("#user_tab").trigger('click',true);
+            }
 
             /*Call createDataTable function of ourDataTableWidget class*/
             // dataTableInstance.createDataTable("UserListingTable", gridHeadersObj, ajax_url_user_listing, destroy = false);
