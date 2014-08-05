@@ -19,17 +19,17 @@
     <div class="box-body">
         <div class="tabbable header-tabs">
             <ul class="nav nav-tabs">
-                <li><a href="#UserArchivedListing" data-toggle="tab"><span class="hidden-inline-mobile">Archived User Listing</span></a></li>
-                <li class="active"><a href="#UserListing" data-toggle="tab"><span class="hidden-inline-mobile">User Listing</span></a></li>
+                <li><a href="#UserArchivedListing" id="userArchived_tab" data-toggle="tab"><span class="hidden-inline-mobile">Archived User Listing</span></a></li>
+                <li class="active"><a href="#UserListing" id="user_tab" data-toggle="tab"><span class="hidden-inline-mobile">User Listing</span></a></li>
             </ul>
             <div class="tab-content">
-                <div class="tab-pane fade in active" id="UserListing">
+                <div class="tab-pane in active" id="UserListing">
                     <table id="UserListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
                         <thead></thead>
                         <tbody></tbody>
                     </table>
                 </div>
-                <div class="tab-pane fade" id="UserArchivedListing">
+                <div class="tab-pane" id="UserArchivedListing">
                     <table id="UserArchivedListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
                         <thead></thead>
                         <tbody></tbody>
@@ -44,20 +44,40 @@
 {% block jquery %}
     <!-- Custom script for data table-->
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Library to load tab content on tab click-->
+    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
     <!-- Custom Script for soft delete-->
     <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
     <script type="text/javascript">
+
+        var dataTableInstance = "";
+
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget();
+            dataTableInstance = new ourDataTableWidget();
+
             /*Grid headers object*/
-            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            // var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            
             /*Ajax url to get grid data*/
-            var ajax_url_user_listing = '{% url "UserListingTable" %}' + '?datatable_headers=' + encodeURIComponent(JSON.stringify(gridHeadersObj));
+            var ajax_url_user_listing = '{% url "UserListingTable" %}' + '?datatable_headers=' + encodeURIComponent('{{ datatable_headers|safe }}');
+
             var ajax_url_user_archived_listing = '{% url "UserArchivedListingTable" %}';
+
+            /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
+
+            $("#userArchived_tab").attr("data_url",ajax_url_user_archived_listing);
+            $("#userArchived_tab").attr("data_header",'{{ datatable_headers|safe }}');
+
+            $("#user_tab").attr("data_url",ajax_url_user_listing);
+            $("#user_tab").attr("data_header",'{{ datatable_headers|safe }}');
+
+            /*Trigger click event on active tab to load its data*/
+            $("#user_tab").trigger('click',true);
+
             /*Call createDataTable function of ourDataTableWidget class*/
-            dataTableInstance.createDataTable("UserListingTable", gridHeadersObj, ajax_url_user_listing, destroy = false);
-            dataTableInstance.createDataTable("UserArchivedListingTable", gridHeadersObj, ajax_url_user_archived_listing, destroy = false);
+            // dataTableInstance.createDataTable("UserListingTable", gridHeadersObj, ajax_url_user_listing, destroy = false);
+            // dataTableInstance.createDataTable("UserArchivedListingTable", gridHeadersObj, ajax_url_user_archived_listing, destroy = false);
         });
     </script>
 {% endblock %}

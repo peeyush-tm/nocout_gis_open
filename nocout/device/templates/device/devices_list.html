@@ -36,39 +36,38 @@
     <div class="box-body">
         <div class="tabbable header-tabs">
             <ul class="nav nav-tabs">
-                <li></li>
-                <li><a href="#AllDeviceListing" data-toggle="tab"><span class="hidden-inline-mobile">All</span></a></li>
-                <li><a href="#ArchivedDeviceListing" data-toggle="tab"><span class="hidden-inline-mobile">Archived</span></a></li>
-                <li><a href="#DisabledDeviceListing" data-toggle="tab"><span class="hidden-inline-mobile">Disabled</span></a></li>
-                <li><a href="#NonOperationalDeviceListing" data-toggle="tab"><span class="hidden-inline-mobile">Non-Operational</span></a></li>
-                <li class="active"><a href="#OperationalDeviceListing" data-toggle="tab"><span class="hidden-inline-mobile">Operational</span></a></li>
+                <li><a href="#AllDeviceListing" id="allDeviceListing_tab" data-toggle="tab"><span class="hidden-inline-mobile">All</span></a></li>
+                <li><a href="#ArchivedDeviceListing" id="archivedDeviceListing_tab" data-toggle="tab"><span class="hidden-inline-mobile">Archived</span></a></li>
+                <li><a href="#DisabledDeviceListing" id="disabledDeviceListing_tab" data-toggle="tab"><span class="hidden-inline-mobile">Disabled</span></a></li>
+                <li><a href="#NonOperationalDeviceListing" id="nonOperationalDeviceListing_tab" data-toggle="tab"><span class="hidden-inline-mobile">Non-Operational</span></a></li>
+                <li class="active"><a href="#OperationalDeviceListing" id="operationalDeviceListing_tab" data-toggle="tab"><span class="hidden-inline-mobile">Operational</span></a></li>
             </ul>
-            <div class="tab-content">
-                <div class="tab-pane fade" id="NonOperationalDeviceListing">
+            <div class="tab-content" style="overflow-x:auto;">
+                <div class="tab-pane" id="NonOperationalDeviceListing">
                     <table id="NonOperationalDeviceListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
                         <thead></thead>
                         <tbody></tbody>
                     </table>
                 </div>
-                <div class="tab-pane fade" id="DisabledDeviceListing">
+                <div class="tab-pane" id="DisabledDeviceListing">
                     <table id="DisabledDeviceListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
                         <thead></thead>
                         <tbody></tbody>
                     </table>
                 </div>
-                <div class="tab-pane fade" id="AllDeviceListing">
+                <div class="tab-pane" id="AllDeviceListing">
                     <table id="AllDeviceListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
                         <thead></thead>
                         <tbody></tbody>
                     </table>
                 </div>
-                <div class="tab-pane fade" id="ArchivedDeviceListing">
+                <div class="tab-pane" id="ArchivedDeviceListing">
                     <table id="ArchivedDeviceListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
                         <thead></thead>
                         <tbody></tbody>
                     </table>
                 </div>
-                <div class="tab-pane fade in active" id="OperationalDeviceListing">
+                <div class="tab-pane in active" id="OperationalDeviceListing">
                     <table id="OperationalDeviceListingTable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
                         <thead></thead>
                         <tbody></tbody>
@@ -82,29 +81,58 @@
 {% block jquery %}
     <!-- Custom Data Table script-->
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Library to load tab content on tab click-->
+    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
     <!-- Custom Script for soft delete-->
     <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
     <script type="text/javascript">
+        
+        var dataTableInstance = "";
+
         $(document).ready(function() {
+            
             /*Make a instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget();
+            dataTableInstance = new ourDataTableWidget();
+            
             /*Grid headers object*/            
-            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
-            var gridHeadersObj_no_nms_actions = $.parseJSON('{{ datatable_headers_no_nms_actions|safe }}');
+            // var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            // var gridHeadersObj_no_nms_actions = $.parseJSON('{{ datatable_headers_no_nms_actions|safe }}');
+            
             /*Ajax url to get grid data*/
             var ajax_url_operational_listing = '{% url "OperationalDeviceListingTable" %}';
             var ajax_url_nonoperational_listing = '{% url "NonOperationalDeviceListingTable" %}';
             var ajax_url_disabled_listing = '{% url "DisabledDeviceListingTable" %}';
             var ajax_url_archived_listing = '{% url "ArchivedDeviceListingTable" %}';
             var ajax_url_all_listing = '{% url "AllDeviceListingTable" %}';
-            /*Call createDataTable function of ourDataTableWidget class*/
-            var destroy=false;
+                
+            /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
 
-            dataTableInstance.createDataTable("OperationalDeviceListingTable", gridHeadersObj, ajax_url_operational_listing, destroy);
-            dataTableInstance.createDataTable("NonOperationalDeviceListingTable", gridHeadersObj, ajax_url_nonoperational_listing, destroy);
-            dataTableInstance.createDataTable("DisabledDeviceListingTable", gridHeadersObj_no_nms_actions, ajax_url_disabled_listing, destroy);
-            dataTableInstance.createDataTable("ArchivedDeviceListingTable", gridHeadersObj_no_nms_actions, ajax_url_archived_listing, destroy);
-            dataTableInstance.createDataTable("AllDeviceListingTable", gridHeadersObj_no_nms_actions, ajax_url_all_listing, destroy);
+            $("#operationalDeviceListing_tab").attr("data_url",ajax_url_operational_listing);
+            $("#operationalDeviceListing_tab").attr("data_header",'{{ datatable_headers|safe }}');
+
+            $("#nonOperationalDeviceListing_tab").attr("data_url",ajax_url_nonoperational_listing);
+            $("#nonOperationalDeviceListing_tab").attr("data_header",'{{ datatable_headers|safe }}');
+
+            $("#disabledDeviceListing_tab").attr("data_url",ajax_url_disabled_listing);
+            $("#disabledDeviceListing_tab").attr("data_header",'{{ datatable_headers_no_nms_actions|safe }}');
+
+            $("#archivedDeviceListing_tab").attr("data_url",ajax_url_archived_listing);
+            $("#archivedDeviceListing_tab").attr("data_header",'{{ datatable_headers_no_nms_actions|safe }}');
+
+            $("#allDeviceListing_tab").attr("data_url",ajax_url_all_listing);
+            $("#allDeviceListing_tab").attr("data_header",'{{ datatable_headers_no_nms_actions|safe }}');
+
+            /*Trigger click event on active tab to load its data*/
+            $("#operationalDeviceListing_tab").trigger('click',true);
+
+            /*Call createDataTable function of ourDataTableWidget class*/
+            // var destroy=false;
+
+            // dataTableInstance.createDataTable("OperationalDeviceListingTable", gridHeadersObj, ajax_url_operational_listing, destroy);
+            // dataTableInstance.createDataTable("NonOperationalDeviceListingTable", gridHeadersObj, ajax_url_nonoperational_listing, destroy);
+            // dataTableInstance.createDataTable("DisabledDeviceListingTable", gridHeadersObj_no_nms_actions, ajax_url_disabled_listing, destroy);
+            // dataTableInstance.createDataTable("ArchivedDeviceListingTable", gridHeadersObj_no_nms_actions, ajax_url_archived_listing, destroy);
+            // dataTableInstance.createDataTable("AllDeviceListingTable", gridHeadersObj_no_nms_actions, ajax_url_all_listing, destroy);
         });
     </script>
 {% endblock %}
