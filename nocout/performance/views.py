@@ -212,6 +212,7 @@ class LivePerformanceListing(BaseDatatableView):
         Preparing the final result after fetching from the data base to render on the data table.
 
         :param qs:
+        :return qs
         """
 
         device_list = []
