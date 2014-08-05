@@ -21,10 +21,17 @@ from django.db.models import Q
 
 
 class UserList(ListView):
+    """
+    Class Based View to for User Listing.
+
+    """
     model = UserProfile
     template_name = 'user_profile/users_list.html'
 
     def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
         context=super(UserList, self).get_context_data(**kwargs)
         datatable_headers=[
             {'mData':'username',           'sTitle' : 'Username',     'sWidth':'null',},
@@ -44,6 +51,9 @@ class UserList(ListView):
         return context
 
 class UserListingTable(BaseDatatableView):
+    """
+    Class Based View for the User data table rendering.
+    """
     model = UserProfile
     columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                'parent__last_name', 'organization__name','phone_number', 'last_login']
@@ -51,9 +61,18 @@ class UserListingTable(BaseDatatableView):
                      'phone_number', 'last_login']
 
     def logged_in_user_organization_ids(self):
+        """
+        to return logged in user organization and organization descendants
+        """
         return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
 
     def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+        """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             query=[]
@@ -69,6 +88,9 @@ class UserListingTable(BaseDatatableView):
         return qs
 
     def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         organization_descendants_ids= self.logged_in_user_organization_ids()
@@ -76,6 +98,13 @@ class UserListingTable(BaseDatatableView):
                .values(*self.columns+['id'])
 
     def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
+
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
             sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
@@ -95,6 +124,9 @@ class UserListingTable(BaseDatatableView):
         return qs
 
     def get_context_data(self, *args, **kwargs):
+        """
+        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
         request = self.request
         self.initialize(*args, **kwargs)
 
@@ -124,6 +156,9 @@ class UserListingTable(BaseDatatableView):
         return ret
 
 class UserArchivedListingTable(BaseDatatableView):
+    """
+    Class Based View for the Archived User data table rendering.
+    """
     model = UserProfile
     columns = ['username', 'first_name', 'last_name', 'email', 'role__role_name', 'parent__first_name',
                'parent__last_name', 'organization__name','phone_number', 'last_login']
@@ -131,6 +166,13 @@ class UserArchivedListingTable(BaseDatatableView):
                      'parent__last_name', 'organization__name','phone_number', 'last_login']
 
     def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+
+        """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             query=[]
@@ -145,6 +187,9 @@ class UserArchivedListingTable(BaseDatatableView):
         return qs
 
     def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         organization_descendants_ids= list(self.request.user.userprofile.organization.get_descendants(include_self=True)
@@ -152,6 +197,13 @@ class UserArchivedListingTable(BaseDatatableView):
         return UserProfile.objects.filter(organization__in = organization_descendants_ids, is_deleted=1).values(*self.columns+['id'])
 
     def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
+
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
             sanity_dicts_list = [OrderedDict({'dict_final_key':'full_name','dict_key1':'first_name', 'dict_key2':'last_name' }),
@@ -169,6 +221,9 @@ class UserArchivedListingTable(BaseDatatableView):
         return qs
 
     def get_context_data(self, *args, **kwargs):
+        """
+        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
         request = self.request
         self.initialize(*args, **kwargs)
 
@@ -198,11 +253,17 @@ class UserArchivedListingTable(BaseDatatableView):
         return ret
 
 class UserDetail(DetailView):
+    """
+    Class Based View to render User Detail.
+    """
     model = UserProfile
     template_name = 'user_profile/user_detail.html'
 
 
 class UserCreate(CreateView):
+    """
+    Class Based View to Create a User.
+    """
     template_name = 'user_profile/user_new.html'
     model = UserProfile
     form_class = UserForm
@@ -210,14 +271,24 @@ class UserCreate(CreateView):
 
     @method_decorator(permission_required('user_profile.add_userprofile', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(UserCreate, self).dispatch(*args, **kwargs)
 
     def get_form_kwargs(self):
+        """
+        Updating Kwargs, required request object to validate the user logged in.
+        """
         kwargs = super(UserCreate, self).get_form_kwargs()
         kwargs.update({'request':self.request.user })
         return kwargs
 
     def form_valid(self, form):
+        """
+        To Assigned User a group for the permissions as per the role the user is created with.
+
+        """
         self.object= form.save(commit=False)
         self.object.set_password(form.cleaned_data["password2"])
         role= form.cleaned_data['role'][0]
@@ -229,6 +300,9 @@ class UserCreate(CreateView):
         return super(ModelFormMixin, self).form_valid(form)
 
 class UserUpdate(UpdateView):
+    """
+    Class Based View to Update the user.
+    """
     template_name = 'user_profile/user_update.html'
     model = UserProfile
     form_class = UserForm
@@ -237,6 +311,9 @@ class UserUpdate(UpdateView):
 
     @method_decorator(permission_required('user_profile.change_userprofile', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(UserUpdate, self).dispatch(*args, **kwargs)
 
     def get_form_kwargs(self):
@@ -248,6 +325,9 @@ class UserUpdate(UpdateView):
         return kwargs
 
     def form_valid(self, form):
+        """
+        To update the form before submitting and log the user activity.
+        """
         self.object= form.save(commit=False)
         self.object.set_password(form.cleaned_data["password2"])
         role= form.cleaned_data['role'][0]
@@ -304,36 +384,60 @@ class UserUpdate(UpdateView):
 
 
 class UserDelete(DeleteView):
+    """
+    Class Based View to Delete the User.
+    """
     model = UserProfile
     template_name = 'user_profile/user_delete.html'
     success_url = reverse_lazy('user_list')
 
     @method_decorator(permission_required('user_profile.delete_userprofile', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
         return super(UserDelete, self).dispatch(*args, **kwargs)
 
     def get(self, *args, **kwargs):
+        """
+        To surpass the delete confirmation and delete the user directly.
+        """
         return self.post(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
+        """
+        To Log the activity before deleting the user.
+        """
         action.send(request.user, verb='deleting user: %s'%(self.get_object().username))
         return super(UserDelete, self).delete(request, *args, **kwargs)
 
 class CurrentUserProfileUpdate(UpdateView):
+    """
+    Class Based view to update the current logged in user profile.
+    """
     model = UserProfile
     template_name = 'user_profile/user_myprofile.html'
     form_class = UserForm
     success_url = reverse_lazy('current_user_profile_update')
 
     def get_form_kwargs(self):
+        """
+        Returns the keyword arguments with the request object for instantiating the form.
+        """
         kwargs = super(CurrentUserProfileUpdate, self).get_form_kwargs()
         kwargs.update({'request':self.request.user })
         return kwargs
 
     def get_object(self, queryset=None):
+        """
+        To fecth the current user object.
+        """
         return self.model._default_manager.get(pk=self.request.user.id)
 
     def form_valid(self, form):
+        """
+        To log the user activity before submitting the form.
+        """
 
         self.object = form.save(commit=False)
         kwargs=dict(first_name=self.object.first_name,

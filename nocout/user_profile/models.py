@@ -6,6 +6,9 @@ from organization.models import Organization
 
 # user profile class
 class UserProfile(MPTTModel, User):
+    """
+    user Profile columns declared
+    """
     parent = TreeForeignKey('self', null=True, blank=True, related_name='user_children')
     role = models.ManyToManyField('Roles')
     organization = models.ForeignKey(Organization)
@@ -18,6 +21,9 @@ class UserProfile(MPTTModel, User):
 
 # user roles class
 class Roles(models.Model):
+    """
+    User Roles columns declared.
+    """
     role_name = models.CharField('Role Name', max_length=100, null=True, blank=True)
     role_description = models.CharField('Role Description', max_length=250, null=True, blank=True)
 
