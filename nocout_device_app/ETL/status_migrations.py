@@ -1,3 +1,7 @@
+"""
+Main file for migration of data from mongodb to mysql for status services.This file runs the script status_mongo_migration.py(which it read from the config.ini and status_mongo_migration.py migrate the mongodb data (data for the status services)into mysql db.
+"""
+
 from configparser import parse_config_obj
 
 

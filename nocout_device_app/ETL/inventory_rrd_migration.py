@@ -1,16 +1,43 @@
-import os,socket,json
+"""
+inventory_rrd_migration.py
+=======================
+
+This file contains the code for extracting and collecting the data for inventory services and storing this data into embeded mongodb database.
+
+Inventory services are services for which data is coming in 1 day interval.
+
+"""
+
+
+import socket,json
 import rrd_main, mongo_functions
 import time
 from configparser import parse_config_obj
 
 
 class MKGeneralException(Exception):
+    """
+    Class defination for the Exception Class.
+    Args: Exception object
+    Kwargs: None
+    Return: message
+    Exception :None
+
+    """
     def __init__(self, reason):
         self.reason = reason
     def __str__(self):
         return self.reason
 
 def inventory_perf_data(site,hostlist):
+	"""
+	inventory_perf_data : Function for collecting the data for inventory serviecs.Service state is also retunred for those services
+	Args: site (site on poller on which devices are monitored)
+	Kwargs: hostlist (all host on that site)
+
+	Return : None
+	Raises: No Exception
+	"""
 
 	invent_check_list = []
 	invent_service_dict = {}
@@ -56,6 +83,14 @@ def inventory_perf_data(site,hostlist):
 		invent_check_list = []
 
 def inventory_perf_data_main():
+	"""
+	inventory_perf_data_main : Main Function for data extraction for inventory services.Function get all configuration from config.ini
+	Args: None
+	Kwargs: None
+
+	Return : None
+	Raises: No Exception
+	"""
 	try:
 		configs = parse_config_obj()
 		for section, options in configs.items():

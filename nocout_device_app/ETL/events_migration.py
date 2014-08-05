@@ -1,6 +1,10 @@
+
+"""
+Main file for migration of data from mongodb to mysql for events.This file runs the script event_mongo_migration.py(which it read from the config.ini and event_mongo_migration.py migrate the data from mongodb to mysql db.
+
+"""
+
 from configparser import parse_config_obj
-
-
 def main():
     configs = parse_config_obj()
     for section, options in configs.items():
