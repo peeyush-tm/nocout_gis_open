@@ -1,12 +1,50 @@
-import os
+"""
+inventory_status_tables_migration.py
+====================================
+
+Script to bulk insert current status data (for inventory_services) from
+Teramatrix pollers to mysql in 1 day time interval.
+
+Current status data means for each (host, service) pair only most latest entry would
+be kept in the database, which describe the status for that inventory service running on a host,
+at any given time.
+
+Inventory services include: Services that should run once in a day.
+
+"""
+
+
 import MySQLdb
-import pymongo
 from datetime import datetime, timedelta
-from rrd_migration import mongo_conn, db_port
-import subprocess
+from rrd_migration import mongo_conn
 import socket
 
 def main(**configs):
+    """
+    The entry point for the all the functions in this file,
+    calls all the appropriate functions in the file
+
+    Kwargs:
+        configs (dict): A python dictionary containing object key identifiers
+	as configuration values, read from main configuration file config.ini
+    Example:
+        {
+	"site": "nocout_gis_slave",
+	"host": "localhost",
+	"user": "root",
+	"ip": "localhost",
+	"sql_passwd": "admin",
+	"nosql_passwd": "none",
+	"port": 27019 # The port being used by mongodb process
+	"inventory_status_tables": {
+	    "nosql_db": "nocout" # Mongodb database name
+	    "sql_db": "nocout_dev" # Sql database name
+	    "scripit": "inventory_status_tables_migration" # Script which would do all the migrations
+	    "table_name": "performance_servicestatus" # Sql table name
+
+	    }
+	}
+    """
     data_values = []
     values_list = []
     docs = []
@@ -24,17 +62,6 @@ def main(**configs):
     for doc in docs:
         values_list = build_data(doc)
         data_values.extend(values_list)
-    field_names = [
-        'host_name',
-        'service',
-        'host_address',
-        'site_id',
-        'value',
-        'war',
-        'crit',
-	'service_state',
-        'time',
-    ]
     if data_values:
     	insert_data(configs.get('table_name'), data_values, configs=configs)
     	print "Data inserted into my mysql db"
@@ -43,6 +70,16 @@ def main(**configs):
     
 
 def read_data(start_time, end_time, **kwargs):
+    """
+    Function to read data from mongodb
+
+    Args:
+        start_time (int): Start time for the entries to be fetched
+	end_time (int): End time for the entries to be fetched
+
+    Kwargs:
+	kwargs (dict): Store mongodb connection variables 
+    """
 
     db = None
     port = None
@@ -65,6 +102,12 @@ def read_data(start_time, end_time, **kwargs):
     return docs
 
 def build_data(doc):
+	"""
+	Function to make data that would be inserted into mysql db
+
+	Args:
+	    doc (dict): Single mongodb document
+	"""
 	values_list = []
 	time = doc.get('time')
 	machine_name = get_machine_name()
@@ -90,6 +133,15 @@ def build_data(doc):
 	return values_list
 
 def insert_data(table, data_values, **kwargs):
+	"""
+        Function to bulk insert data into mysqldb
+
+	Args:
+	    table (str): Mysql table to which to be inserted
+	    data_value (list): List of data tuples
+
+	Kwargs (dict): Dictionary to hold connection variables
+	"""
 	db = mysql_conn(configs=kwargs.get('configs'))
 	query = "SELECT * FROM %s " % table +\
                 "WHERE `device_name`='%s' AND `site_name`='%s' AND `service_name`='%s'" %(str(data_values[0][0]),data_values[0][3],data_values[0][1])
@@ -135,6 +187,16 @@ def insert_data(table, data_values, **kwargs):
     		cursor.close()
 
 def get_epoch_time(datetime_obj):
+    """
+    Function to convert datetime_obj into unix
+    epoch time
+
+    Args:
+        datetime_obj (datetime): Python datetime object
+
+    Returns:
+        Unix epoch time in integer
+    """
     # Get India times (GMT+5.30)
     utc_time = datetime(1970, 1,1, 5, 30)
     if isinstance(datetime_obj, datetime):
@@ -152,6 +214,10 @@ def mysql_conn(db=None, **kwargs):
 
     return db
 def get_machine_name(machine_name=None):
+    """
+    Function to get fully qualified domain name of the machine
+    on which Pythno interpreter is currently executing
+    """
     try:
         machine_name = socket.gethostname()
     except Exception, e:
