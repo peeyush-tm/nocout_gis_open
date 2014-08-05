@@ -9,8 +9,10 @@ from nocout.settings import GISADMIN, ISOLATED_NODE
 
 @dajaxice_register
 def user_soft_delete_form(request, value, datatable_headers):
-    # user which needs to be deleted
-    user = UserProfile.objects.get(id=value)
+    """
+    Generate User soft delete form.
+
+    """
     # result: data dictionary send in ajax response
     #{
     #  "success": 1,     # 0 - fail, 1 - success, 2 - exception
@@ -30,6 +32,7 @@ def user_soft_delete_form(request, value, datatable_headers):
     #                   }
     #           ]
     #}
+    user = UserProfile.objects.get(id=value)
     result = dict()
     result['data'] = {}
     result['success'] = 0
@@ -68,13 +71,13 @@ def user_soft_delete_form(request, value, datatable_headers):
     result['message'] = "Successfully render form."
     return json.dumps({'result': result })
 
-
-# soft delete user i.e. not deleting user from database, it just set
-# it's is_deleted field value to 1 & remove it's relationship with any other user
-# & make some other user parent of associated user
 @dajaxice_register
 def user_soft_delete(request, user_id, new_parent_id, datatable_headers, userlistingtable, userarchivelisting):
-
+    """
+    soft delete user i.e. not deleting user from database, it just set
+    it's is_deleted field value to 1 & remove it's relationship with any other user
+    & make some other user parent of associated user
+    """
     user = UserProfile.objects.get(id= user_id)
 
     result = dict()
@@ -112,6 +115,9 @@ def user_soft_delete(request, user_id, new_parent_id, datatable_headers, userlis
 
 @dajaxice_register
 def user_add( request, user_id):
+    """
+    To re add the user from the archive listing
+    """
     UserProfile.objects.filter(id= user_id).update( **{'is_deleted':0 })
     result = dict()
     result['data'] = {}
@@ -124,6 +130,9 @@ def user_add( request, user_id):
 
 @dajaxice_register
 def user_hard_delete(request, user_id):
+    """
+    To Hard delete the user from the database.
+    """
     UserProfile.objects.filter(id= user_id).delete()
     result = dict()
     result['data'] = {}

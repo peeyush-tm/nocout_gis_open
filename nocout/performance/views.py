@@ -478,7 +478,6 @@ class Inventory_Device_Status(View):
 
 
 class Inventory_Device_Service_Data_Source(View):
-
     """
     Generic Class based View for to fetch Inventory Device Service Data Source.
 

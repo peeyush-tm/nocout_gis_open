@@ -1,7 +1,6 @@
 import json
 from dajaxice.decorators import dajaxice_register
 from models import UserGroup
-# from user_profile.models import Department
 from user_group.models import Organization
 
 
@@ -9,7 +8,6 @@ from user_group.models import Organization
 @dajaxice_register
 def user_group_soft_delete_form(request, value):
     # user group which needs to be deleted
-    user_group = UserGroup.objects.get(id=value)
 
     # result: data dictionary send in ajax response
     #{
@@ -30,6 +28,7 @@ def user_group_soft_delete_form(request, value):
     #                   }
     #           ]
     #}
+    user_group = UserGroup.objects.get(id=value)
     result = dict()
     result['data'] = {}
     result['success'] = 0
@@ -81,12 +80,13 @@ def user_group_soft_delete_form(request, value):
     result['message'] = "Successfully render form."
     return json.dumps({'result': result})
 
-
-# soft delete user group i.e. not deleting user group from database, it just set
-# it's is_deleted field value to 1 & remove it's relationship with any other user
-# group & make some other user group parent of associated user groups
 @dajaxice_register
 def user_group_soft_delete(request, user_group_id, new_parent_id):
+    """
+    soft delete user group i.e. not deleting user group from database, it just set
+    it's is_deleted field value to 1 & remove it's relationship with any other user
+    group & make some other user group parent of associated user groups
+    """
     # if new_parent is not available than make it default (id=1)
     if not new_parent_id:
         new_parent_id = 1
