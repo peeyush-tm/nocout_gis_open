@@ -28,12 +28,9 @@
             <div id="tableContainer" class="box-body">
                 <div class="tabbable header-tabs">
                     <ul class="nav nav-tabs">
-                        <li><a href="#customer_wifi_block" data-toggle="tab"><span
-                                class="hidden-inline-mobile">WiMAX</span></a></li>
-                        <li><a href="#customer_pmp_block" data-toggle="tab"><span
-                                class="hidden-inline-mobile">PMP</span></a></li>
-                        <li class="active"><a href="#customer_p2p_block" data-toggle="tab"><span
-                                class="hidden-inline-mobile">P2P</span></a></li>
+                        <li><a href="#customer_wifi_block" id="customer_wifi_tab" data-toggle="tab"><span class="hidden-inline-mobile">WiMAX</span></a></li>
+                        <li><a href="#customer_pmp_block" id="customer_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
+                        <li class="active"><a href="#customer_p2p_block" id="customer_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">P2P</span></a></li>
                     </ul>
                     <div class="tab-content">
                         <div class="tab-pane" id="customer_wifi_block">
@@ -69,12 +66,17 @@
 {% block jquery %}
     <!-- Custom script for data table-->
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <!-- Library to load tab content on tab click-->
+    <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
     <!-- Custom Script for soft delete-->
     <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
     <script type="text/javascript">
+        
+        var dataTableInstance = "";
+
         $(document).ready(function (e) {
             /*Make a instance of ourDataTableWidget class */
-            var dataTableInstance = new ourDataTableWidget();
+            dataTableInstance = new ourDataTableWidget();
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
 
@@ -86,6 +88,7 @@
                 ajax_url_get_parameter = 'network'
             }
 
+
             /*Ajax url to get grid data*/
             var destroy = false;
             {% ifequal page_type 'network' %}
@@ -95,9 +98,26 @@
                 var ajax_url_wifi = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'WiMAX';
                 var ajax_url_pmp = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'PMP';
                 var ajax_url_p2p = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'P2P';
-                dataTableInstance.createDataTable("customer_wifi_performancelistingtable", gridHeadersObj, ajax_url_wifi, destroy);
-                dataTableInstance.createDataTable("customer_pmp_performancelistingtable", gridHeadersObj, ajax_url_pmp, destroy);
-                dataTableInstance.createDataTable("customer_p2p_performancelistingtable", gridHeadersObj, ajax_url_p2p, destroy);
+    
+                /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
+
+                $("#customer_wifi_tab").attr("data_url",ajax_url_wifi);
+                $("#customer_wifi_tab").attr("data_header",'{{ datatable_headers|safe }}');
+
+                $("#customer_pmp_tab").attr("data_url",ajax_url_pmp);
+                $("#customer_pmp_tab").attr("data_header",'{{ datatable_headers|safe }}');
+
+                $("#customer_ptp_tab").attr("data_url",ajax_url_p2p);
+                $("#customer_ptp_tab").attr("data_header",'{{ datatable_headers|safe }}');
+
+                /*Trigger click event on active tab to load its data*/
+                $("#customer_ptp_tab").trigger('click',true);
+
+                // dataTableInstance.createDataTable("customer_wifi_performancelistingtable", gridHeadersObj, ajax_url_wifi, destroy);
+                // dataTableInstance.createDataTable("customer_pmp_performancelistingtable", gridHeadersObj, ajax_url_pmp, destroy);
+                // dataTableInstance.createDataTable("customer_p2p_performancelistingtable", gridHeadersObj, ajax_url_p2p, destroy);
+
+
             {% endifequal %}
             /*Call createDataTable function of ourDataTableWidget class*/
 
@@ -107,10 +127,6 @@
 
 {% block load_js %}
     <!-- /JAVASCRIPTS -->
-
-
-
-
     <script>
         jQuery(document).ready(function () {
             App.setPage("");  //Set current page

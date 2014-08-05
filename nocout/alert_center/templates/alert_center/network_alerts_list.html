@@ -89,7 +89,7 @@
             $("#network_alert_service_tab").attr("data_header",'{{ datatable_headers_servicealerts|safe }}');
 
             /*Trigger click event on active tab to load its data*/
-            $("#network_alert_latency_tab").click();
+            $("#network_alert_latency_tab").trigger('click',true);
 
             /*Grid headers object*/
             // var gridHeadersObj_latency = $.parseJSON('{{ datatable_headers_latency|safe }}');
