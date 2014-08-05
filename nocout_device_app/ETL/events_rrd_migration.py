@@ -2,8 +2,9 @@
 events_rrd_migration.py
 =======================
 
-Script to import service events data from Nagios rrdtool into
-Teramatrix Pollers.
+This file contains the code for extracting and collecting the nagios events and storing these events in embeded mongodb database.
+File contains four functions.
+
 """
 
 
@@ -15,27 +16,28 @@ from configparser import parse_config_obj
 
 def get_latest_event_entry(db_type=None, db=None, site=None,table_name=None):
 	"""
-                get_latest_event_entry function find the latest entry in monodb or mysql db.
+                get_latest_event_entry function find the time of latest record in monodb or mysql db.
 
                 Args:
                         db_type: type of data connection 
                 
                 Kwargs:
-                        db,site,table_name(name for database table_name)
+                        db (database connection),site (poller on which device is monitored),table_name(name for database table_name)
 
                 Returns:
-                        state (int) :
-                                        latest_time
+                        time (int) :
+                               latest time from the embeded database or mysql database depending upon calling 
                         Raises:
                                Exception
 	"""
-
 	time = None
+	# Mongodb Connection
     	if db_type == 'mongodb':
         	cur = db.nocout_host_event_log.find({}, {"check_timestamp": 1}).sort("_id", -1).limit(1)
         	for c in cur:
                 	entry = c
                 	time = entry.get('check_timestamp')
+	# MYSQL Connection
     	elif db_type == 'mysql':
         	query = "SELECT `check_timestamp` FROM `%s` WHERE" % table_name +\
                 " `site_name` = '%s' ORDER BY `check_timestamp` DESC LIMIT 1" % (site)
@@ -55,19 +57,19 @@ def get_latest_event_entry(db_type=None, db=None, site=None,table_name=None):
 
 def service_perf_data_live_query(db,site,log_split):
 	"""
-                service_perf_data_live_query function live query for service perf data.
+                service_perf_data_live_query function perform the live query for service for which log is received and store
+		the event data in the embeded mongodb database.
 
                 Args: 
-                        db: data connection 
+                        db: database connection either mysql or mongodb 
                 
                 Kwargs:
-                        site,nagios log
+                        site (on which poller device is monitored),nagios log
 
                 Returns:
-                        state (int) :
-                                        None
+                        None
                         Raises:
-                               Exception
+                              No Exception
         """
 
 	# Adding check for not storing data for check_mk service
@@ -82,6 +84,7 @@ def service_perf_data_live_query(db,site,log_split):
 	elif log_split[0] == "SERVICE FLAPPING ALERT":
 		host_ip = log_split[11]
 		description=log_split[9]
+	# calculating the perf_data for all services except for inventory services as they do not have performance data
 	if 'invent' not in log_split[5]:
 		query = "GET services\nColumns: service_perf_data\nFilter: service_description ~ %s\nFilter: host_name = %s\n" % ( 
 		log_split[5],log_split[4]) 
@@ -107,6 +110,8 @@ def service_perf_data_live_query(db,site,log_split):
                 		mongo_functions.mongo_db_insert(db,serv_event_dict,"host_event")
 			else:
 				mongo_functions.mongo_db_insert(db,serv_event_dict,"serv_event")
+
+	# extracting the inventory plugin output ,as these services don't have performance data
 	elif 'invent' in log_split[5]:
 		query = "GET services\nColumns: service_plugin_output\nFilter: service_description ~ %s\nFilter: host_name = %s\n" %(
 		log_split[5],log_split[4]) 
@@ -120,21 +125,23 @@ def service_perf_data_live_query(db,site,log_split):
 				ip_address=host_ip,service_name=log_split[5],site_name=site)
 		mongo_functions.mongo_db_insert(db,serv_event_dict,"serv_event")
 
+
+
 def network_perf_data_live_query(db,site,log_split):
 	"""
-                network_perf_data_live_query function live query for network perf data.
+                network_perf_data_live_query function live query to ping services and stores performance data and extracts and 
+		stores the events data in mongodb.
 
                 Args: 
-                        db: data connection 
+                        db: database connection instance 
                 
                 Kwargs:
-                        site,nagios log
+                        site(poller on which device is monitored),nagios log
 
                 Returns:
-                        state (int) :
-                                        None
+                        None
                         Raises:
-                               Exception
+                               No Exception
         """
 
 
@@ -163,25 +170,25 @@ def network_perf_data_live_query(db,site,log_split):
 				data_source=ds,warning_threshold=host_war,critical_threshold=host_crit,
 				check_timestamp=int(log_split[1]),
 				ip_address=host_ip,site_name=site,service_name='ping')
+		# mongo db insertion
                 mongo_functions.mongo_db_insert(db,host_event_dict,"host_event")
 
 
 
 def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
-	 """
-                extract_nagios_events_live function live query for events.
+	"""
+                Main function for extracting the nagios events from log files and seperating them in based on services
 
                 Args: 
-                        db: mongo_host (query for host) 
+                        db: mongo_host (query for host) (device on which event is triggered) 
                 
                 Kwargs:
-                        mongo_db,mongo_port
+                        mongo_db (mongo_db connection type),mongo_port(port of mongo db on which connection is opened)
 
                 Returns:
-                        state (int) :
-                                        None
+                        None
                         Raises:
-                               Exception
+                               No Exception
         """
 
 	db = None
@@ -202,6 +209,8 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
 		db_name=mongo_db
 	)
 	utc_time = datetime(1970, 1,1,5,30)
+
+	# time for which nagios events are extracted
 	#start_epoch = get_latest_event_entry(db_type = 'mongodb',db=db)
 	#if start_epoch == None:
 	start_time = datetime.now() - timedelta(minutes=1)
@@ -212,7 +221,8 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
         # sustracting 5.30 hours        
         host_event_dict ={}
         serv_event_dict={}
-	
+
+	# query for the extracting the log from nagios .This query is only for services except ping
 	query = "GET log\nColumns: log_type log_time log_state_type log_state  host_name service_description "\
 		"options host_address current_service_perf_data\nFilter: log_time > %s\nFilter: class = 0\nFilter: class = 1\n"\
 		"Filter: class = 2\nFilter: class = 3\nFilter: class = 4\nFilter: class = 6\nOr: 6\n" %(start_epoch) 
@@ -227,6 +237,7 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
 		elif log_split[0] == "SERVICE FLAPPING ALERT":
 			service_perf_data_live_query(db,site,log_split)
 
+	# query for the extracting the log from nagios .This query is ping serviecs
 	query = "GET log\nColumns: log_type log_time log_state_type log_state  host_name service_description "\
 		"options host_address current_host_perf_data\nFilter: log_time > %s\nFilter: class = 0\n"\
 		"Filter: class = 1\nFilter: class = 2\nFilter: class = 3\nFilter: class = 4\nFilter: class = 6\nOr: 6\n" %(start_epoch) 
@@ -243,7 +254,7 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
 		
 if __name__ == '__main__':
     """
-    Main function for this file
+    Main function for this file which keeps track of the all services and host events.This script is regularly called with 1 min interval
 
     """
     configs = parse_config_obj()
