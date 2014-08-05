@@ -1,6 +1,6 @@
 /*Global Variables*/
 var mapInstance = "",
-	that = "",
+	gmap_self = "",
 	currentDomElement = "",
 	main_devices_data_gmaps = [],
 	oms = "",
@@ -64,8 +64,7 @@ var mapInstance = "",
 
 /**
  * This class is used to plot the BS & SS on the google maps & performs their functionality.
- * @class devicePlottingLib
- * @method devicePlottingClass_gmap
+ * @class gmap_devicePlottingLib
  * @uses jQuery
  * @uses Google Maps
  * @uses jQuery Flot
@@ -75,13 +74,12 @@ var mapInstance = "",
 function devicePlottingClass_gmap() {
 
 	/*Store the reference of current pointer in a global variable*/
-	that = this;
+	gmap_self = this;
 
 	/**
 	 * This function creates the base google map with the lat long of India
-	 * @function createMap
-	 * @class devicePlottingLib
-	 * @param domElement "String" It the the dom element on which the map is to be create
+	 * @method createMap
+	 * @param domElement {String} It the the dom element on which the map is to be create
 	 */
 	this.createMap = function(domElement) {
 
@@ -147,13 +145,13 @@ function devicePlottingClass_gmap() {
 					plottedSS = [];
 					pathLineArray = [];
 
-					that.plotSubStation_gmap(marker);
+					gmap_self.plotSubStation_gmap(marker);
 				}
 			}
 
 			var windowPosition = new google.maps.LatLng(marker.ptLat,marker.ptLon);
 			/*Call the function to create info window content*/
-			var content = that.makeWindowContent(marker);
+			var content = gmap_self.makeWindowContent(marker);
 			/*Set the content for infowindow*/
 			infowindow.setContent(content);
 			/*Set The Position for InfoWindow*/
@@ -196,8 +194,7 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function plots the BS & SS network on the created google map
-	 * @function getDevicesData_gmap
-	 * @class devicePlottingLib
+	 * @method getDevicesData_gmap
 	 */
 	this.getDevicesData_gmap = function() {
 
@@ -273,16 +270,16 @@ function devicePlottingClass_gmap() {
 
 								if(appliedFilterLength_gmaps > 0) {
 									/*If any filter is applied then plot the fetch data as per the filters*/
-									that.applyFilter_gmaps(appliedFilterObj_gmaps);
+									gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps);
 								} else {
 									/*Call the plotDevices_gmap to show the markers on the map*/
-									that.plotDevices_gmap(devices_gmaps,"base_station");
+									gmap_self.plotDevices_gmap(devices_gmaps,"base_station");
 								}
 
 								/*Call the function after 3 sec.*/
 								setTimeout(function() {
 										
-									that.getDevicesData_gmap();
+									gmap_self.getDevicesData_gmap();
 								},3000);
 								
 							} else {
@@ -296,7 +293,7 @@ function devicePlottingClass_gmap() {
 						        });
 
 						        /*Recall the server after particular timeout*/
-								that.recallServer_gmap();
+								gmap_self.recallServer_gmap();
 							}
 
 						} else {
@@ -310,7 +307,7 @@ function devicePlottingClass_gmap() {
 					        });
 
 					        /*Recall the server after particular timeout*/
-							that.recallServer_gmap();
+							gmap_self.recallServer_gmap();
 						}
 						/*Decrement the counter*/
 						counter = counter - 1;
@@ -326,7 +323,7 @@ function devicePlottingClass_gmap() {
 				            sticky: true
 				        });
 
-						that.recallServer_gmap();
+						gmap_self.recallServer_gmap();
 					}
 				},
 				/*If data not fetched*/
@@ -341,22 +338,21 @@ function devicePlottingClass_gmap() {
 			            // (bool | optional) if you want it to fade out on its own or just sit there
 			            sticky: true
 			        });
-					that.recallServer_gmap();
+					gmap_self.recallServer_gmap();
 				}
 			});
 		} else {
 
 			/*Recall the server after the defined time*/
-			that.recallServer_gmap();
+			gmap_self.recallServer_gmap();
 		}
 	};
 
 	/**
      * This function is used to plot BS or SS devices & their respective elements on the google maps
-     * @class devicePlottingLib
      * @method plotDevices_gmap
-     * @param stationObject {JSON Objet} In case of BS, it is the devies object array & for SS it contains BS marker object with SS & sector info
-     * @param stationType "String", It contains that the points are for BS or SS.
+     * @param stationObject {Object} In case of BS, it is the devies object array & for SS it contains BS marker object with SS & sector info
+     * @param stationType {String}, It contains that the points are for BS or SS.
 	 */
 	this.plotDevices_gmap = function(stationObject,stationType) {
 
@@ -415,10 +411,10 @@ function devicePlottingClass_gmap() {
 						}
 
 						/*Call createSectorData function to get the points array to plot the sector on google maps.*/
-						that.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
+						gmap_self.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
 
 							/*Plot sector on map with the retrived points*/
-							that.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child);
+							gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child);
 
 						});
 		    		});		    		
@@ -477,7 +473,7 @@ function devicePlottingClass_gmap() {
 		    			
 		    			if(ss_marker_obj.data.show_link == 1) {
 		    				/*Create the link between BS & SS or Sector & SS*/
-					    	var ss_link_line = that.createLink_gmaps(startEndObj,linkColor,base_info,ss_info);
+					    	var ss_link_line = gmap_self.createLink_gmaps(startEndObj,linkColor,base_info,ss_info);
 
 					    	ssLinkArray.push(ss_link_line);
 		    			}
@@ -549,7 +545,7 @@ function devicePlottingClass_gmap() {
 	    		linkColor = bs_ss_devices[i].data.link_color;
 	    		
 		    	/*Create the link between BS & SS or Sector & SS*/
-		    	var polyLineObj = that.createLink_gmaps(startEndObj,linkColor,bs_info,ss_info);		    	
+		    	var polyLineObj = gmap_self.createLink_gmaps(startEndObj,linkColor,bs_info,ss_info);		    	
 
 		    	/*Push the created line in global line array*/
 		    	pathLineArray.push(polyLineObj);
@@ -593,9 +589,8 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function plots all the sub-station in given sectors object array.
-	 * @class devicePlottingLib
 	 * @method plotSubStation_gmap.
-	 * @param stationSectorObject {JSON Objet} It contains sector object in which SS are present.
+	 * @param stationSectorObject {Object} It contains sector object in which SS are present.
 	 */
 	this.plotSubStation_gmap = function(stationSectorObject) {
 
@@ -614,7 +609,7 @@ function devicePlottingClass_gmap() {
 					rad = sectorRadius;
 				}
 
-				that.createSectorData(stationSectorObject.ptLat,stationSectorObject.ptLon,rad,sectorObj[i].azimuth_angle,sectorObj[i].beam_width,sectorObj[i].orientation,function(pointArray) {
+				gmap_self.createSectorData(stationSectorObject.ptLat,stationSectorObject.ptLon,rad,sectorObj[i].azimuth_angle,sectorObj[i].beam_width,sectorObj[i].orientation,function(pointArray) {
 
 					var halfPt = Math.floor(pointArray.length / (+2));
 
@@ -625,7 +620,7 @@ function devicePlottingClass_gmap() {
 				stationSectorObject["child_ss"] = sectorObj[i].sub_station;
 				stationSectorObject["dataset"] = sectorObj[i].info;				
 
-				that.plotDevices_gmap(stationSectorObject,"sub_station");
+				gmap_self.plotDevices_gmap(stationSectorObject,"sub_station");
 			}
 		}
 	};
@@ -633,7 +628,6 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function plot all the BS & SS on google maps & bind events accordingly
-	 * @class devicePlottingLib
 	 * @method plotAllDevice_gmap. 
 	 */
 	this.plotAllDevice_gmap = function() {
@@ -649,7 +643,7 @@ function devicePlottingClass_gmap() {
 				
 				if($.trim(plotedDevices.pointType) == 'base_station') {
 
-					that.plotSubStation_gmap(plotedDevices);
+					gmap_self.plotSubStation_gmap(plotedDevices);
 				}
 			});
 		} else {
@@ -675,13 +669,12 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function creates a link between Bs & SS
-	 * @class devicePlottingLib
 	 * @method createLink_gmaps. 
-	 * @param startEndObj {JSON Object}, It contains the start & end points json object.
-	 * @param linkColor "String", It contains the color for link line.
-	 * @param bs_info {JSON Object}, It contains the start point information json object.
-	 * @param ss_info {JSON Object}, It contains the end point information json object.
-	 * @return pathConnector {JSON Object}, It contains gmaps polyline object.
+	 * @param startEndObj {Object}, It contains the start & end points json object.
+	 * @param linkColor {String}, It contains the color for link line.
+	 * @param bs_info {Object}, It contains the start point information json object.
+	 * @param ss_info {Object}, It contains the end point information json object.
+	 * @return {Object} pathConnector, It contains gmaps polyline object.
 	 */
 	this.createLink_gmaps = function(startEndObj,linkColor,bs_info,ss_info) {
 
@@ -720,7 +713,7 @@ function devicePlottingClass_gmap() {
 		google.maps.event.addListener(pathConnector, 'click', function(e) {
 
 			/*Call the function to create info window content*/
-			var content = that.makeWindowContent(this);
+			var content = gmap_self.makeWindowContent(this);
 			/*Set the content for infowindow*/
 			infowindow.setContent(content);
 			/*Set The Position for InfoWindow*/
@@ -735,8 +728,7 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function show/hide the connection line between BS & SS.
-	 * @class devicePlottingLib
-	 * @method createSectorData.
+	 * @method showConnectionLines_gmap
 	 */
 	this.showConnectionLines_gmap = function() {
 
@@ -771,16 +763,15 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function creates data to plot sectors on google maps.
-	 * @class devicePlottingLib
 	 * @method createSectorData.
-	 * @param Lat "Number", It contains lattitude of any point.
-	 * @param Lng "Number", It contains longitude of any point.
-	 * @param radius "Number", It contains radius for sector.
-	 * @param azimuth "Number", It contains azimuth angle for sector.
-	 * @param beamwidth "Number", It contains width for the sector.
-	 * @param sectorData {JSON Object}, It contains sector info json object.
-	 * @param orientation "String", It contains the orientation type of antena i.e. vertical or horizontal
-	 * @return sectorDataArray {JSON Object Array}, It is the polygon points lat-lon object array
+	 * @param Lat {Number}, It contains lattitude of any point.
+	 * @param Lng {Number}, It contains longitude of any point.
+	 * @param radius {Number}, It contains radius for sector.
+	 * @param azimuth {Number}, It contains azimuth angle for sector.
+	 * @param beamwidth {Number}, It contains width for the sector.
+	 * @param sectorData {Object}, It contains sector info json object.
+	 * @param orientation {String}, It contains the orientation type of antena i.e. vertical or horizontal
+	 * @return {Object Array} sectorDataArray, It is the polygon points lat-lon object array
 	 */
 	this.createSectorData = function(lat,lng,radius,azimuth,beamWidth,orientation,callback) {
 
@@ -862,13 +853,12 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function plot the sector for given lat-lon points
-	 * @class devicePlottingLib
 	 * @method plotSector_gmap.
-	 * @param Lat "Number", It contains lattitude of the point on which sector is creater i.e. BS lat-lon.
-	 * @param Lng "Number", It contains longitude of the point on which sector is creater i.e. BS lat-lon.
+	 * @param Lat {Number}, It contains lattitude of the point on which sector is creater i.e. BS lat-lon.
+	 * @param Lng {Number}, It contains longitude of the point on which sector is creater i.e. BS lat-lon.
 	 * @param pointsArray [Array], It contains the points lat-lon object array.
 	 * @param sectorInfo {JSON Object Array}, It contains the information about the sector which are shown in info window.
-	 * @param bgColor "String", It contains the RGBA format color code for sector.
+	 * @param bgColor {String}, It contains the RGBA format color code for sector.
 	 * @param sector_child [JSON object Array], It contains the connected SS data.
 	 */
 	this.plotSector_gmap = function(lat,lon,pointsArray,sectorInfo,bgColor,sector_child) {
@@ -927,11 +917,11 @@ function devicePlottingClass_gmap() {
 			plottedSS = [];
 			pathLineArray = [];
 
-			that.plotDevices_gmap(this,"sub_station");
+			gmap_self.plotDevices_gmap(this,"sub_station");
 
 			var windowPosition = new google.maps.LatLng(e.latLng.k,e.latLng.B);
 			/*Call the function to create info window content*/
-			var content = that.makeWindowContent(poly);
+			var content = gmap_self.makeWindowContent(poly);
 			/*Set the content for infowindow*/
 			infowindow.setContent(content);
 			/*Set The Position for InfoWindow*/
@@ -943,10 +933,9 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function creates the info window content for BS,SS & link path 
-	 * @class devicePlottingLib
 	 * @method makeWindowContent
-	 * @param contentObject {JSON Object} It contains current pointer(this) information
-	 * @return windowContent "String" It contains content to be shown on info window
+	 * @param contentObject {Object} It contains current pointer(this) information
+	 * @return {String} windowContent, It contains content to be shown on info window
 	 */
 	this.makeWindowContent = function(contentObject) {
 
@@ -998,7 +987,7 @@ function devicePlottingClass_gmap() {
 			infoTable += "</tbody></table>";
 			
 			/*Concat infowindow content*/
-			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='that.claculateFresnelZone("+contentObject.bs_lat+","+contentObject.bs_lon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+");'>Fresnel Zone</button></li></ul></div></div></div>";
+			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.bs_lat+","+contentObject.bs_lon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+");'>Fresnel Zone</button></li></ul></div></div></div>";
 
 		} else {
 
@@ -1041,15 +1030,14 @@ function devicePlottingClass_gmap() {
 	};
 
 	/**
-	 * This function calculates the fresnel zone
-	 * @class devicePlottingLib
+	 * This function calculates the fresnel zone for the given lat-lon's
 	 * @method claculateFresnelZone
-	 * @param lat1 "Int", It contains lattitude of first point
-	 * @param lon1 "Int", It contains longitude of first point
-	 * @param lat2 "Int", It contains lattitude of second point
-	 * @param lon2 "Int", It contains longitude of second point
-	 * @param height1 "Int", It contains antina height of first point
-	 * @param height2 "Int", It contains antina height of second point
+	 * @param lat1 {Number}, It contains lattitude of first point
+	 * @param lon1 {Number}, It contains longitude of first point
+	 * @param lat2 {Number}, It contains lattitude of second point
+	 * @param lon2 {Number}, It contains longitude of second point
+	 * @param height1 {Number}, It contains antina height of first point
+	 * @param height2 {Number}, It contains antina height of second point
 	 */
 	this.claculateFresnelZone = function(lat1,lon1,lat2,lon2,height1,height2) {
 
@@ -1061,6 +1049,7 @@ function devicePlottingClass_gmap() {
 		Number.prototype.toDeg = function() {
 		   return this * 180 / Math.PI;
 		}
+
 		/*Assign lat lons to global variables*/
 		fresnelLat1 = lat1;
 		fresnelLon1 = lon1;
@@ -1109,7 +1098,7 @@ function devicePlottingClass_gmap() {
 	    latLongArray[arrayCounter][0] = lat1;
 	    latLongArray[arrayCounter++][1] = lon1;
 	    /*Call the getFresnelPath function to generate the data for */
-	    that.getFresnelPath(lat1.toRad(), lon1.toRad(), lat2.toRad(), lon2.toRad(), depthStep);
+	    gmap_self.getFresnelPath(lat1.toRad(), lon1.toRad(), lat2.toRad(), lon2.toRad(), depthStep);
 
 	    /* ----  It stores the destination BTS cordinaties ------*/
 	    latLongArray[arrayCounter] = new Array();
@@ -1128,33 +1117,32 @@ function devicePlottingClass_gmap() {
 	            for (var x = 0; x < results.length; x++) {
 	                elevationArray.push(results[x].elevation);
 	            }
-	            that.getFresnelChartData(elevationArray, distance_between_sites);
+	            gmap_self.getFresnelChartData(elevationArray, distance_between_sites);
 	        }
 	    });
 	};
 
 	/**
 	 * This function generate fresnel point data.
-	 * @class devicePlottingLib
 	 * @method getFresnelPath
-	 * @param lat1 "Int", It contains lattitude of first point
-	 * @param lon1 "Int", It contains longitude of first point
-	 * @param lat2 "Int", It contains lattitude of second point
-	 * @param lon2 "Int", It contains longitude of second point
-	 * @param depth "Int", It contains accuracy or depth value for which lat-lons path has to be calculated
+	 * @param lat1 {Number}, It contains lattitude of first point
+	 * @param lon1 {Number}, It contains longitude of first point
+	 * @param lat2 {Number}, It contains lattitude of second point
+	 * @param lon2 {Number}, It contains longitude of second point
+	 * @param depth {Number}, It contains accuracy or depth value for which lat-lons path has to be calculated
 	 */
 	this.getFresnelPath = function(lat1, lon1, lat2, lon2, depth) {
 
-	    var mlat = that.getMidPT_Lat(lat1, lon1, lat2, lon2);
-	    var mlon = that.getMidPT_Lon(lat1, lon1, lat2, lon2);
+	    var mlat = gmap_self.getMidPT_Lat(lat1, lon1, lat2, lon2);
+	    var mlon = gmap_self.getMidPT_Lon(lat1, lon1, lat2, lon2);
 	    
 	    if (depth > 0) {
-	        that.getFresnelPath(lat1, lon1, mlat, mlon, depth - 1);
+	        gmap_self.getFresnelPath(lat1, lon1, mlat, mlon, depth - 1);
 	        latLongArray[arrayCounter] = new Array();
 	        latLongArray[arrayCounter][0] = mlat.toDeg();
 	        latLongArray[arrayCounter++][1] = mlon.toDeg();
 
-	        that.getFresnelPath(mlat, mlon, lat2, lon2, depth - 1);
+	        gmap_self.getFresnelPath(mlat, mlon, lat2, lon2, depth - 1);
 	    }
 	    else {
 	        latLongArray[arrayCounter] = new Array();
@@ -1165,13 +1153,12 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function calculates mid lattitude point for given lat-lons
-	 * @class devicePlottingLib
 	 * @method getMidPT_Lat
-	 * @param lat1 "Int", It contains lattitude of first point
-	 * @param lon1 "Int", It contains longitude of first point
-	 * @param lat2 "Int", It contains lattitude of second point
-	 * @param lon2 "Int", It contains longitude of second point
-	 * @return lat3 "Int", It contains mid pt lat value
+	 * @param lat1 {Number}, It contains lattitude of first point
+	 * @param lon1 {Number}, It contains longitude of first point
+	 * @param lat2 {Number}, It contains lattitude of second point
+	 * @param lon2 {Number}, It contains longitude of second point
+	 * @return {Number}  lat3, It contains mid pt lat value
 	 */
 	this.getMidPT_Lat = function(lat1, lon1, lat2, lon2) {
 	    var decimal_Lon = (lon2.toDeg() - lon1.toDeg()).toRad();
@@ -1184,13 +1171,12 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function calculates mid longitude point for given lat-lons
-	 * @class devicePlottingLib
 	 * @method getMidPT_Lon
-	 * @param lat1 "Int", It contains lattitude of first point
-	 * @param lon1 "Int", It contains longitude of first point
-	 * @param lat2 "Int", It contains lattitude of second point
-	 * @param lon2 "Int", It contains longitude of second point
-	 * @return lon3 "Int", It contains mid pt lon value
+	 * @param lat1 {Number}, It contains lattitude of first point
+	 * @param lon1 {Number}, It contains longitude of first point
+	 * @param lat2 {Number}, It contains lattitude of second point
+	 * @param lon2 {Number}, It contains longitude of second point
+	 * @return {Number} lon3, It contains mid pt lon value
 	 */
 	this.getMidPT_Lon = function(lat1, lon1, lat2, lon2) {
 	    var decimal_Lon = (lon2.toDeg() - lon1.toDeg()).toRad();
@@ -1204,10 +1190,9 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function generates the data for fresnel zone
-	 * @class devicePlottingLib
 	 * @method getFresnelChartData
 	 * @param elevationArray [Int Array], It contains elevation values array
-	 * @param pt_distance "Int", It contains distance between two points
+	 * @param pt_distance {Number}, It contains distance between two points
 	 */
 	this.getFresnelChartData = function(elevationArray, pt_distance) {
 
@@ -1282,15 +1267,14 @@ function devicePlottingClass_gmap() {
 		maxYChart=maxYChart-mod;
 
 		/*Call 'drawFresnelChart' function to plot Fresnel Chart*/
-	    that.drawFresnelChart();
+	    gmap_self.drawFresnelChart();
 	};
 
 	/**
 	 * This function creates the fresnal zone chart with elevation points using jquery.flot.js
-	 * @class devicePlottingLib
 	 * @method drawFresnelChart
-	 * @user jquery.flot.js
-	 * @user bootbox.js
+	 * @uses jquery.flot.js
+	 * @uses bootbox.js
 	 */
 	this.drawFresnelChart = function() {
 
@@ -1342,7 +1326,7 @@ function devicePlottingClass_gmap() {
     			$("#antinaVal1").val(b.value);
 	    	},
 	    	stop : function(a,b){
-	    		that.heightChanged();
+	    		gmap_self.heightChanged();
 	    	}
 	    });
 
@@ -1358,7 +1342,7 @@ function devicePlottingClass_gmap() {
     			$("#antinaVal2").val(b.value);
 	    	},
 	    	stop : function(a,b) {
-	    		that.heightChanged();
+	    		gmap_self.heightChanged();
 	    	}
 	    });
 
@@ -1374,7 +1358,7 @@ function devicePlottingClass_gmap() {
     			$("#clear-factor_val").val(b.value);
 	    	},
 	    	stop : function(a,b){
-	    		that.heightChanged();
+	    		gmap_self.heightChanged();
 	    	}
 	    });
 
@@ -1409,7 +1393,7 @@ function devicePlottingClass_gmap() {
 			$("#chart_div").bind("plothover", function (event, pos, item) {
 				/*Show point detail block*/
 				$('#chart-details').show();
-				that.showScanPointerDetails(pos);
+				gmap_self.showScanPointerDetails(pos);
 				// just in case if tooltip functionality need to be disabled we can use this condition
 				if (true) {
 					if (item) {
@@ -1442,7 +1426,7 @@ function devicePlottingClass_gmap() {
 				} else {
 					fresnelChart.unhighlight();
 				}
-				that.addPinPoint(that.getNearestPointX(pos.x.toFixed(2)), pos);
+				gmap_self.addPinPoint(gmap_self.getNearestPointX(pos.x.toFixed(2)), pos);
 			});
 			$("#chart_div").addClass('readytoclick');
 		}
@@ -1452,33 +1436,31 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function show hovering position detail in right side.
-	 * @class devicePlottingLib
 	 * @method showScanPointerDetails
-	 * @param pos {JSON Object}, It contains the position object.
+	 * @param pos {Object}, It contains the position object.
 	 */
 	this.showScanPointerDetails = function(pos) {
 		
-		var ptLat = parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][0]);
-		var ptLon = parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][1]);
+		var ptLat = parseFloat(latLongArray[gmap_self.getNearestPointX(pos.x.toFixed(2))][0]);
+		var ptLon = parseFloat(latLongArray[gmap_self.getNearestPointX(pos.x.toFixed(2))][1]);
 
 		// finding parameters on scan line 
 		$('#latitude').text(ptLat.toFixed(10));
 		$('#longitude').text(ptLon.toFixed(10));
-		$('#distance').text(parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][3]).toFixed(2)+' Km');
-		$('#altitude').text(parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][2]).toFixed(2)+' m');
-		$('#obstacle').text(parseFloat((latLongArray[that.getNearestPointX(pos.x.toFixed(2))][9]) - parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][2])).toFixed(2)+' m');
-		$('#los').text(parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][4]).toFixed(2)+' m' );
-		$('#fresnel1').text(parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][5]).toFixed(2)+' m' );
-		$('#fresnel2').text(parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][7]).toFixed(2)+' m' );
-		$('#fresnel-altitude').text((parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][7] ) - parseFloat(latLongArray[that.getNearestPointX(pos.x.toFixed(2))][9])).toFixed(2)+' m' );
+		$('#distance').text(parseFloat(latLongArray[gmap_self.getNearestPointX(pos.x.toFixed(2))][3]).toFixed(2)+' Km');
+		$('#altitude').text(parseFloat(latLongArray[gmap_self.getNearestPointX(pos.x.toFixed(2))][2]).toFixed(2)+' m');
+		$('#obstacle').text(parseFloat((latLongArray[gmap_self.getNearestPointX(pos.x.toFixed(2))][9]) - parseFloat(latLongArray[gmap_self.getNearestPointX(pos.x.toFixed(2))][2])).toFixed(2)+' m');
+		$('#los').text(parseFloat(latLongArray[gmap_self.getNearestPointX(pos.x.toFixed(2))][4]).toFixed(2)+' m' );
+		$('#fresnel1').text(parseFloat(latLongArray[gmap_self.getNearestPointX(pos.x.toFixed(2))][5]).toFixed(2)+' m' );
+		$('#fresnel2').text(parseFloat(latLongArray[gmap_self.getNearestPointX(pos.x.toFixed(2))][7]).toFixed(2)+' m' );
+		$('#fresnel-altitude').text((parseFloat(latLongArray[gmap_self.getNearestPointX(pos.x.toFixed(2))][7] ) - parseFloat(latLongArray[gmap_self.getNearestPointX(pos.x.toFixed(2))][9])).toFixed(2)+' m' );
 	};
 
 	/**
 	 * This function returns the nearest point on X-axis
-	 * @class devicePlottingLib
 	 * @method getNearestPointX
-	 * @param posx "Int", It contains the current point X-position value
-	 * @return result "Int", It contains the next or nearest point on X-axis
+	 * @param posx {Number}, It contains the current point X-position value
+	 * @return {Number} result, It contains the next or nearest point on X-axis
 	 */
 	this.getNearestPointX = function(posx) {
 		var tmp = (parseFloat(latLongArray[0][3]) - posx)*(parseFloat(latLongArray[0][3]) - posx);
@@ -1494,10 +1476,9 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function adds pin point info at the bottom of the fresnel graph & bind hover and click event on them.
-	 * @class devicePlottingLib
 	 * @method addPinPoint
-	 * @param index "Int", It contains counter value of no. of pin points
-	 * @param pos {JSON Object}, It contains the position object.
+	 * @param index {Number}, It contains counter value of no. of pin points
+	 * @param pos {Object}, It contains the position object.
 	 */
 	this.addPinPoint = function(index, pos) {
 		if($('#pin-point-'+index+'').length == 0) {
@@ -1507,20 +1488,20 @@ function devicePlottingClass_gmap() {
 				var height =  parseFloat($(this).val());
 				latLongArray[index][9] = height + parseFloat(latLongArray[index][2]);
 				isDialogOpen = false;
-				that.drawFresnelChart();
+				gmap_self.drawFresnelChart();
 			});
 			/*Click event on pinpoint content*/
 			$('#pin-point-remove'+index+'').click(function() {
 				$('#pin-point-'+index+'').remove();
 				latLongArray[index][9] = latLongArray[index][2];
 				isDialogOpen = false;
-				that.drawFresnelChart();
+				gmap_self.drawFresnelChart();
 			});
 			/*Hover event on pinpoint content*/
 			$('#pin-point-'+index+'').hover(function() {
 				isDialogOpen = false;
 				$('#chart-details').show();
-				that.showScanPointerDetails(pos)
+				gmap_self.showScanPointerDetails(pos)
 			},function(){
 				$('#chart-details').hide();
 			});
@@ -1532,7 +1513,6 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function trigger when any antina height slider is changed
-	 * @class devicePlottingLib
 	 * @method heightChanged
 	 */
 	this.heightChanged = function() {
@@ -1543,12 +1523,11 @@ function devicePlottingClass_gmap() {
 		antenaHight2 = $("#antinaVal2").val();
 		clear_factor = $("#clear-factor_val").val();
 
-		that.claculateFresnelZone(fresnelLat1,fresnelLon1,fresnelLat2,fresnelLon2,antenaHight1,antenaHight2);
+		gmap_self.claculateFresnelZone(fresnelLat1,fresnelLon1,fresnelLat2,fresnelLon2,antenaHight1,antenaHight2);
 	};
 
 	/**
 	 * This function fetch the basic filters from appropriate API & this populate the data to respective dropdowns
-	 * @class devicePlottingLib
 	 * @method getBasicFilters
 	 */
 	this.getBasicFilters = function() {
@@ -1610,8 +1589,7 @@ function devicePlottingClass_gmap() {
 	};
 
 	/**
-	 * This function filters the markers for the given filters
-	 * @class devicePlottingLib
+	 * This function filters bs-ss object as per the applied filters
 	 * @method applyFilter_gmaps
 	 * @param filtersArray [JSON Array] It is an object array of filters with keys
 	 */
@@ -1734,7 +1712,7 @@ function devicePlottingClass_gmap() {
 		        });
 
 	 			/*Reset the markers, polyline & filters*/
-	 			that.clearGmapElements();
+	 			gmap_self.clearGmapElements();
 
 				masterMarkersObj = [];
 				slaveMarkersObj = [];
@@ -1746,37 +1724,35 @@ function devicePlottingClass_gmap() {
 			    $("#city").val($("#city option:first").val());
 
 				/*Populate the map with the all data*/
-	 			that.plotDevices_gmap(main_devices_data_gmaps,"base_station");	 			
+	 			gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");	 			
 
 	 		} else {
 
 				/*Reset the markers, polyline & filters*/
-	 			that.clearGmapElements();
+	 			gmap_self.clearGmapElements();
 
 				masterMarkersObj = [];
 				slaveMarkersObj = [];
 
 				/*Populate the map with the filtered markers*/
-	 			that.plotDevices_gmap(filteredData,"base_station");
+	 			gmap_self.plotDevices_gmap(filteredData,"base_station");
 	 		}	 		
 	 	}	
 	};
 
 	/**
 	 * This function calls the plotDevices_gmap function to load the fetched devices in case of no filters
-	 * @class devicePlottingLib
 	 * @method loadExistingDevices
 	 */
 	this.loadExistingDevices = function() {
 
-		that.plotDevices_gmap(main_devices_data_gmaps,"base_station");
+		gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
 	};
 
 	/**
      * This function makes an array from the selected filters
-     * @class devicePlottingLib
-     * @function makeFiltersArray
-     * @param mapPageType "String", It contains the string value by which we can get the page information
+     * @method makeFiltersArray
+     * @param mapPageType {String}, It contains the string value by which we can get the page information
      */
     this.makeFiltersArray = function(mapPageType) {
 
@@ -1851,7 +1827,7 @@ function devicePlottingClass_gmap() {
         if(filtersLength > 0) {
 
         	if($.trim(mapPageType) == "gmap") {
-        		that.applyFilter_gmaps(appliedFilterObj_gmaps);
+        		gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps);
         	} else {
         		earth_instance.applyFilter_earth(appliedFilterObj_gmaps);
         	}
@@ -1860,18 +1836,17 @@ function devicePlottingClass_gmap() {
         else {
 
         	/*Reset markers & polyline*/
-			that.clearGmapElements();
+			gmap_self.clearGmapElements();
 
 			/*Reset Global Variables & Filters*/
-			that.resetVariables_gmap();
+			gmap_self.resetVariables_gmap();
 
-            that.plotDevices_gmap(main_devices_data_gmaps,"base_station");
+            gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
         }
     };
 
 	/**
-	 * This function creates enable the polygon drawing tool & draw the polygon
-	 * @class devicePlottingLib
+	 * This function enable the polygon drawing tool & draw the polygon
 	 * @method createPolygon
 	 */
 	this.createPolygon = function() {
@@ -1936,13 +1911,13 @@ function devicePlottingClass_gmap() {
 					
 					bootbox.alert("No 'Sub-Station' under the selected area.Please re-select");
 					/*Remove current polygon from map*/
-					that.clearPolygon();
+					gmap_self.clearPolygon();
 
 				} else if(selectedCount > 200) {
 					
 					bootbox.alert("Max. limit for selecting sub-stations is 200.Please re-select");
 					/*Remove current polygon from map*/
-					that.clearPolygon();
+					gmap_self.clearPolygon();
 
 				} else {
 					
@@ -2007,13 +1982,13 @@ function devicePlottingClass_gmap() {
 
 									var allServices = result.data[devicesName[i]].services;
 									var deviceNameParam = '"'+replace_device_name+'"';
-									servicesOption = "<ul class='list-unstyled'><li class='servicesContainer'><select class='form-control' onchange='that.serviceSeleted_gmap("+deviceNameParam+")' id='service_"+replace_device_name+"'><option value=''>Select Service</option>";
+									servicesOption = "<ul class='list-unstyled'><li class='servicesContainer'><select class='form-control' onchange='gmap_self.serviceSeleted_gmap("+deviceNameParam+")' id='service_"+replace_device_name+"'><option value=''>Select Service</option>";
 									/*Loop For Number of services*/
 									for(var j=0;j<allServices.length;j++) {
 
 										servicesOption += "<option value='"+allServices[j].value+"'>"+allServices[j].name+"</option>";
 									}
-									servicesOption += "</select></li><li class='divide-10'></li><li><select class='form-control' id='datasource_"+replace_device_name+"'><option value=''>Select Service Datasource</option></select></li><li class='divide-10'></li><li><button class='btn btn-primary' data-complete-text='Fetch' data-loading-text='Please Wait...' id='fetchBtn_"+replace_device_name+"' onClick='that.pollDevice_gmap("+deviceNameParam+")'>Fetch</button> <i class='fa fa-spinner fa fa-spin hide' id='fetch_spinner'>&nbsp;</i> </li></ul><div class='clearfix'><ul class='list-unstyled list-inline' id='pollVal_"+replace_device_name+"'></ul></div>";
+									servicesOption += "</select></li><li class='divide-10'></li><li><select class='form-control' id='datasource_"+replace_device_name+"'><option value=''>Select Service Datasource</option></select></li><li class='divide-10'></li><li><button class='btn btn-primary' data-complete-text='Fetch' data-loading-text='Please Wait...' id='fetchBtn_"+replace_device_name+"' onClick='gmap_self.pollDevice_gmap("+deviceNameParam+")'>Fetch</button> <i class='fa fa-spinner fa fa-spin hide' id='fetch_spinner'>&nbsp;</i> </li></ul><div class='clearfix'><ul class='list-unstyled list-inline' id='pollVal_"+replace_device_name+"'></ul></div>";
 
 									$("#livePolling_"+replace_device_name).append(servicesOption);
 								}								
@@ -2061,9 +2036,8 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function load the service datasource as per the selected service.
-	 * @class devicePlottingLib
 	 * @method serviceSeleted_gmap
-	 * @param deviceName "String", It contains the name of the device whose service is selected
+	 * @param deviceName {String}, It contains the name of the device whose service is selected
 	 */
 	this.serviceSeleted_gmap = function(deviceName) {
 
@@ -2110,9 +2084,8 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function fetch the live polling value for particular device.
-	 * @class devicePlottingLib
 	 * @method pollDevice_gmap
-	 * @param deviceName "String", It contains the name of the device for which the polling value is to be fetched.
+	 * @param deviceName {String}, It contains the name of the device for which the polling value is to be fetched.
 	 */
 	this.pollDevice_gmap = function(deviceName) {
 
@@ -2264,7 +2237,6 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function clear the polygon selection from the map
-	 * @class devicePlottingLib
 	 * @method clearPolygon
 	 */
 	this.clearPolygon = function() {
@@ -2309,7 +2281,6 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function creates the line chart for the monitoring of selected devices
-	 * @class devicePlottingLib
 	 * @method makeMonitoringChart
 	 * @param id 'Integer'
 	 */
@@ -2341,7 +2312,7 @@ function devicePlottingClass_gmap() {
 				/*Decrement the margin-left value*/
 				leftMargin = margin;
 				/*Recursive calling*/
-				that.makeMonitoringChart(id);
+				gmap_self.makeMonitoringChart(id);
 			},1500);
 
 		} else if(stopClassNames.indexOf("active") != -1) {
@@ -2365,7 +2336,7 @@ function devicePlottingClass_gmap() {
             $("#stop_"+id).removeClass("active");
         }
 
-        that.makeMonitoringChart(id);
+        gmap_self.makeMonitoringChart(id);
 	};
 
 	this.pauseMonitoring = function(id) {
@@ -2377,7 +2348,7 @@ function devicePlottingClass_gmap() {
         if($("#stop_"+id).hasClass("active")) {
             $("#stop_"+id).removeClass("active");
         }
-        that.makeMonitoringChart(id);
+        gmap_self.makeMonitoringChart(id);
 	};
 
 	this.stopMonitoring = function(id) {
@@ -2389,12 +2360,11 @@ function devicePlottingClass_gmap() {
         if($("#pause_"+id).hasClass("active")) {
             $("#pause_"+id).removeClass("active");
         }
-        that.makeMonitoringChart(id);
+        gmap_self.makeMonitoringChart(id);
 	};
 	
     /**
      * This function resets the global variables & again call the api calling function after given timeout i.e. 5 minutes
-     * @class devicePlottingLib
      * @method recallServer_gmap
      */
     this.recallServer_gmap = function() {
@@ -2415,20 +2385,19 @@ function devicePlottingClass_gmap() {
 			$("#resetFilters").button("loading");
 
 			/*Reset markers & polyline*/
-			that.clearGmapElements();
+			gmap_self.clearGmapElements();
 
 			/*Reset Global Variables & Filters*/
-			that.resetVariables_gmap();
+			gmap_self.resetVariables_gmap();
 			
 			/*Recall the API*/
-			that.getDevicesData_gmap();
+			gmap_self.getDevicesData_gmap();
 
 		},300000);
     };
 
     /**
 	 * This function removes all the elements from the map
-	 * @class devicePlottingLib
 	 * @method clearGmapElements
 	 */
 	this.clearGmapElements = function() {
@@ -2485,7 +2454,6 @@ function devicePlottingClass_gmap() {
 
 	/**
 	 * This function reset all global variable used in the process
-	 * @class devicePlottingLib
 	 * @method resetVariables_gmap
 	 */
 	this.resetVariables_gmap = function() {
