@@ -2,8 +2,8 @@
 rrd_migration.py
 ================
 
-Script to import services and network performance data from Nagios rrdtool into
-Teramatrix Pollers.
+This script collects and stores data for all services running on all configured devices for this poller.
+
 """
 
 
@@ -18,6 +18,17 @@ import rrd_main
 import mongo_functions
 
 def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
+	"""
+	Function name: build_export  (function export data from the rrdtool (which stores the period data) for all services for particular host
+	and stores them in mongodb in particular structure)
+
+	Args: site : site_name (poller name on which  deviecs are monitored)
+	Kwargs: host(Device from which data to collected) , ip (ip for the device) ,mongo_host (mongodb host name ),
+                mongo_db (mongo db connection),mongo_port(port for mongodb)
+	Return : None
+        Raises:
+	     Exception: IOError 
+	"""
 	_folder = '/opt/omd/sites/%s/var/pnp4nagios/perfdata/%s/' % (site,host)
 	xml_file_list = []
 	#tmp_service =service
@@ -54,9 +65,11 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 	    port=int(mongo_port),
 	    db_name=mongo_db
 	)
+	# all rrdtool .xml files corresponding to services
 	for perf_file in os.listdir(_folder):
 		if perf_file.endswith(".xml"):
-			xml_file_list.append(perf_file)		
+			xml_file_list.append(perf_file)
+	# Extracts the services data for each host from rrdtool
 	for xml_file in xml_file_list:
 		try:
 			tree = ET.parse(_folder + xml_file)
@@ -76,6 +89,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 
 		if serv_disc.endswith('_status') or serv_disc == 'Check_MK':
 			continue
+		# Extracts the performance data from the rrdtool for services
 		if serv_disc == 'ping':
 			query_string = "GET services\nColumns: host_state\nFilter: host_name = %s\nOutputFormat: json\n" % (host)
 			query_output = json.loads(rrd_main.get_from_socket(site,query_string).strip())
@@ -187,6 +201,18 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 
 
 def do_export(site, host, file_name,data_source, start_time, serv):
+    """
+    Function_name : do_export (Main function for extracting the data for the services from rrdtool)
+
+    Args: site (poller on which devices are monitored)
+
+    Kwargs: host(Device from which data to collected) , file_name (rrd file for data source) ,data_source (service data source),
+                start_time (time from which data is extracted),serv (service)
+    return:
+           None
+    Exception:
+           JSONDecodeError
+    """
     data_series = {}
     cmd_output ={}
     CF = 'AVERAGE'
@@ -216,6 +242,7 @@ def do_export(site, host, file_name,data_source, start_time, serv):
     #start_epoch -= 19800
     #end_epoch -= 19800
 
+    # Command for rrdtool data extraction
     cmd = '/omd/sites/%s/bin/rrdtool xport --json --daemon unix:/omd/sites/%s/tmp/run/rrdcached.sock -s %s -e %s --step 300 '\
         %(site,site, str(start_epoch), str(end_epoch))
     RRAs = ['MIN','MAX','AVERAGE']
@@ -252,6 +279,18 @@ def do_export(site, host, file_name,data_source, start_time, serv):
 
 
 def get_threshold(perf_data):
+    """
+    Function_name : get_threshold (function for parsing the performance data and storing in the datastructure)
+
+    Args: perf_data performance_data extracted from rrdtool
+
+    Kwargs: None
+    return:
+           threshold_values (data strucutre containing the performance_data for all data sources)
+    Exception:
+           None
+    """
+
     threshold_values = {}
 
     #if len(perf_data) == 1:
@@ -282,12 +321,35 @@ def get_threshold(perf_data):
 
 
 def pivot_timestamp(timestamp):
+    """
+    Function_name : pivot_timestamp (function for pivoting the time to 5 minutes interval)
+
+    Args: timestamp
+
+    Kwargs: None
+    return:
+           t_stmp (pivoted time stamp)
+    Exception:
+           None
+    """
     t_stmp = timestamp + timedelta(minutes=-(timestamp.minute % 5))
 
     return t_stmp
 
 
 def db_port(site_name=None):
+    """
+    Function_name : db_port (function for extracting the port value for mongodb for particular poller,As different poller will 
+		    have different)
+
+    Args: site_name (poller on which monitoring is performed)
+
+    Kwargs: None
+    return:
+           port (mongodb port)
+    Exception:
+           IOError
+    """
     port = None
     if site_name:
         site = site_name
@@ -312,7 +374,15 @@ def db_port(site_name=None):
 
 def mongo_conn(**kwargs):
     """
-    Mongodb connection object
+    Function_name : mongo_conn (function for making mongo db connection)
+
+    Args: site_name (poller on which monitoring is performed)
+
+    Kwargs: Multiple arguments
+    return:
+           db (mongdb object)
+    Exception:
+           PyMongoError
     """
     DB = None
     try:
@@ -327,6 +397,17 @@ def mongo_conn(**kwargs):
 
 
 def insert_data(data_dict):
+    """
+    Function_name : insert_data (inserting data in mongo db)
+
+    Args: data_dict (data_dict which is inserted)
+
+    Kwargs: None
+    return:
+           None
+    Exception:
+           None
+    """
     port = None
     db  = None
     #Get the port for mongodb process, specific to this multisite instance
@@ -347,6 +428,16 @@ def insert_data(data_dict):
 
 
 def rrd_migration_main(site,host,services,ip, mongo_host, mongo_db, mongo_port):
+	"""
+	Main function for the rrd_migration which extracts and store data in mongodb databses for all services configured on all devices
+	Args: site : site (poller name on which  deviecs are monitored)
+        Kwargs: host(Device from which data to collected) ,services(host services) ,ip (ip for the device) ,mongo_host (mongodb host name ),
+	                mongo_db (mongo db connection),mongo_port(port for mongodb)
+	return:
+	      None
+	Raise
+	    Exception : None
+	"""
 	build_export(site, host, ip, mongo_host, mongo_db, mongo_port)
         #for service in services[0]:
 
