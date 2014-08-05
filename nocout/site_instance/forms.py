@@ -3,6 +3,9 @@ from .models import SiteInstance
 
 
 class SiteInstanceForm(forms.ModelForm):
+    """
+    Class Based SiteInstance Model Form required to create and update the SiteInstance.
+    """
     def __init__(self, *args, **kwargs):
         super(SiteInstanceForm, self).__init__(*args, **kwargs)
         self.fields['machine'].empty_label = 'Select'
@@ -24,5 +27,8 @@ class SiteInstanceForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
+        """
+        Model Form Meta Information.
+        """
         model = SiteInstance
 

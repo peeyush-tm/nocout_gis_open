@@ -1,20 +1,51 @@
-import os
+"""
+status_mongo_migration.py
+==========================
+
+Script to bulk insert data from Teramatrix Pollers into
+central mysql db, for status services.
+The data in the Teramatrix Pollers is stored in Mongodb.
+
+Status services include : Services which runs once an Hour.
+"""
+
+
 import MySQLdb
-import pymongo
 from datetime import datetime, timedelta
-from rrd_migration import mongo_conn, db_port
-from mongo_functions import get_latest_entry
-import subprocess
+from rrd_migration import mongo_conn
 import mongo_functions
 import socket
 
 def main(**configs):
+    """
+    The entry point for the all the functions in this file,
+    calls all the appropriate functions in the file
+
+    Kwargs:
+        configs (dict): A python dictionary containing object key identifiers
+	as configuration values, read from main configuration file config.ini
+    Example:
+        {
+	"site": "nocout_gis_slave",
+	"host": "localhost",
+	"user": "root",
+	"ip": "localhost",
+	"sql_passwd": "admin",
+	"nosql_passwd": "none",
+	"port": 27019 # The port being used by mongodb process
+	"status": {
+	    "nosql_db": "nocout" # Mongodb database name
+	    "sql_db": "nocout_dev" # Sql database name
+	    "script": "status_mongo_migration" # Script which would do all the migrations
+	    "table_name": "performance_performancestatus" # Sql table name
+
+	    }
+	}
+    """
     data_values = []
     values_list = []
     docs = []
     db = mysql_conn(configs=configs)
-    # Get the time for latest entry in mysql
-    #start_time = get_latest_entry(db_type='mysql', db=db, site=configs.get('site'),table_name=configs.get('table_name'))
     utc_time = datetime(1970, 1,1,5,30)
 
 
@@ -28,22 +59,21 @@ def main(**configs):
     for doc in docs:
         values_list = build_data(doc)
         data_values.extend(values_list)
-    field_names = [
-        'host_name',
-        'service',
-        'host_address',
-        'site_id',
-        'value',
-        'war',
-        'crit',
-	'service_state',
-        'time',
-    ]
     insert_data(configs.get('table_name'), data_values, configs=configs)
     print "Data inserted into performance_performancestatus table"
     
 
 def read_data(start_time, end_time, **kwargs):
+    """
+    Function to read data from mongodb
+
+    Args:
+        start_time (int): Start time for the entries to be fetched
+	end_time (int): End time for the entries to be fetched
+
+    Kwargs:
+	kwargs (dict): Store mongodb connection variables 
+    """
 
     db = None
     port = None
@@ -66,6 +96,15 @@ def read_data(start_time, end_time, **kwargs):
     return docs
 
 def build_data(doc):
+	"""
+	Function to make tuples to be stored into mysql db
+
+	Args:
+	    doc (dict): Single mongodb entry
+
+	Returns:
+	    List of tuples, each tuple would correspond to one row in mysql db
+	"""
 	values_list = []
 	time = doc.get('time')
 	machine_name = get_machine_name()
@@ -91,6 +130,16 @@ def build_data(doc):
 	return values_list
 
 def insert_data(table, data_values, **kwargs):
+	"""
+	Function to bulk insert data into mysql db
+
+	Args:
+	    table (str): Mysql table name
+            data_values (list): List of data tuples
+
+	Kwargs:
+	    kwargs: Mysqldb connection variables
+	"""
 	db = mysql_conn(configs=kwargs.get('configs'))
 	query = 'INSERT INTO `%s` ' % table
 	query += """
@@ -109,7 +158,17 @@ def insert_data(table, data_values, **kwargs):
     	cursor.close()
 
 def get_epoch_time(datetime_obj):
-    # Get India times (GMT+5.30)
+    """
+    Function to convert python datetime object into
+    unix epoch time
+
+    Args:
+        datetime_obj (datetime): Python datetime object
+
+    Output:
+        Unix epoch time in intteger format
+    """
+    # Get the time in IST (GMT+5:30)
     utc_time = datetime(1970, 1,1, 5, 30)
     if isinstance(datetime_obj, datetime):
         epoch_time = int((datetime_obj - utc_time).total_seconds())
@@ -118,6 +177,15 @@ def get_epoch_time(datetime_obj):
         return datetime_obj
 
 def mysql_conn(db=None, **kwargs):
+    """
+    Function to create connection to mysql database
+
+    Args:
+        db (dict): Mysqldb connection object
+
+    Kwargs:
+        kwargs (dict): Dict to store mysql connection variables
+    """
     try:
         db = MySQLdb.connect(host=kwargs.get('configs').get('host'), user=kwargs.get('configs').get('user'),
             passwd=kwargs.get('configs').get('sql_passwd'), db=kwargs.get('configs').get('sql_db'))
@@ -126,6 +194,10 @@ def mysql_conn(db=None, **kwargs):
 
     return db
 def get_machine_name(machine_name=None):
+    """
+    Function to get fqdn of the machine on which
+    Python interpreter is currently executing
+    """
     try:
         machine_name = socket.gethostname()
     except Exception, e:

@@ -1,3 +1,10 @@
+"""
+This file is the main file for migrating the mongodb data to mysql data for ping services and other services.It reads all configuration required for connecting the db from config.ini
+
+File also migrates the mongodb data for the latest enrty for each devices to mysql data .so in mysql status tables store the latest data entry 
+for each device
+"""
+
 from configparser import parse_config_obj
 
 

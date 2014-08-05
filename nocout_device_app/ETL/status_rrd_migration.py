@@ -1,4 +1,4 @@
-import os,socket,json
+import socket,json
 import rrd_main, mongo_functions,rrd_migration
 import time
 from configparser import parse_config_obj

@@ -1,11 +1,26 @@
+"""
+File_name : rrd_main.py
+Content: rrd_main file extracts the all devices and associated services with them for that particular poller and pass the host list and
+         services configured on those devices to another function which calculates the services data and stores into mongodb.
+
+"""
+
 import rrd_migration
 import socket
 import json
-import os
 from configparser import parse_config_obj
 
 
 class MKGeneralException(Exception):
+    """
+        This is the Exception class handing exception in this file.
+	Args: Exception instance
+
+	Kwargs: None
+
+	return: class object
+
+    """
     def __init__(self, reason):
         self.reason = reason
     def __str__(self):
@@ -13,6 +28,18 @@ class MKGeneralException(Exception):
 
 
 def get_host_services_name(site_name=None, mongo_host=None, mongo_db=None, mongo_port=None):
+	"""
+	Function_name : get_host_services_name (extracts the services monitotred on that poller)
+
+	Args: site_name (poller on which monitoring data is to be collected)
+
+	Kwargs: mongo_host(host on which we have to monitor services and collect the data),mongo_db(mongo_db connection),
+	        mongo_port( port for the mongodb database)
+	Return : None
+
+	raise 
+	     Exception: SyntaxError,socket error 
+	"""
         try:
             query = "GET hosts\nColumns: host_name\nOutputFormat: json\n"
                 
@@ -36,6 +63,18 @@ def get_host_services_name(site_name=None, mongo_host=None, mongo_db=None, mongo
             raise MKGeneralException(("Failed to create socket. Error code %s Error Message %s:") % (str(msg[0]), msg[1]))
 
 def get_from_socket(site_name, query):
+    """
+	Function_name : get_from_socket (collect the query data from the socket)
+
+	Args: site_name (poller on which monitoring data is to be collected)
+
+	Kwargs: query (query for which data to be collectes from nagios.)
+
+	Return : None
+
+	raise 
+	     Exception: SyntaxError,socket error 
+    """
     socket_path = "/opt/omd/sites/%s/tmp/run/live" % site_name
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     s.connect(socket_path)
@@ -48,6 +87,11 @@ def get_from_socket(site_name, query):
 
     
 if __name__ == '__main__':
+    """
+    main function for this file which is called in 5 minute interval.Every 5 min interval calculates the host configured on this poller
+    and extracts data
+
+    """
     configs = parse_config_obj()
     for section, options in configs.items():
         site = options.get('site')

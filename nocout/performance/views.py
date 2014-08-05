@@ -14,9 +14,6 @@ from service.models import ServiceDataSource, Service, DeviceServiceConfiguratio
 from operator import is_not
 from functools import partial
 from django.utils.dateformat import format
-
-#sort the list of dictionaries
-# http://stackoverflow.com/questions/72899/how-do-i-sort-a-list-of-dictionaries-by-values-of-the-dictionary-in-python
 from operator import itemgetter
 
 import logging
@@ -35,11 +32,18 @@ SERVICES = {
 }
 
 class Live_Performance(ListView):
+    """
+    A generic class view for the performance view
 
+    """
     model= NetworkStatus
     template_name = 'performance/live_perf.html'
 
     def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+
+        """
         context= super(Live_Performance, self).get_context_data(**kwargs)
         datatable_headers=[
             {'mData':'site_instance',      'sTitle' : 'Site ID',       'Width':'null', 'bSortable': False},
@@ -62,10 +66,20 @@ class Live_Performance(ListView):
 
 
 class LivePerformanceListing(BaseDatatableView):
+    """
+    A generic class based view for the performance data table rendering.
+
+    """
     model = NetworkStatus #TODO change to NETWORK STATUS. PROBLEM is with DA, DA is not puttin gin RTA just PL
     columns = ['site_instance', 'id', 'device_alias', 'device_alias', 'ip_address', 'device_type', 'city', 'state']
 
     def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return result_list:
+        """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             result_list=list()
@@ -78,6 +92,10 @@ class LivePerformanceListing(BaseDatatableView):
         return qs
 
     def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
@@ -96,6 +114,13 @@ class LivePerformanceListing(BaseDatatableView):
                 return []
 
     def get_initial_query_set_data(self, device_association='', **kwargs):
+        """
+        Generic function required to fetch the initial data with respect to the page_type parameter in the get request requested.
+
+        :param device_association:
+        :param kwargs:
+        :return: list of devices
+        """
         device_list=list()
         if self.request.GET['page_type'] != 'network':
             device_tab_technology = self.request.GET.get('data_tab')
@@ -132,6 +157,7 @@ class LivePerformanceListing(BaseDatatableView):
 
     def get_performance_data(self, device_list):
         """
+        Consolidated Performance Data from the Data base.
 
         :param device_list:
         :return:
@@ -182,6 +208,12 @@ class LivePerformanceListing(BaseDatatableView):
 
 
     def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
 
         device_list = []
 
@@ -210,6 +242,10 @@ class LivePerformanceListing(BaseDatatableView):
         return sorted_qs
 
     def get_context_data(self, *args, **kwargs):
+        """
+        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
+
         request = self.request
         self.initialize(*args, **kwargs)
 
@@ -239,7 +275,10 @@ class LivePerformanceListing(BaseDatatableView):
         return ret
 
 class Get_Perfomance(View):
+    """
+    The Class based View to get performance page for the single device.
 
+    """
     def get(self, request, page_type = "no_page", device_id=0):
         page_data = {
                         'page_title' : page_type.capitalize(),
@@ -252,20 +291,53 @@ class Get_Perfomance(View):
         return render(request, 'performance/single_device_perf.html',page_data)
 
 class Performance_Dashboard(View):
+    """
+    The Class based View to get performance dashboard page requested.
+
+    """
 
     def get(self, request):
+        """
+        Handles the get request
+
+        :param request:
+        :return Http response object:
+        """
         return render_to_response('performance/perf_dashboard.html')
 
 
 class Sector_Dashboard(View):
+    """
+    The Class based view to get sector dashboard page requested.
+
+    """
 
     def get(self, request):
+        """
+        Handles the get request
+
+        :param request:
+        :return Http response object:
+        """
+
         return render(request, 'performance/sector_dashboard.html')
 
 
 class Fetch_Inventory_Devices(View):
+    """
+    The Generic Class Based View to fetch the inventory devices with respect to page_type resquested.
+
+    """
 
     def get(self, request, page_type=None):
+        """
+        Handles the get request
+
+        :param request:
+        :param page_type:
+        :return Http response object:
+        """
+
 
         result={
             'success' : 0,
@@ -291,6 +363,13 @@ class Fetch_Inventory_Devices(View):
         return HttpResponse(json.dumps(result))
 
     def get_result(self, page_type, organization):
+        """
+        Generic function to return the result w.r.t the page_type and organization of the current logged in user.
+
+        :param page_type:
+        :param organization:
+        return result
+        """
 
         if page_type == "customer":
             substation_result= self.organization_devices_substations(organization)
@@ -300,7 +379,14 @@ class Fetch_Inventory_Devices(View):
             return basestation_result
 
     def organization_devices_substations(self, organization):
-        #To result back the all the substations from the given organization as an argument.
+        """
+        To result back the all the substations from the respective organization..
+
+        :param organization:
+        :return list of substation
+        """
+
+
         organization_substations= SubStation.objects.filter(device__in = Device.objects.filter(
             is_added_to_nms=1,
             organization= organization.id).values_list('id', flat=True)).values_list('id', 'name', 'alias')
@@ -313,7 +399,13 @@ class Fetch_Inventory_Devices(View):
         return result
 
     def organization_devices_basestations(self, organization):
-        #To result back the all the basestations from the given organization as an argument.
+        """
+        To result back the all the basestation from the respective organization..
+
+        :param organization:
+        :return list of basestation
+        """
+
         sector_configured_on_devices_list= Sector.objects.filter( sector_configured_on__id__in= organization.device_set.\
                 values_list('id', flat=True)).values_list('sector_configured_on').annotate(dcount=Count('base_station'))
 
@@ -329,8 +421,16 @@ class Fetch_Inventory_Devices(View):
 
 
 class Inventory_Device_Status(View):
+    """
+    Class Based Generic view to return a Single Device Status
+
+    """
 
     def get(self, request, page_type, device_id):
+        """
+        Handles the Get Request to return a single device status w.r.t page_type and device id requested.
+
+        """
         result={
             'success' : 0,
             'message' : 'Inventory Device Status Not Fetched Successfully.',
@@ -378,8 +478,19 @@ class Inventory_Device_Status(View):
 
 
 class Inventory_Device_Service_Data_Source(View):
+    """
+    Generic Class based View for to fetch Inventory Device Service Data Source.
 
+    """
     def get(self, request, page_type, device_id):
+        """
+        Handles the get Request w.r.t to the page type and device id requested
+
+        :params request object:
+        :params page_type:
+        :params device_id:
+        :return result
+        """
 
         result={
             'success' : 0,
@@ -442,8 +553,23 @@ class Inventory_Device_Service_Data_Source(View):
 
 
 class Get_Service_Type_Performance_Data(View):
+    """
+    Generic Class based View to Fetch the Performance Data from Data Base.
+
+    """
 
     def get(self, request, page_type, service_name, service_data_source_type, device_id):
+        """
+        Handles the get request to fetch performance data w.r.t to arguments requested.
+
+        :params request object:
+        :params page_type:
+        :params service_name:
+        :params service_data_source_type:
+        :params device_id:
+        :return result
+
+        """
         result={
         'success' : 0,
         'message' : 'Substation Service Not Fetched Successfully.',
@@ -579,12 +705,13 @@ class Get_Service_Type_Performance_Data(View):
 
 def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None, condition=None):
     """
+    The raw query preparation.
 
     :param table_name:
     :param devices:
     :param data_sources:
     :param columns:
-    :return:
+    :return query:
     """
     in_string = lambda x: "'" + str(x) + "'"
     col_string = lambda x: "`" + str(x) + "`"

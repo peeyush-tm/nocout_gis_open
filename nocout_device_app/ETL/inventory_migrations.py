@@ -1,3 +1,13 @@
+"""
+inventory_migration.py
+
+File contains code for migrating the mongodb data to mysql.This File is specific to Inventory services and only migrates the data for inventory
+services.
+
+Mysql has another table inventory status table which keeps the latest data for each device configured on that site.This file also migrates the mongodb data to mysql for this table too.
+
+"""
+
 from configparser import parse_config_obj
 
 
