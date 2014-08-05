@@ -87,9 +87,13 @@
             $("#customer_ptp_tab").attr("data_url",ajax_url_p2p);
             $("#customer_ptp_tab").attr("data_header",'{{ datatable_headers|safe }}');
 
+            var location_array = window.location.href.split("#");
 
-            /*Trigger click event on active tab to load its data*/
-            $("#customer_ptp_tab").trigger('click',true);
+            if(location_array.length == 1) {
+
+                /*Trigger click event on active tab to load its data*/
+                $("#customer_ptp_tab").trigger('click',true);
+            }
 
             // var destroy=false;
             // /*Call createDataTable function of ourDataTableWidget class*/

@@ -122,8 +122,13 @@
             $("#allDeviceListing_tab").attr("data_url",ajax_url_all_listing);
             $("#allDeviceListing_tab").attr("data_header",'{{ datatable_headers_no_nms_actions|safe }}');
 
-            /*Trigger click event on active tab to load its data*/
-            $("#operationalDeviceListing_tab").trigger('click',true);
+            var location_array = window.location.href.split("#");
+
+            if(location_array.length == 1) {
+
+                /*Trigger click event on active tab to load its data*/
+                $("#operationalDeviceListing_tab").trigger('click',true);
+            }
 
             /*Call createDataTable function of ourDataTableWidget class*/
             // var destroy=false;
