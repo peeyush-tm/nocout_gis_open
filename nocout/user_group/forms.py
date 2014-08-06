@@ -6,7 +6,9 @@ from user_profile.models import UserProfile
 
 
 class UserGroupForm(forms.ModelForm):
-
+    """
+    Class Based User Group Model Form required to create and update the User Group.
+    """
     def __init__(self, *args, **kwargs):
         initial = kwargs.setdefault('initial',{})
         if kwargs['instance']:
@@ -46,5 +48,8 @@ class UserGroupForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
+        """
+        Model Form Meta Information.
+        """
         model = UserGroup
         fields = ('name', 'alias', 'parent','organization','users',)

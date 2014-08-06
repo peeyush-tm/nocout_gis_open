@@ -3,6 +3,9 @@ from service.models import Service
 
 
 class ServiceGroup(models.Model):
+    """
+    Service Group Model Columns Declaration.
+    """
     servicegroup_name = models.CharField(max_length=100)
     alias = models.CharField(max_length=100)
     service = models.ManyToManyField(Service, blank=True, null=True)

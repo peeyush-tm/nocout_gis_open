@@ -1,5 +1,5 @@
 /*Global Variables*/
-var earth_that = "",
+var earth_self = "",
 	mapsLibInstance = "",
 	ge = "",
 	plotted_ss_earth = [],
@@ -16,7 +16,6 @@ var earth_that = "",
 /**
  * This class is used to plot the BS & SS on the google earth & performs their functionality.
  * @class earth_devicePlottingLib
- * @method googleEarthClass
  * @uses jQuery
  * @uses Google Earth
  * @uses jQuery UI
@@ -25,24 +24,22 @@ var earth_that = "",
 function googleEarthClass() {
 
 	/*Store the reference of current pointer in a global variable*/
-	earth_that = this;
+	earth_self = this;
 
 	/**
 	 * This function creates google earth on the given domElement
-	 * @class earth_devicePlottingLib
 	 * @method createGoogleEarth
-	 * @param domElement "String", It is the dom element on which google earth is to be created.
+	 * @param domElement {String}, It is the dom element on which google earth is to be created.
 	 */
 	this.createGoogleEarth = function(domElement) {
 
-		google.earth.createInstance(domElement, earth_that.earthInitCallback, earth_that.earthFailureCallback);
+		google.earth.createInstance(domElement, earth_self.earthInitCallback, earth_self.earthFailureCallback);
 	};
 
 	/**
 	 * This function handles the initialization callback of google earth creation function
-	 * @class earth_devicePlottingLib
 	 * @method earthInitCallback
-	 * @param pluginInstance {JSON Object}, It is the JSON object returned from google earth create instance function on successful creation of google earth.
+	 * @param pluginInstance {Object}, It is the JSON object returned from google earth create instance function on successful creation of google earth.
 	 */
 	this.earthInitCallback = function(pluginInstance) {
 				
@@ -65,14 +62,13 @@ function googleEarthClass() {
 		ge.getLayerRoot().enableLayerById(ge.LAYER_ROADS, true);
 
 		/*Call get devices function*/
-		earth_that.getDevicesData_earth();
+		earth_self.getDevicesData_earth();
 	};
 
 	/**
 	 * This function handles the failure callback of google earth creation function
-	 * @class earth_devicePlottingLib
 	 * @method earthFailureCallback
-	 * @param errorCode {JSON Object}, It is the JSON object returned from google earth create instance function when google earth creation was not successful or failed.
+	 * @param errorCode {Object}, It is the JSON object returned from google earth create instance function when google earth creation was not successful or failed.
 	 */
 	this.earthFailureCallback = function(errorCode) {
 		// console.log(errorCode);
@@ -88,8 +84,7 @@ function googleEarthClass() {
 
 	/**
 	 * This function fetch the BS & SS from python API.
-	 * @class earth_devicePlottingLib
-	 * @function getDevicesData_earth
+	 * @method getDevicesData_earth
 	 */
 	this.getDevicesData_earth = function() {
 
@@ -148,16 +143,16 @@ function googleEarthClass() {
 
 								if(appliedFilterLength_earth > 0) {
 									/*If any filter is applied then plot the fetch data as per the filters*/
-									earth_that.applyFilter(appliedFilterObj_earth);
+									earth_self.applyFilter(appliedFilterObj_earth);
 								} else {
 									/*Call the plotDevices_earth to show the markers on the map*/
-									earth_that.plotDevices_earth(devices_earth,"base_station");
+									earth_self.plotDevices_earth(devices_earth,"base_station");
 								}
 
 								/*Call the function after 3 sec.*/
 								setTimeout(function() {
 										
-									earth_that.getDevicesData_earth();
+									earth_self.getDevicesData_earth();
 								},3000);
 							} else {
 								$.gritter.add({
@@ -180,7 +175,7 @@ function googleEarthClass() {
 					            sticky: true
 					        });
 
-							earth_that.recallServer_earth();
+							earth_self.recallServer_earth();
 							/*Hide The loading Icon*/
 							$("#loadingIcon").hide();
 
@@ -192,7 +187,7 @@ function googleEarthClass() {
 
 					} else {
 
-						earth_that.recallServer_earth();
+						earth_self.recallServer_earth();
 						/*Hide The loading Icon*/
 						$("#loadingIcon").hide();
 
@@ -223,10 +218,10 @@ function googleEarthClass() {
 	};
 
 	/**
-     * This function is used to populate the markers on the google earth
-     * @class earth_devicePlottingLib
+     * This function is used to populate the BS & SS on the google earth
      * @method plotDevices_earth
-     * @param devicesList [JSON Objet Array] It is the devies object array
+     * @param devicesList {Object Array}, It is the devices object array
+     * @uses gmap_devicePlottingLib
 	 */
 	this.plotDevices_earth = function(devicesList,station_type) {
 
@@ -345,7 +340,7 @@ function googleEarthClass() {
 					plotted_ss_earth = [];
 					plotterLinks_earth = [];
 
-					earth_that.plotSubStation_earth(infoObj);
+					earth_self.plotSubStation_earth(infoObj);
 				}
 			});
 
@@ -372,7 +367,7 @@ function googleEarthClass() {
 
 						var azimuth = sector.azimuth_angle;
 						var beam_width = sector.beam_width;
-						var sector_color = earth_that.makeRgbaObject(sector.color);
+						var sector_color = earth_self.makeRgbaObject(sector.color);
 						var sectorInfo = sector.info;
 						var childSS = JSON.stringify(sector.sub_station);
 						var device_technology = $.trim(resultantMarkers[i].data.technology);
@@ -381,7 +376,7 @@ function googleEarthClass() {
 						/*Call createSectorData function to get the points array to plot the sector on google earth.*/
 						mapsLibInstance.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
 							/*Plot sector on google earth with the retrived points*/
-							earth_that.plotSector_earth(lat,lon,pointsArray,sectorInfo,sector_color,childSS,device_technology);
+							earth_self.plotSector_earth(lat,lon,pointsArray,sectorInfo,sector_color,childSS,device_technology);
 						});
 		    		});
 
@@ -448,7 +443,7 @@ function googleEarthClass() {
 							var bs_info = resultantMarkers[i].data.param.base_station;
 							var ss_info = ssDataObj.data.param.sub_station;
 
-							var linkLinePlacemark = earth_that.createLink_earth(startEndObj,linkColor,bs_info,ss_info);
+							var linkLinePlacemark = earth_self.createLink_earth(startEndObj,linkColor,bs_info,ss_info);
 						}
 					}/*Has sub-station condition ends*/
 				}
@@ -472,7 +467,7 @@ function googleEarthClass() {
 					var bs_info = devicesList.info;
 					var ss_info = resultantMarkers[i].data.param.sub_station;
 
-					var linkLinePlacemark = earth_that.createLink_earth(startEndObj,linkColor,bs_info,ss_info);
+					var linkLinePlacemark = earth_self.createLink_earth(startEndObj,linkColor,bs_info,ss_info);
 
 					/*Push the plotted line to link line array*/
 					plotterLinks_earth.push(linkLinePlacemark);
@@ -486,9 +481,8 @@ function googleEarthClass() {
 
 	/**
 	 * This function plots all the sub-station in given sectors object array.
-	 * @class earth_devicePlottingLib
 	 * @method plotSubStation_earth.
-	 * @param stationSectorObject {JSON Objet} It contains sector object in which SS are present.
+	 * @param stationSectorObject {Object} It contains sector object in which SS are present.
 	 */
 	this.plotSubStation_earth = function(stationSectorObject) {
 
@@ -501,7 +495,7 @@ function googleEarthClass() {
 			// stationSectorObject["info"] = stationSectorObject["bs_info"];
 
 			// /*Call plotDevices_earth to plot the give SS*/
-			// earth_that.plotDevices_earth(stationSectorObject,"sub_station");
+			// earth_self.plotDevices_earth(stationSectorObject,"sub_station");
 
 			var sector = stationSectorObject.sectorsDataset;
 
@@ -516,7 +510,7 @@ function googleEarthClass() {
 
 				var azimuth = sector[i].azimuth_angle;
 				var beam_width = sector[i].beam_width;
-				var sector_color = earth_that.makeRgbaObject(sector[i].color);
+				var sector_color = earth_self.makeRgbaObject(sector[i].color);
 				var sectorInfo = sector[i].info;
 				var ssList = sector[i].sub_station;
 				var orientation = $.trim(sector[i].orientation);				
@@ -533,7 +527,7 @@ function googleEarthClass() {
 					if(ssList.length > 0) {
 
 						infoData["ssList"] = ssList;
-						earth_that.plotDevices_earth(infoData,"sub_station");
+						earth_self.plotDevices_earth(infoData,"sub_station");
 					}
 				});
 			}
@@ -542,13 +536,12 @@ function googleEarthClass() {
 
 	/**
 	 * This function create a line between two points
-	 * @class earth_devicePlottingLib
 	 * @method createLink_earth.
-	 * @param startEndObj {JSON Object}, It contains the start & end points json object.
-	 * @param linkColor "String", It contains the color for link line.
-	 * @param bs_info {JSON Object}, It contains the start point information json object.
-	 * @param ss_info {JSON Object}, It contains the end point information json object.
-	 * @return lineStringPlacemark {JSON Object}, It contains the google earth line Placemark object
+	 * @param startEndObj {Object}, It contains the start & end points json object.
+	 * @param linkColor {String}, It contains the color for link line.
+	 * @param bs_info {Object}, It contains the start point information json object.
+	 * @param ss_info {Object}, It contains the end point information json object.
+	 * @return {Object} lineStringPlacemark, It contains the google earth line Placemark object
 	 */
 	this.createLink_earth = function(startEndObj,linkColor,bs_info,ss_info) {
 
@@ -609,7 +602,7 @@ function googleEarthClass() {
 		lineStyle.setWidth(2);
 
 		/*Color for the link line*/
-		var link_color_obj = earth_that.makeRgbaObject(linkColor);
+		var link_color_obj = earth_self.makeRgbaObject(linkColor);
 
 		lineStyle.getColor().setA(200);
 		lineStyle.getColor().setB((+link_color_obj.b));
@@ -624,15 +617,14 @@ function googleEarthClass() {
 
 	/**
 	 * This function plot the sector for given lat-lon points
-	 * @class earth_devicePlottingLib
 	 * @method plotSector_earth.
-	 * @param Lat "Number", It contains lattitude of any point.
-	 * @param Lng "Number", It contains longitude of any point.
-	 * @param pointsArray [Array], It contains the points lat-lon object array.
-	 * @param sectorInfo {JSON Object Array}, It contains the information about the sector which are shown in info window.
-	 * @param bgColor {JSON Object}, It contains the RGBA format color code JSON object.
-	 * @param childSS [Object Array], It contains all the sub-station info for the given sector
-	 * @param device_technology "String", It contains the base station device technology
+	 * @param Lat {Number}, It contains lattitude of any point.
+	 * @param Lng {Number}, It contains longitude of any point.
+	 * @param pointsArray {Array}, It contains the points lat-lon object array.
+	 * @param sectorInfo {Object Array}, It contains the information about the sector which are shown in info window.
+	 * @param bgColor {Object}, It contains the RGBA format color code JSON object.
+	 * @param childSS {Object Array}, It contains all the sub-station info for the given sector
+	 * @param device_technology {String}, It contains the base station device technology
 	 */
 	this.plotSector_earth = function(lat,lng,pointsArray,sectorInfo,bgColor,childSS,device_technology) {
 
@@ -723,16 +715,15 @@ function googleEarthClass() {
 				plotted_ss_earth = [];
 				plotterLinks_earth = [];
 
-				earth_that.plotDevices_earth(infoObject,"sub_station");
+				earth_self.plotDevices_earth(infoObject,"sub_station");
 			}
 		});
 	};
 
 	/**
-	 * This function make a r,g,b,a color object from rgba color string
-	 * @class earth_devicePlottingLib
+	 * This function make "r,g,b,a" color object from rgba color string
 	 * @method makeRgbaObject
-	 * @param color "String", It contains color in rgba format(string).
+	 * @param color {String}, It contains color in rgba format(string).
 	 */
 	this.makeRgbaObject = function(color) {
 		var colorObject = {};
@@ -747,9 +738,8 @@ function googleEarthClass() {
 
 	/**
 	 * This function filters the BS data from devices object as per the applied rule
-	 * @class earth_devicePlottingLib
 	 * @method applyFilter_earth
-	 * @param filtersArray [JSON Array] It is an object array of filters with keys
+	 * @param filtersArray {Object Array} It is an object array of filters with keys
 	 */
 	this.applyFilter_earth = function(filtersArray) {
 
@@ -836,20 +826,19 @@ function googleEarthClass() {
 	 		} else {
 
 				/*Reset the markers, polyline & filters*/
-	 			earth_that.clearEarthElements();
+	 			earth_self.clearEarthElements();
 
 				masterMarkersObj = [];
 				slaveMarkersObj = [];
 
 				/*Populate the map with the filtered markers*/
-	 			earth_that.plotDevices_earth(filteredData,"base_station");
+	 			earth_self.plotDevices_earth(filteredData,"base_station");
 	 		}	 		
 	 	}	
 	};
 
 	/**
      * This function resets the global variables & again call the api calling function after given timeout i.e. 5 minutes
-     * @class earth_devicePlottingLib
      * @method recallServer_earth
      */
     this.recallServer_earth = function() {
@@ -870,20 +859,19 @@ function googleEarthClass() {
 			$("#resetFilters").button("loading");
 
 			/*Clear all the elements from google earth*/
-			earth_that.clearEarthElements();
+			earth_self.clearEarthElements();
 
 			/*Reset Global Variables*/
-			earth_that.resetVariables_earth();
+			earth_self.resetVariables_earth();
 			
 			/*Recall the API*/
-			earth_that.getDevicesData_earth();
+			earth_self.getDevicesData_earth();
 
 		},300000);
     };
 
     /**
      * This function will clear all the elements from google earth
-     * @class earth_devicePlottingLib
      * @method clearEarthElements
      */
     this.clearEarthElements = function() {
@@ -898,7 +886,6 @@ function googleEarthClass() {
 
     /**
      * This function will clear all the elements from google earth
-     * @class earth_devicePlottingLib
      * @method resetVariables_earth
      */
     this.resetVariables_earth = function() {

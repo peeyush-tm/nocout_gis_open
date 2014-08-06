@@ -15,10 +15,16 @@ from django.db.models import Q
 
 
 class UserStatusList(ListView):
+    """
+    Class Based View to list the User Status of logged in.
+    """
     model = UserProfile
     template_name = 'session_management/users_status_list.html'
 
     def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
         context = super(UserStatusList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'username', 'sTitle': 'Username', 'sWidth': 'null', },
@@ -35,11 +41,20 @@ class UserStatusList(ListView):
 
 
 class UserStatusTable(BaseDatatableView):
+    """
+    Class based View to render User Status Data table.
+    """
     model = UserProfile
     columns = ['username', 'first_name', 'last_name', 'role__role_name']
     order_columns = ['username', 'first_name', 'role__role_name']
 
     def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+        """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             result_list=list()
@@ -48,6 +63,7 @@ class UserStatusTable(BaseDatatableView):
                 #Adding the logged_in_status key to search in the dictionary.
                 dictionary['logged_in_status']= 'YES' if dictionary['id'] in logged_in_users_ids else 'NO'
                 for key in dictionary.keys():
+                    if key=='is_active': continue
                     if sSearch.lower() in str(dictionary[key]).lower():
                         result_list.append(dictionary)
                         dictionary.pop('logged_in_status')
@@ -59,15 +75,25 @@ class UserStatusTable(BaseDatatableView):
         return qs
 
     def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        organization_descendants_ids= list(self.request.user.userprofile.organization.get_descendants(include_self=True)
+        logged_in_user= self.request.user.userprofile
+        organization_descendants_ids= list(logged_in_user.organization.get_descendants(include_self=True)
                                     .values_list('id', flat=True))
 
-        return UserProfile.objects.filter(organization__in = organization_descendants_ids, is_deleted=0)\
-            .values(*self.columns+['id'])
+        return UserProfile.objects.exclude(id= logged_in_user.id).filter(organization__in = \
+               organization_descendants_ids, is_deleted=0).values(*self.columns+['id', 'is_active'])
 
     def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+        """
         if qs:
             sanity_dicts_list = [
                 OrderedDict({'dict_final_key': 'full_name', 'dict_key1': 'first_name', 'dict_key2': 'last_name'})]
@@ -84,6 +110,12 @@ class UserStatusTable(BaseDatatableView):
         return qs
 
     def ordering(self, qs):
+        """
+        Sort the qs with respect to the columns required in the queryset,
+        If Nothing is specified then by default the ordering will be done on the basis of first column
+        in the data table.
+        """
+
         request = self.request
         # Number of columns that are used in sorting
         try:
@@ -118,6 +150,9 @@ class UserStatusTable(BaseDatatableView):
         return qs
 
     def get_context_data(self, *args, **kwargs):
+        """
+        The main function call to fetch, search, ordering , prepare and display the data on the data table.
+        """
         request = self.request
         self.initialize(*args, **kwargs)
 
@@ -149,6 +184,12 @@ class UserStatusTable(BaseDatatableView):
 
 
 def dialog_action(request):
+    """
+    The Action of the Dialog box appears on the screen.
+    If the action is continue then the user will get logged off from the current logged in session
+    and the same session key will be used to login the user.
+
+    """
     url = request.POST.get('url', '/home/')
     if request.POST.get('action') == 'continue':
         session_key = request.session.session_key
@@ -218,8 +259,12 @@ def change_user_status(request):
 
 
 def dialog_for_page_refresh(request):
+    """
+        The Ajax request to refresh the page is user status is changed to not active.
+        or the user session key does not exist any more in the Visitor table.
+    """
     dialog_confirmation = False
-    if not request.user.is_active:
+    if not request.user.is_active or request.user.is_anonymous():
         dialog_confirmation = True
 
     result = {
@@ -237,7 +282,11 @@ def dialog_for_page_refresh(request):
 
 
 def dialog_expired_logout_user(request):
-    logout(request)
+    """
+    To logout the user if the dialog appearing with the timestamp expires.
+    """
+    if not request.user.is_anonymous():
+        logout(request)
     result = {
         "success": 1,  # 0 - fail, 1 - success, 2 - exception
         "message": "Success/Fail message.",
@@ -252,6 +301,9 @@ def dialog_expired_logout_user(request):
 
 
 def logout_user(request):
+    """
+    request to logout the user from the system.
+    """
     user_name = request.POST.get('user_name')
     user = UserProfile.objects.get(username=user_name)
     Session.objects.filter(session_key=user.visitor.session_key).delete()

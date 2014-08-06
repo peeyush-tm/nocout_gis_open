@@ -7,6 +7,9 @@ logger=logging.getLogger(__name__)
 
 
 def locate_devices(request , device_name = "default_device_name"):
+    """
+    Returns the Context Variable to GIS Map page.
+    """
     template_data = { 'username' : request.user.username,
                     'device_name' : device_name,
                     'get_filter_api': get_url(request, 'GET'),
@@ -20,6 +23,9 @@ def locate_devices(request , device_name = "default_device_name"):
 
 def load_google_earth(request):
 
+    """
+    Returns the Context Variable for google earth.
+    """
     template_data = { 'username' : request.user.username,
                       'get_filter_api': get_url(request, 'GET'),
                       'set_filter_api': get_url(request, 'POST')
@@ -31,6 +37,9 @@ def load_google_earth(request):
 
 
 def get_url(req, method):
+    """
+    Return Url w.r.t to the request type.
+    """
     url = None
     if method == 'GET':
         url = "/gis/get_filters/"

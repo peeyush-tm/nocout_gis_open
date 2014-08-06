@@ -85,7 +85,7 @@
                         label: "YES",
                         className: "btn-primary",
                         callback: function() {
-                            username=$(ele).closest('tr').children('td').first().text();
+                            username= $(ele).closest('tr').children('td').first().text();
                             $.ajax({
                                 url:"/sm/logout_user/",
                                 type:"POST",
@@ -93,7 +93,7 @@
                                 dataType:"json",
                                 success: function(data){
                                     if(data.success) {
-                                        $(ele).closest('tr').children('td:nth-child(5)').text("NO");
+                                        $(ele).closest('tr').children('td:nth-child(4)').text("NO");
                                         $(ele).closest('td').children('h3:nth-child(2)').removeClass('fa-sign-out')
                                     }
                                 }//success ends

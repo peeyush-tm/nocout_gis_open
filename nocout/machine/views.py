@@ -16,10 +16,17 @@ from django.db.models import Q
 
 #************************************** Machine *****************************************
 class MachineList(ListView):
+    """
+    Class Based View to render Machine List Page.
+    """
+
     model = Machine
     template_name = 'machine/machines_list.html'
 
     def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
         context=super(MachineList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData':'name',                     'sTitle' : 'Name',                 'sWidth':'null',},
@@ -33,11 +40,21 @@ class MachineList(ListView):
         return context
 
 class MachineListingTable(BaseDatatableView):
+    """
+    Class based View to render Machine Data table.
+    """
     model = Machine
     columns = ['name', 'alias', 'machine_ip',  'agent_port', 'description']
     order_columns = ['name', 'alias', 'machine_ip',  'agent_port', 'description']
 
     def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return qs:
+
+        """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             query=[]
@@ -52,11 +69,21 @@ class MachineListingTable(BaseDatatableView):
         return qs
 
     def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         return Machine.objects.values(*self.columns+['id'])
 
     def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        :return qs
+
+        """
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
         for dct in qs:
@@ -65,6 +92,10 @@ class MachineListingTable(BaseDatatableView):
         return qs
 
     def get_context_data(self, *args, **kwargs):
+        """
+        The main method call to fetch, search, ordering , prepare and display the data on the data table.
+
+        """
         request = self.request
         self.initialize(*args, **kwargs)
 
@@ -94,11 +125,17 @@ class MachineListingTable(BaseDatatableView):
         return ret
 
 class MachineDetail(DetailView):
+    """
+    Class based view to render the machine detail.
+    """
     model = Machine
     template_name = 'machine/machine_detail.html'
 
 
 class MachineCreate(CreateView):
+    """
+    Class based view to create new machine.
+    """
     template_name = 'machine/machine_new.html'
     model = Machine
     form_class = MachineForm
@@ -106,15 +143,25 @@ class MachineCreate(CreateView):
 
     @method_decorator(permission_required('machine.add_machine', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
         return super(MachineCreate, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
+        """
+        Submit the form and to log the user activity.
+        """
+
         self.object=form.save()
         action.send(self.request.user, verb='Created', action_object = self.object)
         return HttpResponseRedirect(MachineCreate.success_url)
 
 
 class MachineUpdate(UpdateView):
+    """
+    Class based view to update machine.
+    """
     template_name = 'machine/machine_update.html'
     model = Machine
     form_class = MachineForm
@@ -122,10 +169,16 @@ class MachineUpdate(UpdateView):
 
     @method_decorator(permission_required('machine.change_machine', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
         return super(MachineUpdate, self).dispatch(*args, **kwargs)
 
 
     def form_valid(self, form):
+        """
+        Submit the form and to log the user activity.
+        """
         initial_field_dict = { field : form.initial[field] for field in form.initial.keys() }
         cleaned_data_field_dict = { field : form.cleaned_data[field]  for field in form.cleaned_data.keys() }
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
@@ -142,15 +195,25 @@ class MachineUpdate(UpdateView):
         return HttpResponseRedirect( MachineUpdate.success_url )
 
 class MachineDelete(DeleteView):
+    """
+    Class based View to delete the machine
+    """
     model = Machine
     template_name = 'machine/machine_delete.html'
     success_url = reverse_lazy('machines_list')
 
     @method_decorator(permission_required('machine.delete_machine', raise_exception=True))
     def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
+
         return super(MachineDelete, self).dispatch(*args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
+        """
+        overriding the delete method to log the user activity.
+        """
         action.send(request.user, verb='deleting machine: %s'%(self.get_object().name))
         return super(MachineDelete, self).delete(request, *args, **kwargs)
 

@@ -1,28 +1,61 @@
 """
 network_status_tables_migration.py
-==========================
+=================================
 
-Script to bulk insert current status data from teramatrix pollers to mysql in 5 min interval for ping services
+Script to bulk insert current status data from
+Teramatrix pollers to mysql in 5 min interval for ping services.
+
+Current status data means for each host only most latest entry would
+be kept in the database, which describe the status (Up/Down) for that host,
+at any given time.
 
 """
 
 
-import os
 import MySQLdb
-import pymongo
-from datetime import datetime, timedelta
-from rrd_migration import mongo_conn, db_port
+from datetime import datetime
+from rrd_migration import mongo_conn
 from mongo_functions import get_latest_entry
 import subprocess
 import socket
 
 
 def main(**configs):
+    """
+    The entry point for the all the functions in this file,
+    calls all the appropriate functions in the file
+
+    Kwargs:
+        configs (dict): A python dictionary containing object key identifiers
+	as configuration values, read from main configuration file config.ini
+    Example:
+        {
+	"site": "nocout_gis_slave",
+	"host": "localhost",
+	"user": "root",
+	"ip": "localhost",
+	"sql_passwd": "admin",
+	"nosql_passwd": "none",
+	"port": 27019 # The port being used by mongodb process
+	"network_status_tables": {
+	    "nosql_db": "nocout" # Mongodb database name
+	    "sql_db": "nocout_dev" # Sql database name
+	    "scripit": "network_status_tables_migration" # Script which would do all the migrations
+	    "table_name": "performance_networkstatus" # Sql table name
+
+	    }
+	}
+    """
     data_values = []
     values_list = []
     docs = []
     db = mysql_conn(configs=configs)
-    # Get the time for latest entry in mysql
+    """
+    start_time variable would store the latest time uptill which mysql
+    table has an entry, so the data having time stamp greater than start_time
+    would be imported to mysql, only, and this way mysql would not store
+    duplicate data.
+    """
     start_time = get_latest_entry(
         db_type='mysql',
         db=db,
@@ -31,27 +64,11 @@ def main(**configs):
     )
 
     end_time = datetime.now()
-
+    # Get all the entries from mongodb having timestamp greater than start_time
     docs = read_data(start_time, end_time, configs=configs)
     for doc in docs:
         values_list = build_data(doc)
         data_values.extend(values_list)
-    field_names = [
-        'device_name',
-        'service_name',
-        'machine_name',
-        'site_name',
-        'data_source',
-        'current_value',
-        'min_value',
-        'max_value',
-        'avg_value',
-        'warning_threshold',
-        'critical_threshold',
-        'sys_timestamp',
-        'check_timestamp',
-	'ip_address'
-    ]
     if data_values:
     	insert_data(configs.get('table_name'), data_values, configs=configs)
     	print "Data inserted into my mysql db"
@@ -59,12 +76,21 @@ def main(**configs):
     	print "No data in mongo db in this time frame for table %s" % (configs.get('table_name'))
 
 def read_data(start_time, end_time, **kwargs):
+    """
+    Function to read data from mongodb
+
+    Args:
+        start_time (int): Start time for the entries to be fetched
+	end_time (int): End time for the entries to be fetched
+
+    Kwargs:
+	kwargs (dict): Store mongodb connection variables 
+    """
 
     db = None
-    port = None
-    #end_time = datetime(2014, 6, 26, 18, 30)
+    docs = []
     #start_time = end_time - timedelta(minutes=10)
-    docs = [] 
+    # Connection to mongodb database, `db` is a python dictionary object 
     db = mongo_conn(
         host=kwargs.get('configs').get('host'),
         port=int(kwargs.get('configs').get('port')),
@@ -82,6 +108,16 @@ def read_data(start_time, end_time, **kwargs):
     return docs
 
 def build_data(doc):
+    """
+    Function to make tuples out of python dict,
+    data would be stored in mysql db in the form of python tuples
+
+    Args:
+	doc (dict): Single mongodb entry
+
+    Returns:
+        A list of tuples, one tuple corresponds to a single row in mysql db
+    """
     values_list = []
     #uuid = get_machineid()
     machine_name = get_machine_name()
@@ -113,6 +149,15 @@ def build_data(doc):
     return values_list
 
 def insert_data(table, data_values, **kwargs):
+	"""
+        Function to bulk insert data into mysqldb
+
+	Args:
+	    table (str): Mysql table to which to be inserted
+	    data_value (list): List of data tuples
+
+	Kwargs (dict): Dictionary to hold connection variables
+	"""
 	db = mysql_conn(configs=kwargs.get('configs'))
 	query = "SELECT * FROM %s " % table +\
                 "WHERE `device_name`='%s' AND `site_name`='%s' AND `service_name`='%s'" %(str(data_values[0][0]),
@@ -160,6 +205,16 @@ def insert_data(table, data_values, **kwargs):
     		cursor.close()
 
 def get_epoch_time(datetime_obj):
+    """
+    Function to convert datetime_obj into unix
+    epoch time
+
+    Args:
+        datetime_obj (datetime): Python datetime object
+
+    Returns:
+        Unix epoch time in integer
+    """
     # Get India times (GMT+5.30)
     utc_time = datetime(1970, 1,1, 5, 30)
     if isinstance(datetime_obj, datetime):
@@ -198,6 +253,10 @@ def get_machineid():
 
 
 def get_machine_name(machine_name=None):
+    """
+    Function get the fully qualified domain name of the machine
+    on which Python interpreter is executing
+    """
     try:
         machine_name = socket.gethostname()
     except Exception, e:

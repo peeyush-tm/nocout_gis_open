@@ -1,3 +1,13 @@
+"""
+mongo_functions.py
+=======================
+
+This file contains the code for mongodb related functions like mongodb insert,mongodb update,mongo_db connection
+
+"""
+
+
+
 import pymongo
 from datetime import datetime
 import rrd_migration
@@ -6,7 +16,13 @@ from operator import itemgetter
 
 def mongo_conn(**kwargs):
 	"""
-    	Mongodb connection object
+    	Mongodb connection function
+	Args: Multiple arguments for connection
+	Kwargs: None
+	Return : Database object
+	
+	Raise:
+		Exception : PymongoError
     	"""
     	DB = None
     	try:
@@ -21,6 +37,15 @@ def mongo_conn(**kwargs):
 
 
 def mongo_db_conn(site_name,db_name):
+	"""
+    	Mongodb connection main function
+	Args: site_name (poller machine site name)
+	Kwargs: db_name (database name)
+	Return : database object
+	
+	Raise:
+		Exception : PymongoError
+    	"""
 	db =None
         port = rrd_migration.db_port(site_name)
 
@@ -33,6 +58,15 @@ def mongo_db_conn(site_name,db_name):
         return db
 
 def mongo_db_insert(db,event_dict,flag):
+	"""
+    	Mongodb insertion function
+	Args: database object
+	Kwargs: event_dict (records to be updated),flag (tables to be changed)
+	Return : success/failure
+	
+	Raise:
+		Exception : None
+    	"""
         success = 0
         failure = 1
         if db:
@@ -58,6 +92,15 @@ def mongo_db_insert(db,event_dict,flag):
                 return failure
 
 def mongo_db_update(db,matching_criteria,event_dict,flag):
+	"""
+    	Mongodb updation function
+	Args: database object
+	Kwargs: matching criteria (on which we have to update db),event_dict (records to be updated),flag(which tables to be changed)
+	Return : success/failure
+	
+	Raise:
+		Exception : None
+    	"""
         success = 0
         failure = 1
         if db:
@@ -82,6 +125,15 @@ def mongo_db_update(db,matching_criteria,event_dict,flag):
 
 
 def get_latest_entry(db_type=None, db=None, site=None,table_name=None, host=None, serv='_HOST_', ds='rta'):
+    """
+    	Mongodb latest entry from mysql or mongodb
+	Args: database object type
+	Kwargs: db (db object) site (site_name),table_name (table in db),host (host_name),serv (service name),ds (data source)
+	Return : latest_time
+	
+	Raise:
+		Exception : IndexError
+    """
     latest_time = None
     if db_type == 'mongodb':
         if serv == "ping":

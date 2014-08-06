@@ -3,6 +3,9 @@ from user_profile.models import UserProfile
 from nocout.widgets import MultipleToSingleSelectionWidget
 
 class UserForm(forms.ModelForm):
+    """
+    Class Based User Form required to create, update and update my profile of the user.
+    """
 
     first_name = forms.CharField(required=True)
     email = forms.CharField(label='Email', required=True)
@@ -53,6 +56,10 @@ class UserForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
+        """
+        Meta Information required to generate model form, and to mention the fields, widgets and fieldsets
+        information required to render for the form.
+        """
         model = UserProfile
         fields = (
             'username', 'first_name', 'last_name', 'email', 'role', 'parent', 'designation', 'company',

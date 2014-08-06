@@ -8,10 +8,17 @@ from user_profile.models import UserProfile
 
 
 class ActionList(ListView):
+    """
+    Class Based View for the User Log Activity
+    """
     model = Action
     template_name = 'activity_stream/actions_logs.html'
 
     def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+
+        """
         context=super(ActionList, self).get_context_data(**kwargs)
         context['datatable_headers'] = json.dumps([ {'mData':'actor', 'sTitle' : 'User','sWidth':'15%','bSortable': False},
                                                     {'mData':'__unicode__', 'sTitle' : 'Actions','bSortable': False},
@@ -20,11 +27,21 @@ class ActionList(ListView):
 
 
 class ActionListingTable(BaseDatatableView):
+    """
+    A generic class based view for the user log activity data table rendering.
+
+    """
     model = Action
     columns = [ 'timestamp']
     order_columns = ['-timestamp']
 
     def filter_queryset(self, qs):
+        """
+        The filtering of the queryset with respect to the search keyword entered.
+
+        :param qs:
+        :return result_list:
+        """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             actor_objects_ids_list = UserProfile.objects.filter(username__icontains=sSearch).values_list('id', flat=True)
@@ -32,11 +49,22 @@ class ActionListingTable(BaseDatatableView):
         return qs
 
     def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+
+        """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         return Action.objects.values(*self.columns+['id'])
 
     def prepare_results(self, qs):
+        """
+        Preparing the final result after fetching from the data base to render on the data table.
+
+        :param qs:
+        return list:
+
+        """
 
         if qs:
             for dct in qs:
@@ -51,6 +79,10 @@ class ActionListingTable(BaseDatatableView):
         return []
 
     def get_context_data(self, *args, **kwargs):
+        """
+        The maine function call to fetch, search, ordering , prepare and display the data on the data table.
+
+        """
         request = self.request
         self.initialize(*args, **kwargs)
 

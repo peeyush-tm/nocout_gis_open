@@ -3,6 +3,9 @@ from django.db import models
 
 # performance tables
 class PerformanceMetric(models.Model):
+    """
+    Performance Metric Table columns declared
+    """
     device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
@@ -24,6 +27,9 @@ class PerformanceMetric(models.Model):
 
 
 class PerformanceNetwork(models.Model):
+    """
+    Performance Network Table columns declared
+    """
     device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
@@ -45,6 +51,9 @@ class PerformanceNetwork(models.Model):
 
 
 class PerformanceService(models.Model):
+    """
+    Performance Service Table columns declared
+    """
     device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
@@ -66,6 +75,9 @@ class PerformanceService(models.Model):
 
 
 class PerformanceStatus(models.Model):
+    """
+    Performance Status Table columns declared
+    """
     device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
@@ -87,6 +99,9 @@ class PerformanceStatus(models.Model):
 
 
 class PerformanceMachine(models.Model):
+    """
+    Performance Machine Table columns declared
+    """
     device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
@@ -108,6 +123,9 @@ class PerformanceMachine(models.Model):
 
 
 class PerformanceInventory(models.Model):
+    """
+    Performance Inventory Table columns declared
+    """
     device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
@@ -130,6 +148,9 @@ class PerformanceInventory(models.Model):
 
 # events tables
 class EventNetwork(models.Model):
+    """
+    Event Network Table columns declared
+    """
     device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
@@ -152,6 +173,9 @@ class EventNetwork(models.Model):
 
 
 class EventService(models.Model):
+    """
+    Event Service Table columns declared
+    """
     device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
@@ -174,6 +198,9 @@ class EventService(models.Model):
 
 
 class EventStatus(models.Model):
+    """
+    Event Status Table columns declared
+    """
     device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
@@ -196,6 +223,9 @@ class EventStatus(models.Model):
 
 
 class EventMachine(models.Model):
+    """
+    Event Machine Table columns declared
+    """
     device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
@@ -218,6 +248,9 @@ class EventMachine(models.Model):
 
 
 class EventInventory(models.Model):
+    """
+    Event Inventory Table columns declared
+    """
     device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
@@ -240,6 +273,9 @@ class EventInventory(models.Model):
 
 
 class NetworkStatus(models.Model):
+    """
+    Network Status Table columns declared
+    """
     device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
@@ -261,6 +297,9 @@ class NetworkStatus(models.Model):
 
 
 class ServiceStatus(models.Model):
+    """
+    Service Status Table columns declared
+    """
     device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
@@ -282,6 +321,9 @@ class ServiceStatus(models.Model):
 
 
 class MachineStatus(models.Model):
+    """
+    Machine Status Table columns declared
+    """
     device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
@@ -303,6 +345,9 @@ class MachineStatus(models.Model):
 
 
 class InventoryStatus(models.Model):
+    """
+    Inventory Status Table columns declared
+    """
     device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
@@ -324,6 +369,9 @@ class InventoryStatus(models.Model):
 
 
 class Status(models.Model):
+    """
+    Status Table columns declared
+    """
     device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
     service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
     machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)

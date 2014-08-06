@@ -7,6 +7,9 @@ from mptt.models import MPTTModel, TreeForeignKey
 
 
 class Organization(MPTTModel, models.Model):
+    """
+    Organization Model columns declaration.
+    """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     city = models.CharField('City', max_length=200, null=True, blank=True)
@@ -16,5 +19,8 @@ class Organization(MPTTModel, models.Model):
     description = models.TextField('Description', null=True, blank=True)
 
     def __str__(self):
+        """
+        Organization object representation.
+        """
         return self.name
 

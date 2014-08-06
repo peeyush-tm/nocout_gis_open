@@ -17,6 +17,10 @@ except ImportError:
     now = datetime.datetime.now
 
 class ActivityStreamAction(Action):
+    """
+    Inheriting the Action model for further extension.
+
+    """
 
     # def __unicode__(self):
     #     ctx = {
