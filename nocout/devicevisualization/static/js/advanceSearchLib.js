@@ -67,7 +67,7 @@ function advanceSearchClass() {
 
 					filtersInfoArray = result.data.objects;
 
-					templateData += '<div id="'+domElemet+'" class="col-md-12 advanceFiltersContainer">';
+					templateData += '<div class="iframe-container"><div class="content-container"><div id="'+domElemet+'" class="col-md-12 advanceFiltersContainer">';
 					templateData += '<form id="'+domElemet+'_form"><div class="form-group form-horizontal">';
 
 					formElements = "";
@@ -175,7 +175,7 @@ function advanceSearchClass() {
 
 					templateData += elementsArray.join('');
 					templateData += '</div><div class="clearfix"></div></form>';
-					templateData += '<div class="clearfix"></div></div>';					
+					templateData += '<div class="clearfix"></div></div></div><iframe class="iframeshim" frameborder="0" scrolling="no"></iframe></div>';					
 
 					/*Call the bootbox to show the popup with the fetched filters*/
 					bootbox.dialog({
@@ -283,6 +283,8 @@ function advanceSearchClass() {
 							}
 						}
 					});
+
+					$(".modal-footer").append('<iframe class="iframeshim" frameborder="0" scrolling="no"></iframe>');
 						
 					/*Initialize the select2*/
 					$(".advanceFiltersContainer select").select2();
