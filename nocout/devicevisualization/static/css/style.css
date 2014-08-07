@@ -299,3 +299,12 @@
     padding-left: 0px;
     padding-right: 0px;   
 }
+
+
+/*Tools Panel CSS*/
+#tools .panel-body ul li {
+    margin-bottom: 10px;
+}
+#tools .panel-body ul li button {
+    width: 120px;
+}
