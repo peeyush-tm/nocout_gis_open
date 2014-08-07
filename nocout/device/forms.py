@@ -11,10 +11,15 @@ from functools import partial
 from django.forms.util import ErrorList
 
 import logging
-logger=logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 # *************************************** Device Form ***********************************************
+
+
 class DeviceForm(forms.ModelForm):
+    """
+    Rendering form for device
+    """
     device_technology = IntReturnModelChoiceField(queryset=DeviceTechnology.objects.all(),
                                                   required=True)
     device_vendor = IntReturnModelChoiceField(queryset=DeviceVendor.objects.all(),
@@ -113,8 +118,10 @@ class DeviceForm(forms.ModelForm):
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
 
-
     class Meta:
+        """
+        Meta Information
+        """
         model = Device
         exclude = ['is_deleted', 'is_added_to_nms', 'is_monitored_on_nms']
         widgets = {
@@ -122,18 +129,27 @@ class DeviceForm(forms.ModelForm):
         }
 
     def clean_latitude(self):
+        """
+        Latitude field validations
+        """
         latitude = self.data['latitude']
-        if latitude!='' and len(latitude)>2 and latitude[2] != '.':
+        if latitude != '' and len(latitude)>2 and latitude[2] != '.':
             raise forms.ValidationError("Please enter correct value for latitude.")
         return self.cleaned_data.get('latitude')
 
     def clean_longitude(self):
+        """
+        Longitude field validation
+        """
         longitude = self.data['longitude']
-        if longitude!='' and len(longitude)>2 and longitude[2] != '.':
+        if longitude != '' and len(longitude)>2 and longitude[2] != '.':
             raise forms.ValidationError("Please enter correct value for longitude.")
         return self.cleaned_data.get('longitude')
 
     def clean_device_name(self):
+        """
+        Device name unique validation
+        """
         device_name = self.cleaned_data['device_name']
         devices = Device.objects.filter(device_name=device_name)
         try:
@@ -146,6 +162,9 @@ class DeviceForm(forms.ModelForm):
         return device_name
 
     def clean_ip_address(self):
+        """
+        IP Address unique validation
+        """
         ip_address = self.cleaned_data['ip_address']
         devices = Device.objects.filter(ip_address=ip_address)
         try:
@@ -158,20 +177,24 @@ class DeviceForm(forms.ModelForm):
         return ip_address
 
     def clean(self):
+        """
+        Validations for device form
+        """
         latitude = self.cleaned_data.get('latitude')
         longitude = self.cleaned_data.get('longitude')
         state = self.cleaned_data.get('state')
 
         if latitude and longitude and state:
             project = partial(
-            pyproj.transform,
-            pyproj.Proj(init='epsg:4326'),
-            pyproj.Proj('+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'))
+                pyproj.transform,
+                pyproj.Proj(init='epsg:4326'),
+                pyproj.Proj(
+                    '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs'))
 
             state_geo_info = StateGeoInfo.objects.filter(state_id=state)
-            state_lat_longs = []
+            state_lat_longs = list()
             for geo_info in state_geo_info:
-                temp_lat_longs = []
+                temp_lat_longs = list()
                 temp_lat_longs.append(geo_info.longitude)
                 temp_lat_longs.append(geo_info.latitude)
                 state_lat_longs.append(temp_lat_longs)
@@ -183,13 +206,17 @@ class DeviceForm(forms.ModelForm):
             poly_g = transform(project, poly)
             p1_g = transform(project, point)
             if not poly_g.contains(p1_g):
-                self._errors["latitude"] = ErrorList([u"Latitude, longitude specified doesn't exist within selected state."])
+                self._errors["latitude"] = ErrorList(
+                    [u"Latitude, longitude specified doesn't exist within selected state."])
         print self.cleaned_data
         return self.cleaned_data
 
 
 # ********************************** Device Extra Fields Form ***************************************
 class DeviceTypeFieldsForm(forms.ModelForm):
+    """
+    Rendering form for device type fields
+    """
     def __init__(self, *args, **kwargs):
         super(DeviceTypeFieldsForm, self).__init__(*args, **kwargs)
         self.fields['device_type'].empty_label = 'Select'
@@ -207,11 +234,17 @@ class DeviceTypeFieldsForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
+        """
+        Meta Information
+        """
         model = DeviceTypeFields
         fields = ('field_name', 'field_display_name', 'device_type')
 
 
 class DeviceTypeFieldsUpdateForm(forms.ModelForm):
+    """
+    Rendering update form for device type fields
+    """
     def __init__(self, *args, **kwargs):
         super(DeviceTypeFieldsUpdateForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
@@ -228,12 +261,18 @@ class DeviceTypeFieldsUpdateForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
+        """
+        Meta Information
+        """
         model = DeviceTypeFields
         fields = ('field_name', 'field_display_name', 'device_type')
 
 
 # **************************************** Device Technology ****************************************
 class DeviceTechnologyForm(forms.ModelForm):
+    """
+    Rendering form for device technology
+    """
     def __init__(self, *args, **kwargs):
         # removing help text for device_vendors 'select' field
         self.base_fields['device_vendors'].help_text = ''
@@ -254,12 +293,18 @@ class DeviceTechnologyForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
+        """
+        Meta Information
+        """
         model = DeviceTechnology
         fields = ('name', 'alias', 'device_vendors')
 
 
 # ****************************************** Device Vendor ******************************************
 class DeviceVendorForm(forms.ModelForm):
+    """
+    Rendering form for device vendor
+    """
     def __init__(self, *args, **kwargs):
         # removing help text for device_models 'select' field
         self.base_fields['device_models'].help_text = ''
@@ -280,12 +325,18 @@ class DeviceVendorForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
+        """
+        Meta Information
+        """
         model = DeviceVendor
         fields = ('name', 'alias', 'device_models')
 
 
 # ******************************************* Device Model ******************************************
 class DeviceModelForm(forms.ModelForm):
+    """
+    Rendering form for device model
+    """
     def __init__(self, *args, **kwargs):
 
         # removing help text for device_types 'select' field
@@ -307,12 +358,18 @@ class DeviceModelForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
+        """
+        Meta Information
+        """
         model = DeviceModel
         fields = ('name', 'alias', 'device_types')
 
 
 # ******************************************* Device Type *******************************************
 class DeviceTypeForm(forms.ModelForm):
+    """
+    Rendering form for device type
+    """
     AGENT_TAG = (
             ('', 'Select'),
             ('snmp', 'SNMP'),
@@ -339,11 +396,17 @@ class DeviceTypeForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'form-control'})
 
     class Meta:
+        """
+        Meta Information
+        """
         model = DeviceType
 
 
 # ******************************************* Device Type *******************************************
 class DevicePortForm(forms.ModelForm):
+    """
+    Rendering form for device port
+    """
     def __init__(self, *args, **kwargs):
         super(DevicePortForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
@@ -358,11 +421,17 @@ class DevicePortForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
+        """
+        Meta Information
+        """
         model = DevicePort
 
 class DeviceFrequencyForm(forms.ModelForm):
-
+    """
+    Rendering form for device frequencies
+    """
     def __init__(self, *args, **kwargs):
         super(DeviceFrequencyForm, self).__init__(*args, **kwargs)
         self.fields['color_hex_value'].widget.attrs.update({'value':"rgb(45,14,255,0.58)",'class':'colorpicker',\
@@ -372,5 +441,9 @@ class DeviceFrequencyForm(forms.ModelForm):
                 field.widget.attrs['class'] += ' form-control'
             else:
                 field.widget.attrs.update({'class':'form-control'})
+
     class Meta:
+        """
+        Meta Information
+        """
         model = DeviceFrequency
