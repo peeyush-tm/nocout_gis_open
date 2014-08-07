@@ -9,7 +9,7 @@ from shapely.geometry import Polygon, Point
 from shapely.ops import transform
 from functools import partial
 from django.forms.util import ErrorList
-
+import re
 import logging
 logger = logging.getLogger(__name__)
 
@@ -184,6 +184,16 @@ class DeviceForm(forms.ModelForm):
         longitude = self.cleaned_data.get('longitude')
         state = self.cleaned_data.get('state')
 
+        # check that device name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            device_name = self.cleaned_data['device_name']
+            if not re.match(r'^[A-Za-z0-9\._-]+$', device_name):
+                self._errors["device_name"] = ErrorList(
+                    [u"Device name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+
+        # check whether lat log lies in state co-ordinates or not
         if latitude and longitude and state:
             project = partial(
                 pyproj.transform,
