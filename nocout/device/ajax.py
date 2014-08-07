@@ -1,3 +1,5 @@
+""" This file contains AJAX functions applied in 'device' app. """
+
 import ast
 import json
 import requests
@@ -6,8 +8,8 @@ import urllib
 from dajax.core import Dajax
 from dajaxice.decorators import dajaxice_register
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
-    DeviceTypeFieldsValue, Country, State, City, DevicePort
-from service.models import Service, ServiceDataSource, ServiceParameters, DeviceServiceConfiguration
+    DeviceTypeFieldsValue, Country, State
+from service.models import Service, ServiceParameters, DeviceServiceConfiguration
 from site_instance.models import SiteInstance
 
 logger = logging.getLogger(__name__)
@@ -18,7 +20,7 @@ def update_vendor(request, option):
     """Updating vendors corresponding to selected technology
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         option (unicode): selected option value
 
     Returns:
@@ -47,7 +49,7 @@ def update_model(request, option):
     """Updating models corresponding to the selected vendor
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         option (unicode): selected option value
 
     Returns:
@@ -76,7 +78,7 @@ def update_type(request, option):
     """Updating types corresponding to the selected model
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         option (unicode): selected option value
 
     Returns:
@@ -106,7 +108,7 @@ def after_update_vendor(request, option, selected=''):
     """Get vendor selection menu with last time selected vendor as selected option after unsuccessful form submission
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         option (unicode): selected option value
 
     Kwargs:
@@ -128,7 +130,7 @@ def after_update_vendor(request, option, selected=''):
     out = list()
     out.append("<option value=''>Select</option>")
     for vendor in vendors:
-        if vendor.id==int(selected):
+        if vendor.id == int(selected):
             out.append("<option value='%d' selected>%s</option>" % (vendor.id, vendor.name))
         else:
             out.append("<option value='%d'>%s</option>" % (vendor.id, vendor.name))
@@ -141,7 +143,7 @@ def after_update_model(request, option, selected=''):
     """Get model selection menu with last time selected model as selected option after unsuccessful form submission
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         option (unicode): selected option value
 
     Kwargs:
@@ -163,7 +165,7 @@ def after_update_model(request, option, selected=''):
     out = list()
     out.append("<option value=''>Select</option>")
     for model in models:
-        if model.id==int(selected):
+        if model.id == int(selected):
             out.append("<option value='%d' selected>%s</option>" % (model.id, model.name))
         else:
             out.append("<option value='%d'>%s</option>" % (model.id, model.name))
@@ -176,7 +178,7 @@ def after_update_type(request, option, selected=''):
     """Get type selection menu with last time selected type as selected option after unsuccessful form submission
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         option (unicode): selected option value
 
     Kwargs:
@@ -198,7 +200,7 @@ def after_update_type(request, option, selected=''):
     out = list()
     out.append("<option value=''>Select</option>")
     for dtype in types:
-        if dtype.id==int(selected):
+        if dtype.id == int(selected):
             out.append("<option value='%d' selected>%s</option>" % (dtype.id, dtype.name))
         else:
             out.append("<option value='%d'>%s</option>" % (dtype.id, dtype.name))
@@ -211,7 +213,7 @@ def device_type_extra_fields(request, option):
     """Show extra fields associated with device type on selecting device type
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         option (unicode): selected option value
 
     Returns:
@@ -232,8 +234,8 @@ def device_type_extra_fields(request, option):
         out.append("<div class='form-group'><label for='%s' class='col-sm-5 control-label'>\
                     %s:</label><div class='col-sm-7'><input id='%s' name='%s' type='text' class='form-control' />\
                     </div></div>"
-            % (extra_field.field_name, extra_field.field_display_name,
-               extra_field.field_name, extra_field.field_name))
+                   % (extra_field.field_name, extra_field.field_display_name,
+                      extra_field.field_name, extra_field.field_name))
     dajax.assign('#extra_fields', 'innerHTML', ''.join(out))
     return dajax.json()
 
@@ -243,7 +245,7 @@ def device_parent_choices_initial(request):
     """Get parent selection menu having option titles including ip address
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
 
     Returns:
         dajax (str): string containing list of dictionaries
@@ -267,7 +269,7 @@ def device_parent_choices_selected(request, option):
     """Get parent selection menu having option titles including ip address after unsuccessful form submission
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         option (unicode): selected option value
 
     Returns:
@@ -297,7 +299,7 @@ def device_extra_fields_update(request, device_type, device_name):
     """Show device extra fields in device update form
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         device_type (unicode): device type value
         device_name (unicode): device name
 
@@ -341,7 +343,7 @@ def device_soft_delete_form(request, value):
     """Get data to show on device soft delete form
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         value (int): device id
 
     Returns:
@@ -412,8 +414,10 @@ def device_soft_delete_form(request, value):
             e_dict['value'] = e_dv.device_name
             # for excluding 'device' which we are deleting from eligible
             # device choices
-            if e_dv.id == device.id: continue
-            if e_dv.is_deleted == 1: continue
+            if e_dv.id == device.id:
+                continue
+            if e_dv.is_deleted == 1:
+                continue
             # for excluding devices from eligible device choices those are not from
             # same device_group as the device which we are deleting
             # if set(e_dv.device_group.all()) != set(device.device_group.all()): continue
@@ -435,7 +439,7 @@ def device_soft_delete(request, device_id, new_parent_id):
         & make some other device parent of associated device
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         value (int): device id
 
     Returns:
@@ -513,7 +517,7 @@ def update_states(request, option):
     """Updating states corresponding to the selected country
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         option (unicode): selected option value
 
     Returns:
@@ -541,7 +545,7 @@ def update_cities(request, option):
     """Updating cities corresponding to the selected state
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         option (unicode): selected option value
 
     Returns:
@@ -569,7 +573,7 @@ def update_states_after_invalid_form(request, option, state_id):
     """Updating states corresponding to the selected country after invalid form submission
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         option (unicode): selected option value
         state_id (int): state id
 
@@ -601,7 +605,7 @@ def update_cities_after_invalid_form(request, option, city_id):
     """Updating cities corresponding to the selected state after invalid form submission
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         option (unicode): selected option value
 
     Returns:
@@ -632,7 +636,7 @@ def add_device_to_nms_core(request, device_id):
     """Adding device to nms core
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         device_id (int): device id
 
     Returns:
@@ -704,7 +708,7 @@ def delete_device_from_nms_core(request, device_id):
     """Delete device from nms core
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         device_id (int): device id
 
     Returns:
@@ -732,8 +736,6 @@ def delete_device_from_nms_core(request, device_id):
             agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
         except:
             logger.info("Device has no device type.")
-
-
         device_data = {'mode': 'deletehost', 'device_name': device.device_name,}
         # site to which configuration needs to be pushed
         master_site = SiteInstance.objects.get(name='master_UA')
@@ -773,7 +775,7 @@ def sync_device_with_nms_core(request, device_id):
     """Sync devices configuration to nms core
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         device_id (int): device id
 
     Returns:
@@ -825,7 +827,7 @@ def edit_single_service_form(request, dsc_id):
     """Edit single service for a device from nms core
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         dsc_id (int): device service configuration id
 
     Returns:
@@ -911,7 +913,7 @@ def get_service_para_table(request, device_name, service_name, template_id=""):
     """Get service parameters and data source tables for service edit form
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         device_name (unicode): device name
         service_name (unicode): service name
 
@@ -959,7 +961,7 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
     """Edit single service form nms core
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         dsc_id (unicode): device service configuration id
         svc_temp_id (unicode): service template id
         data_sources (list): list of data sources dictionaries
@@ -972,7 +974,7 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
                                 ]
 
     Returns:
-        result (dict):
+        result (dict): dictionary containing service information
                     i.e. {
                             "snmp_community": {
                                 "read_community": "public",
@@ -1031,7 +1033,8 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
 
             # looping through data sources add them to 'cmd_params' dictionary
             for sds in data_sources:
-                service_data['cmd_params'][str(sds['data_source'])] = {'warning': str(sds['warning']), 'critical': str(sds['critical'])}
+                service_data['cmd_params'][str(sds['data_source'])] = {'warning': str(sds['warning']),
+                                                                       'critical': str(sds['critical'])}
 
             # snmp port
             service_data['snmp_port'] = str(dsc.port)
@@ -1065,9 +1068,9 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
                 # if response_dict doesn't have key 'success'
                 if not response_dict.get('success'):
                     logger.info(response_dict.get('error_message'))
-                    result['message'] += "Failed to updated service '%s'. <br />" % (dsc.service_name)
+                    result['message'] += "Failed to updated service '%s'. <br />" % dsc.service_name
                 else:
-                    result['message'] += "Successfully updated service '%s'. <br />" % (dsc.service_name)
+                    result['message'] += "Successfully updated service '%s'. <br />" % dsc.service_name
                     device = Device.objects.get(device_name=dsc.device_name)
 
                     # save service to 'service_deviceserviceconfiguration' table
@@ -1109,7 +1112,7 @@ def delete_single_service_form(request, dsc_id):
         dsc_id (int): device service configuration object id
 
     Returns:
-        result (dict):
+        result (dict): dictionary containing service information
                     i.e. {
                             'message': '',
                             'data': {
@@ -1164,12 +1167,12 @@ def delete_single_service(request, device_name, service_name):
     """Delete single service for a device
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         device_name (unicode): device name
         service_name (unicode): service name
 
     Returns:
-        result (dict):
+        result (dict): dictionary containing service information
                     i.e. {
                             'message': '',
                             'data': {
@@ -1247,11 +1250,11 @@ def edit_service_form(request, value):
     """Get parameters for service edit form
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         value (int): device id
 
     Returns:
-        result (dict):
+        result (dict): dictionary containing service information
                     i.e. {
                             'message': 'Successfully render form.',
                             'data': {
@@ -1333,7 +1336,7 @@ def get_old_configuration_for_svc_edit(request, option="", service_id="", device
     """Show currently present information of service in schema
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         option (int): checkbox value
         service_id (unicode): service id
         device_id (unicode): device id
@@ -1405,10 +1408,10 @@ def get_old_configuration_for_svc_edit(request, option="", service_id="", device
 
 @dajaxice_register
 def get_new_configuration_for_svc_edit(request, service_id="", template_id=""):
-    """Show modified information of service by form
+    """Show modified information of service
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         service_id (int): service id
         template_id (unicode): template id
 
@@ -1465,7 +1468,7 @@ def edit_services(request, svc_data):
     """Edit device services
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         svc_data (list): list of dictionaries
                         i.e. [
                             {
@@ -1495,7 +1498,7 @@ def edit_services(request, svc_data):
                         ]
 
     Returns:
-        result (dict):
+        result (dict): dictionary containing service information
                     i.e. {
                             'message': u"Successfully edited service 'radwin_rssi'. <br />
                                          Successfully edited service 'radwin_idu_sn_invent'. <br />",
@@ -1589,7 +1592,7 @@ def edit_services(request, svc_data):
             encoded_data = urllib.urlencode(service_data)
 
             # sending post request to nocout device app to add single service at a time
-            r = requests.post(url , data=encoded_data)
+            r = requests.post(url, data=encoded_data)
 
             # converting post response data into python dict expression
             response_dict = ast.literal_eval(r.text)
@@ -1628,7 +1631,7 @@ def edit_services(request, svc_data):
                     except Exception as e:
                         logger.info(e)
                 else:
-                    result['message'] += "Successfully edited service '%s'. <br />" % (service.name)
+                    result['message'] += "Successfully edited service '%s'. <br />" % service.name
                     device = Device.objects.get(pk=int(sd['device_id']))
                     messages += result['message']
 
@@ -1676,11 +1679,11 @@ def delete_service_form(request, value):
     """Get parameters for service delete form
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         value (int): device id
 
     Returns:
-        result (dict):
+        result (dict): dictionary containing services information
                     i.e. {
                             'message': 'Successfully render form.',
                             'data': {
@@ -1789,7 +1792,7 @@ def delete_services(request, service_data):
     """Delete device services
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         service_data (list): list of dictionaries
                         i.e. [
                                 {
@@ -1807,7 +1810,7 @@ def delete_services(request, service_data):
                             ]
 
     Returns:
-        result (dict): result dictionary
+        result (dict):  dictionary containing service information
                     i.e. {
                             'message': u"Successfully deleted service 'radwin_rssi'. <br />
                                          Successfully deleted service 'radwin_dl_utilization'. <br />
@@ -1842,9 +1845,9 @@ def delete_services(request, service_data):
             device = Device.objects.get(pk=svc['device_id'])
             service = Service.objects.get(pk=svc['service_id'])
             service_data = {
-                'mode' : 'deleteservice',
-                'device_name' : str(device.device_name),
-                'service_name' : str(service.name)
+                'mode': 'deleteservice',
+                'device_name': str(device.device_name),
+                'service_name': str(service.name)
             }
 
             master_site = SiteInstance.objects.get(name='master_UA')
@@ -1861,7 +1864,7 @@ def delete_services(request, service_data):
             encoded_data = urllib.urlencode(service_data)
 
             # sending post request to nocout device app to add single service at a time
-            r = requests.post(url , data=encoded_data)
+            r = requests.post(url, data=encoded_data)
 
             # converting post response data into python dict expression
             response_dict = ast.literal_eval(r.text)
@@ -1874,13 +1877,14 @@ def delete_services(request, service_data):
                 # if response_dict doesn't have key 'success'
                 if response_dict.get('success') != 1:
                     logger.info(response_dict.get('error_message'))
-                    result['message'] += "Failed to delete service '%s'. <br />" % (service.name)
+                    result['message'] += "Failed to delete service '%s'. <br />" % service.name
                     messages += result['message']
                 else:
-                    result['message'] += "Successfully deleted service '%s'. <br />" % (service.name)
+                    result['message'] += "Successfully deleted service '%s'. <br />" % service.name
                     messages += result['message']
                     # delete service rows form 'service_deviceserviceconfiguration' table
-                    DeviceServiceConfiguration.objects.filter(device_name=device.device_name, service_name=service.name).delete()
+                    DeviceServiceConfiguration.objects.filter(device_name=device.device_name,
+                                                              service_name=service.name).delete()
 
         except Exception as e:
             logger.info(e.message)
@@ -1894,11 +1898,11 @@ def add_service_form(request, value):
     """Show add service form
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         value (int): device id
 
     Returns:
-        result (dict): result dictionary
+        result (dict):  dictionary containing services information
                     i.e. {
                             'message': 'Successfully render form.',
                             'data': {
@@ -1977,7 +1981,6 @@ def add_service_form(request, value):
                         }
 
     """
-
     # device to which services are associated
     device = Device.objects.get(id=value)
     result = dict()
@@ -2048,7 +2051,7 @@ def get_old_configuration_for_svc_add(request, option="", service_id="", device_
     """Show currently present information of service in schema
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         option (int): checkbox value
         service_id (unicode): service id
         device_id (unicode): device id
@@ -2090,13 +2093,12 @@ def get_old_configuration_for_svc_add(request, option="", service_id="", device_
     return dajax.json()
 
 
-# get service parameters and data source tables for service addition form
 @dajaxice_register
 def get_new_configuration_for_svc_add(request, service_id="", template_id=""):
-    """Show modified information of service by form
+    """Show modified information of service
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         service_id (int): service id
         template_id (unicode): template id
 
@@ -2145,13 +2147,12 @@ def get_new_configuration_for_svc_add(request, service_id="", template_id=""):
     return dajax.json()
 
 
-# editing services to nocout core
 @dajaxice_register
 def add_services(request, svc_data):
     """Add device services
 
     Args:
-        request (django.core.handlers.wsgi.WSGIRequest):  POST request
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
         svc_data (list): list of dictionaries
                         i.e. [
                             {
@@ -2181,7 +2182,7 @@ def add_services(request, svc_data):
                         ]
 
     Returns:
-        result (dict):
+        result (dict): dictionary of services information
                     i.e. {
                             'message': u"Successfully edited service 'radwin_rssi'. <br />
                                          Successfully edited service 'radwin_idu_sn_invent'. <br />",
@@ -2252,7 +2253,6 @@ def add_services(request, svc_data):
             result['data']['objects']['snmp_community']['read_community'] = str(service_para.protocol.read_community)
             # command parameters
             result['data']['objects']['cmd_params'] = {}
-
             # data_sources --> contains list of data sources
             data_sources = []
             try:
@@ -2272,8 +2272,6 @@ def add_services(request, svc_data):
                         data_sources.append(temp_dict)
             except Exception as e:
                 logger.info(e.message)
-
-
             # snmp port
             result['data']['objects']['snmp_port'] = str(service_para.protocol.port)
             # agent tag
@@ -2294,7 +2292,7 @@ def add_services(request, svc_data):
             encoded_data = urllib.urlencode(service_data)
 
             # sending post request to nocout device app to add single service at a time
-            r = requests.post(url , data=encoded_data)
+            r = requests.post(url, data=encoded_data)
 
             # converting post response data into python dict expression
             response_dict = ast.literal_eval(r.text)
@@ -2331,7 +2329,7 @@ def add_services(request, svc_data):
                     except Exception as e:
                         logger.info(e)
                 else:
-                    result['message'] += "Successfully added service '%s'. <br />" % (service.name)
+                    result['message'] += "Successfully added service '%s'. <br />" % service.name
                     device = Device.objects.get(pk=int(sd['device_id']))
                     messages += result['message']
 
@@ -2364,7 +2362,7 @@ def add_services(request, svc_data):
                     device.save()
         except Exception as e:
             logger.info(e)
-            result['message'] += "Failed to add service '%s'. <br />" % (service.name)
+            result['message'] += "Failed to add service '%s'. <br />" % service.name
             messages += result['message']
 
     # assign messages to result dict message key
