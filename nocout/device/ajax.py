@@ -1,130 +1,260 @@
+""" This file contains AJAX functions applied in 'device' app. """
+
 import ast
 import json
+import requests
+import logging
+import urllib
 from dajax.core import Dajax
 from dajaxice.decorators import dajaxice_register
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
-    DeviceTypeFieldsValue, Country, State, City, DevicePort
-import requests
-import logging
-from service.models import Service, ServiceDataSource, ServiceParameters, DeviceServiceConfiguration
-import urllib
+    DeviceTypeFieldsValue, Country, State
+from service.models import Service, ServiceParameters, DeviceServiceConfiguration
 from site_instance.models import SiteInstance
 
-logger=logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
-# updating vendor corresponding to the selected technology
 @dajaxice_register
 def update_vendor(request, option):
+    """Updating vendors corresponding to selected technology
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (unicode): selected option value
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
+    # selected technology
     tech = DeviceTechnology.objects.get(pk=int(option))
+    # vendors associated to the selected technology
     vendors = tech.device_vendors.all()
-    out = []
+    out = list()
     out.append("<option value='' selected>Select</option>")
     for vendor in vendors:
         out.append("<option value='%d'>%s</option>" % (vendor.id, vendor.name))
     dajax.assign('#id_device_vendor', 'innerHTML', ''.join(out))
     return dajax.json()
 
-# updating model corresponding to the selected vendor
+
 @dajaxice_register
 def update_model(request, option):
+    """Updating models corresponding to the selected vendor
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (unicode): selected option value
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
+    # selected vendor
     vendor = DeviceVendor.objects.get(pk=int(option))
+    # models associated to the selected vendor
     models = vendor.device_models.all()
-    out = []
+    out = list()
     out.append("<option value=''>Select</option>")
     for model in models:
         out.append("<option value='%d'>%s</option>" % (model.id, model.name))
-
     dajax.assign('#id_device_model', 'innerHTML', ''.join(out))
     return dajax.json()
 
 
-# updating type corresponding to the selected model
 @dajaxice_register
 def update_type(request, option):
+    """Updating types corresponding to the selected model
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (unicode): selected option value
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
+
+    # selected model
     model = DeviceModel.objects.get(pk=int(option))
+    # types associated to the selected model
     types = model.device_types.all()
-    out = []
+    out = list()
     out.append("<option value=''>Select</option>")
     for dtype in types:
         out.append("<option value='%d'>%s</option>" % (dtype.id, dtype.name))
     dajax.assign('#id_device_type', 'innerHTML', ''.join(out))
     return dajax.json()
 
-# to get vendor as during device update
+
 @dajaxice_register
 def after_update_vendor(request, option, selected=''):
+    """Get vendor selection menu with last time selected vendor as selected option after unsuccessful form submission
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (unicode): selected option value
+
+    Kwargs:
+        selected (unicode): option value selected before unsuccessful form submission
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
+    # selected technology
     tech = DeviceTechnology.objects.get(pk=int(option))
+    # vendors associated to selected technology
     vendors = tech.device_vendors.all()
-    out = []
+    out = list()
     out.append("<option value=''>Select</option>")
     for vendor in vendors:
-        if vendor.id==int(selected):
+        if vendor.id == int(selected):
             out.append("<option value='%d' selected>%s</option>" % (vendor.id, vendor.name))
         else:
             out.append("<option value='%d'>%s</option>" % (vendor.id, vendor.name))
     dajax.assign('#id_device_vendor', 'innerHTML', ''.join(out))
     return dajax.json()
 
-# updating model corresponding to the selected vendor
+
 @dajaxice_register
 def after_update_model(request, option, selected=''):
+    """Get model selection menu with last time selected model as selected option after unsuccessful form submission
 
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (unicode): selected option value
+
+    Kwargs:
+        selected (unicode): option value selected before unsuccessful form submission
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
+    # selected vendor
     vendor = DeviceVendor.objects.get(pk=int(option))
+    # models associated to selected vendor
     models = vendor.device_models.all()
-    out = []
+    out = list()
     out.append("<option value=''>Select</option>")
     for model in models:
-        if model.id==int(selected):
+        if model.id == int(selected):
             out.append("<option value='%d' selected>%s</option>" % (model.id, model.name))
         else:
             out.append("<option value='%d'>%s</option>" % (model.id, model.name))
-
     dajax.assign('#id_device_model', 'innerHTML', ''.join(out))
     return dajax.json()
 
 
-# updating type corresponding to the selected model
 @dajaxice_register
 def after_update_type(request, option, selected=''):
+    """Get type selection menu with last time selected type as selected option after unsuccessful form submission
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (unicode): selected option value
+
+    Kwargs:
+        selected (unicode): option value selected before unsuccessful form submission
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
+    # selected model
     model = DeviceModel.objects.get(pk=int(option))
+    # types associated to selected model
     types = model.device_types.all()
-    out = []
+    out = list()
     out.append("<option value=''>Select</option>")
     for dtype in types:
-        if dtype.id==int(selected):
+        if dtype.id == int(selected):
             out.append("<option value='%d' selected>%s</option>" % (dtype.id, dtype.name))
         else:
             out.append("<option value='%d'>%s</option>" % (dtype.id, dtype.name))
     dajax.assign('#id_device_type', 'innerHTML', ''.join(out))
     return dajax.json()
 
-# pop up device 'extra fields' corresponding to the selected 'device type'
+
 @dajaxice_register
 def device_type_extra_fields(request, option):
+    """Show extra fields associated with device type on selecting device type
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (unicode): selected option value
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
+    # selected device type
     device_type = DeviceType.objects.get(pk=int(option))
+    # selected device extra
     device_extra_fields = device_type.devicetypefields_set.all()
     out = []
     for extra_field in device_extra_fields:
-        out.append(
-            "<div class='form-group'><label for='%s' class='col-sm-5 control-label'>%s:</label><div class='col-sm-7'><input id='%s' name='%s' type='text' class='form-control' /></div></div>"
-            % (extra_field.field_name, extra_field.field_display_name,
-               extra_field.field_name, extra_field.field_name))
-
+        out.append("<div class='form-group'><label for='%s' class='col-sm-5 control-label'>\
+                    %s:</label><div class='col-sm-7'><input id='%s' name='%s' type='text' class='form-control' />\
+                    </div></div>"
+                   % (extra_field.field_name, extra_field.field_display_name,
+                      extra_field.field_name, extra_field.field_name))
     dajax.assign('#extra_fields', 'innerHTML', ''.join(out))
     return dajax.json()
 
 
-# change device 'parent field' selection menu format when page loads first time
 @dajaxice_register
 def device_parent_choices_initial(request):
+    """Get parent selection menu having option titles including ip address
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
     out = ["<option value=''>Select</option>"]
     for device in Device.objects.all():
@@ -134,9 +264,23 @@ def device_parent_choices_initial(request):
     return dajax.json()
 
 
-# update device 'parent field' selection menu as per last selection on invalid form submission
 @dajaxice_register
 def device_parent_choices_selected(request, option):
+    """Get parent selection menu having option titles including ip address after unsuccessful form submission
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (unicode): selected option value
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
+
     dajax = Dajax()
     out = ["<option value=''>Select</option>"]
     for device in Device.objects.all():
@@ -150,14 +294,31 @@ def device_parent_choices_selected(request, option):
     return dajax.json()
 
 
-# generate device extra device fields during device update
 @dajaxice_register
 def device_extra_fields_update(request, device_type, device_name):
+    """Show device extra fields in device update form
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        device_type (unicode): device type value
+        device_name (unicode): device name
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
+    # current device
     device = Device.objects.get(device_name=device_name)
+    # device type of current device
     device_type = DeviceType.objects.filter(id=device_type)[0]
+    # extra fields associated with current device
     device_extra_fields = device_type.devicetypefields_set.all()
-    out = []
+    out = list()
     for extra_field in device_extra_fields:
         field_value = ""
         try:
@@ -166,7 +327,9 @@ def device_extra_fields_update(request, device_type, device_name):
         except:
             logger.info("Device type field doesn't exist.")
         out.append(
-            "<div class='form-group'><label for='%s' class='col-sm-5 control-label'>%s:</label><div class='col-sm-7'><input id='%s' name='%s' type='text' class='form-control' value='%s' /></div></div>"
+            "<div class='form-group'><label for='%s' class='col-sm-5 control-label'>\
+            %s:</label><div class='col-sm-7'><input id='%s' name='%s' type='text' class='form-control' value='%s' />\
+            </div></div>"
             % (extra_field.field_name, extra_field.field_display_name,
                extra_field.field_name, extra_field.field_name, field_value))
 
@@ -177,27 +340,41 @@ def device_extra_fields_update(request, device_type, device_name):
 # generate content for soft delete popup form
 @dajaxice_register
 def device_soft_delete_form(request, value):
+    """Get data to show on device soft delete form
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        value (int): device id
+
+    Returns:
+        result (dictionary): dictionary contains device and it's children's values
+                            i.e. {
+                                    "success": 1,
+                                    "message": "Success/Fail message.",       # 0 - fail, 1 - success, 2 - exception
+                                    "data": {
+                                        "meta": {},
+                                        "objects": {
+                                            "form_type": <name>,
+                                            "form_title": <name>,
+                                            "device_name": <name>,
+                                            "child_devices": [
+                                                {
+                                                    "id": <id>,
+                                                    "value": <value>
+                                                },
+                                                {
+                                                    "id": <id>,
+                                                    "value": <value>
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+
+    """
     # device which needs to be deleted
     device = Device.objects.get(id=value)
-    # result: data dictionary send in ajax response
-    #{
-    #  "success": 1,     # 0 - fail, 1 - success, 2 - exception
-    #  "message": "Success/Fail message.",
-    #  "data": {
-    #     "meta": {},
-    #     "objects": {
-    #          "device_name": <name>,
-    #          "child_devices": [
-    #                   {
-    #                       "id': <id>,
-    #                       "value": <value>,
-    #                   },
-    #                   {
-    #                       "id': <id>,
-    #                       "value": <value>,
-    #                   }
-    #           ]
-    #}
+
     result = dict()
     result['data'] = {}
     result['success'] = 0
@@ -237,14 +414,16 @@ def device_soft_delete_form(request, value):
             e_dict['value'] = e_dv.device_name
             # for excluding 'device' which we are deleting from eligible
             # device choices
-            if e_dv.id == device.id: continue
-            if e_dv.is_deleted == 1: continue
+            if e_dv.id == device.id:
+                continue
+            if e_dv.is_deleted == 1:
+                continue
             # for excluding devices from eligible device choices those are not from
             # same device_group as the device which we are deleting
             # if set(e_dv.device_group.all()) != set(device.device_group.all()): continue
             result['data']['objects']['eligible'].append(e_dict)
         for c_dv in child_devices:
-            c_dict = {}
+            c_dict = dict()
             c_dict['key'] = c_dv.id
             c_dict['value'] = c_dv.device_name
             result['data']['objects']['childs'].append(c_dict)
@@ -253,11 +432,42 @@ def device_soft_delete_form(request, value):
     return json.dumps({'result': result})
 
 
-# soft delete device i.e. not deleting device from database, it just set
-# it's is_deleted field value to 1 & remove it's relationship with any other device
-# & make some other device parent of associated device
 @dajaxice_register
 def device_soft_delete(request, device_id, new_parent_id):
+    """ Soft delete device i.e. not deleting device from database, it just set
+        it's is_deleted field value to 1 & remove it's relationship with any other device
+        & make some other device parent of associated device
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        value (int): device id
+
+    Returns:
+        result (dictionary): dictionary contains device and it's children's values
+                            i.e. {
+                                    "success": 1,
+                                    "message": "Success/Fail message.",       # 0 - fail, 1 - success, 2 - exception
+                                    "data": {
+                                        "meta": {},
+                                        "objects": {
+                                            "form_type": <name>,
+                                            "form_title": <name>,
+                                            "device_name": <name>,
+                                            "child_devices": [
+                                                {
+                                                    "id": <id>,
+                                                    "value": <value>
+                                                },
+                                                {
+                                                    "id": <id>,
+                                                    "value": <value>
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+
+    """
     # device: device which needs to be deleted
     device = Device.objects.get(id=device_id)
     # result: data dictionary send in ajax response
@@ -302,13 +512,27 @@ def device_soft_delete(request, device_id, new_parent_id):
     return json.dumps({'result': result})
 
 
-# updating states corresponding to the selected country
 @dajaxice_register
 def update_states(request, option):
+    """Updating states corresponding to the selected country
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (unicode): selected option value
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
+    # selected country
     country = Country.objects.get(pk=int(option))
+    # states associated with selected country
     states = country.state_set.all().order_by('state_name')
-    out = []
     out = ["<option value=''>Select State....</option>"]
     for state in states:
         out.append("<option value='%d'>%s</option>" % (state.id, state.state_name))
@@ -316,13 +540,27 @@ def update_states(request, option):
     return dajax.json()
 
 
-# updating cities corresponding to the selected state
 @dajaxice_register
 def update_cities(request, option):
+    """Updating cities corresponding to the selected state
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (unicode): selected option value
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
+    # selected state
     state = State.objects.get(pk=int(option))
+    # cities associated to selected state
     cities = state.city_set.all().order_by('city_name')
-    out = []
     out = ["<option value=''>Select City....</option>"]
     for city in cities:
         out.append("<option value='%d'>%s</option>" % (city.id, city.city_name))
@@ -330,14 +568,28 @@ def update_cities(request, option):
     return dajax.json()
 
 
-# after invalid form submission
-# updating states corresponding to the selected country
 @dajaxice_register
 def update_states_after_invalid_form(request, option, state_id):
+    """Updating states corresponding to the selected country after invalid form submission
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (unicode): selected option value
+        state_id (int): state id
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
+    # selected country
     country = Country.objects.get(pk=int(option))
+    # states associated to selected country
     states = country.state_set.all().order_by('state_name')
-    out = []
     out = ["<option value=''>Select State....</option>"]
     for state in states:
         if state.id == int(state_id):
@@ -348,13 +600,27 @@ def update_states_after_invalid_form(request, option, state_id):
     return dajax.json()
 
 
-# updating cities corresponding to the selected state
 @dajaxice_register
 def update_cities_after_invalid_form(request, option, city_id):
+    """Updating cities corresponding to the selected state after invalid form submission
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (unicode): selected option value
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
+    # selected state
     state = State.objects.get(pk=int(option))
+    # cities associated to the selected state
     cities = state.city_set.all().order_by('city_name')
-    out = []
     out = ["<option value=''>Select City....</option>"]
     for city in cities:
         if city.id == int(city_id):
@@ -365,9 +631,30 @@ def update_cities_after_invalid_form(request, option, city_id):
     return dajax.json()
 
 
-# add device to nms core
 @dajaxice_register
 def add_device_to_nms_core(request, device_id):
+    """Adding device to nms core
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        device_id (int): device id
+
+    Returns:
+        result (dict): dict of device info
+                    i.e. {
+                              'message': 'Deviceaddedsuccessfully.',
+                              'data': {
+                                  'site': u'nocout_gis_slave',
+                                  'agent_tag': u'snmp',
+                                  'mode': 'addhost',
+                                  'device_name': u'device_116',
+                                  'device_alias': u'Device116',
+                                  'ip_address': u'115.111.183.116'
+                              },
+                              'success': 1
+                          }
+
+    """
     result = dict()
     result['data'] = {}
     result['success'] = 0
@@ -377,19 +664,17 @@ def add_device_to_nms_core(request, device_id):
     if device.host_state != "Disable":
         # get 'agent_tag' from DeviceType model
         agent_tag = ""
-        try :
+        try:
             agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
         except:
             logger.info("Device has no device type.")
-
-
         device_data = {'device_name': device.device_name,
                        'device_alias': device.device_alias,
-                       'ip_address':device.ip_address,
+                       'ip_address': device.ip_address,
                        'agent_tag': agent_tag,
                        'site': device.site_instance.name,
-                       'mode' : 'addhost'}
-
+                       'mode': 'addhost'}
+        # site to which configuration needs to be pushed
         master_site = SiteInstance.objects.get(name='master_UA')
         # url for nocout.py
         # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
@@ -399,13 +684,14 @@ def add_device_to_nms_core(request, device_id):
                                                                 master_site.machine.machine_ip,
                                                                 master_site.web_service_port,
                                                                 master_site.name)
-
-        r = requests.post(url , data=device_data)
+        # sending post request to device app for adding device to nms core
+        r = requests.post(url, data=device_data)
+        # converting string in 'r' to dictionary
         response_dict = ast.literal_eval(r.text)
         if r:
             result['data'] = device_data
             result['success'] = 1
-            if response_dict['error_code'] != None:
+            if response_dict['error_code'] is not None:
                 result['message'] = response_dict['error_message'].capitalize()
             else:
                 result['message'] = "Device added successfully."
@@ -417,9 +703,26 @@ def add_device_to_nms_core(request, device_id):
     return json.dumps({'result': result})
 
 
-# add device to nms core
 @dajaxice_register
 def delete_device_from_nms_core(request, device_id):
+    """Delete device from nms core
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        device_id (int): device id
+
+    Returns:
+        result (dict): dict of device info
+                    i.e. {
+                             'message': 'Devicedeletedsuccessfully',
+                             'data': {
+                                 'mode': 'deletehost',
+                                 'device_name': u'device_116'
+                             },
+                             'success': 1
+                         }
+
+    """
     result = dict()
     result['data'] = {}
     result['success'] = 0
@@ -429,14 +732,12 @@ def delete_device_from_nms_core(request, device_id):
     if device.host_state != "Disable":
         # get 'agent_tag' from DeviceType model
         agent_tag = ""
-        try :
+        try:
             agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
         except:
             logger.info("Device has no device type.")
-
-
-        device_data = {'mode' : 'deletehost', 'device_name': device.device_name,}
-
+        device_data = {'mode': 'deletehost', 'device_name': device.device_name,}
+        # site to which configuration needs to be pushed
         master_site = SiteInstance.objects.get(name='master_UA')
         # url for nocout.py
         # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
@@ -446,13 +747,14 @@ def delete_device_from_nms_core(request, device_id):
                                                                 master_site.machine.machine_ip,
                                                                 master_site.web_service_port,
                                                                 master_site.name)
-
-        r = requests.post(url , data=device_data)
+        # sending post request to device app for deleting device to nms core
+        r = requests.post(url, data=device_data)
+        # converting string in 'r' to dictionary
         response_dict = ast.literal_eval(r.text)
         if r:
             result['data'] = device_data
             result['success'] = 1
-            if response_dict['error_code'] != None:
+            if response_dict['error_code'] is not None:
                 result['message'] = response_dict['error_message'].capitalize()
             else:
                 result['message'] = response_dict['message'].capitalize()
@@ -468,17 +770,34 @@ def delete_device_from_nms_core(request, device_id):
     return json.dumps({'result': result})
 
 
-# sync devices with monitoring core
 @dajaxice_register
 def sync_device_with_nms_core(request, device_id):
+    """Sync devices configuration to nms core
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        device_id (int): device id
+
+    Returns:
+        result (dict): dict of device info
+                    i.e. {
+                            'message': 'Configpushedtomysite,nocout_gis_slave',
+                            'data': {
+                                'mode': 'sync'
+                            },
+                            'success': 1
+                         }
+
+    """
     result = dict()
     result['data'] = {}
     result['success'] = 0
     result['message'] = "Device activation for monitoring failed."
     result['data']['meta'] = ''
-    device_data = {'mode' : 'sync'}
+    device_data = {'mode': 'sync'}
     # get device
     device = Device.objects.get(pk=device_id)
+    # site to which configuration needs to be pushed
     master_site = SiteInstance.objects.get(name='master_UA')
     # url for nocout.py
     # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
@@ -488,10 +807,10 @@ def sync_device_with_nms_core(request, device_id):
                                                             master_site.machine.machine_ip,
                                                             master_site.web_service_port,
                                                             master_site.name)
-
+    # sending post request to device app for syncing configuration to associated sites
     r = requests.post(url, data=device_data)
-
     try:
+        # converting string in 'r' to dictionary
         response_dict = ast.literal_eval(r.text)
         if r:
             result['data'] = device_data
@@ -503,369 +822,62 @@ def sync_device_with_nms_core(request, device_id):
     return json.dumps({'result': result})
 
 
-# # generate content for add service popup form
-# @dajaxice_register
-# def add_service_form(request, value):
-#     # device to which services are associated
-#     device = Device.objects.get(id=value)
-#     # result: data dictionary send in ajax response
-#     #{
-#     #  "success": 1,     # 0 - fail, 1 - success, 2 - exception
-#     #  "message": "Success/Fail message.",
-#     #  "data": {
-#     #     "meta": {},
-#     #     "objects": {
-#     #          "device_name": <id>,
-#     #          "device_name": <name>,
-#     #          "device_alias": <name>,
-#     #          "services": [
-#     #                   {
-#     #                       "name': <id>,
-#     #                       "value": <value>,
-#     #                   },
-#     #                   {
-#     #                       "name': <id>,
-#     #                       "value": <value>,
-#     #                   }
-#     #           ]
-#     #          "ports": [
-#     #                   {
-#     #                       "name': <id>,
-#     #                       "value": <value>,
-#     #                   },
-#     #                   {
-#     #                       "name': <id>,
-#     #                       "value": <value>,
-#     #                   }
-#     #           ]
-#     #}
-#     result = dict()
-#     result['data'] = {}
-#     result['success'] = 0
-#     result['message'] = "Failed to render form correctly."
-#     result['data']['meta'] = ''
-#     result['data']['objects'] = {}
-#     result['data']['objects']['device_id'] = value
-#     result['data']['objects']['device_name'] = device.device_name
-#     result['data']['objects']['device_alias'] = device.device_alias
-#     result['data']['objects']['services'] = []
-#     result['data']['objects']['master_site'] = ""
-#     result['data']['objects']['is_added'] = device.is_added_to_nms
-#
-#     # get services associated with device
-#     try:
-#         master_site_name = ""
-#         try:
-#             master_site_name = SiteInstance.objects.get(name='master_UA').name
-#             result['data']['objects']['master_site'] = master_site_name
-#         except:
-#             logger.info("Master site doesn't exist.")
-#         if device.is_added_to_nms == 1:
-#             if master_site_name == "master_UA":
-#                 dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name)
-#                 device_type = DeviceType.objects.get(id=device.device_type)
-#
-#                 # complete no. of services associated with this device
-#                 complete_services = []
-#                 for svc in device_type.service.all():
-#                     complete_services.append(svc.name)
-#
-#                 # services those are already running for this device
-#                 already_added_services = []
-#                 for svc in dsc:
-#                     already_added_services.append(svc.service_name)
-#
-#                 # services those are not currently running but associated with that device
-#                 services = set(complete_services) - set(already_added_services)
-#                 for svc in services:
-#                     service = Service.objects.get(name=svc)
-#                     svc_dict = {}
-#                     svc_dict['key'] = service.id
-#                     svc_dict['value'] = service.alias
-#                     result['data']['objects']['services'].append(svc_dict)
-#             else:
-#                 result['message'] = "Master site doesn't exist. <br /> Please first create master site with name 'master_UA'."
-#         else:
-#             result['message'] = "First add device in nms core."
-#     except:
-#         logger.info("No service to monitor.")
-#
-#     return json.dumps({'result': result})
-#
-#
-# # service data sources select menu popup for service addition form
-# @dajaxice_register
-# def service_data_sources_popup(request, option=""):
-#     dajax = Dajax()
-#     out = []
-#     if option and option != "":
-#         service = Service.objects.get(pk=int(option))
-#         if service:
-#             try:
-#                 service_data_sources = service.service_data_sources.all()
-#                 if service_data_sources:
-#                     out.append("<h5 class='text-warning'>Select data sources:</h5> ")
-#                     out.append("<select class='form-control'  id='service_data_source_select_id'>")
-#                     out.append("<option value='' selected>Select</option>")
-#                     for sds in service_data_sources:
-#                         out.append("<option value='%d'>%s</option>" % (sds.id, sds.alias))
-#                     out.append("</select>")
-#                 else:
-#                     out.append("<h5 class='text-warning'>No data source associated.</h5> ")
-#             except:
-#                 logger.info("No data source available.")
-#     else:
-#         out.append("<h5 class='text-warning'>No data source associated.</h5> ")
-#     dajax.assign('#service_data_source_id', 'innerHTML', ''.join(out))
-#     return dajax.json()
-#
-#
-# # get service templates for service addition form
-# @dajaxice_register
-# def get_service_templates(request, option=""):
-#     dajax = Dajax()
-#     out = []
-#     field_id = "#svc_params_id_{0}".format(option)
-#     if option and option != "":
-#         svc_params = ServiceParameters.objects.all()
-#         if svc_params:
-#             try:
-#                 if svc_params:
-#                     out.append("<h5>Select service template:</h5> ")
-#                     out.append("<select class='form-control'  id='service_%d'>" % option)
-#                     out.append("<option value='' selected>Select</option>")
-#                     for svc_param in svc_params:
-#                         out.append("<option value='%d'>%s</option>" % (svc_param.id, svc_param.parameter_description))
-#                     out.append("</select>")
-#                 else:
-#                     out.append("<h5 class='text-warning'>No data source associated.</h5> ")
-#             except:
-#                 logger.info("No data source available.")
-#     else:
-#         out.append("<h5 class='text-warning'>No data source associated.</h5> ")
-#     dajax.assign(field_id, 'innerHTML', ''.join(out))
-#     return dajax.json()
-#
-#
-# # get service parameters and data source tables for service addition form
-# @dajaxice_register
-# def get_service_para_and_data_source_tables(request, service_value="", para_value="" ):
-#     dajax = Dajax()
-#     params = []
-#     data_sources = []
-#     service_paras_table_id = "#svc_params_table_id_{0}".format(service_value)
-#     service_data_source_table_id = "#service_data_source_table_id_{0}".format(service_value)
-#     if service_value and service_value != "":
-#         service = Service.objects.get(pk=service_value)
-#         svc_param = ServiceParameters.objects.get(pk=para_value)
-#         params.append("<br />")
-#         params.append("<div class=''><div class='box border orange'><div class='box-title'><h4><i class='fa fa-table'></i>Service Parameters</h4></div>")
-#         params.append("<div class='box-body'><table class='table'>")
-#         params.append("<thead><tr><th>Normal Check Interval</th><th>Retry Check Interval</th><th>Max Check Attemps</th></tr></thead>")
-#         params.append("<tbody><tr><td>%d</td><td>%d</td><td>%d</td></tr></tbody>" % (svc_param.normal_check_interval,
-#                                                                                      svc_param.retry_check_interval,
-#                                                                                      svc_param.max_check_attempts)
-#         )
-#         params.append("</div></div></div>")
-#         try:
-#             svc_data_sources = service.service_data_sources.all()
-#             data_sources.append("<br />")
-#             data_sources.append("<div class=''><div class='box border orange'><div class='box-title'><h4><i class='fa fa-table'></i>Service Data Sources</h4></div>")
-#             data_sources.append("<div class='box-body'><table class='table'>")
-#             data_sources.append("<thead><tr><th>Name</th><th>Warning</th><th>Critical</th></tr></thead><tbody>")
-#             for svc_data_source in svc_data_sources:
-#                 data_sources.append("<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % (svc_data_source.alias,
-#                                                                                     svc_data_source.warning,
-#                                                                                     svc_data_source.critical)
-#             )
-#             params.append("</tbody></div></div></div>")
-#         except:
-#             logger.info("Service data source doesn't exist.")
-#     else:
-#         params.append("<h5 class='text-warning'>No data to show.</h5> ")
-#     dajax.assign(service_paras_table_id, 'innerHTML', ''.join(params))
-#     dajax.assign(service_data_source_table_id, 'innerHTML', ''.join(data_sources))
-#     return dajax.json()
-#
-#
-# # adding services to nocout core
-# @dajaxice_register
-# def add_service(request, service_data):
-#     # service format for nocout core
-#     # {
-#     #     "snmp_community": {
-#     #         "read_community": "public",
-#     #         "version": "v2c"
-#     #     },
-#     #     "agent_tag": "snmp",
-#     #     "service_name": "radwin_rssi",
-#     #     "snmp_port": 161,
-#     #     "serv_params": {
-#     #         "normal_check_interval": 5,
-#     #         "max_check_attempts": 5,
-#     #         "retry_check_interval": 5
-#     #     },
-#     #     "device_name": "radwin",
-#     #     "mode": "addservice",
-#     #     "cmd_params": {
-#     #         "rssi": {
-#     #             "warning": "-50",
-#     #             "critical": "-80"
-#     #         }
-#     #     }
-#     # }
-#     result = dict()
-#     result['data'] = {}
-#     result['success'] = 0
-#     result['message'] = ""
-#     result['data']['meta'] = {}
-#     result['data']['objects'] = {}
-#
-#     # messages variable collects message coming from service addition api response
-#     messages = ""
-#
-#     for sd in service_data:
-#         service = ""
-#         try:
-#             result = dict()
-#             result['data'] = {}
-#             result['success'] = 0
-#             result['message'] = ""
-#             result['data']['meta'] = {}
-#             result['data']['objects'] = {}
-#
-#             device = Device.objects.get(pk=int(sd['device_id']))
-#             service = Service.objects.get(pk=int(sd['service_id']))
-#             try:
-#                 service_para = ServiceParameters.objects.get(pk=int(sd['template_id']))
-#             except:
-#                 service_para = service.parameters
-#
-#             # mode
-#             result['data']['objects']['mode'] = "addservice"
-#             # device name
-#             result['data']['objects']['device_name'] = str(device.device_name)
-#             # service name
-#             result['data']['objects']['service_name'] = str(service.name)
-#             # service parameters
-#             result['data']['objects']['serv_params'] = {}
-#             result['data']['objects']['serv_params']['normal_check_interval'] = int(service_para.normal_check_interval)
-#             result['data']['objects']['serv_params']['retry_check_interval'] = int(service_para.retry_check_interval)
-#             result['data']['objects']['serv_params']['max_check_attempts'] = int(service_para.max_check_attempts)
-#             # snmp parameters
-#             result['data']['objects']['snmp_community'] = {}
-#             result['data']['objects']['snmp_community']['version'] = str(service_para.protocol.version)
-#             result['data']['objects']['snmp_community']['read_community'] = str(service_para.protocol.read_community)
-#             # command parameters
-#             result['data']['objects']['cmd_params'] = {}
-#             for sds in service.service_data_sources.all():
-#                 result['data']['objects']['cmd_params'][str(sds.name)] = {'warning': str(sds.warning), 'critical': str(sds.critical)}
-#             # snmp port
-#             result['data']['objects']['snmp_port'] = str(service_para.protocol.port)
-#             # agent tag
-#             result['data']['objects']['agent_tag'] = str(DeviceType.objects.get(pk=device.device_type).agent_tag)
-#             # payload data for post request
-#             service_data = result['data']['objects']
-#             # master site on which service needs to be added
-#             master_site = SiteInstance.objects.get(name='master_UA')
-#             # url for nocout.py
-#             # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
-#             # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
-#             url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
-#                                                                     master_site.password,
-#                                                                     master_site.machine.machine_ip,
-#                                                                     master_site.web_service_port,
-#                                                                     master_site.name)
-#             # encoding service_data
-#             encoded_data = urllib.urlencode(service_data)
-#
-#             # sending post request to nocout device app to add single service at a time
-#             r = requests.post(url , data=encoded_data)
-#
-#             # converting post response data into python dict expression
-#             response_dict = ast.literal_eval(r.text)
-#
-#             # if response(r) is given by post request than process it further to get success/failure messages
-#             if r:
-#                 result['data'] = service_data
-#                 result['success'] = 1
-#
-#                 # if response_dict doesn't have key 'success'
-#                 if not response_dict.get('success'):
-#                     logger.info(response_dict.get('error_message'))
-#                     result['message'] += "Failed to add service '%s'. <br />" % (service.name)
-#                     messages += result['message']
-#                 else:
-#                     result['message'] += "Successfully added service '%s'. <br />" % (service.name)
-#                     device = Device.objects.get(pk=int(sd['device_id']))
-#                     messages += result['message']
-#
-#                     # save service to 'service_deviceserviceconfiguration' table
-#                     try:
-#                         # if service exist in 'service_deviceserviceconfiguration' table than update service else create it
-#                         for data_source in service.service_data_sources.all():
-#                             dsc = DeviceServiceConfiguration.objects.get(device_name=Device.objects.get(pk=int(sd['device_id'])).device_name,
-#                                                        service_name=Service.objects.get(pk=int(sd['service_id'])).name,
-#                                                        data_source=data_source.name)
-#                             dsc.agent_tag=str(DeviceType.objects.get(pk=device.device_type).agent_tag)
-#                             dsc.port=str(service_para.protocol.port)
-#                             dsc.version=str(service_para.protocol.version)
-#                             dsc.read_community=str(service_para.protocol.read_community)
-#                             dsc.svc_template=str(service_para.parameter_description)
-#                             dsc.normal_check_interval=int(service_para.normal_check_interval)
-#                             dsc.retry_check_interval=int(service_para.retry_check_interval)
-#                             dsc.max_check_attempts=int(service_para.max_check_attempts)
-#                             dsc.warning=data_source.warning
-#                             dsc.critical=data_source.critical
-#                             dsc.is_added=1
-#                             dsc.save()
-#                     except Exception as e:
-#                         logger.info(e)
-#                         for data_source in service.service_data_sources.all():
-#                             # create service if it is not existing in 'service_deviceserviceconfiguration' table
-#                             dsc = DeviceServiceConfiguration.objects.create(device_name=str(Device.objects.get(pk=int(sd['device_id'])).device_name),
-#                                                                    service_name=str(Service.objects.get(pk=int(sd['service_id'])).name),
-#                                                                    agent_tag=str(DeviceType.objects.get(pk=device.device_type).agent_tag),
-#                                                                    port=str(service_para.protocol.port),
-#                                                                    version=str(service_para.protocol.version),
-#                                                                    read_community=str(service_para.protocol.read_community),
-#                                                                    svc_template=str(service_para.parameter_description),
-#                                                                    normal_check_interval=int(service_para.normal_check_interval),
-#                                                                    retry_check_interval=int(service_para.retry_check_interval),
-#                                                                    max_check_attempts=int(service_para.max_check_attempts),
-#                                                                    data_source=data_source.name,
-#                                                                    warning=data_source.warning,
-#                                                                    critical=data_source.critical,
-#                                                                    is_added=1
-#                             )
-#
-#
-#                     # set 'is_monitored_on_nms' to 1 if service is added successfully
-#                     device.is_monitored_on_nms = 1
-#                     device.save()
-#             else:
-#                 pass
-#         except Exception as e:
-#             logger.info(e)
-#             result['message'] += "Failed to add service '%s'. <br />" % (service.name)
-#             messages += result['message']
-#
-#     # assign messages to result dict message key
-#     result['message'] = messages
-#     return json.dumps({'result': result})
-
 @dajaxice_register
 def edit_single_service_form(request, dsc_id):
+    """Edit single service for a device from nms core
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        dsc_id (int): device service configuration id
+
+    Returns:
+        result (dict): dict of device service info
+                    i.e. {
+                            'message': '',
+                            'data': {
+                                'meta': {
+
+                                },
+                                'objects': {
+                                    'current_template': u'radwin_snmp_v1_222',
+                                    'templates': [
+                                        {
+                                            'value': u'radwin_snmp_v1_224',
+                                            'key': 1L
+                                        },
+                                        {
+                                            'value': u'radwin_snmp_v1_223',
+                                            'key': 2L
+                                        }
+                                    ],
+                                    'data_source': u'rssi',
+                                    'agent_tag': u'snmp',
+                                    'version': u'v1',
+                                    'read_community': u'public',
+                                    'service_name': u'radwin_rssi',
+                                    'device_alias': u'Device116',
+                                    'dsc_id': 68,
+                                    'warning': u'-50',
+                                    'critical': u'-85',
+                                    'retry_check_interval': 1L,
+                                    'normal_check_interval': 6L,
+                                    'max_check_attempts': 6L,
+                                    'device_name': u'device_116',
+                                    'port': 163L
+                                }
+                            },
+                            'success': 0
+                        }
+
+    """
     # device service configuration object
     dsc = DeviceServiceConfiguration.objects.get(id=dsc_id)
-
     result = dict()
     result['data'] = {}
     result['success'] = 0
     result['message'] = ""
     result['data']['meta'] = {}
     result['data']['objects'] = {}
-
     try:
         device = Device.objects.get(device_name=dsc.device_name)
         service_data = result['data']['objects']
@@ -887,7 +899,7 @@ def edit_single_service_form(request, dsc_id):
         service_data['templates'] = []
         service_templates = ServiceParameters.objects.all()
         for svc_template in service_templates:
-            temp_dict = {}
+            temp_dict = dict()
             temp_dict['key'] = svc_template.id
             temp_dict['value'] = svc_template.parameter_description
             service_data['templates'].append(temp_dict)
@@ -895,28 +907,48 @@ def edit_single_service_form(request, dsc_id):
         logger.info(e)
     return json.dumps({'result': result})
 
-# get service parameters and data source tables for service addition form
+
 @dajaxice_register
 def get_service_para_table(request, device_name, service_name, template_id=""):
+    """Get service parameters and data source tables for service edit form
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        device_name (unicode): device name
+        service_name (unicode): service name
+
+    Kwargs:
+        template_id (unicode): template id
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
     params = []
     if template_id and template_id != "":
         svc_template = ServiceParameters.objects.get(id=template_id)
         params.append("<br />")
-        params.append("<div class=''><div class='box border red'><div class='box-title'><h4><i class='fa fa-table'></i>Modified Service Parameters</h4></div>")
+        params.append("<div class=''><div class='box border red'><div class='box-title'><h4>\
+                      <i class='fa fa-table'></i>Modified Service Parameters</h4></div>")
         params.append("<div class='box-body'><table class='table'>")
-        params.append("<thead><tr><th>Normal Check Interval</th><th>Retry Check Interval</th><th>Max Check Attemps</th></tr></thead>")
+        params.append("<thead><tr><th>Normal Check Interval</th><th>Retry Check Interval</th>\
+                       <th>Max Check Attempts</th></tr></thead>")
         params.append("<tbody><tr><td>%d</td><td>%d</td><td>%d</td></tr>" % (svc_template.normal_check_interval,
                                                                              svc_template.retry_check_interval,
-                                                                             svc_template.max_check_attempts)
-        )
+                                                                             svc_template.max_check_attempts))
         params.append("</tbody>")
         params.append("<thead><tr><th>DS Name</th><th>Warning</th><th>Critical</th></tr></thead><tbody>")
         for sds in DeviceServiceConfiguration.objects.filter(device_name=device_name, service_name=service_name):
             params.append("<tr class='data_source_field'><td class='ds_name'>%s</td>\
                           <td contenteditable='true' class='ds_warning'>%d</td>\
-                          <td contenteditable='true' class='ds_critical'>%d</td></tr>" % (sds.data_source , int(sds.warning), int(sds.critical))
-            )
+                          <td contenteditable='true' class='ds_critical'>%d</td></tr>" % (sds.data_source,
+                                                                                          int(sds.warning),
+                                                                                          int(sds.critical)))
         params.append("</tbody></table></div></div></div>")
     else:
         params.append("<h5 class='text-danger'>No data to show.</h5> ")
@@ -924,33 +956,48 @@ def get_service_para_table(request, device_name, service_name, template_id=""):
     return dajax.json()
 
 
-# edit single service for nocout core
 @dajaxice_register
 def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
-    """
-    Return:
-    {
-        "snmp_community": {
-            "read_community": "public",
-            "version": "v2c"
-        },
-        "agent_tag": "snmp",
-        "service_name": "radwin_rssi",
-        "snmp_port": 161,
-        "serv_params": {
-            "normal_check_interval": 5,
-            "max_check_attempts": 5,
-            "retry_check_interval": 5
-        },
-        "device_name": "radwin",
-        "mode": "editservice",
-        "cmd_params": {
-            "rssi": {
-                "warning": "-50",
-                "critical": "-80"
-            }
-        }
-    }
+    """Edit single service form nms core
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        dsc_id (unicode): device service configuration id
+        svc_temp_id (unicode): service template id
+        data_sources (list): list of data sources dictionaries
+                          i.e. [
+                                    {
+                                        'data_source': u'rssi',
+                                        'warning': u'-50',
+                                        'critical': u'-85'
+                                    }
+                                ]
+
+    Returns:
+        result (dict): dictionary containing service information
+                    i.e. {
+                            "snmp_community": {
+                                "read_community": "public",
+                                "version": "v2c"
+                            },
+                            "agent_tag": "snmp",
+                            "service_name": "radwin_rssi",
+                            "snmp_port": 161,
+                            "serv_params": {
+                                "normal_check_interval": 5,
+                                "max_check_attempts": 5,
+                                "retry_check_interval": 5
+                            },
+                            "device_name": "radwin",
+                            "mode": "editservice",
+                            "cmd_params": {
+                                "rssi": {
+                                    "warning": "-50",
+                                    "critical": "-80"
+                                }
+                            }
+                        }
+
     """
     result = dict()
     result['data'] = {}
@@ -986,7 +1033,8 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
 
             # looping through data sources add them to 'cmd_params' dictionary
             for sds in data_sources:
-                service_data['cmd_params'][str(sds['data_source'])] = {'warning': str(sds['warning']), 'critical': str(sds['critical'])}
+                service_data['cmd_params'][str(sds['data_source'])] = {'warning': str(sds['warning']),
+                                                                       'critical': str(sds['critical'])}
 
             # snmp port
             service_data['snmp_port'] = str(dsc.port)
@@ -1007,7 +1055,7 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
             encoded_data = urllib.urlencode(service_data)
 
             # sending post request to nocout device app to add single service at a time
-            r = requests.post(url , data=encoded_data)
+            r = requests.post(url, data=encoded_data)
 
             # converting post response data into python dict expression
             response_dict = ast.literal_eval(r.text)
@@ -1020,9 +1068,9 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
                 # if response_dict doesn't have key 'success'
                 if not response_dict.get('success'):
                     logger.info(response_dict.get('error_message'))
-                    result['message'] += "Failed to updated service '%s'. <br />" % (dsc.service_name)
+                    result['message'] += "Failed to updated service '%s'. <br />" % dsc.service_name
                 else:
-                    result['message'] += "Successfully updated service '%s'. <br />" % (dsc.service_name)
+                    result['message'] += "Successfully updated service '%s'. <br />" % dsc.service_name
                     device = Device.objects.get(device_name=dsc.device_name)
 
                     # save service to 'service_deviceserviceconfiguration' table
@@ -1030,8 +1078,8 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
                         # if service exist in 'service_deviceserviceconfiguration' table than update it
                         for data_source in data_sources:
                             dsc_obj = DeviceServiceConfiguration.objects.get(device_name=dsc.device_name,
-                                                                service_name=dsc.service_name,
-                                                                data_source=data_source['data_source'])
+                                                                             service_name=dsc.service_name,
+                                                                             data_source=data_source['data_source'])
                             dsc_obj.agent_tag = str(dsc.agent_tag)
                             dsc_obj.port = str(service_para.protocol.port)
                             dsc_obj.version = str(service_para.protocol.version)
@@ -1047,17 +1095,44 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
                         logger.info(e)
         except Exception as e:
             logger.info(e)
-            result['message'] = "Failed to updated service '%s'. <br />" % (dsc.service_name)
+            result['message'] = "Failed to updated service '%s'. <br />" % dsc.service_name
     except Exception as e:
         logger.info(e)
-        result['message'] = "Failed to updated service '%s'. <br />" % (dsc.service_name)
-    # assign messages to result dict message key
+        result['message'] = "Failed to updated service '%s'. <br />" % dsc.service_name
     return json.dumps({'result': result})
 
 
 # delete single service form
 @dajaxice_register
 def delete_single_service_form(request, dsc_id):
+    """Get parameters in the form of JSON object for delete form
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        dsc_id (int): device service configuration object id
+
+    Returns:
+        result (dict): dictionary containing service information
+                    i.e. {
+                            'message': '',
+                            'data': {
+                                'meta': {
+
+                                },
+                                'objects': {
+                                    'service_name': u'radwin_rssi',
+                                    'data_sources': [
+                                        u'rssi'
+                                    ],
+                                    'device_alias': u'Device116',
+                                    'service_alias': u'Receivedsignalstrength',
+                                    'device_name': u'device_116'
+                                }
+                            },
+                            'success': 0
+                        }
+
+    """
     # device service configuration object
     dsc = DeviceServiceConfiguration.objects.get(id=dsc_id)
     result = dict()
@@ -1075,6 +1150,7 @@ def delete_single_service_form(request, dsc_id):
         service_data['device_alias'] = Device.objects.get(device_name=str(dsc.device_name)).device_alias
         service_data['data_sources'] = []
         try:
+            # data sources queryset
             dsc_for_data_sources = DeviceServiceConfiguration.objects.filter(device_name=dsc.device_name,
                                                                              service_name=dsc.service_name)
             for dsc_for_data_source in dsc_for_data_sources:
@@ -1086,9 +1162,37 @@ def delete_single_service_form(request, dsc_id):
     return json.dumps({'result': result})
 
 
-# delete single service
 @dajaxice_register
 def delete_single_service(request, device_name, service_name):
+    """Delete single service for a device
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        device_name (unicode): device name
+        service_name (unicode): service name
+
+    Returns:
+        result (dict): dictionary containing service information
+                    i.e. {
+                            'message': '',
+                            'data': {
+                                'meta': {
+
+                                },
+                                'objects': {
+                                    'service_name': u'radwin_rssi',
+                                    'data_sources': [
+                                        u'rssi'
+                                    ],
+                                    'device_alias': u'Device116',
+                                    'service_alias': u'Receivedsignalstrength',
+                                    'device_name': u'device_116'
+                                }
+                            },
+                            'success': 0
+                        }
+
+    """
     result = dict()
     result['data'] = {}
     result['success'] = 0
@@ -1098,9 +1202,9 @@ def delete_single_service(request, device_name, service_name):
 
     try:
         service_data = {
-            'mode' : 'deleteservice',
-            'device_name' : str(device_name),
-            'service_name' : str(service_name)
+            'mode': 'deleteservice',
+            'device_name': str(device_name),
+            'service_name': str(service_name)
         }
 
         master_site = SiteInstance.objects.get(name='master_UA')
@@ -1117,11 +1221,10 @@ def delete_single_service(request, device_name, service_name):
         encoded_data = urllib.urlencode(service_data)
 
         # sending post request to nocout device app to add single service at a time
-        r = requests.post(url , data=encoded_data)
+        r = requests.post(url, data=encoded_data)
 
         # converting post response data into python dict expression
         response_dict = ast.literal_eval(r.text)
-
 
         # if response(r) is given by post request than process it further to get success/failure messages
         if r:
@@ -1131,9 +1234,9 @@ def delete_single_service(request, device_name, service_name):
             # if response_dict doesn't have key 'success'
             if not response_dict.get('success'):
                 logger.info(response_dict.get('error_message'))
-                result['message'] += "Failed to delete service '%s'. <br />" % (service_name)
+                result['message'] += "Failed to delete service '%s'. <br />" % service_name
             else:
-                result['message'] += "Successfully updated service '%s'. <br />" % (service_name)
+                result['message'] += "Successfully updated service '%s'. <br />" % service_name
 
             # delete service rows form 'service_deviceserviceconfiguration' table
             DeviceServiceConfiguration.objects.filter(device_name=device_name, service_name=service_name).delete()
@@ -1142,42 +1245,40 @@ def delete_single_service(request, device_name, service_name):
     return json.dumps({'result': result})
 
 
-# generate content for edit service popup form
 @dajaxice_register
 def edit_service_form(request, value):
+    """Get parameters for service edit form
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        value (int): device id
+
+    Returns:
+        result (dict): dictionary containing service information
+                    i.e. {
+                            'message': 'Successfully render form.',
+                            'data': {
+                                'meta': '',
+                                'objects': {
+                                    'master_site': u'master_UA',
+                                    'device_alias': u'Device116',
+                                    'is_added': 1L,
+                                    'services': [
+                                        {
+                                            'value': u'ODUserialnumber',
+                                            'key': 14L
+                                        }
+                                    ],
+                                    'device_name': u'device_116',
+                                    'device_id': 545
+                                }
+                            },
+                            'success': 0
+                        }
+
+    """
     # device to which services are associated
     device = Device.objects.get(id=value)
-    # result: data dictionary send in ajax response
-    #{
-    #  "success": 1,     # 0 - fail, 1 - success, 2 - exception
-    #  "message": "Success/Fail message.",
-    #  "data": {
-    #     "meta": {},
-    #     "objects": {
-    #          "device_name": <id>,
-    #          "device_name": <name>,
-    #          "device_alias": <name>,
-    #          "services": [
-    #                   {
-    #                       "name': <id>,
-    #                       "value": <value>,
-    #                   },
-    #                   {
-    #                       "name': <id>,
-    #                       "value": <value>,
-    #                   }
-    #           ]
-    #          "ports": [
-    #                   {
-    #                       "name': <id>,
-    #                       "value": <value>,
-    #                   },
-    #                   {
-    #                       "name': <id>,
-    #                       "value": <value>,
-    #                   }
-    #           ]
-    #}
     result = dict()
     result['data'] = {}
     result['success'] = 0
@@ -1215,12 +1316,13 @@ def edit_service_form(request, value):
                 result['data']['objects']['services'] = []
                 for svc in monitored_services:
                     service = Service.objects.get(name=svc)
-                    svc_dict = {}
+                    svc_dict = dict()
                     svc_dict['key'] = service.id
                     svc_dict['value'] = service.alias
                     result['data']['objects']['services'].append(svc_dict)
             else:
-                result['message'] = "Master site doesn't exist. <br /> Please first create master site with name 'master_UA'."
+                result['message'] = "Master site doesn't exist. <br />\
+                                     Please first create master site with name 'master_UA'."
         else:
             result['message'] = "First add device in nms core."
     except:
@@ -1229,41 +1331,24 @@ def edit_service_form(request, value):
     return json.dumps({'result': result})
 
 
-# service data sources select menu popup for service addition form
-@dajaxice_register
-def service_current_info(request, option="", device_id=""):
-    params = []
-    dajax = Dajax()
-    service = Service.objects.get(id=option)
-    device = Device.objects.get(id=device_id)
-    dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name, service_name=service.name)
-    show_old_configuration_id = "#show_old_configuration_{}".format(option)
-    if device_id:
-        params.append("<br />")
-        params.append("<div class=''><div class='box border red'><div class='box-title'><h4><i class='fa fa-table'></i>Current Service Parameters</h4></div>")
-        params.append("<div class='box-body'><table class='table'>")
-        params.append("<thead><tr><th>Normal Check Interval</th><th>Retry Check Interval</th><th>Max Check Attemps</th></tr></thead>")
-        params.append("<tbody><tr><td>%d</td><td>%d</td><td>%d</td></tr>" % (dsc[0].normal_check_interval,
-                                                                             dsc[0].retry_check_interval,
-                                                                             dsc[0].max_check_attempts)
-        )
-        params.append("</tbody>")
-        params.append("<thead><tr><th>DS Name</th><th>Warning</th><th>Critical</th></tr></thead><tbody>")
-        for sds in dsc:
-            params.append("<tr class='data_source_field'><td class='ds_name'>%s</td>\
-                          <td class='ds_warning'>%d</td>\
-                          <td class='ds_critical'>%d</td></tr>" % (sds.data_source , int(sds.warning), int(sds.critical))
-            )
-        params.append("</tbody></table></div></div></div>")
-    else:
-        params.append("<h5 class='text-danger'>No data to show.</h5> ")
-    dajax.assign(show_old_configuration_id, 'innerHTML', ''.join(params))
-    return dajax.json()
-
-
-# get service templates for service addition form
 @dajaxice_register
 def get_old_configuration_for_svc_edit(request, option="", service_id="", device_id=""):
+    """Show currently present information of service in schema
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (int): checkbox value
+        service_id (unicode): service id
+        device_id (unicode): device id
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
     params = []
     svc_templates = []
@@ -1276,30 +1361,39 @@ def get_old_configuration_for_svc_edit(request, option="", service_id="", device
                 if svc_params:
                     device = Device.objects.get(pk=device_id)
                     service = Service.objects.get(pk=service_id)
-                    dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name, service_name=service.name)
+                    dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name,
+                                                                    service_name=service.name)
                     params.append("<br />")
                     params.append("<h5 class='text-warning'><b>Current configuration:</b></h5>")
-                    params.append("<div class=''><div class='box border orange'><div class='box-title'><h4><i class='fa fa-table'></i>Current Service Parameters</h4></div>")
+                    params.append("<div class=''>\
+                                   <div class='box border orange'>\
+                                   <div class='box-title'>\
+                                        <h4><i class='fa fa-table'></i>Current Service Parameters</h4>\
+                                   </div>")
                     params.append("<div class='box-body'><table class='table'>")
-                    params.append("<thead><tr><th>Normal Check Interval</th><th>Retry Check Interval</th><th>Max Check Attemps</th></tr></thead>")
+                    params.append("<thead><tr>\
+                                        <th>Normal Check Interval</th>\
+                                        <th>Retry Check Interval</th>\
+                                        <th>Max Check Attemps</th>\
+                                   </tr></thead>")
                     params.append("<tbody><tr><td>%d</td><td>%d</td><td>%d</td></tr>" % (dsc[0].normal_check_interval,
                                                                                          dsc[0].retry_check_interval,
-                                                                                         dsc[0].max_check_attempts)
-                    )
+                                                                                         dsc[0].max_check_attempts))
                     params.append("</tbody>")
                     params.append("<thead><tr><th>DS Name</th><th>Warning</th><th>Critical</th></tr></thead><tbody>")
                     for sds in dsc:
                         params.append("<tr><td class='ds_name'>{}</td><td class='ds_warning'>{}</td>\
-                                      <td class='ds_critical'>{}</td></tr>".format(sds.data_source if sds.data_source else "",
-                                                                                                          int(sds.warning) if sds.warning else "",
-                                                                                                          int(sds.critical) if sds.critical else "")
-                    )
+                                       <td class='ds_critical'>{}</td></tr>"
+                                      .format(sds.data_source if sds.data_source else "",
+                                              int(sds.warning) if sds.warning else "",
+                                              int(sds.critical) if sds.critical else ""))
                     params.append("</tbody></table></div></div></div>")
                     svc_templates.append("<p class='text-danger'><b>Select service template:</b></p> ")
                     svc_templates.append("<select class='form-control' id='service_template_%d'>" % option)
                     svc_templates.append("<option value='' selected>Select</option>")
                     for svc_param in svc_params:
-                        svc_templates.append("<option value='%d'>%s</option>" % (svc_param.id, svc_param.parameter_description))
+                        svc_templates.append("<option value='%d'>%s</option>" % (svc_param.id,
+                                                                                 svc_param.parameter_description))
                     svc_templates.append("</select>")
                 else:
                     params.append("<h5 class='text-warning'>No data source associated.</h5> ")
@@ -1312,9 +1406,23 @@ def get_old_configuration_for_svc_edit(request, option="", service_id="", device
     return dajax.json()
 
 
-# get service parameters and data source tables for service addition form
 @dajaxice_register
 def get_new_configuration_for_svc_edit(request, service_id="", template_id=""):
+    """Show modified information of service
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        service_id (int): service id
+        template_id (unicode): template id
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
     field_id = "#show_new_configuration_{0}".format(service_id)
     params = []
@@ -1322,87 +1430,98 @@ def get_new_configuration_for_svc_edit(request, service_id="", template_id=""):
     template = ServiceParameters.objects.get(pk=template_id)
     params.append("<br />")
     params.append("<h5 class='text-danger'><b>Modified configuration:</b></h5>")
-    params.append("<div class=''><div class='box border red'><div class='box-title'><h4><i class='fa fa-table'></i>Modified Service Parameters</h4></div>")
+    params.append("<div class=''>\
+                   <div class='box border red'>\
+                   <div class='box-title'>\
+                       <h4><i class='fa fa-table'></i>Modified Service Parameters</h4>\
+                   </div>")
     params.append("<div class='box-body'><table class='table'>")
-    params.append("<thead><tr><th>Normal Check Interval</th><th>Retry Check Interval</th><th>Max Check Attemps</th></tr></thead>")
+    params.append("<thead><tr>\
+                       <th>Normal Check Interval</th>\
+                       <th>Retry Check Interval</th>\
+                       <th>Max Check Attempts</th>\
+                   </tr></thead>")
     params.append("<tbody><tr><td>%d</td><td>%d</td><td>%d</td></tr>" % (template.normal_check_interval,
                                                                          template.retry_check_interval,
-                                                                         template.max_check_attempts)
-    )
+                                                                         template.max_check_attempts))
     params.append("</tbody>")
-    params.append("<thead><tr><th>DS Name</th><th>Warning</th><th>Critical</th></tr></thead><tbody>")
+    params.append("<thead><tr>\
+                       <th>DS Name</th>\
+                       <th>Warning</th>\
+                       <th>Critical</th>\
+                   </tr></thead><tbody>")
     data_sources = service.service_data_sources.all()
-    for sds in data_sources :
+    for sds in data_sources:
         params.append("<tr class='data_source_field'><td class='ds_name'>{}</td>\
                        <td contenteditable='true' class='ds_warning'>{}</td>\
-                       <td contenteditable='true' class='ds_critical'>{}</td></tr>".format(sds.name if sds.name else "",
-                                                                                          int(sds.warning) if sds.warning else "",
-                                                                                          int(sds.critical) if sds.critical else "")
-    )
+                       <td contenteditable='true' class='ds_critical'>{}</td></tr>"
+                      .format(sds.name if sds.name else "",
+                              int(sds.warning) if sds.warning else "",
+                              int(sds.critical) if sds.critical else ""))
     params.append("</tbody></table></div></div></div>")
     dajax.assign(field_id, 'innerHTML', ''.join(params))
     return dajax.json()
 
 
-# editing services to nocout core
 @dajaxice_register
 def edit_services(request, svc_data):
-    """
-    Parameters:
-    [
-        {
-            "service_id": "7",
-            "data_source": [
-                {
-                    "data_source": "Management_Port_on_Odu",
-                    "warning": "",
-                    "critical": ""
-                },
-                {
-                    "data_source": "Radio_Interface",
-                    "warning": "",
-                    "critical": ""
-                }
-            ],
-            "template_id": "4",
-            "device_id": "545"
-        },
-        {
-            "service_id": "14",
-            "data_source": [
-                {
-                    "data_source": "odu_sn",
-                    "warning": "",
-                    "critical": ""
-                }
-            ],
-            "template_id": "4",
-            "device_id": "545"
-        }
-    ]
-    Return:
-    {
-        "snmp_community": {
-            "read_community": "public",
-            "version": "v2c"
-        },
-        "agent_tag": "snmp",
-        "service_name": "radwin_rssi",
-        "snmp_port": 161,
-        "serv_params": {
-            "normal_check_interval": 5,
-            "max_check_attempts": 5,
-            "retry_check_interval": 5
-        },
-        "device_name": "radwin",
-        "mode": "editservice",
-        "cmd_params": {
-            "rssi": {
-                "warning": "-50",
-                "critical": "-80"
-            }
-        }
-    }
+    """Edit device services
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        svc_data (list): list of dictionaries
+                        i.e. [
+                            {
+                                'service_id': u'1',
+                                'data_source': [
+                                    {
+                                        'warning': u'-50',
+                                        'critical': u'-85',
+                                        'name': u'rssi'
+                                    }
+                                ],
+                                'template_id': u'2',
+                                'device_id': u'545'
+                            },
+                            {
+                                'service_id': u'13',
+                                'data_source': [
+                                    {
+                                        'warning': u'',
+                                        'critical': u'',
+                                        'name': u'idu_sn'
+                                    }
+                                ],
+                                'template_id': u'3',
+                                'device_id': u'545'
+                            }
+                        ]
+
+    Returns:
+        result (dict): dictionary containing service information
+                    i.e. {
+                            'message': u"Successfully edited service 'radwin_rssi'. <br />
+                                         Successfully edited service 'radwin_idu_sn_invent'. <br />",
+                            'data': {
+                                'snmp_community': {
+                                    'read_community': 'public',
+                                    'version': 'v1'
+                                },
+                                'service_name': 'radwin_idu_sn_invent',
+                                'serv_params': {
+                                    'normal_check_interval': 5,
+                                    'max_check_attempts': 5,
+                                    'retry_check_interval': 1
+                                },
+                                'device_name': 'device_116',
+                                'mode': 'editservice',
+                                'cmd_params': {
+
+                                }
+                            },
+                            'success': 1
+                        }
+
     """
     result = dict()
     result['data'] = {}
@@ -1473,7 +1592,7 @@ def edit_services(request, svc_data):
             encoded_data = urllib.urlencode(service_data)
 
             # sending post request to nocout device app to add single service at a time
-            r = requests.post(url , data=encoded_data)
+            r = requests.post(url, data=encoded_data)
 
             # converting post response data into python dict expression
             response_dict = ast.literal_eval(r.text)
@@ -1489,12 +1608,13 @@ def edit_services(request, svc_data):
                     messages += result['message']
 
                     try:
-                        # if service exist in 'service_deviceserviceconfiguration' table than update service else create it
+                        # if service exist in 'service_deviceserviceconfiguration' table
+                        # than update service else create it
                         for data_source in sd['data_source']:
                             dsc = DeviceServiceConfiguration.objects.get(device_name=device.device_name,
                                                                          service_name=service.name,
                                                                          data_source=data_source['name'])
-                            dsc.agent_tag = str(DeviceType.objects.get(pk = device.device_type).agent_tag)
+                            dsc.agent_tag = str(DeviceType.objects.get(pk=device.device_type).agent_tag)
                             dsc.port = str(service_para.protocol.port)
                             dsc.version = str(service_para.protocol.version)
                             dsc.read_community = str(service_para.protocol.read_community)
@@ -1511,18 +1631,19 @@ def edit_services(request, svc_data):
                     except Exception as e:
                         logger.info(e)
                 else:
-                    result['message'] += "Successfully edited service '%s'. <br />" % (service.name)
+                    result['message'] += "Successfully edited service '%s'. <br />" % service.name
                     device = Device.objects.get(pk=int(sd['device_id']))
                     messages += result['message']
 
                     # save service to 'service_deviceserviceconfiguration' table
                     try:
-                        # if service exist in 'service_deviceserviceconfiguration' table than update service else create it
+                        # if service exist in 'service_deviceserviceconfiguration' table
+                        # than update service else create it
                         for data_source in sd['data_source']:
                             dsc = DeviceServiceConfiguration.objects.get(device_name=device.device_name,
                                                                          service_name=service.name,
                                                                          data_source=data_source['name'])
-                            dsc.agent_tag = str(DeviceType.objects.get(pk = device.device_type).agent_tag)
+                            dsc.agent_tag = str(DeviceType.objects.get(pk=device.device_type).agent_tag)
                             dsc.port = str(service_para.protocol.port)
                             dsc.version = str(service_para.protocol.version)
                             dsc.read_community = str(service_para.protocol.read_community)
@@ -1542,7 +1663,7 @@ def edit_services(request, svc_data):
                     device.save()
         except Exception as e:
             logger.info(e)
-            result['message'] += "Failed to edit service '%s'. <br />" % (service.name)
+            result['message'] += "Failed to edit service '%s'. <br />" % service.name
             messages += result['message']
 
     # assign messages to result dict message key
@@ -1555,30 +1676,63 @@ def edit_services(request, svc_data):
 
 @dajaxice_register
 def delete_service_form(request, value):
-    """
-    Return:
-    {
-        "success": 1,     # 0 - fail, 1 - success, 2 - exception
-        "message": "Success/Fail message.",
-        "data": {
-            "meta": {},
-            "objects": {
-                 "device_name": <id>,
-                 "device_name": <name>,
-                 "device_alias": <name>,
-                 "services": [
-                          {
-                              "name': <id>,
-                              "value": <value>,
-                          },
-                          {
-                              "name': <id>,
-                              "value": <value>,
-                          }
-                 ]
-            }
-        }
-    }
+    """Get parameters for service delete form
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        value (int): device id
+
+    Returns:
+        result (dict): dictionary containing services information
+                    i.e. {
+                            'message': 'Successfully render form.',
+                            'data': {
+                                'meta': '',
+                                'objects': {
+                                    'master_site': u'master_UA',
+                                    'device_alias': u'Device116',
+                                    'is_added': 1L,
+                                    'services': [
+                                        {
+                                            'value': u'Receivedsignalstrength',
+                                            'key': 1L
+                                        },
+                                        {
+                                            'value': u'IDUserialnumber',
+                                            'key': 13L
+                                        },
+                                        {
+                                            'value': u'totaldownlinkutilization',
+                                            'key': 7L
+                                        },
+                                        {
+                                            'value': u'ODUserialnumber',
+                                            'key': 14L
+                                        },
+                                        {
+                                            'value': u'portspeedstatus',
+                                            'key': 11L
+                                        },
+                                        {
+                                            'value': u'totaluplinkutilization',
+                                            'key': 8L
+                                        },
+                                        {
+                                            'value': u'channelbandwidth',
+                                            'key': 15L
+                                        },
+                                        {
+                                            'value': u'portup-downstatus',
+                                            'key': 10L
+                                        }
+                                    ],
+                                    'device_name': u'device_116',
+                                    'device_id': 545
+                                }
+                            },
+                            'success': 0
+                        }
+
     """
     # device to which services are associated
     device = Device.objects.get(id=value)
@@ -1619,22 +1773,57 @@ def delete_service_form(request, value):
                 result['data']['objects']['services'] = []
                 for svc in monitored_services:
                     service = Service.objects.get(name=svc)
-                    svc_dict = {}
+                    svc_dict = dict()
                     svc_dict['key'] = service.id
                     svc_dict['value'] = service.alias
                     result['data']['objects']['services'].append(svc_dict)
             else:
-                result['message'] = "Master site doesn't exist. <br /> Please first create master site with name 'master_UA'."
+                result['message'] = "Master site doesn't exist. <br />\
+                                     Please first create master site with name 'master_UA'."
         else:
             result['message'] = "First add device in nms core."
     except:
         logger.info("No service to monitor.")
-
     return json.dumps({'result': result})
 
 
 @dajaxice_register
 def delete_services(request, service_data):
+    """Delete device services
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        service_data (list): list of dictionaries
+                        i.e. [
+                                {
+                                    'service_id': u'1',
+                                    'device_id': u'545'
+                                },
+                                {
+                                    'service_id': u'7',
+                                    'device_id': u'545'
+                                },
+                                {
+                                    'service_id': u'14',
+                                    'device_id': u'545'
+                                }
+                            ]
+
+    Returns:
+        result (dict):  dictionary containing service information
+                    i.e. {
+                            'message': u"Successfully deleted service 'radwin_rssi'. <br />
+                                         Successfully deleted service 'radwin_dl_utilization'. <br />
+                                         Successfully deleted service 'radwin_odu_sn_invent'. <br />",
+                            'data': {
+                                'service_name': 'radwin_odu_sn_invent',
+                                'mode': 'deleteservice',
+                                'device_name': 'device_116'
+                            },
+                            'success': 1
+                        }
+
+    """
     result = dict()
     result['data'] = {}
     result['success'] = 0
@@ -1656,9 +1845,9 @@ def delete_services(request, service_data):
             device = Device.objects.get(pk=svc['device_id'])
             service = Service.objects.get(pk=svc['service_id'])
             service_data = {
-                'mode' : 'deleteservice',
-                'device_name' : str(device.device_name),
-                'service_name' : str(service.name)
+                'mode': 'deleteservice',
+                'device_name': str(device.device_name),
+                'service_name': str(service.name)
             }
 
             master_site = SiteInstance.objects.get(name='master_UA')
@@ -1675,7 +1864,7 @@ def delete_services(request, service_data):
             encoded_data = urllib.urlencode(service_data)
 
             # sending post request to nocout device app to add single service at a time
-            r = requests.post(url , data=encoded_data)
+            r = requests.post(url, data=encoded_data)
 
             # converting post response data into python dict expression
             response_dict = ast.literal_eval(r.text)
@@ -1688,13 +1877,14 @@ def delete_services(request, service_data):
                 # if response_dict doesn't have key 'success'
                 if response_dict.get('success') != 1:
                     logger.info(response_dict.get('error_message'))
-                    result['message'] += "Failed to delete service '%s'. <br />" % (service.name)
+                    result['message'] += "Failed to delete service '%s'. <br />" % service.name
                     messages += result['message']
                 else:
-                    result['message'] += "Successfully deleted service '%s'. <br />" % (service.name)
+                    result['message'] += "Successfully deleted service '%s'. <br />" % service.name
                     messages += result['message']
                     # delete service rows form 'service_deviceserviceconfiguration' table
-                    DeviceServiceConfiguration.objects.filter(device_name=device.device_name, service_name=service.name).delete()
+                    DeviceServiceConfiguration.objects.filter(device_name=device.device_name,
+                                                              service_name=service.name).delete()
 
         except Exception as e:
             logger.info(e.message)
@@ -1703,46 +1893,96 @@ def delete_services(request, service_data):
     return json.dumps({'result': result})
 
 
-#***********************************************************************************************************
-#***************************************** Service Add Functions ****************************************
-#***********************************************************************************************************
-
-# generate content for add service popup form
 @dajaxice_register
 def add_service_form(request, value):
+    """Show add service form
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        value (int): device id
+
+    Returns:
+        result (dict):  dictionary containing services information
+                    i.e. {
+                            'message': 'Successfully render form.',
+                            'data': {
+                                'meta': '',
+                                'objects': {
+                                    'master_site': u'master_UA',
+                                    'device_alias': u'Device116',
+                                    'is_added': 1L,
+                                    'services': [
+                                        {
+                                            'value': u'Receivedsignalstrength',
+                                            'key': 1L
+                                        },
+                                        {
+                                            'value': u'totaldownlinkutilization',
+                                            'key': 7L
+                                        },
+                                        {
+                                            'value': u'ODUserialnumber',
+                                            'key': 14L
+                                        },
+                                        {
+                                            'value': u'ssid',
+                                            'key': 20L
+                                        },
+                                        {
+                                            'value': u'IDUserialnumber',
+                                            'key': 13L
+                                        },
+                                        {
+                                            'value': u'totaluptime',
+                                            'key': 4L
+                                        },
+                                        {
+                                            'value': u'frequency',
+                                            'key': 16L
+                                        },
+                                        {
+                                            'value': u'RadwinUAS',
+                                            'key': 5L
+                                        },
+                                        {
+                                            'value': u'portautonegotiationstatus',
+                                            'key': 12L
+                                        },
+                                        {
+                                            'value': u'linkdistance',
+                                            'key': 18L
+                                        },
+                                        {
+                                            'value': u'portlinkethernetstatus',
+                                            'key': 9L
+                                        },
+                                        {
+                                            'value': u'estimatedthroughput',
+                                            'key': 6L
+                                        },
+                                        {
+                                            'value': u'mimoanddiversitytype',
+                                            'key': 17L
+                                        },
+                                        {
+                                            'value': u'portup-downstatus',
+                                            'key': 10L
+                                        },
+                                        {
+                                            'value': u'producttype',
+                                            'key': 19L
+                                        }
+                                    ],
+                                    'device_name': u'device_116',
+                                    'device_id': 545
+                                }
+                            },
+                            'success': 0
+                        }
+
+    """
     # device to which services are associated
     device = Device.objects.get(id=value)
-    # result: data dictionary send in ajax response
-    #{
-    #  "success": 1,     # 0 - fail, 1 - success, 2 - exception
-    #  "message": "Success/Fail message.",
-    #  "data": {
-    #     "meta": {},
-    #     "objects": {
-    #          "device_name": <id>,
-    #          "device_name": <name>,
-    #          "device_alias": <name>,
-    #          "services": [
-    #                   {
-    #                       "name': <id>,
-    #                       "value": <value>,
-    #                   },
-    #                   {
-    #                       "name': <id>,
-    #                       "value": <value>,
-    #                   }
-    #           ]
-    #          "ports": [
-    #                   {
-    #                       "name': <id>,
-    #                       "value": <value>,
-    #                   },
-    #                   {
-    #                       "name': <id>,
-    #                       "value": <value>,
-    #                   }
-    #           ]
-    #}
     result = dict()
     result['data'] = {}
     result['success'] = 0
@@ -1797,18 +2037,33 @@ def add_service_form(request, value):
                     result['data']['objects']['services'].append(svc_dict)
 
             else:
-                result['message'] = "Master site doesn't exist. <br /> Please first create master site with name 'master_UA'."
+                result['message'] = "Master site doesn't exist. <br />\
+                                     Please first create master site with name 'master_UA'."
         else:
             result['message'] = "First add device in nms core."
     except:
         logger.info("No service to monitor.")
-
     return json.dumps({'result': result})
 
 
-# get service templates for service addition form
 @dajaxice_register
 def get_old_configuration_for_svc_add(request, option="", service_id="", device_id=""):
+    """Show currently present information of service in schema
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (int): checkbox value
+        service_id (unicode): service id
+        device_id (unicode): device id
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
     params = []
     svc_templates = []
@@ -1825,7 +2080,8 @@ def get_old_configuration_for_svc_add(request, option="", service_id="", device_
                     svc_templates.append("<select class='form-control' id='service_template_%d'>" % option)
                     svc_templates.append("<option value='' selected>Select</option>")
                     for svc_param in svc_params:
-                        svc_templates.append("<option value='%d'>%s</option>" % (svc_param.id, svc_param.parameter_description))
+                        svc_templates.append("<option value='%d'>%s</option>" % (svc_param.id,
+                                                                                 svc_param.parameter_description))
                     svc_templates.append("</select>")
                 else:
                     params.append("<h5 class='text-warning'>No data source associated.</h5> ")
@@ -1837,9 +2093,23 @@ def get_old_configuration_for_svc_add(request, option="", service_id="", device_
     return dajax.json()
 
 
-# get service parameters and data source tables for service addition form
 @dajaxice_register
 def get_new_configuration_for_svc_add(request, service_id="", template_id=""):
+    """Show modified information of service
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        service_id (int): service id
+        template_id (unicode): template id
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
     field_id = "#show_new_configuration_{0}".format(service_id)
     params = []
@@ -1847,87 +2117,95 @@ def get_new_configuration_for_svc_add(request, service_id="", template_id=""):
     template = ServiceParameters.objects.get(pk=template_id)
     params.append("<br />")
     params.append("<h5 class='text-warning'><b>Selected configuration:</b></h5>")
-    params.append("<div class=''><div class='box border orange'><div class='box-title'><h4><i class='fa fa-table'></i>Selected Service Parameters</h4></div>")
+    params.append("<div class=''>\
+                   <div class='box border orange'>\
+                   <div class='box-title'>\
+                       <h4><i class='fa fa-table'></i>Selected Service Parameters</h4>\
+                   </div>")
     params.append("<div class='box-body'><table class='table'>")
-    params.append("<thead><tr><th>Normal Check Interval</th><th>Retry Check Interval</th><th>Max Check Attemps</th></tr></thead>")
+    params.append("<thead><tr>\
+                       <th>Normal Check Interval</th>\
+                       <th>Retry Check Interval</th>\
+                       <th>Max Check Attempts</th>\
+                   </tr></thead>")
     params.append("<tbody><tr><td>%d</td><td>%d</td><td>%d</td></tr>" % (template.normal_check_interval,
                                                                          template.retry_check_interval,
-                                                                         template.max_check_attempts)
-    )
+                                                                         template.max_check_attempts))
     params.append("</tbody>")
     params.append("<thead><tr><th>DS Name</th><th>Warning</th><th>Critical</th></tr></thead><tbody>")
+    # data sources associated with service
     data_sources = service.service_data_sources.all()
-    for sds in data_sources :
+    for sds in data_sources:
         params.append("<tr class='data_source_field'><td class='ds_name'>{}</td>\
                        <td contenteditable='true' class='ds_warning'>{}</td>\
-                       <td contenteditable='true' class='ds_critical'>{}</td></tr>".format(sds.name if sds.name else "",
-                                                                                          int(sds.warning) if sds.warning else "",
-                                                                                          int(sds.critical) if sds.critical else "")
-    )
+                       <td contenteditable='true' class='ds_critical'>{}</td></tr>"
+                      .format(sds.name if sds.name else "",
+                              int(sds.warning) if sds.warning else "",
+                              int(sds.critical) if sds.critical else ""))
     params.append("</tbody></table></div></div></div>")
     dajax.assign(field_id, 'innerHTML', ''.join(params))
     return dajax.json()
 
 
-# editing services to nocout core
 @dajaxice_register
 def add_services(request, svc_data):
-    """
-    Parameters:
-    [
-        {
-            "service_id": "7",
-            "data_source": [
-                {
-                    "data_source": "Management_Port_on_Odu",
-                    "warning": "",
-                    "critical": ""
-                },
-                {
-                    "data_source": "Radio_Interface",
-                    "warning": "",
-                    "critical": ""
-                }
-            ],
-            "template_id": "4",
-            "device_id": "545"
-        },
-        {
-            "service_id": "14",
-            "data_source": [
-                {
-                    "data_source": "odu_sn",
-                    "warning": "",
-                    "critical": ""
-                }
-            ],
-            "template_id": "4",
-            "device_id": "545"
-        }
-    ]
-    Return:
-    {
-        "snmp_community": {
-            "read_community": "public",
-            "version": "v2c"
-        },
-        "agent_tag": "snmp",
-        "service_name": "radwin_rssi",
-        "snmp_port": 161,
-        "serv_params": {
-            "normal_check_interval": 5,
-            "max_check_attempts": 5,
-            "retry_check_interval": 5
-        },
-        "device_name": "radwin",
-        "mode": "editservice",
-        "cmd_params": {
-            "rssi": {
-                "warning": "-50",
-                "critical": "-80"
-            }
-        }
-    }
+    """Add device services
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        svc_data (list): list of dictionaries
+                        i.e. [
+                            {
+                                'service_id': u'1',
+                                'data_source': [
+                                    {
+                                        'warning': u'-50',
+                                        'critical': u'-85',
+                                        'name': u'rssi'
+                                    }
+                                ],
+                                'template_id': u'2',
+                                'device_id': u'545'
+                            },
+                            {
+                                'service_id': u'13',
+                                'data_source': [
+                                    {
+                                        'warning': u'',
+                                        'critical': u'',
+                                        'name': u'idu_sn'
+                                    }
+                                ],
+                                'template_id': u'3',
+                                'device_id': u'545'
+                            }
+                        ]
+
+    Returns:
+        result (dict): dictionary of services information
+                    i.e. {
+                            'message': u"Successfully edited service 'radwin_rssi'. <br />
+                                         Successfully edited service 'radwin_idu_sn_invent'. <br />",
+                            'data': {
+                                'snmp_community': {
+                                    'read_community': 'public',
+                                    'version': 'v1'
+                                },
+                                'service_name': 'radwin_idu_sn_invent',
+                                'serv_params': {
+                                    'normal_check_interval': 5,
+                                    'max_check_attempts': 5,
+                                    'retry_check_interval': 1
+                                },
+                                'device_name': 'device_116',
+                                'mode': 'editservice',
+                                'cmd_params': {
+
+                                }
+                            },
+                            'success': 1
+                        }
+
     """
     result = dict()
     result['data'] = {}
@@ -1975,7 +2253,6 @@ def add_services(request, svc_data):
             result['data']['objects']['snmp_community']['read_community'] = str(service_para.protocol.read_community)
             # command parameters
             result['data']['objects']['cmd_params'] = {}
-
             # data_sources --> contains list of data sources
             data_sources = []
             try:
@@ -1995,8 +2272,6 @@ def add_services(request, svc_data):
                         data_sources.append(temp_dict)
             except Exception as e:
                 logger.info(e.message)
-
-
             # snmp port
             result['data']['objects']['snmp_port'] = str(service_para.protocol.port)
             # agent tag
@@ -2017,7 +2292,7 @@ def add_services(request, svc_data):
             encoded_data = urllib.urlencode(service_data)
 
             # sending post request to nocout device app to add single service at a time
-            r = requests.post(url , data=encoded_data)
+            r = requests.post(url, data=encoded_data)
 
             # converting post response data into python dict expression
             response_dict = ast.literal_eval(r.text)
@@ -2054,7 +2329,7 @@ def add_services(request, svc_data):
                     except Exception as e:
                         logger.info(e)
                 else:
-                    result['message'] += "Successfully added service '%s'. <br />" % (service.name)
+                    result['message'] += "Successfully added service '%s'. <br />" % service.name
                     device = Device.objects.get(pk=int(sd['device_id']))
                     messages += result['message']
 
@@ -2087,7 +2362,7 @@ def add_services(request, svc_data):
                     device.save()
         except Exception as e:
             logger.info(e)
-            result['message'] += "Failed to add service '%s'. <br />" % (service.name)
+            result['message'] += "Failed to add service '%s'. <br />" % service.name
             messages += result['message']
 
     # assign messages to result dict message key

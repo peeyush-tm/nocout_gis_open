@@ -4,10 +4,14 @@ inventory_mongo_migration.py
 File contains the data migrations of mongodb to mysql db for inventory services. Inventory services run once a day.
 
 """
+
+from nocout_site_name import *
 import MySQLdb
 from datetime import datetime, timedelta
-from rrd_migration import mongo_conn
 import socket
+import imp
+
+mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -66,7 +70,7 @@ def read_data(start_time, end_time, **kwargs):
     #end_time = datetime(2014, 6, 26, 18, 30)
     #start_time = end_time - timedelta(minutes=10)
     docs = [] 
-    db = mongo_conn(
+    db = mongo_module.mongo_conn(
         host=kwargs.get('configs').get('host'),
         port=int(kwargs.get('configs').get('port')),
         db_name=kwargs.get('configs').get('nosql_db')
