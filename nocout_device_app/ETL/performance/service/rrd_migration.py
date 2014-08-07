@@ -6,7 +6,7 @@ This script collects and stores data for all services running on all configured 
 
 """
 
-
+from nocout_site_name import *
 import os
 import demjson,json
 import re
@@ -14,8 +14,11 @@ from datetime import datetime, timedelta
 from xml.etree import ElementTree as ET
 import subprocess
 import pymongo
-import rrd_main
-import mongo_functions
+import imp
+
+utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
+mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
+config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
 def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 	"""
@@ -60,7 +63,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 	matching_criteria ={}
     	perf_db = None
 	threshold_values = {}
-	db = mongo_conn(
+	db = mongo_module.mongo_conn(
 	    host=mongo_host,
 	    port=int(mongo_port),
 	    db_name=mongo_db
@@ -92,7 +95,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		# Extracts the performance data from the rrdtool for services
 		if serv_disc == 'ping':
 			query_string = "GET services\nColumns: host_state\nFilter: host_name = %s\nOutputFormat: json\n" % (host)
-			query_output = json.loads(rrd_main.get_from_socket(site,query_string).strip())
+			query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
 			service_state = (query_output[0][0])
 			if service_state == 0:
 				service_state = "up"
@@ -101,7 +104,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		else:
 			query_string = "GET services\nColumns: service_state\nFilter: " + \
 			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (serv_disc,host)
-			query_output = json.loads(rrd_main.get_from_socket(site,query_string).strip())
+			query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
 			service_state = (query_output[0][0])
 			if service_state == 0:
 				service_state = "OK"
@@ -123,7 +126,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 			ds_index = params[file_paths.index(path)]
 			if i == 0:
 	    			# Data will be exported from last inserted entry in mongodb uptill current time
-				start_time = mongo_functions.get_latest_entry(db_type='mongodb', db=db, table_name=None,
+				start_time = mongo_module.get_latest_entry(db_type='mongodb', db=db, table_name=None,
 								host=host, serv=data_dict['service'], ds=ds_index)
 			data_series = do_export(site, host, path, ds_index, start_time, data_dict['service'])
 			data_dict.update({
@@ -141,7 +144,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 
 			status_dict['ds'] = ds_index
 			ds_values = data_series['data'][:-1]
-			start_time = mongo_functions.get_latest_entry(db_type='mongodb', db=db, table_name=None,
+			start_time = mongo_module.get_latest_entry(db_type='mongodb', db=db, table_name=None,
                                                                 host=host, serv=data_dict['service'], ds=ds_index)
 			for d in ds_values:
 				if d[-1] is not None:
@@ -168,11 +171,11 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 			status_dict['severity'] = service_state
 			matching_criteria.update({'host':str(host),'service':data_dict['service'],'site':site,'ds':ds_index})
 			if xml_file == '_HOST_.xml':
-				mongo_functions.mongo_db_update(db,matching_criteria,status_dict,"network_perf_data")
-				mongo_functions.mongo_db_insert(db,data_dict,"network_perf_data")
+				mongo_module.mongo_db_update(db,matching_criteria,status_dict,"network_perf_data")
+				mongo_module.mongo_db_insert(db,data_dict,"network_perf_data")
 			else:
-				mongo_functions.mongo_db_update(db,matching_criteria,status_dict,"serv_perf_data")
-				mongo_functions.mongo_db_insert(db,data_dict,"serv_perf_data")
+				mongo_module.mongo_db_update(db,matching_criteria,status_dict,"serv_perf_data")
+				mongo_module.mongo_db_insert(db,data_dict,"serv_perf_data")
 
 		#status = insert_data(data_dict)
 
@@ -414,7 +417,7 @@ def insert_data(data_dict):
     port = db_port()
 
     #Get the mongodb connection object
-    db = mongo_conn(
+    db = mongo_module.mongo_conn(
         host='localhost',
         port=int(port),
         db_name='nocout'

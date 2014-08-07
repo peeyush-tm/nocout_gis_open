@@ -11,14 +11,14 @@ at any given time.
 
 """
 
-
+from nocout_site_name import *
 import MySQLdb
 from datetime import datetime
-from rrd_migration import mongo_conn
-from mongo_functions import get_latest_entry
 import subprocess
 import socket
+import imp
 
+mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -56,7 +56,7 @@ def main(**configs):
     would be imported to mysql, only, and this way mysql would not store
     duplicate data.
     """
-    start_time = get_latest_entry(
+    start_time = mongo_module.get_latest_entry(
         db_type='mysql',
         db=db,
         site=configs.get('site'),
@@ -91,7 +91,7 @@ def read_data(start_time, end_time, **kwargs):
     docs = []
     #start_time = end_time - timedelta(minutes=10)
     # Connection to mongodb database, `db` is a python dictionary object 
-    db = mongo_conn(
+    db = mongo_module.mongo_conn(
         host=kwargs.get('configs').get('host'),
         port=int(kwargs.get('configs').get('port')),
         db_name=kwargs.get('configs').get('nosql_db')

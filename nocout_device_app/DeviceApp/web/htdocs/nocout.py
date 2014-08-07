@@ -74,7 +74,7 @@ logger = nocout_log()
 
 
 def main():
-    local_response = ''
+    response = ''
     action = ''
     action = html.var('mode')
     host = html.var('device_name')
@@ -520,7 +520,7 @@ def delete_host_rules(hostname=None, servicename=None):
         "snmp_ports": [],
         "snmp_communities": []
     }
-
+    os.open(rules_file, os.O_RDWR|os.O_CREAT)
     execfile(rules_file, g_service_vars, g_service_vars)
     del g_service_vars['__builtins__']
 

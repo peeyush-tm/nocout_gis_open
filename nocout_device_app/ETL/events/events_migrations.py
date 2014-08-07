@@ -4,9 +4,13 @@ Main file for migration of data from mongodb to mysql for events.This file runs 
 
 """
 
-from configparser import parse_config_obj
+from nocout_site_name import *
+import imp
+
+config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+
 def main():
-    configs = parse_config_obj()
+    configs = config_module.parse_config_obj()
     for section, options in configs.items():
 	network_event_script = options.get('network_event').get('script')
         network_event_migration_script = __import__(network_event_script)

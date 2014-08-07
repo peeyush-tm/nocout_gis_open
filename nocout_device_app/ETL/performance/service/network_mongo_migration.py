@@ -1,24 +1,23 @@
 """
-service_status_tables_migration.py
+network_mongo_migration.py
 ==========================
 
-Script to bulk insert current status data (for services) from
-Teramatrix pollers to mysql in 5 min interval for all services except Ping.
+Script to bulk insert data from Teramatrix Pollers into
+central mysql db, for network services.
+The data in the Teramatrix Pollers is stored in Mongodb.
 
-Current status data means for each (host, service) pair only most latest entry would
-be kept in the database, which describe the status for that service running on a host,
-at any given time.
-
+Network services include : Ping
 """
 
-
+from nocout_site_name import *
 import MySQLdb
-from datetime import datetime
-from rrd_migration import mongo_conn
-from mongo_functions import get_latest_entry
+from datetime import datetime, timedelta
 import subprocess
 import socket
+import imp
 
+mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
+utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -37,11 +36,11 @@ def main(**configs):
 	"sql_passwd": "admin",
 	"nosql_passwd": "none",
 	"port": 27019 # The port being used by mongodb process
-	"service_status_tables": {
+	"network": {
 	    "nosql_db": "nocout" # Mongodb database name
 	    "sql_db": "nocout_dev" # Sql database name
-	    "scripit": "service_status_tables_migration" # Script which would do all the migrations
-	    "table_name": "performance_servicestatus" # Sql table name
+	    "script": "network_mongo_migration" # Script which would do all the migrations
+	    "table_name": "performance_performancenetwork" # Sql table name
 
 	    }
 	}
@@ -56,11 +55,11 @@ def main(**configs):
     would be imported to mysql, only, and this way mysql would not store
     duplicate data.
     """
-    start_time = get_latest_entry(
-        db_type='mysql',
-        db=db,
-        site=configs.get('site'),
-        table_name=configs.get('table_name')
+    start_time = mongo_module.get_latest_entry(
+		    db_type='mysql', 
+		    db=db,
+		    site=configs.get('site'),
+		    table_name=configs.get('table_name')
     )
 
     end_time = datetime.now()
@@ -71,9 +70,10 @@ def main(**configs):
         data_values.extend(values_list)
     if data_values:
     	insert_data(configs.get('table_name'), data_values, configs=configs)
-   	print "Data inserted into my mysql db"
+    	print "Data inserted into mysql db"
     else:
-    	print "No data in mongodb in this time frame for table %s" % (configs.get('table_name'))
+	print "No data in the mongo db in this time frame"
+    
 
 def read_data(start_time, end_time, **kwargs):
     """
@@ -88,21 +88,24 @@ def read_data(start_time, end_time, **kwargs):
     """
 
     db = None
-    docs = [] 
-    db = mongo_conn(
+    docs = []
+    #start_time = end_time - timedelta(minutes=10)
+    # Connection to mongodb database, `db` is a python dictionary object 
+    db = mongo_module.mongo_conn(
         host=kwargs.get('configs').get('host'),
         port=int(kwargs.get('configs').get('port')),
         db_name=kwargs.get('configs').get('nosql_db')
     )
     if db:
-	if start_time is None:
-		cur = db.device_service_status.find()
+	# `start_time` none means mysql table doesn't contain any entry, yet
+    	if start_time is None:
+	    start_time = end_time - timedelta(minutes=15)
+	    cur = db.network_perf.find({"data":{ "$elemMatch": { "time" : { "$gt": start_time, "$lt": end_time}}}})
 	else:
-        	cur = db.device_service_status.find({
-            	"check_time": {"$gt": start_time, "$lt": end_time}
-        	})
+	    cur = db.network_perf.find({"data":{ "$elemMatch": { "time" : { "$gt": start_time, "$lt": end_time}}}})
         for doc in cur:
             docs.append(doc)
+     
     return docs
 
 def build_data(doc):
@@ -113,18 +116,20 @@ def build_data(doc):
     Args:
 	doc (dict): Single mongodb entry
 
+    Kwargs:
+
     Returns:
         A list of tuples, one tuple corresponds to a single row in mysql db
     """
     values_list = []
     #uuid = get_machineid()
     machine_name = get_machine_name()
-    local_time_epoch = get_epoch_time(doc.get('local_timestamp'))
-    # Advancing loca_timestamp/sys_timestamp to next 5 mins time frame
-    local_time_epoch += 300
-
     for entry in doc.get('data'):
-	check_time_epoch = get_epoch_time(entry.get('time'))
+	if doc.get('ds') == 'rtmin' or doc.get('ds') == 'rtmax':
+		break
+        check_time_epoch = get_epoch_time(entry.get('time'))
+	# Advancing local_timestamp/sys_timestamp to next 5 mins time frame
+	local_time_epoch = check_time_epoch + 300
         t = (
             #uuid,
             doc.get('host'),
@@ -140,80 +145,54 @@ def build_data(doc):
             doc.get('meta').get('cric'),
             local_time_epoch,
             check_time_epoch,
-	    doc.get('ip_address'),
-	    doc.get('severity'),
-	)
+            doc.get('ip_address'),
+	    doc.get('severity')
+        )
         values_list.append(t)
         t = ()
+
     return values_list
 
 def insert_data(table, data_values, **kwargs):
-	"""
-        Function to bulk insert data into mysqldb
+    """
+    Function to insert data into mysql tables
 
-	Args:
-	    table (str): Mysql table to which to be inserted
-	    data_value (list): List of data tuples
+    Args:
+        table (str): Table name into which data to be inserted
+	data_values: Values in the form of list of tuples
 
-	Kwargs (dict): Dictionary to hold connection variables
-	"""
-	db = mysql_conn(configs=kwargs.get('configs'))
-	query = "SELECT * FROM %s " % table +\
-                "WHERE `device_name`='%s' AND `site_name`='%s' AND `service_name`='%s'" %(str(data_values[0][0]),data_values[0][3],data_values[0][1])
-        cursor = db.cursor()
-        try:
-                cursor.execute(query)
-		result = cursor.fetchone()
-        except MySQLdb.Error, e:
-                raise MySQLdb.Error, e
-        db.commit()
-	
-	if result:
-		
- 		query = "UPDATE `%s` " % table
-		query += """SET `device_name`=%s,`service_name`=%s,
-		`machine_name`=%s, `site_name`=%s, `data_source`=%s, `current_value`=%s,
-		`min_value`=%s,`max_value`=%s, `avg_value`=%s, `warning_threshold`=%s,
-		`critical_threshold`=%s, `sys_timestamp`=%s,`check_timestamp`=%s,
-		`ip_address`=%s,`severity`=%s
-		WHERE `device_name`=%s AND `site_name`=%s AND `service_name`=%s
-		""" 
-		try:
-			data_values = map(lambda x: x + (x[0], x[3], x[1],), data_values)
-                	cursor.executemany(query, data_values)
-		except MySQLdb.Error, e:
-                        raise MySQLdb.Error, e
-                db.commit()
-		cursor.close()
-
-	else:
-		query = "INSERT INTO `%s`" % table
- 		query+= """(device_name, service_name, machine_name, 
-            	site_name, data_source, current_value, min_value, 
-            	max_value, avg_value, warning_threshold, 
-            	critical_threshold, sys_timestamp, check_timestamp,ip_address,severity) 
-           	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s,%s)
-		"""
-    		cursor = db.cursor()
-    		try:
-        		cursor.executemany(query, data_values)
-    		except MySQLdb.Error, e:
-       			raise MySQLdb.Error, e
-    		db.commit()
-    		cursor.close()
+    Kwargs:
+        kwargs (dict): Python dict to store connection variables
+    """
+    db = mysql_conn(configs=kwargs.get('configs'))
+    query = "INSERT INTO `%s` " % table
+    query += """
+            (device_name, service_name, machine_name, 
+            site_name, data_source, current_value, min_value, 
+            max_value, avg_value, warning_threshold, 
+            critical_threshold, sys_timestamp, check_timestamp,ip_address,severity) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,%s)
+            """
+    cursor = db.cursor()
+    try:
+        cursor.executemany(query, data_values)
+    except MySQLdb.Error, e:
+        raise MySQLdb.Error, e
+    db.commit()
+    cursor.close()
 
 def get_epoch_time(datetime_obj):
     """
-    Function to convert datetime_obj into unix
-    epoch time
+    Function to convert python datetime object into
+    unix epoch time
 
     Args:
         datetime_obj (datetime): Python datetime object
 
-    Returns:
-        Unix epoch time in integer
+    Output:
+        Unix epoch time in intteger format
     """
-    # Get India times (GMT+5.30)
+    # Get the time in IST (GMT+5:30)
     utc_time = datetime(1970, 1,1, 5, 30)
     if isinstance(datetime_obj, datetime):
         epoch_time = int((datetime_obj - utc_time).total_seconds())
@@ -222,6 +201,15 @@ def get_epoch_time(datetime_obj):
         return datetime_obj
 
 def mysql_conn(db=None, **kwargs):
+    """
+    Function to create connection to mysql database
+
+    Args:
+        db (dict): Mysqldb connection object
+
+    Kwargs:
+        kwargs (dict): Dict to store mysql connection variables
+    """
     try:
         db = MySQLdb.connect(
                 host=kwargs.get('configs').get('host'),
@@ -252,8 +240,8 @@ def get_machineid():
 
 def get_machine_name(machine_name=None):
     """
-    Function get the fully qualified domain name of the machine
-    on which Python interpreter is executing
+    Function to get fully qualified domain name of the machine
+    where Python interpreter is currently executing
     """
     try:
         machine_name = socket.gethostname()

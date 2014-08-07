@@ -5,11 +5,13 @@ Content: rrd_main file extracts the all devices and associated services with the
 
 """
 
+from nocout_site_name import *
 import rrd_migration
 import socket
 import json
-from configparser import parse_config_obj
+import imp
 
+config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
 class MKGeneralException(Exception):
     """
@@ -92,7 +94,7 @@ if __name__ == '__main__':
     and extracts data
 
     """
-    configs = parse_config_obj()
+    configs = config_module.parse_config_obj()
     for section, options in configs.items():
         site = options.get('site')
         get_host_services_name(
