@@ -6,7 +6,7 @@ from inventory.models import IconSettings
 from service.models import Service
 from django.contrib.staticfiles.templatetags.staticfiles import static
 
-logger=logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 @dajaxice_register
