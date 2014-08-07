@@ -26,6 +26,7 @@ class ServiceForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         """
         Meta Information

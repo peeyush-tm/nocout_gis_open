@@ -13,6 +13,7 @@ from .forms import CommandForm
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
 
+
 class CommandList(ListView):
     """
     Generic Class based View to List the Commands.
@@ -26,13 +27,13 @@ class CommandList(ListView):
         Preparing the Context Variable required in the template rendering.
 
         """
-        context=super(CommandList, self).get_context_data(**kwargs)
+        context = super(CommandList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',             'sTitle' : 'Name',          'sWidth':'null', },
-            {'mData':'alias',            'sTitle' : 'Alias',         'sWidth':'null', },
-            {'mData':'command_line',     'sTitle' : 'Command Line',  'sWidth':'null', },
-            {'mData':'actions',          'sTitle' : 'Actions',       'sWidth':'10%',  'bSortable': False},
-            ]
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
+            {'mData': 'command_line', 'sTitle': 'Command Line', 'sWidth': 'null', },
+            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
+        ]
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
