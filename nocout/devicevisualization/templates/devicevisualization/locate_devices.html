@@ -17,8 +17,8 @@
     <span class="date-range pull-right">
         <div class="btn-group">
             <ul class="list-unstyled list-inline">
-                <li>Show Connected SS <input type="checkbox" name="showAllSS" id="showAllSS" onclick="networkMapInstance.plotAllDevice_gmap()" style="vertical-align: sub;" /></li>
-                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines" onclick="networkMapInstance.showConnectionLines_gmap()" style="vertical-align: sub;" /></li>
+                <li>Show Connected SS <input type="checkbox" name="showAllSS" id="showAllSS" onclick="networkMapInstance.plotAllDevice_gmap()" style="vertical-align: text-top;" /></li>
+                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines" onclick="networkMapInstance.showConnectionLines_gmap()" style="vertical-align: text-top;" /></li>
                 <li>
                     <button id="advFilterBtn" class="btn btn-info" onclick="showAdvFilters();" data-complete-text="<i class='fa fa-filter'></i> Advance Filters" data-loading-text="Please Wait...">
                         <i class='fa fa-filter'></i> Advance Filters
@@ -30,7 +30,15 @@
                 <li>
                     <button class="btn btn-info" id="createPolygonBtn"  data-complete-text="<i class='fa fa-location-arrow'></i> Select Devices" data-loading-text="Please Wait..."><i class="fa fa-location-arrow"></i> Select Devices</button>
                     <button class="btn btn-xs btn-danger hide" id="clearPolygonBtn"><i class="fa fa-times"></i> Clear Selection</button>
-                </li>                
+                </li>
+                <li>
+                    <button id="showToolsBtn" class="btn btn-info" onclick="showToolsPanel();">
+                        <i class='fa fa-cog'></i> Tools
+                    </button>
+                    <button id="removeToolsBtn" class="btn btn-danger hide" onclick="removetoolsPanel();" style="margin-left:10px;">
+                        <i class='fa fa-times'></i> Remove Tools
+                    </button>
+                </li>
             </ul>            
         </div>
     </span>
@@ -83,30 +91,71 @@
         <div class="clear"></div>
     </div>
     <div class='box-body' style="position:relative">
-        <!--div on which the map is to be plot-->
 
         <!--Map Container Start-->
         <div id="deviceMap"></div>
         <!--Map Container End-->
-        <div id="sideInfoContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">
-                            <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#sideInfo">Selected Devices</a>
-                        </h3>
-                    </div>
-                    <div id="sideInfo" class="panel-collapse in">
-                        <div class="panel-body">Sorry, No device selected.</div>
+
+        <!--Tools Panel Start-->
+        <div id="toolsContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#tools">Google Map Tools</a>
+                    </h3>
+                </div>
+                <div id="tools" class="panel-collapse in">
+                    <div class="panel-body" align="center">
+                        <ul class="list-unstyled">
+                            <li>
+                                <button id="ruler_select" class="btn btn-info">Ruler</button>
+                                <button id="ruler_remove" class="btn btn-danger hide">Remove Ruler</button>
+                            </li>
+                            <li>
+                                <button id="point_select" class="btn btn-info">Add Point</button>
+                                <button id="point_remove" class="btn btn-danger hide">Remove Point</button>
+                            </li>
+                            <li>
+                                <button id="line_select" class="btn btn-info">Add Line</button>
+                                <button id="line_remove" class="btn btn-danger hide">Remove Line</button>
+                            </li>                        
+                            <li>
+                                <button id="freeze_select" class="btn btn-info">Freeze</button>
+                                <button id="freeze_remove" class="btn btn-danger hide">Un-Freeze</button>
+                            </li>
+                            <li>
+                                <button class="btn btn-info">Export Data</button>
+                            </li>
+                        </ul>
                     </div>
                 </div>
+            </div>
         </div>
+        <!--Tools Panel End-->
+
+        <!--SideInfo Panel Start-->
+        <div id="sideInfoContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#sideInfo">Selected Devices</a>
+                    </h3>
+                </div>
+                <div id="sideInfo" class="panel-collapse in">
+                    <div class="panel-body">Sorry, No device selected.</div>
+                </div>
+            </div>
+        </div>
+        <!--SideInfo Panel End-->
     </div>
 </div>
 
 <!-- Google Map Library-->
-<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,places&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
 <!--This library is used to create marker with labels-->
-<script type="text/javascript" src={% static "js/markerwithlabel.js" %}></script>
+<!-- <script type="text/javascript" src={% static "js/markerwithlabel.js" %}></script> -->
+<!--This library is used to draw label on google maps-->
+<script type="text/javascript" src={% static "js/infobox.js" %}></script>
 <!--This library is used for marker clustering-->
 <script type="text/javascript" src={% static "js/markerclusterer.js" %}></script>
 <!--OverlappingMarkerSpiderfier Library for marker spiderify effect-->

@@ -46,13 +46,15 @@ $("#technology").change(function(e) {
 /*This event triggers when Reset Filter button clicked*/
 $("#resetFilters").click(function(e) {
 
-    $("#resetFilters").button("loading");
-
-    /*Reset The basic filters dropdown*/
-    $("#technology").val($("#technology option:first").val());
-    $("#vendor").val($("#vendor option:first").val());
-    $("#state").val($("#state option:first").val());
-    $("#city").val($("#city option:first").val());
+    if(isFreeze == 0) {
+        
+        $("#resetFilters").button("loading");
+        /*Reset The basic filters dropdown*/
+        $("#technology").val($("#technology option:first").val());
+        $("#vendor").val($("#vendor option:first").val());
+        $("#state").val($("#state option:first").val());
+        $("#city").val($("#city option:first").val());
+    }
 
     if(window.location.pathname.indexOf("google_earth") > -1) {
     
@@ -66,17 +68,20 @@ $("#resetFilters").click(function(e) {
         earth_instance.getDevicesData_earth();
 
     } else {
-        /*Reset filter object variable*/
-        appliedFilterObj_gmaps = {};
+        
+        if(isFreeze == 0) {
+            /*Reset filter object variable*/
+            appliedFilterObj_gmaps = {};
 
-        /*Reset markers, polyline & filters*/
-        networkMapInstance.clearGmapElements();
+            /*Reset markers, polyline & filters*/
+            networkMapInstance.clearGmapElements();
 
-        /*Reset Global Variables & Filters*/
-        networkMapInstance.resetVariables_gmap();
+            /*Reset Global Variables & Filters*/
+            networkMapInstance.resetVariables_gmap();
 
-        /*Call the make network to create the BS-SS network on the google map*/
-        networkMapInstance.getDevicesData_gmap();
+            /*Call the make network to create the BS-SS network on the google map*/
+            networkMapInstance.getDevicesData_gmap();
+        }
     }
 });
 
@@ -112,4 +117,116 @@ $("#createPolygonBtn").click(function(e) {
 $("#clearPolygonBtn").click(function(e) {
 
     networkMapInstance.clearPolygon();
+});
+
+
+/**
+ * This function shows tools panel to google map
+ *
+ */
+function showToolsPanel() {
+
+    /*Hide Tools Button*/
+    $("#showToolsBtn").addClass("hide");
+
+    /*Show Remove Button*/
+    $("#removeToolsBtn").removeClass("hide");
+
+    /*Show Tools Panel*/
+    $("#toolsContainer").removeClass("hide");
+}
+
+function removetoolsPanel() {    
+
+    /*Hide Tools Button*/
+    $("#showToolsBtn").removeClass("hide");
+
+    /*Show Remove Button*/
+    $("#removeToolsBtn").addClass("hide");
+
+    /*Show Tools Panel*/
+    $("#toolsContainer").addClass("hide");
+
+    if($("#ruler_select").hasClass("hide")) {
+        $("#ruler_remove").addClass("hide");
+        $("#ruler_select").removeClass("hide");
+    }
+
+    if($("#point_select").hasClass("hide")) {
+        $("#point_remove").addClass("hide");
+        $("#point_select").removeClass("hide");
+    }
+
+    if($("#line_select").hasClass("hide")) {
+        $("#line_remove").addClass("hide");
+        $("#line_select").removeClass("hide");
+    }
+
+    if($("#freeze_select").hasClass("hide")) {
+        $("#freeze_remove").addClass("hide");
+        $("#freeze_select").removeClass("hide");
+    }
+
+    networkMapInstance.clearToolsParams_gmap();
+}
+
+/**
+ * This event trigger when clicked on "Ruler" button
+ * @event click
+ */
+ $("#ruler_select").click(function(e) {
+
+    networkMapInstance.clearToolsParams_gmap();
+
+    if($("#ruler_remove").hasClass("hide")) {
+
+        $("#ruler_select").addClass("hide");
+        $("#ruler_remove").removeClass("hide");
+    }
+
+    networkMapInstance.addRulerTool_gmap();
+ });
+
+ /**
+  * This event unbind ruler click event & show the Ruler button again
+  * @event click
+  */
+$("#ruler_remove").click(function(e) {
+
+    if(!($("#ruler_remove").hasClass("hide"))) {
+        $("#ruler_select").removeClass("hide");
+        $("#ruler_remove").addClass("hide");
+    }
+
+    networkMapInstance.clearToolsParams_gmap_gmap();
+});
+
+
+/**
+ * This event trigger when clicked on "Ruler" button
+ * @event click
+ */
+ $("#freeze_select").click(function(e) {
+
+    if($("#freeze_remove").hasClass("hide")) {
+
+        $("#freeze_select").addClass("hide");
+        $("#freeze_remove").removeClass("hide");
+    }
+
+    networkMapInstance.freezeDevices_gmap();
+ });
+
+ /**
+  * This event unbind ruler click event & show the Ruler button again
+  * @event click
+  */
+$("#freeze_remove").click(function(e) {
+
+    if(!($("#freeze_remove").hasClass("hide"))) {
+        $("#freeze_select").removeClass("hide");
+        $("#freeze_remove").addClass("hide");
+    }
+
+    networkMapInstance.unfreezeDevices_gmap();
 });
