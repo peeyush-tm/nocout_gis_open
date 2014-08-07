@@ -5,12 +5,14 @@ File contains code for migrating the embeded mongodb data to mysql database.This
 
 """
 
+from nocout_site_name import *
 import MySQLdb
 from datetime import datetime, timedelta
-from rrd_migration import mongo_conn
 from events_rrd_migration import get_latest_event_entry
 import socket
+import imp
 
+mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -60,7 +62,7 @@ def read_data(start_time, end_time, **kwargs):
     db = None
     port = None
     docs = []
-    db = mongo_conn(
+    db = mongo_module.mongo_conn(
         host=kwargs.get('configs').get('host'),
         port=int(kwargs.get('configs').get('port')),
         db_name=kwargs.get('configs').get('nosql_db')

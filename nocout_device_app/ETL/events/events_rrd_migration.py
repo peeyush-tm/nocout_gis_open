@@ -7,12 +7,14 @@ File contains four functions.
 
 """
 
-
+from nocout_site_name import *
 import os,json
 from datetime import datetime, timedelta
-import rrd_migration,rrd_main,mysql_functions,mongo_functions
-from configparser import parse_config_obj
-				
+import imp
+
+utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
+mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
+config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
 def get_latest_event_entry(db_type=None, db=None, site=None,table_name=None):
 	"""
@@ -88,8 +90,8 @@ def service_perf_data_live_query(db,site,log_split):
 	if 'invent' not in log_split[5]:
 		query = "GET services\nColumns: service_perf_data\nFilter: service_description ~ %s\nFilter: host_name = %s\n" % ( 
 		log_split[5],log_split[4]) 
-		perf_data= rrd_main.get_from_socket(site, query)
-		perf_data = rrd_migration.get_threshold(perf_data)
+		perf_data= utility_module.get_from_socket(site, query)
+		perf_data = utility_module.get_threshold(perf_data)
 		
 		for ds in perf_data.iterkeys():
 			# Adding check for not storing data for rtmin and rtmax data source of ping services
@@ -107,15 +109,15 @@ def service_perf_data_live_query(db,site,log_split):
 					ip_address=host_ip,service_name=log_split[5],site_name=site)
 			if log_split[5] == 'PING':
 				serv_event_dict.update({"service_name":"ping"})
-                		mongo_functions.mongo_db_insert(db,serv_event_dict,"host_event")
+                		mongo_module.mongo_db_insert(db,serv_event_dict,"host_event")
 			else:
-				mongo_functions.mongo_db_insert(db,serv_event_dict,"serv_event")
+				mongo_module.mongo_db_insert(db,serv_event_dict,"serv_event")
 
 	# extracting the inventory plugin output ,as these services don't have performance data
 	elif 'invent' in log_split[5]:
 		query = "GET services\nColumns: service_plugin_output\nFilter: service_description ~ %s\nFilter: host_name = %s\n" %(
 		log_split[5],log_split[4]) 
-		perf_data= rrd_main.get_from_socket(site, query)
+		perf_data= utility_module.get_from_socket(site, query)
 		current_value = perf_data.split('- ')[1].strip('\n')
 		serv_event_dict=dict(sys_timestamp=int(log_split[1]),device_name=log_split[4],severity=log_split[8],
                                 description=log_split[11],min_value=0,max_value=0,avg_value =0,
@@ -123,7 +125,7 @@ def service_perf_data_live_query(db,site,log_split):
 				data_source = log_split[5],warning_threshold=0,
 				critical_threshold =0 ,check_timestamp = int(log_split[1]),
 				ip_address=host_ip,service_name=log_split[5],site_name=site)
-		mongo_functions.mongo_db_insert(db,serv_event_dict,"serv_event")
+		mongo_module.mongo_db_insert(db,serv_event_dict,"serv_event")
 
 
 
@@ -146,8 +148,8 @@ def network_perf_data_live_query(db,site,log_split):
 
 
 	query = "GET hosts\nColumns: host_perf_data\nFilter: host_name = %s\n" % (log_split[4]) 
-	perf_data= rrd_main.get_from_socket(site, query)
-	host_perf_data = rrd_migration.get_threshold(perf_data)
+	perf_data= utility_module.get_from_socket(site, query)
+	host_perf_data = utility_module.get_threshold(perf_data)
 	if log_split[0] == "CURRENT HOST STATE":
 		host_ip = log_split[12]
 		description=log_split[11]
@@ -171,7 +173,7 @@ def network_perf_data_live_query(db,site,log_split):
 				check_timestamp=int(log_split[1]),
 				ip_address=host_ip,site_name=site,service_name='ping')
 		# mongo db insertion
-                mongo_functions.mongo_db_insert(db,host_event_dict,"host_event")
+                mongo_module.mongo_db_insert(db,host_event_dict,"host_event")
 
 
 
@@ -203,7 +205,7 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
         else:
                 site = path[path.index('sites')+1]
 	
-        db = rrd_migration.mongo_conn(
+        db = mongo_module.mongo_conn(
 		host=mongo_host,
 		port=mongo_port,
 		db_name=mongo_db
@@ -226,7 +228,7 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
 	query = "GET log\nColumns: log_type log_time log_state_type log_state  host_name service_description "\
 		"options host_address current_service_perf_data\nFilter: log_time > %s\nFilter: class = 0\nFilter: class = 1\n"\
 		"Filter: class = 2\nFilter: class = 3\nFilter: class = 4\nFilter: class = 6\nOr: 6\n" %(start_epoch) 
-	output= rrd_main.get_from_socket(site, query)
+	output= utility_module.get_from_socket(site, query)
 
 	for log_attr in output.split('\n'):
 		log_split = [log_split for log_split in log_attr.split(';')]
@@ -241,7 +243,7 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
 	query = "GET log\nColumns: log_type log_time log_state_type log_state  host_name service_description "\
 		"options host_address current_host_perf_data\nFilter: log_time > %s\nFilter: class = 0\n"\
 		"Filter: class = 1\nFilter: class = 2\nFilter: class = 3\nFilter: class = 4\nFilter: class = 6\nOr: 6\n" %(start_epoch) 
-	output= rrd_main.get_from_socket(site, query)
+	output= utility_module.get_from_socket(site, query)
 
 	for log_attr in output.split('\n'):
 		log_split = [log_split for log_split in log_attr.split(';')]
@@ -257,7 +259,7 @@ if __name__ == '__main__':
     Main function for this file which keeps track of the all services and host events.This script is regularly called with 1 min interval
 
     """
-    configs = parse_config_obj()
+    configs = config_module.parse_config_obj()
     for section, options in configs.items():
 	extract_nagios_events_live(
 			mongo_host=options.get('host'),

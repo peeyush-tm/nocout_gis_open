@@ -4,13 +4,20 @@
  * @event click
  */
 
-var last_clicked_tab = "";
+var last_clicked_tab = "",
+	timeOutId = "";
 
-$(".nav-tabs li a").click(function (e,isFirst) {	
+$(".nav-tabs li a").click(function (e,isFirst) {
 
-	var browser_url_array = window.location.href.split("#");
+	/*Initialize the timer in seconds.Right now its 300 sec i.e. 5 minutes*/
+	var timer = 300;
 
-	var second_condition = "";
+	/*Clear or Reset Time out*/
+	clearTimeout(timeOutId);
+
+	var anchor_id = e.currentTarget.id,
+		browser_url_array = window.location.href.split("#"),
+		second_condition = "";
 	
 	if(isFirst) {
 		second_condition = 	isFirst;
@@ -30,8 +37,7 @@ $(".nav-tabs li a").click(function (e,isFirst) {
 		table_id = $("#"+div_id).find("table")[0].id,
 		ajax_url = e.currentTarget.attributes.data_url.value,
 		grid_headers = JSON.parse(e.currentTarget.attributes.data_header.value),
-		isTableExists = $.fn.dataTableSettings,
-		isActive = $("#"+e.currentTarget.id).parent().hasClass(" active");	
+		isTableExists = $.fn.dataTableSettings;
 
 	/*Check that the table is created before or not*/
 	for ( var i=0, iLen=isTableExists.length ; i<iLen ; i++ ) {
@@ -47,7 +53,6 @@ $(".nav-tabs li a").click(function (e,isFirst) {
 		}
 	}
 	
-
 	if(last_clicked_tab != e.currentTarget.id || second_condition) {
 		/*Call createDataTable function to create the data table for specified dom element with given data*/
 		dataTableInstance.createDataTable(table_id, grid_headers, ajax_url, destroy);
@@ -57,4 +62,10 @@ $(".nav-tabs li a").click(function (e,isFirst) {
 	/*Save the last clicked tab id in global variable for condition checks*/
 	last_clicked_tab = e.currentTarget.id;
 
+	/*Refresh the tab after every given timer. Right now it is 5 minutes*/
+	timeOutId = setTimeout(function() {
+
+		$("#"+anchor_id).trigger('click',true);
+
+	},(+(timer)+"000"));
 });
