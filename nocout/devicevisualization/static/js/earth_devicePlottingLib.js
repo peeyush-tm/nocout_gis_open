@@ -488,24 +488,17 @@ function googleEarthClass() {
 
 		if($.trim(stationSectorObject.technology) != "PTP" && $.trim(stationSectorObject.technology) != "P2P") {
 
-			// var subStationData = [];
-			
-			// subStationData = stationSectorObject.sectorsDataset[0].sub_station;
-			// stationSectorObject["ssList"] = subStationData;
-			// stationSectorObject["info"] = stationSectorObject["bs_info"];
-
-			// /*Call plotDevices_earth to plot the give SS*/
-			// earth_self.plotDevices_earth(stationSectorObject,"sub_station");
-
 			var sector = stationSectorObject.sectorsDataset;
 
 			for(var i=0;i<sector.length;i++) {
 
-				var fetchedRadius = (+sector[i].radius);
-				var rad = 4;
+				var rad = 1;
+
 				/*If radius is greater than 4 Kms then set it to 4.*/
-				if((fetchedRadius <= 4) && (fetchedRadius != null) && (fetchedRadius > 1)) {
-					rad = fetchedRadius;
+				if(sector[i].radius > 4 || sector[i].radius == 0 || sector[i].radius == null) {
+					rad = 4;
+				} else {
+					rad = sector[i].radius;
 				}
 
 				var azimuth = sector[i].azimuth_angle;
@@ -514,11 +507,13 @@ function googleEarthClass() {
 				var sectorInfo = sector[i].info;
 				var ssList = sector[i].sub_station;
 				var orientation = $.trim(sector[i].orientation);				
+				
 				/*Call createSectorData function to get the points array to plot the sector on google earth.*/
-				mapsLibInstance.createSectorData(stationSectorObject.startLat,stationSectorObject.startLon,rad,azimuth,beam_width,orientation,function(pointsArray) {					
+				mapsLibInstance.createSectorData(stationSectorObject.startLat,stationSectorObject.startLon,rad,azimuth,beam_width,orientation,function(pointsArray) {
 					
 					var infoData = {};
 					infoData["technology"] = stationSectorObject.technology;
+					
 					var halfPt = Math.floor(pointsArray.length / (+2));
 					// Create object for Link Line Between Sector & SS
 					infoData["startLat"] = pointsArray[halfPt].lat;
@@ -714,7 +709,6 @@ function googleEarthClass() {
 				/*Reset SS & links array*/
 				plotted_ss_earth = [];
 				plotterLinks_earth = [];
-
 				earth_self.plotDevices_earth(infoObject,"sub_station");
 			}
 		});

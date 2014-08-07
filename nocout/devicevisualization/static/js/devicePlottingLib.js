@@ -118,6 +118,9 @@ function devicePlottingClass_gmap() {
 			});
 		});
 
+		/*Add Full Screen Control*/
+		mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(new FullScreenControl(mapInstance));
+
 		/*Create a instance of OverlappingMarkerSpiderfier*/
 		oms = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
 
