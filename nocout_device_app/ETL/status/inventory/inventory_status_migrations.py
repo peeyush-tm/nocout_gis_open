@@ -8,21 +8,16 @@ Mysql has another table inventory status table which keeps the latest data for e
 
 """
 
-from configparser import parse_config_obj
+from nocout_site_name import *
+import imp
+
+config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
 
 def main():
-    configs = parse_config_obj()
+    configs = config_module.parse_config_obj()
     for section, options in configs.items():
-        inventory_script = options.get('inventory').get('script')
-        inventory_service_migration_script = __import__(inventory_script)
-        inventory_service_migration_script.main(site=options.get('site'), host=options.get('host'),
-                user=options.get('user'), port=options.get('port'),
-                sql_passwd=options.get('sql_passwd'),
-                nosql_db=options.get('inventory').get('nosql_db'),
-                sql_db=options.get('inventory').get('sql_db'), table_name=options.get('inventory').get('table_name'), ip=options.get('ip')
-        )
-	inventory_status_tables_script = options.get('inventory_status_tables').get('script')
+    	inventory_status_tables_script = options.get('inventory_status_tables').get('script')
         inventory_status_tables_migration_script = __import__(inventory_status_tables_script)
         inventory_status_tables_migration_script.main(site=options.get('site'), host=options.get('host'),
                 user=options.get('user'), port=options.get('port'),

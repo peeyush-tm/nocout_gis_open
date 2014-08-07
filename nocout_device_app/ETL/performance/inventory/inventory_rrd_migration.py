@@ -8,11 +8,15 @@ Inventory services are services for which data is coming in 1 day interval.
 
 """
 
-
+from nocout_site_name import *
 import socket,json
-import rrd_main, mongo_functions
 import time
-from configparser import parse_config_obj
+import imp
+
+utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
+mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
+config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+
 
 
 class MKGeneralException(Exception):
@@ -42,10 +46,10 @@ def inventory_perf_data(site,hostlist):
 	invent_check_list = []
 	invent_service_dict = {}
 	matching_criteria = {}
-	db = mongo_functions.mongo_db_conn(site,"nocout")
+	db = mongo_module.mongo_db_conn(site,"nocout")
 	for host in hostlist:
 		query = "GET hosts\nColumns: host_services\nFilter: host_name = %s\n" %(host[0])
-		query_output = rrd_main.get_from_socket(site,query).strip()
+		query_output = utility_module.get_from_socket(site,query).strip()
 		service_list = [service_name for service_name in query_output.split(',')]
 		for service in service_list:
 			if service.endswith('_invent'):
@@ -53,7 +57,7 @@ def inventory_perf_data(site,hostlist):
 		for service in invent_check_list:
 			query_string = "GET services\nColumns: service_state plugin_output host_address\nFilter: " + \
 			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" 	 	% (service,host[0])
-			query_output = json.loads(rrd_main.get_from_socket(site,query_string).strip())
+			query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
 			if query_output[0][1]:
 				plugin_output = str(query_output[0][1].split('- ')[1])
 				service_state = (query_output[0][0])
@@ -76,8 +80,8 @@ def inventory_perf_data(site,hostlist):
 						data_source=ds,severity=service_state,site_name=site,warning_threshold=0,
 						critical_threshold=0,ip_address=host_ip)
 			matching_criteria.update({'device_name':str(host[0]),'service_name':service,'site_name':site})
-			mongo_functions.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
-			mongo_functions.mongo_db_insert(db,invent_service_dict,"inventory_services")
+			mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
+			mongo_module.mongo_db_insert(db,invent_service_dict,"inventory_services")
 			matching_criteria ={}
 			invent_service_dict = {}
 		invent_check_list = []
@@ -92,11 +96,11 @@ def inventory_perf_data_main():
 	Raises: No Exception
 	"""
 	try:
-		configs = parse_config_obj()
+		configs = config_module.parse_config_obj()
 		for section, options in configs.items():
 			site = options.get('site')
 			query = "GET hosts\nColumns: host_name\nOutputFormat: json\n"
-			output = json.loads(rrd_main.get_from_socket(site,query))
+			output = json.loads(utility_module.get_from_socket(site,query))
 			inventory_perf_data(site,output)
 	except SyntaxError, e:
 		raise MKGeneralException(("Can not get performance data: %s") % (e))
