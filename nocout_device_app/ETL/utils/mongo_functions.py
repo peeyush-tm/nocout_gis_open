@@ -7,11 +7,13 @@ This file contains the code for mongodb related functions like mongodb insert,mo
 """
 
 
-
+from nocout_site_name import *
 import pymongo
 from datetime import datetime
-import rrd_migration
 from operator import itemgetter
+import imp
+
+utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 
 
 def mongo_conn(**kwargs):
@@ -47,7 +49,7 @@ def mongo_db_conn(site_name,db_name):
 		Exception : PymongoError
     	"""
 	db =None
-        port = rrd_migration.db_port(site_name)
+        port = utility_module.db_port(site_name)
 
         #Get the mongodb connection object
         db = mongo_conn(

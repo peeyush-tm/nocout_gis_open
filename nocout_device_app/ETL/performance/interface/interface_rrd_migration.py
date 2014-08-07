@@ -1,8 +1,12 @@
+from nocout_site_name import *
 import socket,json
-import rrd_main, mongo_functions,rrd_migration
+import imp
 import time
-from configparser import parse_config_obj
+import imp
 
+utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
+mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
+config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
 class MKGeneralException(Exception):
     def __init__(self, reason):
@@ -15,10 +19,10 @@ def status_perf_data(site,hostlist):
 	status_check_list = []
 	status_service_dict = {}
 	matching_criteria = {}
-	db = mongo_functions.mongo_db_conn(site,"nocout")
+	db = mongo_module.mongo_db_conn(site,"nocout")
 	for host in hostlist:
 		query = "GET hosts\nColumns: host_services\nFilter: host_name = %s\n" %(host[0])
-		query_output = rrd_main.get_from_socket(site,query).strip()
+		query_output = utility_module.get_from_socket(site,query).strip()
 		service_list = [service_name for service_name in query_output.split(',')]
 		for service in service_list:
 			if service.endswith('_status'):
@@ -26,7 +30,7 @@ def status_perf_data(site,hostlist):
 		for service in status_check_list:
 			query_string = "GET services\nColumns: service_state service_perf_data host_address\nFilter: " + \
 			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" 	 	% (service,host[0])
-			query_output = json.loads(rrd_main.get_from_socket(site,query_string).strip())
+			query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
 
 			if query_output[0][1]:
 				perf_data_output = str(query_output[0][1])
@@ -41,7 +45,7 @@ def status_perf_data(site,hostlist):
 					service_state = "CRITICAL"
 				elif service_state == 3:
 					service_state = "UNKNOWN"
-                		perf_data = rrd_migration.get_threshold(perf_data_output)
+                		perf_data = utility_module.get_threshold(perf_data_output)
 			else:
 				continue
                 	for ds in perf_data.iterkeys():
@@ -53,8 +57,8 @@ def status_perf_data(site,hostlist):
                                                 data_source=ds,severity=service_state,site_name=site,warning_threshold=war,
                                                 critical_threshold=crit,ip_address=host_ip)
 				matching_criteria.update({'device_name':str(host[0]),'service_name':service,'site_name':site,'data_source':ds})
-				mongo_functions.mongo_db_update(db,matching_criteria,status_service_dict,"status_services")
-                        	mongo_functions.mongo_db_insert(db,status_service_dict,"status_services")
+				mongo_module.mongo_db_update(db,matching_criteria,status_service_dict,"status_services")
+                        	mongo_module.mongo_db_insert(db,status_service_dict,"status_services")
 				matching_criteria = {}
 			#query_output = json.loads(rrd_main.get_from_socket(site,query_string).strip())
 		status_service_dict = {}
@@ -62,11 +66,11 @@ def status_perf_data(site,hostlist):
 
 def status_perf_data_main():
 	try:
-		configs = parse_config_obj()
+		configs = config_module.parse_config_obj()
 		for section, options in configs.items():
 			site = options.get('site')
 			query = "GET hosts\nColumns: host_name\nOutputFormat: json\n"
-			output = json.loads(rrd_main.get_from_socket(site,query))
+			output = json.loads(utility_module.get_from_socket(site,query))
 			status_perf_data(site,output)
 	except SyntaxError, e:
 		raise MKGeneralException(("Can not get performance data: %s") % (e))

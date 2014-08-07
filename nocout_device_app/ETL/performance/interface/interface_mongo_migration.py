@@ -1,20 +1,21 @@
 """
-status_mongo_migration.py
+interface_mongo_migration.py
 ==========================
 
 Script to bulk insert data from Teramatrix Pollers into
-central mysql db, for status services.
+central mysql db, for interface services.
 The data in the Teramatrix Pollers is stored in Mongodb.
 
-Status services include : Services which runs once an Hour.
+Interface services include : Services which runs once an Hour.
 """
 
-
+from nocout_site_name import *
 import MySQLdb
 from datetime import datetime, timedelta
-from rrd_migration import mongo_conn
-import mongo_functions
 import socket
+import imp
+
+mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -81,7 +82,7 @@ def read_data(start_time, end_time, **kwargs):
     #end_time = datetime(2014, 6, 26, 18, 30)
     #start_time = end_time - timedelta(minutes=10)
     docs = [] 
-    db = mongo_conn(
+    db = mongo_module.mongo_conn(
         host=kwargs.get('configs').get('host'),
         port=int(kwargs.get('configs').get('port')),
         db_name=kwargs.get('configs').get('nosql_db')
