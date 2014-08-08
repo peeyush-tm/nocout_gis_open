@@ -341,7 +341,7 @@ class DeviceTechnologyForm(forms.ModelForm):
 
     def clean(self):
         """
-        Validations for command form
+        Validations for technology form
         """
         name = self.cleaned_data.get('name')
 
@@ -388,7 +388,7 @@ class DeviceVendorForm(forms.ModelForm):
 
     def clean(self):
         """
-        Validations for command form
+        Validations for vendor form
         """
         name = self.cleaned_data.get('name')
 
@@ -434,6 +434,21 @@ class DeviceModelForm(forms.ModelForm):
         model = DeviceModel
         fields = ('name', 'alias', 'device_types')
 
+    def clean(self):
+        """
+        Validations for model form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
+
 
 # ******************************************* Device Type *******************************************
 class DeviceTypeForm(forms.ModelForm):
@@ -441,11 +456,12 @@ class DeviceTypeForm(forms.ModelForm):
     Rendering form for device type
     """
     AGENT_TAG = (
-            ('', 'Select'),
-            ('snmp', 'SNMP'),
-            ('ping', 'Ping')
+        ('', 'Select'),
+        ('snmp', 'SNMP'),
+        ('ping', 'Ping')
     )
     agent_tag = forms.TypedChoiceField(choices=AGENT_TAG, required=True)
+
     def __init__(self, *args, **kwargs):
         # removing help text for device_port 'select' field
         self.base_fields['device_port'].help_text = ''
@@ -470,6 +486,21 @@ class DeviceTypeForm(forms.ModelForm):
         Meta Information
         """
         model = DeviceType
+
+    def clean(self):
+        """
+        Validations for device type form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
 
 
 # ******************************************* Device Type *******************************************
