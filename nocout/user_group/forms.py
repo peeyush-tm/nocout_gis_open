@@ -3,6 +3,10 @@ from django import forms
 from organization.models import Organization
 from user_group.models import UserGroup
 from user_profile.models import UserProfile
+import re
+from django.forms.util import ErrorList
+import logging
+logger = logging.getLogger(__name__)
 
 
 class UserGroupForm(forms.ModelForm):
@@ -53,3 +57,18 @@ class UserGroupForm(forms.ModelForm):
         """
         model = UserGroup
         fields = ('name', 'alias', 'parent','organization','users',)
+
+    def clean(self):
+        """
+        Validations for user group form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
