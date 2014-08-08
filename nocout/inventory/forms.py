@@ -428,12 +428,19 @@ class CircuitForm(forms.ModelForm):
                     field.widget.attrs['class'] += ' col-md-12'
                     field.widget.attrs['class'] += ' select2select'
                 else:
-                    field.widget.attrs['class'] += ' form-control'
+                    field.widget.attrs['class'] += ' tip-focus form-control'
+                    field.widget.attrs['data-toggle'] = 'tooltip'
+                    field.widget.attrs['data-placement'] = 'right'
+                    field.widget.attrs['title'] = field.help_text
             else:
                 if isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
-                    field.widget.attrs.update({'class': 'form-control'})
+                    field.widget.attrs.update({'class': ' tip-focus form-control'})
+                    field.widget.attrs.update({'data-toggle': 'tooltip'})
+                    field.widget.attrs.update({'data-placement': 'right'})
+                    field.widget.attrs.update({'title': field.help_text})
+
     class Meta:
         """
         Meta Information
@@ -461,6 +468,7 @@ class IconSettingsForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         """
         Meta Information
@@ -491,6 +499,7 @@ class LivePollingSettingsForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         """
         Meta Information
@@ -519,6 +528,7 @@ class ThresholdConfigurationForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         """
         Meta Information
@@ -553,6 +563,7 @@ class ThematicSettingsForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'col-md-12 form-control'})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         """
         Meta Information
