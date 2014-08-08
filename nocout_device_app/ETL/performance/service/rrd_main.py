@@ -95,12 +95,13 @@ if __name__ == '__main__':
 
     """
     configs = config_module.parse_config_obj()
-    for section, options in configs.items():
-        site = options.get('site')
-        get_host_services_name(
-            site_name=site,
-            mongo_host=options.get('host'),
-            mongo_db=options.get('nosql_db'),
-            mongo_port=options.get('port')
-        )
+    desired_site = filter(lambda x: x == nocout_site_name, configs.keys())[0]
+    desired_config = configs.get(desired_site)
+    site = desired_config.get('site')
+    get_host_services_name(
+    site_name=site,
+    mongo_host=desired_config.get('host'),
+    mongo_db=desired_config.get('nosql_db'),
+    mongo_port=desired_config.get('port')
+    )
     
