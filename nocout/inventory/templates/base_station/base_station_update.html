@@ -28,7 +28,7 @@
                                                             {{ field }} {{ field.errors }}
                                                         </div>
                                                         <div class="col-md-4 help_text">
-                                                            {{ field.help_text }}
+                                                            {# field.help_text #}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -58,6 +58,10 @@
 
             // Initialize the select2 selectbox.
             $(".select2select").select2();
+            $('.tip-focus').tooltip({
+                placement: 'right',
+                trigger: 'focus'
+            });
 
             // if none of the value from 'country' is selected than empty 'state' & 'city' selection too.
             // or update value of 'state' corresponding to the selected 'country'
