@@ -555,10 +555,16 @@ class DeviceGetFilters(View):
 
 class DeviceSetFilters(View):
     """
-    Parses the request
+    Parses the get request from the filter form.
     """
     def get(self, request):
+        """
+        Handles the get request. Parse the get parameters and fetch the data as required in the request.
 
+        :params self object
+        :params request
+        :return result
+        """
         self.result = {
             "success": 0,
             "message": "Device Data",
@@ -597,15 +603,8 @@ class DeviceSetFilters(View):
                 elif filter['field']=='sector_configured_on':
                     #removing the () brackets and anything between it and then strip it to remove any space left.
                     value_list= [ re.sub("\([^]]*\)", lambda x:'', value ).strip() for value in filter['value'] ]
-
                     devices= Device.objects.filter(device_name__in = value_list).values_list('id', flat=True)
-                    # sector_configured_on_ids=list()
-                    # for device in devices:
-                    #     sector_configured_on_ids+= device.sector_configured_on.values_list('id', flat=True)
-
-                    bs_ids= Sector.objects.filter(sector_configured_on__in= devices)\
-                                .values_list('base_station__id', flat=True)
-
+                    bs_ids= Sector.objects.filter(sector_configured_on__in= devices).values_list('base_station__id', flat=True)
                     base_station_ids+=bs_ids
 
                 else:
@@ -621,7 +620,7 @@ class DeviceSetFilters(View):
                 self.result['data']['objects']= {"id" : "mainNode", "name" : "mainNodeName", "data" :
                                                 { "unspiderfy_icon" : "static/img/marker/slave01.png" }
                                                 }
-                self.result['data']['objects']['children']=list()
+                self.result['data']['objects']['children']= list()
                 for base_station_id in base_station_ids:
                     try:
                         base_station_info=prepare_result(base_station_id)
@@ -641,8 +640,8 @@ class DeviceSetFilters(View):
                         logger.error("API Error Message: %s"%(e.message))
                         pass
 
-            self.result['message']='Data Fetched Successfully.'
-            self.result['success']=1
+            self.result['message']= 'Data Fetched Successfully.' if self.result['data']['objects']['children'] else 'No record found.'
+            self.result['success']=1 if self.result['data']['objects']['children'] else 0
 
         return HttpResponse(json.dumps(self.result))
 

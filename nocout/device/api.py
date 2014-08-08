@@ -377,8 +377,8 @@ def prepare_result(base_station_id):
                 'technology':base_station.bs_technology.name,
                 'antena_height':None,
                 'vendor':','.join(base_station.bs_technology.device_vendors.values_list('name', flat=True)),
-                'city':City.objects.get(id=base_station.city).city_name if base_station.city else None ,
-                'state':State.objects.get(id=base_station.state).state_name if base_station.state else None,
+                'city':City.objects.get(id=base_station.city).city_name if base_station.city else 'N/A' ,
+                'state':State.objects.get(id=base_station.state).state_name if base_station.state else 'N/A',
                 'param':{
                     'base_station':[
                                 {
