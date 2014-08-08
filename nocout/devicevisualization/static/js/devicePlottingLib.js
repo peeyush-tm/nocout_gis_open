@@ -1860,54 +1860,6 @@ function devicePlottingClass_gmap() {
         	appliedFilterObj_gmaps["vendor"] = $("#vendor option:selected").text();
         }
 
-        if($("#state").val().length > 0) {
-        	// selectedState = $("#state option:selected").text();
-        	appliedFilterObj_gmaps["state"] = $("#state option:selected").text();
-
-        	/*Zoom to the selected state area*/
-        	$.getJSON("https://maps.googleapis.com/maps/api/geocode/json?address="+$("#state option:selected").text(),function(result) {
-        	
-	        	var bounds = new google.maps.LatLngBounds();
-	    		/*point bounds to the place location*/
-	    		var ptLatLon = new google.maps.LatLng(result.results[0].geometry.location.lat, result.results[0].geometry.location.lng);
-	    		bounds.extend(ptLatLon);
-	    		/*call fitbounts for the mapInstance with the place location bounds object*/
-	    		mapInstance.fitBounds(bounds)
-
-	    		var listener = google.maps.event.addListener(mapInstance, "idle", function() { 
-	    			/*check for current zoom level*/
-					if (mapInstance.getZoom() > 8) {
-						mapInstance.setZoom(8);
-					}
-					google.maps.event.removeListener(listener);
-				});
-	        });
-        }
-
-        if($("#city").val().length > 0) {
-        	// selectedCity = $("#city option:selected").text();
-        	appliedFilterObj_gmaps["city"] = $("#city option:selected").text();
-
-        	/*Zoom to the selected city area*/
-        	$.getJSON("https://maps.googleapis.com/maps/api/geocode/json?address="+$("#city option:selected").text(),function(result) {
-        	
-	        	var bounds = new google.maps.LatLngBounds();
-	    		/*point bounds to the place location*/
-	    		var ptLatLon = new google.maps.LatLng(result.results[0].geometry.location.lat, result.results[0].geometry.location.lng);
-	    		bounds.extend(ptLatLon);
-	    		/*call fitbounts for the mapInstance with the place location bounds object*/
-	    		mapInstance.fitBounds(bounds)
-
-	    		var listener = google.maps.event.addListener(mapInstance, "idle", function() { 
-	    			/*check for current zoom level*/
-					if (mapInstance.getZoom() > 12) {
-						mapInstance.setZoom(12);
-					}
-					google.maps.event.removeListener(listener);
-				});
-	        });
-        }
-
         /*Get The Length Of Filter Array*/
         var filtersLength = Object.keys(appliedFilterObj_gmaps).length;
 
@@ -1923,13 +1875,28 @@ function devicePlottingClass_gmap() {
         /*If no filter is applied the load all the devices*/
         else {
 
-        	/*Reset markers & polyline*/
-			gmap_self.clearGmapElements();
+        	if($.trim(mapPageType) == "gmap") {
+    			
+    			/*Reset markers & polyline*/
+				gmap_self.clearGmapElements();
 
-			/*Reset Global Variables & Filters*/
-			gmap_self.resetVariables_gmap();
+				/*Reset Global Variables & Filters*/
+				gmap_self.resetVariables_gmap();
 
-            gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
+				/*create the BS-SS network on the google map*/
+	            gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
+
+        	} else {
+
+        		/*Clear all the elements from google earth*/
+		        earth_instance.clearEarthElements();
+
+		        /*Reset Global Variables & Filters*/
+		        earth_instance.resetVariables_earth();
+
+		        /*create the BS-SS network on the google earth*/
+		        earth_instance.plotDevices_earth(main_devices_data_earth,"base_station");
+        	}
         }
     };
 

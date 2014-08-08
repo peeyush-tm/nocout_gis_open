@@ -146,15 +146,20 @@ function googleEarthClass() {
 									counter = Math.round(devicesCount/showLimit);
 								}
 
-								/*Check that any filter is applied or not*/
-								var appliedFilterLength_earth = Object.keys(appliedFilterObj_earth).length;
+								/*Check that any advance filter is applied or not*/
+								if(appliedAdvFilter.length <= 0) {
 
-								if(appliedFilterLength_earth > 0) {
-									/*If any filter is applied then plot the fetch data as per the filters*/
-									earth_self.applyFilter(appliedFilterObj_earth);
-								} else {
-									/*Call the plotDevices_earth to show the markers on the map*/
-									earth_self.plotDevices_earth(devices_earth,"base_station");
+									/*applied basic filters count*/
+									var appliedFilterLength_earth = Object.keys(appliedFilterObj_earth).length;
+
+									/*Check that any basic filter is applied or not*/
+									if(appliedFilterLength_earth > 0) {
+										/*If any filter is applied then plot the fetch data as per the filters*/
+										earth_self.applyFilter_earth(appliedFilterObj_earth);
+									} else {
+										/*Call the plotDevices_earth to show the markers on the map*/
+										earth_self.plotDevices_earth(devices_earth,"base_station");
+									}
 								}
 
 								/*Hide The loading Icon*/
@@ -187,7 +192,7 @@ function googleEarthClass() {
 
 							setTimeout(function(e) {
 								earth_self.recallServer_earth();
-							},300000);
+							},20000);
 							/*Hide The loading Icon*/
 							$("#loadingIcon").hide();
 
@@ -214,7 +219,7 @@ function googleEarthClass() {
 
 						setTimeout(function(e) {
 							earth_self.recallServer_earth();
-						},300000);
+						},20000);
 
 					}
 
@@ -844,7 +849,16 @@ function googleEarthClass() {
 	 		if(filteredData.length === 0) {
 
 	 			bootbox.alert("User Don't Have Any Devies For Selected Filters");
-	 			$("#resetFilters").click();
+	 			// $("#resetFilters").click();
+	 			$("#resetFilters").button("loading");
+		        /*Reset The basic filters dropdown*/
+		        $("#technology").val($("#technology option:first").val());
+		        $("#vendor").val($("#vendor option:first").val());
+		        $("#state").val($("#state option:first").val());
+		        $("#city").val($("#city option:first").val());
+		        
+	 			/*create the BS-SS network on the google earth*/
+		        earth_self.plotDevices_earth(main_devices_data_earth,"base_station");
 
 	 		} else {
 
