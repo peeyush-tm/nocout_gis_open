@@ -2236,23 +2236,6 @@ def add_services(request, svc_data):
                 service_para = service.parameters
                 logger.info(e.message)
 
-            # mode
-            result['data']['objects']['mode'] = "addservice"
-            # device name
-            result['data']['objects']['device_name'] = str(device.device_name)
-            # service name
-            result['data']['objects']['service_name'] = str(service.name)
-            # service parameters
-            result['data']['objects']['serv_params'] = {}
-            result['data']['objects']['serv_params']['normal_check_interval'] = int(service_para.normal_check_interval)
-            result['data']['objects']['serv_params']['retry_check_interval'] = int(service_para.retry_check_interval)
-            result['data']['objects']['serv_params']['max_check_attempts'] = int(service_para.max_check_attempts)
-            # snmp parameters
-            result['data']['objects']['snmp_community'] = {}
-            result['data']['objects']['snmp_community']['version'] = str(service_para.protocol.version)
-            result['data']['objects']['snmp_community']['read_community'] = str(service_para.protocol.read_community)
-            # command parameters
-            result['data']['objects']['cmd_params'] = {}
             # data_sources --> contains list of data sources
             data_sources = []
             try:
@@ -2272,6 +2255,31 @@ def add_services(request, svc_data):
                         data_sources.append(temp_dict)
             except Exception as e:
                 logger.info(e.message)
+
+            # mode
+            result['data']['objects']['mode'] = "addservice"
+            # device name
+            result['data']['objects']['device_name'] = str(device.device_name)
+            # service name
+            result['data']['objects']['service_name'] = str(service.name)
+            # service parameters
+            result['data']['objects']['serv_params'] = {}
+            result['data']['objects']['serv_params']['normal_check_interval'] = int(service_para.normal_check_interval)
+            result['data']['objects']['serv_params']['retry_check_interval'] = int(service_para.retry_check_interval)
+            result['data']['objects']['serv_params']['max_check_attempts'] = int(service_para.max_check_attempts)
+            # snmp parameters
+            result['data']['objects']['snmp_community'] = {}
+            result['data']['objects']['snmp_community']['version'] = str(service_para.protocol.version)
+            result['data']['objects']['snmp_community']['read_community'] = str(service_para.protocol.read_community)
+            # command parameters
+            result['data']['objects']['cmd_params'] = {}
+            for data_source in data_sources:
+                if data_source['warning'] != "":
+                    result['data']['objects']['cmd_params'][str(data_source['name'])] = {
+                        'warning': data_source['warning'],
+                        'critical': data_source['critical']
+                    }
+
             # snmp port
             result['data']['objects']['snmp_port'] = str(service_para.protocol.port)
             # agent tag
