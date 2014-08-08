@@ -142,7 +142,7 @@ class DeviceForm(forms.ModelForm):
         Longitude field validation
         """
         longitude = self.data['longitude']
-        if longitude != '' and len(longitude)>2 and longitude[2] != '.':
+        if longitude != '' and len(longitude) > 2 and longitude[2] != '.':
             raise forms.ValidationError("Please enter correct value for longitude.")
         return self.cleaned_data.get('longitude')
 
@@ -189,7 +189,7 @@ class DeviceForm(forms.ModelForm):
             device_name = self.cleaned_data['device_name']
             if not re.match(r'^[A-Za-z0-9\._-]+$', device_name):
                 self._errors["device_name"] = ErrorList(
-                    [u"Device name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore)."])
+                    [u"Device name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
         except Exception as e:
             logger.info(e.message)
 
