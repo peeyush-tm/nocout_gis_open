@@ -127,17 +127,17 @@ class LivePerformanceListing(BaseDatatableView):
             device_technology_id= DeviceTechnology.objects.get(name=device_tab_technology).id
             #get only devices added to NMS and none other
             devices= Device.objects.filter(is_added_to_nms=1, organization__in=kwargs['organization_ids'], \
-                     device_technology=device_technology_id).values(*self.columns + ['device_name', device_association])
+                     device_technology=device_technology_id).values(*self.columns + ['device_name','machine__name', device_association])
         else:
             #get only devices added to NMS and none other
             devices= Device.objects.filter(is_added_to_nms=1, organization__in=kwargs['organization_ids']).\
-                values(*self.columns + ['device_name', device_association])
+                values(*self.columns + ['device_name','machine__name', device_association])
 
-        required_devices = []
-
-        for device in devices:
-            if device[device_association]:
-                required_devices.append(device["device_name"])
+        # required_devices = []
+        #
+        # for device in devices:
+        #     if device[device_association]:
+        #         required_devices.append(device["device_name"])
 
 
 
@@ -155,7 +155,7 @@ class LivePerformanceListing(BaseDatatableView):
 
         return device_list
 
-    def get_performance_data(self, device_list):
+    def get_performance_data(self, device_list, machine):
         """
         Consolidated Performance Data from the Data base.
 
@@ -175,9 +175,9 @@ class LivePerformanceListing(BaseDatatableView):
                                        "data_source",
                                        "current_value",
                                        "sys_timestamp"
-                                    ]
-                              )
-        performance_data = self.model.objects.raw(query)
+                                      ]
+                             )
+        performance_data = self.model.objects.raw(query).using(alias=machine)
 
         for device in device_list:
             if device not in device_result:
@@ -219,27 +219,40 @@ class LivePerformanceListing(BaseDatatableView):
 
         if qs:
             for dct in qs:
+                device=Device.objects.get(id=dct['id'])
                 if self.request.GET['page_type']=='customer':
-                    substation_id=Device.objects.get(id=dct['id']).substation_set.values()[0]['id']
+                    substation_id=device.substation_set.values()[0]['id']
                     dct.update(actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-list-alt text-info"></i></a>'\
                                .format( self.request.GET['page_type'], substation_id))
                 elif self.request.GET['page_type'] == 'network':
                     dct.update(actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-list-alt text-info"></i></a>'\
                                .format( self.request.GET['page_type'], dct['id']))
 
-                device_list.append(dct["device_name"])
+                device_list.append({'device_name':dct["device_name"], 'device_machine':device.machine.name })
 
-            perf_result = self.get_performance_data(device_list)
+            #Unique machine from the device_list
+            unique_device_machine_list= { device['device_machine']: True for device in device_list }.keys()
 
-            for dct in qs:
-                for result in perf_result:
-                    if dct["device_name"] == result:
-                        dct["packet_loss"] = perf_result[result]["packet_loss"]
-                        dct["latency"] = perf_result[result]["latency"]
-                        dct["last_updated"] = perf_result[result]["last_updated"]
+            machine_dict={}
+            #Creating the machine as a key and device_name as a list for that machine.
+            for machine in unique_device_machine_list:
+                machine_dict[machine]=[ device['device_name'] for device in device_list if device['device_machine']== machine]
 
-        sorted_qs = sorted(qs, key=itemgetter('last_updated'), reverse=True)
-        return sorted_qs
+            #Fetching the data for the device w.r.t to their machine.
+            for machine in machine_dict:
+                perf_result = self.get_performance_data(machine_dict[machine], machine)
+
+                for dct in qs:
+                    for result in perf_result:
+                        if dct["device_name"] == result:
+                            dct["packet_loss"] = perf_result[result]["packet_loss"]
+                            dct["latency"] = perf_result[result]["latency"]
+                            dct["last_updated"] = perf_result[result]["last_updated"]
+
+            #sorting the dict in the descending order for the qs prepared finally.
+            sorted_qs = sorted(qs, key=itemgetter('last_updated'), reverse=True)
+            return sorted_qs
+        return device_list
 
     def get_context_data(self, *args, **kwargs):
         """
