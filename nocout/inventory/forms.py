@@ -68,7 +68,7 @@ class InventoryForm(forms.ModelForm):
 
     def clean(self):
         """
-        Validations for device form
+        Validations for inventory form
         """
         name = self.cleaned_data.get('name')
 
@@ -153,7 +153,7 @@ class AntennaForm(forms.ModelForm):
 
     def clean(self):
         """
-        Validations for device form
+        Validations for antenna form
         """
         name = self.cleaned_data.get('name')
 
@@ -229,7 +229,7 @@ class BackhaulForm(forms.ModelForm):
 
     def clean(self):
         """
-        Validations for device form
+        Validations for backhaul form
         """
         name = self.cleaned_data.get('name')
 
@@ -319,7 +319,7 @@ class BaseStationForm(forms.ModelForm):
 
     def clean(self):
         """
-        Validations for device form
+        Validations for base station form
         """
         name = self.cleaned_data.get('name')
 
@@ -381,7 +381,7 @@ class SectorForm(forms.ModelForm):
 
     def clean(self):
         """
-        Validations for device form
+        Validations for sector form
         """
         name = self.cleaned_data.get('name')
 
@@ -422,7 +422,7 @@ class CustomerForm(forms.ModelForm):
 
     def clean(self):
         """
-        Validations for device form
+        Validations for customer form
         """
         name = self.cleaned_data.get('name')
 
@@ -502,7 +502,7 @@ class SubStationForm(forms.ModelForm):
 
     def clean(self):
         """
-        Validations for device form
+        Validations for sub station form
         """
         name = self.cleaned_data.get('name')
 
@@ -558,7 +558,7 @@ class CircuitForm(forms.ModelForm):
 
     def clean(self):
         """
-        Validations for device form
+        Validations for circuit form
         """
         name = self.cleaned_data.get('name')
 
@@ -601,7 +601,7 @@ class IconSettingsForm(forms.ModelForm):
 
     def clean(self):
         """
-        Validations for device form
+        Validations for icon settings form
         """
         name = self.cleaned_data.get('name')
 
@@ -647,7 +647,7 @@ class LivePollingSettingsForm(forms.ModelForm):
 
     def clean(self):
         """
-        Validations for device form
+        Validations for live polling form
         """
         name = self.cleaned_data.get('name')
 
@@ -691,7 +691,7 @@ class ThresholdConfigurationForm(forms.ModelForm):
 
     def clean(self):
         """
-        Validations for device form
+        Validations for threshold configuration form
         """
         name = self.cleaned_data.get('name')
 
