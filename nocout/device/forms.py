@@ -386,6 +386,21 @@ class DeviceVendorForm(forms.ModelForm):
         model = DeviceVendor
         fields = ('name', 'alias', 'device_models')
 
+    def clean(self):
+        """
+        Validations for command form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
+
 
 # ******************************************* Device Model ******************************************
 class DeviceModelForm(forms.ModelForm):
