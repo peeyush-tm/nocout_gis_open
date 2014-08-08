@@ -1,18 +1,21 @@
+import logging
 import operator
 import copy
 import ast
 import json
 # from device.api import DeviceStats
+import re
 from django.db.models import Q, Count
 from django.views.generic.base import View
 from django.http import HttpResponse
 from django.core.exceptions import ObjectDoesNotExist
-from device.api import logged_in_user_organizations
+from device.api import logged_in_user_organizations, prepare_result
 from device.models import Device, DeviceType, DeviceVendor,\
     DeviceTechnology, City, State
 from itertools import chain
 from device_group.models import DeviceGroup
 
+logger=logging.getLogger(__name__)
 # class DeviceGetFilters(View):
 #     """
 #     Getting all the info for all the devices,
@@ -405,8 +408,9 @@ from device_group.models import DeviceGroup
 #             device_object_list = device_object_list + master_object_list
 #
 #         return device_object_list
-from inventory.models import Sector, BaseStation
-
+from inventory.models import Sector, BaseStation, Circuit
+#reving duplicate entries in the dictionaries in a list
+removing_duplicate_entries = lambda lst: [dict(t) for t in set( [ tuple(sorted(d.items())) for d in lst ] )]
 
 class DeviceGetFilters(View):
     """
@@ -418,9 +422,9 @@ class DeviceGetFilters(View):
         """
         Getting all the devices
 
-        Args:
+        Args: self , request
 
-        Returns:
+        Returns: self.result
 
         """
         self.result = {
@@ -436,7 +440,7 @@ class DeviceGetFilters(View):
                 "field_type": "string",
                 "element_type": "multiselect",
                 "values": [],
-                "key": "bs_name",
+                "key": "name",
                 "title": "B S Name"
                 }
 
@@ -444,7 +448,7 @@ class DeviceGetFilters(View):
                 "field_type": "string",
                 "element_type": "multiselect",
                 "values": [],
-                "key": "bs_alias",
+                "key": "alias",
                 "title": "B S Alias"
                 }
 
@@ -452,7 +456,7 @@ class DeviceGetFilters(View):
                 "field_type": "string",
                 "element_type": "multiselect",
                 "values": [],
-                "key": "bs_city",
+                "key": "city",
                 "title": "BS City"
                 }
 
@@ -460,7 +464,7 @@ class DeviceGetFilters(View):
                 "field_type": "string",
                 "element_type": "multiselect",
                 "values": [],
-                "key": "bs_state",
+                "key": "state",
                 "title": "BS State"
                 }
 
@@ -476,7 +480,7 @@ class DeviceGetFilters(View):
                 "field_type": "string",
                 "element_type": "multiselect",
                 "values": [],
-                "key": "bs_latitude",
+                "key": "latitude",
                 "title": "BS Latitude"
                 }
 
@@ -484,7 +488,7 @@ class DeviceGetFilters(View):
                 "field_type": "string",
                 "element_type": "multiselect",
                 "values": [],
-                "key": "bs_longitude",
+                "key": "longitude",
                 "title": "BS Longitude"
                 }
 
@@ -494,8 +498,16 @@ class DeviceGetFilters(View):
                 "element_type": "multiselect",
                 "values": [],
                 "key": "sector_configured_on",
-                "title": "Sector Configured On Dict"
+                "title": "Sector Configured On Device"
                 }
+
+        circuit_dict={
+                "field_type": "string",
+                "element_type": "multiselect",
+                "values": [],
+                "key": "circuit_name",
+                "title": "Circuit"
+            }
 
         organizations= logged_in_user_organizations(self)
 
@@ -511,27 +523,127 @@ class DeviceGetFilters(View):
                     bs_alias['values'].append({'id':base_station_object.id, 'value':base_station_object.alias })
                     bs_city['values'].append({'id':base_station_object.city, 'value':City.objects.get(id=base_station_object.city).city_name })
                     bs_state['values'].append({'id':base_station_object.state, 'value':State.objects.get(id=base_station_object.state).state_name })
-                    bs_technology['values'].append({'id':base_station_object.id, 'value':base_station_object.bs_technology.name })
+                    bs_technology['values'].append({'id':base_station_object.bs_technology.id, 'value':base_station_object.bs_technology.name })
                     bs_latitude['values'].append({'id':base_station_object.id, 'value':base_station_object.latitude })
                     bs_longitude['values'].append({'id':base_station_object.id, 'value':base_station_object.longitude })
+
 
                     sectors= Sector.objects.filter( base_station= base_station_id )
                     for sector in sectors:
                         sector_configured_on_dict['values'].append({'id':sector.sector_configured_on.id,\
                                'value': sector.sector_configured_on.device_name + ' ('+sector.sector_configured_on.ip_address+')' })
-                except Exception as e:
-                    print e.message
 
+                        if sector.circuit_set.values_list('id', flat=True):
+                            circuit_dict['values'].append({'id':sector.circuit_set.values_list('id', flat=True)[0],\
+                                                           'value':sector.circuit_set.values_list('name', flat=True)[0] })
+
+
+                except Exception as e:
+                    logger.info( e.message+'for base station id: %s'%(str(base_station_id)) )
+
+        #removing duplicate values for the bs_city, bs_state and bs_technology
+        bs_state['values']=removing_duplicate_entries(bs_state['values'])
+        bs_city['values']=removing_duplicate_entries(bs_city['values'])
+        bs_technology['values']=removing_duplicate_entries(bs_technology['values'])
 
         self.result['data']['objects'].extend((bs_name, bs_alias, bs_technology, bs_city, bs_state, bs_latitude,\
-                                              bs_longitude, sector_configured_on_dict))
+                                              bs_longitude, sector_configured_on_dict, circuit_dict))
 
         return HttpResponse(json.dumps(self.result))
 
 
 
+class DeviceSetFilters(View):
+    """
+    Parses the get request from the filter form.
+    """
+    def get(self, request):
+        """
+        Handles the get request. Parse the get parameters and fetch the data as required in the request.
 
+        :params self object
+        :params request
+        :return result
+        """
+        self.result = {
+            "success": 0,
+            "message": "Device Data",
+            "data": {
+                "meta": None,
+                "objects": []
+            }
+        }
 
+        request_query= self.request.GET.get('filters','')
+        if request_query:
+            request_query=eval(request_query)
+            base_station_ids, circuit_ids= list(), list()
+            exec_query_base_station = "base_station_ids = BaseStation.objects.filter("
+            exec_query_circuit = "circuit_ids = Circuit.objects.filter("
+
+            query_circuit, query_base_station =list(), list()
+            for filter in request_query:
+                if filter['field']=='circuit_name':
+                    query_circuit.append("Q(name__in=%s)"%(filter['value']))
+                elif filter['field']=='city':
+
+                    city_ids=City.objects.filter(city_name__in=filter['value']).values_list('id', flat=True)
+                    query_base_station.append("Q(%s__in=%s)"%(filter['field'],str(city_ids)))
+
+                elif filter['field']=='state':
+
+                    state_ids=State.objects.filter(state_name__in= filter['value']).values_list('id', flat=True)
+                    query_base_station.append("Q(%s__in=%s)"%(filter['field'],str(state_ids)))
+
+                elif filter['field']=='bs_technology':
+
+                    dt_ids=DeviceTechnology.objects.filter(name__in= filter['value']).values_list('id', flat=True)
+                    query_base_station.append("Q(%s__in=%s)"%(filter['field'],str(dt_ids)))
+
+                elif filter['field']=='sector_configured_on':
+                    #removing the () brackets and anything between it and then strip it to remove any space left.
+                    value_list= [ re.sub("\([^]]*\)", lambda x:'', value ).strip() for value in filter['value'] ]
+                    devices= Device.objects.filter(device_name__in = value_list).values_list('id', flat=True)
+                    bs_ids= Sector.objects.filter(sector_configured_on__in= devices).values_list('base_station__id', flat=True)
+                    base_station_ids+=bs_ids
+
+                else:
+                    query_base_station.append("Q(%s__in=%s)"%(filter['field'], filter['value']))
+
+            exec_query_base_station+=" | ".join(query_base_station) +").values_list('id', flat=True)"
+            exec_query_circuit+=" | ".join(query_circuit) +").values_list('id', flat=True)"
+
+            if query_base_station: exec exec_query_base_station
+            if query_circuit: exec exec_query_circuit
+
+            if base_station_ids:
+                self.result['data']['objects']= {"id" : "mainNode", "name" : "mainNodeName", "data" :
+                                                { "unspiderfy_icon" : "static/img/marker/slave01.png" }
+                                                }
+                self.result['data']['objects']['children']= list()
+                for base_station_id in base_station_ids:
+                    try:
+                        base_station_info=prepare_result(base_station_id)
+                        self.result['data']['objects']['children'].append(base_station_info)
+                    except Exception as e:
+                        logger.error("API Error Message: %s"%(e.message))
+                        pass
+
+            if circuit_ids:
+                for circuit_id in circuit_ids:
+                    circuit=Circuit.objects.get(id=circuit_id)
+                    base_station_id=circuit.sector.base_station.id
+                    try:
+                        base_station_info=prepare_result(base_station_id)
+                        self.result['data']['objects']['children'].append(base_station_info)
+                    except Exception as e:
+                        logger.error("API Error Message: %s"%(e.message))
+                        pass
+
+            self.result['message']= 'Data Fetched Successfully.' if self.result['data']['objects']['children'] else 'No record found.'
+            self.result['success']=1 if self.result['data']['objects']['children'] else 0
+
+        return HttpResponse(json.dumps(self.result))
 
 
 
