@@ -1,7 +1,11 @@
+import re
 from django import forms
 from device.models import Device
 from device_group.models import DeviceGroup
 from organization.models import Organization
+from django.forms.util import ErrorList
+import logging
+logger = logging.getLogger(__name__)
 
 
 class DeviceGroupForm(forms.ModelForm):
@@ -57,3 +61,18 @@ class DeviceGroupForm(forms.ModelForm):
         """
         model = DeviceGroup
         fields = ('name', 'alias', 'parent', 'organization', 'devices')
+
+    def clean(self):
+        """
+        Validations for device group form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data

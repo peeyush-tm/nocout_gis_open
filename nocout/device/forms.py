@@ -544,6 +544,7 @@ class DevicePortForm(forms.ModelForm):
             logger.info(e.message)
         return self.cleaned_data
 
+
 class DeviceFrequencyForm(forms.ModelForm):
     """
     Rendering form for device frequencies
