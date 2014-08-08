@@ -49,8 +49,8 @@ class DeviceForm(forms.ModelForm):
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
-        except:
-            logger.info("No id exist.")
+        except Exception as e:
+            logger.info(e.message)
         initial = kwargs.setdefault('initial', {})
 
         super(DeviceForm, self).__init__(*args, **kwargs)
@@ -103,8 +103,8 @@ class DeviceForm(forms.ModelForm):
                                                                 label=extra_field.field_display_name, ),
                     })
                     self.fields[extra_field.field_name].widget.attrs['class'] = 'extra'
-        except:
-            pass
+        except Exception as e:
+            logger.info(e.message)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -133,7 +133,7 @@ class DeviceForm(forms.ModelForm):
         Latitude field validations
         """
         latitude = self.data['latitude']
-        if latitude != '' and len(latitude)>2 and latitude[2] != '.':
+        if latitude != '' and len(latitude) > 2 and latitude[2] != '.':
             raise forms.ValidationError("Please enter correct value for latitude.")
         return self.cleaned_data.get('latitude')
 
@@ -155,8 +155,8 @@ class DeviceForm(forms.ModelForm):
         try:
             if self.id:
                 devices = devices.exclude(pk=self.id)
-        except:
-            logger.info("This is not an update form.")
+        except Exception as e:
+            logger.info(e.message)
         if devices.count() > 0:
             raise ValidationError('This device name is already in use.')
         return device_name
@@ -170,8 +170,8 @@ class DeviceForm(forms.ModelForm):
         try:
             if self.id:
                 devices = devices.exclude(pk=self.id)
-        except:
-            logger.info("This is not an update form.")
+        except Exception as e:
+            logger.info(e.message)
         if devices.count() > 0:
             raise ValidationError('This IP address is already in use.')
         return ip_address
