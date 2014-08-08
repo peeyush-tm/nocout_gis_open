@@ -311,6 +311,7 @@ class BaseStationForm(forms.ModelForm):
                     field.widget.attrs.update({'data-toggle': 'tooltip'})
                     field.widget.attrs.update({'data-placement': 'right'})
                     field.widget.attrs.update({'title': field.help_text})
+
     class Meta:
         """
         Meta Information
