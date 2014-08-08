@@ -208,6 +208,14 @@ function devicePlottingClass_gmap() {
 	 */
 	this.getDevicesData_gmap = function() {
 
+		var get_param_filter = [];
+		/*If any advance filters are applied then pass the advance filer with API call else pass blank array*/
+		if(appliedAdvFilter.length > 0) {
+			get_param_filter = appliedAdvFilter;
+		} else {
+			get_param_filter = [];
+		}
+
 		if(counter > 0 || counter == -999) {
 
 			/*Show The loading Icon*/
@@ -222,32 +230,33 @@ function devicePlottingClass_gmap() {
 			/*Ajax call to the API*/
 			$.ajax({
 				crossDomain: true,
-				url : window.location.origin+"/"+"device/stats/",
+				url : window.location.origin+"/"+"device/stats/?filters="+JSON.stringify(get_param_filter),
 				// url : window.location.origin+"/"+"static/new_format.json",
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
 				success : function(result) {
 
-					if(result.data.objects != null) {
+					if(result.success == 1) {
 
-						hitCounter = hitCounter + 1;
-						/*First call case*/
-						if(devicesObject.data == undefined) {
+						if(result.data.objects != null) {
 
-							/*Save the result json to the global variable for global access*/
-							devicesObject = result;
-							/*This will update if any filer is applied*/
-							devices_gmaps = devicesObject.data.objects.children;
-							/*This will changes only when data re-fetched*/
-							main_devices_data_gmaps = devicesObject.data.objects.children;
+							hitCounter = hitCounter + 1;
+							
+							/*First call case*/
+							if(devicesObject.data == undefined) {
 
-						} else {
+								/*Save the result json to the global variable for global access*/
+								devicesObject = result;
+								/*This will update if any filer is applied*/
+								devices_gmaps = devicesObject.data.objects.children;
+								/*This will changes only when data re-fetched*/
+								main_devices_data_gmaps = devicesObject.data.objects.children;
 
-							devices_gmaps = devices_gmaps.concat(result.data.objects.children);
-						}
+							} else {
 
-						if(devicesObject.success == 1) {
+								devices_gmaps = devices_gmaps.concat(result.data.objects.children);
+							}
 
 							if(devicesObject.data.objects.children.length > 0) {
 
@@ -276,20 +285,26 @@ function devicePlottingClass_gmap() {
 									clusterIcon = window.location.origin+"/"+devicesObject.data.objects.data.unspiderfy_icon;
 								}
 
-								/*Check that any filter is applied or not*/
-								var appliedFilterLength_gmaps = Object.keys(appliedFilterObj_gmaps).length;
+								/*Check that any advance filter is applied or not*/
+								if(appliedAdvFilter.length <= 0) {
 
-								if(appliedFilterLength_gmaps > 0) {
-									/*If any filter is applied then plot the fetch data as per the filters*/
-									gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps);
-								} else {
-									/*Call the plotDevices_gmap to show the markers on the map*/
-									gmap_self.plotDevices_gmap(devices_gmaps,"base_station");
+									/*applied basic filters count*/
+									var appliedFilterLength_gmaps = Object.keys(appliedFilterObj_gmaps).length;
+
+									/*Check that any basic filter is applied or not*/
+									if(appliedFilterLength_gmaps > 0) {
+										/*If any filter is applied then plot the fetch data as per the filters*/
+										gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps);
+									} else {
+									
+										/*Call the plotDevices_gmap to show the markers on the map*/
+										gmap_self.plotDevices_gmap(devices_gmaps,"base_station");
+									}
+
 								}
 
-								/*Call the function after 3 sec.*/
+								/*Call the function after 3 sec. for lazyloading*/
 								setTimeout(function() {
-										
 									gmap_self.getDevicesData_gmap();
 								},3000);
 								
@@ -312,21 +327,25 @@ function devicePlottingClass_gmap() {
 
 								setTimeout(function(e){
 									gmap_self.recallServer_gmap();
-								},8000)
+								},300000);
 							}
 
+							/*Decrement the counter*/
+							counter = counter - 1;
+
 						} else {
+
 							$.gritter.add({
 					            // (string | mandatory) the heading of the notification
 					            title: 'GIS - Server Error',
 					            // (string | mandatory) the text inside the notification
-					            text: devicesObject.message,
+					            text: 'No Devices Found',
 					            // (bool | optional) if you want it to fade out on its own or just sit there
 					            sticky: true
 					        });
 
-					        /*Recall the server after particular timeout if system is not freezed*/
-					        /*Hide The loading Icon*/
+							/*Recall the server after particular timeout if system is not freezed*/
+							/*Hide The loading Icon*/
 							$("#loadingIcon").hide();
 
 							/*Enable the refresh button*/
@@ -334,10 +353,8 @@ function devicePlottingClass_gmap() {
 
 							setTimeout(function(e){
 								gmap_self.recallServer_gmap();
-							},8000)
+							},300000);
 						}
-						/*Decrement the counter*/
-						counter = counter - 1;
 
 					} else {
 
@@ -345,13 +362,13 @@ function devicePlottingClass_gmap() {
 				            // (string | mandatory) the heading of the notification
 				            title: 'GIS - Server Error',
 				            // (string | mandatory) the text inside the notification
-				            text: 'No Devices Found',
+				            text: devicesObject.message,
 				            // (bool | optional) if you want it to fade out on its own or just sit there
 				            sticky: true
 				        });
 
-						/*Recall the server after particular timeout if system is not freezed*/
-						/*Hide The loading Icon*/
+				        /*Recall the server after particular timeout if system is not freezed*/
+				        /*Hide The loading Icon*/
 						$("#loadingIcon").hide();
 
 						/*Enable the refresh button*/
@@ -359,8 +376,10 @@ function devicePlottingClass_gmap() {
 
 						setTimeout(function(e){
 							gmap_self.recallServer_gmap();
-						},8000)
+						},300000);
+
 					}
+
 				},
 				/*If data not fetched*/
 				error : function(err) {
@@ -383,7 +402,7 @@ function devicePlottingClass_gmap() {
 
 					setTimeout(function(e){
 						gmap_self.recallServer_gmap();
-					},8000)
+					},300000);
 				}
 			});
 		} else {
@@ -397,7 +416,7 @@ function devicePlottingClass_gmap() {
 
 			setTimeout(function(e){
 				gmap_self.recallServer_gmap();
-			},8000)
+			},300000);
 		}
 	};
 
@@ -638,6 +657,12 @@ function devicePlottingClass_gmap() {
 		var clusterOptions = {gridSize: 70, maxZoom: 8};
 		/*Add the master markers to the cluster MarkerCluster object*/
 		masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
+
+		/*Hide The loading Icon*/
+		$("#loadingIcon").hide();
+
+		/*Enable the refresh button*/
+		$("#resetFilters").button("complete");
 	};
 
 	/**
@@ -1813,15 +1838,6 @@ function devicePlottingClass_gmap() {
 	};
 
 	/**
-	 * This function calls the plotDevices_gmap function to load the fetched devices in case of no filters
-	 * @method loadExistingDevices
-	 */
-	this.loadExistingDevices = function() {
-
-		gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
-	};
-
-	/**
      * This function makes an array from the selected filters
      * @method makeFiltersArray
      * @param mapPageType {String}, It contains the string value by which we can get the page information
@@ -1844,54 +1860,6 @@ function devicePlottingClass_gmap() {
         	appliedFilterObj_gmaps["vendor"] = $("#vendor option:selected").text();
         }
 
-        if($("#state").val().length > 0) {
-        	// selectedState = $("#state option:selected").text();
-        	appliedFilterObj_gmaps["state"] = $("#state option:selected").text();
-
-        	/*Zoom to the selected state area*/
-        	$.getJSON("https://maps.googleapis.com/maps/api/geocode/json?address="+$("#state option:selected").text(),function(result) {
-        	
-	        	var bounds = new google.maps.LatLngBounds();
-	    		/*point bounds to the place location*/
-	    		var ptLatLon = new google.maps.LatLng(result.results[0].geometry.location.lat, result.results[0].geometry.location.lng);
-	    		bounds.extend(ptLatLon);
-	    		/*call fitbounts for the mapInstance with the place location bounds object*/
-	    		mapInstance.fitBounds(bounds)
-
-	    		var listener = google.maps.event.addListener(mapInstance, "idle", function() { 
-	    			/*check for current zoom level*/
-					if (mapInstance.getZoom() > 8) {
-						mapInstance.setZoom(8);
-					}
-					google.maps.event.removeListener(listener);
-				});
-	        });
-        }
-
-        if($("#city").val().length > 0) {
-        	// selectedCity = $("#city option:selected").text();
-        	appliedFilterObj_gmaps["city"] = $("#city option:selected").text();
-
-        	/*Zoom to the selected city area*/
-        	$.getJSON("https://maps.googleapis.com/maps/api/geocode/json?address="+$("#city option:selected").text(),function(result) {
-        	
-	        	var bounds = new google.maps.LatLngBounds();
-	    		/*point bounds to the place location*/
-	    		var ptLatLon = new google.maps.LatLng(result.results[0].geometry.location.lat, result.results[0].geometry.location.lng);
-	    		bounds.extend(ptLatLon);
-	    		/*call fitbounts for the mapInstance with the place location bounds object*/
-	    		mapInstance.fitBounds(bounds)
-
-	    		var listener = google.maps.event.addListener(mapInstance, "idle", function() { 
-	    			/*check for current zoom level*/
-					if (mapInstance.getZoom() > 12) {
-						mapInstance.setZoom(12);
-					}
-					google.maps.event.removeListener(listener);
-				});
-	        });
-        }
-
         /*Get The Length Of Filter Array*/
         var filtersLength = Object.keys(appliedFilterObj_gmaps).length;
 
@@ -1907,13 +1875,28 @@ function devicePlottingClass_gmap() {
         /*If no filter is applied the load all the devices*/
         else {
 
-        	/*Reset markers & polyline*/
-			gmap_self.clearGmapElements();
+        	if($.trim(mapPageType) == "gmap") {
+    			
+    			/*Reset markers & polyline*/
+				gmap_self.clearGmapElements();
 
-			/*Reset Global Variables & Filters*/
-			gmap_self.resetVariables_gmap();
+				/*Reset Global Variables & Filters*/
+				gmap_self.resetVariables_gmap();
 
-            gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
+				/*create the BS-SS network on the google map*/
+	            gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
+
+        	} else {
+
+        		/*Clear all the elements from google earth*/
+		        earth_instance.clearEarthElements();
+
+		        /*Reset Global Variables & Filters*/
+		        earth_instance.resetVariables_earth();
+
+		        /*create the BS-SS network on the google earth*/
+		        earth_instance.plotDevices_earth(main_devices_data_earth,"base_station");
+        	}
         }
     };
 
@@ -2439,6 +2422,9 @@ function devicePlottingClass_gmap() {
 		isCreated = 0;
 		ruler_pt_count = 0;
 
+		/*If any info window is open then close it*/
+		infowindow.close();
+
 		for(var i=0;i<ruler_array.length;i++) {
 			ruler_array[i].setMap(null);
 		}
@@ -2567,6 +2553,9 @@ function devicePlottingClass_gmap() {
 
 		/*Clear the marker array of OverlappingMarkerSpiderfier*/
 		oms.clearMarkers();
+
+		/*close infowindow*/
+		infowindow.close();
 
 		/*Clear master marker cluster objects*/
 		if(masterClusterInstance != "") {
