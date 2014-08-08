@@ -110,21 +110,17 @@ class AntennaForm(forms.ModelForm):
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
-                    print "***************** help_text - ", field.help_text
                     field.widget.attrs['class'] += ' col-md-12'
                     field.widget.attrs['class'] += ' select2select'
                 else:
-                    print "***************** help_text - ", field.help_text
                     field.widget.attrs['class'] += ' tip-focus form-control'
                     field.widget.attrs['data-toggle'] = 'tooltip'
                     field.widget.attrs['data-placement'] = 'right'
                     field.widget.attrs['title'] = field.help_text
             else:
                 if isinstance(field.widget, forms.widgets.Select):
-                    print "***************** help_text - ", field.help_text
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
-                    print "***************** help_text - ", field.help_text
                     field.widget.attrs.update({'class': ' tip-focus form-control'})
                     field.widget.attrs.update({'data-toggle': 'tooltip'})
                     field.widget.attrs.update({'data-placement': 'right'})
@@ -179,12 +175,18 @@ class BackhaulForm(forms.ModelForm):
                     field.widget.attrs['class'] += ' col-md-12'
                     field.widget.attrs['class'] += ' select2select'
                 else:
-                    field.widget.attrs['class'] += ' form-control'
+                    field.widget.attrs['class'] += ' tip-focus form-control'
+                    field.widget.attrs['data-toggle'] = 'tooltip'
+                    field.widget.attrs['data-placement'] = 'right'
+                    field.widget.attrs['title'] = field.help_text
             else:
                 if isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
-                    field.widget.attrs.update({'class': 'form-control'})
+                    field.widget.attrs.update({'class': ' tip-focus form-control'})
+                    field.widget.attrs.update({'data-toggle': 'tooltip'})
+                    field.widget.attrs.update({'data-placement': 'right'})
+                    field.widget.attrs.update({'title': field.help_text})
     class Meta:
         """
         Meta Information
@@ -253,7 +255,10 @@ class BaseStationForm(forms.ModelForm):
                 if isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
-                    field.widget.attrs.update({'class': 'form-control'})
+                    field.widget.attrs.update({'class': ' tip-focus form-control'})
+                    field.widget.attrs.update({'data-toggle': 'tooltip'})
+                    field.widget.attrs.update({'data-placement': 'right'})
+                    field.widget.attrs.update({'title': field.help_text})
     class Meta:
         """
         Meta Information
