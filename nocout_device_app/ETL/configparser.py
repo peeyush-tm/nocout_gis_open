@@ -27,7 +27,6 @@ def parse_config():
 
 def parse_config_obj():
     config = ConfigObj('nocout/config.ini')
-    
     return config
 
 

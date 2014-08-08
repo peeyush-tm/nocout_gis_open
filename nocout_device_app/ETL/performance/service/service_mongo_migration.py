@@ -55,36 +55,21 @@ def main(**configs):
     would be imported to mysql, only, and this way mysql would not store
     duplicate data.
     """
-    start_time = mongo_module.get_latest_entry(
-        db_type='mysql',
-        db=db,
-        site=configs.get('site'),
-        table_name=configs.get('table_name')
-    )
+    for i in range(len(configs.get('mongo_conf'))):
+    	start_time = mongo_module.get_latest_entry(
+		    	db_type='mysql', 
+		    	db=db,
+		    	site=configs.get('mongo_conf')[i][0],
+		    	table_name=configs.get('table_name')
+    	)	
 
-    end_time = datetime.now()
-    # Get all the entries from mongodb having timestamp greater than start_time
-    docs = read_data(start_time, end_time, configs=configs)
-    for doc in docs:
-        values_list = build_data(doc)
-        data_values.extend(values_list)
-    field_names = [
-        'device_name',
-        'service_name',
-        'machine_name',
-        'site_name',
-        'data_source',
-        'current_value',
-        'min_value',
-        'max_value',
-        'avg_value',
-        'warning_threshold',
-        'critical_threshold',
-        'sys_timestamp',
-        'check_timestamp',
-	'ip_address'
-    ]
-    if data_values:	
+    	end_time = datetime.now()
+    	# Get all the entries from mongodb having timestam0p greater than start_time
+    	docs = read_data(start_time, end_time, configs=configs.get('mongo_conf')[i], db_name=configs.get('nosql_db'))
+    	for doc in docs:
+        	values_list = build_data(doc)
+        	data_values.extend(values_list)
+    if data_values:
     	insert_data(configs.get('table_name'), data_values, configs=configs)
     	print "Data inserted into my mysql db"
     else:
@@ -108,9 +93,9 @@ def read_data(start_time, end_time, **kwargs):
     #start_time = end_time - timedelta(minutes=10)
     docs = [] 
     db = mongo_module.mongo_conn(
-        host=kwargs.get('configs').get('host'),
-        port=int(kwargs.get('configs').get('port')),
-        db_name=kwargs.get('configs').get('nosql_db')
+        host=kwargs.get('configs')[1],
+        port=int(kwargs.get('configs')[2]),
+        db_name=kwargs.get('db_name')
     )
     if db:
 	if start_time is None:
@@ -224,7 +209,7 @@ def mysql_conn(db=None, **kwargs):
     """
     try:
         db = MySQLdb.connect(
-                host=kwargs.get('configs').get('host'),
+                host=kwargs.get('configs').get('ip'),
                 user=kwargs.get('configs').get('user'),
                 passwd=kwargs.get('configs').get('sql_passwd'),
                 db=kwargs.get('configs').get('sql_db')
