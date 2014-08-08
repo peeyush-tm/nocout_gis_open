@@ -28,7 +28,7 @@
                                                             {{ field }} {{ field.errors }}
                                                         </div>
                                                         <div class="col-md-4 help_text">
-                                                            {{ field.help_text }}
+                                                            {# field.help_text #}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -56,9 +56,13 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
     {% endblock %}
     <script>
-        $(document).ready(function(){
+        $(document).ready(function () {
             // Initialize the select2 selectbox.
             $(".select2select").select2();
+            $('.tip-focus').tooltip({
+                placement: 'right',
+                trigger: 'focus'
+            });
         })
     </script>
 {% endblock %}

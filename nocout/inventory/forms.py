@@ -1,3 +1,4 @@
+import re
 from django import forms
 from device.models import Country, State, City
 from device_group.models import DeviceGroup
@@ -5,7 +6,10 @@ from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfig
 from nocout.widgets import IntReturnModelChoiceField
 from organization.models import Organization
 from user_group.models import UserGroup
+from django.forms.util import ErrorList
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
+import logging
+logger = logging.getLogger(__name__)
 
 
 #*************************************** Inventory ************************************
@@ -48,12 +52,12 @@ class InventoryForm(forms.ModelForm):
         organization_id=None
         if kwargs['instance']:
             self.fields['name'].widget.attrs['readonly'] = True
-            organization_id=initial['organization']
+            organization_id = initial['organization']
         elif Organization.objects.all():
-            organization_id=Organization.objects.all()[0].id
+            organization_id = Organization.objects.all()[0].id
         if organization_id:
-            organization_descendants_ids= Organization.objects.get(id= organization_id).get_descendants(include_self=True).values_list('id', flat=True)
-            self.fields['device_groups'].queryset= DeviceGroup.objects.filter( organization__in = organization_descendants_ids, is_deleted=0)
+            organization_descendants_ids = Organization.objects.get(id= organization_id).get_descendants(include_self=True).values_list('id', flat=True)
+            self.fields['device_groups'].queryset = DeviceGroup.objects.filter( organization__in = organization_descendants_ids, is_deleted=0)
             self.fields['user_group'].queryset = UserGroup.objects.filter( organization__in = organization_descendants_ids, is_deleted=0)
 
     class Meta:
@@ -61,6 +65,21 @@ class InventoryForm(forms.ModelForm):
         Meta Information
         """
         model = Inventory
+
+    def clean(self):
+        """
+        Validations for inventory form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
 
 
 #*************************************** Antenna **************************************
@@ -101,7 +120,7 @@ class AntennaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(AntennaForm, self).__init__(*args, **kwargs)
-        self.fields['height'].initial =0
+        self.fields['height'].initial = 0
         self.fields['azimuth_angle'].initial = 0
         self.fields['height'].required = True
         self.fields['azimuth_angle'].required = True
@@ -113,18 +132,39 @@ class AntennaForm(forms.ModelForm):
                     field.widget.attrs['class'] += ' col-md-12'
                     field.widget.attrs['class'] += ' select2select'
                 else:
-                    field.widget.attrs['class'] += ' form-control'
+                    field.widget.attrs['class'] += ' tip-focus form-control'
+                    field.widget.attrs['data-toggle'] = 'tooltip'
+                    field.widget.attrs['data-placement'] = 'right'
+                    field.widget.attrs['title'] = field.help_text
             else:
                 if isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
-                    field.widget.attrs.update({'class': 'form-control'})
+                    field.widget.attrs.update({'class': ' tip-focus form-control'})
+                    field.widget.attrs.update({'data-toggle': 'tooltip'})
+                    field.widget.attrs.update({'data-placement': 'right'})
+                    field.widget.attrs.update({'title': field.help_text})
 
     class Meta:
         """
         Meta Information
         """
         model = Antenna
+
+    def clean(self):
+        """
+        Validations for antenna form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
 
 
 #************************************* Backhaul ****************************************
@@ -169,17 +209,38 @@ class BackhaulForm(forms.ModelForm):
                     field.widget.attrs['class'] += ' col-md-12'
                     field.widget.attrs['class'] += ' select2select'
                 else:
-                    field.widget.attrs['class'] += ' form-control'
+                    field.widget.attrs['class'] += ' tip-focus form-control'
+                    field.widget.attrs['data-toggle'] = 'tooltip'
+                    field.widget.attrs['data-placement'] = 'right'
+                    field.widget.attrs['title'] = field.help_text
             else:
                 if isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
-                    field.widget.attrs.update({'class': 'form-control'})
+                    field.widget.attrs.update({'class': ' tip-focus form-control'})
+                    field.widget.attrs.update({'data-toggle': 'tooltip'})
+                    field.widget.attrs.update({'data-placement': 'right'})
+                    field.widget.attrs.update({'title': field.help_text})
     class Meta:
         """
         Meta Information
         """
         model = Backhaul
+
+    def clean(self):
+        """
+        Validations for backhaul form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
 
 
 #************************************ Base Station ****************************************
@@ -238,17 +299,39 @@ class BaseStationForm(forms.ModelForm):
                     field.widget.attrs['class'] += ' col-md-12'
                     field.widget.attrs['class'] += ' select2select'
                 else:
-                    field.widget.attrs['class'] += ' form-control'
+                    field.widget.attrs['class'] += ' tip-focus form-control'
+                    field.widget.attrs['data-toggle'] = 'tooltip'
+                    field.widget.attrs['data-placement'] = 'right'
+                    field.widget.attrs['title'] = field.help_text
             else:
                 if isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
-                    field.widget.attrs.update({'class': 'form-control'})
+                    field.widget.attrs.update({'class': ' tip-focus form-control'})
+                    field.widget.attrs.update({'data-toggle': 'tooltip'})
+                    field.widget.attrs.update({'data-placement': 'right'})
+                    field.widget.attrs.update({'title': field.help_text})
+
     class Meta:
         """
         Meta Information
         """
         model = BaseStation
+
+    def clean(self):
+        """
+        Validations for base station form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
 
 
 #************************************* Sector *************************************
@@ -279,17 +362,38 @@ class SectorForm(forms.ModelForm):
                     field.widget.attrs['class'] += ' col-md-12'
                     field.widget.attrs['class'] += ' select2select'
                 else:
-                    field.widget.attrs['class'] += ' form-control'
+                    field.widget.attrs['class'] += ' tip-focus form-control'
+                    field.widget.attrs['data-toggle'] = 'tooltip'
+                    field.widget.attrs['data-placement'] = 'right'
+                    field.widget.attrs['title'] = field.help_text
             else:
                 if isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
-                    field.widget.attrs.update({'class': 'form-control'})
+                    field.widget.attrs.update({'class': ' tip-focus form-control'})
+                    field.widget.attrs.update({'data-toggle': 'tooltip'})
+                    field.widget.attrs.update({'data-placement': 'right'})
+                    field.widget.attrs.update({'title': field.help_text})
     class Meta:
         """
         Meta Information
         """
         model = Sector
+
+    def clean(self):
+        """
+        Validations for sector form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
         
         
 #************************************* Customer ***************************************
@@ -316,6 +420,21 @@ class CustomerForm(forms.ModelForm):
         Meta Information
         """
         model = Customer
+
+    def clean(self):
+        """
+        Validations for customer form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
         
         
 #*********************************** Sub Station *************************************
@@ -363,17 +482,39 @@ class SubStationForm(forms.ModelForm):
                     field.widget.attrs['class'] += ' col-md-12'
                     field.widget.attrs['class'] += ' select2select'
                 else:
-                    field.widget.attrs['class'] += ' form-control'
+                    field.widget.attrs['class'] += ' tip-focus form-control'
+                    field.widget.attrs['data-toggle'] = 'tooltip'
+                    field.widget.attrs['data-placement'] = 'right'
+                    field.widget.attrs['title'] = field.help_text
             else:
                 if isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
-                    field.widget.attrs.update({'class': 'form-control'})
+                    field.widget.attrs.update({'class': ' tip-focus form-control'})
+                    field.widget.attrs.update({'data-toggle': 'tooltip'})
+                    field.widget.attrs.update({'data-placement': 'right'})
+                    field.widget.attrs.update({'title': field.help_text})
+
     class Meta:
         """
         Meta Information
         """
         model = SubStation
+
+    def clean(self):
+        """
+        Validations for sub station form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
         
         
 #*********************************** Circuit ***************************************
@@ -397,17 +538,39 @@ class CircuitForm(forms.ModelForm):
                     field.widget.attrs['class'] += ' col-md-12'
                     field.widget.attrs['class'] += ' select2select'
                 else:
-                    field.widget.attrs['class'] += ' form-control'
+                    field.widget.attrs['class'] += ' tip-focus form-control'
+                    field.widget.attrs['data-toggle'] = 'tooltip'
+                    field.widget.attrs['data-placement'] = 'right'
+                    field.widget.attrs['title'] = field.help_text
             else:
                 if isinstance(field.widget, forms.widgets.Select):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
-                    field.widget.attrs.update({'class': 'form-control'})
+                    field.widget.attrs.update({'class': ' tip-focus form-control'})
+                    field.widget.attrs.update({'data-toggle': 'tooltip'})
+                    field.widget.attrs.update({'data-placement': 'right'})
+                    field.widget.attrs.update({'title': field.help_text})
+
     class Meta:
         """
         Meta Information
         """
         model = Circuit
+
+    def clean(self):
+        """
+        Validations for circuit form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
 
 
 #*********************************** IconSettings ***************************************
@@ -430,11 +593,27 @@ class IconSettingsForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         """
         Meta Information
         """
         model = IconSettings
+
+    def clean(self):
+        """
+        Validations for icon settings form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
         
         
 #*********************************** LivePollingSettings ***************************************
@@ -460,11 +639,27 @@ class LivePollingSettingsForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         """
         Meta Information
         """
         model = LivePollingSettings
+
+    def clean(self):
+        """
+        Validations for live polling form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
 
 
 #*********************************** LivePollingSettings ***************************************
@@ -488,11 +683,27 @@ class ThresholdConfigurationForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         """
         Meta Information
         """
         model = ThresholdConfiguration
+
+    def clean(self):
+        """
+        Validations for threshold configuration form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
 
 
 
@@ -522,8 +733,24 @@ class ThematicSettingsForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'col-md-12 form-control'})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         """
         Meta Information
         """
         model = ThematicSettings
+
+    def clean(self):
+        """
+        Validations for thematic settings form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
