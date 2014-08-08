@@ -88,6 +88,14 @@ function googleEarthClass() {
 	 */
 	this.getDevicesData_earth = function() {
 
+		var get_param_filter = [];
+		/*If any advance filters are applied then pass the advance filer with API call else pass blank array*/
+		if(appliedAdvFilter.length > 0) {
+			get_param_filter = appliedAdvFilter;
+		} else {
+			get_param_filter = [];
+		}
+
 		if(counter > 0 || counter == -999) {
 
 			/*Show The loading Icon*/
@@ -99,18 +107,18 @@ function googleEarthClass() {
 			/*Ajax call to the API*/
 			$.ajax({
 				crossDomain: true,
-				url : window.location.origin+"/"+"device/stats/",
+				url : window.location.origin+"/"+"device/stats/?filters="+JSON.stringify(get_param_filter),
 				// url : window.location.origin+"/"+"static/new_format.json",
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
 				success : function(result) {
 					
-					if(result.data.objects != null) {
+					if(result.success == 1) {
 
-						hitCounter = hitCounter + 1;
-						
-						if(result.success == 1) {
+						if(result.data.objects != null) {
+
+							hitCounter = hitCounter + 1;
 
 							if(result.data.objects.children.length > 0) {
 
@@ -149,11 +157,18 @@ function googleEarthClass() {
 									earth_self.plotDevices_earth(devices_earth,"base_station");
 								}
 
+								/*Hide The loading Icon*/
+								$("#loadingIcon").hide();
+
+								/*Enable the refresh button*/
+								$("#resetFilters").button("complete");
+
 								/*Call the function after 3 sec.*/
 								setTimeout(function() {
 										
 									earth_self.getDevicesData_earth();
 								},3000);
+
 							} else {
 								$.gritter.add({
 						            // (string | mandatory) the heading of the notification
@@ -165,34 +180,42 @@ function googleEarthClass() {
 						        });
 							}
 
-						} else {
-							$.gritter.add({
-					            // (string | mandatory) the heading of the notification
-					            title: 'Google Earth - Server Error',
-					            // (string | mandatory) the text inside the notification
-					            text: devicesObject_earth.message,
-					            // (bool | optional) if you want it to fade out on its own or just sit there
-					            sticky: true
-					        });
+							/*Decrement the counter*/
+							counter = counter - 1;
 
-							earth_self.recallServer_earth();
+						} else {
+
+							setTimeout(function(e) {
+								earth_self.recallServer_earth();
+							},300000);
 							/*Hide The loading Icon*/
 							$("#loadingIcon").hide();
 
 							/*Enable the refresh button*/
 							$("#resetFilters").button("complete");
 						}
-						/*Decrement the counter*/
-						counter = counter - 1;
 
 					} else {
 
-						earth_self.recallServer_earth();
+						$.gritter.add({
+				            // (string | mandatory) the heading of the notification
+				            title: 'Google Earth - Server Error',
+				            // (string | mandatory) the text inside the notification
+				            text: devicesObject_earth.message,
+				            // (bool | optional) if you want it to fade out on its own or just sit there
+				            sticky: true
+				        });
+
 						/*Hide The loading Icon*/
 						$("#loadingIcon").hide();
 
 						/*Enable the refresh button*/
 						$("#resetFilters").button("complete");
+
+						setTimeout(function(e) {
+							earth_self.recallServer_earth();
+						},300000);
+
 					}
 
 				},
@@ -477,6 +500,12 @@ function googleEarthClass() {
 			}/*End of station_type condition else.*/
 
 		}/*End of devices list for loop.*/
+
+		/*Hide The loading Icon*/
+		$("#loadingIcon").hide();
+
+		/*Enable the refresh button*/
+		$("#resetFilters").button("complete");
 	};
 
 	/**
@@ -838,30 +867,19 @@ function googleEarthClass() {
     this.recallServer_earth = function() {
 
     	/*Hide The loading Icon*/
-		$("#loadingIcon").hide();
+		$("#loadingIcon").show();
 
 		/*Enable the refresh button*/
-		$("#resetFilters").button("complete");
+		$("#resetFilters").button("loading");
+
+		/*Clear all the elements from google earth*/
+		earth_self.clearEarthElements();
+
+		/*Reset Global Variables*/
+		earth_self.resetVariables_earth();
 		
-
-    	setTimeout(function() {
-			
-			/*Hide The loading Icon*/
-			$("#loadingIcon").show();
-
-			/*Enable the refresh button*/
-			$("#resetFilters").button("loading");
-
-			/*Clear all the elements from google earth*/
-			earth_self.clearEarthElements();
-
-			/*Reset Global Variables*/
-			earth_self.resetVariables_earth();
-			
-			/*Recall the API*/
-			earth_self.getDevicesData_earth();
-
-		},300000);
+		/*Recall the API*/
+		earth_self.getDevicesData_earth();
     };
 
     /**

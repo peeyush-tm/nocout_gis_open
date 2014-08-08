@@ -1,12 +1,13 @@
 /*Global Variables*/
-var self = "",
-	nmInstance = "",
+var advSearch_self = "",
+	gmapInstance = "",
+	earthInstance = "",
     filtersInfoArray = [],
     templateData = "",
     formElements = "",
     elementsArray = [],
     resultantObject = {},
-    resultantObjectArray = [],
+    appliedAdvFilter = [],
     searchParameters = "",
     lastSelectedValues = [];
 
@@ -20,7 +21,7 @@ var self = "",
 function advanceSearchClass() {
 
 	/*Store the reference of current pointer in a global variable*/
-	self = this; // Name of current pointer referencing element in all files should be different otherwise conflicts occurs
+	advSearch_self = this; // Name of current pointer referencing element in all files should be different otherwise conflicts occurs
 
 	/**
 	 * This function first get the filters object from the server, create the filters HTML struction & then populate the HTML in the popup
@@ -35,11 +36,9 @@ function advanceSearchClass() {
 	this.getFilterInfo = function(domElemet,windowTitle,buttonId,getApiUrl,setApiUrl) {
 
 		/*If any filter is applied before then save the last filter array in other variable*/
-		if(resultantObjectArray.length != 0) {
-			lastSelectedValues = resultantObjectArray;
-		}		
-		/*Store the reference of current pointer in a global variable*/
-		self = this;
+		if(appliedAdvFilter.length != 0) {
+			lastSelectedValues = appliedAdvFilter;
+		}
 
 		/*Change the text of the button to "Please Wait..." & disable the button*/
 		$("#"+buttonId).button("loading");
@@ -71,8 +70,8 @@ function advanceSearchClass() {
 					templateData += '<form id="'+domElemet+'_form"><div class="form-group form-horizontal">';
 
 					formElements = "";
-					/*Reset the resultantObjectArray*/
-					resultantObjectArray = [];
+					/*Reset the appliedAdvFilter*/
+					appliedAdvFilter = [];
 
 					for(var i=0;i<filtersInfoArray.length;i++) {
 
@@ -175,7 +174,7 @@ function advanceSearchClass() {
 
 					templateData += elementsArray.join('');
 					templateData += '</div><div class="clearfix"></div></form>';
-					templateData += '<div class="clearfix"></div></div></div><iframe class="iframeshim" frameborder="0" scrolling="no"></iframe></div>';					
+					templateData += '<div class="clearfix"></div></div></div><iframe class="iframeshim" frameborder="0" scrolling="no"></iframe></div>';
 
 					/*Call the bootbox to show the popup with the fetched filters*/
 					bootbox.dialog({
@@ -259,17 +258,17 @@ function advanceSearchClass() {
 
 										if(resultantObject.field != undefined) {
 
-											resultantObjectArray.push(resultantObject);
+											appliedAdvFilter.push(resultantObject);
 										}									
 									}
 									/*Stringify the object array to pass it in the query parameters for in set filter API*/
-									searchParameters = JSON.stringify(resultantObjectArray);
+									searchParameters = JSON.stringify(appliedAdvFilter);
 
 									/*call the setFilters function with the searchparamerts & setFilters API url*/
-									self.setFilters(searchParameters,setApiUrl);
+									advSearch_self.setFilters(searchParameters,setApiUrl);
 
 									/*Call the reset function*/
-									self.resetVariables();
+									advSearch_self.resetVariables();
 								}
 							},
 							danger: {
@@ -278,7 +277,7 @@ function advanceSearchClass() {
 								callback: function() {
 									
 									/*Call the reset function*/
-									self.resetVariables();
+									advSearch_self.resetVariables();
 								}
 							}
 						}
@@ -333,14 +332,30 @@ function advanceSearchClass() {
 				/*If data not fetched*/
 				else {
 
-					console.log(result.message);
+					// console.log(result.message);
+					$.gritter.add({
+			            // (string | mandatory) the heading of the notification
+			            title: 'Advance Filters - No Records',
+			            // (string | mandatory) the text inside the notification
+			            text: result.message,
+			            // (bool | optional) if you want it to fade out on its own or just sit there
+			            sticky: true
+			        });
 				}
 			},
 			/*If there is a problem in calling server*/
 			error : function(err) {
 
 				$("#"+buttonId).button("complete");
-				console.log(err.statusText);
+				// console.log(err.statusText);
+				$.gritter.add({
+		            // (string | mandatory) the heading of the notification
+		            title: 'Advance Filters - Error',
+		            // (string | mandatory) the text inside the notification
+		            text: err.statusText,
+		            // (bool | optional) if you want it to fade out on its own or just sit there
+		            sticky: true
+		        });
 			}
 		});		
 	};
@@ -376,27 +391,79 @@ function advanceSearchClass() {
 
 					if(result.data.objects != null) {
 
-						console.log(result);
-						// /*Create a instance of networkMapClass*/
-						// nmInstance = new devicePlottingClass_gmap();
+						/*Hide The loading Icon*/
+						$("#loadingIcon").show();
 
-						// /*Reset markers, polyline & filters*/
-				  //       nmInstance.clearGmapElements();
+						/*Enable the refresh button*/
+						$("#resetFilters").button("loading");
 
-				  //       /*Reset Global Variables & Filters*/
-				  //       nmInstance.resetVariables_gmap();
+				        /*Reset The basic filters dropdown*/
+				        $("#technology").val($("#technology option:first").val());
+				        $("#vendor").val($("#vendor option:first").val());
+				        $("#state").val($("#state option:first").val());
+				        $("#city").val($("#city option:first").val());
 
-				  //       /*Call the make network to create the BS-SS network on the google map*/
-				  //       nmInstance.plotDevices_gmap(result.data.objects.children);
+			        	if(window.location.pathname.indexOf("google_earth") == -1) {
+
+			        		/*Create a instance of networkMapClass*/
+							gmapInstance = new devicePlottingClass_gmap();
+
+							/*Reset markers, polyline & filters*/
+					        gmapInstance.clearGmapElements();
+
+					        /*Reset Global Variables & Filters*/
+					        gmapInstance.resetVariables_gmap();
+
+					        /*If cluster icon exist then save it to global variable else make the global variable blank*/
+							if(result.data.objects.data.unspiderfy_icon == undefined) {
+								clusterIcon = "";
+							} else {
+								clusterIcon = window.location.origin+"/"+result.data.objects.data.unspiderfy_icon;
+							}
+
+					        /*Call the make network to create the BS-SS network on the google map*/
+					        gmapInstance.plotDevices_gmap(result.data.objects.children,"base_station");
+
+			        	} else {
+
+			        		/*Create a instance of googleEarthClass*/
+			        		earthInstance = new googleEarthClass();
+
+			        		/*Clear all the elements from google earth*/
+					        earthInstance.clearEarthElements();
+
+					        /*Reset Global Variables & Filters*/
+					        earthInstance.resetVariables_earth();
+
+					        /*create the BS-SS network on the google map*/
+					        earthInstance.plotDevices_earth(result.data.objects.children,"base_station");
+			        	}
+
 					}
 				} else {
 
-					console.log(result.message);
+					// console.log(result.message);
+					$.gritter.add({
+			            // (string | mandatory) the heading of the notification
+			            title: 'Advance Filters - No Records',
+			            // (string | mandatory) the text inside the notification
+			            text: result.message,
+			            // (bool | optional) if you want it to fade out on its own or just sit there
+			            sticky: true
+			        });
 				}
 			},
 			error : function(err) {
 
-				console.log(err.statusText);
+				// console.log(err.statusText);
+				$.gritter.add({
+		            // (string | mandatory) the heading of the notification
+		            title: 'Advance Filters - Error',
+		            // (string | mandatory) the text inside the notification
+		            text: err.statusText,
+		            // (bool | optional) if you want it to fade out on its own or just sit there
+		            sticky: true
+		        });
 			}
 		});
 	};
@@ -410,7 +477,7 @@ function advanceSearchClass() {
 
 		/*Reset filter data array*/
 		lastSelectedValues = [];
-		resultantObjectArray = []
+		appliedAdvFilter = []
 			
 		/*Hide Remove Filters button*/
 		if(!$("#removeFilterBtn").hasClass("hide")) {
@@ -418,7 +485,7 @@ function advanceSearchClass() {
 		}
 
 		/*Call the resetVariables function to reset all global variables*/
-		self.resetVariables();
+		advSearch_self.resetVariables();
 		
 		/*Click The Refresh Button*/
 		$("#resetFilters").click();		
