@@ -1540,8 +1540,7 @@ class CircuitListingTable(BaseDatatableView):
         for dct in qs:
             dct.update(actions='<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')),
-                date_of_acceptance=dct['date_of_acceptance'].strftime("%Y-%m-%d")
-            )
+                       date_of_acceptance=dct['date_of_acceptance'].strftime("%Y-%m-%d") if dct['date_of_acceptance'] != "" else "")
 
         return qs
 
