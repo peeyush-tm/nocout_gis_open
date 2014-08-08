@@ -543,7 +543,6 @@ class DevicePortForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
-    
 
 class DeviceFrequencyForm(forms.ModelForm):
     """
