@@ -1,5 +1,9 @@
 from django import forms
 from models import Service, ServiceParameters, ServiceDataSource, Protocol
+import re
+from django.forms.util import ErrorList
+import logging
+logger = logging.getLogger(__name__)
 
 
 #************************************* Service ******************************************
@@ -33,6 +37,21 @@ class ServiceForm(forms.ModelForm):
         """
         model = Service
 
+    def clean(self):
+        """
+        Validations for service form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
+
 
 #************************************** Service Data Source ****************************************
 class ServiceDataSourceForm(forms.ModelForm):
@@ -53,11 +72,27 @@ class ServiceDataSourceForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         """
         Meta Information.
         """
         model = ServiceDataSource
+
+    def clean(self):
+        """
+        Validations for service data source form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
 
 
 #************************************** Service Parameters *****************************************
@@ -80,6 +115,7 @@ class ServiceParametersForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         """
         Meta information.
