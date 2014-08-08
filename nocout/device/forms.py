@@ -9,7 +9,7 @@ from shapely.geometry import Polygon, Point
 from shapely.ops import transform
 from functools import partial
 from django.forms.util import ErrorList
-
+import re
 import logging
 logger = logging.getLogger(__name__)
 
@@ -49,8 +49,8 @@ class DeviceForm(forms.ModelForm):
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
-        except:
-            logger.info("No id exist.")
+        except Exception as e:
+            logger.info(e.message)
         initial = kwargs.setdefault('initial', {})
 
         super(DeviceForm, self).__init__(*args, **kwargs)
@@ -103,8 +103,8 @@ class DeviceForm(forms.ModelForm):
                                                                 label=extra_field.field_display_name, ),
                     })
                     self.fields[extra_field.field_name].widget.attrs['class'] = 'extra'
-        except:
-            pass
+        except Exception as e:
+            logger.info(e.message)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -133,7 +133,7 @@ class DeviceForm(forms.ModelForm):
         Latitude field validations
         """
         latitude = self.data['latitude']
-        if latitude != '' and len(latitude)>2 and latitude[2] != '.':
+        if latitude != '' and len(latitude) > 2 and latitude[2] != '.':
             raise forms.ValidationError("Please enter correct value for latitude.")
         return self.cleaned_data.get('latitude')
 
@@ -142,7 +142,7 @@ class DeviceForm(forms.ModelForm):
         Longitude field validation
         """
         longitude = self.data['longitude']
-        if longitude != '' and len(longitude)>2 and longitude[2] != '.':
+        if longitude != '' and len(longitude) > 2 and longitude[2] != '.':
             raise forms.ValidationError("Please enter correct value for longitude.")
         return self.cleaned_data.get('longitude')
 
@@ -155,8 +155,8 @@ class DeviceForm(forms.ModelForm):
         try:
             if self.id:
                 devices = devices.exclude(pk=self.id)
-        except:
-            logger.info("This is not an update form.")
+        except Exception as e:
+            logger.info(e.message)
         if devices.count() > 0:
             raise ValidationError('This device name is already in use.')
         return device_name
@@ -170,8 +170,8 @@ class DeviceForm(forms.ModelForm):
         try:
             if self.id:
                 devices = devices.exclude(pk=self.id)
-        except:
-            logger.info("This is not an update form.")
+        except Exception as e:
+            logger.info(e.message)
         if devices.count() > 0:
             raise ValidationError('This IP address is already in use.')
         return ip_address
@@ -184,6 +184,16 @@ class DeviceForm(forms.ModelForm):
         longitude = self.cleaned_data.get('longitude')
         state = self.cleaned_data.get('state')
 
+        # check that device name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            device_name = self.cleaned_data['device_name']
+            if not re.match(r'^[A-Za-z0-9\._-]+$', device_name):
+                self._errors["device_name"] = ErrorList(
+                    [u"Device name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+
+        # check whether lat log lies in state co-ordinates or not
         if latitude and longitude and state:
             project = partial(
                 pyproj.transform,
@@ -240,6 +250,21 @@ class DeviceTypeFieldsForm(forms.ModelForm):
         model = DeviceTypeFields
         fields = ('field_name', 'field_display_name', 'device_type')
 
+    def clean(self):
+        """
+        Validations for device type fields form
+        """
+        name = self.cleaned_data.get('field_name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['field_name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
+
 
 class DeviceTypeFieldsUpdateForm(forms.ModelForm):
     """
@@ -266,6 +291,21 @@ class DeviceTypeFieldsUpdateForm(forms.ModelForm):
         """
         model = DeviceTypeFields
         fields = ('field_name', 'field_display_name', 'device_type')
+
+    def clean(self):
+        """
+        Validations for command form
+        """
+        name = self.cleaned_data.get('field_name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['field_name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
 
 
 # **************************************** Device Technology ****************************************
@@ -299,6 +339,21 @@ class DeviceTechnologyForm(forms.ModelForm):
         model = DeviceTechnology
         fields = ('name', 'alias', 'device_vendors')
 
+    def clean(self):
+        """
+        Validations for technology form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
+
 
 # ****************************************** Device Vendor ******************************************
 class DeviceVendorForm(forms.ModelForm):
@@ -330,6 +385,21 @@ class DeviceVendorForm(forms.ModelForm):
         """
         model = DeviceVendor
         fields = ('name', 'alias', 'device_models')
+
+    def clean(self):
+        """
+        Validations for vendor form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
 
 
 # ******************************************* Device Model ******************************************
@@ -364,6 +434,21 @@ class DeviceModelForm(forms.ModelForm):
         model = DeviceModel
         fields = ('name', 'alias', 'device_types')
 
+    def clean(self):
+        """
+        Validations for model form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
+
 
 # ******************************************* Device Type *******************************************
 class DeviceTypeForm(forms.ModelForm):
@@ -371,11 +456,12 @@ class DeviceTypeForm(forms.ModelForm):
     Rendering form for device type
     """
     AGENT_TAG = (
-            ('', 'Select'),
-            ('snmp', 'SNMP'),
-            ('ping', 'Ping')
+        ('', 'Select'),
+        ('snmp', 'SNMP'),
+        ('ping', 'Ping')
     )
     agent_tag = forms.TypedChoiceField(choices=AGENT_TAG, required=True)
+
     def __init__(self, *args, **kwargs):
         # removing help text for device_port 'select' field
         self.base_fields['device_port'].help_text = ''
@@ -400,6 +486,21 @@ class DeviceTypeForm(forms.ModelForm):
         Meta Information
         """
         model = DeviceType
+
+    def clean(self):
+        """
+        Validations for device type form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
 
 
 # ******************************************* Device Type *******************************************
@@ -427,6 +528,22 @@ class DevicePortForm(forms.ModelForm):
         Meta Information
         """
         model = DevicePort
+
+    def clean(self):
+        """
+        Validations for command form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
+
 
 class DeviceFrequencyForm(forms.ModelForm):
     """

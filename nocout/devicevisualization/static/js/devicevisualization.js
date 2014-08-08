@@ -54,7 +54,7 @@ $("#resetFilters").click(function(e) {
         $("#vendor").val($("#vendor option:first").val());
         $("#state").val($("#state option:first").val());
         $("#city").val($("#city option:first").val());
-    }
+    }    
 
     if(window.location.pathname.indexOf("google_earth") > -1) {
     
@@ -69,7 +69,8 @@ $("#resetFilters").click(function(e) {
 
     } else {
         
-        if(isFreeze == 0) {
+        if(isFreeze == 0) {            
+
             /*Reset filter object variable*/
             appliedFilterObj_gmaps = {};
 
@@ -191,14 +192,14 @@ function removetoolsPanel() {
   * This event unbind ruler click event & show the Ruler button again
   * @event click
   */
-$("#ruler_remove").click(function(e) {
+$("#ruler_remove").click(function(e) {    
 
     if(!($("#ruler_remove").hasClass("hide"))) {
         $("#ruler_select").removeClass("hide");
         $("#ruler_remove").addClass("hide");
     }
 
-    networkMapInstance.clearToolsParams_gmap_gmap();
+    networkMapInstance.clearToolsParams_gmap();
 });
 
 
