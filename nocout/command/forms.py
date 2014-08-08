@@ -38,7 +38,7 @@ class CommandForm(forms.ModelForm):
 
     def clean(self):
         """
-        Validations for sector form
+        Validations for command form
         """
         name = self.cleaned_data.get('name')
 
