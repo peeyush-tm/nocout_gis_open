@@ -56,7 +56,8 @@ class Live_Performance(ListView):
             {'mData':'state',              'sTitle' : 'State',         'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
             {'mData':'packet_loss',        'sTitle' : 'Packet Loss',   'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
             {'mData':'latency',            'sTitle' : 'Latency',       'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
-            {'mData':'last_updated',       'sTitle' : 'Last Updated',  'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'last_updated_date',  'sTitle' : 'Last Updated Date',  'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
+            {'mData':'last_updated_time',  'sTitle' : 'Last Updated Time',  'sWidth':'null','sClass':'hidden-xs', 'bSortable': False},
             {'mData':'actions',            'sTitle':'Actions',         'sWidth':'5%' ,'bSortable': False}
             ]
 
@@ -147,6 +148,8 @@ class LivePerformanceListing(BaseDatatableView):
                     "packet_loss": "",
                     "latency": "",
                     "last_updated": "",
+                    "last_updated_date": "", 
+                    "last_updated_time": "",
                     "city": City.objects.get(id=device['city']).city_name,
                     "state": State.objects.get(id=device['state']).state_name,
                     "device_type": DeviceType.objects.get(pk=int(device['device_type'])).name
@@ -164,7 +167,13 @@ class LivePerformanceListing(BaseDatatableView):
         """
 
         device_result = {}
-        perf_result = {"packet_loss": "N/A", "latency": "N/A", "last_updated": "N/A"}
+        perf_result = {"packet_loss": "N/A", 
+                        "latency": "N/A",
+                        "last_updated": "N/A",
+                        "last_updated": "N/A", 
+                        "last_updated_date": "N/A", 
+                        "last_updated_time": "N/A"
+                    }
 
         query = prepare_query(table_name="performance_networkstatus",
                               devices=device_list,
@@ -185,7 +194,12 @@ class LivePerformanceListing(BaseDatatableView):
 
 
         for device in device_result:
-            perf_result = {"packet_loss": "N/A", "latency": "N/A", "last_updated": "N/A"}
+            perf_result = {"packet_loss": "N/A",
+                            "latency": "N/A",
+                            "last_updated": "N/A", 
+                            "last_updated_date": "N/A", 
+                            "last_updated_time": "N/A"
+                            }
 
             for data in performance_data:
                 if str(data.device_name).strip().lower() == str(device).strip().lower():
@@ -199,7 +213,8 @@ class LivePerformanceListing(BaseDatatableView):
                         perf_result["latency"] = current_val
 
                     perf_result["last_updated"] = str(datetime.datetime.fromtimestamp(float( data.sys_timestamp )))
-
+                    perf_result["last_updated_date"] = datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%d/%B/%Y")
+                    perf_result["last_updated_time"] = datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%I:%M %p")
                     device_result[device] = perf_result
 
         # log.debug(device_result)
@@ -248,6 +263,8 @@ class LivePerformanceListing(BaseDatatableView):
                             dct["packet_loss"] = perf_result[result]["packet_loss"]
                             dct["latency"] = perf_result[result]["latency"]
                             dct["last_updated"] = perf_result[result]["last_updated"]
+                            dct["last_updated_date"] = perf_result[result]["last_updated_date"]
+                            dct["last_updated_time"] = perf_result[result]["last_updated_time"]
 
             #sorting the dict in the descending order for the qs prepared finally.
             sorted_qs = sorted(qs, key=itemgetter('last_updated'), reverse=True)

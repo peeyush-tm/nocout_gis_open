@@ -97,11 +97,12 @@ def inventory_perf_data_main():
 	"""
 	try:
 		configs = config_module.parse_config_obj()
-		for section, options in configs.items():
-			site = options.get('site')
-			query = "GET hosts\nColumns: host_name\nOutputFormat: json\n"
-			output = json.loads(utility_module.get_from_socket(site,query))
-			inventory_perf_data(site,output)
+		desired_site = filter(lambda x: x == nocout_site_name, configs.keys())[0]
+		desired_config = configs.get(desired_site)
+		site = desired_config.get('site')
+		query = "GET hosts\nColumns: host_name\nOutputFormat: json\n"
+		output = json.loads(utility_module.get_from_socket(site,query))
+		inventory_perf_data(site,output)
 	except SyntaxError, e:
 		raise MKGeneralException(("Can not get performance data: %s") % (e))
 	except socket.error, msg:
