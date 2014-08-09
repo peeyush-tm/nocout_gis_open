@@ -116,6 +116,7 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': False},
             {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': False},
             {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False}, 
+            {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': False},
         ]
         datatable_headers_down = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': False},
