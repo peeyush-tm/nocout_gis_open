@@ -214,9 +214,9 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                 .values_list('id', flat=True)).values_list('sector_configured_on', flat=True).annotate(
                 dcount=Count('base_station'))
 
-        sector_configured_on_devices_name = Device.objects.filter(is_added_to_nms=1,
-                                                                  id__in=sector_configured_on_devices_ids) \
-            .values_list('device_name', flat=True)
+        sector_configured_on_devices = Device.objects.filter(is_added_to_nms= 1, is_deleted= 0,
+                                                                  id__in= sector_configured_on_devices_ids) \
+                                                                 .values('device_name','machine__name')
 
         device_list, performance_data, data_sources_list = list(), list(), list()
         extra_query_condition=None
@@ -245,35 +245,39 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                                  "sys_timestamp",
                                  "description"
                                 ]
+        #Unique machine from the sector_configured_on_devices
+        unique_device_machine_list= { device['machine__name']: True for device in sector_configured_on_devices }.keys()
+        machine_dict, device_data=dict(), list()
+        #Creating the machine as a key and device_name as a list for that machine.
+        for machine in unique_device_machine_list:
+            machine_dict[machine]=[ device['device_name'] for device in sector_configured_on_devices if device['machine__name']== machine]
+        #Fetching the data for the device w.r.t to their machine.
+        for machine, machine_device_list in machine_dict.items():
 
-        query = prepare_query(table_name="performance_eventnetwork", devices=sector_configured_on_devices_name, \
-                              data_sources=data_sources_list, columns=required_data_columns, condition=extra_query_condition)
-        #replace table_name with search table
+            query = prepare_query(table_name= search_table, devices= machine_device_list, \
+                                  data_sources= data_sources_list, columns= required_data_columns,\
+                                  condition= extra_query_condition)
+            if query:
+                performance_data = self.model.objects.raw(query).using(alias= machine)
 
-        if query:
-            performance_data = self.model.objects.raw(query)
-
-            device_data= list()
-
-            for data in performance_data:
-                device_base_station= Sector.objects.get( sector_configured_on__id=Device.objects.get(device_name=\
-                                     data.device_name).id).base_station
-                ddata = {
-                        'device_name':data.device_name,
-                        'severity':data.severity,
-                        'ip_address':data.ip_address,
-                        'base_station':device_base_station.name,
-                        'base_station__city':City.objects.get(id=device_base_station.city).city_name,
-                        'base_station__state':State.objects.get(id=device_base_station.state).state_name,
-                        'current_value':data.current_value,
-                        'sys_time':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%I:%M:%S %p"),
-                        'sys_date':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%d/%B/%Y"),
-                        'sys_timestamp':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                        'description':data.description
-                        }
-                device_data.append(ddata)
-
-
+                for data in performance_data:
+                    device_base_station= Sector.objects.get( sector_configured_on__id=Device.objects.get(device_name=\
+                                         data.device_name).id).base_station
+                    ddata = {
+                            'device_name':data.device_name,
+                            'severity':data.severity,
+                            'ip_address':data.ip_address,
+                            'base_station':device_base_station.name,
+                            'base_station__city':City.objects.get(id= device_base_station.city).city_name,
+                            'base_station__state':State.objects.get(id= device_base_station.state).state_name,
+                            'current_value':data.current_value,
+                            'sys_time':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%I:%M:%S %p"),
+                            'sys_date':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%d/%B/%Y"),
+                            'sys_timestamp':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                            'description':data.description
+                            }
+                    device_data.append(ddata)
+        if device_data:
             sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
             return sorted_device_data
 
@@ -312,7 +316,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         total_display_records = len(qs)
 
         # qs = self.ordering(qs)
-        qs = self.paging(qs)
+        # qs = self.paging(qs) #Removing pagination as of now to render all the data at once.
         # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
@@ -415,13 +419,10 @@ class CustomerAlertListingTable(BaseDatatableView):
         for organization in organizations:
             organization_devices += Device.objects.filter(is_added_to_nms=1, organization__id=organization.id,
                                                           device_technology=device_technology_id)
-            # get the devices in an organisation which are added for monitoring
+        # get the devices in an organisation which are added for monitoring
 
-        organization_substations_devices_name = [device.device_name for device in organization_devices if
-                                                 device.substation_set.exists()]
-
-        device_list, performance_data = list(), list()
-
+        organization_substations_devices = [{'device_name':device.device_name, 'machine_name':device.machine.name} \
+                                            for device in organization_devices if device.substation_set.exists() ]
         data_sources_list = list()
 
         if self.request.GET['data_source'] == 'latency':
@@ -435,42 +436,54 @@ class CustomerAlertListingTable(BaseDatatableView):
                                  "severity",
                                  "current_value",
                                  "sys_timestamp",
-                                 "description"
-        ]
+                                 "description"]
 
-        query = prepare_query(table_name="performance_eventnetwork", devices=organization_substations_devices_name, \
-                              data_sources=data_sources_list, columns=required_data_columns)
+        #Unique machine from the sector_configured_on_devices
+        unique_device_machine_list= { device['machine_name']: True for device in organization_substations_devices }.keys()
+        machine_dict=dict()
+        #Creating the machine as a key and device_name as a list for that machine.
+        for machine in unique_device_machine_list:
+            machine_dict[machine]=[ device['device_name'] for device in organization_substations_devices if device['machine_name']== machine]
+        #Fetching the data for the device w.r.t to their machine.
+        device_list, performance_data = list(), list()
 
-        if query:
-            performance_data = self.model.objects.raw(query)
+        for machine, machine_device_list in machine_dict.items():
 
-        for data in performance_data:
-            for device in organization_substations_devices_name:
-                if device == data.device_name:
-                    device_substation = SubStation.objects.get(device__device_name=device)
-                    try:
-                        #try exception if the device does not have any association with the circuit
-                        device_substation_base_station= Circuit.objects.get(sub_station__id= device_substation.id).sector.base_station
-                        device_substation_base_station_name= device_substation_base_station.name
-                    except:
-                        device_substation_base_station_name='N/A'
-                    device_events = {
-                        'device_name': device,
-                        'severity': data.severity,
-                        'ip_address': Device.objects.get(device_name=device).ip_address,
-                        'sub_station': device_substation.name,
-                        'sub_station__city': City.objects.get(id=device_substation.city).city_name,
-                        'sub_station__state': State.objects.get(id=device_substation.state).state_name,
-                        'base_station':device_substation_base_station_name,
-                        'current_value': data.current_value,
-                        'sys_timestamp': str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
-                        'description':data.description
-                    }
-                    device_list.append(device_events)
-                else:
-                    continue
-        sorted_device_list = sorted(device_list, key=itemgetter('sys_timestamp'), reverse=True)
-        return sorted_device_list
+            query = prepare_query(table_name="performance_eventnetwork", devices=machine_device_list, \
+                                  data_sources=data_sources_list, columns=required_data_columns)
+
+            if query:
+                performance_data = self.model.objects.raw(query).using(alias=machine)
+
+                for data in performance_data:
+                    for device in machine_device_list:
+                        if device == data.device_name:
+                            device_substation = SubStation.objects.get(device__device_name=device)
+                            try:
+                                #try exception if the device does not have any association with the circuit
+                                device_substation_base_station= Circuit.objects.get(sub_station__id= device_substation.id).sector.base_station
+                                device_substation_base_station_name= device_substation_base_station.name
+                            except:
+                                device_substation_base_station_name='N/A'
+                            device_events = {
+                                'device_name': device,
+                                'severity': data.severity,
+                                'ip_address': Device.objects.get(device_name=device).ip_address,
+                                'sub_station': device_substation.name,
+                                'sub_station__city': City.objects.get(id=device_substation.city).city_name,
+                                'sub_station__state': State.objects.get(id=device_substation.state).state_name,
+                                'base_station':device_substation_base_station_name,
+                                'current_value': data.current_value,
+                                'sys_timestamp': str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
+                                'description':data.description
+                            }
+                            device_list.append(device_events)
+                        else:
+                            continue
+                sorted_device_list = sorted(device_list, key=itemgetter('sys_timestamp'), reverse=True)
+                return sorted_device_list
+
+        return device_list
 
     def prepare_results(self, qs):
         """
@@ -506,7 +519,7 @@ class CustomerAlertListingTable(BaseDatatableView):
         total_display_records = len(qs)
 
         # qs = self.ordering(qs)
-        qs = self.paging(qs)
+        # qs = self.paging(qs)
         # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)

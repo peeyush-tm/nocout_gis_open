@@ -127,11 +127,11 @@ class LivePerformanceListing(BaseDatatableView):
             device_tab_technology = self.request.GET.get('data_tab')
             device_technology_id= DeviceTechnology.objects.get(name=device_tab_technology).id
             #get only devices added to NMS and none other
-            devices= Device.objects.filter(is_added_to_nms=1, organization__in=kwargs['organization_ids'], \
+            devices= Device.objects.filter(is_added_to_nms=1, is_deleted=0, organization__in=kwargs['organization_ids'], \
                      device_technology=device_technology_id).values(*self.columns + ['device_name','machine__name', device_association])
         else:
             #get only devices added to NMS and none other
-            devices= Device.objects.filter(is_added_to_nms=1, organization__in=kwargs['organization_ids']).\
+            devices= Device.objects.filter(is_added_to_nms=1, is_deleted=0, organization__in=kwargs['organization_ids']).\
                 values(*self.columns + ['device_name','machine__name', device_association])
 
         # required_devices = []
@@ -254,8 +254,8 @@ class LivePerformanceListing(BaseDatatableView):
                 machine_dict[machine]=[ device['device_name'] for device in device_list if device['device_machine']== machine]
 
             #Fetching the data for the device w.r.t to their machine.
-            for machine in machine_dict:
-                perf_result = self.get_performance_data(machine_dict[machine], machine)
+            for machine, machine_device_list in machine_dict.items():
+                perf_result = self.get_performance_data(machine_device_list, machine)
 
                 for dct in qs:
                     for result in perf_result:
@@ -418,7 +418,7 @@ class Fetch_Inventory_Devices(View):
 
 
         organization_substations= SubStation.objects.filter(device__in = Device.objects.filter(
-            is_added_to_nms=1,
+            is_added_to_nms=1,is_deleted=0,
             organization= organization.id).values_list('id', flat=True)).values_list('id', 'name', 'alias')
 
         result=list()
@@ -440,7 +440,7 @@ class Fetch_Inventory_Devices(View):
                 values_list('id', flat=True)).values_list('sector_configured_on').annotate(dcount=Count('base_station'))
 
         sector_configured_on_devices_ids= map(lambda x: x[0], sector_configured_on_devices_list)
-        sector_configured_on_devices= Device.objects.filter(is_added_to_nms=1,
+        sector_configured_on_devices= Device.objects.filter(is_added_to_nms=1,is_deleted=0,
                                                             id__in= sector_configured_on_devices_ids)
         result=list()
         for sector_configured_on_device in sector_configured_on_devices:
@@ -608,33 +608,35 @@ class Get_Service_Type_Performance_Data(View):
             'objects' : {}
             }
         }
-        inventory_device_name=None
+        inventory_device_name, inventory_device_machine_name=None, None
         if page_type =='customer':
-            inventory_device_name= SubStation.objects.get(id= int(device_id)).device.device_name
+            substation= SubStation.objects.get(id= int(device_id))
+            inventory_device_name= substation.device.device_name
+            inventory_device_machine_name= substation.device.machine.name #Device Machine Name required in Query to fetch data.
+
         elif page_type == 'network':
-            inventory_device_name=Device.objects.get(id=int(device_id)).device_name
-        #raw query commented.
-        # performance_data=PerformanceService.objects.raw('select id, max(id), avg_value, sys_timestamp from \
-        #                 performance_performanceservice where data_source= {0} and device_name= {1} \
-        #                 group by sys_timestamp order by id desc limit 6;'.format(service_data_source_type, substation_name))
+            device=Device.objects.get(id=int(device_id))
+            inventory_device_name= device.device_name
+            inventory_device_machine_name= device.machine.name #Device Machine Name required in Query to fetch data.
+
 
         now=format(datetime.datetime.now(),'U')
         now_minus_60_min=format(datetime.datetime.now() + datetime.timedelta(minutes=-60), 'U')
 
         if service_data_source_type in ['pl', 'rta']:
 
-            performance_data=PerformanceNetwork.objects.filter(device_name=inventory_device_name,
+            performance_data= PerformanceNetwork.objects.filter(device_name=inventory_device_name,
                                                                 service_name=service_name,
                                                                 data_source=service_data_source_type,
                                                                 sys_timestamp__gte=now_minus_60_min,
-                                                                sys_timestamp__lte=now)
+                                                                sys_timestamp__lte=now).using(alias=inventory_device_machine_name)
             # log.info("network performance data %s device name" %(performance_data, inventory_device_name))
         else:
-            performance_data=PerformanceService.objects.filter(device_name=inventory_device_name,
+            performance_data= PerformanceService.objects.filter(device_name=inventory_device_name,
                                                                service_name=service_name,
                                                                data_source=service_data_source_type,
                                                                sys_timestamp__gte=now_minus_60_min,
-                                                               sys_timestamp__lte=now)
+                                                               sys_timestamp__lte=now).using(alias=inventory_device_machine_name)
 
         if performance_data:
             data_list=[]
