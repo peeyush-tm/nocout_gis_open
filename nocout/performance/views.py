@@ -591,33 +591,35 @@ class Get_Service_Type_Performance_Data(View):
             'objects' : {}
             }
         }
-        inventory_device_name=None
+        inventory_device_name, inventory_device_machine_name=None, None
         if page_type =='customer':
-            inventory_device_name= SubStation.objects.get(id= int(device_id)).device.device_name
+            substation= SubStation.objects.get(id= int(device_id))
+            inventory_device_name= substation.device.device_name
+            inventory_device_machine_name= substation.device.machine.name #Device Machine Name required in Query to fetch data.
+
         elif page_type == 'network':
-            inventory_device_name=Device.objects.get(id=int(device_id)).device_name
-        #raw query commented.
-        # performance_data=PerformanceService.objects.raw('select id, max(id), avg_value, sys_timestamp from \
-        #                 performance_performanceservice where data_source= {0} and device_name= {1} \
-        #                 group by sys_timestamp order by id desc limit 6;'.format(service_data_source_type, substation_name))
+            device=Device.objects.get(id=int(device_id))
+            inventory_device_name= device.device_name
+            inventory_device_machine_name= device.machine.name #Device Machine Name required in Query to fetch data.
+
 
         now=format(datetime.datetime.now(),'U')
         now_minus_60_min=format(datetime.datetime.now() + datetime.timedelta(minutes=-60), 'U')
 
         if service_data_source_type in ['pl', 'rta']:
 
-            performance_data=PerformanceNetwork.objects.filter(device_name=inventory_device_name,
+            performance_data= PerformanceNetwork.objects.filter(device_name=inventory_device_name,
                                                                 service_name=service_name,
                                                                 data_source=service_data_source_type,
                                                                 sys_timestamp__gte=now_minus_60_min,
-                                                                sys_timestamp__lte=now)
+                                                                sys_timestamp__lte=now).using(alias=inventory_device_machine_name)
             # log.info("network performance data %s device name" %(performance_data, inventory_device_name))
         else:
-            performance_data=PerformanceService.objects.filter(device_name=inventory_device_name,
+            performance_data= PerformanceService.objects.filter(device_name=inventory_device_name,
                                                                service_name=service_name,
                                                                data_source=service_data_source_type,
                                                                sys_timestamp__gte=now_minus_60_min,
-                                                               sys_timestamp__lte=now)
+                                                               sys_timestamp__lte=now).using(alias=inventory_device_machine_name)
 
         if performance_data:
             data_list=[]
