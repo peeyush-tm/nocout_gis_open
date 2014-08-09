@@ -126,11 +126,11 @@ class LivePerformanceListing(BaseDatatableView):
             device_tab_technology = self.request.GET.get('data_tab')
             device_technology_id= DeviceTechnology.objects.get(name=device_tab_technology).id
             #get only devices added to NMS and none other
-            devices= Device.objects.filter(is_added_to_nms=1, organization__in=kwargs['organization_ids'], \
+            devices= Device.objects.filter(is_added_to_nms=1, is_deleted=0, organization__in=kwargs['organization_ids'], \
                      device_technology=device_technology_id).values(*self.columns + ['device_name','machine__name', device_association])
         else:
             #get only devices added to NMS and none other
-            devices= Device.objects.filter(is_added_to_nms=1, organization__in=kwargs['organization_ids']).\
+            devices= Device.objects.filter(is_added_to_nms=1, is_deleted=0, organization__in=kwargs['organization_ids']).\
                 values(*self.columns + ['device_name','machine__name', device_association])
 
         # required_devices = []
@@ -239,8 +239,8 @@ class LivePerformanceListing(BaseDatatableView):
                 machine_dict[machine]=[ device['device_name'] for device in device_list if device['device_machine']== machine]
 
             #Fetching the data for the device w.r.t to their machine.
-            for machine in machine_dict:
-                perf_result = self.get_performance_data(machine_dict[machine], machine)
+            for machine, machine_device_list in machine_dict.items():
+                perf_result = self.get_performance_data(machine_device_list, machine)
 
                 for dct in qs:
                     for result in perf_result:
@@ -401,7 +401,7 @@ class Fetch_Inventory_Devices(View):
 
 
         organization_substations= SubStation.objects.filter(device__in = Device.objects.filter(
-            is_added_to_nms=1,
+            is_added_to_nms=1,is_deleted=0,
             organization= organization.id).values_list('id', flat=True)).values_list('id', 'name', 'alias')
 
         result=list()
@@ -423,7 +423,7 @@ class Fetch_Inventory_Devices(View):
                 values_list('id', flat=True)).values_list('sector_configured_on').annotate(dcount=Count('base_station'))
 
         sector_configured_on_devices_ids= map(lambda x: x[0], sector_configured_on_devices_list)
-        sector_configured_on_devices= Device.objects.filter(is_added_to_nms=1,
+        sector_configured_on_devices= Device.objects.filter(is_added_to_nms=1,is_deleted=0,
                                                             id__in= sector_configured_on_devices_ids)
         result=list()
         for sector_configured_on_device in sector_configured_on_devices:
