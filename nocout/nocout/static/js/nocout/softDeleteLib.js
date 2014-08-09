@@ -189,6 +189,15 @@ function device_add_message(responseResult) {
 }
 
 
+// show message for device edit success/failure
+function device_edit_message(responseResult) {
+    bootbox.alert(responseResult.result.message, function(){
+        // reload page after clicking "OK!"
+        location = window.location.origin+"/device/#NonOperationalDeviceListing";
+        location.reload();
+    });
+}
+
 
 // delete device to monitoring core
 function delete_device(device_id) {

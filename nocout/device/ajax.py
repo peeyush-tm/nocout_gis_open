@@ -704,6 +704,88 @@ def add_device_to_nms_core(request, device_id):
 
 
 @dajaxice_register
+def edit_device_in_nms_core(request, device_id):
+    """Editing device in nms core
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        device_id (int): device id
+
+    Returns:
+        result (dict): dict of device info
+                    i.e. {
+                              'message': 'Deviceeditedsuccessfully.',
+                              'data': {
+                                  'site': u'nocout_gis_slave',
+                                  'agent_tag': u'snmp',
+                                  'mode': 'edithost',
+                                  'device_name': u'device_116',
+                                  'device_alias': u'Device116',
+                                  'ip_address': u'115.111.183.116'
+                              },
+                              'success': 1
+                          }
+
+    """
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = "Device edit failed."
+    result['data']['meta'] = ''
+    device = Device.objects.get(pk=device_id)
+    if device.host_state != "Disable":
+
+        # get 'agent_tag' from DeviceType model
+        agent_tag = ""
+        try:
+            agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
+        except Exception as e:
+            logger.info(e.message)
+
+        device_data = {'device_name': device.device_name,
+                       'device_alias': device.device_alias,
+                       'ip_address': device.ip_address,
+                       'agent_tag': agent_tag,
+                       'site': device.site_instance.name,
+                       'mode': 'edithost'}
+
+        print "****************** device_data - ", device_data
+
+        # site to which configuration needs to be pushed
+        master_site = SiteInstance.objects.get(name='master_UA')
+
+        # url for nocout.py
+        # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+        # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
+        url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                                master_site.password,
+                                                                master_site.machine.machine_ip,
+                                                                master_site.web_service_port,
+                                                                master_site.name)
+
+        # sending post request to device app for adding device to nms core
+        r = requests.post(url, data=device_data)
+
+        print "***************** r.text - ", r.text
+
+        # converting string in 'r' to dictionary
+        response_dict = ast.literal_eval(r.text)
+        if r:
+            result['data'] = device_data
+            result['success'] = 1
+            if response_dict['error_code'] is not None:
+                result['message'] = response_dict['error_message'].capitalize()
+            else:
+                result['message'] = "Device edited successfully."
+                # set 'is_added_to_nms' to 1 after device successfully edited in nocout nms core
+                device.is_added_to_nms = 1
+                device.save()
+    else:
+        result['message'] = "Device state is disabled. First enable it than add it to nms core."
+    return json.dumps({'result': result})
+
+
+@dajaxice_register
 def delete_device_from_nms_core(request, device_id):
     """Delete device from nms core
 
