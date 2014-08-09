@@ -50,7 +50,7 @@ def main(**configs):
     data_values = []
     values_list = []
     docs = []
-    db = mysql_conn(configs=configs)
+    #db = mysql_conn(configs=configs)
     # Get the time for latest entry in mysql
     #start_time = get_latest_entry(db_type='mysql', db=db, site=configs.get('site'),table_name=configs.get('table_name'))
     utc_time = datetime(1970, 1,1,5,30)
@@ -60,10 +60,13 @@ def main(**configs):
     start_time = end_time - timedelta(minutes=1440)
     start_epoch = int((start_time - utc_time).total_seconds())
     end_epoch =  int((end_time - utc_time).total_seconds())
-    docs = read_data(start_epoch, end_epoch, configs=configs)
-    for doc in docs:
-        values_list = build_data(doc)
-        data_values.extend(values_list)
+    print start_time,end_time
+    
+    for i in range(len(configs.get('mongo_conf'))):
+    	docs = read_data(start_epoch, end_epoch, configs=configs.get('mongo_conf')[i], db_name=configs.get('nosql_db'))
+    	for doc in docs:
+        	values_list = build_data(doc)
+        	data_values.extend(values_list)
     if data_values:
     	insert_data(configs.get('table_name'), data_values, configs=configs)
     	print "Data inserted into my mysql db"
@@ -90,10 +93,10 @@ def read_data(start_time, end_time, **kwargs):
     #start_time = end_time - timedelta(minutes=10)
     docs = [] 
     db = mongo_module.mongo_conn(
-        host=kwargs.get('configs').get('host'),
-        port=int(kwargs.get('configs').get('port')),
-        db_name=kwargs.get('configs').get('nosql_db')
-    )
+        host=kwargs.get('configs')[1],
+        port=int(kwargs.get('configs')[2]),
+        db_name=kwargs.get('db_name')
+    ) 
     if db:
         cur = db.device_inventory_status.find({
             "check_timestamp": {"$gt": start_time, "$lt": end_time}
@@ -208,8 +211,15 @@ def get_epoch_time(datetime_obj):
         return datetime_obj
 
 def mysql_conn(db=None, **kwargs):
+    """
+	function for mysql connection.
+	Arg: db (database instance obj)
+	Kwargs: multiple arguments for mysql connections
+	Return : db object
+	Raises: MYSQLdb.error
+    """
     try:
-        db = MySQLdb.connect(host=kwargs.get('configs').get('host'), user=kwargs.get('configs').get('user'),
+        db = MySQLdb.connect(host=kwargs.get('configs').get('ip'), user=kwargs.get('configs').get('user'),
             passwd=kwargs.get('configs').get('sql_passwd'), db=kwargs.get('configs').get('sql_db'))
     except MySQLdb.Error, e:
         raise MySQLdb.Error, e

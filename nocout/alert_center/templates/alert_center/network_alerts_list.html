@@ -60,17 +60,49 @@
 
 {% block jquery %}
 
-<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
-
-<!-- Library to load tab content on tab click-->
-<script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
-
 <script type="text/javascript">
 
     var dataTableInstance = "";
 
-    /*This is a temporary code which is replace when data for data table is provided*/
+    /*The pagination and the */
     $(document).ready(function (e) {
+            function ourDataTableWidget()
+            {
+                /**
+                 * This function creates the jquery data table on given domElement
+                 * @class ourDataTableWidget
+                 * @method createDataTable
+                 * @param tableId "String" It contains the dom selector of table
+                 * @param tableheaders {JSON Object} It contains the grid headers object
+                 * @param ajax_url "String" It contains the ajax url from which the data is to be loaded
+                 */
+                this.createDataTable = function(tableId, tableheaders, ajax_url, destroy)
+                {
+                    destroy = typeof destroy !== 'undefined' ? destroy : true;
+                    $('.datatable').each(function () {
+                        var datatable = $(this);
+                        // SEARCH - Add the placeholder for Search and Turn this into in-line form control
+                        var search_input = datatable.closest('.dataTables_wrapper').find('div[id$=_filter] input');
+                        search_input.attr('placeholder', 'Search');
+                        search_input.addClass('form-control input-sm');
+                        // LENGTH - Inline-Form control
+                        var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
+                        length_sel.addClass('form-control input-sm');
+                    });
+                    if (destroy){
+                        $("#"+tableId).dataTable().fnDestroy();
+                    }
+                    $("#"+tableId).DataTable({
+                        bAutoWidth: false,
+                        bPaginate: true,
+                        bProcessing : true,
+                        bServerSide: false,
+                        sAjaxSource: ajax_url,
+                        aoColumns:tableheaders
+                    });
+                };
+            }
+
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
 
@@ -117,6 +149,8 @@
             // dataTableInstance.createDataTable("servicealertslistingtable", gridHeadersObj_servicealerts, ajax_url_servicealerts, destroy);
         });
 </script>
+    <!-- Library to load tab content on tab click-->
+<script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
 {% endblock %}
 
 {% block load_js %}

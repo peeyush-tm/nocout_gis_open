@@ -7,7 +7,6 @@ monitoring core.
 """
 
 from wato import *
-import requests
 import json
 import pprint
 import os
@@ -142,7 +141,7 @@ def addhost():
     
     if new_host:
         nocout_add_host_attributes(payload)
-    else:
+    """else:
         response.update({
                 "success": 0,
                 "message": None,
@@ -150,7 +149,7 @@ def addhost():
                 "error_message": payload['host'] + " is already present in some other " +\
                    "multisite instance" 
         })
-        return response
+        return response"""
             
 
     flag = save_host(hosts_file)
@@ -595,23 +594,42 @@ def sync():
     # Snapshot for the local-site; to be used only by master site
     #nocout_create_snapshot()
 
+    # Create backup for the hosts and rules file
+    if os.path.exists(hosts_file):
+        os.system('rsync -a %s /opt/omd/sites/%s/nocout/' % (hosts_file, defaults.omd_site))
+    if os.path.exists(rules_file):
+        os.system('rsync -a %s /opt/omd/sites/%s/nocout/' % (rules_file, defaults.omd_site))
+
     nocout_create_sync_snapshot()
     nocout_sites = nocout_distributed_sites()
-
+    try:
+        f = os.system('~/bin/cmk -R')
+    except Exception, e:
+        logger.error('[sync]' + pprint.pformat(e))
+    if f == 0:
+        sites_affected.append(defaults.omd_site)
     for site, attrs in nocout_sites.items():
         response_text = nocout_synchronize_site(site, attrs, True)
         if response_text is True:
             sites_affected.append(site)
-    if len(sites_affected):
+    if (len(sites_affected)-1) == len(nocout_sites):
         response.update({
             "message": "Config pushed to " + ','.join(sites_affected)
         })
     else:
-        response.update({
-            "message": "Config Not Pushed, either no slave sites to push " +\
-                "config to or some wrong data supplied",
-            "success": 0
-        })
+        if os.path.exists('/opt/omd/sites/%s/nocout/rules.mk' % defaults.omd_site):
+            os.system('cp /opt/omd/sites/%s/nocout/rules.mk %s' % (defaults.omd_site, rules_file))
+            for site, attrs in nocout_sites.items():
+                response_text = nocout_synchronize_site(site, attrs, True)
+            response.update({
+                "message": "Problem with the new config, old config retained",
+                "success": 1
+            })
+        else:
+            response.update({
+                "message": "Config not pushed",
+                "success": 0
+            })
 
     return response
 
@@ -623,13 +641,17 @@ def nocout_synchronize_site(site, site_attrs, restart):
 
 
 def nocout_distributed_sites():
+    logger.debug('[nocout_distributed_sites]')
     nocout_site_vars = {
         "sites": {}
     }
     sites_file = defaults.default_config_dir + "/multisite.d/sites.mk"
-    execfile(sites_file, nocout_site_vars, nocout_site_vars)
+    if os.path.exists(sites_file):
+        execfile(sites_file, nocout_site_vars, nocout_site_vars)
+    logger.debug('Slave sites to push data to - ' + pprint.pformat(nocout_site_vars.get('sites')))
+    logger.debug('[--]')
 
-    return nocout_site_vars.get("sites")
+    return nocout_site_vars.get('sites')
 
 
 def nocout_push_snapshot_to_site(site, site_attrs, restart):
@@ -820,139 +842,3 @@ def give_permissions(file_path):
     #gid = grp.getgrnam('www-data').gr_gid
     os.chmod(file_path, 0775)
     os.close(fd)
-
-
-################################################################################
-##### Adding and activating the hosts
-##### Url based approach
-
-
-def activate_host():
-    activate_host_url = "http://omdadmin:omd@localhost/BT/check_mk/wato.py?" +\
-        "folder=&mode=changelog&_action=activate&_transid=-1"
-
-    r = requests.get(activate_host_url)
-    #wato.ajax_activation()
-    #if is_distributed() is True
-    wato.ajax_replication()
-
-    if r.status_code == 200:
-        return True
-    else:
-        return False
-
-def add_host_obsolete():
-    payload ={}
-    host_tags = {
-        "snmp": "snmp-only|snmp",
-        "cmk_agent": "cmk-agent|tcp",
-        "snmp_v1": "snmp-v1|snmp",
-        "dual": "snmp-tcp|snmp|tcp",
-        "ping": "ping"
-    }
-
-    try:
-        payload = {
-            "host": html.var("device_name"),
-            "attr_alias": html.var("device_alias"),
-            "attr_ipaddress": html.var("ip_address"),
-            "site": html.var("site"),
-            "mode": "newhost",
-            "folder": "",
-            "_change_ipaddress": "on",
-            "attr_tag_agent": host_tags.get(html.var("agent_tag")),
-            "attr_tag_networking": "lan", #To be edited
-            "attr_tag_criticality": "prod",
-            "_transid": "-1",
-            "_change_site": "on",
-            "_change_tag_agent": "on",
-            "_change_contactgroups": "on",
-            "_change_tag_networking": "on",
-            "_change_alias": "on",
-            "save": "Save & Finish"
-        }
-    except AttributeError, e:
-        return "Unable To Add Host"
-    url = "http://omdadmin:omd@localhost/BT/check_mk/wato.py"
-
-    r = requests.get(url, params=payload)
-
-    #return r.status_code
-
-    html.write("Host Added To Multisite\n")
-    html.write(json.dumps(payload))
-    #Activate the changes
-    activate_host()
-    html.write("Host Activated For Monitoring\n")
-
-def add_multisite_instance():
-    payload = {}
-
-    try:
-        payload = {
-            "id": html.var("name"),
-            "alias": html.var("alias"),
-            "_transid": "-1",
-            "filled_in": "site",
-            "folder": "",
-            "method_1_0": html.var("site_ip"),
-            "method_1_1": html.var("live_status_tcp_port"),
-            "method_2": "",
-            "method_sel": "1",
-            "mode": "edit_site",
-            "multisiteurl": "http://"  + html.var("site_ip") + "/" + html.var("name") + "/check_mk/",
-            "repl_priority": "0",
-            "replication": "slave",
-            "save": "Save",
-            "sh_host": "",
-            "sh_site": "",
-            "timeout": "10",
-            "url_prefix": "http://" + html.var("site_ip") + "/" + html.var("name") + "/"
-        }
-    except AttributeError, e:
-        return "Unable To Add Multisite"
-    url = "http://omdadmin:omd@localhost/BT/check_mk/wato.py"  
-    reply = requests.post(url,payload)
-    html.write(json.dumps(payload))
-
-    return reply.status_code
-
-#Url to multisite login page
-def login_page_multisite(site_id):
-    try:
-        payload = {
-            "_login": site_id,
-            "_transid": "-1",
-            "folder": "",
-            "mode": "sites"
-        }
-    except AttributeError, e:
-        return "Unable To Login Multisite"
-
-    url = "http://omdadmin:omd@localhost/BT/check_mk/wato.py"
-
-    r = requests.get(url, params=payload)
-    html.write("Logged-in to multisite\n")
-
-    login_multisite(site_id)
-
-#Url to login to multisite
-def login_multisite(site_id):
-    try:
-        payload = {
-            "_do_login": "Login",
-            "_login": site_id,
-            "_name": "omdadmin",
-            "_passwd": "omd",
-            "_transid": "-1",
-            "filled_in": "login",
-            "folder": "",
-            "mode": "sites"
-        }
-    except AttributeError, e:
-        return "Unable To Activate Multisite"
-
-    url = "http://omdadmin:omd@localhost/BT/check_mk/wato.py"
-
-    r = requests.get(url, params=payload)
-    html.write("Multisite Activated\n")

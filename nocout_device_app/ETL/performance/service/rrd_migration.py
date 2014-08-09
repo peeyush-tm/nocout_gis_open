@@ -105,7 +105,8 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 			query_string = "GET services\nColumns: service_state\nFilter: " + \
 			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (serv_disc,host)
 			query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
-			service_state = (query_output[0][0])
+			if query_output:
+				service_state = (query_output[0][0])
 			if service_state == 0:
 				service_state = "OK"
 			elif service_state == 1:
