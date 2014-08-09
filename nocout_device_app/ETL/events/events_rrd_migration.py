@@ -110,8 +110,10 @@ def service_perf_data_live_query(db,site,log_split):
 			if log_split[5] == 'PING':
 				serv_event_dict.update({"service_name":"ping"})
                 		mongo_module.mongo_db_insert(db,serv_event_dict,"host_event")
+				print "data inserted in mongodb"
 			else:
 				mongo_module.mongo_db_insert(db,serv_event_dict,"serv_event")
+				print "data inserted in mongodb"
 
 	# extracting the inventory plugin output ,as these services don't have performance data
 	elif 'invent' in log_split[5]:
@@ -229,7 +231,7 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
 		"options host_address current_service_perf_data\nFilter: log_time > %s\nFilter: class = 0\nFilter: class = 1\n"\
 		"Filter: class = 2\nFilter: class = 3\nFilter: class = 4\nFilter: class = 6\nOr: 6\n" %(start_epoch) 
 	output= utility_module.get_from_socket(site, query)
-
+	print output
 	for log_attr in output.split('\n'):
 		log_split = [log_split for log_split in log_attr.split(';')]
 		if log_split[0] == "CURRENT SERVICE STATE":
@@ -260,9 +262,12 @@ if __name__ == '__main__':
 
     """
     configs = config_module.parse_config_obj()
-    for section, options in configs.items():
-	extract_nagios_events_live(
-			mongo_host=options.get('host'),
-			mongo_db=options.get('nosql_db'),
-			mongo_port=int(options.get('port'))
-	)
+    configs = config_module.parse_config_obj()
+    desired_site = filter(lambda x: x == nocout_site_name, configs.keys())[0]
+    desired_config = configs.get(desired_site)
+    site = desired_config.get('site')
+    extract_nagios_events_live(
+			mongo_host=desired_config.get('host'),
+			mongo_db=desired_config.get('nosql_db'),
+			mongo_port=int(desired_config.get('port'))
+    )
