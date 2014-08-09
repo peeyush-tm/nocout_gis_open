@@ -96,7 +96,9 @@ class AlertCenterNetworkListing(ListView):
             {'mData': 'current_value', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'description', 'sTitle': 'Alert Description', 'sWidth': 'null', 'bSortable': False},
-            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False}, ]
+            {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': False},
+            {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False}, 
+            ]
 
         datatable_headers_packetdrop = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': False},
@@ -112,8 +114,8 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': False},
             {'mData': 'current_value', 'sTitle': 'Packet Drop', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
-            {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': False},
-            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False},
+            {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': False},
+            {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False}, 
         ]
         datatable_headers_down = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': False},
@@ -130,7 +132,8 @@ class AlertCenterNetworkListing(ListView):
             {'mData': 'current_value', 'sTitle': 'Packet Drop', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': False},
-            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False},
+            {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': False},
+            {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False}, 
         ]
         datatable_headers_servicealerts = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': False},
@@ -147,7 +150,8 @@ class AlertCenterNetworkListing(ListView):
             {'mData': 'current_value', 'sTitle': 'Packet Drop', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': False},
-            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False},
+            {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': False},
+            {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False}, 
         ]
         context['datatable_headers_servicealerts'] = json.dumps(datatable_headers_servicealerts)
         context['datatable_headers_down'] = json.dumps(datatable_headers_down)
@@ -163,9 +167,9 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
     """
     model = EventNetwork
     columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
-               'current_value', 'sys_timestamp', 'description']
+               'current_value', 'sys_time', 'sys_date', 'description']
     order_columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
-                     'current_value', 'sys_timestamp', 'description']
+                     'current_value', 'sys_time', 'sys_date', 'description']
 
     def filter_queryset(self, qs):
 
@@ -256,7 +260,9 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                         'base_station__city':City.objects.get(id=device_base_station.city).city_name,
                         'base_station__state':State.objects.get(id=device_base_station.state).state_name,
                         'current_value':data.current_value,
-                        'sys_timestamp':str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
+                        'sys_time':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%I:%M:%S %p"),
+                        'sys_date':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%d/%B/%Y"),
+                        'sys_timestamp':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
                         'description':data.description
                         }
                 device_data.append(ddata)
