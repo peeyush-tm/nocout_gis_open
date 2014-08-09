@@ -214,7 +214,7 @@ class LivePerformanceListing(BaseDatatableView):
 
                     perf_result["last_updated"] = str(datetime.datetime.fromtimestamp(float( data.sys_timestamp )))
                     perf_result["last_updated_date"] = datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%d/%B/%Y")
-                    perf_result["last_updated_time"] = datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%I:%M:%S %p")
+                    perf_result["last_updated_time"] = datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%I:%M %p")
                     device_result[device] = perf_result
 
         # log.debug(device_result)
