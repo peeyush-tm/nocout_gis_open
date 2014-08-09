@@ -220,6 +220,8 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         device_list, performance_data, data_sources_list = list(), list(), list()
         extra_query_condition=None
 
+        search_table = "performance_eventnetwork"
+
         if 'latency' in self.request.path_info:
             data_sources_list.append('rta')
         elif 'packetdrop' in self.request.path_info:
@@ -228,6 +230,8 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
             data_sources_list.append('pl')
             extra_query_condition="AND (`{0}`.`current_value` = 100 OR `{0}`.`severity`='DOWN' ) "
         elif 'service' in self.request.path_info:
+            search_table = "performance_eventservice"
+            #add data_sources_list as device data sources !!
             return device_list
 
         required_data_columns = ["id",
@@ -243,6 +247,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
         query = prepare_query(table_name="performance_eventnetwork", devices=sector_configured_on_devices_name, \
                               data_sources=data_sources_list, columns=required_data_columns, condition=extra_query_condition)
+        #replace table_name with search table
 
         if query:
             performance_data = self.model.objects.raw(query)
