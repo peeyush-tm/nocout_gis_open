@@ -193,7 +193,7 @@ function device_add_message(responseResult) {
 function device_edit_message(responseResult) {
     bootbox.alert(responseResult.result.message, function(){
         // reload page after clicking "OK!"
-        location = window.location.origin+"/device/#NonOperationalDeviceListing";
+        location = window.location.origin+"/device/#OperationalDeviceListing";
         location.reload();
     });
 }
