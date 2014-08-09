@@ -1327,6 +1327,9 @@ class DeviceCreate(CreateView):
         device = Device()
         device.device_name = form.cleaned_data['device_name']
         device.device_alias = form.cleaned_data['device_alias']
+        device.machine = form.cleaned_data['machine']
+        device.site_instance = form.cleaned_data['site_instance']
+        device.parent = form.cleaned_data['parent']
         device.device_technology = form.cleaned_data['device_technology']
         device.device_vendor = form.cleaned_data['device_vendor']
         device.device_model = form.cleaned_data['device_model']
@@ -1349,12 +1352,12 @@ class DeviceCreate(CreateView):
         device.organization_id = form.cleaned_data['organization'].id
         device.save()
 
-        # saving site_instance --> FK Relation
-        try:
-            device.site_instance = SiteInstance.objects.get(name=form.cleaned_data['site_instance'])
-            device.save()
-        except:
-            logger.info("No instance to add.")
+        # # saving site_instance --> FK Relation
+        # try:
+        #     device.site_instance = SiteInstance.objects.get(name=form.cleaned_data['site_instance'])
+        #     device.save()
+        # except:
+        #     logger.info("No instance to add.")
 
         # # saving associated ports  --> M2M Relation (Model: DevicePort)
         # for port in form.cleaned_data['ports']:
@@ -1369,20 +1372,20 @@ class DeviceCreate(CreateView):
         #     device.save()
 
         # saving device 'parent device' --> FK Relation
-        try:
-            parent_device = Device.objects.get(device_name=form.cleaned_data['parent'])
-            device.parent = parent_device
-            device.save()
-        except:
-            logger.info("Device has no parent.")
+        # try:
+        #     parent_device = Device.objects.get(device_name=form.cleaned_data['parent'])
+        #     device.parent = parent_device
+        #     device.save()
+        # except:
+        #     logger.info("Device has no parent.")
 
         # fetching device extra fields associated with 'device type'
         try:
             device_type = DeviceType.objects.get(id=int(self.request.POST.get('device_type')))
             # it gives all device fields associated with device_type object
             device_type.devicetypefields_set.all()
-        except:
-            logger.info("No device type exists.")
+        except Exception as e:
+            logger.info(e.message)
 
         # saving eav relation data i.e. device extra fields those depends on device type
         for field in all_non_empty_post_fields:
@@ -1396,8 +1399,8 @@ class DeviceCreate(CreateView):
                 dtfv.field_value = self.request.POST.get(field)
                 dtfv.device_id = device.id
                 dtfv.save()
-            except:
-                pass
+            except Exception as e:
+                logger.info(e.message)
 
         action.send(self.request.user, verb='Created', action_object=device)
         return HttpResponseRedirect(DeviceCreate.success_url)
