@@ -272,8 +272,8 @@
 /*Advance Search Filters CSS*/
 .advanceFiltersContainer
 {
-    max-height: 400px;
-    overflow-y: auto;
+    /*max-height: 400px;*/
+    /*overflow-y: auto;*/
     margin-top:10px; 
 }
 
