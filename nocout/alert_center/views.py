@@ -550,7 +550,7 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
                     table_name,
                     (",".join(map(in_string, devices))),
                     (',').join(map(in_string, data_sources)),
-                    extra_where_clause.format("derived_table")
+                    extra_where_clause.format("original_table")
                 )
 
     # logger.debug(query)
@@ -623,22 +623,17 @@ def common_prepare_results(qs):
     """
 
     for dct in qs:
-        if dct['severity']=='DOWN':
+        if dct['severity']=='DOWN' or "CRITICAL" in dct['description'] or dct['severity']=='CRITICAL':
            dct['severity']='<div class="alert_critical"></div>'
            dct['current_value']='<span class="text-danger">%s</span>'%(dct['current_value'])
            dct['description']='<span class="text-danger">%s</span>'%(dct['description'])
 
-        elif dct['severity']=='CRITICAL':
-            dct['severity']='<div class="alert_critical"></div>'
-            dct['current_value']='<span style="color:#d9534f">%s</span>'%(dct['current_value'])
-            dct['description']='<span style="color:#d9534f">%s</span>'%(dct['description'])
-
-        elif dct['severity']=='WARNING':
+        elif dct['severity']=='WARNING' or "WARNING" in dct['description']:
             dct['severity']='<div class="alert_major"></div>'
             dct['current_value']='<span style="color:#FFA500">%s</span>'%(dct['current_value'])
             dct['description']='<span style="color:#FFA500">%s</span>'%(dct['description'])
 
-        elif dct['severity']=='UP':
+        elif dct['severity']=='UP' or "OK" in dct['description']:
             dct['severity']='<div class="alert_normal"></div>'
             dct['current_value']='<span style="color:#008000">%s</span>'%(dct['current_value'])
             dct['description']='<span style="color:#008000">%s</span>'%(dct['description'])
