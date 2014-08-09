@@ -15,16 +15,20 @@ config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/config
 
 
 def main():
+    mongo_conf = []
     configs = config_module.parse_config_obj()
     for section, options in configs.items():
-        inventory_script = options.get('inventory').get('script')
-        inventory_service_migration_script = __import__(inventory_script)
-        inventory_service_migration_script.main(site=options.get('site'), host=options.get('host'),
-                user=options.get('user'), port=options.get('port'),
-                sql_passwd=options.get('sql_passwd'),
-                nosql_db=options.get('inventory').get('nosql_db'),
-                sql_db=options.get('inventory').get('sql_db'), table_name=options.get('inventory').get('table_name'), ip=options.get('ip')
-        )
+	mongo_conf.append((options.get('site'),options.get('host'), options.get('port')))
+	
+    inventory_script = configs.get(mongo_conf[0][0]).get('inventory').get('script')
+    inventory_migration_script = __import__(inventory_script)
+    inventory_migration_script.main(mongo_conf=mongo_conf,
+    user=configs.get(mongo_conf[0][0]).get('user'),
+    sql_passwd=configs.get(mongo_conf[0][0]).get('sql_passwd'),
+    nosql_db=configs.get(mongo_conf[0][0]).get('nosql_db'),
+    sql_db=configs.get(mongo_conf[0][0]).get('sql_db'), table_name=configs.get(mongo_conf[0][0]).get('inventory').get('table_name'), ip=configs.get(mongo_conf[0][0]).get('ip')
+    )
+	
 
 
 if __name__ == '__main__':

@@ -7,7 +7,8 @@ File contains code for migrating the embeded mongodb data to mysql database.This
 
 from nocout_site_name import *
 import MySQLdb
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timedelta
 from events_rrd_migration import get_latest_event_entry
 import socket
 import imp
@@ -28,26 +29,30 @@ def main(**configs):
     data_values = []
     values_list = []
     docs = []
-    end_time = datetime.now()
     db = mysql_conn(configs=configs)
-    start_time = get_latest_event_entry(
+    for i in range(len(configs.get('mongo_conf'))):
+	end_time = datetime.now()
+    	start_time = get_latest_event_entry(
 		    db_type='mysql',
 		    db=db,
-		    site=configs.get('site'),
+		    site=configs.get('mongo_conf')[i][0],
 		    table_name=configs.get('table_name')
-    )
-    if start_time is None:
-	start_time = end_time - timedelta(minutes=15)
-    #start_time = end_time - timedelta(minutes=5)
-    start_time = get_epoch_time(start_time)
-    end_time = get_epoch_time(end_time)
+    	)
+    	if start_time is None:
+		start_time = end_time - timedelta(minutes=15)
+    	start_time = get_epoch_time(start_time)
+    	end_time = get_epoch_time(end_time)
    
-    # Read data function reads the data from mongodb and insert into mysql
-    docs = read_data(start_time, end_time, configs=configs)
-    for doc in docs:
-        values_list = build_data(doc)
-        data_values.extend(values_list)
-    insert_data(configs.get('table_name'), data_values,configs=configs)
+   	 # Read data function reads the data from mongodb and insert into mysql
+    	docs = read_data(start_time, end_time,configs=configs.get('mongo_conf')[i], db_name=configs.get('nosql_db'))
+    	for doc in docs:
+        	values_list = build_data(doc)
+        	data_values.extend(values_list)
+    if data_values:
+        insert_data(configs.get('table_name'), data_values, configs=configs)
+        print "Data inserted into mysql db"
+    else:
+        print "No data in the mongo db in this time frame"
 
 def read_data(start_time, end_time, **kwargs):
     """
@@ -63,9 +68,9 @@ def read_data(start_time, end_time, **kwargs):
     port = None
     docs = []
     db = mongo_module.mongo_conn(
-        host=kwargs.get('configs').get('host'),
-        port=int(kwargs.get('configs').get('port')),
-        db_name=kwargs.get('configs').get('nosql_db')
+        host=kwargs.get('configs')[1],
+        port=int(kwargs.get('configs')[2]),
+        db_name=kwargs.get('db_name')
     )
     if db:
             cur = db.nocout_host_event_log.find({
@@ -162,7 +167,7 @@ def mysql_conn(db=None, **kwargs):
     """
     try:
         db = MySQLdb.connect(
-			host=kwargs.get('configs').get('host'),
+			host=kwargs.get('configs').get('ip'),
 			user=kwargs.get('configs').get('user'),
             		passwd=kwargs.get('configs').get('sql_passwd'),
 			db=kwargs.get('configs').get('sql_db')
