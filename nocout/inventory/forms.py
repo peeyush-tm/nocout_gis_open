@@ -249,6 +249,7 @@ class BackhaulForm(forms.ModelForm):
                     field.widget.attrs.update({'data-toggle': 'tooltip'})
                     field.widget.attrs.update({'data-placement': 'right'})
                     field.widget.attrs.update({'title': field.help_text})
+
     class Meta:
         """
         Meta Information
@@ -336,6 +337,12 @@ class BaseStationForm(forms.ModelForm):
         self.fields['state'].required= True
         self.fields['city'].required= True
 
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -360,6 +367,21 @@ class BaseStationForm(forms.ModelForm):
         Meta Information
         """
         model = BaseStation
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = BaseStation.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
