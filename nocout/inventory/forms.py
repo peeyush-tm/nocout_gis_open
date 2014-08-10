@@ -489,6 +489,13 @@ class CustomerForm(forms.ModelForm):
     """
     def __init__(self, *args, **kwargs):
         super(CustomerForm, self).__init__(*args, **kwargs)
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -501,11 +508,27 @@ class CustomerForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         """
         Meta Information
         """
         model = Customer
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = Customer.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
