@@ -239,7 +239,7 @@ class ProtocolForm(forms.ModelForm):
                 self.id = kwargs['instance'].id
         except Exception as e:
             logger.info(e.message)
-            
+
         super(ProtocolForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
