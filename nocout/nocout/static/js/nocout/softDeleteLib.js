@@ -876,7 +876,7 @@ function device_services_status_frame(content) {
     services_status_html += '<dt>Device Type</dt><dd>'+content.result.data.objects.device_type+'</dd>';
     services_status_html += '</dd></dl>';
     if (!(typeof content.result.data.objects.active_services === 'undefined') && !(Object.keys(content.result.data.objects.active_services).length === 0)) {
-        services_status_html += '<div class=""><div class="box border orange"><div class="box-title"><h4><i class="fa fa-table"></i>Operational Services</h4></div>';
+        services_status_html += '<div class=""><div class="box border red"><div class="box-title"><h4><i class="fa fa-table"></i>Operational Services</h4></div>';
         services_status_html += '<div class="box-body"><table class="table">';
         services_status_html += '<thead><tr><th>Service</th><th>Data Sources</th></tr></thead>';
         services_status_html += '<tbody>';
