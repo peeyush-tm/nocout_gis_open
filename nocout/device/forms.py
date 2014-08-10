@@ -250,6 +250,21 @@ class DeviceTypeFieldsForm(forms.ModelForm):
         model = DeviceTypeFields
         fields = ('field_name', 'field_display_name', 'device_type')
 
+    def clean_field_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['field_name']
+        names = DeviceTypeFields.objects.filter(field_name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
+
     def clean(self):
         """
         Validations for device type fields form
