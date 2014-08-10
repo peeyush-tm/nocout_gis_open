@@ -759,7 +759,7 @@ class IconSettingsForm(forms.ModelForm):
                 self.id = kwargs['instance'].id
         except Exception as e:
             logger.info(e.message)
-            
+
         super(IconSettingsForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -864,6 +864,13 @@ class ThresholdConfigurationForm(forms.ModelForm):
     Class Based View Threshold Configuration Model form to update and create.
     """
     def __init__(self, *args, **kwargs):
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         super(ThresholdConfigurationForm, self).__init__(*args, **kwargs)
         self.fields['live_polling_template'].empty_label = 'Select'
         for name, field in self.fields.items():
@@ -884,6 +891,21 @@ class ThresholdConfigurationForm(forms.ModelForm):
         Meta Information
         """
         model = ThresholdConfiguration
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = ThresholdConfiguration.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
@@ -912,6 +934,13 @@ class ThematicSettingsForm(forms.ModelForm):
         self.base_fields['bt_w_c'].label = 'Warning > > Critical'
         self.base_fields['gt_critical'].label = '> Critical'
 
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+
         super(ThematicSettingsForm, self).__init__(*args, **kwargs)
         self.fields['threshold_template'].empty_label = 'Select'
         self.fields['gt_warning'].empty_label = 'Select'
@@ -934,6 +963,21 @@ class ThematicSettingsForm(forms.ModelForm):
         Meta Information
         """
         model = ThematicSettings
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = ThematicSettings.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
