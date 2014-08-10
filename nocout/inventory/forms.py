@@ -31,6 +31,12 @@ class InventoryForm(forms.ModelForm):
         else:
             initial['organization']=None
 
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         # removing help text for device_groups 'select' field
         self.base_fields['device_groups'].help_text = ''
 
@@ -66,6 +72,21 @@ class InventoryForm(forms.ModelForm):
         Meta Information
         """
         model = Inventory
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = Inventory.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """

@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 import re
 from django import forms
 from device.models import Device
@@ -30,8 +31,13 @@ class DeviceGroupForm(forms.ModelForm):
         self.fields['parent'].empty_label = 'Select'
         self.fields['organization'].empty_label = 'Select'
 
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
 
-        organization_id=None
+        organization_id = None
         if kwargs['instance']:
             self.fields['name'].widget.attrs['readonly'] = True
             organization_id=initial['organization']
@@ -61,6 +67,21 @@ class DeviceGroupForm(forms.ModelForm):
         """
         model = DeviceGroup
         fields = ('name', 'alias', 'parent', 'organization', 'devices')
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = DeviceGroup.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
