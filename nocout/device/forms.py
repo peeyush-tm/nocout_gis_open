@@ -340,7 +340,7 @@ class DeviceTechnologyForm(forms.ModelForm):
                 self.id = kwargs['instance'].id
         except Exception as e:
             logger.info(e.message)
-            
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -403,6 +403,13 @@ class DeviceVendorForm(forms.ModelForm):
         super(DeviceVendorForm, self).__init__(*args, **kwargs)
 
         self.fields['device_models'].required = True
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -422,6 +429,21 @@ class DeviceVendorForm(forms.ModelForm):
         """
         model = DeviceVendor
         fields = ('name', 'alias', 'device_models')
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = DeviceVendor.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
@@ -451,6 +473,13 @@ class DeviceModelForm(forms.ModelForm):
 
         super(DeviceModelForm, self).__init__(*args, **kwargs)
         self.fields['device_types'].required = True
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -470,6 +499,21 @@ class DeviceModelForm(forms.ModelForm):
         """
         model = DeviceModel
         fields = ('name', 'alias', 'device_types')
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = DeviceModel.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
@@ -504,6 +548,13 @@ class DeviceTypeForm(forms.ModelForm):
         self.base_fields['device_port'].help_text = ''
         # removing help text for service 'select' field
         self.base_fields['service'].help_text = ''
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         super(DeviceTypeForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -523,6 +574,21 @@ class DeviceTypeForm(forms.ModelForm):
         Meta Information
         """
         model = DeviceType
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = DeviceType.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
