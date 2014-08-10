@@ -694,6 +694,21 @@ class CircuitForm(forms.ModelForm):
         """
         model = Circuit
 
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = Circuit.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
+
     def clean(self):
         """
         Validations for circuit form
