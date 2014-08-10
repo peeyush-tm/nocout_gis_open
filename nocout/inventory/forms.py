@@ -585,6 +585,12 @@ class SubStationForm(forms.ModelForm):
         self.fields['longitude'].required = True
         self.fields['mac_address'].required = True
 
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -609,6 +615,21 @@ class SubStationForm(forms.ModelForm):
         Meta Information
         """
         model = SubStation
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = SubStation.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
@@ -641,6 +662,13 @@ class CircuitForm(forms.ModelForm):
         self.fields['customer'].empty_label = 'Select'
         self.fields['sub_station'].empty_label = 'Select'
         self.fields['date_of_acceptance'].required = True
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
