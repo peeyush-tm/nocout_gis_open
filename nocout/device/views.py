@@ -226,8 +226,9 @@ class OperationalDeviceListingTable(BaseDatatableView):
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
         organization_descendants_ids = self.logged_in_user_organization_ids()
-        return Device.objects.filter(organization__in=organization_descendants_ids, is_deleted=0, is_monitored_on_nms=1) \
-            .values(*self.columns + ['id'])
+        return Device.objects.filter(organization__in=organization_descendants_ids,
+                                     is_deleted=0,
+                                     is_added_to_nms__in=[1, 2]).values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -256,8 +257,9 @@ class OperationalDeviceListingTable(BaseDatatableView):
             except Exception as device_state_exp:
                 dct['state__name'] = ""
 
-            img_url = static('img/nms_icons/circle_green.png')
-            dct.update(status_icon='<img src="{0}">'.format(img_url))
+            # img_url = static('img/nms_icons/circle_green.png')
+            # dct.update(status_icon='<img src="{0}">'.format(img_url))
+            dct.update(status_icon='<i class="fa fa-circle green-dot"></i>')
 
             # There are two set of links in device list table
             # 1. Device Actions --> device detail, edit, delete from inventory. They are always present in device table if user role is 'Admin'
@@ -271,6 +273,7 @@ class OperationalDeviceListingTable(BaseDatatableView):
                <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(
                 dct['id']))
             dct.update(nms_actions='')
+
             # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
             # checking whether device is 'backhaul configured on' or not
             try:
@@ -280,6 +283,15 @@ class OperationalDeviceListingTable(BaseDatatableView):
                                             <a href="#" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-info" title="Edit Services"></i></a>\
                                             <a href="#" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-info" title="Delete Services"></i></a>'.format(
                         dct['id']))
+                    try:
+                        if current_device.is_added_to_nms == 2:
+                            dct.update(nms_actions='<a href="#" onclick="delete_device({0});"><i class="fa fa-minus-square text-info" title="Delete Device"></i></a>\
+                                                    <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-info" title="Add Services"></i></a>\
+                                                    <a href="#" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-info" title="Edit Services"></i></a>\
+                                                    <a href="#" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-info" title="Delete Services"></i></a>\
+                                                    <a href="#" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Sync Device"></i></a>'.format(dct['id']))
+                    except Exception as e:
+                        logger.info(e.message)
             except:
                 logger.info("Device is not a backhaul")
 
@@ -291,6 +303,15 @@ class OperationalDeviceListingTable(BaseDatatableView):
                                             <a href="#" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-success" title="Edit Services"></i></a>\
                                             <a href="#" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-success" title="Delete Services"></i></a>'.format(
                         dct['id']))
+                    try:
+                        if current_device.is_added_to_nms == 2:
+                            dct.update(nms_actions='<a href="#" onclick="delete_device({0});"><i class="fa fa-minus-square text-success" title="Delete Device"></i></a>\
+                                                    <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Services"></i></a>\
+                                                    <a href="#" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-success" title="Edit Services"></i></a>\
+                                                    <a href="#" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-success" title="Delete Services"></i></a>\
+                                                    <a href="#" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Sync Device"></i></a>'.format(dct['id']))
+                    except Exception as e:
+                        logger.info(e.message)
             except:
                 logger.info("Device is not sector configured on.")
 
@@ -302,6 +323,15 @@ class OperationalDeviceListingTable(BaseDatatableView):
                                             <a href="#" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-danger" title="Edit Services"></i></a>\
                                             <a href="#" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-danger" title="Delete Services"></i></a>'.format(
                         dct['id']))
+                    try:
+                        if current_device.is_added_to_nms == 2:
+                            dct.update(nms_actions='<a href="#" onclick="delete_device({0});"><i class="fa fa-minus-square text-danger" title="Delete Device"></i></a>\
+                                                    <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-danger" title="Add Services"></i></a>\
+                                                    <a href="#" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-danger" title="Edit Services"></i></a>\
+                                                    <a href="#" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-danger" title="Delete Services"></i></a>\
+                                                    <a href="#" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Sync Device"></i></a>'.format(dct['id']))
+                    except Exception as e:
+                        logger.info(e.message)
             except:
                 logger.info("Device is not a substation.")
         return qs
@@ -455,9 +485,11 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
         organization_descendants_ids = self.logged_in_user_organization_ids()
-        return Device.objects.filter(organization__in=organization_descendants_ids, is_deleted=0, is_monitored_on_nms=0,
-                                     host_state="Enable") \
-            .values(*self.columns + ['id'])
+        return Device.objects.filter(organization__in=organization_descendants_ids,
+                                     is_deleted=0,
+                                     is_monitored_on_nms=0,
+                                     is_added_to_nms=0,
+                                     host_state="Enable").values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -486,8 +518,10 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             except Exception as device_state_exp:
                 dct['state__name'] = ""
 
-            img_url = static('img/nms_icons/circle_orange.png')
-            dct.update(status_icon='<img src="{0}">'.format(img_url))
+            # img_url = static('img/nms_icons/circle_orange.png')
+            # dct.update(status_icon='<img src="{0}">'.format(img_url))
+
+            dct.update(status_icon='<i class="fa fa-circle orange-dot"></i>')
 
             # There are two set of links in device list table
             # 1. Device Actions --> device detail, edit, delete from inventory. They are always present in device table if user role is 'Admin'
@@ -712,8 +746,10 @@ class DisabledDeviceListingTable(BaseDatatableView):
             except Exception as device_state_exp:
                 dct['state__name'] = ""
 
-            img_url = static('img/nms_icons/circle_grey.png')
-            dct.update(status_icon='<img src="{0}">'.format(img_url))
+            # img_url = static('img/nms_icons/circle_grey.png')
+            # dct.update(status_icon='<img src="{0}">'.format(img_url))
+
+            dct.update(status_icon='<i class="fa fa-circle grey-dot"></i>')
 
             # There are two set of links in device list table
             # 1. Device Actions --> device detail, edit, delete from inventory. They are always present in device table if user role is 'Admin'
@@ -936,8 +972,10 @@ class ArchivedDeviceListingTable(BaseDatatableView):
             except Exception as device_state_exp:
                 dct['state__name'] = ""
 
-            img_url = static('img/nms_icons/circle_red.png')
-            dct.update(status_icon='<img src="{0}">'.format(img_url))
+            # img_url = static('img/nms_icons/circle_red.png')
+            # dct.update(status_icon='<img src="{0}">'.format(img_url))
+
+            dct.update(status_icon='<i class="fa fa-circle red-dot"></i>')
 
             # There are two set of links in device list table
             # 1. Device Actions --> device detail, edit, delete from inventory. They are always present in device table if user role is 'Admin'
@@ -1161,18 +1199,22 @@ class AllDeviceListingTable(BaseDatatableView):
                 dct['state__name'] = ""
 
             # if device is already added to nms core than show icon in device table
-            img_url = ""
+            icon = ""
             try:
-                if current_device.is_monitored_on_nms == 1:
-                    img_url = static('img/nms_icons/circle_green.png')
-                elif current_device.is_monitored_on_nms == 0 and current_device.host_state == "Enable":
-                    img_url = static('img/nms_icons/circle_orange.png')
-                elif current_device.is_monitored_on_nms == 0 and current_device.host_state == "Disable":
-                    img_url = static('img/nms_icons/circle_grey.png')
-                dct.update(status_icon='<img src="{0}">'.format(img_url))
+                if current_device.is_added_to_nms == 0 and current_device.host_state == "Enable":
+                    icon = '<i class="fa fa-circle orange-dot"></i>'
+                elif current_device.is_added_to_nms == 0 and current_device.host_state == "Disable":
+                    icon = '<i class="fa fa-circle grey-dot"></i>'
+                elif current_device.is_added_to_nms == 1:
+                    icon = '<i class="fa fa-circle green-dot"></i>'
+                elif current_device.is_added_to_nms == 2:
+                    icon = '<i class="fa fa-circle green-dot"></i>'
+                dct.update(status_icon=icon)
             except Exception as e:
+                print "********************************* Exception - "
                 logger.info(e.message)
                 dct.update(status_icon='<img src="">')
+
             # There are two set of links in device list table
             # 1. Device Actions --> device detail, edit, delete from inventory.
             # They are always present in device table if user role is 'Admin'
@@ -1324,10 +1366,14 @@ class DeviceCreate(CreateView):
         device = Device()
         device.device_name = form.cleaned_data['device_name']
         device.device_alias = form.cleaned_data['device_alias']
+        device.machine = form.cleaned_data['machine']
+        device.site_instance = form.cleaned_data['site_instance']
+        device.organization_id = form.cleaned_data['organization']
         device.device_technology = form.cleaned_data['device_technology']
         device.device_vendor = form.cleaned_data['device_vendor']
         device.device_model = form.cleaned_data['device_model']
         device.device_type = form.cleaned_data['device_type']
+        device.parent = form.cleaned_data['parent']
         device.ip_address = form.cleaned_data['ip_address']
         device.mac_address = form.cleaned_data['mac_address']
         device.netmask = form.cleaned_data['netmask']
@@ -1335,51 +1381,23 @@ class DeviceCreate(CreateView):
         device.dhcp_state = form.cleaned_data['dhcp_state']
         device.host_priority = form.cleaned_data['host_priority']
         device.host_state = form.cleaned_data['host_state']
-        device.address = form.cleaned_data['address']
+        device.latitude = form.cleaned_data['latitude']
+        device.longitude = form.cleaned_data['longitude']
+        device.timezone = form.cleaned_data['timezone']
         device.country = form.cleaned_data['country']
         device.state = form.cleaned_data['state']
         device.city = form.cleaned_data['city']
-        device.timezone = form.cleaned_data['timezone']
-        device.latitude = form.cleaned_data['latitude']
-        device.longitude = form.cleaned_data['longitude']
+        device.address = form.cleaned_data['address']
         device.description = form.cleaned_data['description']
-        device.organization_id = form.cleaned_data['organization'].id
         device.save()
-
-        # saving site_instance --> FK Relation
-        try:
-            device.site_instance = SiteInstance.objects.get(name=form.cleaned_data['site_instance'])
-            device.save()
-        except:
-            logger.info("No instance to add.")
-
-        # # saving associated ports  --> M2M Relation (Model: DevicePort)
-        # for port in form.cleaned_data['ports']:
-        #     device_port = DevicePort.objects.get(name=port)
-        #     device.ports.add(device_port)
-        #     device.save()
-
-        # # saving associated services  --> M2M Relation (Model: Service)
-        # for service in form.cleaned_data['service']:
-        #     device_service = Service.objects.get(name=service)
-        #     device.service.add(device_service)
-        #     device.save()
-
-        # saving device 'parent device' --> FK Relation
-        try:
-            parent_device = Device.objects.get(device_name=form.cleaned_data['parent'])
-            device.parent = parent_device
-            device.save()
-        except:
-            logger.info("Device has no parent.")
 
         # fetching device extra fields associated with 'device type'
         try:
             device_type = DeviceType.objects.get(id=int(self.request.POST.get('device_type')))
             # it gives all device fields associated with device_type object
             device_type.devicetypefields_set.all()
-        except:
-            logger.info("No device type exists.")
+        except Exception as e:
+            logger.info(e.message)
 
         # saving eav relation data i.e. device extra fields those depends on device type
         for field in all_non_empty_post_fields:
@@ -1393,8 +1411,8 @@ class DeviceCreate(CreateView):
                 dtfv.field_value = self.request.POST.get(field)
                 dtfv.device_id = device.id
                 dtfv.save()
-            except:
-                pass
+            except Exception as e:
+                logger.info(e.message)
 
         action.send(self.request.user, verb='Created', action_object=device)
         return HttpResponseRedirect(DeviceCreate.success_url)
@@ -1408,7 +1426,6 @@ class DeviceUpdate(UpdateView):
     model = Device
     form_class = DeviceForm
     success_url = reverse_lazy('device_list')
-
 
     @method_decorator(permission_required('device.change_device', raise_exception=True))
     def dispatch(self, *args, **kwargs):
@@ -1440,11 +1457,14 @@ class DeviceUpdate(UpdateView):
         # saving device data
         self.object.device_name = form.cleaned_data['device_name']
         self.object.device_alias = form.cleaned_data['device_alias']
-        #self.object.ports = form.cleaned_data['ports']
+        self.object.machine = form.cleaned_data['machine']
+        self.object.site_instance = form.cleaned_data['site_instance']
+        self.object.organization_id = form.cleaned_data['organization']
         self.object.device_technology = form.cleaned_data['device_technology']
         self.object.device_vendor = form.cleaned_data['device_vendor']
         self.object.device_model = form.cleaned_data['device_model']
         self.object.device_type = form.cleaned_data['device_type']
+        self.object.parent = form.cleaned_data['parent']
         self.object.ip_address = form.cleaned_data['ip_address']
         self.object.mac_address = form.cleaned_data['mac_address']
         self.object.netmask = form.cleaned_data['netmask']
@@ -1452,74 +1472,30 @@ class DeviceUpdate(UpdateView):
         self.object.dhcp_state = form.cleaned_data['dhcp_state']
         self.object.host_priority = form.cleaned_data['host_priority']
         self.object.host_state = form.cleaned_data['host_state']
-        self.object.address = form.cleaned_data['address']
+        self.object.latitude = form.cleaned_data['latitude']
+        self.object.longitude = form.cleaned_data['longitude']
+        self.object.timezone = form.cleaned_data['timezone']
         self.object.country = form.cleaned_data['country']
         self.object.state = form.cleaned_data['state']
         self.object.city = form.cleaned_data['city']
-        self.object.timezone = form.cleaned_data['timezone']
-        self.object.latitude = form.cleaned_data['latitude']
-        self.object.longitude = form.cleaned_data['longitude']
+        self.object.address = form.cleaned_data['address']
         self.object.description = form.cleaned_data['description']
         self.object.organization = form.cleaned_data['organization']
         self.object.save()
 
-        # saving site_instance --> FK Relation
-        try:
-            self.object.site_instance = SiteInstance.objects.get(name=form.cleaned_data['site_instance'])
-            self.object.save()
-        except Exception as site_exception:
-            if settings.DEBUG:
-                logger.critical("Instance(site) information missing : %s" % (site_exception),
-                                exc_info=True,
-                                extra={'stack': True, 'request': self.request}
-                )
-            pass
-
-        # # deleting old services of device
-        # self.object.service.clear()
-
-        # # saving associated services  --> M2M Relation (Model: Service)
-        # for service in form.cleaned_data['service']:
-        #     device_service = Service.objects.get(name=service)
-        #     self.object.service.add(device_service)
-        #     self.object.save()
-
-        # saving device 'parent device' --> FK Relation
-        try:
-            parent_device = Device.objects.get(device_name=form.cleaned_data['parent'])
-            self.object.parent = parent_device
-            self.object.save()
-        except Exception as device_parent_exception:
-            if settings.DEBUG:
-                logger.critical("Device Parent information missing : %s" % (device_parent_exception),
-                                exc_info=True,
-                                extra={'stack': True, 'request': self.request}
-                )
-            pass
-
         # deleting old device extra field values
         try:
             DeviceTypeFieldsValue.objects.filter(device_id=self.object.id).delete()
-        except Exception as device_extra_exception:
-            if settings.DEBUG:
-                logger.critical("Device Extra information missing : %s" % (device_extra_exception),
-                                exc_info=True,
-                                extra={'stack': True, 'request': self.request}
-                )
-            pass
+        except Exception as e:
+            logger.info(e.message)
 
         # fetching device extra fields associated with 'device type'
         try:
             device_type = DeviceType.objects.get(id=int(self.request.POST.get('device_type')))
             # it gives all device fields associated with device_type object
             device_type.devicetypefields_set.all()
-        except Exception as device_type_exception:
-            if settings.DEBUG:
-                logger.critical("Device Type information missing : %s" % (device_type_exception),
-                                exc_info=True,
-                                extra={'stack': True, 'request': self.request}
-                )
-            pass
+        except Exception as e:
+            logger.info(e.message)
 
         # saving eav relation data i.e. device extra fields those depends on device type
         for field in all_non_empty_post_fields:
@@ -1533,10 +1509,28 @@ class DeviceUpdate(UpdateView):
                 dtfv.field_value = self.request.POST.get(field)
                 dtfv.device_id = self.object.id
                 dtfv.save()
-            except:
-                pass
+            except Exception as e:
+                logger.info(e.message)
 
+        # dictionary containing old values of current device
         initial_field_dict = form.initial
+
+        # if 'site_instance' value is changed and 'is_added_to_nms' is 1 than set 'is_added_to_nms' to 2
+        try:
+            if (initial_field_dict['site_instance'] != form.cleaned_data['site_instance'].id) and (self.object.is_added_to_nms == 1):
+                self.object.is_added_to_nms = 2
+                self.object.save()
+        except Exception as e:
+            logger.info(e.message)
+
+        # if 'ip_address' value is changed and 'is_added_to_nms' is 1 than set 'is_added_to_nms' to 2
+        try:
+            if (initial_field_dict['ip_address'] != form.cleaned_data['ip_address']) and (self.object.is_added_to_nms == 1):
+                self.object.is_added_to_nms = 2
+                self.object.save()
+        except Exception as e:
+            logger.info(e.message)
+
 
         def cleaned_data_field():
             """
@@ -1544,8 +1538,6 @@ class DeviceUpdate(UpdateView):
             """
             cleaned_data_field_dict = {}
             for field in form.cleaned_data.keys():
-                # if field in ('service'):
-                #     cleaned_data_field_dict[field]=map(lambda obj: obj.pk, form.cleaned_data[field])
                 if field in ('parent', 'site_instance', 'organization'):
                     cleaned_data_field_dict[field] = form.cleaned_data[field].pk if form.cleaned_data[field] else None
                 elif field in ('device_model', 'device_type', 'device_vendor', 'device_technology') and \
@@ -1568,8 +1560,6 @@ class DeviceUpdate(UpdateView):
                 initial_field_dict['site_instance'] = SiteInstance.objects.get(
                     pk=initial_field_dict['site_instance']).name \
                     if initial_field_dict['site_instance'] else str(None)
-                # initial_field_dict['service'] = ', '.join([Service.objects.get(pk=service).name for service in initial_field_dict['service']])\
-                #     if initial_field_dict['service'] else str(None)
                 initial_field_dict['device_model'] = DeviceModel.objects.get(pk=initial_field_dict['device_model']).name \
                     if initial_field_dict['device_model'] else str(None)
                 initial_field_dict['device_type'] = DeviceType.objects.get(pk=initial_field_dict['device_type']).name \
@@ -1589,8 +1579,6 @@ class DeviceUpdate(UpdateView):
                 cleaned_data_field_dict['site_instance'] = SiteInstance.objects.get(
                     pk=cleaned_data_field_dict['site_instance']).name \
                     if cleaned_data_field_dict['site_instance'] else str(None)
-                # cleaned_data_field_dict['service'] = ', '.join([Service.objects.get(pk=service).name for service in cleaned_data_field_dict['service'] \
-                #     if cleaned_data_field_dict['service']])
                 cleaned_data_field_dict['device_model'] = DeviceModel.objects.get(
                     pk=cleaned_data_field_dict['device_model']).name \
                     if cleaned_data_field_dict['device_model'] else str(None)

@@ -126,6 +126,7 @@ class Device(MPTTModel, models.Model):
 
     device_name = models.CharField('Name', max_length=200, unique=True)
     device_alias = models.CharField('Alias', max_length=200)
+    machine = models.ForeignKey(Machine, null=True, blank=True)
     site_instance = models.ForeignKey(SiteInstance, null=True, blank=True)
     organization = models.ForeignKey(Organization)
     device_technology = models.IntegerField('Device Technology')
@@ -133,7 +134,6 @@ class Device(MPTTModel, models.Model):
     device_model = models.IntegerField('Device Model')
     device_type = models.IntegerField('Device Type')
     parent = models.ForeignKey('self', null=True, blank=True, related_name='device_children')
-    machine = models.ForeignKey(Machine, null=True, blank=True)
     #ports = models.ManyToManyField(DevicePort, null=True, blank=True)
     ip_address = models.IPAddressField('IP Address', unique=True)
     mac_address = models.CharField('MAC Address', max_length=100, null=True, blank=True)
