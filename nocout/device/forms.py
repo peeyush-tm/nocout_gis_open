@@ -613,6 +613,13 @@ class DevicePortForm(forms.ModelForm):
     """
     def __init__(self, *args, **kwargs):
         super(DevicePortForm, self).__init__(*args, **kwargs)
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -631,6 +638,21 @@ class DevicePortForm(forms.ModelForm):
         Meta Information
         """
         model = DevicePort
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = DevicePort.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
