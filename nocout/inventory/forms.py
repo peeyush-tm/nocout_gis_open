@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 import re
 from django import forms
 from device.models import Country, State, City
@@ -126,6 +127,12 @@ class AntennaForm(forms.ModelForm):
         self.fields['azimuth_angle'].required = True
         self.fields['polarization'].required = True
 
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -150,6 +157,21 @@ class AntennaForm(forms.ModelForm):
         Meta Information
         """
         model = Antenna
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = Antenna.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
