@@ -225,6 +225,12 @@ class BackhaulForm(forms.ModelForm):
         self.fields['aggregator'].empty_label = 'Select'
         self.fields['bh_configured_on'].required = True
 
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -248,6 +254,21 @@ class BackhaulForm(forms.ModelForm):
         Meta Information
         """
         model = Backhaul
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = Backhaul.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
