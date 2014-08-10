@@ -818,6 +818,13 @@ class LivePollingSettingsForm(forms.ModelForm):
     """
 
     def __init__(self, *args, **kwargs):
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         super(LivePollingSettingsForm, self).__init__(*args, **kwargs)
         self.fields['technology'].empty_label = 'Select'
         self.fields['service'].empty_label = 'Select'
@@ -840,6 +847,21 @@ class LivePollingSettingsForm(forms.ModelForm):
         Meta Information
         """
         model = LivePollingSettings
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = LivePollingSettings.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
