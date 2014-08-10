@@ -233,6 +233,13 @@ class ProtocolForm(forms.ModelForm):
     private_phase = forms.TypedChoiceField(choices=PRIVATE_PHASE, required=False)
 
     def __init__(self, *args, **kwargs):
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+            
         super(ProtocolForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -251,3 +258,33 @@ class ProtocolForm(forms.ModelForm):
         Meta Information.
         """
         model = Protocol
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = Protocol.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
+
+    def clean(self):
+        """
+        Validations for service data source form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
