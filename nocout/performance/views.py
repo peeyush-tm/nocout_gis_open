@@ -9,7 +9,7 @@ from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation
-from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus
+from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus, ServiceStatus, InventoryStatus
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
 from operator import is_not
 from functools import partial
@@ -527,55 +527,80 @@ class Inventory_Device_Service_Data_Source(View):
             'message' : 'Substation Devices Services Data Source Not Fetched Successfully.',
             'data' : {
                 'meta' : {},
-                'objects' : []
-            }
-        }
+                'objects' : {
+                            'network_perf_tab':[],
+                            'service_status_tab':[],
+                            'inventory_status_tab':[],
+                            'service_perf_tab':[]
+                            }
+                        }
+               }
         inventory_device_type_id=None
         if page_type =='customer':
-            inventory_device= SubStation.objects.get(id= device_id)
-            inventory_device_type_id= Device.objects.get(id= inventory_device.device_id).device_type
+            inventory_device= SubStation.objects.get(id= int(device_id))
+            device_id= Device.objects.get(id= inventory_device.device_id).id
 
-        elif page_type == 'network':
-            #for basestation we need to fetch sector_configured_on device field from the device
-            inventory_device_type_id= Device.objects.get(id=int(device_id)).device_type
+        # elif page_type == 'network':
+        #     #for basestation we need to fetch sector_configured_on device field from the device
+        #     device_id= Device.objects.get(id=int(device_id)).id
 
-        #first check for the service configuration table
+        #Fetch the Service names that are configured w.r.t to a device.
         inventory_device_service_name = DeviceServiceConfiguration.objects.\
-            filter(device_name=Device.objects.get(id=int(device_id)).device_name).\
+            filter(device_name= Device.objects.get(id=int(device_id)).device_name).\
             values_list('service_name', flat=True)
 
-        if not len(inventory_device_service_name):
-            inventory_device_service_name= DeviceType.objects.get(id= inventory_device_type_id) \
-                .service.values_list('name', flat=True)
+        # if not len(inventory_device_service_name):
+        #     inventory_device_service_name= DeviceType.objects.get(id= inventory_device_type_id) \
+        #         .service.values_list('name', flat=True)
 
         ##also append PD and RTA as latency and packet drop
 
-        result['data']['objects'].append({
-                'name':"rta",
-                'title':"Latency",
-                #@TODO: all the ursl must end with a / - django style
-                'url':'performance/service/ping/service_data_source/rta/'+page_type+'/device/'+str(device_id),
-                'active':0
-            })
-
-        result['data']['objects'].append({
-                'name':"pl",
-                'title':"Packet Drop",
-                #@TODO: all the ursl must end with a / - django style
-                'url':'performance/service/ping/service_data_source/pl/'+page_type+'/device/'+str(device_id),
-                'active':0
-            })
+        result['data']['objects']['network_perf_tab'].append(
+                            {
+                            'name':"rta",
+                            'title':"Latency",
+                            'url':'performance/service/ping/service_data_source/rta/'+page_type+'/device/'+str(device_id),
+                            'active':0,
+                            'service_type_tab':'network_perf_tab'
+                            })
+        result['data']['objects']['network_perf_tab'].append(
+                            {
+                            'name':"rta",
+                            'title':"Latency",
+                            'url':'performance/service/ping/service_data_source/rta/'+page_type+'/device/'+str(device_id),
+                            'active':0,
+                            'service_type_tab':'network_perf_tab'
+                            })
 
         for service_name in inventory_device_service_name:
             service_data_sources= Service.objects.get(name= service_name).service_data_sources.all()
             for service_data_source in service_data_sources:
-                result['data']['objects'].append({
-                    'name':service_data_source.name,
-                    'title':service_data_source.alias +' ('+service_name+')',
-                    #@TODO: all the ursl must end with a / - django style
-                    'url':'performance/service/'+service_name+'/service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
-                    'active':0
-                })
+
+                if '_status' in service_data_source.name:
+                    result['data']['objects']['service_status_tab'].append(
+                        {
+                        'name': service_data_source.name,
+                        'title':service_data_source.alias +' ('+service_name+')',
+                        'url':'performance/service/'+service_name+'/service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
+                        'active':0,
+                        })
+
+                elif '_invent' in service_data_source.name:
+                    result['data']['objects']['inventory_status_tab'].append(
+                        {
+                        'name':service_data_source.name,
+                        'title':service_data_source.alias +' ('+service_name+')',
+                        'url':'performance/service/'+service_name+'/service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
+                        'active':0,
+                        })
+                else:
+                    result['data']['objects']['service_perf_tab'].append(
+                        {
+                        'name':service_data_source.name,
+                        'title':service_data_source.alias +' ('+service_name+')',
+                        'url':'performance/service/'+service_name+'/service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
+                        'active':0,
+                        })
 
         result['success']=1
         result['message']='Substation Devices Services Data Source Fetched Successfully.'
@@ -621,7 +646,7 @@ class Get_Service_Type_Performance_Data(View):
 
 
         now=format(datetime.datetime.now(),'U')
-        now_minus_60_min=format(datetime.datetime.now() + datetime.timedelta(minutes=-60), 'U')
+        now_minus_60_min=format(datetime.datetime.now() + datetime.timedelta(minutes= -60), 'U')
 
         if service_data_source_type in ['pl', 'rta']:
 
@@ -631,6 +656,21 @@ class Get_Service_Type_Performance_Data(View):
                                                                 sys_timestamp__gte=now_minus_60_min,
                                                                 sys_timestamp__lte=now).using(alias=inventory_device_machine_name)
             # log.info("network performance data %s device name" %(performance_data, inventory_device_name))
+
+        elif '_status' in service_data_source_type:
+            performance_data= ServiceStatus.objects.filter(device_name=inventory_device_name,
+                                                                service_name=service_name,
+                                                                data_source=service_data_source_type,
+                                                                sys_timestamp__gte=now_minus_60_min,
+                                                                sys_timestamp__lte=now).using(alias=inventory_device_machine_name)
+        elif '_invent' in service_data_source_type:
+
+            performance_data= InventoryStatus.objects.filter(device_name=inventory_device_name,
+                                                                service_name=service_name,
+                                                                data_source=service_data_source_type,
+                                                                sys_timestamp__gte=now_minus_60_min,
+                                                                sys_timestamp__lte=now).using(alias=inventory_device_machine_name)
+
         else:
             performance_data= PerformanceService.objects.filter(device_name=inventory_device_name,
                                                                service_name=service_name,

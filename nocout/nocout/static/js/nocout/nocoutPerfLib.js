@@ -79,7 +79,7 @@ var perf_that = "",
 					device_status = result.data.objects;
 					/*Loop for table headers*/
 					var headers = "<tr>";
-					$.each(device_status.headers,function(key,value) {
+					$.each(device_status.headers,function(key, value) {
 						headers += '<th>'+value+'</th>';
 					});
 
@@ -89,7 +89,7 @@ var perf_that = "",
 
 					/*Loop for status table data*/
 					var status_val = "<tr>";
-					$.each(device_status.values,function(key,value) {
+					$.each(device_status.values,function(key, value) {
 						status_val += '<td>'+value+'</td>';
 					});
 
@@ -115,10 +115,11 @@ var perf_that = "",
  	 * @param get_service_url "String", It contains the url to fetch the services.
  	 * @param device_id "INT", It contains the ID of current device.
  	 */
- 	this.getServices = function(get_service_url,device_id) {
+ 	this.getServices = function(get_service_url, device_id) {
 
  		/*Ajax call to Get Devices API*/
         var get_url = get_service_url;
+        console.log(get_service_url);
 		$.ajax({
 			crossDomain: true,
 			url : get_url,
@@ -129,47 +130,53 @@ var perf_that = "",
 				if(result.success == 1) {
 					var active_tab_id = "",
 						active_tab_url = "";
-					device_services = result.data.objects;
+					device_services_tab = Object.keys(result.data.objects);
+
+
 					/*Loop to get services from object*/
                     var li_style = "background: #f5f5f5; width:100%; border:1px solid #dddddd;"
                     var li_a_style = "background: none; border:none;"
-                    var service_tabs = '<div class="col-md-3">'
-					service_tabs += '<ul class="nav nav-tabs">';
 
-                    var service_tabs_data = '<div class="col-md-9">'
-                    service_tabs_data += '<div class="tab-content">';
-                    var count = 0
-					$.each(device_services,function(key,value) {
-						if(count == 0) {
-							count += 1;
-							active_tab_id = value.name;
-							active_tab_url = "/"+value.url;
+                    var count = 0;
 
-							service_tabs += '<li class="active" style="'+li_style+'"><a href="#'+value.name+'_block" url="'+value.url+'" id="'+value.name+'_tab" data-toggle="tab" style="'+li_a_style+'">'+value.title+'</a></li>';
-							service_tabs_data += '<div class="tab-pane active" id="'+value.name+'_block"><div class="chart_container"><div id="'+value.name+'_chart" style="height:350px;width:100%;"></div></div></div>';
-						} else {
-							service_tabs += '<li class="" style="'+li_style+'"><a href="#'+value.name+'_block" url="'+value.url+'" id="'+value.name+'_tab" data-toggle="tab" style="'+li_a_style+'">'+value.title+'</a></li>';
-							service_tabs_data += '<div class="tab-pane" id="'+value.name+'_block"><div class="chart_container" style="width:100%;"><div id="'+value.name+'_chart" style="height:350px;width:100%;"></div></div></div>';
-						}
-					});
+                    for(var i= 0; i<device_services_tab.length; i++){
+                        device_services = result.data.objects[device_services_tab[i]];
+                        var tabs_with_data = "";
+                        var service_tabs = '<div class="col-md-3">'
+                        service_tabs += '<div class="tabbable row"><ul class="nav nav-tabs">';
 
-					service_tabs += "</ul></div>";
-					service_tabs_data += "</div>";
+                        var service_tabs_data = '<div class="col-md-9">'
+                        service_tabs_data += '<div class="tab-content">';
+                        $.each(device_services, function(key, value) {
+                            if(count == 0) {
+                                count += 1;
+                                active_tab_id = value.name;
+                                active_tab_url = "/"+value.url;
 
-					var tabs_with_data = service_tabs +" "+service_tabs_data;
+                                service_tabs += '<li class="active" style="'+li_style+'"><a href="#'+value.name+'_block" url="'+value.url+'" id="'+value.name+'_tab" data-toggle="tab" style="'+li_a_style+'">'+value.title+'</a></li>';
+                                service_tabs_data += '<div class="tab-pane active" id="'+value.name+'_block"><div class="chart_container"><div id="'+value.name+'_chart" style="height:350px;width:100%;"></div></div></div>';
+                            } else {
+                                service_tabs += '<li class="" style="'+li_style+'"><a href="#'+value.name+'_block" url="'+value.url+'" id="'+value.name+'_tab" data-toggle="tab" style="'+li_a_style+'">'+value.title+'</a></li>';
+                                service_tabs_data += '<div class="tab-pane" id="'+value.name+'_block"><div class="chart_container" style="width:100%;"><div id="'+value.name+'_chart" style="height:350px;width:100%;"></div></div></div>';
+                            }
+                        });
+                        service_tabs += "</ul></div></div>";
+                        service_tabs_data += "</div>";
 
-					$("#services_tab_container").html(tabs_with_data);
+                        tabs_with_data = service_tabs +" "+service_tabs_data;
 
+                        $("#"+device_services_tab[i]).html(tabs_with_data);
+                    }
 					/*Call getServiceData function to fetch the data for currently active service*/
-					perf_that.getServiceData(active_tab_url,active_tab_id,device_id);
+//					perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
 
                     /*Bind click event on tabs*/
-                    $('#services_tab_container .nav-tabs li a').click(function(e) {
-                        var serviceId = e.currentTarget.id.slice(0, -4);
-                        //@TODO: all the ursl must end with a / - django style
-                        var serviceDataUrl = window.location.origin + "/" + $.trim(e.currentTarget.attributes.url.nodeValue);
-                        perfInstance.getServiceData(serviceDataUrl,serviceId,current_device);
-                    });
+//                    $('#services_tab_container .nav-tabs li a').click(function(e) {
+//                        var serviceId = e.currentTarget.id.slice(0, -4);
+//                        //@TODO: all the ursl must end with a / - django style
+//                        var serviceDataUrl = window.location.origin + "/" + $.trim(e.currentTarget.attributes.url.nodeValue);
+//                        perfInstance.getServiceData(serviceDataUrl, serviceId, current_device);
+//                    });
 
 				} else {
 					$("#services_tab_container").html("<p>"+result.message+"</p>");
@@ -192,7 +199,7 @@ var perf_that = "",
  	 * @param service_id "String", It contains unique name for service.
  	 * @param device_id "INT", It contains the ID of current device.
  	 */
- 	this.getServiceData = function(get_service_data_url,service_id,device_id) {
+ 	this.getServiceData = function(get_service_data_url, service_id, device_id) {
 
  		/*Ajax call to Get Devices API*/
         var get_url = get_service_data_url;
