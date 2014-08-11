@@ -242,6 +242,13 @@ function advanceSearchClass() {
 			            sticky: true
 			        });
 				}
+
+				/*Remove backdrop div & hide spinner*/
+                $("#ajax_backdrop").remove();
+                if(!($("#ajax_spinner").hasClass("hide"))) {
+                    /*Hide ajax_spinner div*/
+                    $("#ajax_spinner").addClass("hide");
+                }
 			},
 			/*If there is a problem in calling server*/
 			error : function(err) {
@@ -256,6 +263,13 @@ function advanceSearchClass() {
 		            // (bool | optional) if you want it to fade out on its own or just sit there
 		            sticky: true
 		        });
+
+		        /*Remove backdrop div & hide spinner*/
+                $("#ajax_backdrop").remove();
+                if(!($("#ajax_spinner").hasClass("hide"))) {
+                    /*Hide ajax_spinner div*/
+                    $("#ajax_spinner").addClass("hide");
+                }
 			}
 		});		
 	};
@@ -460,6 +474,13 @@ function advanceSearchClass() {
 					/*Enable the refresh button*/
 					$("#resetFilters").button("complete");
 				}
+
+				/*Remove backdrop div & hide spinner*/
+                $("#ajax_backdrop").remove();
+                if(!($("#ajax_spinner").hasClass("hide"))) {
+                    /*Hide ajax_spinner div*/
+                    $("#ajax_spinner").addClass("hide");
+                }
 			},
 			error : function(err) {
 
@@ -478,6 +499,13 @@ function advanceSearchClass() {
 
 				/*Enable the refresh button*/
 				$("#resetFilters").button("complete");
+
+				/*Remove backdrop div & hide spinner*/
+                $("#ajax_backdrop").remove();
+                if(!($("#ajax_spinner").hasClass("hide"))) {
+                    /*Hide ajax_spinner div*/
+                    $("#ajax_spinner").addClass("hide");
+                }
 			}
 		});
 	};
