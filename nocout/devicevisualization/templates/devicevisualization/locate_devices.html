@@ -4,7 +4,7 @@
     <li>Google Maps</li>
 {% endblock %}
 {% block content_title %}Google Maps{% endblock %}
-{% block content_description %}Location wise devices distribution{% endblock %}
+{% block content_description %} {% endblock %}
 {% load staticfiles %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
@@ -16,9 +16,10 @@
     <!-- GIS Page  -->
     <span class="date-range pull-right">
         <div class="btn-group">
-            <ul class="list-unstyled list-inline">
-                <li>Show Connected SS <input type="checkbox" name="showAllSS" id="showAllSS" onclick="networkMapInstance.plotAllDevice_gmap()" style="vertical-align: text-top;" /></li>
-                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines" onclick="networkMapInstance.showConnectionLines_gmap()" style="vertical-align: text-top;" /></li>
+            <ul class="list-unstyled list-inline gis_page_setting">
+                <li class="alert alert-block alert-info">
+                    <b>Status</b><br/> <span id="gis_status_txt"></span>
+                </li>
                 <li>
                     <button id="advFilterBtn" class="btn btn-info" onclick="showAdvFilters();" data-complete-text="<i class='fa fa-filter'></i> Advance Filters" data-loading-text="Please Wait...">
                         <i class='fa fa-filter'></i> Advance Filters
@@ -35,7 +36,7 @@
                     <button id="showToolsBtn" class="btn btn-info" onclick="showToolsPanel();">
                         <i class='fa fa-cog'></i> Tools
                     </button>
-                    <button id="removeToolsBtn" class="btn btn-danger hide" onclick="removetoolsPanel();" style="margin-left:10px;">
+                    <button id="removeToolsBtn" class="btn btn-danger hide" onclick="removetoolsPanel();">
                         <i class='fa fa-times'></i> Remove Tools
                     </button>
                 </li>
@@ -46,6 +47,65 @@
 {% endblock %}
 
 {% block content %}
+
+    <div class="col-md-12">
+
+        <!-- Advance Filters Content Start-->
+        <div id="advFilterContainerBlock" class="hide">
+            <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Advance Filters</h4>
+            <div id="advFilterFormContainer" class="col-md-8 col-md-offset-2"></div>
+            <div class="clearfix"></div>
+
+            <div class="col-md-8 col-md-offset-2">                
+                <button class="pull-right btn btn-danger" style="margin-left:10px;" id="cancelAdvFilterBtn">Cancel</button>
+                <button class="pull-right btn btn-success" id="setAdvFilterBtn">Filter</button>
+            </div>
+            <div class="clearfix"></div>
+            <div class="divide-20"></div>
+        </div>
+        <!-- Advance Filters Content End-->
+
+        <!-- Select Device Content Start-->
+        <div id="selectDeviceContainerBlock" class="hide">
+            <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Select Devices</h4>
+            <ul class="list-unstyled list-inline">
+                <li>Show Connected SS <input type="checkbox" name="showAllSS" id="showAllSS" onclick="networkMapInstance.plotAllDevice_gmap()" style="vertical-align: text-top;" /></li>
+                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines" onclick="networkMapInstance.showConnectionLines_gmap()" style="vertical-align: text-top;" /></li>
+            </ul>
+            <div class="divide-20"></div>
+        </div>
+        <!-- Select Device Content End-->
+
+        <!-- Tools Content Start-->
+        <div id="toolsContainerBlock" class="hide">
+            <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Gmap Tools</h4>
+            <ul class="list-unstyled list-inline">
+                <li>
+                    <button id="ruler_select" class="btn btn-info">Ruler</button>
+                    <button id="ruler_remove" class="btn btn-danger hide">Remove Ruler</button>
+                </li>
+                <li>
+                    <button id="point_select" class="btn btn-info">Add Point</button>
+                    <button id="point_remove" class="btn btn-danger hide">Remove Point</button>
+                </li>
+                <li>
+                    <button id="line_select" class="btn btn-info">Add Line</button>
+                    <button id="line_remove" class="btn btn-danger hide">Remove Line</button>
+                </li>                        
+                <li>
+                    <button id="freeze_select" class="btn btn-info">Freeze</button>
+                    <button id="freeze_remove" class="btn btn-danger hide">Un-Freeze</button>
+                </li>
+                <li>
+                    <button class="btn btn-info">Export Data</button>
+                </li>
+            </ul>
+            <div class="divide-10"></div>
+        </div>
+        <!-- Tools Content End-->
+        <div class="clearfix"></div>
+    </div>
+
 <div class='box border lite mapContainerBlock'>
     <div class='box-title'>
         <h4 class="col-md-3"><i class='fa fa-map-marker'></i> GOOGLE MAPS <i class="fa fa-spinner fa fa-spin" id="loadingIcon">&nbsp;</i></h4>
@@ -88,57 +148,21 @@
             </ul>
         </div>
         <!--Filters Block End-->
-        <div class="clear"></div>
+        <div class="clearfix"></div>
     </div>
+
     <div class='box-body' style="position:relative">
 
         <!--Map Container Start-->
         <div id="deviceMap"></div>
         <!--Map Container End-->
 
-        <!--Tools Panel Start-->
-        <div id="toolsContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">
-                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#tools">Google Map Tools</a>
-                    </h3>
-                </div>
-                <div id="tools" class="panel-collapse in">
-                    <div class="panel-body" align="center">
-                        <ul class="list-unstyled">
-                            <li>
-                                <button id="ruler_select" class="btn btn-info">Ruler</button>
-                                <button id="ruler_remove" class="btn btn-danger hide">Remove Ruler</button>
-                            </li>
-                            <li>
-                                <button id="point_select" class="btn btn-info">Add Point</button>
-                                <button id="point_remove" class="btn btn-danger hide">Remove Point</button>
-                            </li>
-                            <li>
-                                <button id="line_select" class="btn btn-info">Add Line</button>
-                                <button id="line_remove" class="btn btn-danger hide">Remove Line</button>
-                            </li>                        
-                            <li>
-                                <button id="freeze_select" class="btn btn-info">Freeze</button>
-                                <button id="freeze_remove" class="btn btn-danger hide">Un-Freeze</button>
-                            </li>
-                            <li>
-                                <button class="btn btn-info">Export Data</button>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!--Tools Panel End-->
-
         <!--SideInfo Panel Start-->
         <div id="sideInfoContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <h3 class="panel-title">
-                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#sideInfo">Selected Devices</a>
+                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#sideInfo">Selected Devices</a> <i class="fa fa-spinner fa fa-spin"> </i>
                     </h3>
                 </div>
                 <div id="sideInfo" class="panel-collapse in">
