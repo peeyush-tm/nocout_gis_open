@@ -308,3 +308,17 @@
 #tools .panel-body ul li button {
     width: 120px;
 }
+
+/*Page Settings GMAP*/
+.gis_page_setting {
+    margin-bottom: 5px;
+}
+
+.gis_page_setting li.alert {
+    
+    width: 220px;
+    white-space: normal;
+    margin-bottom: 15px;
+    padding: 5px;
+}
+.gis_page_setting
