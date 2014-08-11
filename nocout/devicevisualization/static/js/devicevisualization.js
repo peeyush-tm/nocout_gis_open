@@ -1,4 +1,10 @@
-var mapPageType = "";
+var mapPageType = "",
+    hasAdvFilter = 0,
+    hasSelectDevice = 0,
+    hasTools = 0;
+
+/*Call get_page_status function to show the current status*/
+get_page_status();
 
 /**
  * This funciton returns the page name of currenly opened page
@@ -94,6 +100,30 @@ function showAdvFilters() {
 
     advSearch.getFilterInfo("filterInfoModal","Advance Filters","advFilterBtn",getFilterApi,setFilterApi);
 }
+    
+/*If 'Filter' button of advance filter is clicked*/
+$("#setAdvFilterBtn").click(function(e) {
+
+    /*Reset advance filter status flag*/
+    hasAdvFilter = 1;
+    advSearch.callSetFilter();
+
+    /*Call get_page_status function to show the current status*/
+    get_page_status();
+
+});
+
+/*If 'Cancel' button of advance filter form is clicked*/
+$("#cancelAdvFilterBtn").click(function(e) {
+
+    $("#advFilterFormContainer").html("");
+
+    if(!($("#advFilterContainerBlock").hasClass("hide"))) {
+        $("#advFilterContainerBlock").addClass("hide");
+    }
+
+    advSearch.resetVariables();
+});
 
 /**
  * This function triggers when remove filters button is clicked
@@ -101,23 +131,46 @@ function showAdvFilters() {
  */
 function removeAdvFilters() {
 
+    /*Reset advance filter status flag*/
+    hasAdvFilter = 0;
+
     advSearch.removeFilters();
+
+    /*Call get_page_status function to show the current status*/
+    get_page_status();
 }
 
 /*Trigers when "Create Polygon" button is clicked*/
 $("#createPolygonBtn").click(function(e) {
+
+    if($("#selectDeviceContainerBlock").hasClass("hide")) {
+        $("#selectDeviceContainerBlock").removeClass("hide");
+    }
 
     $("#createPolygonBtn").button("loading");
     $("#advFilterBtn").button("loading");
     $("#resetFilters").button("loading");
 
     networkMapInstance.createPolygon();
+
+    hasSelectDevice = 1;
+
+    /*Call get_page_status function to show the current status*/
+    get_page_status();
 });
 
 /*triggers when clear selection button is clicked*/
 $("#clearPolygonBtn").click(function(e) {
 
+    if(!($("#selectDeviceContainerBlock").hasClass("hide"))) {
+        $("#selectDeviceContainerBlock").addClass("hide");
+    }
+
     networkMapInstance.clearPolygon();
+    hasSelectDevice = 0;
+
+    /*Call get_page_status function to show the current status*/
+    get_page_status();
 });
 
 
@@ -127,6 +180,8 @@ $("#clearPolygonBtn").click(function(e) {
  */
 function showToolsPanel() {
 
+    hasTools = 1;
+
     /*Hide Tools Button*/
     $("#showToolsBtn").addClass("hide");
 
@@ -134,10 +189,15 @@ function showToolsPanel() {
     $("#removeToolsBtn").removeClass("hide");
 
     /*Show Tools Panel*/
-    $("#toolsContainer").removeClass("hide");
+    $("#toolsContainerBlock").removeClass("hide");
+
+    /*Call get_page_status function to show the current status*/
+    get_page_status();
 }
 
 function removetoolsPanel() {    
+
+    hasTools = 0;
 
     /*Hide Tools Button*/
     $("#showToolsBtn").removeClass("hide");
@@ -146,7 +206,7 @@ function removetoolsPanel() {
     $("#removeToolsBtn").addClass("hide");
 
     /*Show Tools Panel*/
-    $("#toolsContainer").addClass("hide");
+    $("#toolsContainerBlock").addClass("hide");
 
     if($("#ruler_select").hasClass("hide")) {
         $("#ruler_remove").addClass("hide");
@@ -169,6 +229,8 @@ function removetoolsPanel() {
     }
 
     networkMapInstance.clearToolsParams_gmap();
+    /*Call get_page_status function to show the current status*/
+    get_page_status();
 }
 
 /**
@@ -231,3 +293,32 @@ $("#freeze_remove").click(function(e) {
 
     networkMapInstance.unfreezeDevices_gmap();
 });
+
+/**
+ * This function get the current status & show it on gmap/google eartg page.
+ */
+
+function get_page_status() {
+
+    var status_txt = "";
+
+    if(hasAdvFilter == 0 && hasSelectDevice == 0 && hasTools == 0) {
+        status_txt = "Default";
+    } else if(hasAdvFilter == 0 && hasSelectDevice == 0 && hasTools == 1) {
+        status_txt = "Gmap Tools Applied";
+    } else if(hasAdvFilter == 0 && hasSelectDevice == 1 && hasTools == 0) {
+        status_txt = "Select Devices Applied";
+    } else if(hasAdvFilter == 0 && hasSelectDevice == 1 && hasTools == 1) {
+        status_txt = "Select Devices Applied<br/>Gmap Tools Applied";
+    } else if(hasAdvFilter == 1 && hasSelectDevice == 0 && hasTools == 0) {
+        status_txt = "Advance Filters Applied";
+    } else if(hasAdvFilter == 1 && hasSelectDevice == 0 && hasTools == 1) {
+        status_txt = "Advance Filters Applied<br/>Gmap Tools Applied";
+    } else if(hasAdvFilter == 1 && hasSelectDevice == 1 && hasTools == 0) {
+        status_txt = "Advance Filters Applied<br/>Select Devices Applied";
+    } else if(hasAdvFilter == 1 && hasSelectDevice == 1 && hasTools == 1) {
+        status_txt = "Advance Filters Applied<br/>Select Devices Applied<br/>Gmap Tools Applied";
+    }
+
+    $("#gis_status_txt").html(status_txt);
+}

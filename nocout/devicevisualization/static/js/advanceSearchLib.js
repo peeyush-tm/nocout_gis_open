@@ -1,6 +1,7 @@
 /*Global Variables*/
 var advSearch_self = "",
 	gmapInstance = "",
+	setFilterApiUrl = "",
 	earthInstance = "",
     filtersInfoArray = [],
     templateData = "",
@@ -31,9 +32,11 @@ function advanceSearchClass() {
 	 * @param windowTitle "String" It is title of the popup
 	 * @param buttonId "String" It is the dom selector or ID of the clicked button.
 	 * @param getApiUrl "String" It is the url of the get_filter API
-	 * @param setApiUrl "String" It is the url of the set_filter API
+	 * @param setFilterApiUrl "String" It is the url of the set_filter API
 	 */
 	this.getFilterInfo = function(domElemet,windowTitle,buttonId,getApiUrl,setApiUrl) {
+
+		setFilterApiUrl = setApiUrl;
 
 		/*If any filter is applied before then save the last filter array in other variable*/
 		if(appliedAdvFilter.length != 0) {
@@ -66,7 +69,7 @@ function advanceSearchClass() {
 
 					filtersInfoArray = result.data.objects;
 
-					templateData += '<div class="iframe-container"><div class="content-container"><div id="'+domElemet+'" class="col-md-12 advanceFiltersContainer">';
+					templateData += '<div class="iframe-container"><div class="content-container"><div id="'+domElemet+'" class="advanceFiltersContainer">';
 					templateData += '<form id="'+domElemet+'_form"><div class="form-group form-horizontal">';
 
 					formElements = "";
@@ -77,7 +80,7 @@ function advanceSearchClass() {
 
 						if(filtersInfoArray[i] != null) {
 
-							formElements += '<div class="form-group"><label for="'+filtersInfoArray[i].key+'" class="col-sm-3 control-label">';
+							formElements += '<div class="form-group"><label for="'+filtersInfoArray[i].key+'" class="col-sm-4 control-label">';
 							formElements += filtersInfoArray[i].title;
 							formElements += '</label><div class="col-sm-8">';
 
@@ -173,117 +176,14 @@ function advanceSearchClass() {
 					}
 
 					templateData += elementsArray.join('');
-					templateData += '</div><div class="clearfix"></div></form>';
-					templateData += '<div class="clearfix"></div></div></div><iframe class="iframeshim" frameborder="0" scrolling="no"></iframe></div>';
+					templateData += '<div class="clearfix"></div></div><div class="clearfix"></div></form>';
+					templateData += '<div class="clearfix"></div></div></div><iframe class="iframeshim" frameborder="0" scrolling="no"></iframe></div><div class="clearfix"></div>';
 
-					/*Call the bootbox to show the popup with the fetched filters*/
-					bootbox.dialog({
-						message: templateData,
-						title: '<i class="fa fa-filter">&nbsp;</i> '+windowTitle,
-						buttons: {
-							success: {
-								label: "Search",
-								className: "btn-success",
-								callback: function() {
-									
-									for(var j=0;j<filtersInfoArray.length;j++) {
+					$("#advFilterFormContainer").html(templateData);
 
-										resultantObject = {};
-
-										var elementType = $.trim(filtersInfoArray[j].element_type);
-										var selectId = filtersInfoArray[j].key;
-
-										/*Check Element Type*/
-										if(elementType == "multiselect") {
-
-											var val = $("#filter_"+selectId).select2("val");
-											if(val.length > 0) {
-
-												resultantObject["field"] = selectId;
-												resultantObject["value"] = val;
-											}
-										} else if(elementType == "select") {
-
-											var selectedVal = $("#filter_"+selectId).select2("val");
-											
-											if(selectedVal.length > 0) {
-
-												resultantObject["field"] = selectId;
-												resultantObject["value"] = selectedVal;
-											}
-										} else if(elementType == "checkbox") {
-
-											var checkboxArray = [];
-
-											for(var k=0;k<filtersInfoArray[j].values.length;k++) {
-
-												if($("#checkbox_"+filtersInfoArray[j].values[k].id)[0].checked == true) {
-
-													checkboxArray.push($("#checkbox_"+filtersInfoArray[j].values[k].id)[0].value);
-												}
-											}
-
-											if(checkboxArray.length > 0) {
-
-												resultantObject["field"] = filtersInfoArray[j].key;
-												resultantObject["value"] = checkboxArray;
-											}
-										} else if(elementType == "radio") {
-
-											var radioArray = [];
-
-											for(var k=0;k<filtersInfoArray[j].values.length;k++) {
-
-												if($("#radio_"+filtersInfoArray[j].values[k].id)[0].checked == true) {
-
-													radioArray.push($("#radio_"+filtersInfoArray[j].values[k].id)[0].value)												
-												}
-											}
-
-											if(radioArray.length > 0) {
-
-												resultantObject["field"] = filtersInfoArray[j].key;
-												resultantObject["value"] = radioArray;
-											}
-										} else {
-
-											var typedText = $("#filter_"+selectId).val();
-											
-											if(typedText.length > 0) {
-
-												resultantObject["field"] = selectId;
-												resultantObject["value"] = typedText;
-											}
-										}
-
-										if(resultantObject.field != undefined) {
-
-											appliedAdvFilter.push(resultantObject);
-										}									
-									}
-									/*Stringify the object array to pass it in the query parameters for in set filter API*/
-									searchParameters = JSON.stringify(appliedAdvFilter);
-
-									/*call the setFilters function with the searchparamerts & setFilters API url*/
-									advSearch_self.setFilters(searchParameters,setApiUrl);
-
-									/*Call the reset function*/
-									advSearch_self.resetVariables();
-								}
-							},
-							danger: {
-								label: "Cancel",
-								className: "btn-danger",
-								callback: function() {
-									
-									/*Call the reset function*/
-									advSearch_self.resetVariables();
-								}
-							}
-						}
-					});
-
-					$(".modal-footer").append('<iframe class="iframeshim" frameborder="0" scrolling="no"></iframe>');
+					if($("#advFilterContainerBlock").hasClass("hide")) {
+						$("#advFilterContainerBlock").removeClass("hide");
+					}
 						
 					/*Initialize the select2*/
 					$(".advanceFiltersContainer select").select2();
@@ -361,8 +261,116 @@ function advanceSearchClass() {
 	};
 
 	/**
+	 * This method generates get parameter for setfilter API & call setFilter function
+	 * @method callSetFilter
+	 */
+	this.callSetFilter = function() {
+
+		for(var j=0;j<filtersInfoArray.length;j++) {
+
+			resultantObject = {};
+
+			var elementType = $.trim(filtersInfoArray[j].element_type);
+			var selectId = filtersInfoArray[j].key;
+
+			/*Check Element Type*/
+			if(elementType == "multiselect") {
+
+				var val = $("#filter_"+selectId).select2("val");
+				if(val.length > 0) {
+
+					resultantObject["field"] = selectId;
+					resultantObject["value"] = val;
+				}
+			} else if(elementType == "select") {
+
+				var selectedVal = $("#filter_"+selectId).select2("val");
+				
+				if(selectedVal.length > 0) {
+
+					resultantObject["field"] = selectId;
+					resultantObject["value"] = selectedVal;
+				}
+			} else if(elementType == "checkbox") {
+
+				var checkboxArray = [];
+
+				for(var k=0;k<filtersInfoArray[j].values.length;k++) {
+
+					if($("#checkbox_"+filtersInfoArray[j].values[k].id)[0].checked == true) {
+
+						checkboxArray.push($("#checkbox_"+filtersInfoArray[j].values[k].id)[0].value);
+					}
+				}
+
+				if(checkboxArray.length > 0) {
+
+					resultantObject["field"] = filtersInfoArray[j].key;
+					resultantObject["value"] = checkboxArray;
+				}
+			} else if(elementType == "radio") {
+
+				var radioArray = [];
+
+				for(var k=0;k<filtersInfoArray[j].values.length;k++) {
+
+					if($("#radio_"+filtersInfoArray[j].values[k].id)[0].checked == true) {
+
+						radioArray.push($("#radio_"+filtersInfoArray[j].values[k].id)[0].value)												
+					}
+				}
+
+				if(radioArray.length > 0) {
+
+					resultantObject["field"] = filtersInfoArray[j].key;
+					resultantObject["value"] = radioArray;
+				}
+			} else {
+
+				var typedText = $("#filter_"+selectId).val();
+				
+				if(typedText.length > 0) {
+
+					resultantObject["field"] = selectId;
+					resultantObject["value"] = typedText;
+				}
+			}
+
+			if(resultantObject.field != undefined) {
+
+				appliedAdvFilter.push(resultantObject);
+			}									
+		}
+		/*Stringify the object array to pass it in the query parameters for in set filter API*/
+		searchParameters = JSON.stringify(appliedAdvFilter);
+
+		/*call the setFilters function with the searchparamerts & setFilters API url*/
+		advSearch_self.setFilters(searchParameters,setFilterApiUrl);
+
+		/*Call the reset function*/
+		advSearch_self.resetVariables();
+
+		$("#advFilterFormContainer").html("");
+
+		if(!($("#advFilterContainerBlock").hasClass("hide"))) {
+			$("#advFilterContainerBlock").addClass("hide");
+		}
+
+		if($("#removeFilterBtn").hasClass("hide")) {
+			$("#removeFilterBtn").removeClass("hide");
+		}
+
+
+		/*show The loading Icon*/
+		$("#loadingIcon").show();
+
+		/*Enable the refresh button*/
+		$("#resetFilters").button("loading");
+
+	};
+
+	/**
 	 * This function call the set filter api & as the response pass the devices to the devicePlottingLib
-	 * @class advanceSearchLib
 	 * @method setFilters
 	 * @param searchString "String" It is the query string passed to the API
 	 * @param setFilterApi "String" It is the URL of the set filter API
@@ -390,12 +398,6 @@ function advanceSearchClass() {
 				if(result.success == 1) {
 
 					if(result.data.objects != null) {
-
-						/*Hide The loading Icon*/
-						$("#loadingIcon").show();
-
-						/*Enable the refresh button*/
-						$("#resetFilters").button("loading");
 
 				        /*Reset The basic filters dropdown*/
 				        $("#technology").val($("#technology option:first").val());
@@ -451,6 +453,12 @@ function advanceSearchClass() {
 			            // (bool | optional) if you want it to fade out on its own or just sit there
 			            sticky: true
 			        });
+
+			        /*hide The loading Icon*/
+					$("#loadingIcon").hide();
+
+					/*Enable the refresh button*/
+					$("#resetFilters").button("complete");
 				}
 			},
 			error : function(err) {
@@ -464,6 +472,12 @@ function advanceSearchClass() {
 		            // (bool | optional) if you want it to fade out on its own or just sit there
 		            sticky: true
 		        });
+
+		        /*hide The loading Icon*/
+				$("#loadingIcon").hide();
+
+				/*Enable the refresh button*/
+				$("#resetFilters").button("complete");
 			}
 		});
 	};
@@ -478,7 +492,13 @@ function advanceSearchClass() {
 		/*Reset filter data array*/
 		lastSelectedValues = [];
 		appliedAdvFilter = []
-			
+		
+		$("#advFilterFormContainer").html("");
+
+		if(!($("#advFilterContainerBlock").hasClass("hide"))) {
+			$("#advFilterContainerBlock").addClass("hide");
+		}
+
 		/*Hide Remove Filters button*/
 		if(!$("#removeFilterBtn").hasClass("hide")) {
 			$("#removeFilterBtn").addClass("hide");
