@@ -156,10 +156,9 @@ def insert_data(table, data_values, **kwargs):
         try:
                 cursor.execute(query)
 		result = cursor.fetchone()
-        except MySQLdb.Error, e:
-                raise MySQLdb.Error, e
-        db.commit()
-	
+	except mysql.connector.Error as err:
+        	raise mysql.connector.Error, err
+
 	if result:
  		query = "UPDATE `%s` " % table
 		query += """SET `device_name`=%s,`service_name`=%s,
@@ -172,8 +171,8 @@ def insert_data(table, data_values, **kwargs):
 		try:
 			data_values = map(lambda x: x + (x[0], x[3], x[1],x[4],), data_values)
                 	cursor.executemany(query, data_values)
-		except MySQLdb.Error, e:
-                        raise MySQLdb.Error, e
+		except mysql.connector.Error as err:
+        		raise mysql.connector.Error, err
                 db.commit()
 		cursor.close()
 
@@ -229,7 +228,8 @@ def mysql_conn(db=None, **kwargs):
                 user=kwargs.get('configs').get('user'),
                 passwd=kwargs.get('configs').get('sql_passwd'),
                 host=kwargs.get('configs').get('ip'),
-                db=kwargs.get('configs').get('sql_db')
+                db=kwargs.get('configs').get('sql_db'),
+		buffered=True
         )
     except mysql.connector.Error as err:
         raise mysql.connector.Error, err

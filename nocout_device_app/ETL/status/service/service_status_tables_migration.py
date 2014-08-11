@@ -123,6 +123,7 @@ def build_data(doc):
     values_list = []
     #uuid = get_machineid()
     machine_name = get_machine_name()
+    print machine_name
     local_time_epoch = get_epoch_time(doc.get('local_timestamp'))
     # Advancing loca_timestamp/sys_timestamp to next 5 mins time frame
     local_time_epoch += 300
@@ -168,9 +169,8 @@ def insert_data(table, data_values, **kwargs):
         try:
                 cursor.execute(query)
 		result = cursor.fetchone()
-        except MySQLdb.Error, e:
-                raise MySQLdb.Error, e
-        db.commit()
+	except mysql.connector.Error as err:
+        	raise mysql.connector.Error, err
 	
 	if result:
 		
@@ -181,12 +181,12 @@ def insert_data(table, data_values, **kwargs):
 		`critical_threshold`=%s, `sys_timestamp`=%s,`check_timestamp`=%s,
 		`ip_address`=%s,`severity`=%s
 		WHERE `device_name`=%s AND `site_name`=%s AND `service_name`=%s
-		""" 
+		"""
 		try:
 			data_values = map(lambda x: x + (x[0], x[3], x[1],), data_values)
                 	cursor.executemany(query, data_values)
-		except MySQLdb.Error, e:
-                        raise MySQLdb.Error, e
+		except mysql.connector.Error as err:
+        		raise mysql.connector.Error, err
                 db.commit()
 		cursor.close()
 
@@ -242,7 +242,8 @@ def mysql_conn(db=None, **kwargs):
                 user=kwargs.get('configs').get('user'),
                 passwd=kwargs.get('configs').get('sql_passwd'),
                 host=kwargs.get('configs').get('ip'),
-                db=kwargs.get('configs').get('sql_db')
+                db=kwargs.get('configs').get('sql_db'),
+		buffered=True
         )
     except mysql.connector.Error as err:
         raise mysql.connector.Error, err
