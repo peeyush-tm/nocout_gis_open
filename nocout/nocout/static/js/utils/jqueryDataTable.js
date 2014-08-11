@@ -70,7 +70,7 @@ function ourDataTableWidget()
             bServerSide: true,
             sAjaxSource: ajax_url,
             /*This is the callback funtion for data ajax call*/
-            fnDrawCallback: function(oSettings) {
+            fnInitComplete: function(oSettings) {
                 /*Remove backdrop div & hide spinner*/
                 $("#ajax_backdrop").remove();
                 if(!($("#ajax_spinner").hasClass("hide"))) {
