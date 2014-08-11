@@ -270,7 +270,7 @@ class OperationalDeviceListingTable(BaseDatatableView):
             # c. sub-station configured on (from model SubStation)
             dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-               <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(
+               <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(
                 dct['id']))
             dct.update(nms_actions='')
 
@@ -278,20 +278,20 @@ class OperationalDeviceListingTable(BaseDatatableView):
             # checking whether device is 'backhaul configured on' or not
             try:
                 if Backhaul.objects.get(bh_configured_on=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-info" title="Services Status"></i></a>\
-                                            <a href="#" onclick="delete_device({0});"><i class="fa fa-minus-square text-info" title="Delete Device"></i></a>\
-                                            <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-info" title="Add Services"></i></a>\
-                                            <a href="#" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-info" title="Edit Services"></i></a>\
-                                            <a href="#" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-info" title="Delete Services"></i></a>'.format(
+                    dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-info" title="Services Status"></i></a>\
+                                            <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-info" title="Delete Device"></i></a>\
+                                            <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-info" title="Add Services"></i></a>\
+                                            <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-info" title="Edit Services"></i></a>\
+                                            <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-info" title="Delete Services"></i></a>'.format(
                         dct['id']))
                     try:
                         if current_device.is_added_to_nms == 2:
-                            dct.update(nms_actions='<a href="#" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-info" title="Services Status"></i></a>\
-                                                    <a href="#" onclick="delete_device({0});"><i class="fa fa-minus-square text-info" title="Delete Device"></i></a>\
-                                                    <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-info" title="Add Services"></i></a>\
-                                                    <a href="#" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-info" title="Edit Services"></i></a>\
-                                                    <a href="#" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-info" title="Delete Services"></i></a>\
-                                                    <a href="#" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Sync Device"></i></a>'.format(dct['id']))
+                            dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-info" title="Services Status"></i></a>\
+                                                    <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-info" title="Delete Device"></i></a>\
+                                                    <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-info" title="Add Services"></i></a>\
+                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-info" title="Edit Services"></i></a>\
+                                                    <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-info" title="Delete Services"></i></a>\
+                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Sync Device"></i></a>'.format(dct['id']))
                     except Exception as e:
                         logger.info(e.message)
             except:
@@ -300,20 +300,20 @@ class OperationalDeviceListingTable(BaseDatatableView):
             # checking whether device is 'sector configured on' or not
             try:
                 if Sector.objects.get(sector_configured_on=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-success" title="Services Status"></i></a>\
-                                            <a href="#" onclick="delete_device({0});"><i class="fa fa-minus-square text-success" title="Delete Device"></i></a>\
-                                            <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Services"></i></a>\
-                                            <a href="#" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-success" title="Edit Services"></i></a>\
-                                            <a href="#" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-success" title="Delete Services"></i></a>'.format(
+                    dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-success" title="Services Status"></i></a>\
+                                            <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-success" title="Delete Device"></i></a>\
+                                            <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Services"></i></a>\
+                                            <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-success" title="Edit Services"></i></a>\
+                                            <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-success" title="Delete Services"></i></a>'.format(
                         dct['id']))
                     try:
                         if current_device.is_added_to_nms == 2:
-                            dct.update(nms_actions='<a href="#" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-success" title="Services Status"></i></a>\
-                                                    <a href="#" onclick="delete_device({0});"><i class="fa fa-minus-square text-success" title="Delete Device"></i></a>\
-                                                    <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Services"></i></a>\
-                                                    <a href="#" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-success" title="Edit Services"></i></a>\
-                                                    <a href="#" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-success" title="Delete Services"></i></a>\
-                                                    <a href="#" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Sync Device"></i></a>'.format(dct['id']))
+                            dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-success" title="Services Status"></i></a>\
+                                                    <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-success" title="Delete Device"></i></a>\
+                                                    <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Services"></i></a>\
+                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-success" title="Edit Services"></i></a>\
+                                                    <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-success" title="Delete Services"></i></a>\
+                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Sync Device"></i></a>'.format(dct['id']))
                     except Exception as e:
                         logger.info(e.message)
             except:
@@ -322,20 +322,20 @@ class OperationalDeviceListingTable(BaseDatatableView):
             # checking whether device is 'sub station' or not
             try:
                 if SubStation.objects.get(device=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-danger" title="Services Status"></i></a>\
-                                            <a href="#" onclick="delete_device({0});"><i class="fa fa-minus-square text-danger" title="Delete Device"></i></a>\
-                                            <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-danger" title="Add Services"></i></a>\
-                                            <a href="#" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-danger" title="Edit Services"></i></a>\
-                                            <a href="#" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-danger" title="Delete Services"></i></a>'.format(
+                    dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-danger" title="Services Status"></i></a>\
+                                            <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-danger" title="Delete Device"></i></a>\
+                                            <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-danger" title="Add Services"></i></a>\
+                                            <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-danger" title="Edit Services"></i></a>\
+                                            <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-danger" title="Delete Services"></i></a>'.format(
                         dct['id']))
                     try:
                         if current_device.is_added_to_nms == 2:
-                            dct.update(nms_actions='<a href="#" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-danger" title="Services Status"></i></a>\
-                                                    <a href="#" onclick="delete_device({0});"><i class="fa fa-minus-square text-danger" title="Delete Device"></i></a>\
-                                                    <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-danger" title="Add Services"></i></a>\
-                                                    <a href="#" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-danger" title="Edit Services"></i></a>\
-                                                    <a href="#" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-danger" title="Delete Services"></i></a>\
-                                                    <a href="#" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Sync Device"></i></a>'.format(dct['id']))
+                            dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-danger" title="Services Status"></i></a>\
+                                                    <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-danger" title="Delete Device"></i></a>\
+                                                    <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-danger" title="Add Services"></i></a>\
+                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-danger" title="Edit Services"></i></a>\
+                                                    <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-danger" title="Delete Services"></i></a>\
+                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Sync Device"></i></a>'.format(dct['id']))
                     except Exception as e:
                         logger.info(e.message)
             except:
@@ -538,15 +538,15 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             # c. sub-station configured on (from model SubStation)
             dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-               <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(
+               <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(
                 dct['id']))
             dct.update(nms_actions='')
             # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
             # checking whether device is 'backhaul configured on' or not
             try:
                 if Backhaul.objects.get(bh_configured_on=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-info" title="Add Device"></i></a>\
-                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-info" title="Add Service"></i></a>'.format(
+                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-info" title="Add Device"></i></a>\
+                        <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-info" title="Add Service"></i></a>'.format(
                         dct['id']))
             except:
                 logger.info("Device is not a backhaul.")
@@ -554,8 +554,8 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             # checking whether device is 'sector configured on' or not
             try:
                 if Sector.objects.get(sector_configured_on=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-success" title="Add Device"></i></a>\
-                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
+                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-success" title="Add Device"></i></a>\
+                        <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
                         dct['id']))
             except:
                 logger.info("Device is not sector configured on.")
@@ -563,8 +563,8 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             # checking whether device is 'sub station' or not
             try:
                 if SubStation.objects.get(device=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-danger"></i></a>\
-                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-danger" title="Add Service"></i></a>'.format(
+                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-danger"></i></a>\
+                        <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-danger" title="Add Service"></i></a>'.format(
                         dct['id']))
             except:
                 logger.info("Device is not a substation.")
@@ -766,34 +766,34 @@ class DisabledDeviceListingTable(BaseDatatableView):
             # c. sub-station configured on (from model SubStation)
             dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-               <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(
+               <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(
                 dct['id']))
             # dct.update(nms_actions='')
             # # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
             # # checking whether device is 'backhaul configured on' or not
             # try:
             #     if Backhaul.objects.get(bh_configured_on=current_device):
-            #         dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-            #             <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-            #             <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            #         dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+            #             <a href="javascript:;" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+            #             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             # except:
             #     logger.info("Device is not basestation")
             #
             # # checking whether device is 'sector configured on' or not
             # try:
             #     if Sector.objects.get(sector_configured_on=current_device):
-            #         dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-            #             <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-            #             <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            #         dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+            #             <a href="javascript:;" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+            #             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             # except:
             #     logger.info("Device is not basestation")
             #
             # # checking whether device is 'sub station' or not
             # try:
             #     if SubStation.objects.get(device=current_device):
-            #         dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-            #             <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-            #             <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            #         dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+            #             <a href="javascript:;" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+            #             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             # except:
             #     logger.info("Device is not substation.")
         return qs
@@ -992,34 +992,34 @@ class ArchivedDeviceListingTable(BaseDatatableView):
             # c. sub-station configured on (from model SubStation)
             dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-               <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(
+               <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(
                 dct['id']))
             # dct.update(nms_actions='')
             # # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
             # # checking whether device is 'backhaul configured on' or not
             # try:
             #     if Backhaul.objects.get(bh_configured_on=current_device):
-            #         dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-            #             <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-            #             <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            #         dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+            #             <a href="javascript:;" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+            #             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             # except:
             #     logger.info("Device is not basestation")
             #
             # # checking whether device is 'sector configured on' or not
             # try:
             #     if Sector.objects.get(sector_configured_on=current_device):
-            #         dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-            #             <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-            #             <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            #         dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+            #             <a href="javascript:;" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+            #             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             # except:
             #     logger.info("Device is not basestation")
             #
             # # checking whether device is 'sub station' or not
             # try:
             #     if SubStation.objects.get(device=current_device):
-            #         dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-            #             <a href="#" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
-            #             <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
+            #         dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+            #             <a href="javascript:;" onclick="sync_devices({0});"><i class="fa fa-share-square-o text-success" title="Sync device for monitoring"></i></a>\
+            #             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(dct['id']))
             # except:
             #     logger.info("Device is not substation.")
         return qs
@@ -1231,7 +1231,7 @@ class AllDeviceListingTable(BaseDatatableView):
             # c. sub-station configured on (from model SubStation)
             dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-               <a href="#" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})">\
+               <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})">\
                <i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(
                 dct['id']))
             dct.update(nms_actions='')
@@ -1239,8 +1239,8 @@ class AllDeviceListingTable(BaseDatatableView):
             # checking whether device is 'backhaul configured on' or not
             try:
                 if Backhaul.objects.get(bh_configured_on=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
+                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+                        <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
                         dct['id']))
             except:
                 logger.info("Device is not basestation")
@@ -1248,8 +1248,8 @@ class AllDeviceListingTable(BaseDatatableView):
             # checking whether device is 'sector configured on' or not
             try:
                 if Sector.objects.get(sector_configured_on=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
+                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+                        <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
                         dct['id']))
             except:
                 logger.info("Device is not basestation")
@@ -1257,8 +1257,8 @@ class AllDeviceListingTable(BaseDatatableView):
             # checking whether device is 'sub station' or not
             try:
                 if SubStation.objects.get(device=current_device):
-                    dct.update(nms_actions='<a href="#" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
-                        <a href="#" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
+                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-warning"></i></a>\
+                        <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
                         dct['id']))
             except:
                 logger.info("Device is not substation.")
