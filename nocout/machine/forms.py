@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 import re
 from django import forms
 from models import Machine
@@ -14,6 +15,13 @@ class MachineForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(MachineForm, self).__init__(*args, **kwargs)
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         self.fields['machine_ip'].required=True
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -33,6 +41,21 @@ class MachineForm(forms.ModelForm):
         Meta Information.
         """
         model = Machine
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = Machine.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """

@@ -649,22 +649,22 @@ def common_prepare_results(qs):
 
     for dct in qs:
         if dct['severity']=='DOWN' or "CRITICAL" in dct['description'] or dct['severity']=='CRITICAL':
-           dct['severity']='<div class="alert_critical"></div>'
+           dct['severity']='<i class="fa fa-circle red-dot"></i>'
            dct['current_value']='<span class="text-danger">%s</span>'%(dct['current_value'])
            dct['description']='<span class="text-danger">%s</span>'%(dct['description'])
 
-        elif dct['severity']=='WARNING' or "WARNING" in dct['description']:
-            dct['severity']='<div class="alert_major"></div>'
+        elif dct['severity']=='WARNING' or "WARNING" in dct['description'] or "WARN" in dct['description']:
+            dct['severity']='<i class="fa fa-circle orange-dot"></i>'
             dct['current_value']='<span style="color:#FFA500">%s</span>'%(dct['current_value'])
             dct['description']='<span style="color:#FFA500">%s</span>'%(dct['description'])
 
         elif dct['severity']=='UP' or "OK" in dct['description']:
-            dct['severity']='<div class="alert_normal"></div>'
+            dct['severity']='<i class="fa fa-circle green-dot"></i>'
             dct['current_value']='<span style="color:#008000">%s</span>'%(dct['current_value'])
             dct['description']='<span style="color:#008000">%s</span>'%(dct['description'])
 
         else:
-            dct['severity']='<div class="alert_informational"></div>'
+            dct['severity']='<i class="fa fa-circle grey-dot"></i>'
             dct['current_value']='<span style="color:#bba11f" >%s</span>'%(dct['current_value'])
             dct['description']='<span style="color:#bba11f">%s</span>'%(dct['description'])
 

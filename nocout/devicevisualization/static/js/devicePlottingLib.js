@@ -1964,15 +1964,31 @@ function devicePlottingClass_gmap() {
 
 				if(selectedCount == 0) {
 					
+					hasSelectDevice = 0;
+					/*Call get_page_status function to show the current status*/
+    				get_page_status();
+
 					bootbox.alert("No 'Sub-Station' under the selected area.Please re-select");
 					/*Remove current polygon from map*/
 					gmap_self.clearPolygon();
 
+					if(!($("#selectDeviceContainerBlock").hasClass("hide"))) {
+						$("#selectDeviceContainerBlock").addClass("hide");
+					}
+
 				} else if(selectedCount > 200) {
 					
+					hasSelectDevice = 0;
+					/*Call get_page_status function to show the current status*/
+    				get_page_status();
+
 					bootbox.alert("Max. limit for selecting sub-stations is 200.Please re-select");
 					/*Remove current polygon from map*/
 					gmap_self.clearPolygon();
+
+					if(!($("#selectDeviceContainerBlock").hasClass("hide"))) {
+						$("#selectDeviceContainerBlock").addClass("hide");
+					}
 
 				} else {
 					
@@ -1989,7 +2005,7 @@ function devicePlottingClass_gmap() {
 						}
 
 						devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+(i+1)+'.) '+polygonSelectedDevices[i].name+'</h5>';
-						devicesTemplate += '<div style="min-height:60px;margin:15px 0px;" id="livePolling_'+new_device_name+'"></div></div>';
+						devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'"></div></div>';
 					}
 
 					devicesTemplate += "</div>";
@@ -2043,10 +2059,13 @@ function devicePlottingClass_gmap() {
 
 										servicesOption += "<option value='"+allServices[j].value+"'>"+allServices[j].name+"</option>";
 									}
-									servicesOption += "</select></li><li class='divide-10'></li><li><select class='form-control' id='datasource_"+replace_device_name+"'><option value=''>Select Service Datasource</option></select></li><li class='divide-10'></li><li><button class='btn btn-primary' data-complete-text='Fetch' data-loading-text='Please Wait...' id='fetchBtn_"+replace_device_name+"' onClick='gmap_self.pollDevice_gmap("+deviceNameParam+")'>Fetch</button> <i class='fa fa-spinner fa fa-spin hide' id='fetch_spinner'>&nbsp;</i> </li></ul><div class='clearfix'><ul class='list-unstyled list-inline' id='pollVal_"+replace_device_name+"'></ul></div>";
+									servicesOption += "</select></li><li class='divide-10'></li><li><select class='form-control' id='datasource_"+replace_device_name+"'><option value=''>Select Service Datasource</option></select></li><li class='divide-10'></li><li><button class='btn btn-primary' data-complete-text='Fetch' data-loading-text='Please Wait...' id='fetchBtn_"+replace_device_name+"' onClick='gmap_self.pollDevice_gmap("+deviceNameParam+")'>Fetch</button> <i class='fa fa-spinner fa fa-spin hide' id='fetch_spinner'>&nbsp;</i> </li></ul><div class='clearfix'><ul class='list-unstyled' id='pollVal_"+replace_device_name+"'></ul></div>";
 
 									$("#livePolling_"+replace_device_name).append(servicesOption);
-								}								
+								}
+
+								/*Hide the spinner*/
+								$("#sideInfoContainer .panel-title i").addClass("hide");
 
 							} else {
 
@@ -2058,6 +2077,8 @@ function devicePlottingClass_gmap() {
 						            // (bool | optional) if you want it to fade out on its own or just sit there
 						            sticky: true
 						        });
+						        /*Hide the spinner*/
+								$("#sideInfoContainer .panel-title i").addClass("hide");
 							}
 						},
 						error : function(err) {
@@ -2070,9 +2091,10 @@ function devicePlottingClass_gmap() {
 					            // (bool | optional) if you want it to fade out on its own or just sit there
 					            sticky: true
 					        });
+					        /*Hide the spinner*/
+							$("#sideInfoContainer .panel-title i").addClass("hide");
 						}
-					});					
-					
+					});
 				}
 
 				$("#createPolygonBtn").button("complete");
@@ -2144,8 +2166,6 @@ function devicePlottingClass_gmap() {
 	 */
 	this.pollDevice_gmap = function(deviceName) {
 
-		$("#fetchBtn_"+deviceName).button("loading");
-
 		var selectedServiceTxt = $.trim($("#service_"+deviceName+" option:selected").text());
 		var selectedServiceVal = $.trim($("#service_"+deviceName).val());
 		
@@ -2164,15 +2184,32 @@ function devicePlottingClass_gmap() {
 
 		if(selectedServiceVal != "" && selectedDatasourceVal != "") {
 
+			$("#fetchBtn_"+deviceName).button("loading");
+
 			if($("#fetch_spinner").hasClass("hide")) {
 				$("#fetch_spinner").removeClass("hide");
 			}
+			
+			if($("#fetchVal_"+deviceName+"_"+selectedDatasourceVal).length > 0) {
+				
+				var data_with_bracket = $("#fetchVal_"+deviceName+"_"+selectedDatasourceVal).html().split(":-")[1].replace(/ +/g, "").split(","),
+					string_val = [];
 
+				/*Remove ')' from data_with_bracket array and make new array*/
+				for(var i=1;i<data_with_bracket.length;i += 2) {
+					string_val.push(data_with_bracket[i].replace(')', ''));
+				}
+
+				/*Create integer array from fetched values for sparkline chart*/
+				var chart_data = string_val.map(function(item) {
+				    return parseInt(item, 10);
+				});				
+			}
 
 			/*Make ajax call to get the live polling data.*/
 			$.ajax({
-				url : window.location.origin+"/device/lp_service_data/"+"?device=['"+actual_device_name+"']&service=['"+selectedServiceTxt+"']&datasource=['"+selectedDatasourceTxt+"']",
-				// url : window.location.origin+"/"+"static/livePolling.json",
+				// url : window.location.origin+"/device/lp_service_data/"+"?device=['"+actual_device_name+"']&service=['"+selectedServiceTxt+"']&datasource=['"+selectedDatasourceTxt+"']",
+				url : window.location.origin+"/"+"static/livePolling.json",
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
@@ -2185,11 +2222,38 @@ function devicePlottingClass_gmap() {
 					}
 
 					if(result.success == 1) {
-
+						
 						/*Check that polling value exist or not*/
 						if(result.data.value.length > 0) {
 
-							$("#pollVal_"+deviceName+" ").append("<li>"+result.data.value[0]+"</li>");
+							var dateObj = new Date(),
+								current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(),
+								final_chart_data = [];
+
+							if($("#fetchVal_"+deviceName+"_"+selectedDatasourceVal).length == 0) {
+
+								var fetchValString = "";
+								fetchValString += "<li id='fetchVal_"+deviceName+"_"+selectedDatasourceVal+"' style='margin-top:8px;margin-bottom:8px;'><b>"+selectedDatasourceTxt.toUpperCase()+"</b> :- ( <i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.value[0]+")</li>";
+								fetchValString += "<li><span class='sparkline' id='sparkline_"+deviceName+"_"+selectedDatasourceVal+"'></span></li>";
+
+								$("#pollVal_"+deviceName+" ").append(fetchValString);
+								/*Sparkline Chart Data*/
+								final_chart_data.push((+result.data.value[0]));
+							
+							} else {
+								$("#fetchVal_"+deviceName+"_"+selectedDatasourceVal).append(", ( <i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.value[0]+")");
+								/*Sparkline Chart Data*/
+								final_chart_data = chart_data;
+							}
+
+							/*Plot sparkline chart with the fetched polling value*/
+							$("#sparkline_"+deviceName+"_"+selectedDatasourceVal).sparkline(final_chart_data, {
+
+						        type: "line",
+						        lineColor: "blue",
+						        spotColor : "orange",
+						        defaultPixelsPerValue : 10
+						    });
 						}
 
 						/*Check that markerurl exist or not*/

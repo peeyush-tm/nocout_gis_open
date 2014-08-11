@@ -189,6 +189,15 @@ function device_add_message(responseResult) {
 }
 
 
+// show message for device edit success/failure
+function device_edit_message(responseResult) {
+    bootbox.alert(responseResult.result.message, function(){
+        // reload page after clicking "OK!"
+        location = window.location.origin+"/device/#OperationalDeviceListing";
+        location.reload();
+    });
+}
+
 
 // delete device to monitoring core
 function delete_device(device_id) {
@@ -414,7 +423,7 @@ function get_service_edit_form(content) {
                 }
             }
             else {
-                service_edit_html += '<h5 class="text-warning">There are no services for device ' + '"' + content.result.data.objects.device_alias + '"to monitor. </h5>';
+                service_edit_html += '<h5 class="text-warning">There are no operational services for device ' + '"' + content.result.data.objects.device_alias+'. </h5>';
             }
         }
         else{
@@ -852,3 +861,90 @@ function show_new_configuration_for_svc_add(value){
 function add_services_message(responseResult) {
     bootbox.alert(responseResult.result.message);
 }
+
+
+// ********************************** Service Add Functions ***************************************
+// add services on nms core
+function device_services_status_frame(content) {
+    var services_status_html = "";
+    services_status_html += '<h5 class="text-warning"><b>Device Info:</b></h5>';
+    services_status_html += '<dl class="dl-horizontal">';
+    services_status_html += '<dt>Device</dt><dd>'+content.result.data.objects.device_name+'</dd>';
+    services_status_html += '<dt>Machine</dt><dd>'+content.result.data.objects.machine+'</dd>';
+    services_status_html += '<dt>Site</dt><dd>'+content.result.data.objects.site_instance+'</dd>';
+    services_status_html += '<dt>IP Address</dt><dd>'+content.result.data.objects.ip_address+'</dd>';
+    services_status_html += '<dt>Device Type</dt><dd>'+content.result.data.objects.device_type+'</dd>';
+    services_status_html += '</dd></dl>';
+    if (!(typeof content.result.data.objects.active_services === 'undefined') && !(Object.keys(content.result.data.objects.active_services).length === 0)) {
+        services_status_html += '<div class=""><div class="box border red"><div class="box-title"><h4><i class="fa fa-table"></i>Operational Services</h4></div>';
+        services_status_html += '<div class="box-body"><table class="table">';
+        services_status_html += '<thead><tr><th>Service</th><th>Data Sources</th></tr></thead>';
+        services_status_html += '<tbody>';
+        for (var i = 0, l = content.result.data.objects.active_services.length; i < l; i++) {
+            services_status_html += '<tr>';
+            services_status_html += '<td>'+content.result.data.objects.active_services[i].service+'</td>';
+            services_status_html += '<td>'+content.result.data.objects.active_services[i].data_sources+'</td>';
+            services_status_html += '</tr>';
+        }
+        services_status_html += '</tbody></table>';
+        services_status_html += '</div></div></div>';
+    }
+    else{
+        services_status_html += '<div class=""><div class="box border red"><div class="box-title"><h4><i class="fa fa-table"></i>Operational Services</h4></div>';
+        services_status_html += '<div class="box-body"><table class="table">';
+        services_status_html += '<thead><tr><th>Service</th><th>Data Sources</th></tr></thead>';
+        services_status_html += '<tbody>';
+        services_status_html += '<tr>';
+        services_status_html += '<td align="right"><span class="text-danger">No service is operational on this device.</span></td>';
+        services_status_html += '</tr>';
+        services_status_html += '</tbody></table>';
+        services_status_html += '</div></div></div>';
+    }
+
+    if (!(typeof content.result.data.objects.inactive_services === 'undefined') && !(Object.keys(content.result.data.objects.inactive_services).length === 0)) {
+        services_status_html += '<div class=""><div class="box border orange"><div class="box-title"><h4><i class="fa fa-table"></i>Non Operational Services</h4></div>';
+        services_status_html += '<div class="box-body"><table class="table">';
+        services_status_html += '<thead><tr><th>Service</th><th>Data Sources</th></tr></thead>';
+        services_status_html += '<tbody>';
+        for (var i = 0, l = content.result.data.objects.inactive_services.length; i < l; i++) {
+            services_status_html += '<tr>';
+            services_status_html += '<td>'+content.result.data.objects.inactive_services[i].service+'</td>';
+            services_status_html += '<td>'+content.result.data.objects.inactive_services[i].data_sources+'</td>';
+            services_status_html += '</tr>';
+        }
+        services_status_html += '</tbody></table>';
+        services_status_html += '</div></div></div>';
+    }
+    else{
+        services_status_html += '<div class=""><div class="box border orange"><div class="box-title"><h4><i class="fa fa-table"></i>Operational Services</h4></div>';
+        services_status_html += '<div class="box-body"><table class="table">';
+        services_status_html += '<thead><tr><th>Service</th><th>Data Sources</th></tr></thead>';
+        services_status_html += '<tbody>';
+        services_status_html += '<tr>';
+        services_status_html += '<td align="right"><span class="text-danger">All services are operational for this device.</span></td>';
+        services_status_html += '</tr>';
+        services_status_html += '</tbody></table>';
+        services_status_html += '</div></div></div>';
+    }
+
+    bootbox.dialog({
+        message: services_status_html,
+        title: "<span class='text-danger'><i class='fa fa-list-alt'></i> Device Service Status</span>",
+        buttons: {
+            success: {
+                label: "Yes!",
+                className: "btn-success",
+                callback: function () {
+                        $(".bootbox").modal("hide");
+                    }
+                }
+            },
+            danger: {
+                label: "No!",
+                className: "btn-danger",
+                callback: function () {
+                    $(".bootbox").modal("hide");
+                }
+            }
+    });
+    }
