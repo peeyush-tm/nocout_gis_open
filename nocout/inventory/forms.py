@@ -596,6 +596,7 @@ class SubStationForm(forms.ModelForm):
         self.fields['state'].empty_label = 'Select'
         self.fields['city'].empty_label = 'Select'
         self.fields['device'].empty_label = 'Select'
+        self.fields['antenna'].empty_label = 'Select'
         self.fields['antenna'].required = True
         self.fields['building_height'].required = True
         self.fields['tower_height'].required = True
