@@ -1,4 +1,4 @@
 six==1.4.1
-demjson==2.0.1
+demjson==2.2.2
 configobj==5.0.5
 pymongo==2.7.2
