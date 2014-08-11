@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 import re
 from django import forms
 from .models import Organization
@@ -8,6 +9,13 @@ logger = logging.getLogger(__name__)
 
 class OrganizationForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         super(OrganizationForm, self).__init__(*args, **kwargs)
         self.fields['parent'].empty_label = 'Select'
         for name, field in self.fields.items():
@@ -25,6 +33,21 @@ class OrganizationForm(forms.ModelForm):
 
     class Meta:
         model = Organization
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = Organization.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """

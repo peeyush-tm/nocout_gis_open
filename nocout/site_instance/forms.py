@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 from .models import SiteInstance
 import re
 from django.forms.util import ErrorList
@@ -16,6 +17,12 @@ class SiteInstanceForm(forms.ModelForm):
         self.fields['machine'].required = True
         self.fields['username'].required = True
         self.fields['password'].required = True
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -35,6 +42,23 @@ class SiteInstanceForm(forms.ModelForm):
         Model Form Meta Information.
         """
         model = SiteInstance
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = SiteInstance.objects.filter(name=name)
+
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
