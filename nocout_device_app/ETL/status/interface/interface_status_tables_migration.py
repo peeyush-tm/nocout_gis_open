@@ -59,10 +59,13 @@ def main(**configs):
     start_time = end_time - timedelta(minutes=60)
     start_epoch = int((start_time - utc_time).total_seconds())
     end_epoch =  int((end_time - utc_time).total_seconds())
-    docs = read_data(start_epoch, end_epoch, configs=configs)
-    for doc in docs:
-        values_list = build_data(doc)
-        data_values.extend(values_list)
+    print start_time,end_time
+    
+    for i in range(len(configs.get('mongo_conf'))):
+    	docs = read_data(start_epoch, end_epoch, configs=configs.get('mongo_conf')[i], db_name=configs.get('nosql_db'))
+    	for doc in docs:
+        	values_list = build_data(doc)
+        	data_values.extend(values_list)
     if data_values:
     	insert_data(configs.get('table_name'), data_values, configs=configs)
    	print "Data inserted into my mysql db"
@@ -83,23 +86,34 @@ def read_data(start_time, end_time, **kwargs):
 
     db = None
     port = None
+    docs = []
     #end_time = datetime(2014, 6, 26, 18, 30)
     #start_time = end_time - timedelta(minutes=10)
     docs = [] 
     db = mongo_module.mongo_conn(
-        host=kwargs.get('configs').get('host'),
-        port=int(kwargs.get('configs').get('port')),
-        db_name=kwargs.get('configs').get('nosql_db')
-    )
+        host=kwargs.get('configs')[1],
+        port=int(kwargs.get('configs')[2]),
+        db_name=kwargs.get('db_name')
+    ) 
     if db:
         cur = db.device_status_services_status.find({
             "check_timestamp": {"$gt": start_time, "$lt": end_time}
         })
         for doc in cur:
             docs.append(doc)
+     
     return docs
 
 def build_data(doc):
+	"""
+	Function to make tuples to be stored into mysql db
+
+	Args:
+	    doc (dict): Single mongodb entry
+
+	Returns:
+	    List of tuples, each tuple would correspond to one row in mysql db
+	"""
 	values_list = []
 	time = doc.get('time')
 	machine_name = get_machine_name()
@@ -198,9 +212,18 @@ def get_epoch_time(datetime_obj):
         return datetime_obj
 
 def mysql_conn(db=None, **kwargs):
+    """
+    Function to create connection to mysql database
+
+    Args:
+        db (dict): Mysqldb connection object
+
+    Kwargs:
+        kwargs (dict): Dict to store mysql connection variables
+    """
     try:
         db = MySQLdb.connect(
-                host=kwargs.get('configs').get('host'),
+                host=kwargs.get('configs').get('ip'),
                 user=kwargs.get('configs').get('user'),
                 passwd=kwargs.get('configs').get('sql_passwd'),
                 db=kwargs.get('configs').get('sql_db')

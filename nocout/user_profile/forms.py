@@ -2,6 +2,7 @@ from django import forms
 from user_profile.models import UserProfile
 from nocout.widgets import MultipleToSingleSelectionWidget
 
+
 class UserForm(forms.ModelForm):
     """
     Class Based User Form required to create, update and update my profile of the user.

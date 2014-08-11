@@ -26,13 +26,14 @@ def nocout_log():
         logger object, which logs the activities to a log file
     """
     logger=logging.getLogger('nocout_da')
+    fd = os.open('/opt/omd/sites/%s/nocout/nocout_live.log' % defaults.omd_site, os.O_RDWR | os.O_CREAT)
     if not len(logger.handlers):
         logger.setLevel(logging.DEBUG)
-        #open('/opt/omd/sites/%s/nocout/nocout_live.log' % defaults.omd_site, 'a').close()
         handler=logging.FileHandler('/opt/omd/sites/%s/nocout/nocout_live.log' % defaults.omd_site)
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
         logger.addHandler(handler)
+    os.close(fd)
 
     return logger
 

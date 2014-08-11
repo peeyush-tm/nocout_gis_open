@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 import re
 from django import forms
 from device.models import Country, State, City
@@ -29,6 +30,12 @@ class InventoryForm(forms.ModelForm):
             initial['organization']=Organization.objects.all()[0].id
         else:
             initial['organization']=None
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
 
         # removing help text for device_groups 'select' field
         self.base_fields['device_groups'].help_text = ''
@@ -65,6 +72,21 @@ class InventoryForm(forms.ModelForm):
         Meta Information
         """
         model = Inventory
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = Inventory.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
@@ -126,6 +148,12 @@ class AntennaForm(forms.ModelForm):
         self.fields['azimuth_angle'].required = True
         self.fields['polarization'].required = True
 
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -150,6 +178,21 @@ class AntennaForm(forms.ModelForm):
         Meta Information
         """
         model = Antenna
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = Antenna.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
@@ -203,6 +246,12 @@ class BackhaulForm(forms.ModelForm):
         self.fields['aggregator'].empty_label = 'Select'
         self.fields['bh_configured_on'].required = True
 
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -221,11 +270,27 @@ class BackhaulForm(forms.ModelForm):
                     field.widget.attrs.update({'data-toggle': 'tooltip'})
                     field.widget.attrs.update({'data-placement': 'right'})
                     field.widget.attrs.update({'title': field.help_text})
+
     class Meta:
         """
         Meta Information
         """
         model = Backhaul
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = Backhaul.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
@@ -293,6 +358,12 @@ class BaseStationForm(forms.ModelForm):
         self.fields['state'].required= True
         self.fields['city'].required= True
 
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -317,6 +388,21 @@ class BaseStationForm(forms.ModelForm):
         Meta Information
         """
         model = BaseStation
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = BaseStation.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
@@ -356,6 +442,12 @@ class SectorForm(forms.ModelForm):
         self.fields['antenna'].empty_label = 'Select'
         self.fields['sector_id'].empty_label = True
 
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -380,6 +472,21 @@ class SectorForm(forms.ModelForm):
         """
         model = Sector
 
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = Sector.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
+
     def clean(self):
         """
         Validations for sector form
@@ -403,6 +510,13 @@ class CustomerForm(forms.ModelForm):
     """
     def __init__(self, *args, **kwargs):
         super(CustomerForm, self).__init__(*args, **kwargs)
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -415,11 +529,27 @@ class CustomerForm(forms.ModelForm):
                     field.widget.attrs.update({'class': 'col-md-12 select2select'})
                 else:
                     field.widget.attrs.update({'class': 'form-control'})
+
     class Meta:
         """
         Meta Information
         """
         model = Customer
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = Customer.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
@@ -476,6 +606,12 @@ class SubStationForm(forms.ModelForm):
         self.fields['longitude'].required = True
         self.fields['mac_address'].required = True
 
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -500,6 +636,21 @@ class SubStationForm(forms.ModelForm):
         Meta Information
         """
         model = SubStation
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = SubStation.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
@@ -532,6 +683,13 @@ class CircuitForm(forms.ModelForm):
         self.fields['customer'].empty_label = 'Select'
         self.fields['sub_station'].empty_label = 'Select'
         self.fields['date_of_acceptance'].required = True
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -557,6 +715,21 @@ class CircuitForm(forms.ModelForm):
         """
         model = Circuit
 
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = Circuit.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
+
     def clean(self):
         """
         Validations for circuit form
@@ -580,6 +753,13 @@ class IconSettingsForm(forms.ModelForm):
     """
 
     def __init__(self, *args, **kwargs):
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         super(IconSettingsForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -599,6 +779,21 @@ class IconSettingsForm(forms.ModelForm):
         Meta Information
         """
         model = IconSettings
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = IconSettings.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
@@ -623,6 +818,13 @@ class LivePollingSettingsForm(forms.ModelForm):
     """
 
     def __init__(self, *args, **kwargs):
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         super(LivePollingSettingsForm, self).__init__(*args, **kwargs)
         self.fields['technology'].empty_label = 'Select'
         self.fields['service'].empty_label = 'Select'
@@ -645,6 +847,21 @@ class LivePollingSettingsForm(forms.ModelForm):
         Meta Information
         """
         model = LivePollingSettings
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = LivePollingSettings.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
@@ -669,6 +886,13 @@ class ThresholdConfigurationForm(forms.ModelForm):
     Class Based View Threshold Configuration Model form to update and create.
     """
     def __init__(self, *args, **kwargs):
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         super(ThresholdConfigurationForm, self).__init__(*args, **kwargs)
         self.fields['live_polling_template'].empty_label = 'Select'
         for name, field in self.fields.items():
@@ -689,6 +913,21 @@ class ThresholdConfigurationForm(forms.ModelForm):
         Meta Information
         """
         model = ThresholdConfiguration
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = ThresholdConfiguration.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """
@@ -717,6 +956,13 @@ class ThematicSettingsForm(forms.ModelForm):
         self.base_fields['bt_w_c'].label = 'Warning > > Critical'
         self.base_fields['gt_critical'].label = '> Critical'
 
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+
         super(ThematicSettingsForm, self).__init__(*args, **kwargs)
         self.fields['threshold_template'].empty_label = 'Select'
         self.fields['gt_warning'].empty_label = 'Select'
@@ -739,6 +985,21 @@ class ThematicSettingsForm(forms.ModelForm):
         Meta Information
         """
         model = ThematicSettings
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = ThematicSettings.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """

@@ -147,3 +147,23 @@ span.dept {
     background-size: 20px 20px;
 }
 
+/* color for fa-circle */
+.red-dot {
+    color: #FF0000;
+}
+
+.green-dot {
+    color: #009933;
+}
+
+.orange-dot {
+    color: #FFA319;
+}
+
+.grey-dot {
+    color: #A8B0B0;
+}
+
+.blue-dot {
+    color: #0066FF;
+}

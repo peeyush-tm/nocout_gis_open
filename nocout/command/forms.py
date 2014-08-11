@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 import re
 from django import forms
 from models import Command
@@ -16,6 +17,13 @@ class CommandForm(forms.ModelForm):
         Initialize function to change attributes before rending the model form.
 
         """
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
         super(CommandForm, self).__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
@@ -35,6 +43,21 @@ class CommandForm(forms.ModelForm):
         Model name required for the model form to generate in the meta information
         """
         model = Command
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = Command.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
 
     def clean(self):
         """

@@ -54,14 +54,18 @@ def main(**configs):
     start_time = end_time - timedelta(minutes=60)
     start_epoch = int((start_time - utc_time).total_seconds())
     end_epoch =  int((end_time - utc_time).total_seconds())
-    #print start_time,end_time
-    docs = read_data(start_epoch, end_epoch, configs=configs)
-    #print docs
-    for doc in docs:
-        values_list = build_data(doc)
-        data_values.extend(values_list)
-    insert_data(configs.get('table_name'), data_values, configs=configs)
-    print "Data inserted into performance_performancestatus table"
+    print start_time,end_time
+    
+    for i in range(len(configs.get('mongo_conf'))):
+    	docs = read_data(start_epoch, end_epoch, configs=configs.get('mongo_conf')[i], db_name=configs.get('nosql_db'))
+    	for doc in docs:
+        	values_list = build_data(doc)
+        	data_values.extend(values_list)
+    if data_values:
+    	insert_data(configs.get('table_name'), data_values, configs=configs)
+    	print "Data inserted into performance_performancestatus table"
+    else:
+	print "No data in the mongo db in this time frame"
     
 
 def read_data(start_time, end_time, **kwargs):
@@ -83,10 +87,10 @@ def read_data(start_time, end_time, **kwargs):
     #start_time = end_time - timedelta(minutes=10)
     docs = [] 
     db = mongo_module.mongo_conn(
-        host=kwargs.get('configs').get('host'),
-        port=int(kwargs.get('configs').get('port')),
-        db_name=kwargs.get('configs').get('nosql_db')
-    )
+        host=kwargs.get('configs')[1],
+        port=int(kwargs.get('configs')[2]),
+        db_name=kwargs.get('db_name')
+    ) 
     if db:
         cur = db.status_perf.find({
             "check_timestamp": {"$gt": start_time, "$lt": end_time}
@@ -188,7 +192,7 @@ def mysql_conn(db=None, **kwargs):
         kwargs (dict): Dict to store mysql connection variables
     """
     try:
-        db = MySQLdb.connect(host=kwargs.get('configs').get('host'), user=kwargs.get('configs').get('user'),
+        db = MySQLdb.connect(host=kwargs.get('configs').get('ip'), user=kwargs.get('configs').get('user'),
             passwd=kwargs.get('configs').get('sql_passwd'), db=kwargs.get('configs').get('sql_db'))
     except MySQLdb.Error, e:
         raise MySQLdb.Error, e

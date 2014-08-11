@@ -704,6 +704,84 @@ def add_device_to_nms_core(request, device_id):
 
 
 @dajaxice_register
+def edit_device_in_nms_core(request, device_id):
+    """Editing device in nms core
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        device_id (int): device id
+
+    Returns:
+        result (dict): dict of device info
+                    i.e. {
+                              'message': 'Deviceeditedsuccessfully.',
+                              'data': {
+                                  'site': u'nocout_gis_slave',
+                                  'agent_tag': u'snmp',
+                                  'mode': 'edithost',
+                                  'device_name': u'device_116',
+                                  'device_alias': u'Device116',
+                                  'ip_address': u'115.111.183.116'
+                              },
+                              'success': 1
+                          }
+
+    """
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = "Device edit failed."
+    result['data']['meta'] = ''
+    device = Device.objects.get(pk=device_id)
+    if device.host_state != "Disable":
+
+        # get 'agent_tag' from DeviceType model
+        agent_tag = ""
+        try:
+            agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
+        except Exception as e:
+            logger.info(e.message)
+
+        device_data = {'device_name': device.device_name,
+                       'device_alias': device.device_alias,
+                       'ip_address': device.ip_address,
+                       'agent_tag': agent_tag,
+                       'site': device.site_instance.name,
+                       'mode': 'edithost'}
+
+        # site to which configuration needs to be pushed
+        master_site = SiteInstance.objects.get(name='master_UA')
+
+        # url for nocout.py
+        # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+        # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
+        url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                                master_site.password,
+                                                                master_site.machine.machine_ip,
+                                                                master_site.web_service_port,
+                                                                master_site.name)
+
+        # sending post request to device app for adding device to nms core
+        r = requests.post(url, data=device_data)
+
+        # converting string in 'r' to dictionary
+        response_dict = ast.literal_eval(r.text)
+        if r:
+            result['data'] = device_data
+            result['success'] = 1
+            if response_dict['error_code'] is not None:
+                result['message'] = response_dict['error_message'].capitalize()
+            else:
+                result['message'] = "Device edited successfully."
+                # set 'is_added_to_nms' to 1 after device successfully edited in nocout nms core
+                device.is_added_to_nms = 1
+                device.save()
+    else:
+        result['message'] = "Device state is disabled. First enable it than add it to nms core."
+    return json.dumps({'result': result})
+
+
+@dajaxice_register
 def delete_device_from_nms_core(request, device_id):
     """Delete device from nms core
 
@@ -2002,8 +2080,9 @@ def add_service_form(request, value):
         try:
             master_site_name = SiteInstance.objects.get(name='master_UA').name
             result['data']['objects']['master_site'] = master_site_name
-        except:
-            logger.info("Master site doesn't exist.")
+        except Exception as e:
+            logger.info(e.message)
+
         if device.is_added_to_nms == 1:
             if master_site_name == "master_UA":
                 # fetching all services from 'service device configuration' table
@@ -2375,4 +2454,148 @@ def add_services(request, svc_data):
 
     # assign messages to result dict message key
     result['message'] = messages
+    return json.dumps({'result': result})
+
+
+@dajaxice_register
+def device_services_status(request, device_id):
+    """Show current device services status
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        device_id (int): device id
+
+    Returns:
+        result (dict): dictionary of device and associated services information
+                    i.e. {
+                            'message': '',
+                            'data': {
+                                'meta': {
+
+                                },
+                                'objects': {
+                                    'site_instance': 'nocout_gis_slave',
+                                    'inactive_services': [
+                                        {
+                                            'service': u'Receivedsignalstrength',
+                                            'data_sources': 'Receivedsignalstrength,
+                                            '
+                                        },
+                                        {
+                                            'service': u'totaluplinkutilization',
+                                            'data_sources': 'Management_Port_on_Odu,
+                                            Radio_Interface,
+                                            '
+                                        },
+                                        {
+                                            'service': u'channelbandwidth',
+                                            'data_sources': 'channelbandwidth,
+                                            '
+                                        },
+                                        {
+                                            'service': u'portspeedstatus',
+                                            'data_sources': 'ethernet_port_1,
+                                            ethernet_port_2,
+                                            ethernet_port_3,
+                                            ethernet_port_4,
+                                            '
+                                        },
+                                        {
+                                            'service': u'IDUserialnumber',
+                                            'data_sources': 'IDUserialnumber,
+                                            '
+                                        },
+                                        {
+                                            'service': u'totaluptime',
+                                            'data_sources': 'totaluptime,
+                                            '
+                                        },
+                                        {
+                                            'service': u'frequency',
+                                            'data_sources': 'frequency,
+                                            '
+                                        },
+                                        {
+                                            'service': u'RadwinUAS',
+                                            'data_sources': 'unavailableseconds,
+                                            '
+                                        },
+                                        {
+                                            'service': u'portautonegotiationstatus',
+                                            'data_sources': 'ethernet_port_1,
+                                            ethernet_port_2,
+                                            ethernet_port_3,
+                                            ethernet_port_4,
+                                            '
+                                        }
+                                    ],
+                                    'active_services': [
+
+                                    ],
+                                    'device_name': '115.112.95.187',
+                                    'machine': 'default',
+                                    'device_type': 'Radwin2KBS',
+                                    'ip_address': '115.112.95.187'
+                                }
+                            },
+                            'success': 1
+                        }
+
+    """
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = ""
+    result['data']['meta'] = {}
+    result['data']['objects'] = {}
+
+    # current device
+    device = Device.objects.get(pk=device_id)
+
+    # fetching all services from 'service device configuration' table
+    dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name)
+    device_type = DeviceType.objects.get(id=device.device_type)
+
+    # complete no. of services associated with this device
+    complete_services = []
+    for svc in device_type.service.all():
+        complete_services.append(svc.name)
+
+    # services those are already running for this device
+    already_added_services = []
+    for svc in dsc:
+        already_added_services.append(svc.service_name)
+
+    # services those are not currently running but associated with that device
+    inactive_services = set(complete_services) - set(already_added_services)
+
+    # services those are currently running and associated with current device
+    active_services = set(already_added_services)
+
+    result['data']['objects']['device_name'] = str(device.device_alias)
+    result['data']['objects']['machine'] = str(device.machine)
+    result['data']['objects']['site_instance'] = str(device.site_instance)
+    result['data']['objects']['ip_address'] = str(device.ip_address)
+    result['data']['objects']['device_type'] = str(DeviceType.objects.get(pk=device.device_type))
+    result['data']['objects']['active_services'] = []
+    result['data']['objects']['inactive_services'] = []
+
+    for svc in active_services:
+        service = Service.objects.get(name=svc)
+        temp_svc = dict()
+        temp_svc['service'] = service.alias
+        temp_svc['data_sources'] = ""
+        for ds in service.service_data_sources.all():
+            temp_svc['data_sources'] += "{}, ".format(ds.alias)
+        result['data']['objects']['active_services'].append(temp_svc)
+
+    for svc in inactive_services:
+        service = Service.objects.get(name=svc)
+        temp_svc = dict()
+        temp_svc['service'] = service.alias
+        temp_svc['data_sources'] = ""
+        for ds in service.service_data_sources.all():
+            temp_svc['data_sources'] += "{}, ".format(ds.alias)
+        result['data']['objects']['inactive_services'].append(temp_svc)
+
     return json.dumps({'result': result})
