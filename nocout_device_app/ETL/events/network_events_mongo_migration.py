@@ -6,13 +6,13 @@ File contains code for migrating the embeded mongodb data to mysql database.This
 """
 
 from nocout_site_name import *
-import MySQLdb
+import mysql.connector
 from datetime import datetime
 from datetime import timedelta
 from events_rrd_migration import get_latest_event_entry
 import socket
 import imp
-
+import time
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 
 def main(**configs):
@@ -134,8 +134,8 @@ def insert_data(table,data_values,**kwargs):
 	cursor = db.cursor()
     	try:
         	cursor.executemany(query, data_values)
-    	except MySQLdb.Error, e:
-        	raise MySQLdb.Error, e
+  	except mysql.connector.Error as err:
+        	raise mysql.connector.Error, err
     	db.commit()
     	cursor.close()
 
@@ -148,10 +148,10 @@ def get_epoch_time(datetime_obj):
 	Raise : MYSQLdb.error
 
         """
-	utc_time = datetime(1970, 1,1)
+	#utc_time = datetime(1970, 1,1,5,30)
 	if isinstance(datetime_obj, datetime):
-		epoch_time = int((datetime_obj - utc_time).total_seconds())
-		epoch_time -= 19800
+		start_epoch = datetime_obj
+		epoch_time = int(time.mktime(start_epoch.timetuple()))
 		return epoch_time
 	else:
 		return datetime_obj
@@ -162,18 +162,18 @@ def mysql_conn(db=None, **kwargs):
 	Args: db (mysql datbase connection object)
 	Kwargs: Multiple arguments fetched from config.ini for connecting to mysql db
 	Return : Database object
-	Raise : MYSQLdb.error
+	Raise : mysql.connector error
 
     """
     try:
-        db = MySQLdb.connect(
-			host=kwargs.get('configs').get('ip'),
-			user=kwargs.get('configs').get('user'),
-            		passwd=kwargs.get('configs').get('sql_passwd'),
-			db=kwargs.get('configs').get('sql_db')
-    	)
-    except MySQLdb.Error, e:
-        raise MySQLdb.Error, e
+        db = mysql.connector.connect(
+                user=kwargs.get('configs').get('user'),
+                passwd=kwargs.get('configs').get('sql_passwd'),
+                host=kwargs.get('configs').get('ip'),
+                db=kwargs.get('configs').get('sql_db')
+        )
+    except mysql.connector.Error as err:
+        raise mysql.connector.Error, err
 
     return db
 

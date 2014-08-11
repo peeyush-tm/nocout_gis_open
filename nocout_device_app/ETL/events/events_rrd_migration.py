@@ -11,6 +11,7 @@ from nocout_site_name import *
 import os,json
 from datetime import datetime, timedelta
 import imp
+import time
 
 utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
@@ -218,10 +219,11 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
 	#start_epoch = get_latest_event_entry(db_type = 'mongodb',db=db)
 	#if start_epoch == None:
 	start_time = datetime.now() - timedelta(minutes=1)
-	start_epoch = int((start_time - utc_time).total_seconds())
+	start_epoch = int(time.mktime(start_time.timetuple()))
+
         end_time = datetime.now()
-        end_epoch = int((end_time - utc_time).total_seconds())
-	
+	end_epoch = int(time.mktime(end_time.timetuple()))
+
         # sustracting 5.30 hours        
         host_event_dict ={}
         serv_event_dict={}

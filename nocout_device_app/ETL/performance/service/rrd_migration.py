@@ -15,6 +15,7 @@ from xml.etree import ElementTree as ET
 import subprocess
 import pymongo
 import imp
+import time
 
 utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
@@ -239,13 +240,15 @@ def do_export(site, host, file_name,data_source, start_time, serv):
 
     #end_time = datetime.now() - timedelta(minutes=10)
     #start_time = end_time - timedelta(minutes=5)
-    start_epoch = int((start_time - utc_time).total_seconds())
-    end_epoch = int((end_time - utc_time).total_seconds())
-
+    
+    start_epoch = int(time.mktime(start_time.timetuple()))
+    end_epoch = int(time.mktime(end_time.timetuple()))
+   
     #Subtracting 5:30 Hrs to epoch times, to get IST
     #start_epoch -= 19800
     #end_epoch -= 19800
 
+    print start_epoch,end_epoch
     # Command for rrdtool data extraction
     cmd = '/omd/sites/%s/bin/rrdtool xport --json --daemon unix:/omd/sites/%s/tmp/run/rrdcached.sock -s %s -e %s --step 300 '\
         %(site,site, str(start_epoch), str(end_epoch))
@@ -261,7 +264,7 @@ def do_export(site, host, file_name,data_source, start_time, serv):
     try:
         cmd_output = demjson.decode(cmd_output)
     except demjson.JSONDecodeError, e:
-        raise demjson.JSONDecodeError, e
+	raise demjson.JSONDecodeError, e
 
     legend = cmd_output.get('meta').get('legend')
     start_check = cmd_output['meta']['start']
