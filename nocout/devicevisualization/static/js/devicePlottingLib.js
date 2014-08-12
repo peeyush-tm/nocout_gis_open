@@ -208,14 +208,13 @@ function devicePlottingClass_gmap() {
 	 */
 	this.getDevicesData_gmap = function() {
 
-		var get_param_filter = [];
+		var get_param_filter = "";
 		/*If any advance filters are applied then pass the advance filer with API call else pass blank array*/
 		if(appliedAdvFilter.length > 0) {
-			get_param_filter = appliedAdvFilter;
+			get_param_filter = JSON.stringify(appliedAdvFilter);
 		} else {
-			get_param_filter = [];
+			get_param_filter = "";
 		}
-
 		if(counter > 0 || counter == -999) {
 
 			/*Show The loading Icon*/
@@ -230,7 +229,7 @@ function devicePlottingClass_gmap() {
 			/*Ajax call to the API*/
 			$.ajax({
 				crossDomain: true,
-				url : window.location.origin+"/"+"device/stats/?filters="+JSON.stringify(get_param_filter),
+				url : window.location.origin+"/"+"device/stats/?filters="+get_param_filter,
 				// url : window.location.origin+"/"+"static/new_format.json",
 				type : "GET",
 				dataType : "json",
@@ -301,7 +300,10 @@ function devicePlottingClass_gmap() {
 										gmap_self.plotDevices_gmap(devices_gmaps,"base_station");
 									}
 
-								}
+								} else {
+                                    /*Call the plotDevices_gmap to show the markers on the map*/
+									gmap_self.plotDevices_gmap(devices_gmaps,"base_station");
+                                }
 
 								/*Call the function after 3 sec. for lazyloading*/
 								setTimeout(function() {

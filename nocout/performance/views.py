@@ -536,6 +536,7 @@ class Inventory_Device_Service_Data_Source(View):
                         }
                }
         inventory_device_type_id=None
+        inventory_device_service_name=[]
         if page_type =='customer':
             #The device id is the substation id.
             inventory_device= SubStation.objects.get(id= int(device_id))
@@ -590,16 +591,16 @@ class Inventory_Device_Service_Data_Source(View):
                         'url':'performance/service/'+service_name+'/service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
                         'active':0,
                         })
-                else:
-                    service_data_sources= Service.objects.get(name= service_name).service_data_sources.all()
-                    for service_data_source in service_data_sources:
-                        result['data']['objects']['service_perf_tab'].append(
-                            {
-                            'name':service_data_source.name,
-                            'title':service_data_source.alias +' ('+service_name+')',
-                            'url':'performance/service/'+service_name+'/service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
-                            'active':0,
-                            })
+            else:
+                service_data_sources= Service.objects.get(name= service_name).service_data_sources.all()
+                for service_data_source in service_data_sources:
+                    result['data']['objects']['service_perf_tab'].append(
+                        {
+                        'name':service_data_source.name,
+                        'title':service_data_source.alias +' ('+service_name+')',
+                        'url':'performance/service/'+service_name+'/service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
+                        'active':0,
+                        })
 
         result['success']=1
         result['message']='Substation Devices Services Data Source Fetched Successfully.'
@@ -672,7 +673,7 @@ class Get_Service_Type_Performance_Data(View):
                                                              sys_timestamp__gte=now_minus_60_min,
                                                              sys_timestamp__lte=now).using(alias=inventory_device_machine_name)
 
-            result=self.get_performance_data_result(performance_data)
+            result=self.get_performance_data_result_for_status_and_invent_data_source(performance_data)
         else:
             performance_data= PerformanceService.objects.filter(device_name=inventory_device_name,
                                                                service_name=service_name,
@@ -700,8 +701,9 @@ class Get_Service_Type_Performance_Data(View):
                              'time':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%I:%M %p"),
                              'value':data.current_value,
                              })
-        self.result['message']= 'Device Performance Data Fetched Successfully To Plot Table.'
-        self.result['data']['objects']['table_data']=result_data
+        self.result['success']=1
+        self.result['message']= 'Device Performance Data Fetched Successfully To Plot Table.' if result_data else 'No Record Found.'
+        self.result['data']['objects']['table_data']= result_data
         return self.result
 
     def get_performance_data_result(self, performance_data):

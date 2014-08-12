@@ -136,9 +136,10 @@ var perf_that = "",
                     var li_style = "background: #f5f5f5; width:100%; border:1px solid #dddddd;"
                     var li_a_style = "background: none; border:none;"
 
-                    var count = 0;
 
-                    for(var i= 0; i<device_services_tab.length; i++){
+
+                    for(var i= 0; i<device_services_tab.length; i++) {
+                        var count = 0;
                         device_services = result.data.objects[device_services_tab[i]];
                         var tabs_with_data = "";
                         var service_tabs = '<div class="col-md-3"><ul class="nav nav-tabs">';
@@ -162,10 +163,10 @@ var perf_that = "",
                         service_tabs_data += '</div>';
                         tabs_with_data = service_tabs +" "+service_tabs_data;
 
-                        $("#"+device_services_tab[i]+" .inner_tab_container .panel-body .tabs-left").html(tabs_with_data);
-                    }
-					/*Call getServiceData function to fetch the data for currently active service*/
-					perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
+                            $("#"+device_services_tab[i]+" .inner_tab_container .panel-body .tabs-left").html(tabs_with_data);
+                            /*Call getServiceData function to fetch the data for currently active service*/
+                            perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
+                        }
 
                     /*Bind click event on tabs*/
                     $('.inner_tab_container .nav-tabs li a').click(function(e) {
@@ -210,10 +211,35 @@ var perf_that = "",
 				if(result.success == 1) {
 					/*Service Data Object*/
 					single_service_data = result.data.objects;
-                    console.log(single_service_data);
-                    if ('table_data' in single_service_data ){
 
-                        $('#'+service_id+'_chart').html('hello')
+                    if (result.data.objects.table_data != undefined) {
+                        if(result.data.objects.table_data.length > 0) {
+
+                            var table_string = "";
+                            var grid_headers = Object.keys(result.data.objects.table_data[0]);
+                            table_string += '<table class="table table-bordered"><thead>';
+                            /*Table header creation start*/
+                            for(var i=0;i<grid_headers.length;i++) {
+                                table_string += '<td>'+grid_headers[i].toUpperCase()+'</td>';
+                            }
+                            table_string += '</thead><tbody>';
+                            /*Table header creation end*/
+
+                            /*Table data creation start*/
+
+                            for(var i=0;i<result.data.objects.table_data.length;i++) {
+                                table_string += '<tr>';
+                                table_string += '<td>'+result.data.objects.table_data[i].date+'</td>';
+                                table_string += '<td>'+result.data.objects.table_data[i].time+'</td>';
+                                table_string += '<td>'+result.data.objects.table_data[i].value+'</td>';
+                                table_string += '</tr>';
+                            }
+                            /*Table data creation end*/
+                            table_string += '</tbody></table>';
+                            $('#'+service_id+'_chart').html(table_string);
+                        } else {
+                            $('#'+service_id+'_chart').html(result.message);
+                        }
 
                     }
                     else{
