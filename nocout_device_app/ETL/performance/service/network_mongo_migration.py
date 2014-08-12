@@ -10,12 +10,12 @@ Network services include : Ping
 """
 
 from nocout_site_name import *
-import MySQLdb
+import mysql.connector
 from datetime import datetime, timedelta
 import subprocess
 import socket
 import imp
-
+import time
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 
@@ -177,8 +177,8 @@ def insert_data(table, data_values, **kwargs):
     cursor = db.cursor()
     try:
         cursor.executemany(query, data_values)
-    except MySQLdb.Error, e:
-        raise MySQLdb.Error, e
+    except mysql.connector.Error as err:
+        raise mysql.connector.Error, err
     db.commit()
     cursor.close()
 
@@ -194,9 +194,11 @@ def get_epoch_time(datetime_obj):
         Unix epoch time in intteger format
     """
     # Get the time in IST (GMT+5:30)
-    utc_time = datetime(1970, 1,1, 5, 30)
+    #utc_time = datetime(1970, 1,1, 5, 30)
     if isinstance(datetime_obj, datetime):
-        epoch_time = int((datetime_obj - utc_time).total_seconds())
+	start_epoch = datetime_obj
+        epoch_time = int(time.mktime(start_epoch.timetuple()))
+
         return epoch_time
     else:
         return datetime_obj
@@ -212,14 +214,14 @@ def mysql_conn(db=None, **kwargs):
         kwargs (dict): Dict to store mysql connection variables
     """
     try:
-        db = MySQLdb.connect(
-                host=kwargs.get('configs').get('ip'),
+        db = mysql.connector.connect(
                 user=kwargs.get('configs').get('user'),
                 passwd=kwargs.get('configs').get('sql_passwd'),
+                host=kwargs.get('configs').get('ip'),
                 db=kwargs.get('configs').get('sql_db')
         )
-    except MySQLdb.Error, e:
-        raise MySQLdb.Error, e
+    except mysql.connector.Error as err:
+        raise mysql.connector.Error, err
 
     return db
 

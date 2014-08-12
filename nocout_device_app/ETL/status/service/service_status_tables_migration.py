@@ -13,11 +13,12 @@ at any given time.
 
 
 from nocout_site_name import *
-import MySQLdb
+import mysql.connector
 from datetime import datetime
 import subprocess
 import socket
 import imp
+import time
 
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 
@@ -122,6 +123,7 @@ def build_data(doc):
     values_list = []
     #uuid = get_machineid()
     machine_name = get_machine_name()
+    print machine_name
     local_time_epoch = get_epoch_time(doc.get('local_timestamp'))
     # Advancing loca_timestamp/sys_timestamp to next 5 mins time frame
     local_time_epoch += 300
@@ -167,9 +169,8 @@ def insert_data(table, data_values, **kwargs):
         try:
                 cursor.execute(query)
 		result = cursor.fetchone()
-        except MySQLdb.Error, e:
-                raise MySQLdb.Error, e
-        db.commit()
+	except mysql.connector.Error as err:
+        	raise mysql.connector.Error, err
 	
 	if result:
 		
@@ -180,12 +181,12 @@ def insert_data(table, data_values, **kwargs):
 		`critical_threshold`=%s, `sys_timestamp`=%s,`check_timestamp`=%s,
 		`ip_address`=%s,`severity`=%s
 		WHERE `device_name`=%s AND `site_name`=%s AND `service_name`=%s
-		""" 
+		"""
 		try:
 			data_values = map(lambda x: x + (x[0], x[3], x[1],), data_values)
                 	cursor.executemany(query, data_values)
-		except MySQLdb.Error, e:
-                        raise MySQLdb.Error, e
+		except mysql.connector.Error as err:
+        		raise mysql.connector.Error, err
                 db.commit()
 		cursor.close()
 
@@ -200,8 +201,8 @@ def insert_data(table, data_values, **kwargs):
     		cursor = db.cursor()
     		try:
         		cursor.executemany(query, data_values)
-    		except MySQLdb.Error, e:
-       			raise MySQLdb.Error, e
+    		except mysql.connector.Error as err:
+				raise mysql.connector.Error, err
     		db.commit()
     		cursor.close()
 
@@ -217,9 +218,11 @@ def get_epoch_time(datetime_obj):
         Unix epoch time in integer
     """
     # Get India times (GMT+5.30)
-    utc_time = datetime(1970, 1,1, 5, 30)
+    #utc_time = datetime(1970, 1,1, 5, 30)
     if isinstance(datetime_obj, datetime):
-        epoch_time = int((datetime_obj - utc_time).total_seconds())
+	start_epoch = datetime_obj
+        epoch_time = int(time.mktime(start_epoch.timetuple()))
+
         return epoch_time
     else:
         return datetime_obj
@@ -235,14 +238,15 @@ def mysql_conn(db=None, **kwargs):
         kwargs (dict): Mysql db connection variables   
     """
     try:
-        db = MySQLdb.connect(
-                host=kwargs.get('configs').get('ip'),
+        db = mysql.connector.connect(
                 user=kwargs.get('configs').get('user'),
                 passwd=kwargs.get('configs').get('sql_passwd'),
-                db=kwargs.get('configs').get('sql_db')
+                host=kwargs.get('configs').get('ip'),
+                db=kwargs.get('configs').get('sql_db'),
+		buffered=True
         )
-    except MySQLdb.Error, e:
-        raise MySQLdb.Error, e
+    except mysql.connector.Error as err:
+        raise mysql.connector.Error, err
 
     return db
 
