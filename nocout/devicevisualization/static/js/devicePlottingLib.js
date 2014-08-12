@@ -1860,6 +1860,14 @@ function devicePlottingClass_gmap() {
         	appliedFilterObj_gmaps["vendor"] = $("#vendor option:selected").text();
         }
 
+        if($("#state").val().length > 0) {
+        	appliedFilterObj_gmaps["state"] = $("#state option:selected").text();
+        }
+
+        if($("#city").val().length > 0) {
+        	appliedFilterObj_gmaps["city"] = $("#city option:selected").text();
+        }
+
         /*Get The Length Of Filter Array*/
         var filtersLength = Object.keys(appliedFilterObj_gmaps).length;
 
