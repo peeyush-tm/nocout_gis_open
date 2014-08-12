@@ -119,7 +119,6 @@ var perf_that = "",
 
  		/*Ajax call to Get Devices API*/
         var get_url = get_service_url;
-        console.log(get_service_url);
 		$.ajax({
 			crossDomain: true,
 			url : get_url,
@@ -142,8 +141,7 @@ var perf_that = "",
                     for(var i= 0; i<device_services_tab.length; i++){
                         device_services = result.data.objects[device_services_tab[i]];
                         var tabs_with_data = "";
-                        var service_tabs = '<div class="col-md-3">'
-                        service_tabs += '<div class="tabbable row"><ul class="nav nav-tabs">';
+                        var service_tabs = '<div class="col-md-3"><ul class="nav nav-tabs">';
 
                         var service_tabs_data = '<div class="col-md-9">'
                         service_tabs_data += '<div class="tab-content">';
@@ -160,32 +158,31 @@ var perf_that = "",
                                 service_tabs_data += '<div class="tab-pane" id="'+value.name+'_block"><div class="chart_container" style="width:100%;"><div id="'+value.name+'_chart" style="height:350px;width:100%;"></div></div></div>';
                             }
                         });
-                        service_tabs += "</ul></div></div>";
-                        service_tabs_data += "</div>";
-
+                        service_tabs += '</ul></div>';
+                        service_tabs_data += '</div>';
                         tabs_with_data = service_tabs +" "+service_tabs_data;
 
-                        $("#"+device_services_tab[i]).html(tabs_with_data);
+                        $("#"+device_services_tab[i]+" .inner_tab_container .panel-body .tabs-left").html(tabs_with_data);
                     }
 					/*Call getServiceData function to fetch the data for currently active service*/
-//					perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
+					perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
 
                     /*Bind click event on tabs*/
-//                    $('#services_tab_container .nav-tabs li a').click(function(e) {
-//                        var serviceId = e.currentTarget.id.slice(0, -4);
-//                        //@TODO: all the ursl must end with a / - django style
-//                        var serviceDataUrl = window.location.origin + "/" + $.trim(e.currentTarget.attributes.url.nodeValue);
-//                        perfInstance.getServiceData(serviceDataUrl, serviceId, current_device);
-//                    });
+                    $('.inner_tab_container .nav-tabs li a').click(function(e) {
+                        var serviceId = e.currentTarget.id.slice(0, -4);
+                        //@TODO: all the ursl must end with a / - django style
+                        var serviceDataUrl = window.location.origin + "/" + $.trim(e.currentTarget.attributes.url.nodeValue);
+                        perfInstance.getServiceData(serviceDataUrl, serviceId, current_device);
+                    });
 
 				} else {
-					$("#services_tab_container").html("<p>"+result.message+"</p>");
+					$(".inner_tab_container").html("<p>"+result.message+"</p>");
 					console.log(result.message);
 				}
 			},
 			error : function(err) {
 
-				$("#services_tab_container").html(err.statusText);
+				$(".inner_tab_container").html(err.statusText);
 
 			}
 		});
@@ -213,60 +210,65 @@ var perf_that = "",
 				if(result.success == 1) {
 					/*Service Data Object*/
 					single_service_data = result.data.objects;
+                    console.log(single_service_data);
+                    if ('table_data' in single_service_data ){
 
+                        $('#'+service_id+'_chart').html('hello')
 
-					$('#'+service_id+'_chart').highcharts({
-			            chart: {
-			                type: single_service_data.type,
-//                            events:{
-//                                load: Highcharts.drawTable //@TODO: here in we need to draw canvas table with data table data
-//                            }
-			            },
-			            title: {
-			                text: single_service_data.name
-			            },
-			            legend: {
-				            align: 'right',
-				            verticalAlign: 'top',
-				            x: 0,
-				            y: 0,
-				            floating: true,
-				            borderWidth: 1,
-				            backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
-				        },
-			            tooltip: {
-			                pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
-			                shared: true,
-                            valueSuffix: single_service_data.valuesuffix
-			            },
-			            xAxis: {
-                            title: {
-                                text: "time"
+                    }
+                    else{
+                        $('#'+service_id+'_chart').highcharts({
+                            chart: {
+                                type: single_service_data.type
+    //                            events:{
+    //                                load: Highcharts.drawTable //@TODO: here in we need to draw canvas table with data table data
+    //                            }
                             },
-		            		type: 'datetime',
-			                dateTimeLabelFormats: {
-			                    day: '%e. %b',
-								month: '%b \'%y',
-								year: '%Y'
-			                },
-                            tickPixelInterval: 120
-			            },
-                        yAxis: {
-                          title: {
-                                text: single_service_data.valuetext
-                            }
-                        },
-                        series: single_service_data.chart_data
-			        });
+                            title: {
+                                text: single_service_data.name
+                            },
+                            legend: {
+                                align: 'right',
+                                verticalAlign: 'top',
+                                x: 0,
+                                y: 0,
+                                floating: true,
+                                borderWidth: 1,
+                                backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
+                            },
+                            tooltip: {
+                                pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
+                                shared: true,
+                                valueSuffix: single_service_data.valuesuffix
+                            },
+                            xAxis: {
+                                title: {
+                                    text: "time"
+                                },
+                                type: 'datetime',
+                                dateTimeLabelFormats: {
+                                    day: '%e. %b',
+                                    month: '%b \'%y',
+                                    year: '%Y'
+                                },
+                                tickPixelInterval: 120
+                            },
+                            yAxis: {
+                              title: {
+                                    text: single_service_data.valuetext
+                                }
+                            },
+                            series: single_service_data.chart_data
+                        });
 
-					/*Hide Highcharts.com Name*/
-					var highcharts_link = $("#services_tab_container svg text:last-child");
-					$.grep(highcharts_link,function(val) {
-						if($.trim(val.innerHTML) == 'Highcharts.com') {
-							val.innerHTML = "";
-						}
-					});
-					
+                        /*Hide Highcharts.com Name*/
+                        var highcharts_link = $("#services_tab_container svg text:last-child");
+                        $.grep(highcharts_link,function(val) {
+                            if($.trim(val.innerHTML) == 'Highcharts.com') {
+                                val.innerHTML = "";
+                            }
+                        });
+                    }
 				} else {
 					$('#'+service_id+'_chart').html(result.message);
 					console.log(result.message);
