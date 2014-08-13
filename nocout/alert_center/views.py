@@ -148,7 +148,9 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': False},
             {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
-            {'mData': 'current_value', 'sTitle': 'Packet Drop', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': False},
+            {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': False},
             {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': False},
@@ -274,6 +276,8 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                             'sys_timestamp':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
                             'description':data.description
                             }
+                    if 'service' in self.request.path_info:
+                        ddata.update({'data_source_name':data.data_source })
                     device_data.append(ddata)
         if device_data:
             sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
