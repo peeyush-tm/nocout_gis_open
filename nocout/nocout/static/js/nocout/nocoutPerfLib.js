@@ -216,11 +216,11 @@ var perf_that = "",
                         if(result.data.objects.table_data.length > 0) {
 
                             var table_string = "";
-                            var grid_headers = Object.keys(result.data.objects.table_data[0]);
+                            var grid_headers = result.data.objects.table_data_header;
                             table_string += '<table class="table table-bordered"><thead>';
                             /*Table header creation start*/
                             for(var i=0;i<grid_headers.length;i++) {
-                                table_string += '<td>'+grid_headers[i].toUpperCase()+'</td>';
+                                table_string += '<td>'+grid_headers[i]+'</td>';
                             }
                             table_string += '</thead><tbody>';
                             /*Table header creation end*/
