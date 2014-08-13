@@ -9,7 +9,8 @@ from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation
-from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus, ServiceStatus, InventoryStatus
+from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus, ServiceStatus, InventoryStatus, \
+    PerformanceStatus, PerformanceInventory, Status
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
 from operator import is_not
 from functools import partial
@@ -552,6 +553,9 @@ class Inventory_Device_Service_Data_Source(View):
             inventory_device_service_name = DeviceServiceConfiguration.objects.filter(device_name= \
                         Device.objects.get(id= device_id).device_name).values_list('service_name', flat=True)
 
+        #TODO:to remove this code as the services are getting multi added with their port.
+        inventory_device_service_name=list(set(inventory_device_service_name))
+
         result['data']['objects']['network_perf_tab'].append(
                             {
                             'name':"rta",
@@ -645,7 +649,8 @@ class Get_Service_Type_Performance_Data(View):
 
         now= format(datetime.datetime.now(),'U')
         now_minus_60_min= format(datetime.datetime.now() + datetime.timedelta(minutes= -60), 'U')
-
+        now_minus_1day= format(datetime.datetime.now() + datetime.timedelta(days= -1), 'U')
+        now_minus_1week= format(datetime.datetime.now() + datetime.timedelta(weeks= -1), 'U')
         if service_data_source_type in ['pl', 'rta']:
 
             performance_data= PerformanceNetwork.objects.filter(device_name=inventory_device_name,
@@ -657,20 +662,20 @@ class Get_Service_Type_Performance_Data(View):
             result=self.get_performance_data_result(performance_data)
 
         elif '_status' in service_name:
-            performance_data= ServiceStatus.objects.filter(device_name=inventory_device_name,
+            performance_data= PerformanceStatus.objects.filter(device_name=inventory_device_name,
                                                            service_name=service_name,
                                                            data_source=service_data_source_type,
-                                                           sys_timestamp__gte=now_minus_60_min,
+                                                           sys_timestamp__gte=now_minus_1day,
                                                            sys_timestamp__lte=now).using(alias=inventory_device_machine_name)
 
             result=self.get_performance_data_result_for_status_and_invent_data_source(performance_data)
 
         elif '_invent' in service_name:
 
-            performance_data= InventoryStatus.objects.filter(device_name=inventory_device_name,
+            performance_data= PerformanceInventory.objects.filter(device_name=inventory_device_name,
                                                              service_name=service_name,
                                                              data_source=service_data_source_type,
-                                                             sys_timestamp__gte=now_minus_60_min,
+                                                             sys_timestamp__gte=now_minus_1week,
                                                              sys_timestamp__lte=now).using(alias=inventory_device_machine_name)
 
             result=self.get_performance_data_result_for_status_and_invent_data_source(performance_data)
@@ -704,6 +709,7 @@ class Get_Service_Type_Performance_Data(View):
         self.result['success']=1
         self.result['message']= 'Device Performance Data Fetched Successfully To Plot Table.' if result_data else 'No Record Found.'
         self.result['data']['objects']['table_data']= result_data
+        self.result['data']['objects']['table_data_header']= ['Date', 'Time', 'Value']
         return self.result
 
     def get_performance_data_result(self, performance_data):
