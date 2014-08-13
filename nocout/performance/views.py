@@ -566,9 +566,9 @@ class Inventory_Device_Service_Data_Source(View):
                             })
         result['data']['objects']['network_perf_tab'].append(
                             {
-                            'name':"rta",
+                            'name':"pl",
                             'title':"Packet Drop",
-                            'url':'performance/service/ping/service_data_source/rta/'+page_type+'/device/'+str(device_id),
+                            'url':'performance/service/ping/service_data_source/pl/'+page_type+'/device/'+str(device_id),
                             'active':0,
                             'service_type_tab':'network_perf_tab'
                             })
