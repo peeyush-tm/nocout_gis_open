@@ -9,7 +9,7 @@ from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation
-from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus
+from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus, ServiceStatus, InventoryStatus
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
 from operator import is_not
 from functools import partial
@@ -318,7 +318,7 @@ class Get_Perfomance(View):
                         'get_services_url' : 'performance/get_inventory_service_data_sources/'+str(page_type)+'/device/'+str(device_id),
                     }
 
-        return render(request, 'performance/single_device_perf.html',page_data)
+        return render(request, 'performance/single_device_perf.html', page_data)
 
 class Performance_Dashboard(View):
     """
@@ -527,55 +527,80 @@ class Inventory_Device_Service_Data_Source(View):
             'message' : 'Substation Devices Services Data Source Not Fetched Successfully.',
             'data' : {
                 'meta' : {},
-                'objects' : []
-            }
-        }
+                'objects' : {
+                            'network_perf_tab':[],
+                            'service_status_tab':[],
+                            'inventory_status_tab':[],
+                            'service_perf_tab':[]
+                            }
+                        }
+               }
         inventory_device_type_id=None
+        inventory_device_service_name=[]
         if page_type =='customer':
-            inventory_device= SubStation.objects.get(id= device_id)
-            inventory_device_type_id= Device.objects.get(id= inventory_device.device_id).device_type
+            #The device id is the substation id.
+            inventory_device= SubStation.objects.get(id= int(device_id))
+            #device_id= Device.objects.get(id= inventory_device.device_id).id
+            #Fetch the Service names that are configured w.r.t to a device.
+            inventory_device_service_name = DeviceServiceConfiguration.objects.filter(device_name= \
+                        Device.objects.get(id= Device.objects.get(id= inventory_device.device_id).id).device_name)\
+                        .values_list('service_name', flat=True)
 
         elif page_type == 'network':
-            #for basestation we need to fetch sector_configured_on device field from the device
-            inventory_device_type_id= Device.objects.get(id=int(device_id)).device_type
+            #The device_id is the sector_configured_on device id.
+            #Fetch the Service names that are configured w.r.t to a device.
+            inventory_device_service_name = DeviceServiceConfiguration.objects.filter(device_name= \
+                        Device.objects.get(id= device_id).device_name).values_list('service_name', flat=True)
 
-        #first check for the service configuration table
-        inventory_device_service_name = DeviceServiceConfiguration.objects.\
-            filter(device_name=Device.objects.get(id=int(device_id)).device_name).\
-            values_list('service_name', flat=True)
-
-        if not len(inventory_device_service_name):
-            inventory_device_service_name= DeviceType.objects.get(id= inventory_device_type_id) \
-                .service.values_list('name', flat=True)
-
-        ##also append PD and RTA as latency and packet drop
-
-        result['data']['objects'].append({
-                'name':"rta",
-                'title':"Latency",
-                #@TODO: all the ursl must end with a / - django style
-                'url':'performance/service/ping/service_data_source/rta/'+page_type+'/device/'+str(device_id),
-                'active':0
-            })
-
-        result['data']['objects'].append({
-                'name':"pl",
-                'title':"Packet Drop",
-                #@TODO: all the ursl must end with a / - django style
-                'url':'performance/service/ping/service_data_source/pl/'+page_type+'/device/'+str(device_id),
-                'active':0
-            })
+        result['data']['objects']['network_perf_tab'].append(
+                            {
+                            'name':"rta",
+                            'title':"Latency",
+                            'url':'performance/service/ping/service_data_source/rta/'+page_type+'/device/'+str(device_id),
+                            'active':0,
+                            'service_type_tab':'network_perf_tab'
+                            })
+        result['data']['objects']['network_perf_tab'].append(
+                            {
+                            'name':"rta",
+                            'title':"Packet Drop",
+                            'url':'performance/service/ping/service_data_source/rta/'+page_type+'/device/'+str(device_id),
+                            'active':0,
+                            'service_type_tab':'network_perf_tab'
+                            })
 
         for service_name in inventory_device_service_name:
-            service_data_sources= Service.objects.get(name= service_name).service_data_sources.all()
-            for service_data_source in service_data_sources:
-                result['data']['objects'].append({
-                    'name':service_data_source.name,
-                    'title':service_data_source.alias +' ('+service_name+')',
-                    #@TODO: all the ursl must end with a / - django style
-                    'url':'performance/service/'+service_name+'/service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
-                    'active':0
-                })
+            if '_status' in service_name:
+                service_data_sources= Service.objects.get(name= service_name).service_data_sources.all()
+                for service_data_source in service_data_sources:
+                        result['data']['objects']['service_status_tab'].append(
+                        {
+                        'name': service_data_source.name,
+                        'title':service_data_source.alias +' ('+service_name+')',
+                        'url':'performance/service/'+service_name+'/service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
+                        'active':0,
+                        })
+
+            elif '_invent' in service_name:
+                service_data_sources= Service.objects.get(name= service_name).service_data_sources.all()
+                for service_data_source in service_data_sources:
+                    result['data']['objects']['inventory_status_tab'].append(
+                        {
+                        'name':service_data_source.name,
+                        'title':service_data_source.alias +' ('+service_name+')',
+                        'url':'performance/service/'+service_name+'/service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
+                        'active':0,
+                        })
+            else:
+                service_data_sources= Service.objects.get(name= service_name).service_data_sources.all()
+                for service_data_source in service_data_sources:
+                    result['data']['objects']['service_perf_tab'].append(
+                        {
+                        'name':service_data_source.name,
+                        'title':service_data_source.alias +' ('+service_name+')',
+                        'url':'performance/service/'+service_name+'/service_data_source/'+ service_data_source.name +'/'+page_type+'/device/'+str(device_id),
+                        'active':0,
+                        })
 
         result['success']=1
         result['message']='Substation Devices Services Data Source Fetched Successfully.'
@@ -584,10 +609,9 @@ class Inventory_Device_Service_Data_Source(View):
 
 class Get_Service_Type_Performance_Data(View):
     """
-    Generic Class based View to Fetch the Performance Data from Data Base.
+    Generic Class based View to Fetch the Performance Data.
 
     """
-
     def get(self, request, page_type, service_name, service_data_source_type, device_id):
         """
         Handles the get request to fetch performance data w.r.t to arguments requested.
@@ -600,7 +624,7 @@ class Get_Service_Type_Performance_Data(View):
         :return result
 
         """
-        result={
+        self.result={
         'success' : 0,
         'message' : 'Substation Service Not Fetched Successfully.',
         'data' : {
@@ -615,13 +639,12 @@ class Get_Service_Type_Performance_Data(View):
             inventory_device_machine_name= substation.device.machine.name #Device Machine Name required in Query to fetch data.
 
         elif page_type == 'network':
-            device=Device.objects.get(id=int(device_id))
+            device=Device.objects.get(id= int(device_id))
             inventory_device_name= device.device_name
             inventory_device_machine_name= device.machine.name #Device Machine Name required in Query to fetch data.
 
-
-        now=format(datetime.datetime.now(),'U')
-        now_minus_60_min=format(datetime.datetime.now() + datetime.timedelta(minutes=-60), 'U')
+        now= format(datetime.datetime.now(),'U')
+        now_minus_60_min= format(datetime.datetime.now() + datetime.timedelta(minutes= -60), 'U')
 
         if service_data_source_type in ['pl', 'rta']:
 
@@ -630,7 +653,27 @@ class Get_Service_Type_Performance_Data(View):
                                                                 data_source=service_data_source_type,
                                                                 sys_timestamp__gte=now_minus_60_min,
                                                                 sys_timestamp__lte=now).using(alias=inventory_device_machine_name)
-            # log.info("network performance data %s device name" %(performance_data, inventory_device_name))
+
+            result=self.get_performance_data_result(performance_data)
+
+        elif '_status' in service_name:
+            performance_data= ServiceStatus.objects.filter(device_name=inventory_device_name,
+                                                           service_name=service_name,
+                                                           data_source=service_data_source_type,
+                                                           sys_timestamp__gte=now_minus_60_min,
+                                                           sys_timestamp__lte=now).using(alias=inventory_device_machine_name)
+
+            result=self.get_performance_data_result_for_status_and_invent_data_source(performance_data)
+
+        elif '_invent' in service_name:
+
+            performance_data= InventoryStatus.objects.filter(device_name=inventory_device_name,
+                                                             service_name=service_name,
+                                                             data_source=service_data_source_type,
+                                                             sys_timestamp__gte=now_minus_60_min,
+                                                             sys_timestamp__lte=now).using(alias=inventory_device_machine_name)
+
+            result=self.get_performance_data_result_for_status_and_invent_data_source(performance_data)
         else:
             performance_data= PerformanceService.objects.filter(device_name=inventory_device_name,
                                                                service_name=service_name,
@@ -638,11 +681,36 @@ class Get_Service_Type_Performance_Data(View):
                                                                sys_timestamp__gte=now_minus_60_min,
                                                                sys_timestamp__lte=now).using(alias=inventory_device_machine_name)
 
+            result=self.get_performance_data_result(performance_data)
+
+        return HttpResponse(json.dumps(result), mimetype="application/json")
+
+
+    def get_performance_data_result_for_status_and_invent_data_source(self, performance_data):
+
+        result_data, aggregate_data=list(), dict()
+        for data in performance_data:
+            temp_time = data.sys_timestamp
+
+            if temp_time in aggregate_data:
+                continue
+            else:
+                aggregate_data[temp_time] = data.sys_timestamp
+                result_data.append({
+                             'date':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%d/%B/%Y"),
+                             'time':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%I:%M %p"),
+                             'value':data.current_value,
+                             })
+        self.result['success']=1
+        self.result['message']= 'Device Performance Data Fetched Successfully To Plot Table.' if result_data else 'No Record Found.'
+        self.result['data']['objects']['table_data']= result_data
+        return self.result
+
+    def get_performance_data_result(self, performance_data):
+
+
         if performance_data:
-            data_list=[]
-            warn_data_list=[]
-            crit_data_list=[]
-            aggregate_data = {}
+            data_list, warn_data_list, crit_data_list, aggregate_data=list(), list(), list(), dict()
             for data in performance_data:
                 temp_time = data.sys_timestamp
 
@@ -650,24 +718,25 @@ class Get_Service_Type_Performance_Data(View):
                     continue
                 else:
                     aggregate_data[temp_time] = data.sys_timestamp
-                    result['data']['objects']['type']= SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"] if \
+                    self.result['data']['objects']['type']= SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"] if \
                         data.data_source in SERVICE_DATA_SOURCE else "spline"
 
-                    result['data']['objects']['valuesuffix']= \
+                    self.result['data']['objects']['valuesuffix']= \
                         SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"] \
                             if data.data_source in SERVICE_DATA_SOURCE \
                             else "spline"
 
-                    result['data']['objects']['valuesuffix']= \
+                    self.result['data']['objects']['valuesuffix']= \
                         SERVICE_DATA_SOURCE[str(data.data_source).lower()]["valuesuffix"] \
                             if data.data_source in SERVICE_DATA_SOURCE \
                             else ""
 
-                    result['data']['objects']['valuetext']= \
+                    self.result['data']['objects']['valuetext']= \
                         SERVICE_DATA_SOURCE[str(data.data_source).lower()]["valuetext"] \
                             if data.data_source in SERVICE_DATA_SOURCE \
                             else str(data.data_source).upper()
 
+                    self.result['data']['objects']['plot_type']='charts'
                     #data_list.append([data.sys_timestamp, data.avg_value ])
 
                     # data_list.append([data.sys_timestamp*1000, float(data.avg_value) if data.avg_value else 0])
@@ -711,13 +780,13 @@ class Get_Service_Type_Performance_Data(View):
 
                     #this ensures a further good presentation of data w.r.t thresholds
 
-                    result['success']=1
-                    result['message']='Device Performance Data Fetched Successfully.'
-                    result['data']['objects']['chart_data']=[{'name': str(data.data_source).upper(),
+                    self.result['success']=1
+                    self.result['message']='Device Performance Data Fetched Successfully To Plot Graphs.'
+                    self.result['data']['objects']['chart_data']=[{'name': str(data.data_source).upper(),
                                                               'data': data_list,
-                                                              'type': result['data']['objects']['type'],
-                                                              'valuesuffix': result['data']['objects']['valuesuffix'],
-                                                              'valuetext': result['data']['objects']['valuetext']
+                                                              'type': self.result['data']['objects']['type'],
+                                                              'valuesuffix': self.result['data']['objects']['valuesuffix'],
+                                                              'valuetext': self.result['data']['objects']['valuetext']
                                                               },
                                                              {'name': str("warning threshold").title(),
                                                               'color': '#FFE90D',
@@ -731,10 +800,9 @@ class Get_Service_Type_Performance_Data(View):
                                                              }
                     ]
 
-        return HttpResponse(json.dumps(result), mimetype="application/json")
+        return self.result
 
 # misc utility functions
-
 def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None, condition=None):
     """
     The raw query preparation.

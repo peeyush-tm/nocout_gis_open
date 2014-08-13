@@ -9,407 +9,14 @@ from django.db.models import Q, Count
 from django.views.generic.base import View
 from django.http import HttpResponse
 from django.core.exceptions import ObjectDoesNotExist
-from device.api import logged_in_user_organizations, prepare_result
+from inventory.models import Sector, BaseStation, Circuit, SubStation, Customer
 from device.models import Device, DeviceType, DeviceVendor,\
     DeviceTechnology, City, State
-from itertools import chain
-from device_group.models import DeviceGroup
+from nocout.utils import logged_in_user_organizations
 
 logger=logging.getLogger(__name__)
-# class DeviceGetFilters(View):
-#     """
-#     Getting all the info for all the devices,
-#     to be populated into search filters drop downs
-#
-#     """
-#
-#     def get(self, request):
-#         """
-#         Getting all the devices
-#
-#         Args:
-#
-#         Returns:
-#
-#         """
-#
-#         device_dict = {}
-#         self.result = {
-#             "success": 1,
-#             "message": "Device Data",
-#             "data": {
-#                 "meta": None,
-#                 "objects": []
-#             }
-#         }
-#         device_dict = self.get_device_objects()
-#         self.result.get('data').get('objects').extend(device_dict)
-#         device_dict = self.get_objects_by_id(
-#             DeviceGroup,
-#             key='device_group',
-#             title='Device Group'
-#         )
-#         self.result.get('data').get('objects').append(device_dict)
-#         device_dict = self.get_objects_by_id(
-#             DeviceType,
-#             key='device_type',
-#             title='Device Type'
-#         )
-#         self.result.get('data').get('objects').append(device_dict)
-#         device_dict = self.get_objects_by_id(
-#             DeviceTechnology,
-#             key='device_technology',
-#             title='Device Technology'
-#         )
-#         self.result.get('data').get('objects').append(device_dict)
-#         device_dict = self.get_objects_by_id(
-#             DeviceVendor,
-#             key='device_vendor',
-#             title='Device Vendor'
-#         )
-#         self.result.get('data').get('objects').append(device_dict)
-#         return HttpResponse(json.dumps(self.result))
-#
-#
-#     def get_device_objects(self, **kwargs):
-#         result_list = []
-#         device_attribute_dict = {
-#             "device_name": [],
-#             "device_alias": [],
-#             "ip_address": [],
-#             "mac_address": [],
-#             "host_state": [],
-#             "city": [],
-#             "state": []
-#         }
-#         base_dict = {
-#             "key": None,
-#             "title": None,
-#             "field_type": None,
-#             "element_type": None,
-#             "values": []
-#         }
-#         attr_list = [
-#             {"device_name": "Device Name"},
-#             {"device_alias": "Device Alias"},
-#             {"ip_address": "IP Address"},
-#             {"mac_address": "Mac Address"},
-#             {"host_state": "Host State"},
-#             {"city": "City"},
-#             {"state": "State"}
-#         ]
-#         obj_list = Device.objects.all().order_by('id').values()
-#         for obj in obj_list:
-#             device_attribute_dict.get('device_name').append({
-#                 "id": obj.get('id'),
-#                 "value": obj.get('device_name')
-#             })
-#             device_attribute_dict.get('device_alias').append({
-#                 "id": obj.get('id'),
-#                 "value": obj.get('device_alias')
-#             })
-#             device_attribute_dict.get('ip_address').append({
-#                 "id": obj.get('id'),
-#                 "value": obj.get('ip_address')
-#             })
-#             device_attribute_dict.get('mac_address').append({
-#                 "id": obj.get('id'),
-#                 "value": obj.get('mac_address')
-#             })
-#             device_attribute_dict.get('host_state').append({
-#                 "id": obj.get('id'),
-#                 "value": obj.get('host_state')
-#             })
-#             device_attribute_dict.get('city').append({
-#                 "id": obj.get('id'),
-#                 "value": obj.get('city')
-#             })
-#             device_attribute_dict.get('state').append({
-#                 "id": obj.get('id'),
-#                 "value": obj.get('state')
-#             })
-#
-#         for attr in attr_list:
-#             base_dict = dict(
-#                 key=attr.keys()[0],
-#                 title=attr.values()[0],
-#                 field_type="string",
-#                 element_type="multiselect",
-#                 values=device_attribute_dict.get(attr.keys()[0])
-#             )
-#             result_list.append(base_dict)
-#
-#         return result_list
-#
-#     def get_objects_by_id(self, model_class, **kwargs):
-#         base_dict = {
-#             "key": kwargs.get('key'),
-#             "title": kwargs.get('title'),
-#             "field_type": "string",
-#             "element_type": "multiselect",
-#             "values": []
-#         }
-#
-#         obj_list = model_class.objects.all().order_by('id')
-#         for obj in obj_list:
-#             value_dict = dict(
-#                 id=obj.id,
-#                 value=obj.name
-#             )
-#             base_dict.get('values').append(value_dict)
-#
-#         return base_dict
-#
-#
-# class DeviceSetFilters(View):
-#     """
-#     Returning values matched to search filters
-#     criterion
-#     """
-#
-#     def get(self, request):
-#         """
-#         Get the values for filters
-#
-#         Args:
-#
-#         Returns:
-#
-#         """
-#
-#         req_params = request.GET
-#         #Get the host-ip
-#         host_ip = request.META['SERVER_NAME']
-#         host_port = request.META['SERVER_PORT']
-#         filters = {}
-#         device_attribs = {}
-#         device_object_list = []
-#         #Result dict prototype
-#         self.result = {
-#             "success": 0,
-#             "message": "No Device Data",
-#             "data": {
-#                 "meta": None,
-#                 "objects": None
-#             }
-#         }
-#         cls = DeviceStats()
-#
-#         if req_params.get('filters') is not None:
-#             filters = ast.literal_eval(req_params.get('filters'))
-#
-#         #storing all filter, name/value, pairs in one big dict
-#         filters = {attr.get('field'): attr.get('value') for attr in filters}
-#
-#         if 'device_group' in filters.iterkeys():
-#             device_gp_list = DeviceStats.get_model_queryset(
-#                 cls,
-#                 DeviceGroup,
-#                 'id',
-#                 field_list=filters.get('device_group')
-#             )
-#
-#             device_id_list = self.inventory_model_queryset(
-#                 Inventory,
-#                 'device_id',
-#                 field_list=device_gp_list
-#             )
-#             device_attribs.update({
-#                 "device_id_list": device_id_list
-#             })
-#
-#         if 'device_technology' in filters.iterkeys():
-#             device_attribs = self.add_filters(
-#                 filters,
-#                 device_attribs,
-#                 'device_technology'
-#             )
-#
-#         if 'device_vendor' in filters.iterkeys():
-#             device_attribs = self.add_filters(
-#                 filters,
-#                 device_attribs,
-#                 'device_vendor'
-#             )
-#
-#         if 'device_model' in filters.iterkeys():
-#             device_attribs = self.add_filters(
-#                 filters,
-#                 device_attribs,
-#                 'device_model'
-#             )
-#
-#         if 'device_name' in filters.iterkeys():
-#             device_attribs = self.add_filters(
-#                 filters,
-#                 device_attribs,
-#                 'device_name'
-#             )
-#
-#         if 'device_alias' in filters.iterkeys():
-#             device_attribs = self.add_filters(
-#                 filters,
-#                 device_attribs,
-#                 'device_alias'
-#             )
-#
-#         if 'mac_address' in filters.iterkeys():
-#             device_attribs = self.add_filters(
-#                 filters,
-#                 device_attribs,
-#                 'mac_address'
-#             )
-#
-#         if 'ip_address' in filters.iterkeys():
-#             device_attribs = self.add_filters(
-#                 filters,
-#                 device_attribs,
-#                 'ip_address'
-#             )
-#
-#         if 'city' in filters.iterkeys():
-#             device_attribs = self.add_filters(
-#                 filters,
-#                 device_attribs,
-#                 'city'
-#             )
-#
-#         if 'state' in filters.iterkeys():
-#             device_attribs = self.add_filters(
-#                 filters,
-#                 device_attribs,
-#                 'state'
-#             )
-#
-#         device_object_list = self.device_model_queryset(
-#             Device,
-#             'device_name',
-#             field_attribs=device_attribs
-#         )
-#
-#         device_object_list = self.get_master(device_object_list)
-#
-#         device_m_s_info = DeviceStats.get_master_slave_pairs(
-#             cls,
-#             device_object_list,
-#             show_link=1,
-#             host_ip=host_ip,
-#             host_port=host_port
-#         )
-#
-#         if len(device_m_s_info.get('children')):
-#             self.result.update({
-#                 "success": 1,
-#                 "message": "Device Data",
-#                 "data": {
-#                     "meta": device_m_s_info.pop('meta'),
-#                     "objects": device_m_s_info
-#                 }
-#             })
-#             return HttpResponse(json.dumps(self.result))
-#         else:
-#             return HttpResponse(json.dumps(self.result))
-#
-#     def add_filters(self, filters, filter_dict, filter_key):
-#         filter_dict.update({
-#             filter_key: filters.get(filter_key)
-#         })
-#
-#         return filter_dict
-#
-#     def inventory_model_queryset(self, model_class, field_name, **kwargs):
-#         q_list = []
-#         obj_attr_list = []
-#         f = operator.attrgetter(field_name)
-#         for attr in kwargs.get('field_list'):
-#             q_list.append(Q(device_group_id=attr))
-#
-#         obj_list = model_class.objects.filter(reduce(operator.or_, q_list))
-#         for o in obj_list:
-#             obj_attr_list.append(f(o))
-#
-#         return obj_attr_list
-#
-#     def device_model_queryset(self, model_class, field_name, **kwargs):
-#         q_list = []
-#         reduce_q_list = []
-#         final_predicate_list = []
-#         obj_attr_list = []
-#         obj_list = []
-#
-#         f = operator.attrgetter(field_name)
-#
-#         device_id_list = kwargs.get('field_attribs').get('device_id_list', [])
-#         device_technology = kwargs.get('field_attribs').get('device_technology', [])
-#         device_vendor = kwargs.get('field_attribs').get('device_vendor', [])
-#         device_model = kwargs.get('field_attribs').get('device_model', [])
-#         device_name = kwargs.get('field_attribs').get('device_name', [])
-#         device_alias = kwargs.get('field_attribs').get('device_alias', [])
-#         mac_address = kwargs.get('field_attribs').get('mac_address', [])
-#         ip_address = kwargs.get('field_attribs').get('ip_address', [])
-#         city_list = kwargs.get('field_attribs').get('city', [])
-#         state_list = kwargs.get('field_attribs').get('state', [])
-#
-#         if len(device_id_list):
-#             for _id in device_id_list:
-#                 q_list.append(Q(pk=_id))
-#         if len(device_technology):
-#             for _id in device_technology:
-#                 q_list.append(Q(device_technology=_id))
-#         if len(device_vendor):
-#             for _id in device_vendor:
-#                 q_list.append(Q(device_vendor=_id))
-#         if len(device_model):
-#             for _id in device_model:
-#                 q_list.append(Q(device_model=_id))
-#         if len(device_name):
-#             for _name in device_name:
-#                 q_list.append(Q(device_name=_name))
-#         if len(device_alias):
-#             for _alias in device_alias:
-#                 q_list.append(Q(device_alias=_alias))
-#         if len(ip_address):
-#             for _ip in ip_address:
-#                 q_list.append(Q(ip_address=_ip))
-#         if len(mac_address):
-#             for _mac in mac_address:
-#                 q_list.append(Q(mac_address=_mac))
-#         if len(city_list):
-#             for city in city_list:
-#                 q_list.append(Q(city=city.strip()))
-#         if len(state_list):
-#             for state in state_list:
-#                 q_list.append(Q(state=state.strip()))
-#         if len(q_list):
-#             reduce_q_list = reduce(operator.or_, q_list)
-#
-#         if len(reduce_q_list):
-#             obj_list = model_class.objects.filter(reduce_q_list)
-#
-#         return obj_list
-#
-#     def get_master(self, device_object_list):
-#         master_object = None
-#         master_object_list = []
-#         device_object_list = list(device_object_list)
-#         if len(device_object_list) == 0:
-#             return device_object_list
-#
-#         for s in device_object_list:
-#             if not [p.id for p in device_object_list if s.parent_id == p.id]:
-#                 try:
-#                     master_object = Device.objects.get(
-#                         id=s.parent_id
-#                     )
-#                     master_object_list.append(master_object)
-#                 except ObjectDoesNotExist, error:
-#                     print error
-#         if len(master_object_list):
-#             device_object_list = device_object_list + master_object_list
-#
-#         return device_object_list
-from inventory.models import Sector, BaseStation, Circuit
-#reving duplicate entries in the dictionaries in a list
+
+#removing duplicate entries in the dictionaries in a list
 removing_duplicate_entries = lambda lst: [dict(t) for t in set( [ tuple(sorted(d.items())) for d in lst ] )]
 
 class DeviceGetFilters(View):
@@ -569,35 +176,52 @@ class DeviceSetFilters(View):
             "success": 0,
             "message": "Device Data",
             "data": {
-                "meta": None,
+                "meta": {},
                 "objects": []
             }
         }
 
+        result_data=list()
         request_query= self.request.GET.get('filters','')
-        if request_query:
-            request_query=eval(request_query)
+        result_data= filter_gis_map(request_query)
+        self.result['data']['objects']= {"id" : "mainNode", "name" : "mainNodeName", "data" :
+                                        { "unspiderfy_icon" : "static/img/marker/slave01.png" }
+                                        }
+        self.result['data']['meta']['total_count']=0
+        self.result['data']['objects']['children']=result_data
+        self.result['message']= 'Data Fetched Successfully.' if self.result['data']['objects']['children'] else 'No record found.'
+        self.result['success']= 1 if self.result['data']['objects']['children'] else 0
+
+        return HttpResponse(json.dumps(self.result))
+
+
+
+def filter_gis_map(request_query):
+    result_list=list()
+    if request_query:
+            request_query= eval(request_query)
             base_station_ids, circuit_ids= list(), list()
             exec_query_base_station = "base_station_ids = BaseStation.objects.filter("
             exec_query_circuit = "circuit_ids = Circuit.objects.filter("
 
             query_circuit, query_base_station =list(), list()
             for filter in request_query:
+
                 if filter['field']=='circuit_name':
                     query_circuit.append("Q(name__in=%s)"%(filter['value']))
                 elif filter['field']=='city':
 
-                    city_ids=City.objects.filter(city_name__in=filter['value']).values_list('id', flat=True)
+                    city_ids= City.objects.filter(city_name__in=filter['value']).values_list('id', flat=True)
                     query_base_station.append("Q(%s__in=%s)"%(filter['field'],str(city_ids)))
 
                 elif filter['field']=='state':
 
-                    state_ids=State.objects.filter(state_name__in= filter['value']).values_list('id', flat=True)
+                    state_ids= State.objects.filter(state_name__in= filter['value']).values_list('id', flat=True)
                     query_base_station.append("Q(%s__in=%s)"%(filter['field'],str(state_ids)))
 
                 elif filter['field']=='bs_technology':
 
-                    dt_ids=DeviceTechnology.objects.filter(name__in= filter['value']).values_list('id', flat=True)
+                    dt_ids= DeviceTechnology.objects.filter(name__in= filter['value']).values_list('id', flat=True)
                     query_base_station.append("Q(%s__in=%s)"%(filter['field'],str(dt_ids)))
 
                 elif filter['field']=='sector_configured_on':
@@ -617,16 +241,12 @@ class DeviceSetFilters(View):
             if query_circuit: exec exec_query_circuit
 
             if base_station_ids:
-                self.result['data']['objects']= {"id" : "mainNode", "name" : "mainNodeName", "data" :
-                                                { "unspiderfy_icon" : "static/img/marker/slave01.png" }
-                                                }
-                self.result['data']['objects']['children']= list()
                 for base_station_id in base_station_ids:
                     try:
-                        base_station_info=prepare_result(base_station_id)
-                        self.result['data']['objects']['children'].append(base_station_info)
+                        base_station_info= prepare_result(base_station_id)
+                        result_list.append(base_station_info)
                     except Exception as e:
-                        logger.error("API Error Message: %s"%(e.message))
+                        logger.error("SetFilters API Error Message: %s"%(e.message))
                         pass
 
             if circuit_ids:
@@ -634,46 +254,287 @@ class DeviceSetFilters(View):
                     circuit=Circuit.objects.get(id=circuit_id)
                     base_station_id=circuit.sector.base_station.id
                     try:
-                        base_station_info=prepare_result(base_station_id)
-                        self.result['data']['objects']['children'].append(base_station_info)
+                        base_station_info= prepare_result(base_station_id)
+                        result_list.append(base_station_info)
                     except Exception as e:
-                        logger.error("API Error Message: %s"%(e.message))
+                        logger.error("SetFilters API Error Message: %s"%(e.message))
                         pass
 
-            self.result['message']= 'Data Fetched Successfully.' if self.result['data']['objects']['children'] else 'No record found.'
-            self.result['success']=1 if self.result['data']['objects']['children'] else 0
-
-        return HttpResponse(json.dumps(self.result))
+    return result_list
 
 
+def prepare_result(base_station_id):
+    base_station= BaseStation.objects.get(id=base_station_id)
+    base_station_info={
+        'id':base_station.id,
+        'name':base_station.name,
+        'data':{
+                'lat':base_station.latitude,
+                'lon':base_station.longitude,
+                "markerUrl" : "static/img/marker/icon2_small.png",
+                'technology':base_station.bs_technology.name,
+                'antena_height':None,
+                'vendor':','.join(base_station.bs_technology.device_vendors.values_list('name', flat=True)),
+                'city':City.objects.get(id=base_station.city).city_name if base_station.city else 'N/A' ,
+                'state':State.objects.get(id=base_station.state).state_name if base_station.state else 'N/A',
+                'param':{
+                    'base_station':[
+                                {
+                                 'name':'alias',
+                                 'title':'Alias',
+                                 'show':1,
+                                 'value':base_station.alias
+                                },
+                                {
+                                 'name':'building_height',
+                                 'title':'Building Height',
+                                 'show':1,
+                                 'value':base_station.building_height if base_station.building_height else 'N/A'
+                                },
+                                {
+                                 'name':'tower_height',
+                                 'title':'Tower Height',
+                                 'show':1,
+                                 'value':base_station.tower_height if base_station.tower_height else 'N/A'
+                                },
+                                {
+                                 'name':'bs_technology',
+                                 'title':'BS Technology',
+                                 'show':1,
+                                 'value':base_station.bs_technology.name if base_station.bs_technology else 'N/A'
+                                }],
+                      'backhual':[
+                                   {
+                                    'name':'bh_configured_on',
+                                    'title':'BH Configured On',
+                                    'show':1,
+                                    'value':base_station.backhaul.bh_configured_on.device_name if base_station.backhaul.bh_configured_on.device_name else 'N/A'
+                                   },
+                                   {
+                                    'name':'bh_capacity',
+                                    'title':'BH Capacity',
+                                    'show':1,
+                                    'value':base_station.backhaul.bh_capacity if base_station.backhaul.bh_capacity else 'N/A'
+                                   },
+                                   {
+                                    'name':'bh_type',
+                                    'title':'BH Type',
+                                    'show':1,
+                                    'value':base_station.backhaul.bh_type if base_station.backhaul.bh_type else 'N/A'
+                                   },
+                                   {
+                                    'name':'pe_ip',
+                                    'title':'PE IP',
+                                    'show':1,
+                                    'value':base_station.backhaul.pe_ip if base_station.backhaul.pe_ip else 'N/A'
+                                   },
+                                   {
+                                    'name':'bh_connectivity',
+                                    'title':'BH Connectivity',
+                                    'show':1,
+                                    'value':base_station.backhaul.bh_connectivity if base_station.backhaul.bh_connectivity else 'N/A'
+                                   },
+               ]}
 
+               },
+        }
 
+    base_station_info['data']['param']['sector']=[]
+    sectors= Sector.objects.filter(base_station = base_station.id)
+    for sector in sectors:
+            if Sector.objects.get(id=sector.id).sector_configured_on.is_deleted==1:
+                continue
+            base_station_info['data']['param']['sector']+=[{
+            "color" : sector.frequency.color_hex_value if hasattr(sector, 'frequency')  and sector.frequency else 'rgba(74,72,94,0.58)',
+            'radius':sector.cell_radius,
+            'azimuth_angle':sector.antenna.azimuth_angle,
+            'beam_width' : sector.antenna.beam_width,
+            'orientation' : sector.antenna.polarization,
+            'info':[   {
+                        'name':'sector_name',
+                        'title':'Sector Name',
+                        'show':1,
+                        'value':sector.name
+                        },
+                       {
+                        'name':'type_of_bs',
+                        'title':'Type of BS',
+                        'show':1,
+                        'value':sector.base_station.bs_type \
+                            if sector.base_station.bs_type else 'N/A'
+                        },
+                       {
+                        'name':'building_height',
+                        'title':'Building Height',
+                        'show':1,
+                        'value':base_station.building_height \
+                            if base_station.building_height else 'N/A'
+                        },
+                       {
+                        'name':'tower_height',
+                        'title':'Tower Height',
+                        'show':1,
+                        'value':base_station.tower_height if base_station.tower_height else 'N/A'
+                        },
+                       {
+                        'name':'type_of_antenna',
+                        'title':'Antenna Type',
+                        'show':1,
+                        'value':sector.antenna.mount_type if sector.antenna.mount_type else 'N/A'
+                        },
+                       {
+                        'name':'antenna_tilt',
+                        'title':'Antenna Tilt',
+                        'show':1,
+                        'value':sector.antenna.tilt if sector.antenna.tilt else 'N/A'
+                        },
+                       {
+                        'name':'antenna_ht',
+                        'title':'Antenna Height',
+                        'show':1,
+                        'value':sector.antenna.height if sector.antenna.height else 'N/A'
+                        },
+                       {
+                        'name':'antenna_bw',
+                        'title':'Antenna Beam Width',
+                        'show':1,
+                        'value':sector.antenna.beam_width if sector.antenna.beam_width else 'N/A'
+                        },
+                       {
+                        'name':'antenna_azimuth',
+                        'title':'Antenna Azimuth Angle',
+                        'show':1,
+                        'value':sector.antenna.azimuth_angle if sector.antenna.azimuth_angle else 'N/A'
+                        },
+                       {
+                        'name':'antenna_splitter_installed',
+                        'title':'Installation of Splitter',
+                        'show':1,
+                        'value':sector.antenna.splitter_installed if sector.antenna.splitter_installed else 'N/A'
+                        },
+                       {
+                        'name':'city',
+                        'title':'City',
+                        'show':1,
+                        'value':City.objects.get(id=base_station.city).city_name  \
+                            if sector.base_station.city else 'N/A'
+                        },
+                       {
+                        'name':'state',
+                        'title':'State',
+                        'show':1,
+                        'value':State.objects.get(id=base_station.state).state_name \
+                            if base_station.state else 'N/A'
+                        },
+            ],
+            'sub_station':[]
 
+            }]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            circuits= Circuit.objects.filter(sector = sector.id)
+            for circuit in circuits:
+                substation= SubStation.objects.get(id = circuit.sub_station.id)
+                substation_device= Device.objects.get(id= substation.device.id)
+                if substation_device.is_deleted==1:
+                    continue
+                base_station_info['data']['param']['sector'][-1]['sub_station']+=[{
+                                  'id'  : substation.id,
+                                  'name': substation.name,
+                                  'device_name':substation.device.device_name,
+                                  'data': {
+                                      "lat":substation_device.latitude,
+                                      "lon":substation_device.longitude,
+                                      "antenmaina_height" : sector.antenna.height,
+                                      "markerUrl" : "static/img/marker/icon4_small.png",
+                                      "show_link" : 1,
+                                      "link_color" : sector.frequency.color_hex_value if hasattr(sector, 'frequency')  and sector.frequency else 'rgba(74,72,94,0.58)',
+                                      'param':{
+                                              'sub_station':[
+                                                  {
+                                                   'name':'alias',
+                                                   'title':'Alias',
+                                                   'show':1,
+                                                   'value':substation_device.device_alias if substation_device.device_alias else 'N/A'
+                                                  },
+                                                  {
+                                                   'name':'cktid',
+                                                   'title':'Circuit ID',
+                                                   'show':1,
+                                                   'value':circuit.id if circuit.id else 'N/A'
+                                                  },
+                                                  {
+                                                   'name':'qos_bandwidth',
+                                                   'title':'QOS(BW)',
+                                                   'show':1,
+                                                   'value':circuit.qos_bandwidth if circuit.qos_bandwidth else 'N/A'
+                                                  },
+                                                  {
+                                                   'name':'latitude',
+                                                   'title':'Latitude',
+                                                   'show':1,
+                                                   'value':substation_device.latitude if substation_device.latitude else 'N/A'
+                                                  },
+                                                  {
+                                                   'name':'longitude',
+                                                   'title':'Longitude',
+                                                   'show':1,
+                                                   'value':substation.device.longitude if substation.device.longitude else 'N/A'
+                                                  },
+                                                  {
+                                                   'name':'antenna_height',
+                                                   'title':'Antenna Height',
+                                                   'show':1,
+                                                   'value':sector.antenna.height if sector.antenna.height else 'N/A'
+                                                  },
+                                                  {
+                                                   'name':'polarisation',
+                                                   'title':'Polarisation',
+                                                   'show':1,
+                                                   'value':sector.antenna.polarization \
+                                                       if sector.antenna.polarization else 'N/A'
+                                                  },
+                                                  {
+                                                   'name':'mount_type',
+                                                   'title':'SS MountType',
+                                                   'show':1,
+                                                   'value':sector.antenna.mount_type if sector.antenna.mount_type else 'N/A'
+                                                  },
+                                                  {
+                                                   'name':'antenna_type',
+                                                   'title':'Antenna Type',
+                                                   'show':1,
+                                                   'value':sector.antenna.antenna_type if sector.antenna.antenna_type else 'N/A'
+                                                  },
+                                                  {
+                                                   'name':'ethernet_extender',
+                                                   'title':'Ethernet Extender',
+                                                   'show':1,
+                                                   'value':sector.antenna.ethernet_extender \
+                                                       if hasattr(sector.antenna, 'ethernet_extender') and sector.antenna.ethernet_extender  else 'N/A'
+                                                  },
+                                                  {
+                                                   'name':'cable_length',
+                                                   'title':'Cable Length',
+                                                   'show':1,
+                                                   'value':sector.antenna.cable_length \
+                                                       if hasattr(sector.antenna, 'cable_length') and sector.antenna.cable_length else 'N/A'
+                                                  },
+                                                  {
+                                                   'name':'customer_address',
+                                                   'title':'Customer Address',
+                                                   'show':1,
+                                                   'value': Customer.objects.get(id=sector.circuit_set.values('customer')).address \
+                                                       if 'customer' in sector.circuit_set.values() else 'N/A'
+                                                  },
+                                                  {
+                                                   'name':'date_of_acceptance',
+                                                   'title':'Date of Acceptance',
+                                                   'show':1,
+                                                   'value':Customer.objects.get(id=sector.circuit_set.values('customer')).date_of_acceptance \
+                                                       if 'date_of_acceptance' in sector.circuit_set.values('date_of_acceptance') else 'N/A'
+                                                  }
+                                              ],
+                                          }
+                                      }
+                                      }]
+    return base_station_info
