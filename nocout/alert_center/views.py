@@ -593,25 +593,65 @@ class SingleDeviceAlertDetails(View):
         required_columns= ["device_name", "ip_address", "service_name", "data_source",
                           "severity", "current_value", "sys_timestamp", "description"]
         if service_name == 'latency':
-            data_list= EventNetwork.objects.filter(device_name=device_name, data_source='rta',
-                       sys_timestamp__gte= now_minus_1week, sys_timestamp__lte=now).values(*required_columns)
+            data_list= EventNetwork.objects.\
+                filter(device_name=device_name,
+                       data_source='rta',
+                       sys_timestamp__gte= now_minus_1week,
+                       sys_timestamp__lte=now).\
+                order_by("-sys_timestamp").\
+                values(*required_columns)
 
         elif service_name == 'packetdrop' or service_name == 'packet_drop':
-            data_list= EventNetwork.objects.filter(device_name=device_name, data_source='pl',
-                       sys_timestamp__gte= now_minus_1week, sys_timestamp__lte=now).values(*required_columns)
+            data_list= EventNetwork.objects.\
+                filter(device_name=device_name,
+                       data_source='pl',
+                       sys_timestamp__gte= now_minus_1week,
+                       sys_timestamp__lte=now).\
+                order_by("-sys_timestamp").\
+                values(*required_columns)
 
         elif service_name == 'down':
-            data_list= EventNetwork.objects.filter(device_name= device_name, data_source='pl', current_value=100,
-                       severity='DOWN', sys_timestamp__gte= now_minus_1week, sys_timestamp__lte= now). \
-                       values(*required_columns)
+            data_list= EventNetwork.objects.\
+                filter(device_name= device_name,
+                       data_source='pl',
+                       current_value=100,
+                       severity='DOWN',
+                       sys_timestamp__gte= now_minus_1week,
+                       sys_timestamp__lte= now). \
+                    order_by("-sys_timestamp").\
+                    values(*required_columns)
 
         elif service_name == 'service':
-            data_list= EventService.objects.filter(device_name= device_name, sys_timestamp__gte= now_minus_1week,
-                                        sys_timestamp__lte= now).values(*required_columns)
+            data_list= EventService.objects.\
+                filter(device_name= device_name,
+                        sys_timestamp__gte= now_minus_1week,
+                        sys_timestamp__lte= now).\
+                order_by("-sys_timestamp").\
+                values(*required_columns)
 
+        required_columns = [
+                            "device_name",
+                            "ip_address",
+                            "service_name",
+                            "data_source",
+                            "severity",
+                            "current_value",
+                            "alert_date",
+                            "alert_time",
+                            "description"
+        ]
+        for data in data_list:
+            data["alert_date"] = datetime.datetime.\
+                                fromtimestamp(float( data["sys_timestamp"] )).\
+                                strftime("%d/%B/%Y")
+            data["alert_time"] = datetime.datetime.\
+                                fromtimestamp(float( data["sys_timestamp"] )).\
+                                strftime("%I:%M %p")
+            del(data["sys_timestamp"])
         required_columns= map(lambda x:x.replace('_',' ') , required_columns )
         context= dict(devices=devices_result,
                       current_device_id= device_id,
+                      current_device_name = device_name,
                       page_type= page_type,
                       table_data= data_list,
                       table_header= required_columns

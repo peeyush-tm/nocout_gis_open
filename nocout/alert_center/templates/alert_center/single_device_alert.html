@@ -20,7 +20,7 @@
 	<!--Single Device Live Perf Start-->
 	<div class='box border lite perfContainerBlock'>
 	    <div class='box-title'>
-	        <h4><i class='fa fa-file-text'></i> {{ page_type| title }} Alert - {{ current_device_id }}</h4>
+	        <h4><i class='fa fa-file-text'></i> {{ page_type| title }} Alert - {{ current_device_name }}</h4>
 	        <!--Filters Block Start-->
 	        <div class="pull-right">
 	            <ul class="list-unstyled list-inline">
@@ -65,11 +65,13 @@
         <div>
 
         </div>
-            <table class="table table-bordered">
+            <table id="device_alert" class="table table-bordered table-stripped table-sortable">
                 <thead>
-                    {% for data in table_header %}
-                        <td>{{ data | title }}</td>
-                    {% endfor %}
+                    <tr>
+                        {% for data in table_header %}
+                            <th class="headerSortable" style="background: none;">{{ data | title }}</th>
+                        {% endfor %}
+                    </tr>
                 </thead>
                 <tbody>
                     {% for data in table_data %}
@@ -79,7 +81,8 @@
                             <td>{{ data.data_source }}</td>
                             <td>{{ data.severity }}</td>
                             <td>{{ data.current_value }}</td>
-                            <td>{{ data.sys_timestamp }}</td>
+                            <td>{{ data.alert_date }}</td>
+                            <td>{{ data.alert_time }}</td>
                             <td>{{ data.description }}</td>
                         </tr>
                     {% endfor %}
@@ -88,25 +91,43 @@
         </div>
     </div>
 
-{% endblock %}
 
+    <script type="text/javascript">
+        $(document).ready(function(e) {
+            //set the dropdown to current device value
+            $("#device_name").val("{{current_device_id}}");
 
-<script type="text/javascript">
-    $(document).ready(function(e) {
             //on change of selection element in device_name
             // we should redirect user to the new page for the device
             $("#device_name").on('change', function(){
                 var new_device = $(this).val();
                 var uri = $.url();
                 var path = uri.attr('path').split('/');
-                path[path.length-2] = new_device;
+                path[path.length-4] = new_device;
                 var new_url = uri.attr('protocol') + "://" + uri.attr('host') + ":" + uri.attr('port') + path.join("/");
                 window.location.href = new_url;
             });
 
             /*Initialize Datepicker*/
-			$(".datepicker").datepicker();
-    })
-</script>
+            $(".datepicker").datepicker();
+        })
+    </script>
+
+{% endblock %}
+
+{% block load_js %}
+    <script>
+        $(document).ready(function () {
+            $("#device_alert").tablecloth({
+              theme:"stats",
+              bordered: true,
+              sortable:true,
+              striped: true,
+              clean:true
+            });
+        });
+    </script>
+{% endblock %}
+
 
 
