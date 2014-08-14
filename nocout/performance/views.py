@@ -420,12 +420,10 @@ class Fetch_Inventory_Devices(View):
 
         organization_substations= SubStation.objects.filter(device__in = Device.objects.filter(
             is_added_to_nms=1,is_deleted=0,
-            organization= organization.id).values_list('id', flat=True)).values_list('id', 'name', 'alias')
-
+            organization= organization.id).values_list('id', flat=True)).values_list('id', 'alias')
         result=list()
-
         for substation in organization_substations:
-            result.append({ 'id':substation[0], 'name':substation[1], 'alias':substation[2] })
+            result.append({ 'id':substation[0], 'alias':substation[1] })
 
         return result
 
@@ -445,8 +443,7 @@ class Fetch_Inventory_Devices(View):
                                                             id__in= sector_configured_on_devices_ids)
         result=list()
         for sector_configured_on_device in sector_configured_on_devices:
-            result.append({ 'id':sector_configured_on_device.id, 'name':sector_configured_on_device.device_name,
-                            'alias':sector_configured_on_device.device_alias })
+            result.append({ 'id':sector_configured_on_device.id, 'alias':sector_configured_on_device.device_alias })
 
         return result
 

@@ -1,0 +1,112 @@
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+	<li>Alert Detail</li>
+	<li>{{ page_type | title }} Alert</li>
+{% endblock %}
+{% block content_title %} {{ page_type | title  }} Alert{% endblock %}
+{% block content_description %} {% endblock %}
+{% load staticfiles %}
+{% block css %}
+	<!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
+{% endblock %}
+
+{% block content %}
+	<style>
+		.perfContainerBlock .box-title .pull-right .list-inline > li {
+			max-width: 200px !important;
+		}
+	</style>
+	<!--Single Device Live Perf Start-->
+	<div class='box border lite perfContainerBlock'>
+	    <div class='box-title'>
+	        <h4><i class='fa fa-file-text'></i> {{ page_type| title }} Alert - {{ current_device_id }}</h4>
+	        <!--Filters Block Start-->
+	        <div class="pull-right">
+	            <ul class="list-unstyled list-inline">
+	                <li>
+	                    <!--device_name Filter-->
+	                    <select name="device_name" id="device_name" class="form-control col-xs-1 input-sm">
+                            {% for device in devices %}
+    	                        <option value='{{ device.id }}'>{{  device.alias }}</option>
+                            {% endfor %}
+	                    </select>
+	                </li>
+	                <li>
+	                    <!--start_date Filter-->
+	                    <input class="form-control col-xs-1 input-sm datepicker" type="text" name="start_date" size="10" id="start_date" placeholder="Start Date">
+	                </li>
+	                <li>
+	                	<span class="col-xs-1 input-sm">To</span>
+	                </li>
+	                <li>
+	                    <!--end_date Filter-->
+	                    <input class="form-control col-xs-1 input-sm datepicker" type="text" name="end_date" size="10" id="end_date" placeholder="End Date">
+	                </li>
+	                <li>
+	                	<!--CSV or Excel download action. -->
+	                    <div class="btn-group dropdown col-xs-1">
+							<button class="btn  btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+								Download Report
+								<span class="caret"></span>
+							</button>
+							<ul class="dropdown-menu context">
+								<li>
+									<a href="javascript:;">Excel</a>
+								</li>
+								<li>
+									<a href="javascript:;">CSV</a>
+								</li>
+							</ul>
+						</div>
+	                </li>
+	            </ul>
+	        </div>
+        <div>
+
+        </div>
+            <table class="table table-bordered">
+                <thead>
+                    {% for data in table_header %}
+                        <td>{{ data | title }}</td>
+                    {% endfor %}
+                </thead>
+                <tbody>
+                    {% for data in table_data %}
+                        <tr><td>{{ data.device_name }}</td>
+                            <td>{{ data.ip_address }}</td>
+                            <td>{{ data.service_name }}</td>
+                            <td>{{ data.data_source }}</td>
+                            <td>{{ data.severity }}</td>
+                            <td>{{ data.current_value }}</td>
+                            <td>{{ data.sys_timestamp }}</td>
+                            <td>{{ data.description }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+{% endblock %}
+
+
+<script type="text/javascript">
+    $(document).ready(function(e) {
+            //on change of selection element in device_name
+            // we should redirect user to the new page for the device
+            $("#device_name").on('change', function(){
+                var new_device = $(this).val();
+                var uri = $.url();
+                var path = uri.attr('path').split('/');
+                path[path.length-2] = new_device;
+                var new_url = uri.attr('protocol') + "://" + uri.attr('host') + ":" + uri.attr('port') + path.join("/");
+                window.location.href = new_url;
+            });
+
+            /*Initialize Datepicker*/
+			$(".datepicker").datepicker();
+    })
+</script>
+
+
