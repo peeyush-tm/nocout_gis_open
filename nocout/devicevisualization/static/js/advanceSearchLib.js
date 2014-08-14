@@ -442,17 +442,37 @@ function advanceSearchClass() {
 
 			        	} else {
 
-			        		/*Create a instance of googleEarthClass*/
-			        		earthInstance = new googleEarthClass();
 
-			        		/*Clear all the elements from google earth*/
-					        earthInstance.clearEarthElements();
+			        		/*Create a instance of networkMapClass*/
+							gmapInstance = new devicePlottingClass_gmap();
+
+							/*Reset markers, polyline & filters*/
+					        gmapInstance.clearGmapElements();
 
 					        /*Reset Global Variables & Filters*/
-					        earthInstance.resetVariables_earth();
+					        gmapInstance.resetVariables_gmap();
+
+					        /*If cluster icon exist then save it to global variable else make the global variable blank*/
+							if(result.data.objects.data.unspiderfy_icon == undefined) {
+								clusterIcon = "";
+							} else {
+								clusterIcon = window.location.origin+"/"+result.data.objects.data.unspiderfy_icon;
+							}
+
+					        /*Call the make network to create the BS-SS network on the google map*/
+					        gmapInstance.plotDevices_gmap(result.data.objects.children,"base_station");
+			        		/************** GOOGLE EARTH CODE*********************/
+			        		/*Create a instance of googleEarthClass*/
+			        		// earthInstance = new googleEarthClass();
+
+			        		/*Clear all the elements from google earth*/
+					        // earthInstance.clearEarthElements();
+
+					        /*Reset Global Variables & Filters*/
+					        // earthInstance.resetVariables_earth();
 
 					        /*create the BS-SS network on the google map*/
-					        earthInstance.plotDevices_earth(result.data.objects.children,"base_station");
+					        // earthInstance.plotDevices_earth(result.data.objects.children,"base_station");
 			        	}
 
 					}

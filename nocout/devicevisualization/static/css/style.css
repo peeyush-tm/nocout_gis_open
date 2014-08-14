@@ -127,7 +127,8 @@
     right:10px;
     top:10px;
     background:#FFF;
-    border:1px solid #000; 
+    border:1px solid #000;
+    z-index: 9999;
 }
 .sideInfoContainer .panel {
 
@@ -282,22 +283,36 @@
     padding-left: 0px;
     padding-right: 0px;
 }
+
 .mapContainerBlock .box-title .col-md-9 ul.list-unstyled li {
     width: 133px;
     max-width: 100%;
     padding-left: 0px;
     padding-right: 0px;
 }
+
 .mapContainerBlock .box-title .col-md-9 ul.list-unstyled li:last-child {
     width: auto;
 }
+
 .mapContainerBlock .box-title .col-md-9 ul.list-unstyled li .input-sm {
     padding: 5px;
 }
+
 .earthContainerBlock .box-title .col-md-9 ul.list-unstyled li {
-    max-width: 165px;
+    /*max-width: 165px;*/
+    width: 133px;
+    max-width: 100%;
     padding-left: 0px;
     padding-right: 0px;   
+}
+
+.earthContainerBlock .box-title .col-md-9 ul.list-unstyled li .input-sm {
+    padding: 5px;
+}
+
+.earthContainerBlock .box-title .col-md-9 ul.list-unstyled li:last-child {
+    width: auto;
 }
 
 
