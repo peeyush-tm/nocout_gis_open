@@ -458,7 +458,6 @@ function advanceSearchClass() {
 					}
 				} else {
 
-					// console.log(result.message);
 					$.gritter.add({
 			            // (string | mandatory) the heading of the notification
 			            title: 'Advance Filters - No Records',
@@ -473,6 +472,8 @@ function advanceSearchClass() {
 
 					/*Enable the refresh button*/
 					$("#resetFilters").button("complete");
+
+					$("#removeFilterBtn").click();
 				}
 
 				/*Remove backdrop div & hide spinner*/
