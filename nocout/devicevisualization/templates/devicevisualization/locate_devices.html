@@ -220,9 +220,10 @@
         networkMapInstance.createMap("deviceMap");
 
         if($.trim(deviceName) == "default_device_name") {
-            
-            /*Call the make network to create the BS-SS network on the google map*/
-            networkMapInstance.getDevicesData_gmap();
+            if(typeof google != "undefined") {
+                /*Call the make network to create the BS-SS network on the google map*/
+                networkMapInstance.getDevicesData_gmap();
+            }
 
         } else {
 
