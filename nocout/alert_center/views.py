@@ -834,17 +834,17 @@ def common_prepare_results(qs):
 
         elif dct['severity']=='WARNING' or "WARNING" in dct['description'] or "WARN" in dct['description']:
             dct['severity']='<i class="fa fa-circle orange-dot"></i>'
-            dct['current_value']='<span style="color:#FFA500">%s</span>'%(dct['current_value'])
-            dct['description']='<span style="color:#FFA500">%s</span>'%(dct['description'])
+            dct['current_value']='<span class="text-warning">%s</span>'%(dct['current_value'])
+            dct['description']='<span class="text-warning">%s</span>'%(dct['description'])
 
         elif dct['severity']=='UP' or "OK" in dct['description']:
             dct['severity']='<i class="fa fa-circle green-dot"></i>'
-            dct['current_value']='<span style="color:#008000">%s</span>'%(dct['current_value'])
-            dct['description']='<span style="color:#008000">%s</span>'%(dct['description'])
+            dct['current_value']='<span class="text-success">%s</span>'%(dct['current_value'])
+            dct['description']='<span class="text-success">%s</span>'%(dct['description'])
 
         else:
             dct['severity']='<i class="fa fa-circle grey-dot"></i>'
-            dct['current_value']='<span style="color:#bba11f" >%s</span>'%(dct['current_value'])
-            dct['description']='<span style="color:#bba11f">%s</span>'%(dct['description'])
+            dct['current_value']='<span class="text-muted" >%s</span>'%(dct['current_value'])
+            dct['description']='<span class="text-muted">%s</span>'%(dct['description'])
 
     return qs
