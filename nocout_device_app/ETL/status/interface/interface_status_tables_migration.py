@@ -18,7 +18,7 @@ import socket
 import imp
 import time
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
-
+utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -49,7 +49,7 @@ def main(**configs):
     data_values = []
     values_list = []
     docs = []
-    db = mysql_conn(configs=configs)
+    db = utility_module.mysql_conn(configs=configs)
     # Get the time for latest entry in mysql
     #start_time = get_latest_entry(db_type='mysql', db=db, site=configs.get('site'),table_name=configs.get('table_name'))
     utc_time = datetime(1970, 1,1,5,30)
@@ -117,7 +117,7 @@ def build_data(doc):
 	"""
 	values_list = []
 	time = doc.get('time')
-	machine_name = get_machine_name()
+	machine_name = utility_module.get_machine_name()
         t = (
         doc.get('device_name'),
         doc.get('service_name'),
@@ -149,7 +149,7 @@ def insert_data(table, data_values, **kwargs):
 
 	Kwargs (dict): Dictionary to hold connection variables
 	"""
-	db = mysql_conn(configs=kwargs.get('configs'))
+	db = utility_module.mysql_conn(configs=kwargs.get('configs'))
 	query = "SELECT * FROM %s " % table +\
                 "WHERE `device_name`='%s' AND `site_name`='%s' AND `service_name`='%s' AND `data_source`='%s'" %(str(data_values[0][0]),data_values[0][3],data_values[0][1],data_values[0][4])
         cursor = db.cursor()
@@ -191,61 +191,6 @@ def insert_data(table, data_values, **kwargs):
 				raise mysql.connector.Error, err
     		db.commit()
     		cursor.close()
-
-def get_epoch_time(datetime_obj):
-    """
-    Function to convert datetime_obj into unix
-    epoch time
-
-    Args:
-        datetime_obj (datetime): Python datetime object
-
-    Returns:
-        Unix epoch time in integer
-    """
-    # Get India times (GMT+5.30)
-    #utc_time = datetime(1970, 1,1, 5, 30)
-    if isinstance(datetime_obj, datetime):
-	start_epoch = datetime_obj
-        epoch_time = int(time.mktime(start_epoch.timetuple()))
-
-        return epoch_time
-    else:
-        return datetime_obj
-
-def mysql_conn(db=None, **kwargs):
-    """
-    Function to create connection to mysql database
-
-    Args:
-        db (dict): Mysqldb connection object
-
-    Kwargs:
-        kwargs (dict): Dict to store mysql connection variables
-    """
-    try:
-        db = mysql.connector.connect(
-                user=kwargs.get('configs').get('user'),
-                passwd=kwargs.get('configs').get('sql_passwd'),
-                host=kwargs.get('configs').get('ip'),
-                db=kwargs.get('configs').get('sql_db'),
-		buffered=True
-        )
-    except mysql.connector.Error as err:
-        raise mysql.connector.Error, err
-
-    return db
-def get_machine_name(machine_name=None):
-    """
-    Function to get the fully qualified domain name for the machine
-    on which Python interpretr is currently executing
-    """
-    try:
-        machine_name = socket.gethostname()
-    except Exception, e:
-        raise Exception(e)
-
-    return machine_name
 
 
 if __name__ == '__main__':
