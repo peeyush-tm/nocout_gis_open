@@ -59,6 +59,10 @@
     {% block content_js %}
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
         <script type="text/javascript" src={% static "js/bootstrap-file-input/bootstrap-file-input.js" %}></script>
+        <script type="text/javascript" src={% static "js/lodash/lodash.js" %}></script>
+        <script type="text/javascript" src={% static "js/jszip/jszip.js" %}></script>
+        <script type="text/javascript" src={% static "js/js-xslx/xlsx.js" %}></script>
+        <script type="text/javascript" src={% static "js/js-xslx/xlsx-reader.js" %}></script>
     {% endblock %}
     <script>
         $(document).ready(function(){
@@ -73,9 +77,27 @@
                 placement: 'right',
                 trigger: 'focus'
             });
-
-            /*Initialize Datepicker*/
-			$(".datepicker").datepicker();
-        })
+        });
+        $("#id_file_upload").change(function(event) {
+            var file = this.files[0], sheets;
+            XLSXReader(file, true, function(xlsxData) {
+                sheets = xlsxData.sheets;
+                console.log(sheets)
+                // Do somehting with sheets. It's a
+                // Javascript object with sheet names
+                // as keys and data as value in form of 2D array
+            });
+        });
+        /*
+        $("#id_file_upload").change(function () {
+            if ($("#id_file_upload").val()){
+                alert($('#id_file_upload').files[0].name);
+                Dajaxice.inventory.load_sheet_no_select_menu(Dajax.process, {'uploaded_file': $('#id_file_upload').attr('files')});
+            }
+            else {
+                Dajaxice.inventory.update_sheet_no_select_menu(Dajax.process, {'uploaded_file': $('#id_file_upload').attr('files')});
+            }
+        });
+        */
     </script>
 {% endblock %}
