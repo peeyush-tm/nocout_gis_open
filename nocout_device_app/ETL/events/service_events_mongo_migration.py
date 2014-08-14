@@ -13,6 +13,7 @@ import socket
 import imp
 import time
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
+utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -29,7 +30,7 @@ def main(**configs):
     data_values = []
     values_list = []
     docs = []
-    db = mysql_conn(configs=configs)
+    db = utility_module.mysql_conn(configs=configs)
     for i in range(len(configs.get('mongo_conf'))):
 	end_time = datetime.now()
     	start_time = get_latest_event_entry(
@@ -40,13 +41,11 @@ def main(**configs):
     	)
     	if start_time is None:
 		start_time = end_time - timedelta(minutes=15)
-    	start_time = get_epoch_time(start_time)
-    	end_time = get_epoch_time(end_time)
+    	start_time = utility_module.get_epoch_time(start_time)
+    	end_time = utility_module.get_epoch_time(end_time)
    
    	 # Read data function reads the data from mongodb and insert into mysql
     	docs = read_data(start_time, end_time,configs=configs.get('mongo_conf')[i], db_name=configs.get('nosql_db'))
-	print "docs"
-	print configs.get('mongo_conf')[i][0],docs
     	for doc in docs:
         	values_list = build_data(doc)
         	data_values.extend(values_list)
@@ -94,7 +93,7 @@ def build_data(doc):
         """
 
 	values_list = []
-	machine_name = get_machine_name()
+	machine_name = utility_module.get_machine_name()
 	t = (
         doc.get('device_name'),
         doc.get('service_name'),
@@ -127,7 +126,7 @@ def insert_data(table,data_values,**kwargs):
 
         """
 
-	db = mysql_conn(configs=kwargs.get('configs'))
+	db = utility_module.mysql_conn(configs=kwargs.get('configs'))
 	query = 'INSERT INTO `%s` ' % table
 	query += """
 		(device_name,service_name,sys_timestamp,check_timestamp,
@@ -144,61 +143,7 @@ def insert_data(table,data_values,**kwargs):
     	db.commit()
     	cursor.close()
 
-def get_epoch_time(datetime_obj):
-	"""
-        Function returns the converted epoch time from datetime obj
-        Args: table (mysql table on which we have to insert the data.table information is fetched from config.ini)
-        Kwargs: data_values (list of formatted doc )
-        Return : None
-        Raise : MYSQLdb.error
 
-        """
-
-	#utc_time = datetime(1970, 1,1)
-	if isinstance(datetime_obj, datetime):
-		start_epoch = datetime_obj
-        	epoch_time = int(time.mktime(start_epoch.timetuple()))
-        	return epoch_time
-    	else:
-        	return datetime_obj
-
-def mysql_conn(db=None, **kwargs):
-    """
-        Function for mysql database connection
-        Args: db (mysql datbase connection object)
-        Kwargs: Multiple arguments fetched from config.ini for connecting to mysql db
-        Return : Database object
-        Raise : mysql.connector error
-
-    """
-
-    try:
-        db = mysql.connector.connect(
-                user=kwargs.get('configs').get('user'),
-                passwd=kwargs.get('configs').get('sql_passwd'),
-                host=kwargs.get('configs').get('ip'),
-                db=kwargs.get('configs').get('sql_db')
-        )
-    except mysql.connector.Error as err:
-        raise mysql.connector.Error, err
-
-    return db
-
-def get_machine_name(machine_name=None):
-    """
-        Function for fetching the machine_name
-        Args: Input parameter for machine_name
-        Kwargs: None
-        Return : machine_name
-        Raise : Exception
-
-    """
-    try:
-        machine_name = socket.gethostname()
-    except Exception, e:
-        raise Exception(e)
-
-    return machine_name
 
 if __name__ == '__main__':
     main()
