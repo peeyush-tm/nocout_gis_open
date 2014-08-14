@@ -148,7 +148,9 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': False},
             {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
-            {'mData': 'current_value', 'sTitle': 'Packet Drop', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': False},
+            {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
             {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': False},
             {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': False},
@@ -232,8 +234,6 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
             extra_query_condition="AND (`{0}`.`current_value` = 100 OR `{0}`.`severity`='DOWN' ) "
         elif 'service' in self.request.path_info:
             search_table = "performance_eventservice"
-            #add data_sources_list as device data sources !!
-            return device_list
 
         required_data_columns = ["id",
                                  "ip_address",
@@ -276,6 +276,8 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                             'sys_timestamp':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
                             'description':data.description
                             }
+                    if 'service' in self.request.path_info:
+                        ddata.update({'data_source_name':data.data_source })
                     device_data.append(ddata)
         if device_data:
             sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
@@ -554,19 +556,18 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
     if not columns:
         return None
 
-    extra_where_clause = condition if condition else ""
     if table_name and devices:
         query = "SELECT {0} FROM {1} as original_table " \
                 "LEFT OUTER JOIN ({1} as derived_table) " \
                 "ON ( " \
-                "    original_table.data_source = derived_table.data_source AND " \
-                "    original_table.device_name = derived_table.device_name AND " \
-                "    original_table.id < derived_table.id" \
+                "        original_table.data_source = derived_table.data_source " \
+                "    AND original_table.device_name = derived_table.device_name " \
+                "    AND original_table.id < derived_table.id" \
                 ") " \
                 "WHERE ( " \
-                "    derived_table.id is null AND " \
-                "    original_table.device_name in ( {2} ) AND " \
-                "    original_table.data_source in ( {3} )" \
+                "        derived_table.id is null " \
+                "    AND original_table.device_name in ( {2} ) " \
+                "    {3}" \
                 "    {4}" \
                 ")" \
                 "ORDER BY original_table.id DESC" \
@@ -574,12 +575,9 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
                     (',').join(["original_table.`" + col_name + "`" for col_name in columns]),
                     table_name,
                     (",".join(map(in_string, devices))),
-                    (',').join(map(in_string, data_sources)),
-                    extra_where_clause.format("original_table")
+                    "AND original_table.data_source in ( {0} )".format((',').join(map(in_string, data_sources))) if data_sources else "",
+                    condition.format("original_table") if condition else ""
                 )
-
-    # logger.debug(query)
-
     return query
 
 
