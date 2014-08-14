@@ -1,3 +1,4 @@
+import os
 from django.core.exceptions import ValidationError
 import re
 from django import forms
@@ -466,6 +467,7 @@ class SectorForm(forms.ModelForm):
                     field.widget.attrs.update({'data-toggle': 'tooltip'})
                     field.widget.attrs.update({'data-placement': 'right'})
                     field.widget.attrs.update({'title': field.help_text})
+
     class Meta:
         """
         Meta Information
@@ -1016,3 +1018,38 @@ class ThematicSettingsForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
+
+
+#*********************************** Bulk Import ***************************************
+IMPORT_FILE_TYPES = ['.xls', '.xlsx' ]
+
+
+class GISInventoryBulkImportForm(forms.Form):
+    SHEET_CHOICES = (('', 'Select'),
+                     (1, '1'),
+                     (2, '2'))
+    file_upload = forms.FileField(label='Upload GIS Inventory File')
+    sheet = forms.ChoiceField(label='Sheet No.', choices=SHEET_CHOICES)
+
+    def __init__(self, *args, **kwargs):
+        super(GISInventoryBulkImportForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    def clean_file_upload(self):
+        input_excel = self.cleaned_data['file_upload']
+        extension = os.path.splitext(input_excel.name)[1]
+        if not (extension in IMPORT_FILE_TYPES):
+            raise forms.ValidationError( u'%s is not a valid excel file. Please make sure your input file is an excel file.' % extension )
+        else:
+            return input_excel
