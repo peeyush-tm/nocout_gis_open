@@ -96,7 +96,9 @@ function devicePlottingClass_gmap() {
 
 			var mapObject = {
 				center    : new google.maps.LatLng(21.1500,79.0900),
-				zoom      : 4
+				zoom      : 4,
+				mapTypeId : google.maps.MapTypeId.ROADMAP,
+				mapTypeControl : false
 			};    
 			/*Create Map Type Object*/
 			mapInstance = new google.maps.Map(document.getElementById(domElement),mapObject);		
