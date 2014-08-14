@@ -117,39 +117,8 @@ var perf_that = "",
  	 */
  	this.getServices = function(get_service_url, device_id) {
 
-        /*Spinner configuration object*/
-        var spinner_options = {
-            lines: 17, // The number of lines to draw
-            length: 33, // The length of each line
-            width: 3, // The line thickness
-            radius: 19, // The radius of the inner circle
-            corners: 1, // Corner roundness (0..1)
-            rotate: 0, // The rotation offset
-            direction: 1, // 1: clockwise, -1: counterclockwise
-            color: '#000', // #rgb or #rrggbb or array of colors
-            speed: 0.7, // Rounds per second
-            trail: 60, // Afterglow percentage
-            shadow: true, // Whether to render a shadow
-            hwaccel: false, // Whether to use hardware acceleration
-            className: 'spinner', // The CSS class to assign to the spinner
-            zIndex: 2e9, // The z-index (defaults to 2000000000)
-            top: '50%', // Top position relative to parent
-            left: '50%' // Left position relative to parent
-        };
-        /*Spinner DOM Element*/
-        var dom_target = document.getElementById('ajax_spinner');
-        
-        if($("#ajax_spinner").hasClass("hide")) {
-            /*Show ajax_spinner div*/
-            $("#ajax_spinner").removeClass("hide")
-            /*Initialize spinner object*/
-            var spinner = new Spinner(spinner_options).spin(dom_target);
-            /*If ajax_backdrop div not exist then appent it to body */
-            if($("#ajax_backdrop").length == 0) {
-                $("body").append('<div class="modal-backdrop fade in" id="ajax_backdrop" style="background: #FFFFFF;"></div>');
-            }            
-        }
-        /*Spinner Block End*/
+        /*Show the spinner*/
+        showSpinner();
 
  		/*Ajax call to Get Devices API*/
         var get_url = get_service_url;
@@ -168,12 +137,12 @@ var perf_that = "",
 
 					/*Loop to get services from object*/
                     var li_style = "background: #f5f5f5; width:100%; border:1px solid #dddddd;"
-                    var li_a_style = "background: none; border:none;"
+                    var li_a_style = "background: none; border:none;";
+                    
+                    var count = 0;
 
-
-
-                    for(var i= 0; i<device_services_tab.length; i++) {
-                        var count = 0;
+                    for(var i= 0; i<device_services_tab.length; i++) {                        
+                        
                         device_services = result.data.objects[device_services_tab[i]];
                         var tabs_with_data = "";
                         var service_tabs = '<div class="col-md-3"><ul class="nav nav-tabs">';
@@ -198,15 +167,17 @@ var perf_that = "",
                         tabs_with_data = service_tabs +" "+service_tabs_data;
 
                             $("#"+device_services_tab[i]+" .inner_tab_container .panel-body .tabs-left").html(tabs_with_data);
-                            /*Call getServiceData function to fetch the data for currently active service*/
-                            perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
+                            /*Call getServiceData function to fetch the data for currently active service*/                            
                         }
+
+                    /*Load data of first tab*/
+                    perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
 
                     /*Bind click event on tabs*/
                     $('.inner_tab_container .nav-tabs li a').click(function(e) {
                         var serviceId = e.currentTarget.id.slice(0, -4);
                         //@TODO: all the ursl must end with a / - django style
-                        var serviceDataUrl = window.location.origin + "/" + $.trim(e.currentTarget.attributes.url.nodeValue);
+                        var serviceDataUrl = window.location.origin + "/" + $.trim(e.currentTarget.attributes.url.value);
                         perfInstance.getServiceData(serviceDataUrl, serviceId, current_device);
                     });
 
@@ -215,24 +186,15 @@ var perf_that = "",
 					console.log(result.message);
 				}
 
-                /*Remove backdrop div & hide spinner*/
-                $("#ajax_backdrop").remove();
-                if(!($("#ajax_spinner").hasClass("hide"))) {
-                    /*Hide ajax_spinner div*/
-                    $("#ajax_spinner").addClass("hide");
-                }
+                /*Hide the spinner*/
+                hideSpinner();
 			},
 			error : function(err) {
 
 				$(".inner_tab_container").html(err.statusText);
 
-                /*Remove backdrop div & hide spinner*/
-                $("#ajax_backdrop").remove();
-                if(!($("#ajax_spinner").hasClass("hide"))) {
-                    /*Hide ajax_spinner div*/
-                    $("#ajax_spinner").addClass("hide");
-                }
-
+                /*Hide the spinner*/
+                hideSpinner();
 			}
 		});
  	};
@@ -246,40 +208,9 @@ var perf_that = "",
  	 * @param device_id "INT", It contains the ID of current device.
  	 */
  	this.getServiceData = function(get_service_data_url, service_id, device_id) {
-
-    /*Spinner configuration object*/
-    var spinner_options = {
-        lines: 17, // The number of lines to draw
-        length: 33, // The length of each line
-        width: 3, // The line thickness
-        radius: 19, // The radius of the inner circle
-        corners: 1, // Corner roundness (0..1)
-        rotate: 0, // The rotation offset
-        direction: 1, // 1: clockwise, -1: counterclockwise
-        color: '#000', // #rgb or #rrggbb or array of colors
-        speed: 0.7, // Rounds per second
-        trail: 60, // Afterglow percentage
-        shadow: true, // Whether to render a shadow
-        hwaccel: false, // Whether to use hardware acceleration
-        className: 'spinner', // The CSS class to assign to the spinner
-        zIndex: 2e9, // The z-index (defaults to 2000000000)
-        top: '50%', // Top position relative to parent
-        left: '50%' // Left position relative to parent
-    };
-    /*Spinner DOM Element*/
-    var dom_target = document.getElementById('ajax_spinner');
     
-    if($("#ajax_spinner").hasClass("hide")) {
-        /*Show ajax_spinner div*/
-        $("#ajax_spinner").removeClass("hide")
-        /*Initialize spinner object*/
-        var spinner = new Spinner(spinner_options).spin(dom_target);
-        /*If ajax_backdrop div not exist then appent it to body */
-        if($("#ajax_backdrop").length == 0) {
-            $("body").append('<div class="modal-backdrop fade in" id="ajax_backdrop" style="background: #FFFFFF;"></div>');
-        }            
-    }
-    /*Spinner Block End*/
+    /*Show the spinner*/
+    showSpinner();
 
  		/*Ajax call to Get Devices API*/
         var get_url = get_service_data_url;
@@ -382,24 +313,16 @@ var perf_that = "",
 					// console.log(result.message);
 				}
 
-                /*Remove backdrop div & hide spinner*/
-                $("#ajax_backdrop").remove();
-                if(!($("#ajax_spinner").hasClass("hide"))) {
-                    /*Hide ajax_spinner div*/
-                    $("#ajax_spinner").addClass("hide");
-                }
+                /*Hide the spinner*/
+                hideSpinner();
 			},
 			error : function(err) {
 				
 				$('#'+service_id+'_chart').html(err.statusText);
-				console.log(err);
+				// console.log(err);
 
-                /*Remove backdrop div & hide spinner*/
-                $("#ajax_backdrop").remove();
-                if(!($("#ajax_spinner").hasClass("hide"))) {
-                    /*Hide ajax_spinner div*/
-                    $("#ajax_spinner").addClass("hide");
-                }
+                /*Hide the spinner*/
+                hideSpinner();
 			}
 		});
  	};
