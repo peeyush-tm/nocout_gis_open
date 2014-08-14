@@ -117,6 +117,9 @@ var perf_that = "",
  	 */
  	this.getServices = function(get_service_url, device_id) {
 
+        /*Show the spinner*/
+        showSpinner();
+
  		/*Ajax call to Get Devices API*/
         var get_url = get_service_url;
 		$.ajax({
@@ -134,12 +137,12 @@ var perf_that = "",
 
 					/*Loop to get services from object*/
                     var li_style = "background: #f5f5f5; width:100%; border:1px solid #dddddd;"
-                    var li_a_style = "background: none; border:none;"
+                    var li_a_style = "background: none; border:none;";
+                    
+                    var count = 0;
 
-
-
-                    for(var i= 0; i<device_services_tab.length; i++) {
-                        var count = 0;
+                    for(var i= 0; i<device_services_tab.length; i++) {                        
+                        
                         device_services = result.data.objects[device_services_tab[i]];
                         var tabs_with_data = "";
                         var service_tabs = '<div class="col-md-3"><ul class="nav nav-tabs">';
@@ -164,15 +167,17 @@ var perf_that = "",
                         tabs_with_data = service_tabs +" "+service_tabs_data;
 
                             $("#"+device_services_tab[i]+" .inner_tab_container .panel-body .tabs-left").html(tabs_with_data);
-                            /*Call getServiceData function to fetch the data for currently active service*/
-                            perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
+                            /*Call getServiceData function to fetch the data for currently active service*/                            
                         }
+
+                    /*Load data of first tab*/
+                    perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
 
                     /*Bind click event on tabs*/
                     $('.inner_tab_container .nav-tabs li a').click(function(e) {
                         var serviceId = e.currentTarget.id.slice(0, -4);
                         //@TODO: all the ursl must end with a / - django style
-                        var serviceDataUrl = window.location.origin + "/" + $.trim(e.currentTarget.attributes.url.nodeValue);
+                        var serviceDataUrl = window.location.origin + "/" + $.trim(e.currentTarget.attributes.url.value);
                         perfInstance.getServiceData(serviceDataUrl, serviceId, current_device);
                     });
 
@@ -180,11 +185,16 @@ var perf_that = "",
 					$(".inner_tab_container").html("<p>"+result.message+"</p>");
 					console.log(result.message);
 				}
+
+                /*Hide the spinner*/
+                hideSpinner();
 			},
 			error : function(err) {
 
 				$(".inner_tab_container").html(err.statusText);
 
+                /*Hide the spinner*/
+                hideSpinner();
 			}
 		});
  	};
@@ -198,6 +208,9 @@ var perf_that = "",
  	 * @param device_id "INT", It contains the ID of current device.
  	 */
  	this.getServiceData = function(get_service_data_url, service_id, device_id) {
+    
+    /*Show the spinner*/
+    showSpinner();
 
  		/*Ajax call to Get Devices API*/
         var get_url = get_service_data_url;
@@ -297,13 +310,19 @@ var perf_that = "",
                     }
 				} else {
 					$('#'+service_id+'_chart').html(result.message);
-					console.log(result.message);
+					// console.log(result.message);
 				}
+
+                /*Hide the spinner*/
+                hideSpinner();
 			},
 			error : function(err) {
 				
 				$('#'+service_id+'_chart').html(err.statusText);
-				console.log(err);
+				// console.log(err);
+
+                /*Hide the spinner*/
+                hideSpinner();
 			}
 		});
  	};

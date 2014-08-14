@@ -89,117 +89,140 @@ function devicePlottingClass_gmap() {
 	 * @param domElement {String} It the the dom element on which the map is to be create
 	 */
 	this.createMap = function(domElement) {
-
-		/*Save the dom element in the global variable*/
-		currentDomElement = domElement;
-
-		var mapObject = {
-			center    : new google.maps.LatLng(21.1500,79.0900),
-			zoom      : 4
-		};    
-		/*Create Map Type Object*/
-		mapInstance = new google.maps.Map(document.getElementById(domElement),mapObject);
-		/*Search text box object*/
-		var searchTxt = document.getElementById('searchTxt');
-
-		/*google search object for search text box*/
-		var searchBox = new google.maps.places.SearchBox(searchTxt);
-
-		/*Event listener for search text box*/
-		google.maps.event.addListener(new google.maps.places.SearchBox(searchTxt), 'places_changed', function() {			
-			/*place object returned from map API*/
-    		var places = searchBox.getPlaces();
-    		/*initialize bounds object*/
-    		var bounds = new google.maps.LatLngBounds();
-    		/*point bounds to the place location*/
-    		bounds.extend(places[0].geometry.location);
-    		/*call fitbounts for the mapInstance with the place location bounds object*/
-    		mapInstance.fitBounds(bounds)
-    		/*Listener to reset zoom level if it exceeds to particular value*/
-    		var listener = google.maps.event.addListener(mapInstance, "idle", function() { 
-    			/*check for current zoom level*/
-				if (mapInstance.getZoom() > 8) {
-					mapInstance.setZoom(8);
-				}
-				google.maps.event.removeListener(listener);
-			});
-		});
-
-		/*Add Full Screen Control*/
-		mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(new FullScreenControl(mapInstance));
-
-		/*Create a instance of OverlappingMarkerSpiderfier*/
-		oms = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
-
-		/*Create a instance of google map info window*/
-		infowindow = new google.maps.InfoWindow();		
-
-		oms.addListener('click', function(marker,e) {
-
-			var isChecked = $("#showAllSS:checked").length;
-			
-			if($.trim(marker.pointType) == 'base_station') {
-
-				if(isChecked != 1) {
-
-					/*Clear the existing SS for same point*/
-					for(var i=0;i<plottedSS.length;i++) {
-						plottedSS[i].setMap(null);
-					}
-
-					/*Clear all the link between BS & SS  or Sector & SS*/
-					for(var j=0;j<pathLineArray.length;j++) {
-						pathLineArray[j].setMap(null);	
-					}
-					/*Reset global variables*/
-					plottedSS = [];
-					pathLineArray = [];
-
-					gmap_self.plotSubStation_gmap(marker);
-				}
+		/*If no internet access*/
+		if(typeof google != "undefined") {
+			/*Save the dom element in the global variable*/
+			currentDomElement = domElement;
+			var mapObject = {};
+			if(window.location.pathname.indexOf("google_earth") > -1) {
+				mapObject = {
+					center    : new google.maps.LatLng(21.1500,79.0900),
+					zoom      : 4,
+					mapTypeId : google.maps.MapTypeId.SATELLITE,
+					mapTypeControl : false
+				};
+			} else {
+				mapObject = {
+					center    : new google.maps.LatLng(21.1500,79.0900),
+					zoom      : 4,
+					mapTypeId : google.maps.MapTypeId.ROADMAP,
+					mapTypeControl : false
+				};
 			}
 
-			var windowPosition = new google.maps.LatLng(marker.ptLat,marker.ptLon);
-			/*Call the function to create info window content*/
-			var content = gmap_self.makeWindowContent(marker);
-			/*Set the content for infowindow*/
-			infowindow.setContent(content);
-			/*Set The Position for InfoWindow*/
-			infowindow.setPosition(windowPosition);
-			/*Open the info window*/
-			infowindow.open(mapInstance);
-		});
-		/*Event when the markers cluster expands or spiderify*/
-		oms.addListener('spiderfy', function(e,markers) {
-			/*Change the markers icon from cluster icon to thrie own icon*/
-			for(var i=0;i<e.length;i++) {
-				e[i].setOptions({"icon":e[i].oldIcon});
-			}
+			/*Create Map Type Object*/
+			mapInstance = new google.maps.Map(document.getElementById(domElement),mapObject);		
+			/*Search text box object*/
+			var searchTxt = document.getElementById('searchTxt');
 
-			infowindow.close();
-		});
-		/*Event when markers cluster is collapsed or unspiderify*/
-		oms.addListener('unspiderfy', function(e,markers) {
+			/*google search object for search text box*/
+			var searchBox = new google.maps.places.SearchBox(searchTxt);
 
-			var latArray = [],
-				lonArray = [];
-
-			$.grep(e, function (elem) {
-				latArray.push(elem.ptLat);
-				lonArray.push(elem.ptLon);
+			/*Event listener for search text box*/
+			google.maps.event.addListener(new google.maps.places.SearchBox(searchTxt), 'places_changed', function() {			
+				/*place object returned from map API*/
+	    		var places = searchBox.getPlaces();
+	    		/*initialize bounds object*/
+	    		var bounds = new google.maps.LatLngBounds();
+	    		/*point bounds to the place location*/
+	    		bounds.extend(places[0].geometry.location);
+	    		/*call fitbounts for the mapInstance with the place location bounds object*/
+	    		mapInstance.fitBounds(bounds)
+	    		/*Listener to reset zoom level if it exceeds to particular value*/
+	    		var listener = google.maps.event.addListener(mapInstance, "idle", function() { 
+	    			/*check for current zoom level*/
+					if (mapInstance.getZoom() > 8) {
+						mapInstance.setZoom(8);
+					}
+					google.maps.event.removeListener(listener);
+				});
 			});
 
-			/*Reset the marker icon to cluster icon*/
-			for(var i=0;i<e.length;i++) {
+			/*Add Full Screen Control*/
+			mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(new FullScreenControl(mapInstance));
 
-				var latCount = $.grep(latArray, function (elem) {return elem === e[i].ptLat;}).length;
-				var lonCount = $.grep(lonArray, function (elem) {return elem === e[i].ptLon;}).length;
+			/*Create a instance of OverlappingMarkerSpiderfier*/
+			oms = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
 
-				if(lonCount > 1 && latCount > 1) {
-					e[i].setOptions({"icon":clusterIcon});
-				}				
-			}
-		});
+			/*Create a instance of google map info window*/
+			infowindow = new google.maps.InfoWindow();		
+
+			oms.addListener('click', function(marker,e) {
+
+				var isChecked = $("#showAllSS:checked").length;
+				
+				if($.trim(marker.pointType) == 'base_station') {
+
+					if(isChecked != 1) {
+
+						/*Clear the existing SS for same point*/
+						for(var i=0;i<plottedSS.length;i++) {
+							plottedSS[i].setMap(null);
+						}
+
+						/*Clear all the link between BS & SS  or Sector & SS*/
+						for(var j=0;j<pathLineArray.length;j++) {
+							pathLineArray[j].setMap(null);	
+						}
+						/*Reset global variables*/
+						plottedSS = [];
+						pathLineArray = [];
+
+						gmap_self.plotSubStation_gmap(marker);
+					}
+				}
+
+				var windowPosition = new google.maps.LatLng(marker.ptLat,marker.ptLon);
+				/*Call the function to create info window content*/
+				var content = gmap_self.makeWindowContent(marker);
+				/*Set the content for infowindow*/
+				infowindow.setContent(content);
+				/*Set The Position for InfoWindow*/
+				infowindow.setPosition(windowPosition);
+				/*Open the info window*/
+				infowindow.open(mapInstance);
+			});
+			/*Event when the markers cluster expands or spiderify*/
+			oms.addListener('spiderfy', function(e,markers) {
+				/*Change the markers icon from cluster icon to thrie own icon*/
+				for(var i=0;i<e.length;i++) {
+					e[i].setOptions({"icon":e[i].oldIcon});
+				}
+
+				infowindow.close();
+			});
+			/*Event when markers cluster is collapsed or unspiderify*/
+			oms.addListener('unspiderfy', function(e,markers) {
+
+				var latArray = [],
+					lonArray = [];
+
+				$.grep(e, function (elem) {
+					latArray.push(elem.ptLat);
+					lonArray.push(elem.ptLon);
+				});
+
+				/*Reset the marker icon to cluster icon*/
+				for(var i=0;i<e.length;i++) {
+
+					var latCount = $.grep(latArray, function (elem) {return elem === e[i].ptLat;}).length;
+					var lonCount = $.grep(lonArray, function (elem) {return elem === e[i].ptLon;}).length;
+
+					if(lonCount > 1 && latCount > 1) {
+						e[i].setOptions({"icon":clusterIcon});
+					}				
+				}
+			});
+		} else {
+			$.gritter.add({
+	            // (string | mandatory) the heading of the notification
+	            title: 'Google Maps',
+	            // (string | mandatory) the text inside the notification
+	            text: 'No Internet Access',
+	            // (bool | optional) if you want it to fade out on its own or just sit there
+	            sticky: true
+	        });
+		}
 	};
 
 	/**
@@ -207,7 +230,6 @@ function devicePlottingClass_gmap() {
 	 * @method getDevicesData_gmap
 	 */
 	this.getDevicesData_gmap = function() {
-
 		var get_param_filter = "";
 		/*If any advance filters are applied then pass the advance filer with API call else pass blank array*/
 		if(appliedAdvFilter.length > 0) {
@@ -215,6 +237,7 @@ function devicePlottingClass_gmap() {
 		} else {
 			get_param_filter = "";
 		}
+
 		if(counter > 0 || counter == -999) {
 
 			/*Show The loading Icon*/
@@ -1862,6 +1885,14 @@ function devicePlottingClass_gmap() {
         	appliedFilterObj_gmaps["vendor"] = $("#vendor option:selected").text();
         }
 
+        if($("#state").val().length > 0) {
+        	appliedFilterObj_gmaps["state"] = $("#state option:selected").text();
+        }
+
+        if($("#city").val().length > 0) {
+        	appliedFilterObj_gmaps["city"] = $("#city option:selected").text();
+        }
+
         /*Get The Length Of Filter Array*/
         var filtersLength = Object.keys(appliedFilterObj_gmaps).length;
 
@@ -2210,8 +2241,8 @@ function devicePlottingClass_gmap() {
 
 			/*Make ajax call to get the live polling data.*/
 			$.ajax({
-				// url : window.location.origin+"/device/lp_service_data/"+"?device=['"+actual_device_name+"']&service=['"+selectedServiceTxt+"']&datasource=['"+selectedDatasourceTxt+"']",
-				url : window.location.origin+"/"+"static/livePolling.json",
+				url : window.location.origin+"/device/lp_service_data/"+"?device=['"+actual_device_name+"']&service=['"+selectedServiceTxt+"']&datasource=['"+selectedDatasourceTxt+"']",
+				// url : window.location.origin+"/"+"static/livePolling.json",
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
@@ -2235,7 +2266,7 @@ function devicePlottingClass_gmap() {
 							if($("#fetchVal_"+deviceName+"_"+selectedDatasourceVal).length == 0) {
 
 								var fetchValString = "";
-								fetchValString += "<li id='fetchVal_"+deviceName+"_"+selectedDatasourceVal+"' style='margin-top:8px;margin-bottom:8px;'><b>"+selectedDatasourceTxt.toUpperCase()+"</b> :- ( <i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.value[0]+")</li>";
+								fetchValString += "<li id='fetchVal_"+deviceName+"_"+selectedDatasourceVal+"' style='margin-top:8px;margin-bottom:8px;'><b>"+selectedDatasourceTxt.toUpperCase()+"</b> :- (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.value[0]+")</li>";
 								fetchValString += "<li><span class='sparkline' id='sparkline_"+deviceName+"_"+selectedDatasourceVal+"'></span></li>";
 
 								$("#pollVal_"+deviceName+" ").append(fetchValString);
@@ -2243,7 +2274,7 @@ function devicePlottingClass_gmap() {
 								final_chart_data.push((+result.data.value[0]));
 							
 							} else {
-								$("#fetchVal_"+deviceName+"_"+selectedDatasourceVal).append(", ( <i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.value[0]+")");
+								$("#fetchVal_"+deviceName+"_"+selectedDatasourceVal).append(", (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.value[0]+")");
 								/*Sparkline Chart Data*/
 								final_chart_data = chart_data;
 							}
@@ -2633,12 +2664,7 @@ function devicePlottingClass_gmap() {
 		$("#loadingIcon").hide();
 
 		/*Enable the refresh button*/
-		$("#resetFilters").button("complete");		
-
-		/*Clear the existing SS for same point*/
-		for(var i=0;i<plottedSS.length;i++) {
-			plottedSS[i].setMap(null);
-		}
+		$("#resetFilters").button("complete");
 
 		/*Remove All Master Markers*/
 		for(var i=0;i<masterMarkersObj.length;i++) {
