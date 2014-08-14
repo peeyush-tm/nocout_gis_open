@@ -8,7 +8,7 @@ File contains four functions.
 """
 
 from nocout_site_name import *
-import os,json
+import os
 from datetime import datetime, timedelta
 import imp
 import time
@@ -85,7 +85,7 @@ def service_perf_data_live_query(db,site,log_split):
 		host_ip = log_split[12]
 		description=log_split[11]
 	elif log_split[0] == "SERVICE FLAPPING ALERT":
-		host_ip = log_split[11]
+		host_ip = log_split[10]
 		description=log_split[9]
 	# calculating the perf_data for all services except for inventory services as they do not have performance data
 	if 'invent' not in log_split[5]:
@@ -104,7 +104,7 @@ def service_perf_data_live_query(db,site,log_split):
 			if ds == 'pl':
 				cur=cur.strip('%')				
 			serv_event_dict=dict(sys_timestamp=int(log_split[1]),device_name=log_split[4],severity=log_split[8],
-					description=log_split[11],min_value=0,max_value=0,avg_value =0,current_value=cur,
+					description=description,min_value=0,max_value=0,avg_value =0,current_value=cur,
 					data_source = ds,warning_threshold=war,
 					critical_threshold =crit ,check_timestamp = int(log_split[1]),
 					ip_address=host_ip,service_name=log_split[5],site_name=site)
@@ -120,10 +120,13 @@ def service_perf_data_live_query(db,site,log_split):
 	elif 'invent' in log_split[5]:
 		query = "GET services\nColumns: service_plugin_output\nFilter: service_description ~ %s\nFilter: host_name = %s\n" %(
 		log_split[5],log_split[4]) 
-		perf_data= utility_module.get_from_socket(site, query)
-		current_value = perf_data.split('- ')[1].strip('\n')
+		try:
+			perf_data= utility_module.get_from_socket(site, query)
+			current_value = perf_data.split('- ')[1].strip('\n')
+		except:
+			current_value =None
 		serv_event_dict=dict(sys_timestamp=int(log_split[1]),device_name=log_split[4],severity=log_split[8],
-                                description=log_split[11],min_value=0,max_value=0,avg_value =0,
+                                description=description,min_value=0,max_value=0,avg_value =0,
 				current_value=current_value,
 				data_source = log_split[5],warning_threshold=0,
 				critical_threshold =0 ,check_timestamp = int(log_split[1]),
@@ -233,7 +236,6 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
 		"options host_address current_service_perf_data\nFilter: log_time > %s\nFilter: class = 0\nFilter: class = 1\n"\
 		"Filter: class = 2\nFilter: class = 3\nFilter: class = 4\nFilter: class = 6\nOr: 6\n" %(start_epoch) 
 	output= utility_module.get_from_socket(site, query)
-	print output
 	for log_attr in output.split('\n'):
 		log_split = [log_split for log_split in log_attr.split(';')]
 		if log_split[0] == "CURRENT SERVICE STATE":
