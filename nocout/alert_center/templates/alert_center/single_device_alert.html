@@ -88,7 +88,7 @@
                                 <td>{{ data.alert_date }}</td>
                                 <td>{{ data.alert_time }}</td>
                                 <td><span class="text-danger">{{ data.description }}</span></td>
-                            {% elif data.severity in 'WARN,WARNING' or 'WARN' in data.description %}
+                            {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
                                 <td><i class="fa fa-circle orange-dot"></i></td>
                                 <td>{{ data.device_name }}</td>
                                 <td>{{ data.ip_address }}</td>
@@ -99,7 +99,7 @@
                                 <td>{{ data.alert_date }}</td>
                                 <td>{{ data.alert_time }}</td>
                                 <td><span class="text-warning">{{ data.description }}</span></td>
-                            {% elif data.severity in 'OK,STARTED' or 'OK' in data.description %}
+                            {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
                                 <td><i class="fa fa-circle green-dot"></i></td>
                                 <td>{{ data.device_name }}</td>
                                 <td>{{ data.ip_address }}</td>
