@@ -13,7 +13,8 @@ get_page_status();
 function getPageType() {
 
     if(window.location.pathname.indexOf("google_earth") > -1) {
-        mapPageType = "earth";
+        mapPageType = "gmap";
+        // mapPageType = "earth";
         networkMapInstance = mapsLibInstance;
     } else {
         mapPageType = "gmap";
@@ -63,15 +64,31 @@ $("#resetFilters").click(function(e) {
     }    
 
     if(window.location.pathname.indexOf("google_earth") > -1) {
-    
+        
+        if(isFreeze == 0) {            
+
+            /*Reset filter object variable*/
+            appliedFilterObj_gmaps = {};
+
+            /*Reset markers, polyline & filters*/
+            networkMapInstance.clearGmapElements();
+
+            /*Reset Global Variables & Filters*/
+            networkMapInstance.resetVariables_gmap();
+
+            /*Call the make network to create the BS-SS network on the google map*/
+            networkMapInstance.getDevicesData_gmap();
+        }
+
+        /***************GOOGLE EARTH CODE*******************/
         /*Clear all the elements from google earth*/
-        earth_instance.clearEarthElements();
+        // earth_instance.clearEarthElements();
 
         /*Reset Global Variables & Filters*/
-        earth_instance.resetVariables_earth();
+        // earth_instance.resetVariables_earth();
 
         /*create the BS-SS network on the google map*/
-        earth_instance.getDevicesData_earth();
+        // earth_instance.getDevicesData_earth();
 
     } else {
         
@@ -333,17 +350,17 @@ function show_spinner() {
 
     /*Spinner configuration object*/
     var spinner_options = {
-        lines: 15, // The number of lines to draw
-        length: 16, // The length of each line
-        width: 2, // The line thickness
-        radius: 10, // The radius of the inner circle
+        lines: 17, // The number of lines to draw
+        length: 33, // The length of each line
+        width: 3, // The line thickness
+        radius: 19, // The radius of the inner circle
         corners: 1, // Corner roundness (0..1)
         rotate: 0, // The rotation offset
         direction: 1, // 1: clockwise, -1: counterclockwise
         color: '#000', // #rgb or #rrggbb or array of colors
-        speed: 0.8, // Rounds per second
-        trail: 100, // Afterglow percentage
-        shadow: false, // Whether to render a shadow
+        speed: 0.7, // Rounds per second
+        trail: 60, // Afterglow percentage
+        shadow: true, // Whether to render a shadow
         hwaccel: false, // Whether to use hardware acceleration
         className: 'spinner', // The CSS class to assign to the spinner
         zIndex: 2e9, // The z-index (defaults to 2000000000)
@@ -360,7 +377,7 @@ function show_spinner() {
         var spinner = new Spinner(spinner_options).spin(dom_target);
         /*If ajax_backdrop div not exist then appent it to body */
         if($("#ajax_backdrop").length == 0) {
-            $("body").append('<div class="modal-backdrop fade in" id="ajax_backdrop"></div>');
+            $("body").append('<div class="modal-backdrop fade in" id="ajax_backdrop" style="background:#FFFFFF;"></div>');
         }
     }
 }

@@ -93,11 +93,23 @@ function devicePlottingClass_gmap() {
 		if(typeof google != "undefined") {
 			/*Save the dom element in the global variable*/
 			currentDomElement = domElement;
+			var mapObject = {};
+			if(window.location.pathname.indexOf("google_earth") > -1) {
+				mapObject = {
+					center    : new google.maps.LatLng(21.1500,79.0900),
+					zoom      : 4,
+					mapTypeId : google.maps.MapTypeId.SATELLITE,
+					mapTypeControl : false
+				};
+			} else {
+				mapObject = {
+					center    : new google.maps.LatLng(21.1500,79.0900),
+					zoom      : 4,
+					mapTypeId : google.maps.MapTypeId.ROADMAP,
+					mapTypeControl : false
+				};
+			}
 
-			var mapObject = {
-				center    : new google.maps.LatLng(21.1500,79.0900),
-				zoom      : 4
-			};    
 			/*Create Map Type Object*/
 			mapInstance = new google.maps.Map(document.getElementById(domElement),mapObject);		
 			/*Search text box object*/
@@ -218,7 +230,6 @@ function devicePlottingClass_gmap() {
 	 * @method getDevicesData_gmap
 	 */
 	this.getDevicesData_gmap = function() {
-
 		var get_param_filter = "";
 		/*If any advance filters are applied then pass the advance filer with API call else pass blank array*/
 		if(appliedAdvFilter.length > 0) {
@@ -226,6 +237,7 @@ function devicePlottingClass_gmap() {
 		} else {
 			get_param_filter = "";
 		}
+
 		if(counter > 0 || counter == -999) {
 
 			/*Show The loading Icon*/
@@ -2229,8 +2241,8 @@ function devicePlottingClass_gmap() {
 
 			/*Make ajax call to get the live polling data.*/
 			$.ajax({
-				// url : window.location.origin+"/device/lp_service_data/"+"?device=['"+actual_device_name+"']&service=['"+selectedServiceTxt+"']&datasource=['"+selectedDatasourceTxt+"']",
-				url : window.location.origin+"/"+"static/livePolling.json",
+				url : window.location.origin+"/device/lp_service_data/"+"?device=['"+actual_device_name+"']&service=['"+selectedServiceTxt+"']&datasource=['"+selectedDatasourceTxt+"']",
+				// url : window.location.origin+"/"+"static/livePolling.json",
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
@@ -2254,7 +2266,7 @@ function devicePlottingClass_gmap() {
 							if($("#fetchVal_"+deviceName+"_"+selectedDatasourceVal).length == 0) {
 
 								var fetchValString = "";
-								fetchValString += "<li id='fetchVal_"+deviceName+"_"+selectedDatasourceVal+"' style='margin-top:8px;margin-bottom:8px;'><b>"+selectedDatasourceTxt.toUpperCase()+"</b> :- ( <i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.value[0]+")</li>";
+								fetchValString += "<li id='fetchVal_"+deviceName+"_"+selectedDatasourceVal+"' style='margin-top:8px;margin-bottom:8px;'><b>"+selectedDatasourceTxt.toUpperCase()+"</b> :- (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.value[0]+")</li>";
 								fetchValString += "<li><span class='sparkline' id='sparkline_"+deviceName+"_"+selectedDatasourceVal+"'></span></li>";
 
 								$("#pollVal_"+deviceName+" ").append(fetchValString);
@@ -2262,7 +2274,7 @@ function devicePlottingClass_gmap() {
 								final_chart_data.push((+result.data.value[0]));
 							
 							} else {
-								$("#fetchVal_"+deviceName+"_"+selectedDatasourceVal).append(", ( <i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.value[0]+")");
+								$("#fetchVal_"+deviceName+"_"+selectedDatasourceVal).append(", (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.value[0]+")");
 								/*Sparkline Chart Data*/
 								final_chart_data = chart_data;
 							}
