@@ -11,9 +11,8 @@ from datetime import datetime, timedelta
 import socket
 import imp
 import time
-
-
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
+utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -91,7 +90,7 @@ def build_data(doc):
 	"""
 	values_list = []
 	time = doc.get('time')
-	machine_name = get_machine_name()
+	machine_name = utility_module.get_machine_name()
         t = (
         doc.get('device_name'),
         doc.get('service_name'),
@@ -119,9 +118,9 @@ def insert_data(table, data_values, **kwargs):
 	Arg: table (mysql database table name)
 	Kwargs: data_values (formatted record)
 	Return : None
-	Raises: MySQLdb.error
+	Raises: mysql.connector.Error
 	"""
-	db = mysql_conn(configs=kwargs.get('configs'))
+	db = utility_module.mysql_conn(configs=kwargs.get('configs'))
 	query = 'INSERT INTO `%s` ' % table
 	query += """
                 (device_name,service_name,sys_timestamp,check_timestamp,
@@ -138,57 +137,6 @@ def insert_data(table, data_values, **kwargs):
     	db.commit()
     	cursor.close()
 
-def get_epoch_time(datetime_obj):
-    """
-	function for converting the datetime object into epoch_time.
-	Arg: datetime_obj (time object)
-	Kwargs: None
-	Return : epoch_time/datetimeobj
-	Raises: None
-    """
-    # Get India times (GMT+5.30)
-    #utc_time = datetime(1970, 1,1, 5, 30)
-    if isinstance(datetime_obj, datetime):
-	start_epoch = datetime_obj
-        epoch_time = int(time.mktime(start_epoch.timetuple()))
-
-        return epoch_time
-    else:
-        return datetime_obj
-
-def mysql_conn(db=None, **kwargs):
-    """
-	function for mysql connection.
-	Arg: db (database instance obj)
-	Kwargs: multiple arguments for mysql connections
-	Return : db object
-	Raises: MYSQLdb.error
-    """
-    try:
-        db = mysql.connector.connect(
-                user=kwargs.get('configs').get('user'),
-                passwd=kwargs.get('configs').get('sql_passwd'),
-                host=kwargs.get('configs').get('ip'),
-                db=kwargs.get('configs').get('sql_db')
-        )
-    except mysql.connector.Error as err:
-        raise mysql.connector.Error, err
-
-    return db
-def get_machine_name(machine_name=None):
-    """
-	function for getting machine_name.
-	Arg: machine_name
-	Kwargs: None
-	Return : machine_name
-	Raises: Exception
-    """
-    try:
-        machine_name = socket.gethostname()
-    except Exception, e:
-        raise Exception(e)
-
-    return machine_name
 
 
 if __name__ == '__main__':
