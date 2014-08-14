@@ -87,10 +87,10 @@
                     <div id="tableContainer" class="box-body">
                         <div class="tabbable header-tabs">
                             <ul class="nav nav-tabs" >
-                                <li><a href="#inventory_status_tab"  data-toggle="tab"><span class="hidden-inline-mobile">Inventory Status</span></a></li>
-                                <li><a href="#service_status_tab"  data-toggle="tab"><span class="hidden-inline-mobile">Service Status</span></a></li>
-                                <li><a href="#service_perf_tab"  data-toggle="tab"><span class="hidden-inline-mobile">Service Performance</span></a></li>
-                                <li class="active"><a href="#network_perf_tab"  data-toggle="tab"><span class="hidden-inline-mobile">Network Performance</span></a></li>
+                                <li><a href="#inventory_status_tab" id="inventory_status"  data-toggle="tab"><span class="hidden-inline-mobile">Inventory Status</span></a></li>
+                                <li><a href="#service_status_tab" id="service_status"  data-toggle="tab"><span class="hidden-inline-mobile">Service Status</span></a></li>
+                                <li><a href="#service_perf_tab" id="service_perf"  data-toggle="tab"><span class="hidden-inline-mobile">Service Performance</span></a></li>
+                                <li class="active"><a href="#network_perf_tab" id="network_perf"  data-toggle="tab"><span class="hidden-inline-mobile">Network Performance</span></a></li>
                             </ul>
 
 {#                            <div class="clearfix"></div>#}
@@ -221,7 +221,38 @@
             else{
                 $("#show_status_btn").text("Hide Status");
             }
-		})
+		});
+
+		/*Load first inner tab of network performance*/
+		$("#network_perf").click(function(e) {
+			fetchFirstTabContent(e);
+		});
+
+		/*Load first inner tab of service performance*/
+		$("#service_perf").click(function(e) {
+			fetchFirstTabContent(e);
+		});
+
+		/*Load first inner tab of service status*/
+		$("#service_status").click(function(e) {
+			fetchFirstTabContent(e);
+		});
+
+		/*Load first inner tab of inventory status*/
+		$("#inventory_status").click(function(e) {
+			fetchFirstTabContent(e);
+		});
+
+		/**
+		 * This function load the first inner tab content when the tab is opened.
+		 */
+		function fetchFirstTabContent(e) {
+			var tab_id = e.currentTarget.attributes.href.value.split("#")[1];
+			var li_count = $("#"+tab_id+" .inner_tab_container .col-md-3 ul li").length;
+			if(li_count > 0) {
+				$("#"+tab_id+" .inner_tab_container .col-md-3 ul li:first-child a").trigger('click');
+			}
+		}
 
 	</script>
 
