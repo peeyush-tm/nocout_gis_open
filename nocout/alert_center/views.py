@@ -3,13 +3,14 @@ import logging
 import datetime
 from django.db.models import Count
 from django.db.models.query import ValuesQuerySet
-from django.shortcuts import render_to_response
-from django.views.generic import ListView
+from django.shortcuts import render_to_response, render
+from django.views.generic import ListView, View
 from django.template import RequestContext
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceTechnology
 from inventory.models import BaseStation, Sector, SubStation, Circuit
 from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
+from django.utils.dateformat import format
 
 #sort the list of dictionaries
 # http://stackoverflow.com/questions/72899/how-do-i-sort-a-list-of-dictionaries-by-values-of-the-dictionary-in-python
@@ -95,9 +96,10 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': False},
             {'mData': 'current_value', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': False},
-            {'mData': 'description', 'sTitle': 'Alert Description', 'sWidth': 'null', 'bSortable': False},
-            {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': False},
-            {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False}, 
+            {'mData': 'description', 'sTitle': 'Alert Description', 'sWidth': 'null', 'bSortable': False },
+            {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': False },
+            {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False },
+            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': False },
             ]
 
         datatable_headers_packetdrop = [
@@ -117,6 +119,7 @@ class AlertCenterNetworkListing(ListView):
             {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': False},
             {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False}, 
             {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': False},
+            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': False },
         ]
         datatable_headers_down = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': False},
@@ -134,7 +137,8 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': False},
             {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': False},
             {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': False},
-            {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False}, 
+            {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False},
+            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': False },
         ]
         datatable_headers_servicealerts = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': False},
@@ -154,7 +158,8 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': False},
             {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': False},
             {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': False},
-            {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False}, 
+            {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False},
+            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': False },
         ]
         context['datatable_headers_servicealerts'] = json.dumps(datatable_headers_servicealerts)
         context['datatable_headers_down'] = json.dumps(datatable_headers_down)
@@ -276,8 +281,9 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                             'sys_timestamp':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
                             'description':data.description
                             }
+                    #If service tab is requested then add an another key:data_source_name to render in the data table.
                     if 'service' in self.request.path_info:
-                        ddata.update({'data_source_name':data.data_source })
+                        ddata.update({'data_source_name': data.data_source })
                     device_data.append(ddata)
         if device_data:
             sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
@@ -295,6 +301,21 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+            service_tab_name= None
+            # figure out which tab call is made.
+            if 'latency' in self.request.path_info:
+                service_tab_name='latency'
+            elif 'packetdrop' in self.request.path_info:
+                service_tab_name='packetdrop'
+            elif 'down' in self.request.path_info:
+                service_tab_name='down'
+            elif 'service' in self.request.path_info:
+                service_tab_name='service'
+
+            for dct in qs:
+                device_id= Device.objects.get(device_name=dct['device_name']).id
+                dct.update(action='<a href="/alert_center/network/device/{0}/service_tab/{1}/"><i class="fa fa-list-alt text-info"></i></a>'\
+                           .format( device_id, service_tab_name ))
 
         return common_prepare_results(qs)
 
@@ -364,6 +385,7 @@ class CustomerAlertList(ListView):
              'bSortable': False},
             {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': False},
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': False},
+            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': False },
         ]
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['data_source'] = " ".join(self.kwargs['data_source'].split('_')).title()
@@ -497,6 +519,18 @@ class CustomerAlertListingTable(BaseDatatableView):
 
         if qs:
             qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+            service_tab= None
+            # figure out which tab call is made.
+            data_source=self.request.GET.get('data_source','')
+            if 'latency' == data_source:
+                service_tab='latency'
+            elif 'packet_drop' == data_source:
+                service_tab='packet_drop'
+
+            for dct in qs:
+                device_id= Device.objects.get(device_name=dct['device_name']).id
+                dct.update(action='<a href="/alert_center/customer/device/{0}/service_tab/{1}/"><i class="fa fa-list-alt text-info"></i></a>'\
+                           .format( device_id, service_tab ))
 
         return common_prepare_results(qs)
 
@@ -534,6 +568,113 @@ class CustomerAlertListingTable(BaseDatatableView):
                'aaData': aaData
         }
         return ret
+
+
+class SingleDeviceAlertDetails(View):
+    """
+    Generic Class for Network and Customer to render the details page for a single device.
+    """
+    def get(self, request, page_type, device_id, service_name):
+
+        logged_in_user, devices_result= request.user.userprofile, list()
+
+        if 'admin' in logged_in_user.role.values_list('role_name', flat= True):
+            organizations= logged_in_user.organization.get_descendants(include_self= True)
+            for organization in organizations:
+                devices_result+=self.get_result(page_type, organization)
+        else:
+            organization= logged_in_user.organization
+            devices_result= self.get_result(page_type, organization)
+
+        now= format(datetime.datetime.now(),'U')
+        now_minus_1week= format(datetime.datetime.now() + datetime.timedelta(weeks= -1), 'U')
+        device_name= Device.objects.get(id=device_id).device_name
+        data_list=None
+        required_columns= ["device_name", "ip_address", "service_name", "data_source",
+                          "severity", "current_value", "sys_timestamp", "description"]
+        if service_name == 'latency':
+            data_list= EventNetwork.objects.filter(device_name=device_name, data_source='rta',
+                       sys_timestamp__gte= now_minus_1week, sys_timestamp__lte=now).values(*required_columns)
+
+        elif service_name == 'packetdrop' or service_name == 'packet_drop':
+            data_list= EventNetwork.objects.filter(device_name=device_name, data_source='pl',
+                       sys_timestamp__gte= now_minus_1week, sys_timestamp__lte=now).values(*required_columns)
+
+        elif service_name == 'down':
+            data_list= EventNetwork.objects.filter(device_name= device_name, data_source='pl', current_value=100,
+                       severity='DOWN', sys_timestamp__gte= now_minus_1week, sys_timestamp__lte= now). \
+                       values(*required_columns)
+
+        elif service_name == 'service':
+            data_list= EventService.objects.filter(device_name= device_name, sys_timestamp__gte= now_minus_1week,
+                                        sys_timestamp__lte= now).values(*required_columns)
+
+        required_columns= map(lambda x:x.replace('_',' ') , required_columns )
+        context= dict(devices=devices_result,
+                      current_device_id= device_id,
+                      page_type= page_type,
+                      table_data= data_list,
+                      table_header= required_columns
+                     )
+        return render( request, 'alert_center/single_device_alert.html', context )
+
+    def get_result(self, page_type, organization):
+        """
+        Generic function to return the result w.r.t the page_type and organization of the current logged in user.
+
+        :param page_type:
+        :param organization:
+        return result
+        """
+
+        if page_type == "customer":
+            substation_result= self.organization_devices_substations(organization)
+            return substation_result
+        elif page_type == "network":
+            basestation_result = self.organization_devices_basestations(organization)
+            return basestation_result
+
+
+    def organization_devices_substations(self, organization):
+        """
+        To result back the all the substations from the respective organization..
+
+        :param organization:
+        :return list of substation
+        """
+        organization_substations= SubStation.objects.filter(device__in = Device.objects.filter(
+            is_added_to_nms=1,is_deleted=0,
+            organization= organization.id).values_list('id', flat=True)).values_list('id', 'name', 'alias')
+
+        result=list()
+        for substation in organization_substations:
+            result.append({ 'id':substation[0], 'name':substation[1], 'alias':substation[2] })
+
+        return result
+
+    def organization_devices_basestations(self, organization):
+        """
+        To result back the all the basestation from the respective organization..
+
+        :param organization:
+        :return list of basestation
+        """
+
+        sector_configured_on_devices_list= Sector.objects.filter( sector_configured_on__id__in= organization.device_set.\
+                values_list('id', flat=True)).values_list('sector_configured_on').annotate(dcount=Count('base_station'))
+
+        sector_configured_on_devices_ids= map(lambda x: x[0], sector_configured_on_devices_list)
+        sector_configured_on_devices= Device.objects.filter(is_added_to_nms=1,is_deleted=0,
+                                                            id__in= sector_configured_on_devices_ids)
+        result=list()
+        for sector_configured_on_device in sector_configured_on_devices:
+            result.append({ 'id':sector_configured_on_device.id, 'name':sector_configured_on_device.device_name,
+                            'alias':sector_configured_on_device.device_alias })
+
+        return result
+
+
+
 
 
 # misc utility functions
