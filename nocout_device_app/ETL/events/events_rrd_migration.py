@@ -157,8 +157,8 @@ def network_perf_data_live_query(db,site,log_split):
 	perf_data= utility_module.get_from_socket(site, query)
 	host_perf_data = utility_module.get_threshold(perf_data)
 	if log_split[0] == "CURRENT HOST STATE":
-		host_ip = log_split[12]
-		description=log_split[11]
+		host_ip = log_split[11]
+		description=log_split[10]
 	elif log_split[0] == "HOST ALERT" or log_split[0] == "INITIAL HOST STATE":
 		host_ip = log_split[11]
 		description=log_split[10]
