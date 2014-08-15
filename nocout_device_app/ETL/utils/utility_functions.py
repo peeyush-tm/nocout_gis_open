@@ -133,6 +133,7 @@ def mysql_conn(db=None, **kwargs):
                 passwd=kwargs.get('configs').get('sql_passwd'),
                 host=kwargs.get('configs').get('ip'),
                 db=kwargs.get('configs').get('sql_db'),
+		port=kwargs.get('configs').get('sql_port'),
 		buffered=True
         )
     except mysql.connector.Error as err:

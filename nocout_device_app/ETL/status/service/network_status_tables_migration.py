@@ -21,6 +21,7 @@ import time
 
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
+config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -124,7 +125,9 @@ def build_data(doc):
         A list of tuples, one tuple corresponds to a single row in mysql db
     """
     values_list = []
-    machine_name = utility_module.get_machine_name()
+    configs = config_module.parse_config_obj()
+    for config, options in configs.items():
+	    machine_name = options.get('machine')
     local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
     # Advancing local_timestamp/sys_timetamp to next 5 mins time frame
     local_time_epoch += 300

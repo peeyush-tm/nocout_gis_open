@@ -17,8 +17,10 @@ import subprocess
 import socket
 import imp
 import time
+
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
+config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -123,7 +125,9 @@ def build_data(doc):
     """
     values_list = []
     #uuid = get_machineid()
-    machine_name = utility_module.get_machine_name()
+    configs = config_module.parse_config_obj()
+    for config, options in configs.items():
+	    machine_name = options.get('machine')
     for entry in doc.get('data'):
 	check_time_epoch = utility_module.get_epoch_time(entry.get('time'))
 	# Advancing local_timestamp/sys_timestamp to next 5 mins time frame
