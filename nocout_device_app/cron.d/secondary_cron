@@ -1,11 +1,11 @@
 
-*/5 * * * * /usr/bin/python nocout/performance/service/rrd_main.py >> nocout/logs/service/rrd_main.log 2>&1
+*/5 * * * * /usr/bin/python nocout/performance/service/rrd_main.py >> /tmp/nocout_da/nocout_gis_slave/service/rrd_main.log 2>&1
 
-0 * * * * /usr/bin/python nocout/performance/interface/interface_rrd_migration.py >> nocout/logs/interface/interface_rrd_migration.log 2>&1
-
-
-*/1 * * * * /usr/bin/python nocout/events/events_rrd_migration.py >> nocout/logs/events/events_rrd_migration.log 2>&1
+0 * * * * /usr/bin/python nocout/performance/interface/interface_rrd_migration.py >> /tmp/nocout_da/nocout_gis_slave/interface/interface_rrd_migration.log 2>&1
 
 
-30 23 * * * /usr/bin/python nocout/performance/inventory/inventory_rrd_migration.py >> nocout/logs/inventory/inventory_rrd_migration.log 2>&1
+*/1 * * * * /usr/bin/python nocout/events/events_rrd_migration.py >> /tmp/nocout_da/nocout_gis_slave/events/events_rrd_migration.log 2>&1
+
+
+30 23 * * * /usr/bin/python nocout/performance/inventory/inventory_rrd_migration.py >> /tmp/nocout_da/nocout_gis_slave/inventory/inventory_rrd_migration.log 2>&1
 
