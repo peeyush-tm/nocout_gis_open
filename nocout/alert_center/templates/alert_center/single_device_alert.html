@@ -44,7 +44,14 @@
 	                    <input class="form-control col-xs-1 input-sm datepicker" type="text" name="end_date" size="10" id="end_date" placeholder="End Date">
 	                </li>
 	                <li>
+                        <div class="btn-group dropdown col-xs-1">
+                            <button id="apply_filter" class="btn  btn-default btn-sm">
+                                    Apply Filter
+                            </button>
+                        </div>
+                    </li>
 	                	<!--CSV or Excel download action. -->
+                    <li>
 	                    <div class="btn-group dropdown col-xs-1">
 							<button class="btn  btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
 								Download Report
@@ -52,10 +59,10 @@
 							</button>
 							<ul class="dropdown-menu context">
 								<li>
-									<a href="javascript:;">Excel</a>
-								</li>
-								<li>
-									<a href="javascript:;">CSV</a>
+									<a id="download_excel">Excel</a>
+                                </li>
+                                <li>
+									<a id="download_csv">CSV</a>
 								</li>
 							</ul>
 						</div>
@@ -65,6 +72,9 @@
         <div>
 
         </div>
+
+        <div>{{ start_date_object|date:'l d M, Y' }} TO {{ end_date_object|date:'l d M, Y' }}</div>
+
             <table id="device_alert" class="table table-bordered table-stripped table-sortable">
                 <thead>
                     <tr>
@@ -75,6 +85,7 @@
                     </tr>
                 </thead>
                 <tbody>
+                {% if table_data %}
                     {% for data in table_data %}
                         <tr>
                             {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
@@ -124,6 +135,13 @@
                             {% endif %}
                         </tr>
                     {% endfor %}
+
+                {% else %}
+
+                    <div>NO RECORD FOUND.</div>
+
+                {% endif %}
+
                 </tbody>
             </table>
         </div>
@@ -132,6 +150,24 @@
 
     <script type="text/javascript">
         $(document).ready(function(e) {
+            //setting up a custom jquery function to retrive the get paramters.
+            $.urlParam = function(name){
+                    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                    if (results==null){
+                       return null;
+                    }
+                    else{
+                       return results[1] || 0;
+                    }};
+            start_date= $.urlParam('start_date');
+            if (start_date){
+                 $("#start_date").val(decodeURIComponent(start_date));
+            }
+            end_date= $.urlParam('end_date');
+            if (end_date){
+                 $("#end_date").val(decodeURIComponent(end_date));
+            }
+
             //set the dropdown to current device value
             $("#device_name").val("{{current_device_id}}");
 
@@ -147,7 +183,26 @@
             });
 
             /*Initialize Datepicker*/
-            $(".datepicker").datepicker();
+            $(".datepicker").datepicker({ dateFormat: 'dd-mm-yy' });
+
+            $("#apply_filter").on('click', function(){
+
+                window.location.href = '{% url "SingleDeviceDetails"  page_type current_device_id service_name %}' +'?start_date=' + encodeURIComponent($("#start_date").val())
+                                       + '&end_date=' + encodeURIComponent($("#end_date").val());
+
+            });
+
+            $("#download_excel").on('click', function(){
+                window.location.replace('{% url "SingleDeviceDetails"  page_type current_device_id service_name %}'
+                        + '?download_excel=true')
+            });
+
+            $("#download_csv").on('click', function(){
+                window.location.replace('{% url "SingleDeviceDetails"  page_type current_device_id service_name %}'
+                        + '?download_csv=true')
+            });
+
+
         })
     </script>
 

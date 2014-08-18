@@ -15,7 +15,10 @@ urlpatterns = patterns('',
     url(r'^detail/network_detail/$', views.getNetworkAlertDetail),
     url(r'^(?P<page_type>\w+)/device/(?P<device_id>\w+)/service_tab/(?P<service_name>\w+)/$',
         views.SingleDeviceAlertDetails.as_view(), name='SingleDeviceDetails'),
-    # url(r'^latencylist/',views.AlertCenterNetworkListing.as_view(), name='AlertCenterNetworkListing'),
-    # url(r'^downlistingtable/',views.DownListingTable.as_view(), name='DownListingTable'),
-    # url(r'^servicealertslistingtable/',views.ServiceAlertsListingTable.as_view(), name='ServiceAlertsListingTable'),
+
+    url(r'^detail/network_detail/$', views.getNetworkAlertDetail),
+
+
+
+
 )

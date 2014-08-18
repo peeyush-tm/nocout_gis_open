@@ -1,8 +1,7 @@
-import json
-import logging
-import datetime
+import json, logging, datetime, xlwt, csv
 from django.db.models import Count
 from django.db.models.query import ValuesQuerySet
+from django.http import HttpResponse
 from django.shortcuts import render_to_response, render
 from django.views.generic import ListView, View
 from django.template import RequestContext
@@ -27,7 +26,7 @@ def getNetworkAlert(request):
     :params request object:
     :return Http response object:
     """
-    return render_to_response('alert_center/network_alerts_list.html', context_instance=RequestContext(request))
+    return render_to_response('alert_center/network_alerts_list.html', context_instance= RequestContext(request))
 
 
 def getCustomerAlert(request, page_type="default_device_name"):
@@ -581,23 +580,45 @@ class SingleDeviceAlertDetails(View):
         if 'admin' in logged_in_user.role.values_list('role_name', flat= True):
             organizations= logged_in_user.organization.get_descendants(include_self= True)
             for organization in organizations:
-                devices_result+=self.get_result(page_type, organization)
+                devices_result+= self.get_result(page_type, organization)
         else:
             organization= logged_in_user.organization
             devices_result= self.get_result(page_type, organization)
 
-        now= format(datetime.datetime.now(),'U')
-        now_minus_1week= format(datetime.datetime.now() + datetime.timedelta(weeks= -1), 'U')
+        start_date= self.request.GET.get('start_date','')
+        end_date= self.request.GET.get('end_date','')
+
+        if start_date and end_date:
+            start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
+            end_date_object= datetime.datetime.strptime( end_date + " 00:00:00", "%d-%m-%Y %H:%M:%S" )
+            #If Both the date enterted are same and then we will fetch the whole day data.
+            if start_date == end_date:
+                #Converting the end date to the highest time in a day.
+                end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
+
+            start_date= format( start_date_object, 'U')
+            end_date= format( end_date_object, 'U')
+        else:
+            # The end date is the end limit we need to make query till.
+            end_date_object= datetime.datetime.now()
+            # The start date is the last monday of the week we need to calculate from.
+            start_date_object= end_date_object - datetime.timedelta(days= end_date_object.weekday())
+            #Replacing the time, to start with the 00:00:00 of the last monday obtained.
+            start_date_object= start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
+            # Converting the date to epoch time or Unix Timestamp
+            end_date= format(end_date_object, 'U' )
+            start_date= format(start_date_object, 'U')
+
         device_name= Device.objects.get(id=device_id).device_name
-        data_list=None
+        data_list= None
         required_columns= ["device_name", "ip_address", "service_name", "data_source",
                           "severity", "current_value", "sys_timestamp", "description"]
         if service_name == 'latency':
             data_list= EventNetwork.objects.\
                 filter(device_name=device_name,
                        data_source='rta',
-                       sys_timestamp__gte= now_minus_1week,
-                       sys_timestamp__lte=now).\
+                       sys_timestamp__gte= start_date,
+                       sys_timestamp__lte= end_date).\
                 order_by("-sys_timestamp").\
                 values(*required_columns)
 
@@ -605,8 +626,8 @@ class SingleDeviceAlertDetails(View):
             data_list= EventNetwork.objects.\
                 filter(device_name=device_name,
                        data_source='pl',
-                       sys_timestamp__gte= now_minus_1week,
-                       sys_timestamp__lte=now).\
+                       sys_timestamp__gte= start_date,
+                       sys_timestamp__lte= end_date).\
                 order_by("-sys_timestamp").\
                 values(*required_columns)
 
@@ -616,16 +637,16 @@ class SingleDeviceAlertDetails(View):
                        data_source='pl',
                        current_value=100,
                        severity='DOWN',
-                       sys_timestamp__gte= now_minus_1week,
-                       sys_timestamp__lte= now). \
+                       sys_timestamp__gte= start_date,
+                       sys_timestamp__lte= end_date). \
                     order_by("-sys_timestamp").\
                     values(*required_columns)
 
         elif service_name == 'service':
             data_list= EventService.objects.\
                 filter(device_name= device_name,
-                        sys_timestamp__gte= now_minus_1week,
-                        sys_timestamp__lte= now).\
+                        sys_timestamp__gte= start_date,
+                        sys_timestamp__lte= end_date).\
                 order_by("-sys_timestamp").\
                 values(*required_columns)
 
@@ -639,7 +660,7 @@ class SingleDeviceAlertDetails(View):
                             "alert_date",
                             "alert_time",
                             "description"
-        ]
+                            ]
         for data in data_list:
             data["alert_date"] = datetime.datetime.\
                                 fromtimestamp(float( data["sys_timestamp"] )).\
@@ -648,15 +669,70 @@ class SingleDeviceAlertDetails(View):
                                 fromtimestamp(float( data["sys_timestamp"] )).\
                                 strftime("%I:%M %p")
             del(data["sys_timestamp"])
-        required_columns= map(lambda x:x.replace('_',' ') , required_columns )
-        context= dict(devices=devices_result,
-                      current_device_id= device_id,
-                      current_device_name = device_name,
-                      page_type= page_type,
-                      table_data= data_list,
-                      table_header= required_columns
-                     )
-        return render( request, 'alert_center/single_device_alert.html', context )
+
+        download_excel= self.request.GET.get('download_excel', '')
+        download_csv= self.request.GET.get('download_csv', '')
+
+
+        if download_excel:
+
+            workbook = xlwt.Workbook()
+            worksheet = workbook.add_sheet('report')
+            style = xlwt.XFStyle()
+
+            borders = xlwt.Borders()
+            borders.bottom = xlwt.Borders.DASHED
+            style.borders = borders
+
+            column_length= len(required_columns)
+            row_length= len(data_list) -1
+            #Writing headers first for the excel file.
+            for column in range(column_length):
+                worksheet.write(0, column, required_columns[column], style=style)
+            #Writing rest of the rows.
+            for row in range(1,row_length):
+                for column in range(column_length):
+                    worksheet.write(row, column, data_list[row][required_columns[column]], style=style)
+
+            response= HttpResponse(mimetype= 'application/vnd.ms-excel', content_type='text/plain')
+            response['Content-Disposition'] = 'attachment; filename=alert_report_{0}.xls'.format(device_name)
+            workbook.save(response)
+            return response
+
+        elif download_csv:
+
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="alert_report_{0}.csv"'.format(device_name)
+
+            writer = csv.writer(response)
+            headers= map(lambda x:x.replace('_',' ') , required_columns )
+            writer.writerow(headers)
+            column_length= len(required_columns)
+            row_length= len(data_list) -1
+
+
+            for row in range(1, row_length):
+                row_list= list()
+                for column in range(0, column_length):
+                    row_list.append(data_list[row][required_columns[column]])
+                writer.writerow(row_list)
+            return response
+
+        else:
+
+            required_columns= map(lambda x:x.replace('_',' ') , required_columns )
+            context= dict(devices= devices_result,
+                          current_device_id= device_id,
+                          current_device_name = device_name,
+                          page_type= page_type,
+                          table_data= data_list,
+                          table_header= required_columns,
+                          service_name= service_name,
+                          start_date_object= start_date_object,
+                          end_date_object= start_date_object,
+                         )
+
+            return render(request, 'alert_center/single_device_alert.html', context )
 
     def get_result(self, page_type, organization):
         """
