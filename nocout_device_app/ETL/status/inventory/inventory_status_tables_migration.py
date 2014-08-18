@@ -22,6 +22,7 @@ import time
 
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
+config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/cofigparser.py')
 
 def main(**configs):
     """
@@ -118,7 +119,9 @@ def build_data(doc):
 	"""
 	values_list = []
 	time = doc.get('time')
-	machine_name = utility_module.get_machine_name()
+	configs = config_module.parse_config_obj()
+        for config, options in configs.items():
+		machine_name = options.get('machine')
         t = (
         doc.get('device_name'),
         doc.get('service_name'),

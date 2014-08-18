@@ -74,3 +74,34 @@ ACTSTREAM_SETTINGS = {
 
 }
 ```
+
+Module Files
+===
+
+```
+.
+├── README.md
+├── __init__.py
+├── actions.py
+├── admin.py
+├── docs
+│   ├── ActivityStream.html
+│   └── ActivityStream.pdf
+├── models.py
+├── templates
+│   └── activity_stream
+│       ├── actions_logs.html
+│       └── hello.html
+├── urls.py
+└── views.py
+```
+
+1. README.md    : Module's README file for details
+2. __init.py__  : Python's modules init file
+3. admin.py     : Django Framework's Admin module registration file
+4. docs         : Documentation folder for the module
+5. models.py    : Django Framework's database interface
+6. templates    : HTML files for rendering a View for the module
+7. actions.py   : defined pre-actions for capturing user's activity
+8. urls.py      : Module's url routing file
+9. views.py     : Modules controller file
