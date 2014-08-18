@@ -1,0 +1,8 @@
+/tmp/nocout_da/nocout_gis_slave/service/*.log /tmp/nocout_da/nocout_gis_slave/events/*.log /tmp/nocout_da/nocout_gis_slave/inventory/*.log /tmp/nocout_da/nocout_gis_slave/interface/*.log /tmp/nocout_da/nocout_gis_slave/*.log{
+        missingok
+        notifempty
+        daily
+        rotate 12
+        compress
+	size 10M 
+}
