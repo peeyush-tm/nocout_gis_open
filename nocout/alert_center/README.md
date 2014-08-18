@@ -63,3 +63,38 @@ Alert Category for Sub-Station Events
 1. PTP   : PTP type device Events
 2. WiMAX : WiMAX type device Events
 3. PMP   : PMP type device Events
+
+
+Module Files
+===
+
+```
+.
+├── README.md
+├── __init__.py
+├── admin.py
+├── docs
+│   ├── ALERT CENTER.html
+│   └── ALERT CENTER.pdf
+├── models.py
+├── templates
+│   └── alert_center
+│       ├── customer_alerts_list.html
+│       ├── customer_details_list.html
+│       ├── network_alerts_list.html
+│       ├── network_details_list.html
+│       └── single_device_alert.html
+├── tests.py
+├── urls.py
+└── views.py
+```
+
+1. README.md    : Module's README file for details
+2. __init.py__  : Python's modules init file
+3. admin.py     : Django Framework's Admin module registration file
+4. docs         : Documentation folder for the module
+5. models.py    : Django Framework's database interface
+6. templates    : HTML files for rendering a View for the module
+7. tests.py     : unit test files for the module
+8. urls.py      : Module's url routing file
+9. views.py     : Modules controller file
