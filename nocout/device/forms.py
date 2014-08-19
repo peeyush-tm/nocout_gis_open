@@ -80,6 +80,8 @@ class DeviceForm(forms.ModelForm):
         self.fields['state'].widget.choices = self.fields['state'].choices
         self.fields['city'].empty_label = "Select"
         self.fields['city'].widget.choices = self.fields['city'].choices
+        self.fields['ports'].empty_label = "Select"
+        self.fields['ports'].widget.choices = self.fields['ports'].choices
         self.fields['site_instance'].required = True
         self.fields['machine'].required = True
         self.fields['latitude'].required = True
