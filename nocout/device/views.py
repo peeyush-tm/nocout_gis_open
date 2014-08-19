@@ -1374,7 +1374,7 @@ class DeviceCreate(CreateView):
         device.device_alias = form.cleaned_data['device_alias']
         device.machine = form.cleaned_data['machine']
         device.site_instance = form.cleaned_data['site_instance']
-        device.organization_id = form.cleaned_data['organization']
+        device.organization_id = form.cleaned_data['organization'].id
         device.device_technology = form.cleaned_data['device_technology']
         device.device_vendor = form.cleaned_data['device_vendor']
         device.device_model = form.cleaned_data['device_model']
