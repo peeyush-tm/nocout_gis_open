@@ -1117,7 +1117,7 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
             # snmp port
             service_data['snmp_port'] = str(dsc.port)
             # agent tag
-            service_data['agent_tag'] = str(dsc.agent_tag)
+            service_data['agent_tag'] = str(dsc.agent_tag) if dsc.agent_tag is not None else "snmp"
 
             # master site on which service needs to be added
             master_site = SiteInstance.objects.get(name='master_UA')
