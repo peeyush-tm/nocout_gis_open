@@ -601,7 +601,8 @@ class Inventory_Device_Service_Data_Source(View):
                         'name': service_data_source,
                         'title': Service.objects.get(name=service_name).alias.upper() +
                                  " : " +
-                                 ServiceDataSource.objects.get(name=service_data_source).alias,
+                                 ServiceDataSource.objects.filter(name=service_data_source)[0].alias
+                                    if len(ServiceDataSource.objects.filter(name=service_data_source)) else service_data_source,
                         'url': 'performance/service/' + service_name + '/service_data_source/' + service_data_source + '/' + page_type + '/device/' + str(
                             device_id),
                         'active': 0,
@@ -615,7 +616,8 @@ class Inventory_Device_Service_Data_Source(View):
                         'name': service_data_source,
                         'title': Service.objects.get(name=service_name).alias.upper() +
                                  " : " +
-                                 ServiceDataSource.objects.get(name=service_data_source).alias,
+                                 ServiceDataSource.objects.filter(name=service_data_source)[0].alias
+                                    if len(ServiceDataSource.objects.filter(name=service_data_source)) else service_data_source,
                         'url': 'performance/service/' + service_name + '/service_data_source/' + service_data_source + '/' + page_type + '/device/' + str(
                             device_id),
                         'active': 0,
@@ -628,7 +630,8 @@ class Inventory_Device_Service_Data_Source(View):
                         'name': service_data_source,
                         'title': Service.objects.get(name=service_name).alias.upper() +
                                  " : " +
-                                 ServiceDataSource.objects.get(name=service_data_source).alias,
+                                 ServiceDataSource.objects.filter(name=service_data_source)[0].alias
+                                    if len(ServiceDataSource.objects.filter(name=service_data_source)) else service_data_source,
                         'url': 'performance/service/' + service_name + '/service_data_source/' + service_data_source + '/' + page_type + '/device/' + str(
                             device_id),
                         'active': 0,
