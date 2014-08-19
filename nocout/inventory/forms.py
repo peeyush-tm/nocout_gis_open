@@ -1025,9 +1025,8 @@ IMPORT_FILE_TYPES = ['.xls', '.xlsx' ]
 
 
 class GISInventoryBulkImportForm(forms.Form):
-    SHEET_CHOICES = (('', 'Select'),
-                     (1, '1'),
-                     (2, '2'))
+    SHEET_CHOICES = [('', 'Select')] + [(id, id) for id in range(50)]
+    print "******************* SHEET_CHOICES - ", SHEET_CHOICES
     file_upload = forms.FileField(label='Upload GIS Inventory File')
     sheet = forms.ChoiceField(label='Sheet No.', choices=SHEET_CHOICES)
 

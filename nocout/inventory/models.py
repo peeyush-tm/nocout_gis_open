@@ -136,6 +136,7 @@ class Sector(models.Model):
     def __unicode__(self):
         return self.name
 
+
 # gis customer model
 class Customer(models.Model):
     """
@@ -148,6 +149,7 @@ class Customer(models.Model):
 
     def __unicode__(self):
         return self.name
+
 
 # gis sub-station
 class SubStation(models.Model):
@@ -175,6 +177,7 @@ class SubStation(models.Model):
 
     def __unicode__(self):
         return self.name
+
 
 # gis circuit model
 class Circuit(models.Model):
