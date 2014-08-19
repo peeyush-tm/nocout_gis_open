@@ -1352,7 +1352,7 @@ class DeviceCreate(CreateView):
         """
         If the form is valid, redirect to the supplied URL.
         """
-
+        print "Form Clean Data ---------------------------------------------", form.cleaned_data
         # post_fields: it contains form post data
         # for e.g. <QueryDict: {u'tower_height': [u''], u'qos_bw': [u'fevefvef']}>
         post_fields = self.request.POST
@@ -1374,7 +1374,7 @@ class DeviceCreate(CreateView):
         device.device_alias = form.cleaned_data['device_alias']
         device.machine = form.cleaned_data['machine']
         device.site_instance = form.cleaned_data['site_instance']
-        device.organization_id = form.cleaned_data['organization']
+        device.organization_id = form.cleaned_data['organization'].id
         device.device_technology = form.cleaned_data['device_technology']
         device.device_vendor = form.cleaned_data['device_vendor']
         device.device_model = form.cleaned_data['device_model']
@@ -1396,6 +1396,12 @@ class DeviceCreate(CreateView):
         device.address = form.cleaned_data['address']
         device.description = form.cleaned_data['description']
         device.save()
+
+        # saving associated ports  --> M2M Relation (Model: DevicePort)
+        for port in form.cleaned_data['ports']:
+            device_port = DevicePort.objects.get(name=port)
+            device.ports.add(device_port)
+            device.save()
 
         # fetching device extra fields associated with 'device type'
         try:
@@ -1488,6 +1494,15 @@ class DeviceUpdate(UpdateView):
         self.object.description = form.cleaned_data['description']
         self.object.organization = form.cleaned_data['organization']
         self.object.save()
+
+        # delete old ports
+        self.object.ports.clear()
+
+        # saving associated ports  --> M2M Relation (Model: DevicePort)
+        for port in form.cleaned_data['ports']:
+            device_port = DevicePort.objects.get(name=port)
+            self.object.ports.add(device_port)
+            self.object.save()
 
         # deleting old device extra field values
         try:
