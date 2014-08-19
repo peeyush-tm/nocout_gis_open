@@ -1,6 +1,4 @@
 from django.shortcuts import render_to_response
-from user_profile.models import UserProfile
-from user_group.models import Organization
 from django.template import RequestContext
 import logging
 logger=logging.getLogger(__name__)
