@@ -561,19 +561,16 @@ class Inventory_Device_Service_Data_Source(View):
             inventory_device = SubStation.objects.get(id=int(device_id))
             #device_id= Device.objects.get(id= inventory_device.device_id).id
             #Fetch the Service names that are configured w.r.t to a device.
-            inventory_device_service_name = DeviceServiceConfiguration.objects.filter(device_name= \
-                                                                                          Device.objects.get(
-                                                                                              id=Device.objects.get(
-                                                                                                  id=inventory_device.device_id).id).device_name) \
-                .values_list('service_name, data_source', flat=True)
+            inventory_device_service_name = DeviceServiceConfiguration.objects.filter(
+                device_name= Device.objects.get(id=Device.objects.get(id=inventory_device.device_id).id).device_name) \
+                .values_list('service_name', 'data_source')
 
         elif page_type == 'network':
             # The device_id is the sector_configured_on device id.
             #Fetch the Service names that are configured w.r.t to a device.
-            inventory_device_service_name = DeviceServiceConfiguration.objects.filter(device_name= \
-                                                                                          Device.objects.get(
-                                                                                              id=device_id).device_name).values_list(
-                'service_name, data_source', flat=True)
+            inventory_device_service_name = DeviceServiceConfiguration.objects.filter(
+                device_name= Device.objects.get(id=device_id).device_name)\
+                .values_list('service_name', 'data_source')
 
         # TODO:to remove this code as the services are getting multi added with their port.
         inventory_device_service_name = list(set(inventory_device_service_name))
@@ -602,7 +599,9 @@ class Inventory_Device_Service_Data_Source(View):
                 result['data']['objects']['service_status_tab'].append(
                     {
                         'name': service_data_source,
-                        'title': service_data_source + ' (' + service_name + ')',
+                        'title': Service.objects.get(name=service_name).alias.upper() +
+                                 " : " +
+                                 ServiceDataSource.objects.get(name=service_data_source).alias,
                         'url': 'performance/service/' + service_name + '/service_data_source/' + service_data_source + '/' + page_type + '/device/' + str(
                             device_id),
                         'active': 0,
@@ -614,7 +613,9 @@ class Inventory_Device_Service_Data_Source(View):
                 result['data']['objects']['inventory_status_tab'].append(
                     {
                         'name': service_data_source,
-                        'title': service_data_source + ' (' + service_name + ')',
+                        'title': Service.objects.get(name=service_name).alias.upper() +
+                                 " : " +
+                                 ServiceDataSource.objects.get(name=service_data_source).alias,
                         'url': 'performance/service/' + service_name + '/service_data_source/' + service_data_source + '/' + page_type + '/device/' + str(
                             device_id),
                         'active': 0,
@@ -625,7 +626,9 @@ class Inventory_Device_Service_Data_Source(View):
                 result['data']['objects']['service_perf_tab'].append(
                     {
                         'name': service_data_source,
-                        'title': service_data_source + ' (' + service_name + ')',
+                        'title': Service.objects.get(name=service_name).alias.upper() +
+                                 " : " +
+                                 ServiceDataSource.objects.get(name=service_data_source).alias,
                         'url': 'performance/service/' + service_name + '/service_data_source/' + service_data_source + '/' + page_type + '/device/' + str(
                             device_id),
                         'active': 0,
