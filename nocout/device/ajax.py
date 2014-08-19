@@ -104,6 +104,36 @@ def update_type(request, option):
 
 
 @dajaxice_register
+def update_ports(request, option):
+    """Updating ports corresponding to the selected type
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (unicode): selected option value
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
+    dajax = Dajax()
+
+    # selected type
+    device_type = DeviceType.objects.get(pk=int(option))
+    # ports associated to the selected type
+    ports = device_type.device_port.all()
+    out = list()
+    out.append("<option value=''>Select</option>")
+    for port in ports:
+        out.append("<option value='%d'>%s - (%d)</option>" % (port.id, port.alias, port.value))
+    dajax.assign('#id_ports', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+@dajaxice_register
 def after_update_vendor(request, option, selected=''):
     """Get vendor selection menu with last time selected vendor as selected option after unsuccessful form submission
 
@@ -205,6 +235,46 @@ def after_update_type(request, option, selected=''):
         else:
             out.append("<option value='%d'>%s</option>" % (dtype.id, dtype.name))
     dajax.assign('#id_device_type', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+@dajaxice_register
+def after_update_ports(request, option, selected=[]):
+    """Get ports selection menu with last time selected port as selected option after unsuccessful form submission
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (unicode): selected option value
+
+    Kwargs:
+        selected (unicode): option value selected before unsuccessful form submission
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
+    dajax = Dajax()
+    
+    # selected type
+    device_type = DeviceType.objects.get(pk=int(option))
+
+    # ports associated to selected type
+    ports = device_type.device_port.all()
+    out = list()
+    out.append("<option value=''>Select</option>")
+    for port in ports:
+        if selected:
+            if port.id in [int(x) for x in selected]:
+                out.append("<option value='%d' selected>%s - (%d)</option>" % (port.id, port.alias, port.value))
+            else:
+                out.append("<option value='%d'>%s - (%d)</option>" % (port.id, port.alias, port.value))
+        else:
+            out.append("<option value='%d'>%s - (%d)</option>" % (port.id, port.alias, port.value))
+    dajax.assign('#id_ports', 'innerHTML', ''.join(out))
     return dajax.json()
 
 
@@ -666,14 +736,18 @@ def add_device_to_nms_core(request, device_id):
         agent_tag = ""
         try:
             agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
-        except:
-            logger.info("Device has no device type.")
+        except Exception as e:
+            logger.info(e.message)
+
         device_data = {'device_name': device.device_name,
                        'device_alias': device.device_alias,
                        'ip_address': device.ip_address,
                        'agent_tag': agent_tag,
                        'site': device.site_instance.name,
                        'mode': 'addhost'}
+
+        print "Device data -------------------------------", device_data
+
         # site to which configuration needs to be pushed
         master_site = SiteInstance.objects.get(name='master_UA')
         # url for nocout.py
