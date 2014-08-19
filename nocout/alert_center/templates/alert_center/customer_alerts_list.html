@@ -65,6 +65,9 @@
                  */
                 this.createDataTable = function(tableId, tableheaders, ajax_url, destroy)
                 {
+                    /*Show the spinner*/
+                    showSpinner();
+
                     destroy = typeof destroy !== 'undefined' ? destroy : true;
                     $('.datatable').each(function () {
                         var datatable = $(this);
@@ -85,6 +88,11 @@
                         bProcessing : true,
                         bServerSide: false,
                         sAjaxSource: ajax_url,
+                        /*This is the callback funtion for data ajax call*/
+                        fnInitComplete : function(oSettings, json) {
+                            /*Hide the spinner*/
+                            hideSpinner();
+                        },
                         aoColumns:tableheaders
                     });
                 };

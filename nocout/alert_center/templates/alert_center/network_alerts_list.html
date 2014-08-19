@@ -66,8 +66,9 @@
 
     /*The pagination and the */
     $(document).ready(function (e) {
+
             function ourDataTableWidget()
-            {
+            {                
                 /**
                  * This function creates the jquery data table on given domElement
                  * @class ourDataTableWidget
@@ -78,6 +79,9 @@
                  */
                 this.createDataTable = function(tableId, tableheaders, ajax_url, destroy)
                 {
+                    /*Show the spinner*/
+                    showSpinner();
+
                     destroy = typeof destroy !== 'undefined' ? destroy : true;
                     $('.datatable').each(function () {
                         var datatable = $(this);
@@ -98,6 +102,11 @@
                         bProcessing : true,
                         bServerSide: false,
                         sAjaxSource: ajax_url,
+                        /*This is the callback funtion for data ajax call*/
+                        fnInitComplete : function(oSettings, json) {
+                            /*Hide the spinner*/
+                            hideSpinner();
+                        },
                         aoColumns:tableheaders
                     });
                 };
@@ -149,7 +158,7 @@
             // dataTableInstance.createDataTable("servicealertslistingtable", gridHeadersObj_servicealerts, ajax_url_servicealerts, destroy);
         });
 </script>
-    <!-- Library to load tab content on tab click-->
+<!-- Library to load tab content on tab click-->
 <script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
 {% endblock %}
 

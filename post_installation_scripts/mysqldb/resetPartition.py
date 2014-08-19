@@ -66,7 +66,7 @@ for ptable in partitionTableList:
     # print temp_partition
 
     c = calendar.Calendar()
-    c.setfirstweekday(calendar.SUNDAY)
+    c.setfirstweekday(calendar.MONDAY)
     writeThis = []
     temp = {}
     for year in years_list:

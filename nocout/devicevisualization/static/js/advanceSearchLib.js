@@ -242,6 +242,9 @@ function advanceSearchClass() {
 			            sticky: true
 			        });
 				}
+
+				/*Hide the spinner*/
+                hideSpinner();
 			},
 			/*If there is a problem in calling server*/
 			error : function(err) {
@@ -256,6 +259,9 @@ function advanceSearchClass() {
 		            // (bool | optional) if you want it to fade out on its own or just sit there
 		            sticky: true
 		        });
+
+		        /*Hide the spinner*/
+                hideSpinner();
 			}
 		});		
 	};
@@ -428,23 +434,42 @@ function advanceSearchClass() {
 
 			        	} else {
 
-			        		/*Create a instance of googleEarthClass*/
-			        		earthInstance = new googleEarthClass();
 
-			        		/*Clear all the elements from google earth*/
-					        earthInstance.clearEarthElements();
+			        		/*Create a instance of networkMapClass*/
+							gmapInstance = new devicePlottingClass_gmap();
+
+							/*Reset markers, polyline & filters*/
+					        gmapInstance.clearGmapElements();
 
 					        /*Reset Global Variables & Filters*/
-					        earthInstance.resetVariables_earth();
+					        gmapInstance.resetVariables_gmap();
+
+					        /*If cluster icon exist then save it to global variable else make the global variable blank*/
+							if(result.data.objects.data.unspiderfy_icon == undefined) {
+								clusterIcon = "";
+							} else {
+								clusterIcon = window.location.origin+"/"+result.data.objects.data.unspiderfy_icon;
+							}
+
+					        /*Call the make network to create the BS-SS network on the google map*/
+					        gmapInstance.plotDevices_gmap(result.data.objects.children,"base_station");
+			        		/************** GOOGLE EARTH CODE*********************/
+			        		/*Create a instance of googleEarthClass*/
+			        		// earthInstance = new googleEarthClass();
+
+			        		/*Clear all the elements from google earth*/
+					        // earthInstance.clearEarthElements();
+
+					        /*Reset Global Variables & Filters*/
+					        // earthInstance.resetVariables_earth();
 
 					        /*create the BS-SS network on the google map*/
-					        earthInstance.plotDevices_earth(result.data.objects.children,"base_station");
+					        // earthInstance.plotDevices_earth(result.data.objects.children,"base_station");
 			        	}
 
 					}
 				} else {
 
-					// console.log(result.message);
 					$.gritter.add({
 			            // (string | mandatory) the heading of the notification
 			            title: 'Advance Filters - No Records',
@@ -459,7 +484,12 @@ function advanceSearchClass() {
 
 					/*Enable the refresh button*/
 					$("#resetFilters").button("complete");
+
+					$("#removeFilterBtn").click();
 				}
+
+				/*Hide the spinner*/
+                hideSpinner();
 			},
 			error : function(err) {
 
@@ -478,6 +508,9 @@ function advanceSearchClass() {
 
 				/*Enable the refresh button*/
 				$("#resetFilters").button("complete");
+
+				/*Hide the spinner*/
+                hideSpinner();
 			}
 		});
 	};

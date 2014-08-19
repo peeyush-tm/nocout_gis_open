@@ -42,7 +42,9 @@ function googleEarthClass() {
 	 * @param pluginInstance {Object}, It is the JSON object returned from google earth create instance function on successful creation of google earth.
 	 */
 	this.earthInitCallback = function(pluginInstance) {
-				
+		console.log(pluginInstance);
+		// var mapTypeId = myMap.getMapTypeId();
+		// myMapObject.setMapTypeId(google.maps.MapTypeId.SATELLITE);
 
 		ge = pluginInstance;
 		ge.getWindow().setVisibility(true);

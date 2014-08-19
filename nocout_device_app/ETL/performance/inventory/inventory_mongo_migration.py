@@ -6,12 +6,14 @@ File contains the data migrations of mongodb to mysql db for inventory services.
 """
 
 from nocout_site_name import *
-import MySQLdb
+import mysql.connector
 from datetime import datetime, timedelta
 import socket
 import imp
-
+import time
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
+utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
+config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -32,8 +34,9 @@ def main(**configs):
 
     end_time = datetime.now()
     start_time = end_time - timedelta(minutes=1440)
-    start_epoch = int((start_time - utc_time).total_seconds())
-    end_epoch =  int((end_time - utc_time).total_seconds())
+    start_epoch = int(time.mktime(start_time.timetuple()))
+    end_epoch = int(time.mktime(end_time.timetuple()))
+
     print start_time,end_time
     
     for i in range(len(configs.get('mongo_conf'))):
@@ -88,7 +91,9 @@ def build_data(doc):
 	"""
 	values_list = []
 	time = doc.get('time')
-	machine_name = get_machine_name()
+        configs = config_module.parse_config_obj()
+	for config, options in configs.items():
+		machine_name = options.get('machine')
         t = (
         doc.get('device_name'),
         doc.get('service_name'),
@@ -116,9 +121,9 @@ def insert_data(table, data_values, **kwargs):
 	Arg: table (mysql database table name)
 	Kwargs: data_values (formatted record)
 	Return : None
-	Raises: MySQLdb.error
+	Raises: mysql.connector.Error
 	"""
-	db = mysql_conn(configs=kwargs.get('configs'))
+	db = utility_module.mysql_conn(configs=kwargs.get('configs'))
 	query = 'INSERT INTO `%s` ' % table
 	query += """
                 (device_name,service_name,sys_timestamp,check_timestamp,
@@ -130,56 +135,11 @@ def insert_data(table, data_values, **kwargs):
 	cursor = db.cursor()
     	try:
         	cursor.executemany(query, data_values)
-    	except MySQLdb.Error, e:
-        	raise MySQLdb.Error, e
+    	except mysql.connector.Error as err:
+        	raise mysql.connector.Error, err
     	db.commit()
     	cursor.close()
 
-def get_epoch_time(datetime_obj):
-    """
-	function for converting the datetime object into epoch_time.
-	Arg: datetime_obj (time object)
-	Kwargs: None
-	Return : epoch_time/datetimeobj
-	Raises: None
-    """
-    # Get India times (GMT+5.30)
-    utc_time = datetime(1970, 1,1, 5, 30)
-    if isinstance(datetime_obj, datetime):
-        epoch_time = int((datetime_obj - utc_time).total_seconds())
-        return epoch_time
-    else:
-        return datetime_obj
-
-def mysql_conn(db=None, **kwargs):
-    """
-	function for mysql connection.
-	Arg: db (database instance obj)
-	Kwargs: multiple arguments for mysql connections
-	Return : db object
-	Raises: MYSQLdb.error
-    """
-    try:
-        db = MySQLdb.connect(host=kwargs.get('configs').get('ip'), user=kwargs.get('configs').get('user'),
-            passwd=kwargs.get('configs').get('sql_passwd'), db=kwargs.get('configs').get('sql_db'))
-    except MySQLdb.Error, e:
-        raise MySQLdb.Error, e
-
-    return db
-def get_machine_name(machine_name=None):
-    """
-	function for getting machine_name.
-	Arg: machine_name
-	Kwargs: None
-	Return : machine_name
-	Raises: Exception
-    """
-    try:
-        machine_name = socket.gethostname()
-    except Exception, e:
-        raise Exception(e)
-
-    return machine_name
 
 
 if __name__ == '__main__':

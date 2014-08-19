@@ -40,7 +40,7 @@
                         <i class='fa fa-times'></i> Remove Tools
                     </button>
                 </li>
-            </ul>            
+            </ul>
         </div>
     </span>
     <!-- /DATE RANGE PICKER -->
@@ -176,8 +176,6 @@
 
 <!-- Google Map Library-->
 <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
-<!--This library is used to create marker with labels-->
-<!-- <script type="text/javascript" src={% static "js/markerwithlabel.js" %}></script> -->
 <!--This library is used to draw label on google maps-->
 <script type="text/javascript" src={% static "js/infobox.js" %}></script>
 <!--This library is used for marker clustering-->
@@ -220,9 +218,10 @@
         networkMapInstance.createMap("deviceMap");
 
         if($.trim(deviceName) == "default_device_name") {
-            
-            /*Call the make network to create the BS-SS network on the google map*/
-            networkMapInstance.getDevicesData_gmap();
+            if(typeof google != "undefined") {
+                /*Call the make network to create the BS-SS network on the google map*/
+                networkMapInstance.getDevicesData_gmap();
+            }
 
         } else {
 

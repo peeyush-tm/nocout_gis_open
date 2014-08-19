@@ -64,7 +64,7 @@
 	        <div class="clearfix"></div>
 	    </div>
 	    <div class='box-body'>
-	    	<!--Device Staus Block Start-->
+	    	<!--Device Status Block Start-->
 	    	<button class="btn btn-info btn-xs" title="Hide Status" id="show_status_btn">Hide Status</button>
 	    	<div class="clearfix"></div>
 	        <div class="well well-sm" id="status_container" style="margin:10px;">
@@ -73,15 +73,69 @@
 					<tbody></tbody>
 				</table>
         	</div>        	
-        	<!--Device Staus Block End-->
+        	<!--Device Status Block End-->
         	<div class="clearfix"></div>
         	<div class="divide-20"></div>
-        	<div class="panel panel-default">
-	        	<div class="panel-body">
+        	<div class="box">
+                <div class="box-title">
+
+                </div>
 	        		<!--Services Tabs & their content Start-->
-	        		<div class="tabbable row" id="services_tab_container">
-						
-					</div>
+{#	        		<div class="tabbable row" id="services_tab_container">#}
+{##}
+{#					</div>#}
+                    <div id="tableContainer" class="box-body">
+                        <div class="tabbable header-tabs">
+                            <ul class="nav nav-tabs" >
+                                <li><a href="#inventory_status_tab" id="inventory_status"  data-toggle="tab"><span class="hidden-inline-mobile">Inventory Status</span></a></li>
+                                <li><a href="#service_status_tab" id="service_status"  data-toggle="tab"><span class="hidden-inline-mobile">Service Status</span></a></li>
+                                <li><a href="#service_perf_tab" id="service_perf"  data-toggle="tab"><span class="hidden-inline-mobile">Service Performance</span></a></li>
+                                <li class="active"><a href="#network_perf_tab" id="network_perf"  data-toggle="tab"><span class="hidden-inline-mobile">Network Performance</span></a></li>
+                            </ul>
+
+{#                            <div class="clearfix"></div>#}
+                        </div>
+                        <div>
+                                <div class="tab-content">
+                                    <div class="tab-pane fade in active" id="network_perf_tab">
+                                        <div class="panel panel-default inner_tab_container">
+                                            <div class="panel-body">
+                                                 <div class="tabbable tabs-left">
+
+                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane" id="service_perf_tab">
+                                        <div class="panel panel-default inner_tab_container">
+                                            <div class="panel-body">
+                                                 <div class="tabbable tabs-left">
+
+                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane" id="service_status_tab">
+                                        <div class="panel panel-default inner_tab_container">
+                                            <div class="panel-body">
+                                                 <div class="tabbable tabs-left">
+
+                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane" id="inventory_status_tab">
+                                        <div class="panel panel-default inner_tab_container">
+                                            <div class="panel-body">
+                                                 <div class="tabbable tabs-left">
+
+                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
 					<!--Services Tabs & their content End-->
 	        	</div>
         	</div>
@@ -94,8 +148,6 @@
 	<script src={% static "js/highcharts.js" %}></script>
     <script src={% static "js/highcharttheme.js" %}></script>
     <script src={% static "js/highchartstable.js" %}></script>
-    <!-- PURL Liberary for parsing URLS -->
-    <script src={% static "js/purl.js" %}></script>
 	<!--Our Custom Script-->
 	<script src={% static "js/nocout/nocoutPerfLib.js" %}></script>
 
@@ -147,13 +199,13 @@
 			perfInstance = new nocoutPerfLib();
 
 			/*To Populate the device dropdown*/
-			perfInstance.getAllDevices(devicesUrl,current_device);
+			perfInstance.getAllDevices(devicesUrl, current_device);
 
 			/*To populate the status table*/
-			perfInstance.getStatus(statusUrl,current_device);
+			perfInstance.getStatus(statusUrl, current_device);
 
 			/*To populate the services tabs*/
-			perfInstance.getServices(serviceUrl,current_device);
+			perfInstance.getServices(serviceUrl, current_device);
 
 
 		});
@@ -167,7 +219,38 @@
             else{
                 $("#show_status_btn").text("Hide Status");
             }
-		})
+		});
+
+		/*Load first inner tab of network performance*/
+		$("#network_perf").click(function(e) {
+			fetchFirstTabContent(e);
+		});
+
+		/*Load first inner tab of service performance*/
+		$("#service_perf").click(function(e) {
+			fetchFirstTabContent(e);
+		});
+
+		/*Load first inner tab of service status*/
+		$("#service_status").click(function(e) {
+			fetchFirstTabContent(e);
+		});
+
+		/*Load first inner tab of inventory status*/
+		$("#inventory_status").click(function(e) {
+			fetchFirstTabContent(e);
+		});
+
+		/**
+		 * This function load the first inner tab content when the tab is opened.
+		 */
+		function fetchFirstTabContent(e) {
+			var tab_id = e.currentTarget.attributes.href.value.split("#")[1];
+			var li_count = $("#"+tab_id+" .inner_tab_container .col-md-3 ul li").length;
+			if(li_count > 0) {
+				$("#"+tab_id+" .inner_tab_container .col-md-3 ul li:first-child a").trigger('click');
+			}
+		}
 
 	</script>
 

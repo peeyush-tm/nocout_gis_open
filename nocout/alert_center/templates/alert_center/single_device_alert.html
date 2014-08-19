@@ -1,0 +1,227 @@
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+	<li>Alert Detail</li>
+	<li>{{ page_type | title }} Alert</li>
+{% endblock %}
+{% block content_title %} {{ page_type | title  }} Alert{% endblock %}
+{% block content_description %} {% endblock %}
+{% load staticfiles %}
+{% block css %}
+	<!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
+{% endblock %}
+
+{% block content %}
+	<style>
+		.perfContainerBlock .box-title .pull-right .list-inline > li {
+			max-width: 200px !important;
+		}
+	</style>
+	<!--Single Device Live Perf Start-->
+	<div class='box border lite perfContainerBlock'>
+	    <div class='box-title'>
+	        <h4><i class='fa fa-file-text'></i> {{ page_type| title }} Alert - {{ current_device_name }}</h4>
+	        <!--Filters Block Start-->
+	        <div class="pull-right">
+	            <ul class="list-unstyled list-inline">
+	                <li>
+	                    <!--device_name Filter-->
+	                    <select name="device_name" id="device_name" class="form-control col-xs-1 input-sm">
+                            {% for device in devices %}
+    	                        <option value='{{ device.id }}'>{{  device.alias }}</option>
+                            {% endfor %}
+	                    </select>
+	                </li>
+	                <li>
+	                    <!--start_date Filter-->
+	                    <input class="form-control col-xs-1 input-sm datepicker" type="text" name="start_date" size="10" id="start_date" placeholder="Start Date">
+	                </li>
+	                <li>
+	                	<span class="col-xs-1 input-sm">To</span>
+	                </li>
+	                <li>
+	                    <!--end_date Filter-->
+	                    <input class="form-control col-xs-1 input-sm datepicker" type="text" name="end_date" size="10" id="end_date" placeholder="End Date">
+	                </li>
+	                <li>
+                        <div class="btn-group dropdown col-xs-1">
+                            <button id="apply_filter" class="btn  btn-default btn-sm">
+                                    Apply Filter
+                            </button>
+                        </div>
+                    </li>
+	                	<!--CSV or Excel download action. -->
+                    <li>
+	                    <div class="btn-group dropdown col-xs-1">
+							<button class="btn  btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+								Download Report
+								<span class="caret"></span>
+							</button>
+							<ul class="dropdown-menu context">
+								<li>
+									<a id="download_excel">Excel</a>
+                                </li>
+                                <li>
+									<a id="download_csv">CSV</a>
+								</li>
+							</ul>
+						</div>
+	                </li>
+	            </ul>
+	        </div>
+        <div>
+
+        </div>
+
+        <div>{{ start_date_object|date:'l d M, Y' }} TO {{ end_date_object|date:'l d M, Y' }}</div>
+
+            <table id="device_alert" class="table table-bordered table-stripped table-sortable">
+                <thead>
+                    <tr>
+                        <th>&nbsp;</th>
+                        {% for data in table_header %}
+                            <th class="headerSortable" style="background: none;">{{ data | title }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% if table_data %}
+                    {% for data in table_data %}
+                        <tr>
+                            {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
+                                <td><i class="fa fa-circle red-dot"></i></td>
+                                <td>{{ data.device_name }}</td>
+                                <td>{{ data.ip_address }}</td>
+                                <td>{{ data.service_name }}</td>
+                                <td>{{ data.data_source }}</td>
+                                <td><span class="text-danger">{{ data.severity }}</span></td>
+                                <td><span class="text-danger">{{ data.current_value }}</span></td>
+                                <td>{{ data.alert_date }}</td>
+                                <td>{{ data.alert_time }}</td>
+                                <td><span class="text-danger">{{ data.description }}</span></td>
+                            {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
+                                <td><i class="fa fa-circle orange-dot"></i></td>
+                                <td>{{ data.device_name }}</td>
+                                <td>{{ data.ip_address }}</td>
+                                <td>{{ data.service_name }}</td>
+                                <td>{{ data.data_source }}</td>
+                                <td><span class="text-warning">{{ data.severity }}</span></td>
+                                <td><span class="text-warning">{{ data.current_value }}</span></td>
+                                <td>{{ data.alert_date }}</td>
+                                <td>{{ data.alert_time }}</td>
+                                <td><span class="text-warning">{{ data.description }}</span></td>
+                            {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
+                                <td><i class="fa fa-circle green-dot"></i></td>
+                                <td>{{ data.device_name }}</td>
+                                <td>{{ data.ip_address }}</td>
+                                <td>{{ data.service_name }}</td>
+                                <td>{{ data.data_source }}</td>
+                                <td><span class="text-success">{{ data.severity }}</span></td>
+                                <td><span class="text-success">{{ data.current_value }}</span></td>
+                                <td>{{ data.alert_date }}</td>
+                                <td>{{ data.alert_time }}</td>
+                                <td><span class="text-success">{{ data.description }}</span></td>
+                            {% else %}
+                                <td><i class="fa fa-circle grey-dot"></i></td>
+                                <td>{{ data.device_name }}</td>
+                                <td>{{ data.ip_address }}</td>
+                                <td>{{ data.service_name }}</td>
+                                <td>{{ data.data_source }}</td>
+                                <td><span class="text-muted">{{ data.severity }}</span></td>
+                                <td><span class="text-muted">{{ data.current_value }}</span></td>
+                                <td>{{ data.alert_date }}</td>
+                                <td>{{ data.alert_time }}</td>
+                                <td><span class="text-muted">{{ data.description }}</span></td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+
+                {% else %}
+
+                    <div>NO RECORD FOUND.</div>
+
+                {% endif %}
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <script type="text/javascript">
+        $(document).ready(function(e) {
+            //setting up a custom jquery function to retrive the get paramters.
+            $.urlParam = function(name){
+                    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                    if (results==null){
+                       return null;
+                    }
+                    else{
+                       return results[1] || 0;
+                    }};
+            start_date= $.urlParam('start_date');
+            if (start_date){
+                 $("#start_date").val(decodeURIComponent(start_date));
+            }
+            end_date= $.urlParam('end_date');
+            if (end_date){
+                 $("#end_date").val(decodeURIComponent(end_date));
+            }
+
+            //set the dropdown to current device value
+            $("#device_name").val("{{current_device_id}}");
+
+            //on change of selection element in device_name
+            // we should redirect user to the new page for the device
+            $("#device_name").on('change', function(){
+                var new_device = $(this).val();
+                var uri = $.url();
+                var path = uri.attr('path').split('/');
+                path[path.length-4] = new_device;
+                var new_url = uri.attr('protocol') + "://" + uri.attr('host') + ":" + uri.attr('port') + path.join("/");
+                window.location.href = new_url;
+            });
+
+            /*Initialize Datepicker*/
+            $(".datepicker").datepicker({ dateFormat: 'dd-mm-yy' });
+
+            $("#apply_filter").on('click', function(){
+
+                window.location.href = '{% url "SingleDeviceDetails"  page_type current_device_id service_name %}' +'?start_date=' + encodeURIComponent($("#start_date").val())
+                                       + '&end_date=' + encodeURIComponent($("#end_date").val());
+
+            });
+
+            $("#download_excel").on('click', function(){
+                window.location.replace('{% url "SingleDeviceDetails"  page_type current_device_id service_name %}'
+                        + '?download_excel=true')
+            });
+
+            $("#download_csv").on('click', function(){
+                window.location.replace('{% url "SingleDeviceDetails"  page_type current_device_id service_name %}'
+                        + '?download_csv=true')
+            });
+
+
+        })
+    </script>
+
+{% endblock %}
+
+{% block load_js %}
+    <script>
+        $(document).ready(function () {
+            $("#device_alert").tablecloth({
+              theme:"stats",
+              bordered: true,
+              sortable:true,
+              striped: true,
+              clean:true
+            });
+        });
+    App.init(); //Initialise plugins and elements
+    </script>
+{% endblock %}
+
+
+

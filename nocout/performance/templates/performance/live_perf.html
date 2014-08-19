@@ -101,21 +101,21 @@
     
                 /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
 
-                $("#customer_wifi_tab").attr("data_url",ajax_url_wifi);
+                $("#customer_wifi_tab").attr("data_url", ajax_url_wifi);
                 $("#customer_wifi_tab").attr("data_header",'{{ datatable_headers|safe }}');
 
-                $("#customer_pmp_tab").attr("data_url",ajax_url_pmp);
+                $("#customer_pmp_tab").attr("data_url", ajax_url_pmp);
                 $("#customer_pmp_tab").attr("data_header",'{{ datatable_headers|safe }}');
 
-                $("#customer_ptp_tab").attr("data_url",ajax_url_p2p);
-                $("#customer_ptp_tab").attr("data_header",'{{ datatable_headers|safe }}');
+                $("#customer_ptp_tab").attr("data_url", ajax_url_p2p);
+                $("#customer_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
 
                 var location_array = window.location.href.split("#");
 
                 if(location_array.length == 1) {
 
                     /*Trigger click event on active tab to load its data*/
-                    $("#customer_ptp_tab").trigger('click',true);
+                    $("#customer_ptp_tab").trigger('click', true);
                 }
 
                 // dataTableInstance.createDataTable("customer_wifi_performancelistingtable", gridHeadersObj, ajax_url_wifi, destroy);
