@@ -59,7 +59,7 @@ def check_radwin_ul_utilization(item, _no_params, info):
                     if_name = "unknown interface name"
                 if ' ' in if_name:
                     if_name = str.replace(if_name, ' ', '_')
-                status_list.append((if_name, link_in_octets))
+                status_list.append((if_name, saveint(link_in_octets)))
             for name, in_octets in status_list:
                 infotext += "[%s] ul_utilization:%s" % (name, in_octets)
             state = 0
