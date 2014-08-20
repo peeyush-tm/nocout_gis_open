@@ -88,7 +88,6 @@ class BaseStation(models.Model):
     """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
-    bs_technology = models.ForeignKey(DeviceTechnology, null=True, blank=True)
     bs_site_id = models.CharField('BS Site ID', max_length=250, null=True, blank=True)
     bs_site_type = models.CharField('BS Site Type', max_length=100, null=True, blank=True)
     bs_switch = models.ForeignKey(Device, null=True, blank=True, related_name='bs_switch')
@@ -121,6 +120,7 @@ class Sector(models.Model):
     alias = models.CharField('Alias', max_length=250)
     sector_id = models.CharField('Sector ID', max_length=250, null=True, blank=True)
     base_station = models.ForeignKey(BaseStation, related_name='sector')
+    bs_technology = models.ForeignKey(DeviceTechnology, null=True, blank=True)
     sector_configured_on = models.ForeignKey(Device, max_length=250, null=True, blank=False, related_name='sector_configured_on')
     sector_configured_on_port = models.ForeignKey(DevicePort, null=True, blank=True)
     antenna = models.ForeignKey(Antenna, null=True, blank=True, related_name='sector')
