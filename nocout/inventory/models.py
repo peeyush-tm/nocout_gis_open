@@ -99,12 +99,13 @@ class BaseStation(models.Model):
     latitude = models.FloatField('Latitude', null=True, blank=True)
     longitude = models.FloatField('Longitude', null=True, blank=True)
     infra_provider = models.CharField('Infra Provider', max_length=100, null=True, blank=True)
+    gps_type = models.CharField('GPS Type', max_length=100, null=True, blank=True)
     building_height = models.FloatField('Building Height', null=True, blank=True, help_text='(mtr) Enter a number.')
     tower_height = models.FloatField('Tower Height', null=True, blank=True, help_text='(mtr) Enter a number.')
     country = models.IntegerField('Country', null=True, blank=True)
     state = models.IntegerField('State', null=True, blank=True)
     city = models.IntegerField('City', null=True, blank=True)
-    gps_type = models.CharField('GPS Type', max_length=100, null=True, blank=True)
+    address = models.TextField('Address', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):

@@ -1021,12 +1021,11 @@ class ThematicSettingsForm(forms.ModelForm):
 
 
 #*********************************** Bulk Import ***************************************
-IMPORT_FILE_TYPES = ['.xls', '.xlsx' ]
+IMPORT_FILE_TYPES = ['.xlsx']
 
 
 class GISInventoryBulkImportForm(forms.Form):
     SHEET_CHOICES = [('', 'Select')] + [(id, id) for id in range(50)]
-    print "******************* SHEET_CHOICES - ", SHEET_CHOICES
     file_upload = forms.FileField(label='Upload GIS Inventory File')
     sheet = forms.ChoiceField(label='Sheet No.', choices=SHEET_CHOICES)
 
