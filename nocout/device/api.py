@@ -39,15 +39,13 @@ class DeviceStatsApi(View):
                 page_number= self.request.GET.get('page_number', None)
                 start, offset= None, None
                 if page_number:
-
                     offset= int(page_number)*GIS_MAP_MAX_DEVICE_LIMIT
                     start= offset - GIS_MAP_MAX_DEVICE_LIMIT
-
 
                 base_stations_and_sector_configured_on_devices= Sector.objects.filter(sector_configured_on__id__in= \
                 organization.device_set.values_list('id', flat=True))[start:offset].values_list('base_station').annotate(dcount=Count('base_station'))
                 if base_stations_and_sector_configured_on_devices:
-                    total_count= base_stations_and_sector_configured_on_devices.count()
+                    total_count= Sector.objects.filter(sector_configured_on__id__in=organization.device_set.values_list('id', flat=True)).count()
                     request_query= self.request.GET.get('filters','')
                     if request_query:
                         return DeviceSetFilters.as_view()(self.request, total_count)
