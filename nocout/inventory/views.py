@@ -1738,7 +1738,9 @@ class IconSettingsListingTable(BaseDatatableView):
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             try:
-                img_url = static('img/{}'.format(dct['upload_image']))
+                img_url = "/media/"+ (dct['upload_image']) if \
+                    "uploaded" in dct['upload_image'] \
+                    else static("img/" + dct['upload_image'])
                 dct.update(upload_image='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(img_url))
             except Exception as e:
                 logger.info(e)
