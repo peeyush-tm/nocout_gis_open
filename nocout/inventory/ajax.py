@@ -236,18 +236,20 @@ def gt_warning_choices(request, option):
     out = list()
     out.append("<option value="">Select</option>")
     for icon_setting in icon_settings:
-        img_url = "/media/"+ (icon_setting.upload_image) if \
-                    "uploaded" in icon_setting.upload_image \
-                    else static("img/" + icon_setting.upload_image)
-        # img_url = static('img/{}'.format())
+        img_url = "/media/"+ str(icon_setting.upload_image) \
+            if "uploaded" in str(icon_setting.upload_image) \
+            else static('img/{}'.format(icon_setting.upload_image))
+        # img_url = static('img/{}'.format(icon_setting.upload_image))
         if icon_setting.id == int(option):
-            out.append("<option value={} style='background-image:url({}); background-size: 24px 24px;' selected>{}\
-                        </option>"
-                       .format(icon_setting.id, img_url, icon_setting.alias))
+            out.append("<option value="+str(icon_setting.id)+" "
+                        "style='background-image:url(\""+img_url+"\"); "
+                        "background-size: 24px 24px;' selected>"+str(icon_setting.alias)+" </option>")
+
         else:
-            out.append("<option value={} style='background-image:url({}); background-size: 24px 24px;'>{}</option>"
-                       .format(icon_setting.id, img_url, icon_setting.alias))
-    print out
+            out.append("<option value="+str(icon_setting.id)+" "
+                        "style='background-image:url(\""+img_url+"\"); "
+                        "background-size: 24px 24px;'>"+str(icon_setting.alias)+"</option>")
+
     dajax.assign("#id_gt_warning", 'innerHTML', ''.join(out))
     return dajax.json()
 

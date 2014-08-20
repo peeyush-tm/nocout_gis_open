@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.conf.urls import patterns, include, url
 from django.conf.urls.static import static
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.generic import RedirectView
 # Include dajaxice ajax module
 from dajaxice.core import dajaxice_autodiscover, dajaxice_config
@@ -62,6 +63,7 @@ urlpatterns = patterns('',
     url(r'^sm/', include('session_management.urls'))
 )
 
+urlpatterns += staticfiles_urlpatterns()
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # if settings.DEBUG:
