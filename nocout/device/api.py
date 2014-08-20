@@ -322,14 +322,17 @@ class FetchLPDataApi(View):
                     # comparing threshold values to get icon
                     try:
                         value = int(response_dict.get('value')[0])
+                        image_partial = "img/icons/wifi7.png"
                         if int(value) > int(tc.warning):
-                            icon = static('img/{}'.format(ts.gt_warning.upload_image))
+                            image_partial = ts.gt_warning.upload_image
                         elif int(tc.warning) >= int(value) >= int(tc.critical):
-                            icon = static('img/{}'.format(ts.bt_w_c.upload_image))
+                            image_partial = ts.bt_w_c.upload_image
                         elif int(value) > int(tc.critical):
-                            icon = static('img/{}'.format(ts.gt_critical.upload_image))
+                            image_partial = ts.gt_critical.upload_image
                         else:
                             icon = static('img/icons/wifi7.png')
+                        img_url = "/media/"+ icon if "uploaded" in image_partial else static("img/" + image_partial)
+                        icon = static('{0}'.format(img_url))
                     except Exception as e:
                         icon = static('img/icons/wifi7.png')
                         logger.info(e.message)
