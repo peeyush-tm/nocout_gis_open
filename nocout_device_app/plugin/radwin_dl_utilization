@@ -58,7 +58,7 @@ def check_radwin_dl_utilization(item, _no_params, info):
                     if_name = "unknown interface name"
                 if ' ' in if_name:
                     if_name = str.replace(if_name, ' ', '_')
-                status_list.append((if_name, link_out_octets))
+                status_list.append((if_name, saveint(link_out_octets)))
             for name, out_octets, in status_list:
                 infotext += "[%s] dl_utilization:%s" % (name, out_octets)
             state = 0
