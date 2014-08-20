@@ -439,7 +439,7 @@ class SectorForm(forms.ModelForm):
         self.fields['sector_configured_on'].empty_label = 'Select'
         self.fields['sector_configured_on_port'].empty_label = 'Select'
         self.fields['antenna'].empty_label = 'Select'
-        self.fields['antenna'].empty_label = 'Select'
+        self.fields['frequency'].empty_label = 'Select'
         self.fields['sector_id'].empty_label = True
 
         try:

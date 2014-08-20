@@ -126,7 +126,7 @@ class Sector(models.Model):
     antenna = models.ForeignKey(Antenna, null=True, blank=True, related_name='sector')
     mrc = models.CharField('MRC', max_length=4, null=True, blank=True)
     tx_power = models.FloatField('TX Power', null=True, blank=True, help_text='(dB) Enter a number.')
-    rx_power = models.FloatField('RX Field', null=True, blank=True, help_text='(dB) Enter a number.')
+    rx_power = models.FloatField('RX Power', null=True, blank=True, help_text='(dB) Enter a number.')
     rf_bandwidth = models.FloatField('RF Bandwidth', max_length=250, null=True, blank=True, help_text='(kbps) Enter a number.')
     frame_length = models.FloatField('Frame Length', null=True, blank=True, help_text='(mtr) Enter a number.')
     cell_radius = models.FloatField('Cell Radius', null=True, blank=True, help_text='(mtr) Enter a number.')
