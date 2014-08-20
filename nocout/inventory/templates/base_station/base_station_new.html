@@ -57,7 +57,14 @@
     {% endblock %}
     <script>
     $(document).ready(function () {
-
+            $("label[for=id_bs_technology]").html('<span class="mandatory">* </span>BS Technology');
+            $("label[for=id_bs_site_id]").text('BS Site ID');
+            $("label[for=id_bs_site_type]").text('BS Site Type');
+            $("label[for=id_bs_switch]").text('BS Switch');
+            $("label[for=id_bs_type]").text('BS Type');
+            $("label[for=id_bh_bso]").text('BH BSO');
+            $("label[for=id_hssu_used]").text('HSSU Used');
+            $("label[for=id_gps_type]").text('GPS Type');
             // Initialize the select2 selectbox.
             $(".select2select").select2();
             $('.tip-focus').tooltip({

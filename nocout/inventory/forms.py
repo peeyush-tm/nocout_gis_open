@@ -345,19 +345,18 @@ class BaseStationForm(forms.ModelForm):
         self.fields['country'].empty_label = 'Select'
         self.fields['state'].empty_label = 'Select'
         self.fields['city'].empty_label = 'Select'
-        self.fields['building_height'].initial =0
-        self.fields['tower_height'].initial =0
-
-        self.fields['bs_technology'].required =True
-        self.fields['latitude'].required =True
-        self.fields['longitude'].required =True
+        self.fields['building_height'].initial = 0
+        self.fields['tower_height'].initial = 0
+        self.fields['bs_technology'].required = True
+        self.fields['latitude'].required = True
+        self.fields['longitude'].required = True
         self.fields['country'].required = True
-        self.fields['city'].required =True
-        self.fields['state'].required =True
-        self.fields['building_height'].required =True
-        self.fields['tower_height'].required =True
-        self.fields['state'].required= True
-        self.fields['city'].required= True
+        self.fields['city'].required = True
+        self.fields['state'].required = True
+        self.fields['building_height'].required = True
+        self.fields['tower_height'].required = True
+        self.fields['state'].required = True
+        self.fields['city'].required = True
 
         try:
             if 'instance' in kwargs:
