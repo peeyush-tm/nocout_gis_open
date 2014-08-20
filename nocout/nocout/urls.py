@@ -1,5 +1,7 @@
 from django.conf import settings
 from django.conf.urls import patterns, include, url
+from django.conf.urls.static import static
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.generic import RedirectView
 # Include dajaxice ajax module
 from dajaxice.core import dajaxice_autodiscover, dajaxice_config
@@ -63,17 +65,17 @@ urlpatterns = patterns('',
                        url(r'^sm/', include('session_management.urls')),
                        url(r'^bulk_import/', include('inventory.bulk_import_urls')))
 
-if settings.DEBUG:
-    import debug_toolbar
+# if settings.DEBUG:
+#     import debug_toolbar
+#     urlpatterns += patterns('',
+#         url(r'^__debug__/', include(debug_toolbar.urls)),
+#     )
 
-    urlpatterns += patterns('',
-                            url(r'^__debug__/', include(debug_toolbar.urls)), )
-
-# url for uploaded files is like
-# http://localhost:8000/files/icons/mobilephonetower1.png
-if settings.DEBUG:
-    urlpatterns += patterns('',
-                            url(r'^files/(?P<path>.*)$', 'django.views.static.serve', {
-                                'document_root': settings.MEDIA_ROOT,
-                            }),
-    )
+# # url for uploaded files is like
+# # http://localhost:8000/files/icons/mobilephonetower1.png
+# if settings.DEBUG:
+#     urlpatterns += patterns('',
+#         url(r'^files/(?P<path>.*)$', 'django.views.static.serve', {
+#             'document_root': settings.MEDIA_ROOT,
+#         }),
+# )

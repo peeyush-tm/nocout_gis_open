@@ -34,6 +34,8 @@ host_tags = {
     "snmp": "snmp",
     "cmk_agent": "cmk-agent|tcp",
     "snmp_v1": "snmp-v1|snmp",
+    "snmp_v2": "snmp-v2|snmp",
+    "snmp_v3": "snmp-v3|snmp",
     "dual": "snmp-tcp|snmp|tcp",
     "ping": "ping"
 }
@@ -101,6 +103,7 @@ def main():
 
 
 def addhost():
+    logger.debug('[-- addhost --]')
     global g_host_vars
     response = {
         "success": 1,
@@ -116,6 +119,7 @@ def addhost():
         "site": html.var("site"),
         "agent_tag": html.var("agent_tag")
     }
+    logger.debug('payload : ' + pprint.pformat(payload))
     for key, attr in payload.items():
         if not attr:
             response.update({
@@ -160,12 +164,14 @@ def addhost():
                 "error_code": 4,
                 "error_message": "hosts.mk is locked or some other message"
         })
+	logger.error('host could not be saved, flag value :' + pprint.pformat(flag))
         return response
-
+    logger.debug('[-- addhost finish --]')
     return response
 
 
 def addservice():
+    logger.debug("[-- addservice --]")
     global g_service_vars
     response = {
         "success": 1,
@@ -194,6 +200,7 @@ def addservice():
         if payload.get('cmd_params'):
             try:
                 cmd_params = ast.literal_eval(payload.get('cmd_params'))
+		logger.debug("cmd_params : " + pprint.pformat(cmd_params))
                 for param, thresholds in cmd_params.items():
                     t = ()
                     if thresholds.get('warning') and thresholds.get('critical'):
@@ -204,6 +211,7 @@ def addservice():
                 check_tuple = ([payload.get('host')], payload.get('service'), None, t)
                 g_service_vars['checks'].append(check_tuple)
             except Exception, e:
+		logger.error('Error in cmd_params : ' + pprint.pformat(e))
                 response.update({
                     "success": 0,
                     "message": "Service not added",
@@ -214,7 +222,9 @@ def addservice():
         if payload.get('serv_params'):
             try:
                 serv_params = ast.literal_eval((payload.get('serv_params')))
+		logger.debug('serv_params : ' + pprint.pformat(serv_params))
             except Exception, e:
+		logger.error('Error in serv_params : ' + pprint.pformat(e))
                 response.update({
                     "success": 0,
                     "message": "Service not added",
@@ -222,7 +232,7 @@ def addservice():
                 })
                 return response
             for param, val in serv_params.items():
-                t = (val, [host_tags.get(payload.get('agent_tag'))], [payload.get('host')], payload.get('service'))
+                t = (val, [host_tags.get(payload.get('agent_tag'), 'snmp')], [payload.get('host')], payload.get('service'))
                 g_service_vars['extra_service_conf'][param].append(t)
                 t = ()
 
@@ -267,11 +277,13 @@ def addservice():
             "message": "Service not added",
             "error_code": 1
         })
+    logger.debug('[-- addservice finish --]')
 
     return response
 
 
 def edithost():
+    logger.debug('[-- edithost --]')
     response = {
         "success": 1,
         "device_name": html.var('device_name'),
@@ -286,6 +298,7 @@ def edithost():
         "site": html.var("site"),
         "agent_tag": html.var("agent_tag")
     }
+    logger.debug('payload: ' + pprint.pformat(payload))
     load_file(hosts_file)
     new_host = nocout_find_host(payload.get('host'))
     if not new_host:
@@ -313,10 +326,12 @@ def edithost():
         })
         return response
 
+    logger.debug('[-- edithost finish --]')
     return response
 
 
 def editservice():
+    logger.debug('[-- editservice --]')
     global g_service_vars
     response = {
         "success": 1,
@@ -347,6 +362,7 @@ def editservice():
         if payload.get('cmd_params'):
             try:
                 cmd_params = ast.literal_eval(payload.get('cmd_params'))
+                logger.debug('cmd_params : ' + pprint.pformat(cmd_params))
                 if payload.get('service').strip().lower() == 'ping':
                     ping_attributes.update({
                         'loss': (int(cmd_params.get('pl').get('warning', 80)), int(cmd_params.get('pl').get('critical', 100))),
@@ -375,15 +391,17 @@ def editservice():
         if payload.get('serv_params'):
             try:
                 serv_params = ast.literal_eval(payload.get('serv_params'))
+                logger.debug('serv_params : ' + pprint.pformat(serv_params))
             except Exception, e:
                 response.update({
                     "success": 0,
                     "message": "Service not added",
                     "error_message": "serv_params " + pprint.pformat(e)
                 })
+		logger.error('Error in serv_params : ' + pprint.pformat(e))
                 return response
             for param, val in serv_params.items():
-                t = (val, [host_tags.get(payload.get('agent_tag'))], [payload.get('host')], payload.get('service'))
+                t = (val, [host_tags.get(payload.get('agent_tag'), 'snmp')], [payload.get('host')], payload.get('service'))
                 g_service_vars['extra_service_conf'][param].append(t)
                 t = ()
 
@@ -422,6 +440,7 @@ def editservice():
             "error_code": 1
         })
 
+    logger.debug('[-- editservice finish --]')
     return response
 
 
@@ -586,6 +605,7 @@ def write_new_host_rules():
 
 
 def sync():
+    logger.debug('[-- sync --]')
     sites_affected = []
     response = {
         "success": 1,
@@ -604,15 +624,17 @@ def sync():
     nocout_sites = nocout_distributed_sites()
     try:
         f = os.system('~/bin/cmk -R')
+	logger.debug('f : '  + pprint.pformat(f))
     except Exception, e:
         logger.error('[sync]' + pprint.pformat(e))
     if f == 0:
         sites_affected.append(defaults.omd_site)
     for site, attrs in nocout_sites.items():
+	logger.debug('site :' + pprint.pformat(site))
         response_text = nocout_synchronize_site(site, attrs, True)
         if response_text is True:
             sites_affected.append(site)
-    if (len(sites_affected)-1) == len(nocout_sites):
+    if len(sites_affected) == len(nocout_sites):
         response.update({
             "message": "Config pushed to " + ','.join(sites_affected)
         })
@@ -630,7 +652,7 @@ def sync():
                 "message": "Config not pushed",
                 "success": 0
             })
-
+    logger.debug('[-- sync finish --]')
     return response
 
 
@@ -666,9 +688,15 @@ def nocout_push_snapshot_to_site(site, site_attrs, restart):
         ("secret", site_attrs.get('secret'))
     ])
     url = url_base + var_string
-    response_text = upload_file(url, sync_snapshot_file, '')
+    try:
+            response_text = upload_file(url, sync_snapshot_file, '')
+    except:
+	    logger.debug('Slave site ' + pprint.pformat(site) + ' not running')
+            return "Garbled response from automation"
+
     try:
         response = eval(response_text)
+	logger.debug('Push to site : ' + pprint.pformat(site) + ' response ' + pprint.pformat(response))
         return response
     except:
         return "Garbled response from automation"
@@ -766,7 +794,7 @@ def save_service(host, service_name, host_tag, service_tuple, serv_params, ping_
             if serv_params:
                 for param, val in serv_params.items():
                     f.write('extra_service_conf["' + param + '"] = [\n')
-                    conf = (val, [host_tags.get(host_tag)], [host], service_name)
+                    conf = (val, [host_tags.get(host_tag, 'snmp')], [host], service_name)
                     f.write(pprint.pformat(conf) + "\n")
                     f.write("]")
                     f.write('\n\n')
@@ -790,8 +818,8 @@ def save_service(host, service_name, host_tag, service_tuple, serv_params, ping_
 
 def nocout_add_host_attributes(host_attrs):
     global host_tags
-    host_entry = "%s|lan|prod|%s|site:%s|wato|//" % (
-    host_attrs.get('host'), host_tags.get(html.var('agent_tag')), host_attrs.get('site'))
+    host_entry = "%s|wan|prod|%s|site:%s|wato|//" % (
+    host_attrs.get('host'), host_tags.get(html.var('agent_tag'), 'snmp'), host_attrs.get('site'))
     g_host_vars['all_hosts'].append(host_entry)
 
     g_host_vars['ipaddresses'].update({

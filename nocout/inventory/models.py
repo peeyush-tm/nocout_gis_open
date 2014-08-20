@@ -5,7 +5,8 @@ from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency
 from device_group.models import DeviceGroup
 from organization.models import Organization
 from django.utils.safestring import mark_safe
-
+from django.core.files.storage import FileSystemStorage
+from django.conf import settings
 
 # inventory model --> mapper of user_group & device groups
 class Inventory(models.Model):
@@ -209,9 +210,10 @@ class IconSettings(models.Model):
     """
     IconSettings Model Columns Declaration.
     """
+    # fs = FileSystemStorage(location=settings.MEDIA_ROOT)
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
-    upload_image = models.ImageField(upload_to='icons/')
+    upload_image = models.ImageField(upload_to='uploaded/icons/%Y/%m/%d')
 
     def __unicode__(self):
         return self.alias
