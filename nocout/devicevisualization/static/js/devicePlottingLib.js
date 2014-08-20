@@ -538,7 +538,8 @@ function devicePlottingClass_gmap() {
 							antena_height    : ss_marker_obj.data.antena_height,
 							name 		 	 : ss_marker_obj.name,
 							device_name 	 : ss_marker_obj.device_name,
-							zIndex 			 : 200
+							zIndex 			 : 200,
+                            optimized: false
 						};
 
 						/*Create SS Marker*/
@@ -598,7 +599,8 @@ function devicePlottingClass_gmap() {
 				bs_name 		 : bs_ss_devices[i].name,
 				name 		 	 : bs_ss_devices[i].name,
 				antena_height    : bs_ss_devices[i].data.antena_height,
-				zIndex 			 : 200
+				zIndex 			 : 200,
+                optimized: false
 			};
 
 			/*Create BS or SS Marker*/

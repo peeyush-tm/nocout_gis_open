@@ -323,16 +323,16 @@ class FetchLPDataApi(View):
                     try:
                         value = int(response_dict.get('value')[0])
                         image_partial = "img/icons/wifi7.png"
-                        if int(value) > int(tc.warning):
+                        if abs(int(value)) > abs(int(tc.warning)):
                             image_partial = ts.gt_warning.upload_image
-                        elif int(tc.warning) >= int(value) >= int(tc.critical):
+                        elif abs(int(tc.warning)) >= abs(int(value)) >= abs(int(tc.critical)):
                             image_partial = ts.bt_w_c.upload_image
-                        elif int(value) > int(tc.critical):
+                        elif abs(int(value)) > abs(int(tc.critical)):
                             image_partial = ts.gt_critical.upload_image
                         else:
                             icon = static('img/icons/wifi7.png')
-                        img_url = "/media/"+ icon if "uploaded" in image_partial else static("img/" + image_partial)
-                        icon = static('{0}'.format(img_url))
+                        img_url = "/media/"+ str(image_partial) if "uploaded" in str(image_partial) else static("img/" + image_partial)
+                        icon = str(img_url)
                     except Exception as e:
                         icon = static('img/icons/wifi7.png')
                         logger.info(e.message)
