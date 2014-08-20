@@ -60,7 +60,15 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
     {% endblock %}
     <script>
-        $(document).ready(function(){
+        $(document).ready(function() {
+            // Changing labels of form fields
+            $("label[for=id_circuit_id]").html('<span class="mandatory">* </span>Circuit ID');
+            $("label[for=id_sector]").text('Sector/PTP Near End');
+            $("label[for=id_sub_station]").text('Sub Station/PTP Far End');
+            $("label[for=id_qos_bandwidth]").text('QOS (BW)');
+            $("label[for=id_dl_rssi_during_acceptance]").text('RSSI During Acceptance');
+            $("label[for=id_dl_cinr_during_acceptance]").text('CINR During Acceptance');
+
             // Initialize the select2 selectbox.
             $(".select2select").select2();
             $('.tip-focus').tooltip({
