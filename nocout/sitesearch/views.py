@@ -273,7 +273,7 @@ def prepare_result(base_station_id):
                 'lon':base_station.longitude,
                 "markerUrl" : "static/img/marker/icon2_small.png",
                 'technology':base_station.bs_technology.name,
-                'antena_height':None,
+                'antena_height':0,
                 'vendor':','.join(base_station.bs_technology.device_vendors.values_list('name', flat=True)),
                 'city':City.objects.get(id=base_station.city).city_name if base_station.city else 'N/A' ,
                 'state':State.objects.get(id=base_station.state).state_name if base_station.state else 'N/A',
@@ -346,10 +346,10 @@ def prepare_result(base_station_id):
                 continue
             base_station_info['data']['param']['sector']+=[{
             "color" : sector.frequency.color_hex_value if hasattr(sector, 'frequency')  and sector.frequency else 'rgba(74,72,94,0.58)',
-            'radius':sector.cell_radius,
-            'azimuth_angle':sector.antenna.azimuth_angle,
-            'beam_width' : sector.antenna.beam_width,
-            'orientation' : sector.antenna.polarization,
+            'radius':sector.cell_radius if sector.cell_radius else 0,
+            'azimuth_angle':sector.antenna.azimuth_angle if sector.antenna.azimuth_angle else 0,
+            'beam_width' : sector.antenna.beam_width if sector.antenna.beam_width else 0,
+            'orientation' : sector.antenna.polarization if sector.antenna.polarization else "vertical",
             'info':[   {
                         'name':'sector_name',
                         'title':'Sector Name',
@@ -389,7 +389,7 @@ def prepare_result(base_station_id):
                         'value':sector.antenna.tilt if sector.antenna.tilt else 'N/A'
                         },
                        {
-                        'name':'antenna_ht',
+                        'name':'antena_height',
                         'title':'Antenna Height',
                         'show':1,
                         'value':sector.antenna.height if sector.antenna.height else 'N/A'
