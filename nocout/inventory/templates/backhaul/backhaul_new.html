@@ -56,7 +56,29 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
     {% endblock %}
     <script>
-        $(document).ready(function(){
+        $(document).ready(function() {
+            // Changing labels of form fields
+            $("label[for=id_bh_configured_on]").html('<span class="mandatory">* </span>BH Configured On');
+            $("label[for=id_bh_port_name]").text('BH Port Name');
+            $("label[for=id_bh_port]").text('BH Port');
+            $("label[for=id_bh_type]").text('BH Type');
+            $("label[for=id_bh_switch]").text('BS Switch/Converter');
+            $("label[for=id_switch_port_name]").text('BS Device Port Name');
+            $("label[for=id_switch_port]").text('BS Device Port');
+            $("label[for=id_pop]").text('POP Switch/Converter');
+            $("label[for=id_pop_port_name]").text('POP Device Port Name');
+            $("label[for=id_pop_port]").text('POP Device Port');
+            $("label[for=id_aggregator]").text('Aggregator Switch/Converter');
+            $("label[for=id_aggregator_port_name]").text('Aggregator Device Port Name');
+            $("label[for=id_aggregator_port]").text('Aggregator Device Port');
+            $("label[for=id_pe_hostname]").text('PE Hostname');
+            $("label[for=id_pe_ip]").text('PE IP Address');
+            $("label[for=id_bh_connectivity]").text('BH Connectivity');
+            $("label[for=id_bh_circuit_id]").text('BH Circuit ID');
+            $("label[for=id_bh_capacity]").text('BH Capacity');
+            $("label[for=id_ttsl_circuit_id]").text('TTSL Circuit ID');
+            $("label[for=id_dr_site]").text('DR Site');
+
             // Initialize the select2 selectbox.
             $(".select2select").select2();
             $('.tip-focus').tooltip({
