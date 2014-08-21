@@ -9,6 +9,7 @@ var mapInstance = "",
 	devicesObject = {},
 	plottedSS = [],
 	metaData = {},
+	isCallCompleted = 0,
 	hitCounter = 1,
 	showLimit = 0,
 	devicesCount = 0,
@@ -230,15 +231,19 @@ function devicePlottingClass_gmap() {
 	 * @method getDevicesData_gmap
 	 */
 	this.getDevicesData_gmap = function() {
+		
 		var get_param_filter = "";
 		/*If any advance filters are applied then pass the advance filer with API call else pass blank array*/
 		if(appliedAdvFilter.length > 0) {
 			get_param_filter = JSON.stringify(appliedAdvFilter);
 		} else {
 			get_param_filter = "";
-		}
+		}		
 
 		if(counter > 0 || counter == -999) {
+
+			/*Ajax call not completed yet*/
+			isCallCompleted = 0;
 
 			/*Show The loading Icon*/
 			$("#loadingIcon").show();
@@ -248,11 +253,11 @@ function devicePlottingClass_gmap() {
 
 			/*To Enable The Cross Domain Request*/
 			$.support.cors = true;
-			
+
 			/*Ajax call to the API*/
 			$.ajax({
 				crossDomain: true,
-				url : window.location.origin+"/"+"device/stats/?filters="+get_param_filter,
+				url : window.location.origin+"/"+"device/stats/?filters="+get_param_filter+"&page_number="+hitCounter,
 				// url : window.location.origin+"/"+"static/new_format.json",
 				type : "GET",
 				dataType : "json",
@@ -263,8 +268,7 @@ function devicePlottingClass_gmap() {
 
 						if(result.data.objects != null) {
 
-							hitCounter = hitCounter + 1;
-							
+							hitCounter = hitCounter + 1;							
 							/*First call case*/
 							if(devicesObject.data == undefined) {
 
@@ -272,13 +276,13 @@ function devicePlottingClass_gmap() {
 								devicesObject = result;
 								/*This will update if any filer is applied*/
 								devices_gmaps = devicesObject.data.objects.children;
-								/*This will changes only when data re-fetched*/
-								main_devices_data_gmaps = devicesObject.data.objects.children;
 
 							} else {
 
 								devices_gmaps = devices_gmaps.concat(result.data.objects.children);
 							}
+
+							main_devices_data_gmaps = devices_gmaps;
 
 							if(devicesObject.data.objects.children.length > 0) {
 
@@ -320,23 +324,26 @@ function devicePlottingClass_gmap() {
 									} else {
 									
 										/*Call the plotDevices_gmap to show the markers on the map*/
-										gmap_self.plotDevices_gmap(devices_gmaps,"base_station");
+										gmap_self.plotDevices_gmap(result.data.objects.children,"base_station");
 									}
 
 								} else {
                                     /*Call the plotDevices_gmap to show the markers on the map*/
-									gmap_self.plotDevices_gmap(devices_gmaps,"base_station");
+									gmap_self.plotDevices_gmap(result.data.objects.children,"base_station");
                                 }
+
+                                /*Decrement the counter*/
+								counter = counter - 1;
 
 								/*Call the function after 3 sec. for lazyloading*/
 								setTimeout(function() {
 									gmap_self.getDevicesData_gmap();
-								},3000);
+								},1000);
 								
 							} else {
 								$.gritter.add({
 						            // (string | mandatory) the heading of the notification
-						            title: 'GIS - No Data',
+						            title: 'GIS',
 						            // (string | mandatory) the text inside the notification
 						            text: 'No Devices Found',
 						            // (bool | optional) if you want it to fade out on its own or just sit there
@@ -353,16 +360,13 @@ function devicePlottingClass_gmap() {
 								setTimeout(function(e){
 									gmap_self.recallServer_gmap();
 								},300000);
-							}
-
-							/*Decrement the counter*/
-							counter = counter - 1;
+							}							
 
 						} else {
 
 							$.gritter.add({
 					            // (string | mandatory) the heading of the notification
-					            title: 'GIS - Server Error',
+					            title: 'GIS',
 					            // (string | mandatory) the text inside the notification
 					            text: 'No Devices Found',
 					            // (bool | optional) if you want it to fade out on its own or just sit there
@@ -383,23 +387,25 @@ function devicePlottingClass_gmap() {
 
 					} else {
 
+						isCallCompleted = 1;
+
 						$.gritter.add({
 				            // (string | mandatory) the heading of the notification
-				            title: 'GIS - Server Error',
+				            title: 'GIS',
 				            // (string | mandatory) the text inside the notification
-				            text: devicesObject.message,
+				            text: result.message,
 				            // (bool | optional) if you want it to fade out on its own or just sit there
 				            sticky: true
 				        });
-
-				        /*Recall the server after particular timeout if system is not freezed*/
+				        
 				        /*Hide The loading Icon*/
 						$("#loadingIcon").hide();
 
 						/*Enable the refresh button*/
 						$("#resetFilters").button("complete");
 
-						setTimeout(function(e){
+						/*Recall the server after particular timeout if system is not freezed*/
+						setTimeout(function(e) {
 							gmap_self.recallServer_gmap();
 						},300000);
 
@@ -407,9 +413,8 @@ function devicePlottingClass_gmap() {
 
 				},
 				/*If data not fetched*/
-				error : function(err) {
+				error : function(err) {					
 
-					// console.log(err.responseText);
 					$.gritter.add({
 			            // (string | mandatory) the heading of the notification
 			            title: 'GIS - Server Error',
@@ -432,13 +437,16 @@ function devicePlottingClass_gmap() {
 			});
 		} else {
 
-			/*Recall the server after particular timeout if system is not freezed*/
+			/*Ajax call not completed yet*/
+			isCallCompleted = 1;
+			
 			/*Hide The loading Icon*/
 			$("#loadingIcon").hide();
 
 			/*Enable the refresh button*/
 			$("#resetFilters").button("complete");
 
+			/*Recall the server after particular timeout if system is not freezed*/
 			setTimeout(function(e){
 				gmap_self.recallServer_gmap();
 			},300000);
@@ -521,7 +529,7 @@ function devicePlottingClass_gmap() {
 					var has_ss = bs_ss_devices[i].data.param.sector[0].sub_station.length;					
 					if(has_ss > 0) {
 
-						var ss_marker_obj = bs_ss_devices[i].data.param.sector[0].sub_station[0];						
+						var ss_marker_obj = bs_ss_devices[i].data.param.sector[0].sub_station[0];
 
 						/*Create SS Marker Object*/
 						var ss_marker_object = {
@@ -683,11 +691,14 @@ function devicePlottingClass_gmap() {
 		/*Add the master markers to the cluster MarkerCluster object*/
 		masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
 
-		/*Hide The loading Icon*/
-		$("#loadingIcon").hide();
+		if(isCallCompleted == 1) {
 
-		/*Enable the refresh button*/
-		$("#resetFilters").button("complete");
+			/*Hide The loading Icon*/
+			$("#loadingIcon").hide();
+
+			/*Enable the refresh button*/
+			$("#resetFilters").button("complete");
+		}
 	};
 
 	/**
@@ -2648,17 +2659,8 @@ function devicePlottingClass_gmap() {
 	 */
 	this.clearGmapElements = function() {
 
-		/*Clear the marker array of OverlappingMarkerSpiderfier*/
-		oms.clearMarkers();
-
 		/*close infowindow*/
 		infowindow.close();
-
-		/*Clear master marker cluster objects*/
-		if(masterClusterInstance != "") {
-			masterClusterInstance.clearMarkers();
-		}
-
 
 		/*Hide The loading Icon*/
 		$("#loadingIcon").hide();
@@ -2694,6 +2696,12 @@ function devicePlottingClass_gmap() {
 
 			ssLinkArray[j].setMap(null);
 		}
+
+		/*Clear the marker array of OverlappingMarkerSpiderfier*/
+		oms.clearMarkers();
+
+		/*Clear master marker cluster objects*/
+		masterClusterInstance.clearMarkers();
 	};
 
 	/**
