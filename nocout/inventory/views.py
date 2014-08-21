@@ -465,7 +465,7 @@ class BaseStationList(ListView):
         datatable_headers = [
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'null', },
+            # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'null', },
             {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'null', },
             {'mData': 'bs_switch__device_name', 'sTitle': 'BS Switch', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             {'mData': 'backhaul__name', 'sTitle': 'Backhaul', 'sWidth': 'null', },
@@ -486,9 +486,9 @@ class BaseStationListingTable(BaseDatatableView):
     Class based View to render Base Station Data table.
     """
     model = BaseStation
-    columns = ['name', 'alias', 'bs_technology__alias', 'bs_site_id',
+    columns = ['name', 'alias', 'bs_site_id',
                'bs_switch__device_name', 'backhaul__name', 'bs_type', 'building_height', 'description']
-    order_columns = ['name', 'alias', 'bs_technology__alias', 'bs_site_id',
+    order_columns = ['name', 'alias', 'bs_site_id',
                      'bs_switch__device_name', 'backhaul__name', 'bs_type', 'building_height', 'description']
 
     def filter_queryset(self, qs):
