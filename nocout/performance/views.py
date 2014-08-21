@@ -327,9 +327,10 @@ class Get_Perfomance(View):
     """
 
     def get(self, request, page_type="no_page", device_id=0):
+        device = Device.objects.get(id=device_id)
         page_data = {
             'page_title': page_type.capitalize(),
-            'device_id': device_id,
+            'device': device,
             'get_devices_url': 'performance/get_inventory_devices/' + str(page_type),
             'get_status_url': 'performance/get_inventory_device_status/' + str(page_type) + '/device/' + str(device_id),
             'get_services_url': 'performance/get_inventory_service_data_sources/' + str(page_type) + '/device/' + str(
@@ -436,7 +437,7 @@ class Fetch_Inventory_Devices(View):
 
         organization_substations = SubStation.objects.filter(device__in=Device.objects.filter(
             is_added_to_nms=1, is_deleted=0,
-            organization=organization.id).values_list('id', flat=True)).values_list('id', 'alias')
+            organization=organization.id).values_list('id', flat=True)).values_list('id', 'device__device_name')
         result = list()
         for substation in organization_substations:
             result.append({'id': substation[0], 'alias': substation[1]})

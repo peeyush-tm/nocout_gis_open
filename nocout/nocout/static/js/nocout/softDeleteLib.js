@@ -719,7 +719,7 @@ function get_service_add_form(content) {
                 }
             }
             else {
-                service_add_html += '<h5 class="text-warning">There are no services for device ' + '"' + content.result.data.objects.device_alias + '"to monitor. </h5>';
+                service_add_html += '<h5 class="text-warning">All service are operational for device ' + '"' + content.result.data.objects.device_alias + '". </h5>';
             }
         }
         else{
@@ -929,7 +929,7 @@ function device_services_status_frame(content) {
 
     bootbox.dialog({
         message: services_status_html,
-        title: "<span class='text-danger'><i class='fa fa-list-alt'></i> Device Service Status</span>",
+        title: "<span class='text-danger'><i class='fa fa-list-alt'></i> Device Services Status</span>",
         buttons: {
             success: {
                 label: "Yes!",

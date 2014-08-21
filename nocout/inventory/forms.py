@@ -1,3 +1,4 @@
+import os
 from django.core.exceptions import ValidationError
 import re
 from django import forms
@@ -338,25 +339,22 @@ class BaseStationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(BaseStationForm, self).__init__(*args, **kwargs)
-        self.fields['bs_technology'].empty_label = 'Select'
         self.fields['bs_switch'].empty_label = 'Select'
         self.fields['backhaul'].empty_label = 'Select'
         self.fields['country'].empty_label = 'Select'
         self.fields['state'].empty_label = 'Select'
         self.fields['city'].empty_label = 'Select'
-        self.fields['building_height'].initial =0
-        self.fields['tower_height'].initial =0
-
-        self.fields['bs_technology'].required =True
-        self.fields['latitude'].required =True
-        self.fields['longitude'].required =True
+        self.fields['building_height'].initial = 0
+        self.fields['tower_height'].initial = 0
+        self.fields['latitude'].required = True
+        self.fields['longitude'].required = True
         self.fields['country'].required = True
-        self.fields['city'].required =True
-        self.fields['state'].required =True
-        self.fields['building_height'].required =True
-        self.fields['tower_height'].required =True
-        self.fields['state'].required= True
-        self.fields['city'].required= True
+        self.fields['city'].required = True
+        self.fields['state'].required = True
+        self.fields['building_height'].required = True
+        self.fields['tower_height'].required = True
+        self.fields['state'].required = True
+        self.fields['city'].required = True
 
         try:
             if 'instance' in kwargs:
@@ -436,10 +434,12 @@ class SectorForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(SectorForm, self).__init__(*args, **kwargs)
         self.fields['base_station'].empty_label = 'Select'
+        self.fields['bs_technology'].empty_label = 'Select'
+        self.fields['bs_technology'].required = True
         self.fields['sector_configured_on'].empty_label = 'Select'
         self.fields['sector_configured_on_port'].empty_label = 'Select'
         self.fields['antenna'].empty_label = 'Select'
-        self.fields['antenna'].empty_label = 'Select'
+        self.fields['frequency'].empty_label = 'Select'
         self.fields['sector_id'].empty_label = True
 
         try:
@@ -466,6 +466,7 @@ class SectorForm(forms.ModelForm):
                     field.widget.attrs.update({'data-toggle': 'tooltip'})
                     field.widget.attrs.update({'data-placement': 'right'})
                     field.widget.attrs.update({'title': field.help_text})
+
     class Meta:
         """
         Meta Information
@@ -596,6 +597,7 @@ class SubStationForm(forms.ModelForm):
         self.fields['state'].empty_label = 'Select'
         self.fields['city'].empty_label = 'Select'
         self.fields['device'].empty_label = 'Select'
+        self.fields['antenna'].empty_label = 'Select'
         self.fields['antenna'].required = True
         self.fields['building_height'].required = True
         self.fields['tower_height'].required = True
@@ -1015,3 +1017,36 @@ class ThematicSettingsForm(forms.ModelForm):
         except Exception as e:
             logger.info(e.message)
         return self.cleaned_data
+
+
+#*********************************** Bulk Import ***************************************
+IMPORT_FILE_TYPES = ['.xlsx']
+
+
+class GISInventoryBulkImportForm(forms.Form):
+    SHEET_CHOICES = [('', 'Select')] + [(id, id) for id in range(50)]
+    file_upload = forms.FileField(label='Upload GIS Inventory File')
+    sheet = forms.ChoiceField(label='Sheet No.', choices=SHEET_CHOICES)
+
+    def __init__(self, *args, **kwargs):
+        super(GISInventoryBulkImportForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    def clean_file_upload(self):
+        input_excel = self.cleaned_data['file_upload']
+        extension = os.path.splitext(input_excel.name)[1]
+        if not (extension in IMPORT_FILE_TYPES):
+            raise forms.ValidationError( u'%s is not a valid excel file. Please make sure your input file is an excel file.' % extension )
+        else:
+            return input_excel

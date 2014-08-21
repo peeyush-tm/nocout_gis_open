@@ -141,6 +141,16 @@
             if (!$('#id_device_type').val()) {
                 $("#id_device_type").empty();
             }
+            else {
+                Dajaxice.device.after_update_ports(Dajax.process, {'option': $('#id_device_type').val(), 'selected': $('#id_ports').val()});
+            }
+
+            // update 'ports' if it is already selected corresponding to 'device type'
+            // i.e. after validation if form is invalid
+            // or just empty the selection menu
+            if (!$('#id_ports').val()) {
+                $("#id_ports").empty();
+            }
 
             // if none of the value from 'country' is selected than empty 'state' & 'city' selection too.
             // or update value of 'state' corresponding to the selected 'country'
@@ -178,6 +188,8 @@
                 $("#id_device_model").empty();
                 $("#id_device_type").select2("val","");
                 $("#id_device_type").empty();
+                $("#id_ports").select2("val","");
+                $("#id_ports").empty();
                 $("#extra_fields").empty();
             }
         });
@@ -194,6 +206,8 @@
                 $("#id_device_model").empty();
                 $("#id_device_type").select2("val","");
                 $("#id_device_type").empty();
+                $("#id_ports").select2("val","");
+                $("#id_ports").empty();
                 $("#extra_fields").empty();
             }
         });
@@ -206,11 +220,28 @@
             else{
                 $("#id_device_type").select2("val","");
                 $("#id_device_type").empty();
+                $("#id_ports").select2("val","");
+                $("#id_ports").empty();
                 $("#extra_fields").empty();
             }
         }).click(function () {
             if ($("#id_device_model").length == 1) {
                 Dajaxice.device.update_type(Dajax.process, {'option': $('#id_device_model').val()});
+            }
+        });
+
+        // update 'ports' on selecting 'device type'
+        $("#id_device_type").change(function () {
+            if ($('#id_device_type').val()){
+                Dajaxice.device.update_ports(Dajax.process, {'option': $('#id_device_type').val()});
+            }
+            else{
+                $("#id_ports").select2("val","");
+                $("#id_ports").empty();
+            }
+        }).click(function () {
+            if ($("#id_device_type").length == 1) {
+                Dajaxice.device.update_ports(Dajax.process, {'option': $('#id_device_type').val()});
             }
         });
 
