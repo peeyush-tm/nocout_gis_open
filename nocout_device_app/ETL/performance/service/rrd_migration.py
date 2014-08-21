@@ -131,6 +131,8 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 				start_time = mongo_module.get_latest_entry(db_type='mongodb', db=db, table_name=None,
 								host=host, serv=data_dict['service'], ds=ds_index)
 			data_series = do_export(site, host, path, ds_index, start_time, data_dict['service'])
+                        if len(data_series) == 0:
+                            continue
 			data_dict.update({
 				"check_time": data_series.get('check_time'),
 				"local_timestamp": data_series.get('local_timestamp'),
@@ -258,13 +260,12 @@ def do_export(site, host, file_name,data_source, start_time, serv):
     	cmd += 'DEF:%s_%s=%s:%d:%s XPORT:%s_%s:%s_%s '\
             %(data_source, RRA, file_name, 1, RRA, data_source,
                 RRA, data_source, RRA)
-
     p=subprocess.Popen(cmd,stdout=subprocess.PIPE, shell=True)
     cmd_output, err = p.communicate()
     try:
         cmd_output = demjson.decode(cmd_output)
     except demjson.JSONDecodeError, e:
-	raise demjson.JSONDecodeError, e
+        return data_series
 
     legend = cmd_output.get('meta').get('legend')
     start_check = cmd_output['meta']['start']

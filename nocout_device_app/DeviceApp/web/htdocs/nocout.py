@@ -190,6 +190,7 @@ def addservice():
         "snmp_port": html.var("snmp_port"),
         "snmp_community": html.var("snmp_community")
     }
+    logger.debug('service payload : ' + pprint.pformat(payload))
     new_host = nocout_find_host(payload.get('host'))
 
     if not new_host:
@@ -200,7 +201,6 @@ def addservice():
         if payload.get('cmd_params'):
             try:
                 cmd_params = ast.literal_eval(payload.get('cmd_params'))
-		logger.debug("cmd_params : " + pprint.pformat(cmd_params))
                 for param, thresholds in cmd_params.items():
                     t = ()
                     if thresholds.get('warning') and thresholds.get('critical'):
@@ -222,7 +222,6 @@ def addservice():
         if payload.get('serv_params'):
             try:
                 serv_params = ast.literal_eval((payload.get('serv_params')))
-		logger.debug('serv_params : ' + pprint.pformat(serv_params))
             except Exception, e:
 		logger.error('Error in serv_params : ' + pprint.pformat(e))
                 response.update({
