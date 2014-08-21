@@ -1,0 +1,102 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+{% block breadcrumb_title %}
+    <li>Inventory</li>
+    <li>Bulk Import</li>
+    <li>GIS Inventory</li>
+{% endblock %}
+{% block css %}
+	<!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
+{% endblock %}
+{% block content_title %}GIS Import Bulk Import{% endblock %}
+{% block content_description %}GIS Import Bulk Import{% endblock %}
+{% block content %}
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i> SELECT FILE</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-8"><br />
+                                    <form enctype="multipart/form-data" action="/bulk_import/gis_inventory/" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                                        <div class="form-group">
+                                            {% for field in form %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">{% if field.field.required %}<span class="mandatory">* </span>{% endif %}{{ field.label|title }}</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field }} {{ field.errors }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {# field.help_text #}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-3 col-sm-9">
+                                                <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>Create</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i>Reset</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/circuit/')"><i class="fa fa-times"></i>Cancel</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+        <script type="text/javascript" src={% static "js/bootstrap-file-input/bootstrap-file-input.js" %}></script>
+        <script type="text/javascript" src={% static "js/lodash/lodash.js" %}></script>
+        {# <script type="text/javascript" src={% static "js/shim/shim.js" %}></script> #}
+        <script type="text/javascript" src={% static "js/jszip/jszip.js" %}></script>
+        {# <script type="text/javascript" src={% static "js/js-xls/xls.js" %}></script> #}
+        <script type="text/javascript" src={% static "js/js-xlsx/xlsx.js" %}></script>
+        <script type="text/javascript" src={% static "js/js-xlsx/xlsx-reader.js" %}></script>
+    {% endblock %}
+    <script>
+        $(document).ready(function () {
+            // modify image upload field
+            var image_uploader = "#id_file_upload";
+            var id_gt_warning = "#id_gt_warning";
+            $(image_uploader).bootstrapFileInput();
+            $(image_uploader).prev().text("Upload file");
+            // Initialize the select2 selectbox.
+            $(".select2select").select2();
+            $('.tip-focus').tooltip({
+                placement: 'right',
+                trigger: 'focus'
+            });
+            $("#id_sheet").empty().append('<option value="">Select</option>');
+        });
+        $("#id_file_upload").change(function (event) {
+            var file = this.files[0], sheets;
+            XLSXReader(file, true, function (xlsxData) {
+                sheets = xlsxData.sheets;
+                console.log(sheets)
+                sheets_options = '<option value="">Select</option>';
+                var arr = [];
+                for (var key in sheets) {
+                    arr.push((key));
+                }
+                sheets_array = arr.reverse();
+                for (var i = 0; i < sheets_array.length; i++) {
+                    sheets_options += '<option value="' + parseInt(i) + '">' + sheets_array[i] + '</option>';
+                }
+                $("#id_sheet").empty().append(sheets_options);
+            });
+        });
+    </script>
+{% endblock %}

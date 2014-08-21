@@ -24,7 +24,8 @@ var spinner_options = {
 };
 /*Spinner DOM Element*/
 var dom_target = document.getElementById('ajax_spinner');
-
+/*Initialize spinner object*/
+var spinner = new Spinner(spinner_options).spin(dom_target);
 /**
  * This funtion show the spinner
  */
@@ -32,9 +33,7 @@ function showSpinner() {
 	
 	if($("#ajax_spinner").hasClass("hide")) {
         /*Show ajax_spinner div*/
-        $("#ajax_spinner").removeClass("hide")
-        /*Initialize spinner object*/
-        var spinner = new Spinner(spinner_options).spin(dom_target);
+        $("#ajax_spinner").removeClass("hide");
         /*If ajax_backdrop div not exist then appent it to body */
         if($("#ajax_backdrop").length == 0) {
             $("body").append('<div class="modal-backdrop fade in" id="ajax_backdrop" style="background: #FFFFFF;"></div>');
