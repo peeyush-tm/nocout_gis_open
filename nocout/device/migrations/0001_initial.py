@@ -115,6 +115,7 @@ class Migration(SchemaMigration):
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('device_name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=200)),
             ('device_alias', self.gf('django.db.models.fields.CharField')(max_length=200)),
+            ('machine', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['machine.Machine'], null=True, blank=True)),
             ('site_instance', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['site_instance.SiteInstance'], null=True, blank=True)),
             ('organization', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['organization.Organization'])),
             ('device_technology', self.gf('django.db.models.fields.IntegerField')()),
@@ -122,7 +123,6 @@ class Migration(SchemaMigration):
             ('device_model', self.gf('django.db.models.fields.IntegerField')()),
             ('device_type', self.gf('django.db.models.fields.IntegerField')()),
             ('parent', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='device_children', null=True, to=orm['device.Device'])),
-            ('machine', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['machine.Machine'], null=True, blank=True)),
             ('ip_address', self.gf('django.db.models.fields.IPAddressField')(unique=True, max_length=15)),
             ('mac_address', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
             ('netmask', self.gf('django.db.models.fields.IPAddressField')(max_length=15, null=True, blank=True)),
@@ -147,6 +147,15 @@ class Migration(SchemaMigration):
             (u'level', self.gf('django.db.models.fields.PositiveIntegerField')(db_index=True)),
         ))
         db.send_create_signal(u'device', ['Device'])
+
+        # Adding M2M table for field ports on 'Device'
+        m2m_table_name = db.shorten_name(u'device_device_ports')
+        db.create_table(m2m_table_name, (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('device', models.ForeignKey(orm[u'device.device'], null=False)),
+            ('deviceport', models.ForeignKey(orm[u'device.deviceport'], null=False))
+        ))
+        db.create_unique(m2m_table_name, ['device_id', 'deviceport_id'])
 
         # Adding model 'ModelType'
         db.create_table(u'device_modeltype', (
@@ -231,6 +240,9 @@ class Migration(SchemaMigration):
         # Deleting model 'Device'
         db.delete_table(u'device_device')
 
+        # Removing M2M table for field ports on 'Device'
+        db.delete_table(db.shorten_name(u'device_device_ports'))
+
         # Deleting model 'ModelType'
         db.delete_table(u'device_modeltype')
 
@@ -296,6 +308,7 @@ class Migration(SchemaMigration):
             'netmask': ('django.db.models.fields.IPAddressField', [], {'max_length': '15', 'null': 'True', 'blank': 'True'}),
             'organization': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['organization.Organization']"}),
             'parent': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'device_children'", 'null': 'True', 'to': u"orm['device.Device']"}),
+            'ports': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': u"orm['device.DevicePort']", 'null': 'True', 'blank': 'True'}),
             u'rght': ('django.db.models.fields.PositiveIntegerField', [], {'db_index': 'True'}),
             'site_instance': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['site_instance.SiteInstance']", 'null': 'True', 'blank': 'True'}),
             'state': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
