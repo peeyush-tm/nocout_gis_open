@@ -153,14 +153,14 @@ class GetCustomerAlertDetail(BaseDatatableView):
             data_sources_list=['rta','pl']
             extra_query_condition="AND (`{0}`.`severity` in ('DOWN', 'CRITICAL', 'WARNING', 'UNKNOWN') ) "
             query_table_eventnetwork = prepare_query(table_name= "performance_eventnetwork", devices= machine_device_list, \
-                                  data_sources= data_sources_list, columns= required_data_columns)
+                                  data_sources= data_sources_list, columns= required_data_columns, condition=extra_query_condition)
 
             if query_table_eventnetwork:
                 device_data+= self.collective_query_result(query_table_eventnetwork, machine, machine_device_list)
 
             data_sources_list=[]
             query_table_eventservice = prepare_query(table_name= "performance_eventservice", devices= machine_device_list, \
-                                  data_sources= data_sources_list, columns= required_data_columns)
+                                  data_sources= data_sources_list, columns= required_data_columns, condition=extra_query_condition)
 
             if query_table_eventservice:
                 device_data+= self.collective_query_result(query_table_eventservice, machine, machine_device_list)
@@ -366,16 +366,17 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         #Fetching the data for the device w.r.t to their machine.
         for machine, machine_device_list in machine_dict.items():
+            extra_query_condition="AND (`{0}`.`severity` in ('DOWN', 'CRITICAL', 'WARNING', 'UNKNOWN') ) "
             data_sources_list= ['rta', 'pl']
             query_table_eventnetwork = prepare_query(table_name= "performance_eventnetwork", devices= machine_device_list, \
-                                  data_sources= data_sources_list, columns= required_data_columns)
+                                  data_sources= data_sources_list, columns= required_data_columns, condition=extra_query_condition)
 
             if query_table_eventnetwork:
                 device_data+= self.collective_query_result(query_table_eventnetwork, machine)
 
             data_sources_list=[]
             query_table_eventservice = prepare_query(table_name= "performance_eventservice", devices= machine_device_list, \
-                                  data_sources= data_sources_list, columns= required_data_columns)
+                                  data_sources= data_sources_list, columns= required_data_columns, condition=extra_query_condition)
 
             if query_table_eventservice:
                 device_data+= self.collective_query_result(query_table_eventservice, machine)
