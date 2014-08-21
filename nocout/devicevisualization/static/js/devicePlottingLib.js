@@ -2703,7 +2703,9 @@ function devicePlottingClass_gmap() {
 		oms.clearMarkers();
 
 		/*Clear master marker cluster objects*/
-		masterClusterInstance.clearMarkers();
+		if(masterClusterInstance != "") {
+			masterClusterInstance.clearMarkers();
+		}		
 	};
 
 	/**
