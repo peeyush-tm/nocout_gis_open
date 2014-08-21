@@ -85,6 +85,7 @@ class Migration(SchemaMigration):
             ('critical', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
             ('added_on', self.gf('django.db.models.fields.DateTimeField')(null=True, blank=True)),
             ('modified_on', self.gf('django.db.models.fields.DateTimeField')(null=True, blank=True)),
+            ('is_added', self.gf('django.db.models.fields.IntegerField')(default=0)),
         ))
         db.send_create_signal(u'service', ['DeviceServiceConfiguration'])
 
@@ -125,6 +126,7 @@ class Migration(SchemaMigration):
             'data_source': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'device_name': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'is_added': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'max_check_attempts': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'modified_on': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             'normal_check_interval': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
