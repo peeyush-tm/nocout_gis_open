@@ -270,20 +270,36 @@ def filter_gis_map(request_query):
 
     return result_list
 
+def tech_marker_url(techno):
+    """
+
+    :param techno: technology P2P,
+    :return: technology markers
+    """
+    if techno == "P2P":
+        return "static/img/icons/mobilephonetower1.png"
+    elif techno == "PMP":
+        return "static/img/icons/mobilephonetower2.png"
+    elif techno == "WiMAX":
+        return "static/img/icons/mobilephonetower3.png"
+    else:
+        return "static/img/marker/icon2_small.png"
 
 def prepare_result(base_station_id):
     base_station = BaseStation.objects.get(id=base_station_id)
 
     sectors = Sector.objects.filter(base_station=base_station.id)
     #because sectors of a base station would be of same technology
+    techno = sectors[0].bs_technology.name if sectors[0].bs_technology else 'N/A'
+
     base_station_info = {
         'id': base_station.id,
         'name': base_station.name,
         'data': {
             'lat': base_station.latitude,
             'lon': base_station.longitude,
-            "markerUrl": "static/img/marker/icon2_small.png",
-            'technology': sectors[0].bs_technology.name if sectors[0].bs_technology else 'N/A',
+            "markerUrl": tech_marker_url(techno),
+            'technology': techno,
             'antena_height': 0,
             'vendor':','.join(sectors[0].bs_technology.device_vendors.values_list('name', flat=True)),
             'city': City.objects.get(id=base_station.city).city_name if base_station.city else 'N/A',

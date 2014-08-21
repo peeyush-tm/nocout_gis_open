@@ -393,23 +393,26 @@ class GetNetworkAlertDetail(BaseDatatableView):
         performance_data = self.model.objects.raw(query).using(alias= machine)
 
         for data in performance_data:
-            device_base_station= Sector.objects.get( sector_configured_on__id=Device.objects.get(device_name=\
-                                 data.device_name).id).base_station
-            ddata = {
-                    'device_name':data.device_name,
-                    'severity':data.severity,
-                    'ip_address':data.ip_address,
-                    'base_station':device_base_station.name,
-                    'base_station__city':City.objects.get(id= device_base_station.city).city_name,
-                    'base_station__state':State.objects.get(id= device_base_station.state).state_name,
-                    'data_source_name': data.data_source,
-                    'current_value':data.current_value,
-                    'sys_time':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%I:%M:%S %p"),
-                    'sys_date':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%d/%B/%Y"),
-                    'sys_timestamp':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                    'description':data.description
-                    }
-            result_data.append(ddata)
+
+            sector = Sector.objects.filter( sector_configured_on__id=Device.objects.get(device_name=\
+                                 data.device_name).id)
+            if len(sector):
+                device_base_station= sector[0].base_station
+                ddata = {
+                        'device_name':data.device_name,
+                        'severity':data.severity,
+                        'ip_address':data.ip_address,
+                        'base_station':device_base_station.name,
+                        'base_station__city':City.objects.get(id= device_base_station.city).city_name,
+                        'base_station__state':State.objects.get(id= device_base_station.state).state_name,
+                        'data_source_name': data.data_source,
+                        'current_value':data.current_value,
+                        'sys_time':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%I:%M:%S %p"),
+                        'sys_date':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%d/%B/%Y"),
+                        'sys_timestamp':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                        'description':data.description
+                        }
+                result_data.append(ddata)
 
         return result_data
 
@@ -662,24 +665,26 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                 performance_data = self.model.objects.raw(query).using(alias= machine)
 
                 for data in performance_data:
-                    device_base_station= Sector.objects.get( sector_configured_on__id=Device.objects.get(device_name=\
-                                         data.device_name).id).base_station
-                    ddata = {
-                            'device_name':data.device_name,
-                            'severity':data.severity,
-                            'ip_address':data.ip_address,
-                            'base_station':device_base_station.name,
-                            'base_station__city':City.objects.get(id= device_base_station.city).city_name,
-                            'base_station__state':State.objects.get(id= device_base_station.state).state_name,
-                            'current_value':data.current_value,
-                            'sys_time':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%I:%M:%S %p"),
-                            'sys_date':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%d/%B/%Y"),
-                            'sys_timestamp':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                            'description':data.description
-                            }
-                    #If service tab is requested then add an another key:data_source_name to render in the data table.
-                    if 'service' in self.request.path_info:
-                        ddata.update({'data_source_name': data.data_source })
+                    sector = Sector.objects.filter( sector_configured_on__id=Device.objects.get(device_name=\
+                                 data.device_name).id)
+                    if len(sector):
+                        device_base_station= sector[0].base_station
+                        ddata = {
+                                'device_name':data.device_name,
+                                'severity':data.severity,
+                                'ip_address':data.ip_address,
+                                'base_station':device_base_station.name,
+                                'base_station__city':City.objects.get(id= device_base_station.city).city_name,
+                                'base_station__state':State.objects.get(id= device_base_station.state).state_name,
+                                'current_value':data.current_value,
+                                'sys_time':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%I:%M:%S %p"),
+                                'sys_date':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%d/%B/%Y"),
+                                'sys_timestamp':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                                'description':data.description
+                                }
+                        #If service tab is requested then add an another key:data_source_name to render in the data table.
+                        if 'service' in self.request.path_info:
+                            ddata.update({'data_source_name': data.data_source })
                     device_data.append(ddata)
         if device_data:
             sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
@@ -1175,6 +1180,8 @@ class SingleDeviceAlertDetails(View):
 
         sector_configured_on_devices_list= Sector.objects.filter( sector_configured_on__id__in= organization.device_set.\
                 values_list('id', flat=True)).values_list('sector_configured_on').annotate(dcount=Count('base_station'))
+        #single sector will have single base station
+        # but base staiton can have multiple sectors
 
         sector_configured_on_devices_ids= map(lambda x: x[0], sector_configured_on_devices_list)
         sector_configured_on_devices= Device.objects.filter(is_added_to_nms=1,is_deleted=0,
