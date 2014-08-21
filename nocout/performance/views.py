@@ -437,7 +437,7 @@ class Fetch_Inventory_Devices(View):
 
         organization_substations = SubStation.objects.filter(device__in=Device.objects.filter(
             is_added_to_nms=1, is_deleted=0,
-            organization=organization.id).values_list('id', flat=True)).values_list('id', 'alias')
+            organization=organization.id).values_list('id', flat=True)).values_list('id', 'device__device_name')
         result = list()
         for substation in organization_substations:
             result.append({'id': substation[0], 'alias': substation[1]})

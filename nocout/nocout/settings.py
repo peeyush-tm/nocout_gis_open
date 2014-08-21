@@ -297,3 +297,4 @@ ACTSTREAM_SETTINGS = {
 ######################list of private IPs
 
 PRIVATE_IPS_PREFIX = ('10.', '172.', '192.', )
+GIS_MAP_MAX_DEVICE_LIMIT=20

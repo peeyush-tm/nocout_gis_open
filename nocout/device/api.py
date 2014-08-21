@@ -13,7 +13,7 @@ from nocout.utils import logged_in_user_organizations
 from service.models import DeviceServiceConfiguration, Service, ServiceDataSource
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from sitesearch.views import DeviceSetFilters, prepare_result
-
+from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 logger=logging.getLogger(__name__)
 
 class DeviceStatsApi(View):
@@ -36,16 +36,23 @@ class DeviceStatsApi(View):
 
         if organizations:
             for organization in organizations:
+                page_number= self.request.GET.get('page_number', None)
+                start, offset= None, None
+                if page_number:
+                    offset= int(page_number)*GIS_MAP_MAX_DEVICE_LIMIT
+                    start= offset - GIS_MAP_MAX_DEVICE_LIMIT
 
                 base_stations_and_sector_configured_on_devices= Sector.objects.filter(sector_configured_on__id__in= \
-                organization.device_set.values_list('id', flat=True)).values_list('base_station').annotate(dcount=Count('base_station'))
+                organization.device_set.values_list('id', flat=True))[start:offset].values_list('base_station').annotate(dcount=Count('base_station'))
                 if base_stations_and_sector_configured_on_devices:
+                    total_count= Sector.objects.filter(sector_configured_on__id__in=organization.device_set.values_list('id', flat=True)).count()
                     request_query= self.request.GET.get('filters','')
                     if request_query:
-                        return DeviceSetFilters.as_view()(self.request)
+                        return DeviceSetFilters.as_view()(self.request, total_count)
 
                     else:
-                        self.result['data']['meta']['total_count']=0
+                        self.result['data']['meta']['total_count']= total_count
+                        self.result['data']['meta']['limit']= GIS_MAP_MAX_DEVICE_LIMIT
                         self.result['data']['objects']= {"id" : "mainNode", "name" : "mainNodeName", "data" :
                                                                 { "unspiderfy_icon" : "static/img/marker/slave01.png" }
                                                         }
