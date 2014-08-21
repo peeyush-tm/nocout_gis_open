@@ -1,3 +1,4 @@
+import csv
 import json
 import datetime
 from django.db.models import Count
@@ -7,6 +8,7 @@ from django.shortcuts import render_to_response, render
 from django.views.generic import ListView
 from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
+import xlwt
 from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation
 from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus, ServiceStatus, InventoryStatus, \
@@ -335,6 +337,7 @@ class Get_Perfomance(View):
             'get_status_url': 'performance/get_inventory_device_status/' + str(page_type) + '/device/' + str(device_id),
             'get_services_url': 'performance/get_inventory_service_data_sources/' + str(page_type) + '/device/' + str(
                 device_id),
+            'page_type':page_type
             }
 
         return render(request, 'performance/single_device_perf.html', page_data)
@@ -663,12 +666,13 @@ class Get_Service_Type_Performance_Data(View):
         """
         self.result = {
             'success': 0,
-            'message': 'Substation Service Not Fetched Successfully.',
+            'message': 'Substation Service Not Fetched.',
             'data': {
                 'meta': {},
                 'objects': {}
             }
         }
+
         inventory_device_name, inventory_device_machine_name = None, None
         if page_type == 'customer':
             substation = SubStation.objects.get(id=int(device_id))
@@ -680,18 +684,30 @@ class Get_Service_Type_Performance_Data(View):
             inventory_device_name = device.device_name
             inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
-        now = format(datetime.datetime.now(), 'U')
-        now_minus_60_min = format(datetime.datetime.now() + datetime.timedelta(minutes=-60), 'U')
-        now_minus_1day = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
-        now_minus_1week = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
+
+        start_date= self.request.GET.get('start_date','')
+        end_date= self.request.GET.get('end_date','')
+
+        if start_date and end_date:
+            start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
+            end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
+            start_date= format( start_date_object, 'U')
+            end_date= format( end_date_object, 'U')
+        else:
+
+            end_date = format(datetime.datetime.now(), 'U')
+            # now_minus_60_min = format(datetime.datetime.now() + datetime.timedelta(minutes=-60), 'U')
+            # now_minus_1day = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
+            start_date= format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
+
         if service_data_source_type in ['pl', 'rta']:
 
             performance_data = PerformanceNetwork.objects.filter(device_name=inventory_device_name,
                                                                  service_name=service_name,
                                                                  data_source=service_data_source_type,
-                                                                 sys_timestamp__gte=now_minus_60_min,
-                                                                 sys_timestamp__lte=now).using(
-                alias=inventory_device_machine_name)
+                                                                 sys_timestamp__gte=start_date,
+                                                                 sys_timestamp__lte=end_date).using(
+                                                                 alias=inventory_device_machine_name)
 
             result = self.get_performance_data_result(performance_data)
 
@@ -699,9 +715,9 @@ class Get_Service_Type_Performance_Data(View):
             performance_data = PerformanceStatus.objects.filter(device_name=inventory_device_name,
                                                                 service_name=service_name,
                                                                 data_source=service_data_source_type,
-                                                                sys_timestamp__gte=now_minus_1day,
-                                                                sys_timestamp__lte=now).using(
-                alias=inventory_device_machine_name)
+                                                                sys_timestamp__gte=start_date,
+                                                                sys_timestamp__lte=end_date).using(
+                                                                alias=inventory_device_machine_name)
 
             result = self.get_performance_data_result_for_status_and_invent_data_source(performance_data)
 
@@ -710,22 +726,92 @@ class Get_Service_Type_Performance_Data(View):
             performance_data = PerformanceInventory.objects.filter(device_name=inventory_device_name,
                                                                    service_name=service_name,
                                                                    data_source=service_data_source_type,
-                                                                   sys_timestamp__gte=now_minus_1week,
-                                                                   sys_timestamp__lte=now).using(
-                alias=inventory_device_machine_name)
+                                                                   sys_timestamp__gte= start_date,
+                                                                   sys_timestamp__lte= end_date).using(
+                                                                   alias=inventory_device_machine_name)
 
             result = self.get_performance_data_result_for_status_and_invent_data_source(performance_data)
         else:
             performance_data = PerformanceService.objects.filter(device_name=inventory_device_name,
                                                                  service_name=service_name,
                                                                  data_source=service_data_source_type,
-                                                                 sys_timestamp__gte=now_minus_60_min,
-                                                                 sys_timestamp__lte=now).using(
-                alias=inventory_device_machine_name)
+                                                                 sys_timestamp__gte= start_date,
+                                                                 sys_timestamp__lte= end_date).using(
+                                                                 alias=inventory_device_machine_name)
 
             result = self.get_performance_data_result(performance_data)
 
-        return HttpResponse(json.dumps(result), mimetype="application/json")
+        download_excel= self.request.GET.get('download_excel', '')
+        download_csv= self.request.GET.get('download_csv', '')
+
+
+        if download_excel:
+
+            table_data, table_header=self.return_table_header_and_table_data(service_name, result)
+            workbook = xlwt.Workbook()
+            worksheet = workbook.add_sheet('report')
+            style = xlwt.XFStyle()
+
+            borders = xlwt.Borders()
+            borders.bottom = xlwt.Borders.DASHED
+            style.borders = borders
+
+            column_length= len(table_header)
+            row_length= len(table_data) +1
+            #Writing headers first for the excel file.
+            for column in range(column_length):
+                worksheet.write(0, column, table_header[column], style=style)
+            #Writing rest of the rows.
+            for row in range(1,row_length):
+                for column in range(column_length):
+                    worksheet.write(row, column, table_data[row-1][ table_header[column].lower() ], style=style)
+
+            response= HttpResponse(mimetype= 'application/vnd.ms-excel', content_type='text/plain')
+            response['Content-Disposition'] = 'attachment; filename=alert_report_{0}.xls'.format(inventory_device_name)
+            workbook.save(response)
+            return response
+
+        elif download_csv:
+
+            table_data, table_header=self.return_table_header_and_table_data(service_name, result)
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="alert_report_{0}.csv"'.format(inventory_device_name)
+
+            writer = csv.writer(response)
+            writer.writerow(table_header)
+            column_length= len(table_header)
+            row_length= len(table_data) +1
+
+            for row in range(1, row_length):
+                row_list= list()
+                for column in range(0, column_length):
+                    row_list.append(table_data[row-1][ table_header[column].lower() ])
+                writer.writerow(row_list)
+            return response
+
+        else:
+
+            return HttpResponse(json.dumps(result), mimetype="application/json")
+
+    def return_table_header_and_table_data(self, service_name, result ):
+
+        if '_invent' in service_name or  '_status' in service_name :
+            table_data= result['data']['objects']['table_data']
+            table_header= result['data']['objects']['table_data_header']
+
+        else:
+            table_data= result['data']['objects']['chart_data'][0]['data']
+            table_header= ['Value','Date', 'Time' ]
+            data_list=[]
+            for data in table_data:
+                data_list+= [{
+                    'date': datetime.datetime.fromtimestamp(float(data['x']/1000)).strftime("%d/%B/%Y"),
+                    'time': datetime.datetime.fromtimestamp(float(data['x']/1000)).strftime("%I:%M %p"),
+                    'value':data['y'],
+                    }]
+            table_data=data_list
+
+        return table_data, table_header
 
 
     def get_performance_data_result_for_status_and_invent_data_source(self, performance_data):
