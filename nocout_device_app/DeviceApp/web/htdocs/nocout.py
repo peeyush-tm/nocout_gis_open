@@ -31,11 +31,11 @@ nocout_backup_paths = nocout_replication_paths + [
 ]
 
 host_tags = {
-    "snmp": "snmp",
+    "snmp": "snmp-only|snmp",
     "cmk_agent": "cmk-agent|tcp",
-    "snmp_v1": "snmp-v1|snmp",
-    "snmp_v2": "snmp-v2|snmp",
-    "snmp_v3": "snmp-v3|snmp",
+    "snmp-v1|snmp": "snmp-v1|snmp",
+    "snmp-v2|snmp": "snmp-v2|snmp",
+    "v3|snmp": "v3|snmp",
     "dual": "snmp-tcp|snmp|tcp",
     "ping": "ping"
 }
@@ -232,7 +232,7 @@ def addservice():
                 })
                 return response
             for param, val in serv_params.items():
-                t = (val, [host_tags.get(payload.get('agent_tag'), 'snmp')], [payload.get('host')], payload.get('service'))
+                t = (val, [], [payload.get('host')], payload.get('service'))
                 g_service_vars['extra_service_conf'][param].append(t)
                 t = ()
 
@@ -401,7 +401,7 @@ def editservice():
 		logger.error('Error in serv_params : ' + pprint.pformat(e))
                 return response
             for param, val in serv_params.items():
-                t = (val, [host_tags.get(payload.get('agent_tag'), 'snmp')], [payload.get('host')], payload.get('service'))
+                t = (val, [], [payload.get('host')], payload.get('service'))
                 g_service_vars['extra_service_conf'][param].append(t)
                 t = ()
 

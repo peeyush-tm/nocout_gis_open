@@ -45,8 +45,8 @@ def get_host_services_name(site_name=None, mongo_host=None, mongo_db=None, mongo
         try:
             query = "GET hosts\nColumns: host_name\nOutputFormat: json\n"
                 
-            output = json.loads(get_from_socket(site_name, query))
-            for host_name in output:
+            main_output = json.loads(get_from_socket(site_name, query))
+            for host_name in main_output:
                 modified_query = "GET hosts\nColumns: host_services host_address\n" +\
                     "Filter: host_name = %s\nOutputFormat: json\n" % (host_name[0])
                 output= json.loads(get_from_socket(site_name, modified_query))
