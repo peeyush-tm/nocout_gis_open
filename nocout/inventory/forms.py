@@ -339,7 +339,6 @@ class BaseStationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(BaseStationForm, self).__init__(*args, **kwargs)
-        self.fields['bs_technology'].empty_label = 'Select'
         self.fields['bs_switch'].empty_label = 'Select'
         self.fields['backhaul'].empty_label = 'Select'
         self.fields['country'].empty_label = 'Select'
@@ -347,7 +346,6 @@ class BaseStationForm(forms.ModelForm):
         self.fields['city'].empty_label = 'Select'
         self.fields['building_height'].initial = 0
         self.fields['tower_height'].initial = 0
-        self.fields['bs_technology'].required = True
         self.fields['latitude'].required = True
         self.fields['longitude'].required = True
         self.fields['country'].required = True
@@ -436,6 +434,8 @@ class SectorForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(SectorForm, self).__init__(*args, **kwargs)
         self.fields['base_station'].empty_label = 'Select'
+        self.fields['bs_technology'].empty_label = 'Select'
+        self.fields['bs_technology'].required = True
         self.fields['sector_configured_on'].empty_label = 'Select'
         self.fields['sector_configured_on_port'].empty_label = 'Select'
         self.fields['antenna'].empty_label = 'Select'
