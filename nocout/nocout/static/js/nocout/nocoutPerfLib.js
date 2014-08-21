@@ -178,7 +178,9 @@ var perf_that = "",
                         var serviceId = e.currentTarget.id.slice(0, -4);
                         //@TODO: all the ursl must end with a / - django style
                         var serviceDataUrl = window.location.origin + "/" + $.trim(e.currentTarget.attributes.url.value);
+                        window.location.href = "#"+e.currentTarget.id
                         perfInstance.getServiceData(serviceDataUrl, serviceId, current_device);
+
                     });
 
 				} else {
@@ -211,7 +213,7 @@ var perf_that = "",
     
     /*Show the spinner*/
     showSpinner();
-
+        window.location.href = "#"+service_id
  		/*Ajax call to Get Devices API*/
         var get_url = get_service_data_url;
 		$.ajax({

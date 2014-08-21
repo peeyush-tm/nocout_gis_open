@@ -83,11 +83,11 @@
                         <li><a href="#network_bhUtil_block" data-toggle="tab"><span class="hidden-inline-mobile">BH Utilisation</span></a></li>
                         <li><a href="#network_sectorUtil_block" data-toggle="tab"><span class="hidden-inline-mobile">Sector Utilisation</span></a></li>
                         <li><a href="#network_ulIssue_block" data-toggle="tab"><span class="hidden-inline-mobile">UL Issue</span></a></li>
-                        <li><a href="#network_ptp_block" data-toggle="tab"><span class="hidden-inline-mobile">PTP</span></a></li>
                         <li><a href="#network_converter_block" data-toggle="tab"><span class="hidden-inline-mobile">Converter</span></a></li>
                         <li><a href="#network_pmpBs_block" data-toggle="tab"><span class="hidden-inline-mobile">PMP BS</span></a></li>
                         <li><a href="#network_wimaxBs_block" data-toggle="tab"><span class="hidden-inline-mobile">Wimax BS</span></a></li>
-                        <li class="active"><a href="#network_temp_block" data-toggle="tab"><span class="hidden-inline-mobile">Temperature</span></a></li>
+                        <li><a href="#network_temp_block" data-toggle="tab"><span class="hidden-inline-mobile">Temperature</span></a></li>
+                        <li class="active"><a href="#network_ptp_block" data-toggle="tab"><span class="hidden-inline-mobile">PTP</span></a></li>
                     </ul>
                     <!-- nav-tab End -->
 
@@ -150,18 +150,9 @@
                         <!-- network_ulIssue_block End -->
 
                         <!-- network_ptp_block Start -->
-                        <div class="tab-pane fade" id="network_ptp_block">
-                            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
-                                <thead>
-                                    <th></th>
-                                    <th>Received Time</th>
-                                    <th>Event Type</th>
-                                    <th>Event Name</th>
-                                    <th>Device Type</th>
-                                    <th>Host Alias</th>
-                                    <th>IP Address</th>
-                                    <th>Description</th>
-                                </thead>
+                        <div class="tab-pane fade in active" id="network_ptp_block">
+                            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="network_ptp_block_table">
+                                <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -222,7 +213,7 @@
                         <!-- network_wimaxBs_block End -->
 
                         <!-- network_temp_block Start -->
-                        <div class="tab-pane fade in active" id="network_temp_block">
+                        <div class="tab-pane fade" id="network_temp_block">
                             <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">
                                 <thead>
                                     <th></th>
@@ -250,10 +241,70 @@
 
 
 {% block jquery %}
+<!-- Custom script for data table-->
 <script type="text/javascript">
-    /*This is a temporary code which is replace when data for data table is provided*/
-    $(".datatable").DataTable();
-    
+    var dataTableInstance = "";
+
+    $(document).ready(function () {
+
+        /* Removing the pagination in the datatable*/
+        function ourDataTableWidget()
+        {
+            /**
+             * This function creates the jquery data table on given domElement
+             * @class ourDataTableWidget
+             * @method createDataTable
+             * @param tableId "String" It contains the dom selector of table
+             * @param tableheaders {JSON Object} It contains the grid headers object
+             * @param ajax_url "String" It contains the ajax url from which the data is to be loaded
+             */
+            this.createDataTable = function(tableId, tableheaders, ajax_url, destroy)
+            {
+                /*Show the spinner*/
+                showSpinner();
+
+                destroy = typeof destroy !== 'undefined' ? destroy : true;
+                $('.datatable').each(function () {
+                    var datatable = $(this);
+                    // SEARCH - Add the placeholder for Search and Turn this into in-line form control
+                    var search_input = datatable.closest('.dataTables_wrapper').find('div[id$=_filter] input');
+                    search_input.attr('placeholder', 'Search');
+                    search_input.addClass('form-control input-sm');
+                    // LENGTH - Inline-Form control
+                    var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
+                    length_sel.addClass('form-control input-sm');
+                });
+                if (destroy){
+                    $("#"+tableId).dataTable().fnDestroy();
+                }
+                $("#"+tableId).DataTable({
+                    bAutoWidth: false,
+                    bPaginate: true,
+                    bProcessing : true,
+                    bServerSide: false,
+                    sAjaxSource: ajax_url,
+                    /*This is the callback funtion for data ajax call*/
+                    fnInitComplete : function(oSettings, json) {
+                        /*Hide the spinner*/
+                        hideSpinner();
+                    },
+                    aoColumns:tableheaders
+                });
+            };
+        }
+
+        /*Make a instance of ourDataTableWidget class */
+        var dataTableInstance = new ourDataTableWidget();
+        /*Grid headers object*/
+        var gridHeadersObj = $.parseJSON('{{ network_ptp_block_table_header|safe }}');
+        /*Ajax url to get grid data*/
+        var ajax_url = '{% url "Network_PTP_Block_Table" %}';
+        /*Call createDataTable function of ourDataTableWidget class*/
+        var destroy= false;
+        dataTableInstance.createDataTable("network_ptp_block_table", gridHeadersObj, ajax_url, destroy);
+
+    });
+
     function nw_alert_showFilters() {
 
         if($("#removeNwDetailFilterBtn").hasClass("hide")) {
