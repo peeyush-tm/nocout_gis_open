@@ -2538,11 +2538,11 @@ class GISInventoryBulkImport(FormView):
             # dropdown lists
             types_of_bs_list = ['WIMAX', 'CAMBIUM', 'RADWIN']
             site_types_list = ['GBT', 'RTT', 'POLE']
-            infra_provider_list = ['VIOM', 'INDUS', 'ATC', 'IDEA', 'QUIPPO', 'SPICE', 'TTML', 'TCL', 'TOWER VISION', 'RIL', 'WTTIL', 'OTHER']
-            make_of_antenna_list = ['Xhat', 'Andrew', 'MTI', 'Twin', 'Proshape']
+            infra_provider_list = ['TVI', 'VIOM', 'INDUS', 'ATC', 'IDEA', 'QUIPPO', 'SPICE', 'TTML', 'TCL', 'TOWER VISION', 'RIL', 'WTTIL', 'OTHER']
+            make_of_antenna_list = ['MTI H Pol', 'Xhat', 'Andrew', 'MTI', 'Twin', 'Proshape']
             antenna_polarisation_list = ['Vertical', 'Horizontal', 'Cross', 'Dual']
             bh_off_or_onnet_list = ['OFFNET', 'ONNET', 'OFFNET+ONNET', 'OFFNET+ONNET UBR', 'ONNET+UBR', 'ONNET COLO','ONNET COLO+UBR']
-            backhaul_type_list = ['E1', 'EoSDH', 'Dark Fibre', 'UBR']
+            backhaul_type_list = ['SDH', 'Ethernet', 'E1', 'EoSDH', 'Dark Fibre', 'UBR']
             pmp_list = [1, 2]
             azimuth_angles_list = range(0, 361)
             installation_of_splitter_list = ['Yes', 'No']
@@ -2553,9 +2553,12 @@ class GISInventoryBulkImport(FormView):
             regex_upto_two_dec_places = '^\d{1,3}($|\.\d{1,2}$)'
             regex_ip_address = '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$'
             regex_alnum_comma_hyphen_fslash_underscore_space = '^[a-zA-Z0-9\s,_/-]+$'
+            regex_alnum_comma_hyphen_fslash_underscore_space_asterisk = '^[a-zA-Z0-9\s,_/*-]+$'
             regex_alpha_underscore = '^[a-zA-Z_]+$'
             regex_alnum_comma_underscore_space = '^[a-zA-Z0-9\s,_]+$'
+            regex_alnum_comma_underscore_space_asterisk = '^[a-zA-Z0-9\s,\*_]+$'
             regex_alnum_hyphen = '^[a-zA-Z0-9-]+$'
+            regex_alnum_space = '^[a-zA-Z0-9\s]+$'
 
             # 'city' validation (must be alphabetical)
             if city:
@@ -2594,8 +2597,8 @@ class GISInventoryBulkImport(FormView):
 
             #  'site id' validation (must be alphanumeric)
             if site_id:
-                if not site_id.strip().isalnum():
-                    errors += 'Site ID must be alphanumeric.\n'
+                if not re.match(regex_alnum_space, str(site_id).strip()):
+                    errors += 'Site ID {} must be alphanumeric.\n'.format(site_id)
             else:
                 errors += 'Site ID must not be empty.\n'
 
@@ -2690,9 +2693,11 @@ class GISInventoryBulkImport(FormView):
                 errors += 'Type of GPS must not be empty.\n'
 
             # 'bs switch ip' validation (must be an ip address)
+
             if bs_switch_ip:
-                if not re.match(regex_ip_address, bs_switch_ip.strip()):
-                    errors += 'BS Switch IP must be an ip address.\n'
+                if bs_switch_ip != 'NA':
+                    if not re.match(regex_ip_address, bs_switch_ip.strip()):
+                        errors += 'BS Switch IP {} must be an ip address.\n'.format(bs_switch_ip)
             else:
                 errors += 'BS switch IP must not be empty.\n'
 
@@ -2745,8 +2750,8 @@ class GISInventoryBulkImport(FormView):
             # (can only contains alphanumeric, underscore, hyphen, space, comma, forward slash)
             if switch_or_converter_port:
                 if not re.match(regex_alnum_comma_hyphen_fslash_underscore_space, switch_or_converter_port.strip()):
-                    errors += 'Switch/Converter Port can only contains alphanumeric, underscore, hyphen, space, \
-                               comma, forward slash.\n'
+                    errors += 'Switch/Converter Port {} can only contains alphanumeric, underscore, hyphen, space, \
+                               comma, forward slash.\n'.format(switch_or_converter_port)
             else:
                 errors += 'Switch/Converter Port must not be empty.\n'
 
@@ -2772,8 +2777,8 @@ class GISInventoryBulkImport(FormView):
             # 'bh circuit id' validation
             # (can only contains alphanumeric, underscore, space, comma)
             if bh_circuit_id:
-                if not re.match(regex_alnum_comma_underscore_space, bh_circuit_id.strip()):
-                    errors += 'BH Circuit ID can only contains alphanumeric, underscore, space, comma.\n'
+                if not re.match(regex_alnum_comma_underscore_space_asterisk, bh_circuit_id.strip()):
+                    errors += 'BH Circuit ID - {} can only contains alphanumeric, underscore, space, comma.\n'.format(bh_circuit_id)
 
             # 'pe hostname' validation
             # (can only contains alphanumerics and hyphen)
@@ -2791,8 +2796,9 @@ class GISInventoryBulkImport(FormView):
                 errors += 'PE IP must not be empty.\n'
 
             # 'dr site' validation (must be 'Yes' or 'No')
-            if dr_site.strip().lower() not in [x.lower() for x in dr_site_list]:
-                errors += 'DR Site must be from \'Yes\' or \'No\'.\n'
+            if dr_site:
+                if dr_site.strip().lower() not in [x.lower() for x in dr_site_list]:
+                    errors += 'DR Site {} must be from \'Yes\' or \'No\'.\n'.format(dr_site)
 
             # 'ttsl circuit id' validation
             # (can only contains alphanumeric, underscore, space, comma)
@@ -2800,8 +2806,6 @@ class GISInventoryBulkImport(FormView):
                 if ttsl_circuit_id != "NA":
                     if not re.match(regex_alnum_comma_underscore_space, ttsl_circuit_id.strip()):
                         errors += 'TTSL Circuit ID can only contains alphanumeric, underscore, space, comma.\n'
-            else:
-                errors += 'TTSL Circuit ID must not be empty.'
 
             # insert key 'errors' in dict 'd'
             d['errors'] = errors
