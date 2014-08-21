@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import re
 """
 Link Ethernet Poller script.
 
@@ -71,8 +72,7 @@ def check_radwin_link_ethernet_status(item, _no_params, info):
                 state = if_statename(str(link_state))
                 if state == None:
                     state = "unknown"
-                if ' ' in if_name:
-                    if_name = str.replace(if_name, ' ', '_')
+		if_name = re.sub('[^0-9a-zA-Z-_]+', '_', if_name)
                 status_list.append((if_name, state))
             state = 0
             for name, status in status_list:
