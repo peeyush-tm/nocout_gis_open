@@ -345,7 +345,7 @@ function devicePlottingClass_gmap() {
 						            // (string | mandatory) the heading of the notification
 						            title: 'GIS',
 						            // (string | mandatory) the text inside the notification
-						            text: 'No Devices Found',
+						            text: 'Device Loading Completed',
 						            // (bool | optional) if you want it to fade out on its own or just sit there
 						            sticky: true
 						        });
@@ -368,7 +368,7 @@ function devicePlottingClass_gmap() {
 					            // (string | mandatory) the heading of the notification
 					            title: 'GIS',
 					            // (string | mandatory) the text inside the notification
-					            text: 'No Devices Found',
+					            text: 'Device Loading Completed',
 					            // (bool | optional) if you want it to fade out on its own or just sit there
 					            sticky: true
 					        });
@@ -1839,7 +1839,7 @@ function devicePlottingClass_gmap() {
 
 	 			$.gritter.add({
 		            // (string | mandatory) the heading of the notification
-		            title: 'GIS - No Devices',
+		            title: 'GIS - Device Load Completed',
 		            // (string | mandatory) the text inside the notification
 		            text: "User Don't Have Any Devies For Selected Filters",
 		            // (bool | optional) if you want it to fade out on its own or just sit there

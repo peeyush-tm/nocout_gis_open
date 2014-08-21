@@ -23,7 +23,7 @@ class DeviceStatsApi(View):
 
         self.result = {
             "success": 0,
-            "message": "No Device Data",
+            "message": "Device Loading Completed",
             "data": {
                 "meta": {},
                 "objects": None
@@ -73,7 +73,7 @@ class DeviceFilterApi(View):
     def get(self, request):
         self.result = {
             "success": 0,
-            "message": "No Device Data",
+            "message": "Device Loading Completed",
             "data": {
                 "meta": {},
                 "objects": {}
