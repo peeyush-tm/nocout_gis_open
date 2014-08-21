@@ -22,6 +22,7 @@ from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation,
 from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm, CircuitForm
 from device.models import Country, State, City
 from django.contrib.staticfiles.templatetags.staticfiles import static
+import xlrd
 import logging
 logger = logging.getLogger(__name__)
 
