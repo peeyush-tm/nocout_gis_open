@@ -12,6 +12,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from inventory.models import Sector, BaseStation, Circuit, SubStation, Customer
 from device.models import Device, DeviceType, DeviceVendor, \
     DeviceTechnology, City, State
+from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 from nocout.utils import logged_in_user_organizations
 
 logger = logging.getLogger(__name__)
@@ -169,8 +170,7 @@ class DeviceSetFilters(View):
     """
     Parses the get request from the filter form.
     """
-
-    def get(self, request):
+    def get(self, request, total_count=None):
         """
         Handles the get request. Parse the get parameters and fetch the data as required in the request.
 
@@ -187,18 +187,18 @@ class DeviceSetFilters(View):
             }
         }
 
-        result_data = list()
-        request_query = self.request.GET.get('filters', '')
-        result_data = filter_gis_map(request_query)
-        self.result['data']['objects'] = {"id": "mainNode", "name": "mainNodeName", "data":
-            {"unspiderfy_icon": "static/img/marker/slave01.png"}
-        }
-        self.result['data']['meta']['total_count'] = 0
-        self.result['data']['objects']['children'] = result_data
-        self.result['message'] = 'Data Fetched Successfully.' if self.result['data']['objects'][
-            'children'] else 'No record found.'
-        self.result['success'] = 1 if self.result['data']['objects']['children'] else 0
+        result_data=list()
+        request_query= self.request.GET.get('filters','')
+        result_data= filter_gis_map(request_query)
+        self.result['data']['objects']= {"id" : "mainNode", "name" : "mainNodeName", "data" :
+                                        { "unspiderfy_icon" : "static/img/marker/slave01.png" }
+                                        }
 
+        self.result['data']['meta']['total_count']= total_count if total_count else len(result_data)
+        self.result['data']['meta']['limit']= GIS_MAP_MAX_DEVICE_LIMIT
+        self.result['data']['objects']['children']= result_data
+        self.result['message']= 'Data Fetched Successfully.' if self.result['data']['objects']['children'] else 'No record found.'
+        self.result['success']= 1 if self.result['data']['objects']['children'] else 0
         return HttpResponse(json.dumps(self.result))
 
 
