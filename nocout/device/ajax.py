@@ -104,6 +104,36 @@ def update_type(request, option):
 
 
 @dajaxice_register
+def update_ports(request, option):
+    """Updating ports corresponding to the selected type
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (unicode): selected option value
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
+    dajax = Dajax()
+
+    # selected type
+    device_type = DeviceType.objects.get(pk=int(option))
+    # ports associated to the selected type
+    ports = device_type.device_port.all()
+    out = list()
+    out.append("<option value=''>Select</option>")
+    for port in ports:
+        out.append("<option value='%d'>%s - (%d)</option>" % (port.id, port.alias, port.value))
+    dajax.assign('#id_ports', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+@dajaxice_register
 def after_update_vendor(request, option, selected=''):
     """Get vendor selection menu with last time selected vendor as selected option after unsuccessful form submission
 
@@ -205,6 +235,46 @@ def after_update_type(request, option, selected=''):
         else:
             out.append("<option value='%d'>%s</option>" % (dtype.id, dtype.name))
     dajax.assign('#id_device_type', 'innerHTML', ''.join(out))
+    return dajax.json()
+
+
+@dajaxice_register
+def after_update_ports(request, option, selected=[]):
+    """Get ports selection menu with last time selected port as selected option after unsuccessful form submission
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): POST request
+        option (unicode): selected option value
+
+    Kwargs:
+        selected (unicode): option value selected before unsuccessful form submission
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
+    dajax = Dajax()
+    
+    # selected type
+    device_type = DeviceType.objects.get(pk=int(option))
+
+    # ports associated to selected type
+    ports = device_type.device_port.all()
+    out = list()
+    out.append("<option value=''>Select</option>")
+    for port in ports:
+        if selected:
+            if port.id in [int(x) for x in selected]:
+                out.append("<option value='%d' selected>%s - (%d)</option>" % (port.id, port.alias, port.value))
+            else:
+                out.append("<option value='%d'>%s - (%d)</option>" % (port.id, port.alias, port.value))
+        else:
+            out.append("<option value='%d'>%s - (%d)</option>" % (port.id, port.alias, port.value))
+    dajax.assign('#id_ports', 'innerHTML', ''.join(out))
     return dajax.json()
 
 
@@ -658,7 +728,7 @@ def add_device_to_nms_core(request, device_id):
     result = dict()
     result['data'] = {}
     result['success'] = 0
-    result['message'] = "Device addition failed."
+    result['message'] = "<i class=\"fa fa-times red-dot\"></i>Device addition failed."
     result['data']['meta'] = ''
     device = Device.objects.get(pk=device_id)
     if device.host_state != "Disable":
@@ -666,14 +736,18 @@ def add_device_to_nms_core(request, device_id):
         agent_tag = ""
         try:
             agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
-        except:
-            logger.info("Device has no device type.")
+        except Exception as e:
+            logger.info(e.message)
+
         device_data = {'device_name': device.device_name,
                        'device_alias': device.device_alias,
                        'ip_address': device.ip_address,
                        'agent_tag': agent_tag,
                        'site': device.site_instance.name,
                        'mode': 'addhost'}
+
+        print "Device data -------------------------------", device_data
+
         # site to which configuration needs to be pushed
         master_site = SiteInstance.objects.get(name='master_UA')
         # url for nocout.py
@@ -694,7 +768,7 @@ def add_device_to_nms_core(request, device_id):
             if response_dict['error_code'] is not None:
                 result['message'] = response_dict['error_message'].capitalize()
             else:
-                result['message'] = "Device added successfully."
+                result['message'] = "<i class=\"fa fa-check green-dot\"></i>Device added successfully."
                 # set 'is_added_to_nms' to 1 after device successfully added to nocout nms core
                 device.is_added_to_nms = 1
                 device.save()
@@ -772,12 +846,12 @@ def edit_device_in_nms_core(request, device_id):
             if response_dict['error_code'] is not None:
                 result['message'] = response_dict['error_message'].capitalize()
             else:
-                result['message'] = "Device edited successfully."
+                result['message'] = "<i class=\"fa fa-check green-dot\"></i>Device edited successfully."
                 # set 'is_added_to_nms' to 1 after device successfully edited in nocout nms core
                 device.is_added_to_nms = 1
                 device.save()
     else:
-        result['message'] = "Device state is disabled. First enable it than add it to nms core."
+        result['message'] = "<i class=\"fa fa-info text-info\"></i>Device state is disabled. First enable it than add it to nms core."
     return json.dumps({'result': result})
 
 
@@ -1146,9 +1220,9 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
                 # if response_dict doesn't have key 'success'
                 if not response_dict.get('success'):
                     logger.info(response_dict.get('error_message'))
-                    result['message'] += "Failed to updated service '%s'. <br />" % dsc.service_name
+                    result['message'] += "<i class=\"fa fa-times red-dot\"></i>Failed to updated service '%s'. <br />" % dsc.service_name
                 else:
-                    result['message'] += "Successfully updated service '%s'. <br />" % dsc.service_name
+                    result['message'] += "<i class=\"fa fa-check green-dot\"></i>Successfully updated service '%s'. <br />" % dsc.service_name
                     device = Device.objects.get(device_name=dsc.device_name)
 
                     # save service to 'service_deviceserviceconfiguration' table
@@ -1312,9 +1386,9 @@ def delete_single_service(request, device_name, service_name):
             # if response_dict doesn't have key 'success'
             if not response_dict.get('success'):
                 logger.info(response_dict.get('error_message'))
-                result['message'] += "Failed to delete service '%s'. <br />" % service_name
+                result['message'] += "<i class=\"fa fa-times red-dot\"></i>Failed to delete service '%s'. <br />" % service_name
             else:
-                result['message'] += "Successfully updated service '%s'. <br />" % service_name
+                result['message'] += "<i class=\"fa fa-check green-dot\"></i>Successfully updated service '%s'. <br />" % service_name
 
             # delete service rows form 'service_deviceserviceconfiguration' table
             DeviceServiceConfiguration.objects.filter(device_name=device_name, service_name=service_name).delete()
@@ -1682,7 +1756,7 @@ def edit_services(request, svc_data):
                 # if response_dict doesn't have key 'success'
                 if response_dict.get('success') != 1:
                     logger.info(response_dict.get('error_message'))
-                    result['message'] += "Failed to edit service '%s'. <br />" % (service.name)
+                    result['message'] += "<i class=\"fa fa-times red-dot\"></i>Failed to edit service '%s'. <br />" % (service.name)
                     messages += result['message']
 
                     try:
@@ -1709,7 +1783,7 @@ def edit_services(request, svc_data):
                     except Exception as e:
                         logger.info(e)
                 else:
-                    result['message'] += "Successfully edited service '%s'. <br />" % service.name
+                    result['message'] += "<i class=\"fa fa-check green-dot\"></i>Successfully edited service '%s'. <br />" % service.name
                     device = Device.objects.get(pk=int(sd['device_id']))
                     messages += result['message']
 
@@ -1741,7 +1815,7 @@ def edit_services(request, svc_data):
                     device.save()
         except Exception as e:
             logger.info(e)
-            result['message'] += "Failed to edit service '%s'. <br />" % service.name
+            result['message'] += "<i class=\"fa fa-times red-dot\"></i>Failed to edit service '%s'. <br />" % service.name
             messages += result['message']
 
     # assign messages to result dict message key
@@ -1955,10 +2029,10 @@ def delete_services(request, service_data):
                 # if response_dict doesn't have key 'success'
                 if response_dict.get('success') != 1:
                     logger.info(response_dict.get('error_message'))
-                    result['message'] += "Failed to delete service '%s'. <br />" % service.name
+                    result['message'] += "<i class=\"fa fa-times red-dot\"></i>Failed to delete service '%s'. <br />" % service.name
                     messages += result['message']
                 else:
-                    result['message'] += "Successfully deleted service '%s'. <br />" % service.name
+                    result['message'] += "<i class=\"fa fa-check green-dot\"></i>Successfully deleted service '%s'. <br />" % service.name
                     messages += result['message']
                     # delete service rows form 'service_deviceserviceconfiguration' table
                     DeviceServiceConfiguration.objects.filter(device_name=device.device_name,
@@ -2391,7 +2465,7 @@ def add_services(request, svc_data):
                 # if response_dict doesn't have key 'success'
                 if response_dict.get('success') != 1:
                     logger.info(response_dict.get('error_message'))
-                    result['message'] += "Failed to add service '%s'. <br />" % (service.name)
+                    result['message'] += "<i class=\"fa fa-times red-dot\"></i> Failed to add service '%s'. <br />" % (service.name)
                     messages += result['message']
 
                     try:
@@ -2416,7 +2490,7 @@ def add_services(request, svc_data):
                     except Exception as e:
                         logger.info(e)
                 else:
-                    result['message'] += "Successfully added service '%s'. <br />" % service.name
+                    result['message'] += "<i class=\"fa fa-check green-dot\"></i> Successfully added service '%s'. <br />" % service.name
                     device = Device.objects.get(pk=int(sd['device_id']))
                     messages += result['message']
 
@@ -2449,7 +2523,7 @@ def add_services(request, svc_data):
                     device.save()
         except Exception as e:
             logger.info(e)
-            result['message'] += "Failed to add service '%s'. <br />" % service.name
+            result['message'] += "<i class=\"fa fa-times red-dot\"></i> Failed to add service '%s'. <br />" % service.name
             messages += result['message']
 
     # assign messages to result dict message key

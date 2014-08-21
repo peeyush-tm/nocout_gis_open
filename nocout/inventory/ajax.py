@@ -5,6 +5,7 @@ import logging
 from inventory.models import IconSettings
 from service.models import Service
 from django.contrib.staticfiles.templatetags.staticfiles import static
+import xlrd
 
 logger = logging.getLogger(__name__)
 
@@ -366,6 +367,33 @@ def gt_critical_initial_choices(request):
                    .format(icon_setting.id, img_url, icon_setting.alias))
     dajax.assign('#id_gt_critical', 'innerHTML', ''.join(out))
     return dajax.json()
+
+
+# @dajaxice_register
+# def load_sheet_no_select_menu(request, uploaded_file):
+#     dajax = Dajax()
+#     book = xlrd.open_workbook(uploaded_file, file_contents=uploaded_file.read())
+#     sheet = book.sheet_by_index(0)
+#     print "*********************** book - ", book
+#     print "*********************** sheet - ", sheet
+#     print "***************** no. of rows - ", sheet.nrows
+#     print "*********************** request - ", request
+#     print "*********************** uploaded_file - ", uploaded_file
+#     return dajax.json()
+#
+# @dajaxice_register
+# def update_sheet_no_select_menu(request, uploaded_file):
+#     print "********************** uploaded_file - ", uploaded_file
+#     dajax = Dajax()
+#     book = xlrd.open_workbook(uploaded_file, file_contents=uploaded_file.read())
+#     sheet = book.sheet_by_index(0)
+#     print "*********************** book - ", book
+#     print "*********************** sheet - ", sheet
+#     print "***************** no. of rows - ", sheet.nrows
+#     print "*********************** request - ", request
+#     print "*********************** uploaded_file - ", str(uploaded_file)
+#     return dajax.json()
+
 
 
 

@@ -1,3 +1,4 @@
+import re
 from django.contrib.auth.decorators import permission_required
 from django.shortcuts import render
 import json
@@ -5,8 +6,8 @@ from actstream import action
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect, HttpResponse
 from django.utils.decorators import method_decorator
-from django.views.generic import ListView, DetailView
-from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView, TemplateView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.db.models import Q
@@ -14,13 +15,15 @@ from device_group.models import DeviceGroup
 from nocout.utils.util import DictDiffer
 from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings
 from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
-    ThematicSettingsForm
+    ThematicSettingsForm, GISInventoryBulkImportForm
 from organization.models import Organization
 from user_group.models import UserGroup
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
 from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm, CircuitForm
 from device.models import Country, State, City
 from django.contrib.staticfiles.templatetags.staticfiles import static
+import xlrd
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -2458,3 +2461,373 @@ class ThematicSettingsDelete(DeleteView):
         The request dispatch method restricted with the permissions.
         """
         return super(ThematicSettingsDelete, self).dispatch(*args, **kwargs)
+
+
+#************************************ GIS Inventory Bulk Upload ******************************************
+class GISInventoryBulkImport(FormView):
+    template_name = 'bulk_import/gis_bulk_import.html'
+    success_url = '/bulk_import/gis_inventory/'
+    form_class = GISInventoryBulkImportForm
+
+    def form_valid(self, form):
+        print "************************ form_valid **********************"
+        uploaded_file = self.request.FILES['file_upload']
+        sheet_no = int(self.request.POST['sheet'])
+        print "***************** sheet_no - ", sheet_no
+        book = xlrd.open_workbook(uploaded_file.name, file_contents=uploaded_file.read())
+        sheet = book.sheet_by_index(sheet_no)
+        print "***************** sheet - ", sheet
+        print "***************** no. of rows - ", sheet.nrows
+        print "***************** 1st row - ", sheet.row(0)
+        keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols)]
+        # print "&&&&&&&&&&&&&&&&&"
+        # print len(keys)
+        # print "&&&&&&&&&&&&&&&&&"
+        # print keys
+        valid_rows_list = []
+        invalid_rows_list = []
+        for row_index in xrange(1, sheet.nrows):
+            d = {keys[col_index]: sheet.cell(row_index, col_index).value
+                 for col_index in xrange(sheet.ncols)}
+            # print "***************************************************"
+            # print str(d['Make of Antenna'])
+            # print "***************************************************"
+            city = d['City']
+            state = d['State']
+            address = d['Address']
+            bs_name = d['BS Name']
+            type_of_bs = d['Type_Of_BS(Technology)']
+            site_type = d['Site_Type']
+            infra_provider = d['Infra Provider']
+            site_id = str(int(d['Site ID'])) if isinstance(d['Site ID'], float) else str(d['Site ID'])
+            print "Site ID ----------------------------", type(site_id)
+            building_height = d['Building_Height']
+            tower_height = d['Tower_Height']
+            latitude = d['Latitude']
+            longitude = d['Longitude']
+            idu_ip = d['IDU IP']
+            sector_name = d['Sector_name']
+            pmp = int(d['PMP']) if isinstance(d['PMP'], float) else d['PMP']
+            make_of_antenna = "#N/A" if isinstance(d['Make of Antenna'], int) else d['Make of Antenna']
+            antenna_polarization = d['Antenna Polarisation']
+            antenna_tilt = int(d['Antenna_Tilt']) if isinstance(d['Antenna_Tilt'], float) else d['Antenna_Tilt']
+            antenna_height = d['Antenna_Height']
+            antenna_beamwidth = int(d['Antenna_BeamWidth']) if isinstance(d['Antenna_BeamWidth'], float) else d['Antenna_BeamWidth']
+            azimuth = d['Azimuth']
+            installation_of_splitter = d['Installation of Splitter']
+            type_of_gps = d['Type of GPS']
+            bs_switch_ip = d['BS Switch IP']
+            aggregation_switch = d['Aggregation Switch']
+            aggregation_switch_port = d['Aggregation Switch Port']
+            bs_converter_ip = d['BS Converter IP']
+            pop_converter_ip = d['POP Converter IP']
+            converter_type = d['Converter Type']
+            bh_configured_on = d['BH Configured On Switch/Converter']
+            switch_or_converter_port = d['Switch/Converter Port']
+            bh_capacity = int(d['BH Capacity']) if isinstance(d['BH Capacity'], float) else d['BH Capacity']
+            bh_off_or_onnet = d['BH Offnet/Onnet']
+            backhaul_type = d['Backhaul Type']
+            bh_circuit_id = d['BH Circuit ID']
+            pe_hostname = d['PE Hostname']
+            pe_ip = d['PE IP']
+            dr_site = d['DR site']
+            ttsl_circuit_id = d['TTSL CIRCUIT ID']
+            errors = ""
+
+            # dropdown lists
+            types_of_bs_list = ['WIMAX', 'CAMBIUM', 'RADWIN']
+            site_types_list = ['GBT', 'RTT', 'POLE']
+            infra_provider_list = ['VIOM', 'INDUS', 'ATC', 'IDEA', 'QUIPPO', 'SPICE', 'TTML', 'TCL', 'TOWER VISION', 'RIL', 'WTTIL', 'OTHER']
+            make_of_antenna_list = ['Xhat', 'Andrew', 'MTI', 'Twin', 'Proshape']
+            antenna_polarisation_list = ['Vertical', 'Horizontal', 'Cross', 'Dual']
+            bh_off_or_onnet_list = ['OFFNET', 'ONNET', 'OFFNET+ONNET', 'OFFNET+ONNET UBR', 'ONNET+UBR', 'ONNET COLO','ONNET COLO+UBR']
+            backhaul_type_list = ['E1', 'EoSDH', 'Dark Fibre', 'UBR']
+            pmp_list = [1, 2]
+            azimuth_angles_list = range(0, 361)
+            installation_of_splitter_list = ['Yes', 'No']
+            dr_site_list = ['Yes', 'No']
+
+            # regex for checking whether string contains only numbers and .(dot)
+            regex_numbers_and_single_dot = '^[0-9]*\\.?[0-9]*$'
+            regex_upto_two_dec_places = '^\d{1,3}($|\.\d{1,2}$)'
+            regex_ip_address = '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$'
+            regex_alnum_comma_hyphen_fslash_underscore_space = '^[a-zA-Z0-9\s,_/-]+$'
+            regex_alpha_underscore = '^[a-zA-Z_]+$'
+            regex_alnum_comma_underscore_space = '^[a-zA-Z0-9\s,_]+$'
+            regex_alnum_hyphen = '^[a-zA-Z0-9-]+$'
+
+            # 'city' validation (must be alphabetical)
+            if city:
+                if not city.isalpha():
+                    errors += 'City must be alpha.\n'
+            else:
+                errors += 'City must not be empty.\n'
+
+            # 'state' validation (must be alphabetical)
+            if state:
+                if not state.isalpha():
+                    errors += 'State must be alpha.\n'
+            else:
+                errors += 'State must not be empty.\n'
+
+            # 'type of bs' validation (must be from provided list)
+            if type_of_bs:
+                if type_of_bs.strip().lower() not in [x.lower() for x in types_of_bs_list]:
+                    errors += '{} is not valid option for bs type.\n'.format(type_of_bs)
+            else:
+                errors += 'Type of BS must not be empty.\n'
+
+            # 'site type' validation (must be from provided list)
+            if site_type:
+                if site_type.strip().lower() not in [x.lower() for x in site_types_list]:
+                    errors += '{} is not a valid option for site type.\n'.format(site_type)
+            else:
+                errors += 'Site type must not be empty.\n'
+
+            # 'infra provider' validation (must be from provided list)
+            if infra_provider:
+                if infra_provider.strip().lower() not in [x.lower() for x in infra_provider_list]:
+                    errors += '{} is not a valid option for infra provider.\n'.format(infra_provider)
+            else:
+                errors += 'Infra provider must not be empty.\n'
+
+            #  'site id' validation (must be alphanumeric)
+            if site_id:
+                if not site_id.strip().isalnum():
+                    errors += 'Site ID must be alphanumeric.\n'
+            else:
+                errors += 'Site ID must not be empty.\n'
+
+            # 'building height' validation (must be upto 2 decimal places)
+            if building_height:
+                if not re.match(regex_upto_two_dec_places, str(building_height).strip()):
+                    errors += 'Building height must be upto 2 decimal places.\n'
+            else:
+                errors += 'Building height must not be empty.\n'
+
+            # 'tower height' validation (must be upto 2 decimal places)
+            if tower_height:
+                if not re.match(regex_upto_two_dec_places, str(tower_height).strip()):
+                    errors += 'Tower height must be upto 2 decimal places.\n'
+            else:
+                errors += 'Tower height must not be empty.\n'
+
+            # 'idu ip' validation (must be an ip address)
+            if idu_ip:
+                if not re.match(regex_ip_address, idu_ip.strip()):
+                    errors += 'IDU IP must be an ip address.'
+            else:
+                errors += 'IDU IP must not be empty.\n'
+
+            # 'sector name' validation (matches pattern for V1, V2, V3, V4 etc.)
+            if sector_name:
+                if not sector_name.lower().startswith('v'):
+                    errors += 'Sector name must be like V1, V2, V3, V4 etc.'
+            else:
+                errors += 'Sector name must not be empty.\n'
+
+            # 'pmp' validation (must be from provided list)
+            if pmp:
+                if pmp not in pmp_list:
+                    errors += '{} is not a valid option for pmp.\n'.format(pmp)
+            else:
+                errors += 'PMP must not be empty.\n'
+
+            # 'make of antenna' validation (must be form provided list)
+            if make_of_antenna:
+                if make_of_antenna != '#N/A':
+                    if make_of_antenna.strip().lower() not in [x.lower() for x in make_of_antenna_list]:
+                        errors += '{} is not a valid option for make of antenna.\n'.format(make_of_antenna)
+
+            # 'antenna polarisation' validation (must be from provided list)
+            if antenna_polarization:
+                if antenna_polarization.strip().lower() not in [x.lower() for x in antenna_polarisation_list]:
+                    errors += '{} is not a valid option for antenna polarization.\n'.format(antenna_polarization)
+            else:
+                errors += 'Antenna polarization must not be empty.\n'
+
+            # 'antenna tilt' validation (must be numeric)
+            if antenna_tilt:
+                if not isinstance(antenna_tilt, int):
+                    errors += 'Antenna tilt must be numeric.\n'
+            else:
+                errors += 'Antenna tilt must not be empty.\n'
+
+            # 'antenna height' validation (must be upto 2 decimal places)
+            if antenna_height:
+                if not re.match(regex_upto_two_dec_places, str(antenna_height).strip()):
+                    errors += 'Antenna height must be upto 2 decimal places.\n'
+            else:
+                errors += 'Antenna height must not be empty.\n'
+
+            # 'antenna beamwidth' validation (must be numeric)
+            if antenna_beamwidth:
+                if not isinstance(antenna_beamwidth, int):
+                    errors += 'Antenna beamwidth must be numeric.\n'
+            else:
+                errors += 'Antenna beamwidth must not be empty.\n'
+
+            # 'azimuth' validation (must be in range 0-360)
+            if azimuth:
+                if azimuth not in azimuth_angles_list:
+                    errors += 'Azimuth must be in range 0-360.\n'
+            else:
+                errors += 'Azimuth must not be empty.\n'
+
+            # 'installation of splitter' validation (must be 'Yes' or 'No')
+            if installation_of_splitter:
+                if installation_of_splitter.strip().lower() not in [x.lower() for x in installation_of_splitter_list]:
+                    errors += 'Installation of splitter must be from \'Yes\' or \'No\'.\n'
+            else:
+                errors += 'Installation of splitter must not be empty.\n'
+
+            # 'type of gps' validation (must be alphanumeric)
+            if type_of_gps:
+                if not (isinstance(type_of_gps, unicode) and type_of_gps.strip().isalnum()):
+                    errors += 'Type of GPS must be alphanumeric.\n'
+            else:
+                errors += 'Type of GPS must not be empty.\n'
+
+            # 'bs switch ip' validation (must be an ip address)
+            if bs_switch_ip:
+                if not re.match(regex_ip_address, bs_switch_ip.strip()):
+                    errors += 'BS Switch IP must be an ip address.\n'
+            else:
+                errors += 'BS switch IP must not be empty.\n'
+
+            # 'aggregation switch' validation (must be an ip address)
+            if aggregation_switch:
+                if aggregation_switch != 'NA':
+                    if not re.match(regex_ip_address, aggregation_switch.strip()):
+                        errors += 'Aggregation Switch must be an ip address.\n'
+
+            # 'aggregation switch port' validation
+            # (can only contains alphanumeric, underscore, hyphen, space, comma, forward slash)
+            if aggregation_switch_port:
+                if aggregation_switch_port != 'NA':
+                    if not re.match(regex_alnum_comma_hyphen_fslash_underscore_space, aggregation_switch_port.strip()):
+                        errors += 'Aggregation Switch Port can only contains alphanumeric, underscore, hyphen, space, \
+                                   comma, forward slash.\n'
+
+            # 'bs converter ip' validation (must be an ip address)
+            if bs_converter_ip:
+                if bs_converter_ip != 'NA':
+                    if not re.match(regex_ip_address, bs_converter_ip.strip()):
+                        errors += 'BS Converter IP must be an ip address.\n'
+            else:
+                errors += 'BS Converter IP must not be empty.\n'
+
+            # 'pop conveter ip' validation (must be an ip address)
+            if pop_converter_ip:
+                if pop_converter_ip != 'NA':
+                    if not re.match(regex_ip_address, pop_converter_ip.strip()):
+                        errors += 'POP Converter IP must be an ip address.\n'
+            else:
+                errors += 'POP Converter must not be empty.\n'
+
+            # 'converter type' validation (can only contains alphabets or underscore)
+            if converter_type:
+                if converter_type != 'NA':
+                    if not re.match(regex_alpha_underscore, converter_type.strip()):
+                        errors += 'Converter type can only contains alphabets or underscore.\n'
+            else:
+                errors += 'Converter type must not be empty.\n'
+
+            # 'bh configured on' validation (must be an ip address)
+            if bh_configured_on:
+                if not re.match(regex_ip_address, bh_configured_on.strip()):
+                    errors += 'BH Configured On must be an ip address.\n'
+            else:
+                errors += 'BH Configured On must not be empty.\n'
+
+            # 'switch or converter port' validation
+            # (can only contains alphanumeric, underscore, hyphen, space, comma, forward slash)
+            if switch_or_converter_port:
+                if not re.match(regex_alnum_comma_hyphen_fslash_underscore_space, switch_or_converter_port.strip()):
+                    errors += 'Switch/Converter Port can only contains alphanumeric, underscore, hyphen, space, \
+                               comma, forward slash.\n'
+            else:
+                errors += 'Switch/Converter Port must not be empty.\n'
+
+            # 'bh capacity' validation (must be numeric)
+            if bh_capacity:
+                if not isinstance(bh_capacity, int):
+                    errors += 'BH Capacity must be numeric.\n'
+            else:
+                errors += 'BH Capacity must not be empty.\n'
+
+            # 'bh off or onnet' validation (must be from provided list)
+            if bh_off_or_onnet:
+                if bh_off_or_onnet.strip().lower() not in [x.lower() for x in bh_off_or_onnet_list]:
+                    errors += '{} is not a valid option for bh off or onnet.\n'.format(bh_off_or_onnet)
+            else:
+                errors += 'BH Offnet/Onnet must not be empty.\n'
+
+            # 'backhaul type' validation (must be from provided list)
+            if backhaul_type:
+                if backhaul_type.strip().lower() not in [x.lower() for x in backhaul_type_list]:
+                    errors += '{} is not a valid option for backhaul type.\n'.format(backhaul_type)
+
+            # 'bh circuit id' validation
+            # (can only contains alphanumeric, underscore, space, comma)
+            if bh_circuit_id:
+                if not re.match(regex_alnum_comma_underscore_space, bh_circuit_id.strip()):
+                    errors += 'BH Circuit ID can only contains alphanumeric, underscore, space, comma.\n'
+
+            # 'pe hostname' validation
+            # (can only contains alphanumerics and hyphen)
+            if pe_hostname:
+                if not re.match(regex_alnum_hyphen, pe_hostname.strip()):
+                    errors += 'PE Hostname can only contains alphanumerics and hyphen.\n'
+            else:
+                errors += 'PE Hostname must not be empty.\n'
+
+            # 'pe ip' validation (must be an ip address)
+            if pe_ip:
+                if not re.match(regex_ip_address, pe_ip.strip()):
+                    errors += 'PE IP must be an ip address.\n'
+            else:
+                errors += 'PE IP must not be empty.\n'
+
+            # 'dr site' validation (must be 'Yes' or 'No')
+            if dr_site.strip().lower() not in [x.lower() for x in dr_site_list]:
+                errors += 'DR Site must be from \'Yes\' or \'No\'.\n'
+
+            # 'ttsl circuit id' validation
+            # (can only contains alphanumeric, underscore, space, comma)
+            if ttsl_circuit_id:
+                if ttsl_circuit_id != "NA":
+                    if not re.match(regex_alnum_comma_underscore_space, ttsl_circuit_id.strip()):
+                        errors += 'TTSL Circuit ID can only contains alphanumeric, underscore, space, comma.\n'
+            else:
+                errors += 'TTSL Circuit ID must not be empty.'
+
+            # insert key 'errors' in dict 'd'
+            d['errors'] = errors
+
+            # check whether there are errors exist or not
+            try:
+                if not errors:
+                    valid_rows_list.append(d)
+                else:
+                    invalid_rows_list.append(d)
+            except Exception as e:
+                logger.info(e.message)
+
+            # print "&&&&&&&&&&&&&&&&&"
+            # print len(d)
+            # print "&&&&&&&&&&&&&&&&&"
+            # print d
+            # print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+        print "Valid - "
+        for row in valid_rows_list:
+            print "It's valid."
+            print "**********************************"
+            print row['errors']
+        print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"
+        print "\n\n\n\n\n\n\n\n\n"
+        print "InValid - "
+        for row in invalid_rows_list:
+            print "**********************************"
+            print row['errors']
+        return super(GISInventoryBulkImport, self).get(self, form)

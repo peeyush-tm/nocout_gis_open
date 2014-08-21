@@ -89,7 +89,6 @@ class BaseStation(models.Model):
     """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
-    bs_technology = models.ForeignKey(DeviceTechnology, null=True, blank=True)
     bs_site_id = models.CharField('BS Site ID', max_length=250, null=True, blank=True)
     bs_site_type = models.CharField('BS Site Type', max_length=100, null=True, blank=True)
     bs_switch = models.ForeignKey(Device, null=True, blank=True, related_name='bs_switch')
@@ -100,12 +99,13 @@ class BaseStation(models.Model):
     latitude = models.FloatField('Latitude', null=True, blank=True)
     longitude = models.FloatField('Longitude', null=True, blank=True)
     infra_provider = models.CharField('Infra Provider', max_length=100, null=True, blank=True)
+    gps_type = models.CharField('GPS Type', max_length=100, null=True, blank=True)
     building_height = models.FloatField('Building Height', null=True, blank=True, help_text='(mtr) Enter a number.')
     tower_height = models.FloatField('Tower Height', null=True, blank=True, help_text='(mtr) Enter a number.')
     country = models.IntegerField('Country', null=True, blank=True)
     state = models.IntegerField('State', null=True, blank=True)
     city = models.IntegerField('City', null=True, blank=True)
-    gps_type = models.CharField('GPS Type', max_length=100, null=True, blank=True)
+    address = models.TextField('Address', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
@@ -121,12 +121,13 @@ class Sector(models.Model):
     alias = models.CharField('Alias', max_length=250)
     sector_id = models.CharField('Sector ID', max_length=250, null=True, blank=True)
     base_station = models.ForeignKey(BaseStation, related_name='sector')
+    bs_technology = models.ForeignKey(DeviceTechnology, null=True, blank=True)
     sector_configured_on = models.ForeignKey(Device, max_length=250, null=True, blank=False, related_name='sector_configured_on')
     sector_configured_on_port = models.ForeignKey(DevicePort, null=True, blank=True)
     antenna = models.ForeignKey(Antenna, null=True, blank=True, related_name='sector')
     mrc = models.CharField('MRC', max_length=4, null=True, blank=True)
     tx_power = models.FloatField('TX Power', null=True, blank=True, help_text='(dB) Enter a number.')
-    rx_power = models.FloatField('RX Field', null=True, blank=True, help_text='(dB) Enter a number.')
+    rx_power = models.FloatField('RX Power', null=True, blank=True, help_text='(dB) Enter a number.')
     rf_bandwidth = models.FloatField('RF Bandwidth', max_length=250, null=True, blank=True, help_text='(kbps) Enter a number.')
     frame_length = models.FloatField('Frame Length', null=True, blank=True, help_text='(mtr) Enter a number.')
     cell_radius = models.FloatField('Cell Radius', null=True, blank=True, help_text='(mtr) Enter a number.')
@@ -136,6 +137,7 @@ class Sector(models.Model):
 
     def __unicode__(self):
         return self.name
+
 
 # gis customer model
 class Customer(models.Model):
@@ -149,6 +151,7 @@ class Customer(models.Model):
 
     def __unicode__(self):
         return self.name
+
 
 # gis sub-station
 class SubStation(models.Model):
@@ -176,6 +179,7 @@ class SubStation(models.Model):
 
     def __unicode__(self):
         return self.name
+
 
 # gis circuit model
 class Circuit(models.Model):
