@@ -397,7 +397,7 @@ def prepare_result(base_station_id):
                                                                           'title': 'Site Name',
                                                                           'show': 1,
                                                                           'value': SiteInstance.objects.get(id=int(base_station.bs_site_id)).name \
-                                                                              if base_station.bs_site_id else 'N/A'
+                                                                              if base_station.bs_site_id and SiteInstance.objects.filter(id=int(base_station.bs_site_id)) else 'N/A'
                                                                       },
                                                                       {
                                                                           'name': 'site_type',
