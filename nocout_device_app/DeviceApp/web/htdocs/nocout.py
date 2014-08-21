@@ -31,11 +31,11 @@ nocout_backup_paths = nocout_replication_paths + [
 ]
 
 host_tags = {
-    "snmp": "snmp",
+    "snmp": "snmp-only|snmp",
     "cmk_agent": "cmk-agent|tcp",
-    "snmp_v1": "snmp-v1|snmp",
-    "snmp_v2": "snmp-v2|snmp",
-    "snmp_v3": "snmp-v3|snmp",
+    "snmp-v1|snmp": "snmp-v1|snmp",
+    "snmp-v2|snmp": "snmp-v2|snmp",
+    "v3|snmp": "v3|snmp",
     "dual": "snmp-tcp|snmp|tcp",
     "ping": "ping"
 }
@@ -190,7 +190,6 @@ def addservice():
         "snmp_port": html.var("snmp_port"),
         "snmp_community": html.var("snmp_community")
     }
-    logger.debug('service payload : ' + pprint.pformat(payload))
     new_host = nocout_find_host(payload.get('host'))
 
     if not new_host:
@@ -201,6 +200,7 @@ def addservice():
         if payload.get('cmd_params'):
             try:
                 cmd_params = ast.literal_eval(payload.get('cmd_params'))
+		logger.debug("cmd_params : " + pprint.pformat(cmd_params))
                 for param, thresholds in cmd_params.items():
                     t = ()
                     if thresholds.get('warning') and thresholds.get('critical'):
@@ -222,6 +222,7 @@ def addservice():
         if payload.get('serv_params'):
             try:
                 serv_params = ast.literal_eval((payload.get('serv_params')))
+		logger.debug('serv_params : ' + pprint.pformat(serv_params))
             except Exception, e:
 		logger.error('Error in serv_params : ' + pprint.pformat(e))
                 response.update({
@@ -231,7 +232,7 @@ def addservice():
                 })
                 return response
             for param, val in serv_params.items():
-                t = (val, [host_tags.get(payload.get('agent_tag'), 'snmp')], [payload.get('host')], payload.get('service'))
+                t = (val, [], [payload.get('host')], payload.get('service'))
                 g_service_vars['extra_service_conf'][param].append(t)
                 t = ()
 
@@ -400,7 +401,7 @@ def editservice():
 		logger.error('Error in serv_params : ' + pprint.pformat(e))
                 return response
             for param, val in serv_params.items():
-                t = (val, [host_tags.get(payload.get('agent_tag'), 'snmp')], [payload.get('host')], payload.get('service'))
+                t = (val, [], [payload.get('host')], payload.get('service'))
                 g_service_vars['extra_service_conf'][param].append(t)
                 t = ()
 
