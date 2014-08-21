@@ -151,6 +151,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
         for machine, machine_device_list in machine_dict.items():
 
             data_sources_list=['rta','pl']
+            extra_query_condition="AND (`{0}`.`severity` in ('DOWN', 'CRITICAL', 'WARNING', 'UNKNOWN') ) "
             query_table_eventnetwork = prepare_query(table_name= "performance_eventnetwork", devices= machine_device_list, \
                                   data_sources= data_sources_list, columns= required_data_columns)
 
