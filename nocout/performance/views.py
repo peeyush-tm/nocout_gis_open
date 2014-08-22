@@ -252,15 +252,15 @@ class LivePerformanceListing(BaseDatatableView):
                 if self.request.GET['page_type'] == 'customer':
                     substation_id = device.substation_set.values()[0]['id']
                     dct.update(
-                        actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-list-alt text-info"></i></a>\
-                        <a href="/alert_center/{0}/device/{2}/service_tab/{3}/"><i class="fa fa-table"></i></a> \
-                        <a href="/device/{2}"><i class="fa fa-archive"></i></a>'
+                        actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                        <a href="/alert_center/{0}/device/{2}/service_tab/{3}/"><i class="fa fa-warning text-warning"></i></a> \
+                        <a href="/device/{2}"><i class="fa fa-dropbox text-muted"></i></a>'
                         .format(self.request.GET['page_type'], substation_id, device.id, 'latency'  if 'latency' in dct.keys() else 'packet_drop' ))
                 elif self.request.GET['page_type'] == 'network':
                     dct.update(
-                        actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-list-alt text-info"></i></a> \
-                         <a href="/alert_center/{0}/device/{1}/service_tab/{2}/"><i class="fa fa-table"></i></a> \
-                         <a href="/device/{1}"><i class="fa fa-archive"></i></a>'
+                        actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-bar-chart-o text-info"></i></a> \
+                         <a href="/alert_center/{0}/device/{1}/service_tab/{2}/"><i class="fa fa-warning text-warning"></i></a> \
+                         <a href="/device/{1}"><i class="fa fa-dropbox text-muted"></i></a>'
                         .format(self.request.GET['page_type'], dct['id'], 'latency'  if 'latency' in dct.keys() else 'packet_drop'))
 
                 device_list.append({'device_name': dct["device_name"], 'device_machine': device.machine.name})
