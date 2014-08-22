@@ -221,7 +221,7 @@ function devicePlottingClass_gmap() {
 	            // (string | mandatory) the text inside the notification
 	            text: 'No Internet Access',
 	            // (bool | optional) if you want it to fade out on its own or just sit there
-	            sticky: true
+	            sticky: false
 	        });
 		}
 	};
@@ -304,12 +304,12 @@ function devicePlottingClass_gmap() {
 									counter = Math.floor(devicesCount / showLimit);
 								}
 
-								/*If cluster icon exist then save it to global variable else make the global variable blank*/
-								if(devicesObject.data.objects.data.unspiderfy_icon == undefined) {
-									clusterIcon = "";
-								} else {
-									clusterIcon = window.location.origin+"/"+devicesObject.data.objects.data.unspiderfy_icon;
-								}
+//								/*If cluster icon exist then save it to global variable else make the global variable blank*/
+//								if(devicesObject.data.objects.data.unspiderfy_icon == undefined) {
+//									clusterIcon = "";
+//								} else {
+//									clusterIcon = window.location.origin+"/"+devicesObject.data.objects.data.unspiderfy_icon;
+//								}
 
 								/*Check that any advance filter is applied or not*/
 								if(appliedAdvFilter.length <= 0) {
@@ -341,13 +341,19 @@ function devicePlottingClass_gmap() {
 								},1000);
 								
 							} else {
+
+                                /*Cluster options object*/
+                                var clusterOptions = {gridSize: 70, maxZoom: 8};
+                                /*Add the master markers to the cluster MarkerCluster object*/
+                                masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
+
 								$.gritter.add({
 						            // (string | mandatory) the heading of the notification
 						            title: 'GIS',
 						            // (string | mandatory) the text inside the notification
 						            text: 'Device Loading Completed',
 						            // (bool | optional) if you want it to fade out on its own or just sit there
-						            sticky: true
+						            sticky: false
 						        });
 
 						        /*Recall the server after particular timeout if system is not freezed*/
@@ -364,13 +370,20 @@ function devicePlottingClass_gmap() {
 
 						} else {
 
+
+                            /*Cluster options object*/
+                            var clusterOptions = {gridSize: 70, maxZoom: 8};
+                            /*Add the master markers to the cluster MarkerCluster object*/
+                            masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
+
+
 							$.gritter.add({
 					            // (string | mandatory) the heading of the notification
 					            title: 'GIS',
 					            // (string | mandatory) the text inside the notification
 					            text: 'Device Loading Completed',
 					            // (bool | optional) if you want it to fade out on its own or just sit there
-					            sticky: true
+					            sticky: false
 					        });
 
 							/*Recall the server after particular timeout if system is not freezed*/
@@ -389,13 +402,21 @@ function devicePlottingClass_gmap() {
 
 						isCallCompleted = 1;
 
+
+                        /*Cluster options object*/
+                        var clusterOptions = {gridSize: 70, maxZoom: 8};
+                        /*Add the master markers to the cluster MarkerCluster object*/
+                        masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
+
+
+
 						$.gritter.add({
 				            // (string | mandatory) the heading of the notification
 				            title: 'GIS',
 				            // (string | mandatory) the text inside the notification
 				            text: result.message,
 				            // (bool | optional) if you want it to fade out on its own or just sit there
-				            sticky: true
+				            sticky: false
 				        });
 				        
 				        /*Hide The loading Icon*/
@@ -421,7 +442,7 @@ function devicePlottingClass_gmap() {
 			            // (string | mandatory) the text inside the notification
 			            text: err.statusText,
 			            // (bool | optional) if you want it to fade out on its own or just sit there
-			            sticky: true
+			            sticky: false
 			        });
 					/*Recall the server after particular timeout if system is not freezed*/
 					/*Hide The loading Icon*/
@@ -687,11 +708,6 @@ function devicePlottingClass_gmap() {
 				masterMarkersObj.splice(k, 1);
 			}
 		}
-
-		/*Cluster options object*/
-		var clusterOptions = {gridSize: 70, maxZoom: 8};
-		/*Add the master markers to the cluster MarkerCluster object*/
-		masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
 
 		if(isCallCompleted == 1) {
 
@@ -1716,7 +1732,7 @@ function devicePlottingClass_gmap() {
 		            // (string | mandatory) the text inside the notification
 		            text: err.statusText,
 		            // (bool | optional) if you want it to fade out on its own or just sit there
-		            sticky: true
+		            sticky: false
 		        });
 				// console.log(err);
 			}
@@ -1843,7 +1859,7 @@ function devicePlottingClass_gmap() {
 		            // (string | mandatory) the text inside the notification
 		            text: "User Don't Have Any Devies For Selected Filters",
 		            // (bool | optional) if you want it to fade out on its own or just sit there
-		            sticky: true
+		            sticky: false
 		        });
 
 	 			/*Reset the markers, polyline & filters*/
@@ -2121,7 +2137,7 @@ function devicePlottingClass_gmap() {
 						            // (string | mandatory) the text inside the notification
 						            text: result.message,
 						            // (bool | optional) if you want it to fade out on its own or just sit there
-						            sticky: true
+						            sticky: false
 						        });
 						        /*Hide the spinner*/
 								$("#sideInfoContainer .panel-title i").addClass("hide");
@@ -2135,7 +2151,7 @@ function devicePlottingClass_gmap() {
 					            // (string | mandatory) the text inside the notification
 					            text: err.statusText,
 					            // (bool | optional) if you want it to fade out on its own or just sit there
-					            sticky: true
+					            sticky: false
 					        });
 					        /*Hide the spinner*/
 							$("#sideInfoContainer .panel-title i").addClass("hide");
@@ -2363,7 +2379,7 @@ function devicePlottingClass_gmap() {
 				            // (string | mandatory) the text inside the notification
 				            text: result.message,
 				            // (bool | optional) if you want it to fade out on its own or just sit there
-				            sticky: true
+				            sticky: false
 				        });
 					}
 				},
@@ -2381,7 +2397,7 @@ function devicePlottingClass_gmap() {
 			            // (string | mandatory) the text inside the notification
 			            text: err.statusText,
 			            // (bool | optional) if you want it to fade out on its own or just sit there
-			            sticky: true
+			            sticky: false
 			        });
 				}
 			});
@@ -2394,7 +2410,7 @@ function devicePlottingClass_gmap() {
 	            // (string | mandatory) the text inside the notification
 	            text: "Service & Service Datasource selection is mandatory.",
 	            // (bool | optional) if you want it to fade out on its own or just sit there
-	            sticky: true
+	            sticky: false
 	        });
 		} // End else Statement
 	};
