@@ -1100,14 +1100,20 @@ class SingleDeviceAlertDetails(View):
                     worksheet.write(row, column, data_list[row][required_columns[column]], style=style)
 
             response= HttpResponse(mimetype= 'application/vnd.ms-excel', content_type='text/plain')
-            response['Content-Disposition'] = 'attachment; filename=alert_report_{0}.xls'.format(device_name)
+            start_date_string=datetime.datetime.fromtimestamp(float(start_date)).strftime("%d/%B/%Y")
+            end_date_string=datetime.datetime.fromtimestamp(float(end_date)  ).strftime("%d/%B/%Y")
+            response['Content-Disposition'] = 'attachment; filename=alert_report_{0}_{1}_to_{2}.xls'\
+                .format(device_name, start_date_string, end_date_string)
             workbook.save(response)
             return response
 
         elif download_csv:
 
             response = HttpResponse(content_type='text/csv')
-            response['Content-Disposition'] = 'attachment; filename="alert_report_{0}.csv"'.format(device_name)
+            start_date_string= datetime.datetime.fromtimestamp(float(start_date)).strftime("%d/%B/%Y")
+            end_date_string= datetime.datetime.fromtimestamp(float(end_date)  ).strftime("%d/%B/%Y")
+            response['Content-Disposition'] = 'attachment; filename=alert_report_{0}_{1}_to_{2}.csv'\
+                .format(device_name, start_date_string, end_date_string )
 
             writer = csv.writer(response)
             headers= map(lambda x:x.replace('_',' ') , required_columns )
