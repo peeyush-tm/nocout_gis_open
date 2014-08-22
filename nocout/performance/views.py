@@ -24,10 +24,10 @@ import logging
 log = logging.getLogger(__name__)
 
 SERVICE_DATA_SOURCE = {
-    "uas": {"type": "spline", "valuesuffix": "seconds", "valuetext": "Seconds"},
+    "uas": {"type": "area", "valuesuffix": "seconds", "valuetext": "Seconds"},
     "rssi": {"type": "column", "valuesuffix": "dB", "valuetext": "dB"},
-    "uptime": {"type": "spline", "valuesuffix": "ms", "valuetext": "milliseconds"},
-    "rta": {"type": "spline", "valuesuffix": "ms", "valuetext": "ms"},
+    "uptime": {"type": "area", "valuesuffix": "ms", "valuetext": "milliseconds"},
+    "rta": {"type": "area", "valuesuffix": "ms", "valuetext": "ms"},
     "pl": {"type": "column", "valuesuffix": "%", "valuetext": "Percentage (%)"},
     }
 
@@ -860,12 +860,12 @@ class Get_Service_Type_Performance_Data(View):
                     aggregate_data[temp_time] = data.sys_timestamp
                     self.result['data']['objects']['type'] = SERVICE_DATA_SOURCE[str(data.data_source).lower()][
                         "type"] if \
-                        data.data_source in SERVICE_DATA_SOURCE else "spline"
+                        data.data_source in SERVICE_DATA_SOURCE else "area"
 
                     self.result['data']['objects']['valuesuffix'] = \
                         SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"] \
                             if data.data_source in SERVICE_DATA_SOURCE \
-                            else "spline"
+                            else "area"
 
                     self.result['data']['objects']['valuesuffix'] = \
                         SERVICE_DATA_SOURCE[str(data.data_source).lower()]["valuesuffix"] \
@@ -890,14 +890,14 @@ class Get_Service_Type_Performance_Data(View):
 
                     ###to draw each data point w.r.t threshold we would need to use the following
 
-                    compare_point = lambda p1, p2, p3: '#70AFC4' if abs(p1) < abs(p2) \
+                    compare_point = lambda p1, p2, p3: '#70AFC4' \
+                        if abs(p1) < abs(p2) \
                         else ('#FFE90D'
                               if abs(p2) < abs(p1) < abs(p3)
-                              else ('#FF193B'
-                                    # if abs(p3) < abs(p1)
-                                    # else "#70AFC4"
-                    )
-                    )
+                              else ('#FF193B' if abs(p3) < abs(p1)
+                                            else "#70AFC4"
+                                    )
+                            )
 
                     if data.avg_value:
                         formatter_data_point = {
@@ -934,12 +934,18 @@ class Get_Service_Type_Performance_Data(View):
                                                                     {'name': str("warning threshold").title(),
                                                                      'color': '#FFE90D',
                                                                      'data': warn_data_list,
-                                                                     'type': 'line'
+                                                                     'type': 'line',
+                                                                     'marker' : {
+                                                                         'enabled': False
+                                                                     }
                                                                     },
                                                                     {'name': str("critical threshold").title(),
                                                                      'color': '#FF193B',
                                                                      'data': crit_data_list,
-                                                                     'type': 'line'
+                                                                     'type': 'line',
+                                                                     'marker' : {
+                                                                         'enabled': False
+                                                                     }
                                                                     }
                     ]
 

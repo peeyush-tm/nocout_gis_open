@@ -1,0 +1,19 @@
+
+*/5 * * * * /usr/bin/python nocout/performance/service/rrd_main.py >> /tmp/nocout_da/pub_slave_1/service/rrd_main.log 2>&1
+7-59/5 * * * * /usr/bin/python nocout/performance/service/migrations.py >> /tmp/nocout_da/pub_slave_1/service/migrations.log 2>&1
+7-59/5 * * * * /usr/bin/python nocout/status/service/service_status_migrations.py >> /tmp/nocout_da/pub_slave_1/service/service_status_migrations.log 2>&1
+
+0 * * * * /usr/bin/python nocout/performance/interface/interface_rrd_migration.py >> /tmp/nocout_da/pub_slave_1/interface/interface_rrd_migration.log 2>&1
+1 * * * * /usr/bin/python nocout/performance/interface/interface_migrations.py >> /tmp/nocout_da/pub_slave_1/interface/interface_migrations.log 2>&1
+1 * * * * /usr/bin/python nocout/status/interface/interface_status_migrations.py >> /tmp/nocout_da/pub_slave_1/interface/interface_status_migrations.log 2>&1
+
+
+*/1 * * * * /usr/bin/python nocout/events/events_rrd_migration.py >> /tmp/nocout_da/pub_slave_1/events/events_rrd_migration.log 2>&1
+*/2 * * * * /usr/bin/python nocout/events/events_migrations.py >> /tmp/nocout_da/pub_slave_1/events/events_migrations.log 2>&1
+
+
+30 23 * * * /usr/bin/python nocout/performance/inventory/inventory_rrd_migration.py >> /tmp/nocout_da/pub_slave_1/inventory/inventory_rrd_migration.log 2>&1
+31 23 * * * /usr/bin/python nocout/performance/inventory/inventory_migrations.py >> /tmp/nocout_da/pub_slave_1/inventory/inventory_migrations.log 2>&1
+31 23 * * * /usr/bin/python nocout/status/inventory/inventory_status_migrations.py >> /tmp/nocout_da/pub_slave_1/inventory/inventory_status_migrations.log 2>&1
+
+

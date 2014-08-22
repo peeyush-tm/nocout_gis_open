@@ -37,7 +37,7 @@ def get_config_file(conf_file=None):
 	Reads the appropriate config.ini file from conf.d/,
 	based on poller slave site name
 	"""
-	config_file_list = os.listdir('/opt/omd/sites/%s/nocout/conf.d' % nocout_site_name)
+	config_file_list = os.listdir('/omd/sites/%s/nocout/conf.d' % nocout_site_name)
 	conf_file = filter(lambda x: x[:-4] in nocout_site_name, config_file_list)
 
         return conf_file[0] if conf_file else None
