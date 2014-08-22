@@ -14,8 +14,6 @@ from device.models import Device, DeviceType, DeviceVendor, \
     DeviceTechnology, City, State
 from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 from nocout.utils import logged_in_user_organizations
-from site_instance.models import SiteInstance
-
 logger = logging.getLogger(__name__)
 
 # removing duplicate entries in the dictionaries in a list
@@ -152,7 +150,7 @@ class DeviceGetFilters(View):
 
 
                 except Exception as e:
-                    logger.info(e.message + 'for base station id: %s' % (str(base_station_id)))
+                    logger.info(e.message + 'for base station id: %s' % (str(base_station_id)), exc_info=True)
 
         #removing duplicate values for the bs_city, bs_state and bs_technology
         bs_state['values'] = removing_duplicate_entries(bs_state['values'])
@@ -254,7 +252,7 @@ def filter_gis_map(request_query):
                     base_station_info = prepare_result(base_station_id)
                     result_list.append(base_station_info)
                 except Exception as e:
-                    logger.error("SetFilters API Error Message: %s" % (e.message))
+                    logger.error("SetFilters API Error Message: %s" % (e.message), exc_info=True)
                     pass
 
         if circuit_ids:
@@ -265,7 +263,7 @@ def filter_gis_map(request_query):
                     base_station_info = prepare_result(base_station_id)
                     result_list.append(base_station_info)
                 except Exception as e:
-                    logger.error("SetFilters API Error Message: %s" % (e.message))
+                    logger.error("SetFilters API Error Message: %s" % (e.message), exc_info=True)
                     pass
 
     return result_list
@@ -412,8 +410,7 @@ def prepare_result(base_station_id):
                                                                           'name': 'site_name',
                                                                           'title': 'Site Name',
                                                                           'show': 1,
-                                                                          'value': SiteInstance.objects.get(id=int(base_station.bs_site_id)).name \
-                                                                              if base_station.bs_site_id and SiteInstance.objects.filter(id=int(base_station.bs_site_id)) else 'N/A'
+                                                                          'value': base_station.bs_site_id  if base_station.bs_site_id else 'N/A'
                                                                       },
                                                                       {
                                                                           'name': 'site_type',
@@ -645,11 +642,11 @@ def prepare_result(base_station_id):
             if substation_device.device_technology == DeviceTechnology.objects.get(name='WiMAX').id:
                 substation_list[0]['data']['param']['sub_station']+=[
                     {
-                        'name': 'dl_cnir_rssi_during_acceptance',
-                        'title': 'DL CNIR RSSI During Acceptance',
+                        'name': 'dl_cinr_during_acceptance',
+                        'title': 'DL CINR RSSI During Acceptance',
                         'show': 1,
-                        'value': substation.circuit_set.values_list('dl_cnir_rssi_during_acceptance', flat=True)[0] \
-                            if substation.circuit_set.values_list('dl_cnir_rssi_during_acceptance', flat=True)[0] else 'N/A'
+                        'value': substation.circuit_set.values_list('dl_cinr_during_acceptance', flat=True)[0] \
+                            if substation.circuit_set.values_list('dl_cinr_during_acceptance', flat=True)[0] else 'N/A'
                     }]
 
             elif substation_device.device_technology == DeviceTechnology.objects.get(name='PMP').id:
