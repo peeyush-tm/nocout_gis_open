@@ -179,29 +179,31 @@ class GetCustomerAlertDetail(BaseDatatableView):
         for data in performance_data:
                 for device in machine_device_list:
                     if device == data.device_name:
-                        device_substation = SubStation.objects.get(device__device_name=device)
-                        try:
-                            #try exception if the device does not have any association with the circuit
-                            device_substation_base_station= Circuit.objects.get(sub_station__id= device_substation.id).sector.base_station
-                            device_substation_base_station_name= device_substation_base_station.name
-                        except:
-                            device_substation_base_station_name='N/A'
-                        device_events = {
-                            'device_name': device,
-                            'severity': data.severity,
-                            'ip_address': Device.objects.get(device_name=device).ip_address,
-                            'sub_station': device_substation.name,
-                            'sub_station__city': City.objects.get(id=device_substation.city).city_name,
-                            'sub_station__state': State.objects.get(id=device_substation.state).state_name,
-                            'base_station':device_substation_base_station_name,
-                            'data_source_name': data.data_source,
-                            'current_value': data.current_value,
-                            'sys_time':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%I:%M:%S %p"),
-                            'sys_date':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%d/%B/%Y"),
-                            'sys_timestamp':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                            'description':data.description
-                        }
-                        device_list.append(device_events)
+                        substation = SubStation.objects.filter(device__device_name=device)
+                        if len(substation):
+                            device_substation = substation[0]
+                            try:
+                                #try exception if the device does not have any association with the circuit
+                                device_substation_base_station= Circuit.objects.get(sub_station__id= device_substation.id).sector.base_station
+                                device_substation_base_station_name= device_substation_base_station.name
+                            except:
+                                device_substation_base_station_name='N/A'
+                            device_events = {
+                                'device_name': device,
+                                'severity': data.severity,
+                                'ip_address': Device.objects.get(device_name=device).ip_address,
+                                'sub_station': device_substation.name,
+                                'sub_station__city': City.objects.get(id=device_substation.city).city_name,
+                                'sub_station__state': State.objects.get(id=device_substation.state).state_name,
+                                'base_station':device_substation_base_station_name,
+                                'data_source_name': data.data_source,
+                                'current_value': data.current_value,
+                                'sys_time':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%I:%M:%S %p"),
+                                'sys_date':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%d/%B/%Y"),
+                                'sys_timestamp':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                                'description':data.description
+                            }
+                            device_list.append(device_events)
                     else:
                         continue
 
