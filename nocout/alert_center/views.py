@@ -671,23 +671,27 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                                  data.device_name).id)
                     if len(sector):
                         device_base_station= sector[0].base_station
-                        ddata = {
-                                'device_name':data.device_name,
-                                'severity':data.severity,
-                                'ip_address':data.ip_address,
-                                'base_station':device_base_station.name,
-                                'base_station__city':City.objects.get(id= device_base_station.city).city_name,
-                                'base_station__state':State.objects.get(id= device_base_station.state).state_name,
-                                'current_value':data.current_value,
-                                'sys_time':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%I:%M:%S %p"),
-                                'sys_date':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%d/%B/%Y"),
-                                'sys_timestamp':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                                'description':data.description
-                                }
-                        #If service tab is requested then add an another key:data_source_name to render in the data table.
-                        if 'service' in self.request.path_info:
-                            ddata.update({'data_source_name': data.data_source })
-                    device_data.append(ddata)
+                        #only display warning or critical devices
+                        if data.severity in ['DOWN', 'CRITICAL', 'WARNING', 'UNKNOWN'] or \
+                                'WARN' in data.description or \
+                                'CRIT' in data.description:
+                            ddata = {
+                                    'device_name':data.device_name,
+                                    'severity':data.severity,
+                                    'ip_address':data.ip_address,
+                                    'base_station':device_base_station.name,
+                                    'base_station__city':City.objects.get(id= device_base_station.city).city_name,
+                                    'base_station__state':State.objects.get(id= device_base_station.state).state_name,
+                                    'current_value':data.current_value,
+                                    'sys_time':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%I:%M:%S %p"),
+                                    'sys_date':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%d/%B/%Y"),
+                                    'sys_timestamp':datetime.datetime.fromtimestamp(float( data.sys_timestamp )).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                                    'description':data.description
+                                    }
+                            #If service tab is requested then add an another key:data_source_name to render in the data table.
+                            if 'service' in self.request.path_info:
+                                ddata.update({'data_source_name': data.data_source })
+                            device_data.append(ddata)
         if device_data:
             sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
             return sorted_device_data
@@ -895,19 +899,23 @@ class CustomerAlertListingTable(BaseDatatableView):
                                     device_substation_base_station_name= device_substation_base_station.name
                                 except:
                                     device_substation_base_station_name='N/A'
-                                device_events = {
-                                    'device_name': device,
-                                    'severity': data.severity,
-                                    'ip_address': Device.objects.get(device_name=device).ip_address,
-                                    'sub_station': device_substation.name,
-                                    'sub_station__city': City.objects.get(id=device_substation.city).city_name,
-                                    'sub_station__state': State.objects.get(id=device_substation.state).state_name,
-                                    'base_station':device_substation_base_station_name,
-                                    'current_value': data.current_value,
-                                    'sys_timestamp': str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
-                                    'description':data.description
-                                }
-                                device_list.append(device_events)
+                                #only display warning or critical devices
+                                if data.severity in ['DOWN', 'CRITICAL', 'WARNING', 'UNKNOWN'] or \
+                                    'WARN' in data.description or \
+                                    'CRIT' in data.description:
+                                    device_events = {
+                                        'device_name': device,
+                                        'severity': data.severity,
+                                        'ip_address': Device.objects.get(device_name=device).ip_address,
+                                        'sub_station': device_substation.name,
+                                        'sub_station__city': City.objects.get(id=device_substation.city).city_name,
+                                        'sub_station__state': State.objects.get(id=device_substation.state).state_name,
+                                        'base_station':device_substation_base_station_name,
+                                        'current_value': data.current_value,
+                                        'sys_timestamp': str(datetime.datetime.fromtimestamp(float( data.sys_timestamp ))),
+                                        'description':data.description
+                                    }
+                                    device_list.append(device_events)
                         else:
                             continue
                 sorted_device_list = sorted(device_list, key=itemgetter('sys_timestamp'), reverse=True)
