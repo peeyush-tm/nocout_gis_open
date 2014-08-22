@@ -22,7 +22,7 @@ import time
 
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
-config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/cofigparser.py')
+config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
 def main(**configs):
     """
