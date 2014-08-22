@@ -1134,7 +1134,7 @@ class SingleDeviceAlertDetails(View):
                           table_header= required_columns,
                           service_name= service_name,
                           start_date_object= start_date_object,
-                          end_date_object= start_date_object,
+                          end_date_object= end_date_object,
                          )
 
             return render(request, 'alert_center/single_device_alert.html', context )
