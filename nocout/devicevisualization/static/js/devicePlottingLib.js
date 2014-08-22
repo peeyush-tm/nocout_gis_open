@@ -189,12 +189,14 @@ function devicePlottingClass_gmap() {
 				for(var i=0;i<e.length;i++) {
 					e[i].setOptions({"icon":e[i].oldIcon});
 				}
-
+                //freeze the map when spiderified
+                isFreeze = 1;
 				infowindow.close();
 			});
 			/*Event when markers cluster is collapsed or unspiderify*/
 			oms.addListener('unspiderfy', function(e,markers) {
-
+                //un freeze the map when in normal state
+                isFreeze = 0;
 				var latArray = [],
 					lonArray = [];
 
