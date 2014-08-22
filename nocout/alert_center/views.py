@@ -1056,7 +1056,10 @@ class SingleDeviceAlertDetails(View):
             end_date = format(end_date_object, 'U')
             start_date = format(start_date_object, 'U')
 
-        device_name = Device.objects.get(id=device_id).device_name
+        device_obj = Device.objects.get(id=device_id)
+        device_name = device_obj.device_name
+        machine_name =  device_obj.machine.name
+
         data_list = None
         required_columns = ["device_name", "ip_address", "service_name", "data_source",
                             "severity", "current_value", "sys_timestamp", "description"]
@@ -1067,7 +1070,7 @@ class SingleDeviceAlertDetails(View):
                        sys_timestamp__gte=start_date,
                        sys_timestamp__lte=end_date). \
                 order_by("-sys_timestamp"). \
-                values(*required_columns)
+                values(*required_columns).using(alias=machine_name)
 
         elif service_name == 'packetdrop' or service_name == 'packet_drop':
             data_list = EventNetwork.objects. \
@@ -1076,7 +1079,7 @@ class SingleDeviceAlertDetails(View):
                        sys_timestamp__gte=start_date,
                        sys_timestamp__lte=end_date). \
                 order_by("-sys_timestamp"). \
-                values(*required_columns)
+                values(*required_columns).using(alias=machine_name)
 
         elif service_name == 'down':
             data_list = EventNetwork.objects. \
@@ -1087,7 +1090,7 @@ class SingleDeviceAlertDetails(View):
                        sys_timestamp__gte=start_date,
                        sys_timestamp__lte=end_date). \
                 order_by("-sys_timestamp"). \
-                values(*required_columns)
+                values(*required_columns).using(alias=machine_name)
 
         elif service_name == 'service':
             data_list = EventService.objects. \
@@ -1095,7 +1098,7 @@ class SingleDeviceAlertDetails(View):
                        sys_timestamp__gte=start_date,
                        sys_timestamp__lte=end_date). \
                 order_by("-sys_timestamp"). \
-                values(*required_columns)
+                values(*required_columns).using(alias=machine_name)
 
         required_columns = [
             "device_name",
