@@ -1,0 +1,72 @@
+#!/usr/bin/python
+
+"""
+Poller script for jitter value in downlink for SS type cambium devices.
+
+Poller script determines the jitter value.
+poller script takes the snmp value of OID 1.3.6.1.4.1.161.19.3.2.2.3.0 from snmp agent of device at specific interval.
+Information of ss type cambium device is sent to device application 
+
+"""
+# #############################################################
+# Function :  check_cambium_jitter_dl
+#
+# Parameters : info(SNMP output of OID ) _no_params (Currently no params supported )
+#
+# Output  :  service state , Plugin output and performace data
+#############################################################
+
+
+def check_cambium_jitter_dl(item, _no_params, info):
+    """
+                check_cambium_jitter_dl function calculates the downlink jitter
+
+                Args:
+                        item (str) Specific item on SNMP output on which we want to filter results
+                
+                Kwargs:
+                        params (tuple) Check parameters for critical and warning state of service
+
+                Returns:
+                        state (int) :
+                                        0 : OK
+                                        1 : Warning
+                                        2: Critical
+                    3: unknown
+                        infotext(string):
+                                        plugin output
+                                        Example : jitter_dl is 0
+
+                        performance_data  (list):
+                                        performance data
+                                        Example: jitter_dl=0;;;;
+                        Raises:
+                                ValueError ,Exception
+    """
+    state = 3
+    jitter_dl = None
+    infotext = "unknown output"
+    try:
+        if info:
+            if info[0][0]:
+                jitter_dl = info[0][0]
+                state = 0
+                infotext = "Jitter DL is %d " % jitter_dl
+    except ValueError:
+        infotext = "type mismatch on value"
+    except:
+        infotext = "unknown value"
+    return (state, infotext, [("jitter_dl", saveint(jitter_dl))])
+
+
+check_info["cambium_jitter_dl"] = {
+'check_function': check_cambium_jitter_dl,
+'service_description': 'cambium_jitter_dl',
+'has_perfdata': True,
+}
+
+##############################################################
+# SNMP OID
+#############################################################
+snmp_info["cambium_jitter_dl"] = ( "1.3.6.1.4.1.161.19.3.2.2", ["3.0"] )
+
