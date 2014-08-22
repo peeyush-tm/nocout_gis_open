@@ -771,7 +771,10 @@ class Get_Service_Type_Performance_Data(View):
                     worksheet.write(row, column, table_data[row-1][ table_header[column].lower() ], style=style)
 
             response= HttpResponse(mimetype= 'application/vnd.ms-excel', content_type='text/plain')
-            response['Content-Disposition'] = 'attachment; filename=alert_report_{0}.xls'.format(inventory_device_name)
+            start_date_string=datetime.datetime.fromtimestamp(float(start_date)).strftime("%d/%B/%Y")
+            end_date_string=datetime.datetime.fromtimestamp(float(end_date)  ).strftime("%d/%B/%Y")
+            response['Content-Disposition'] = 'attachment; filename=performance_report_{0}_{1}_to_{2}.xls'\
+                .format( inventory_device_name, start_date_string, end_date_string )
             workbook.save(response)
             return response
 
@@ -779,7 +782,10 @@ class Get_Service_Type_Performance_Data(View):
 
             table_data, table_header=self.return_table_header_and_table_data(service_name, result)
             response = HttpResponse(content_type='text/csv')
-            response['Content-Disposition'] = 'attachment; filename="alert_report_{0}.csv"'.format(inventory_device_name)
+            start_date_string=datetime.datetime.fromtimestamp(float(start_date)).strftime("%d/%B/%Y")
+            end_date_string=datetime.datetime.fromtimestamp(float(end_date)  ).strftime("%d/%B/%Y")
+            response['Content-Disposition'] = 'attachment; filename="performance_report_{0}_{1}_to_{2}.xls"'\
+                .format(inventory_device_name, start_date_string, end_date_string)
 
             writer = csv.writer(response)
             writer.writerow(table_header)
