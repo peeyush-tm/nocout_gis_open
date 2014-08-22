@@ -715,8 +715,9 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
             for dct in qs:
                 device_id= Device.objects.get(device_name=dct['device_name']).id
-                dct.update(action='<a href="/alert_center/network/device/{0}/service_tab/{1}/"><i class="fa fa-list-alt text-info"></i></a>'\
-                           .format( device_id, service_tab_name ))
+                dct.update(action='<a href="/alert_center/network/device/{0}/service_tab/{1}/"><i class="fa fa-list-alt text-info"></i></a>\
+                                   <a href="/performance/network_live/{0}/"><i class="fa fa-bar-chart-o"></i></a>\
+                                   <a href="/device/{0}"><i class="fa fa-archive"></i></a>'.format( device_id, service_tab_name ))
 
         return common_prepare_results(qs)
 
@@ -929,9 +930,11 @@ class CustomerAlertListingTable(BaseDatatableView):
                 service_tab='packet_drop'
 
             for dct in qs:
-                device_id= Device.objects.get(device_name=dct['device_name']).id
-                dct.update(action='<a href="/alert_center/customer/device/{0}/service_tab/{1}/"><i class="fa fa-list-alt text-info"></i></a>'\
-                           .format( device_id, service_tab ))
+                device= Device.objects.get(device_name= dct['device_name'])
+                dct.update(action='<a href="/alert_center/customer/device/{0}/service_tab/{1}/"><i class="fa fa-list-alt text-info"></i></a>\
+                                   <a href="/performance/customer_live/{2}/"><i class="fa fa-bar-chart-o"></i></a>\
+                                   <a href="/device/{0}"><i class="fa fa-archive"></i></a>'.format( device.id, service_tab,
+                                                                               device.substation_set.values()[0]['id'] ))
 
         return common_prepare_results(qs)
 
