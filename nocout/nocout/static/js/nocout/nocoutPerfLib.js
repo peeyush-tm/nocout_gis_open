@@ -273,6 +273,7 @@ $.urlParam = function(name){
                     else{
                         $('#'+service_id+'_chart').highcharts({
                             chart: {
+                                zoomType: 'x',
                                 type: single_service_data.type
     //                            events:{
     //                                load: Highcharts.drawTable //@TODO: here in we need to draw canvas table with data table data
@@ -293,6 +294,7 @@ $.urlParam = function(name){
                             tooltip: {
                                 pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
                                 shared: true,
+                                crosshairs: true,
                                 valueSuffix: single_service_data.valuesuffix
                             },
                             xAxis: {
@@ -300,12 +302,17 @@ $.urlParam = function(name){
                                     text: "time"
                                 },
                                 type: 'datetime',
+                                minRange: 3600000,
                                 dateTimeLabelFormats: {
+                                    millisecond: '%H:%M:%S.%L',
+                                    second: '%H:%M:%S',
+                                    minute: '%H:%M',
+                                    hour: '%H:%M',
                                     day: '%e. %b',
+                                    week: '%e. %b',
                                     month: '%b \'%y',
                                     year: '%Y'
-                                },
-                                tickPixelInterval: 120
+                                }
                             },
                             yAxis: {
                               title: {
