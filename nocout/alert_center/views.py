@@ -134,8 +134,10 @@ class GetCustomerAlertDetail(BaseDatatableView):
             organization_devices += Device.objects.filter(is_added_to_nms=1, organization__id=organization.id)
         # get the devices in an organisation which are added for monitoring
 
-        organization_substations_devices = [{'device_name': device.device_name, 'machine_name': device.machine.name} \
-                                            for device in organization_devices if device.substation_set.exists()]
+        organization_substations_devices = [{'device_name': device.device_name,
+                                             'machine_name': device.machine.name}
+                                            for device in organization_devices if device.substation_set.exists()
+        ]
 
         required_data_columns = ["id",
                                  "ip_address",
