@@ -16,4 +16,4 @@
 31 23 * * * /usr/bin/python nocout/performance/inventory/inventory_migrations.py >> /tmp/nocout_da/ospf4_slave_1/inventory/inventory_migrations.log 2>&1
 31 23 * * * /usr/bin/python nocout/status/inventory/inventory_status_migrations.py >> /tmp/nocout_da/ospf4_slave_1/inventory/inventory_status_migrations.log 2>&1
 
-
+0 0 1 * * /usr/bin/python nocout/utils/mongodb_clean_migration.py >> /tmp/nocout_da/ospf4_slave_1/mongodb_clean.log 2>&1
