@@ -68,9 +68,13 @@
     {% endblock %}
     <script>
         $(document).ready(function () {
+            // Changing labels of form fields
+            $("label[for=id_bs_sheet]").text('BS Sheet');
+            $("label[for=id_ss_sheet]").text('SS Sheet');
+            $("label[for=id_ptp_sheet]").text('PTP Sheet');
+
             // modify image upload field
             var image_uploader = "#id_file_upload";
-            var id_gt_warning = "#id_gt_warning";
             $(image_uploader).bootstrapFileInput();
             $(image_uploader).prev().text("Upload file");
             // Initialize the select2 selectbox.
@@ -79,24 +83,53 @@
                 placement: 'right',
                 trigger: 'focus'
             });
-            $("#id_sheet").empty().append('<option value="">Select</option>');
+            $("#id_bs_sheet").empty().append('<option value="">Select</option>');
+            $("#id_ss_sheet").empty().append('<option value="">Select</option>');
+            $("#id_ptp_sheet").empty().append('<option value="">Select</option>');
         });
         $("#id_file_upload").change(function (event) {
             var file = this.files[0], sheets;
             XLSXReader(file, true, function (xlsxData) {
                 sheets = xlsxData.sheets;
-                console.log(sheets)
+                console.log(sheets);
                 sheets_options = '<option value="">Select</option>';
                 var arr = [];
                 for (var key in sheets) {
-                    arr.push((key));
+                    arr.push(key);
                 }
                 sheets_array = arr.reverse();
                 for (var i = 0; i < sheets_array.length; i++) {
-                    sheets_options += '<option value="' + parseInt(i) + '">' + sheets_array[i] + '</option>';
+                    // sheets_options += '<option value="' + parseInt(i) + '">' + sheets_array[i] + '</option>';
+                    sheets_options += '<option value="' + sheets_array[i] + '">' + sheets_array[i] + '</option>';
                 }
-                $("#id_sheet").empty().append(sheets_options);
+                $("#id_bs_sheet").empty().append(sheets_options);
+                $("#id_ss_sheet").empty().append(sheets_options);
+                $("#id_ptp_sheet").empty().append(sheets_options);
             });
+        });
+
+        // reset 'PTP' select menu if either of 'BS' or 'SS' has value (i.e. selected value)
+        $("#id_ss_sheet").change(function () {
+            if ($("#id_ss_sheet").val()) {
+                $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
+                $("#id_ptp_sheet").prop('selectedIndex',0);
+            }
+        });
+        $("#id_bs_sheet").change(function () {
+            if ($("#id_bs_sheet").val()) {
+                $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
+                $("#id_ptp_sheet").prop('selectedIndex',0);
+            }
+        });
+
+        // reset 'BS' and 'SS' select menu if 'PTP' has value (i.e. selected value)
+        $("#id_ptp_sheet").change(function () {
+            if ($("#id_ptp_sheet").val()) {
+                $("#s2id_id_bs_sheet").find(".select2-chosen").text('Select');
+                $("#s2id_id_ss_sheet").find(".select2-chosen").text('Select');
+                $("#id_bs_sheet").prop('selectedIndex',0);
+                $("#id_ss_sheet").prop('selectedIndex',0);
+            }
         });
     </script>
 {% endblock %}
