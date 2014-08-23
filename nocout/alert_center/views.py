@@ -162,15 +162,15 @@ class GetCustomerAlertDetail(BaseDatatableView):
 
         for machine, machine_device_list in machine_dict.items():
 
-            data_sources_list = ['rta', 'pl']
-
-            device_data += self.collective_query_result(
-                machine = machine,
-                table_name = "performance_eventnetwork",
-                devices = machine_device_list,
-                data_sources = data_sources_list,
-                columns = required_data_columns
-            )
+            # data_sources_list = ['rta', 'pl']
+            #
+            # device_data += self.collective_query_result(
+            #     machine = machine,
+            #     table_name = "performance_eventnetwork",
+            #     devices = machine_device_list,
+            #     data_sources = data_sources_list,
+            #     columns = required_data_columns
+            # )
 
             data_sources_list = []
             device_data += self.collective_query_result(
@@ -394,15 +394,15 @@ class GetNetworkAlertDetail(BaseDatatableView):
         #Fetching the data for the device w.r.t to their machine.
         for machine, machine_device_list in machine_dict.items():
 
-            data_sources_list = ['rta', 'pl']
-
-            device_data += self.collective_query_result(
-                machine = machine,
-                table_name = "performance_eventnetwork",
-                devices = machine_device_list,
-                data_sources = data_sources_list,
-                columns = required_data_columns
-            )
+            # data_sources_list = ['rta', 'pl']
+            #
+            # device_data += self.collective_query_result(
+            #     machine = machine,
+            #     table_name = "performance_eventnetwork",
+            #     devices = machine_device_list,
+            #     data_sources = data_sources_list,
+            #     columns = required_data_columns
+            # )
 
             data_sources_list = []
             device_data += self.collective_query_result(
