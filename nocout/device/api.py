@@ -1,4 +1,4 @@
-import ast
+import ast, sys
 import json, logging
 import urllib
 from django.db.models import Q, Count
@@ -23,7 +23,7 @@ class DeviceStatsApi(View):
 
         self.result = {
             "success": 0,
-            "message": "No Device Data",
+            "message": "Device Loading Completed",
             "data": {
                 "meta": {},
                 "objects": None
@@ -62,7 +62,7 @@ class DeviceStatsApi(View):
                                 base_station_info= prepare_result(base_station_id)
                                 self.result['data']['objects']['children'].append(base_station_info)
                             except Exception as e:
-                                logger.error("API Error Message: %s"%(e.message))
+                                logger.error("API Error Message: %s"%(e.message), exc_info=True)
                                 pass
                     self.result['message']='Data Fetched Successfully.'
                     self.result['success']=1
@@ -73,7 +73,7 @@ class DeviceFilterApi(View):
     def get(self, request):
         self.result = {
             "success": 0,
-            "message": "No Device Data",
+            "message": "Device Loading Completed",
             "data": {
                 "meta": {},
                 "objects": {}

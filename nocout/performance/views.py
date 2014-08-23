@@ -1,3 +1,4 @@
+import csv
 import json
 import datetime
 from django.db.models import Count
@@ -7,6 +8,7 @@ from django.shortcuts import render_to_response, render
 from django.views.generic import ListView
 from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
+import xlwt
 from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation
 from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus, ServiceStatus, InventoryStatus, \
@@ -22,10 +24,10 @@ import logging
 log = logging.getLogger(__name__)
 
 SERVICE_DATA_SOURCE = {
-    "uas": {"type": "spline", "valuesuffix": "seconds", "valuetext": "Seconds"},
+    "uas": {"type": "area", "valuesuffix": "seconds", "valuetext": "Seconds"},
     "rssi": {"type": "column", "valuesuffix": "dB", "valuetext": "dB"},
-    "uptime": {"type": "spline", "valuesuffix": "ms", "valuetext": "milliseconds"},
-    "rta": {"type": "spline", "valuesuffix": "ms", "valuetext": "ms"},
+    "uptime": {"type": "area", "valuesuffix": "ms", "valuetext": "milliseconds"},
+    "rta": {"type": "area", "valuesuffix": "ms", "valuetext": "ms"},
     "pl": {"type": "column", "valuesuffix": "%", "valuetext": "Percentage (%)"},
     }
 
@@ -250,12 +252,16 @@ class LivePerformanceListing(BaseDatatableView):
                 if self.request.GET['page_type'] == 'customer':
                     substation_id = device.substation_set.values()[0]['id']
                     dct.update(
-                        actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-list-alt text-info"></i></a>' \
-                        .format(self.request.GET['page_type'], substation_id))
+                        actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                        <a href="/alert_center/{0}/device/{2}/service_tab/{3}/"><i class="fa fa-warning text-warning"></i></a> \
+                        <a href="/device/{2}"><i class="fa fa-dropbox text-muted"></i></a>'
+                        .format(self.request.GET['page_type'], substation_id, device.id, 'latency'  if 'latency' in dct.keys() else 'packet_drop' ))
                 elif self.request.GET['page_type'] == 'network':
                     dct.update(
-                        actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-list-alt text-info"></i></a>' \
-                        .format(self.request.GET['page_type'], dct['id']))
+                        actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-bar-chart-o text-info"></i></a> \
+                         <a href="/alert_center/{0}/device/{1}/service_tab/{2}/"><i class="fa fa-warning text-warning"></i></a> \
+                         <a href="/device/{1}"><i class="fa fa-dropbox text-muted"></i></a>'
+                        .format(self.request.GET['page_type'], dct['id'], 'latency'  if 'latency' in dct.keys() else 'packet_drop'))
 
                 device_list.append({'device_name': dct["device_name"], 'device_machine': device.machine.name})
 
@@ -335,6 +341,7 @@ class Get_Perfomance(View):
             'get_status_url': 'performance/get_inventory_device_status/' + str(page_type) + '/device/' + str(device_id),
             'get_services_url': 'performance/get_inventory_service_data_sources/' + str(page_type) + '/device/' + str(
                 device_id),
+            'page_type':page_type
             }
 
         return render(request, 'performance/single_device_perf.html', page_data)
@@ -663,12 +670,13 @@ class Get_Service_Type_Performance_Data(View):
         """
         self.result = {
             'success': 0,
-            'message': 'Substation Service Not Fetched Successfully.',
+            'message': 'Substation Service Not Fetched.',
             'data': {
                 'meta': {},
                 'objects': {}
             }
         }
+
         inventory_device_name, inventory_device_machine_name = None, None
         if page_type == 'customer':
             substation = SubStation.objects.get(id=int(device_id))
@@ -680,18 +688,30 @@ class Get_Service_Type_Performance_Data(View):
             inventory_device_name = device.device_name
             inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
-        now = format(datetime.datetime.now(), 'U')
-        now_minus_60_min = format(datetime.datetime.now() + datetime.timedelta(minutes=-60), 'U')
-        now_minus_1day = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
-        now_minus_1week = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
+
+        start_date= self.request.GET.get('start_date','')
+        end_date= self.request.GET.get('end_date','')
+
+        if start_date and end_date:
+            start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
+            end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
+            start_date= format( start_date_object, 'U')
+            end_date= format( end_date_object, 'U')
+        else:
+
+            end_date = format(datetime.datetime.now(), 'U')
+            # now_minus_60_min = format(datetime.datetime.now() + datetime.timedelta(minutes=-60), 'U')
+            # now_minus_1day = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
+            start_date= format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
+
         if service_data_source_type in ['pl', 'rta']:
 
             performance_data = PerformanceNetwork.objects.filter(device_name=inventory_device_name,
                                                                  service_name=service_name,
                                                                  data_source=service_data_source_type,
-                                                                 sys_timestamp__gte=now_minus_60_min,
-                                                                 sys_timestamp__lte=now).using(
-                alias=inventory_device_machine_name)
+                                                                 sys_timestamp__gte=start_date,
+                                                                 sys_timestamp__lte=end_date).using(
+                                                                 alias=inventory_device_machine_name)
 
             result = self.get_performance_data_result(performance_data)
 
@@ -699,9 +719,9 @@ class Get_Service_Type_Performance_Data(View):
             performance_data = PerformanceStatus.objects.filter(device_name=inventory_device_name,
                                                                 service_name=service_name,
                                                                 data_source=service_data_source_type,
-                                                                sys_timestamp__gte=now_minus_1day,
-                                                                sys_timestamp__lte=now).using(
-                alias=inventory_device_machine_name)
+                                                                sys_timestamp__gte=start_date,
+                                                                sys_timestamp__lte=end_date).using(
+                                                                alias=inventory_device_machine_name)
 
             result = self.get_performance_data_result_for_status_and_invent_data_source(performance_data)
 
@@ -710,22 +730,98 @@ class Get_Service_Type_Performance_Data(View):
             performance_data = PerformanceInventory.objects.filter(device_name=inventory_device_name,
                                                                    service_name=service_name,
                                                                    data_source=service_data_source_type,
-                                                                   sys_timestamp__gte=now_minus_1week,
-                                                                   sys_timestamp__lte=now).using(
-                alias=inventory_device_machine_name)
+                                                                   sys_timestamp__gte= start_date,
+                                                                   sys_timestamp__lte= end_date).using(
+                                                                   alias=inventory_device_machine_name)
 
             result = self.get_performance_data_result_for_status_and_invent_data_source(performance_data)
         else:
             performance_data = PerformanceService.objects.filter(device_name=inventory_device_name,
                                                                  service_name=service_name,
                                                                  data_source=service_data_source_type,
-                                                                 sys_timestamp__gte=now_minus_60_min,
-                                                                 sys_timestamp__lte=now).using(
-                alias=inventory_device_machine_name)
+                                                                 sys_timestamp__gte= start_date,
+                                                                 sys_timestamp__lte= end_date).using(
+                                                                 alias=inventory_device_machine_name)
 
             result = self.get_performance_data_result(performance_data)
 
-        return HttpResponse(json.dumps(result), mimetype="application/json")
+        download_excel= self.request.GET.get('download_excel', '')
+        download_csv= self.request.GET.get('download_csv', '')
+
+
+        if download_excel:
+
+            table_data, table_header=self.return_table_header_and_table_data(service_name, result)
+            workbook = xlwt.Workbook()
+            worksheet = workbook.add_sheet('report')
+            style = xlwt.XFStyle()
+
+            borders = xlwt.Borders()
+            borders.bottom = xlwt.Borders.DASHED
+            style.borders = borders
+
+            column_length= len(table_header)
+            row_length= len(table_data) +1
+            #Writing headers first for the excel file.
+            for column in range(column_length):
+                worksheet.write(0, column, table_header[column], style=style)
+            #Writing rest of the rows.
+            for row in range(1,row_length):
+                for column in range(column_length):
+                    worksheet.write(row, column, table_data[row-1][ table_header[column].lower() ], style=style)
+
+            response= HttpResponse(mimetype= 'application/vnd.ms-excel', content_type='text/plain')
+            start_date_string=datetime.datetime.fromtimestamp(float(start_date)).strftime("%d/%B/%Y")
+            end_date_string=datetime.datetime.fromtimestamp(float(end_date)  ).strftime("%d/%B/%Y")
+            response['Content-Disposition'] = 'attachment; filename=performance_report_{0}_{1}_to_{2}.xls'\
+                .format( inventory_device_name, start_date_string, end_date_string )
+            workbook.save(response)
+            return response
+
+        elif download_csv:
+
+            table_data, table_header=self.return_table_header_and_table_data(service_name, result)
+            response = HttpResponse(content_type='text/csv')
+            start_date_string=datetime.datetime.fromtimestamp(float(start_date)).strftime("%d/%B/%Y")
+            end_date_string=datetime.datetime.fromtimestamp(float(end_date)  ).strftime("%d/%B/%Y")
+            response['Content-Disposition'] = 'attachment; filename="performance_report_{0}_{1}_to_{2}.xls"'\
+                .format(inventory_device_name, start_date_string, end_date_string)
+
+            writer = csv.writer(response)
+            writer.writerow(table_header)
+            column_length= len(table_header)
+            row_length= len(table_data) +1
+
+            for row in range(1, row_length):
+                row_list= list()
+                for column in range(0, column_length):
+                    row_list.append(table_data[row-1][ table_header[column].lower() ])
+                writer.writerow(row_list)
+            return response
+
+        else:
+
+            return HttpResponse(json.dumps(result), mimetype="application/json")
+
+    def return_table_header_and_table_data(self, service_name, result ):
+
+        if '_invent' in service_name or  '_status' in service_name :
+            table_data= result['data']['objects']['table_data']
+            table_header= result['data']['objects']['table_data_header']
+
+        else:
+            table_data= result['data']['objects']['chart_data'][0]['data']
+            table_header= ['Value','Date', 'Time' ]
+            data_list=[]
+            for data in table_data:
+                data_list+= [{
+                    'date': datetime.datetime.fromtimestamp(float(data['x']/1000)).strftime("%d/%B/%Y"),
+                    'time': datetime.datetime.fromtimestamp(float(data['x']/1000)).strftime("%I:%M %p"),
+                    'value':data['y'],
+                    }]
+            table_data=data_list
+
+        return table_data, table_header
 
 
     def get_performance_data_result_for_status_and_invent_data_source(self, performance_data):
@@ -764,12 +860,12 @@ class Get_Service_Type_Performance_Data(View):
                     aggregate_data[temp_time] = data.sys_timestamp
                     self.result['data']['objects']['type'] = SERVICE_DATA_SOURCE[str(data.data_source).lower()][
                         "type"] if \
-                        data.data_source in SERVICE_DATA_SOURCE else "spline"
+                        data.data_source in SERVICE_DATA_SOURCE else "area"
 
                     self.result['data']['objects']['valuesuffix'] = \
                         SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"] \
                             if data.data_source in SERVICE_DATA_SOURCE \
-                            else "spline"
+                            else "area"
 
                     self.result['data']['objects']['valuesuffix'] = \
                         SERVICE_DATA_SOURCE[str(data.data_source).lower()]["valuesuffix"] \
@@ -794,14 +890,14 @@ class Get_Service_Type_Performance_Data(View):
 
                     ###to draw each data point w.r.t threshold we would need to use the following
 
-                    compare_point = lambda p1, p2, p3: '#70AFC4' if abs(p1) < abs(p2) \
+                    compare_point = lambda p1, p2, p3: '#70AFC4' \
+                        if abs(p1) < abs(p2) \
                         else ('#FFE90D'
                               if abs(p2) < abs(p1) < abs(p3)
-                              else ('#FF193B'
-                                    # if abs(p3) < abs(p1)
-                                    # else "#70AFC4"
-                    )
-                    )
+                              else ('#FF193B' if abs(p3) < abs(p1)
+                                            else "#70AFC4"
+                                    )
+                            )
 
                     if data.avg_value:
                         formatter_data_point = {
@@ -838,12 +934,18 @@ class Get_Service_Type_Performance_Data(View):
                                                                     {'name': str("warning threshold").title(),
                                                                      'color': '#FFE90D',
                                                                      'data': warn_data_list,
-                                                                     'type': 'line'
+                                                                     'type': 'line',
+                                                                     'marker' : {
+                                                                         'enabled': False
+                                                                     }
                                                                     },
                                                                     {'name': str("critical threshold").title(),
                                                                      'color': '#FF193B',
                                                                      'data': crit_data_list,
-                                                                     'type': 'line'
+                                                                     'type': 'line',
+                                                                     'marker' : {
+                                                                         'enabled': False
+                                                                     }
                                                                     }
                     ]
 

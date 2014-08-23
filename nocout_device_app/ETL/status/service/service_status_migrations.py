@@ -22,6 +22,7 @@ def main():
     user=configs.get(mongo_conf[0][0]).get('user'),
     sql_passwd=configs.get(mongo_conf[0][0]).get('sql_passwd'),
     nosql_db=configs.get(mongo_conf[0][0]).get('nosql_db'),
+    sql_port=configs.get(mongo_conf[0][0]).get('mysql_port'),
     sql_db=configs.get(mongo_conf[0][0]).get('sql_db'), table_name=configs.get(mongo_conf[0][0]).get('service_status_tables').get('table_name'), ip=configs.get(mongo_conf[0][0]).get('ip')
     )
 	
@@ -31,6 +32,7 @@ def main():
     user=configs.get(mongo_conf[0][0]).get('user'),
     sql_passwd=configs.get(mongo_conf[0][0]).get('sql_passwd'),
     nosql_db=configs.get(mongo_conf[0][0]).get('nosql_db'),
+    sql_port=configs.get(mongo_conf[0][0]).get('mysql_port'),
     sql_db=configs.get(mongo_conf[0][0]).get('sql_db'), table_name=configs.get(mongo_conf[0][0]).get('network_status_tables').get('table_name'), ip=configs.get(mongo_conf[0][0]).get('ip')
     )
 

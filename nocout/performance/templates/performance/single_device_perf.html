@@ -41,6 +41,13 @@
 	                    <!--end_date Filter-->
 	                    <input class="form-control col-xs-1 input-sm datepicker" type="text" name="end_date" size="10" id="end_date" placeholder="End Date">
 	                </li>
+                    <li>
+                        <div class="btn-group dropdown col-xs-1">
+                            <button id="apply_filter" class="btn  btn-default btn-sm">
+                                    Apply Filter
+                            </button>
+                        </div>
+                    </li>
 	                <li>
 	                	<!--CSV or Excel download action. -->
 	                    <div class="btn-group dropdown col-xs-1">
@@ -50,10 +57,10 @@
 							</button>
 							<ul class="dropdown-menu context">
 								<li>
-									<a href="javascript:;">Excel</a>
+									<a id="download_excel">Excel</a>
 								</li>
 								<li>
-									<a href="javascript:;">CSV</a>
+									<a id="download_csv">CSV</a>
 								</li>
 							</ul>
 						</div>
@@ -161,13 +168,33 @@
             desired_url_string = "https://";
         }
 
- if (window.location.protocol == "https:") {
+        if (window.location.protocol == "https:") {
             //window.location.href = "https:" + window.location.href.substring(window.location.protocol.length);
             window.location.origin = "https:" + window.location.origin.substring(window.location.protocol.length);
         }
 
 
 		$(document).ready(function(e) {
+            //setting up a custom jquery function to retrive the get paramters.
+            $.urlParam = function(name){
+                    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                    if (results==null){
+                       return null;
+                    }
+                    else{
+                       return results[1] || 0;
+                    }};
+            start_date= $.urlParam('start_date');
+            if (start_date){
+                 $("#start_date").val(decodeURIComponent(start_date));
+            }
+            end_date= $.urlParam('end_date');
+            if (end_date){
+                 $("#end_date").val(decodeURIComponent(end_date));
+            }
+            //set the dropdown to current device value
+            $("#device_name").val("{{ device.id }}");
+
             //on change of selection element in device_name
             // we should redirect user to the new page for the device
             $("#device_name").on('change', function(){
@@ -186,8 +213,34 @@
             });
 			
 			/*Initialize Datepicker*/
-			$(".datepicker").datepicker();
-			
+            $(".datepicker").datepicker({ dateFormat: 'dd-mm-yy' });
+
+            $("#apply_filter").on('click', function(){
+
+                window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' +'?start_date=' + encodeURIComponent($("#start_date").val())
+                                       + '&end_date=' + encodeURIComponent($("#end_date").val());
+            });
+
+            $("#download_excel").on('click', function(){
+                var service_name = window.location.href.split('#')[1];
+                var service_data_source= window.location.href.split('#')[2];
+                window.location.replace('/performance/service/'+ service_name +'/service_data_source/'+ service_data_source +
+                '/{{ page_type }}/device/{{ device.id }}' +
+                '?download_excel=true' +'&start_date=' + encodeURIComponent($("#start_date").val()) +
+                '&end_date=' + encodeURIComponent($("#end_date").val()))
+            });
+
+            $("#download_csv").on('click', function(){
+                var service_name = window.location.href.split('#')[1];
+                var service_data_source= window.location.href.split('#')[2];
+
+                window.location.replace('/performance/service/'+ service_name +'/service_data_source/'+ service_data_source +
+                '/{{ page_type }}/device/{{ device.id }}' +
+                '?download_csv=true' +'&start_date=' + encodeURIComponent($("#start_date").val()) +
+                '&end_date=' + encodeURIComponent($("#end_date").val()))
+            });
+
+
 			/*Hide Status Container*/
 			//$("#status_container").hide();
 

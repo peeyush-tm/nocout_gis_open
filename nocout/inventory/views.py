@@ -23,7 +23,6 @@ from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, Custom
 from device.models import Country, State, City
 from django.contrib.staticfiles.templatetags.staticfiles import static
 import xlrd
-
 import logging
 logger = logging.getLogger(__name__)
 

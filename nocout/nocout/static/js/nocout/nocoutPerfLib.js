@@ -14,6 +14,16 @@ var perf_that = "",
 	getServiceDataUrl = "",
 	x=0;
 
+$.urlParam = function(name){
+                    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                    if (results==null){
+                       return null;
+                    }
+                    else{
+                       return results[1] || 0;
+                    }};
+
+
  function nocoutPerfLib() {
 
  	/*Save reference of current pointer to the global variable*/
@@ -177,8 +187,7 @@ var perf_that = "",
                     $('.inner_tab_container .nav-tabs li a').click(function(e) {
                         var serviceId = e.currentTarget.id.slice(0, -4);
                         //@TODO: all the ursl must end with a / - django style
-                        var serviceDataUrl = window.location.origin + "/" + $.trim(e.currentTarget.attributes.url.value);
-                        window.location.href = "#"+e.currentTarget.id
+                        var serviceDataUrl = "/" + $.trim(e.currentTarget.attributes.url.value);
                         perfInstance.getServiceData(serviceDataUrl, serviceId, current_device);
 
                     });
@@ -211,14 +220,18 @@ var perf_that = "",
  	 */
  	this.getServiceData = function(get_service_data_url, service_id, device_id) {
     
-    /*Show the spinner*/
-    showSpinner();
-        window.location.href = "#"+service_id
+        /*Show the spinner*/
+        showSpinner();
+        /* Appending the Hash Tag of service_name with service_data_source */
+        window.location.href = '#'+ get_service_data_url.split('/')[3] + "#"+ get_service_data_url.split('/')[5];
  		/*Ajax call to Get Devices API*/
+        var start_date=$.urlParam('start_date');
+        var end_date=$.urlParam('end_date');
         var get_url = get_service_data_url;
 		$.ajax({
 			crossDomain: true,
 			url : get_url,
+            data : {'start_date':start_date, 'end_date':end_date },
 			type : "GET",
 			dataType : "json",
 			success : function(result) {
@@ -260,6 +273,7 @@ var perf_that = "",
                     else{
                         $('#'+service_id+'_chart').highcharts({
                             chart: {
+                                zoomType: 'x',
                                 type: single_service_data.type
     //                            events:{
     //                                load: Highcharts.drawTable //@TODO: here in we need to draw canvas table with data table data
@@ -280,6 +294,7 @@ var perf_that = "",
                             tooltip: {
                                 pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
                                 shared: true,
+                                crosshairs: true,
                                 valueSuffix: single_service_data.valuesuffix
                             },
                             xAxis: {
@@ -287,12 +302,17 @@ var perf_that = "",
                                     text: "time"
                                 },
                                 type: 'datetime',
+                                minRange: 3600000,
                                 dateTimeLabelFormats: {
+                                    millisecond: '%H:%M:%S.%L',
+                                    second: '%H:%M:%S',
+                                    minute: '%H:%M',
+                                    hour: '%H:%M',
                                     day: '%e. %b',
+                                    week: '%e. %b',
                                     month: '%b \'%y',
                                     year: '%Y'
-                                },
-                                tickPixelInterval: 120
+                                }
                             },
                             yAxis: {
                               title: {

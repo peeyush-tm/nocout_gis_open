@@ -1,0 +1,8 @@
+/tmp/nocout_da/vrfprv_slave_1/service/*.log /tmp/nocout_da/vrfprv_slave_1/events/*.log /tmp/nocout_da/vrfprv_slave_1/inventory/*.log /tmp/nocout_da/vrfprv_slave_1/interface/*.log /tmp/nocout_da/vrfprv_slave_1/*.log{
+        missingok
+        notifempty
+        daily
+        rotate 12
+        compress
+	size 10M 
+}
