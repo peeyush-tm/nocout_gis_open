@@ -187,7 +187,7 @@ class LPServicesApi(View):
     def get(self, request):
         """Returns json containing devices, services and data sources"""
 
-        self.result = {
+        result = {
             "success": 0,
             "message": "No Service Data",
             "data": {
@@ -207,14 +207,14 @@ class LPServicesApi(View):
                     device_sdc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name)
 
                     # initializing dict for current device
-                    self.result['data'][str(dv)] = {}
+                    result['data'][str(dv)] = {}
 
                     # initializing list for services associated to current device(dv)
-                    self.result['data'][str(dv)]['services'] = []
+                    result['data'][str(dv)]['services'] = []
 
                     # loop through all services of current device(dv)
                     for dsc in device_sdc:
-                        svc_dict = {}
+                        svc_dict = dict()
                         svc_dict['name'] = str(dsc.service_name)
                         svc_dict['value'] = Service.objects.get(name=dsc.service_name).id
 
@@ -234,14 +234,14 @@ class LPServicesApi(View):
                             svc_dict['datasource'].append(sds_dict)
 
                         # appending service dict to services list of current device(dv)
-                        self.result['data'][str(dv)]['services'].append(svc_dict)
-                        self.result['success'] = 1
-                        self.result['message'] = "Successfully fetched services and data sources."
+                        result['data'][str(dv)]['services'].append(svc_dict)
+                        result['success'] = 1
+                        result['message'] = "Successfully fetched services and data sources."
         except Exception as e:
-            self.result['message'] = e.message
+            result['message'] = e.message
             logger.info(e)
 
-        return HttpResponse(json.dumps(self.result))
+        return HttpResponse(json.dumps(result))
 
 
 class FetchLPDataApi(View):
@@ -272,15 +272,15 @@ class FetchLPDataApi(View):
         services = eval(str(self.request.GET.get('service',None)))
         datasources = eval(str(self.request.GET.get('datasource',None)))
 
-        self.result = {
+        result = {
             "success": 0,
             "message": "",
             "data": {
             }
         }
 
-        self.result['data']['value'] = []
-        self.result['data']['icon'] = []
+        result['data']['value'] = []
+        result['data']['icon'] = []
         try:
             for dv, svc, ds in zip(devices, services, datasources):
                 lp_data = dict()
@@ -293,14 +293,12 @@ class FetchLPDataApi(View):
                 device = Device.objects.get(device_name=dv)
                 service = Service.objects.get(name=svc)
                 data_source = ServiceDataSource.objects.get(name=ds)
-                machine_ip = device.machine.machine_ip
-                site_name = device.site_instance.name
 
                 url = "http://{}:{}@{}:{}/{}/check_mk/nocout_live.py".format(device.site_instance.username,
-                                                                        device.site_instance.password,
-                                                                        device.machine.machine_ip,
-                                                                        device.site_instance.web_service_port,
-                                                                        device.site_instance.name)
+                                                                             device.site_instance.password,
+                                                                             device.machine.machine_ip,
+                                                                             device.site_instance.web_service_port,
+                                                                             device.site_instance.name)
 
                 # encoding 'lp_data'
                 encoded_data = urllib.urlencode(lp_data)
@@ -313,7 +311,7 @@ class FetchLPDataApi(View):
 
                 # if response(r) is given by post request than process it further to get success/failure messages
                 if r:
-                    self.result['data']['value'].append(response_dict.get('value')[0])
+                    result['data']['value'].append(response_dict.get('value')[0])
 
                     # device technology
                     tech = DeviceTechnology.objects.get(pk=device.device_technology)
@@ -339,26 +337,98 @@ class FetchLPDataApi(View):
                             image_partial = ts.gt_critical.upload_image
                         else:
                             icon = static('img/icons/wifi7.png')
-                        img_url = "/media/"+ str(image_partial) if "uploaded" in str(image_partial) else static("img/" + image_partial)
+                        img_url = "/media/" + str(image_partial) if "uploaded" in str(image_partial) else static(
+                            "img/" + image_partial)
                         icon = str(img_url)
                     except Exception as e:
                         icon = static('img/icons/wifi7.png')
                         logger.info(e.message)
 
-                    self.result['data']['icon'].append(icon)
+                    result['data']['icon'].append(icon)
                     # if response_dict doesn't have key 'success'
                     if not response_dict.get('success'):
                         logger.info(response_dict.get('error_message'))
-                        self.result['message'] += "Failed to fetch data for '%s'." % (svc)
+                        result['message'] += "Failed to fetch data for '%s'." % (svc)
                     else:
-                        self.result['message'] += "Successfully fetch data for '%s'." % (svc)
+                        result['message'] += "Successfully fetch data for '%s'." % (svc)
 
-            self.result['success'] = 1
+            result['success'] = 1
         except Exception as e:
-            self.result['message'] = e.message
+            result['message'] = e.message
             logger.info(e)
 
-        return HttpResponse(json.dumps(self.result))
+        return HttpResponse(json.dumps(result))
+
+
+class FetchLPSettingsApi(View):
+    """
+        API for fetching the service live polled value
+        :Parameters:
+            - 'technology' (unicode) - id of technology
+
+        :Returns:
+           - 'result' (dict) - dictionary containing list of live polling settings
+            {
+                "message": "Successfully fetched live polling settings.",
+                "data": {
+                    "lp_templates": [
+                        {
+                            "id": 1,
+                            "value": "RadwinUAS"
+                        },
+                        {
+                            "id": 2,
+                            "value": "Radwin RSSI"
+                        },
+                        {
+                            "id": 3,
+                            "value": "Estimated Throughput"
+                        },
+                        {
+                            "id": 4,
+                            "value": "Radwin Uptime"
+                        }
+                    ]
+                },
+                "success": 1
+            }
+    """
+
+    def get(self, request):
+        """Returns json containing live polling values and icon urls for bulk devices"""
+        # result dictionary to be returned as output of ap1
+        result = {
+            "success": 0,
+            "message": "Failed to fetch live polling settings.",
+            "data": {
+            }
+        }
+
+        # initializing 'lp_templates' list containing live setting templates
+        result['data']['lp_templates'] = list()
+
+        # converting 'json' into python object
+        technology_id = int(self.request.GET.get('technology', None))
+
+        # technology object
+        technology = DeviceTechnology.objects.get(pk=technology_id)
+
+        # get live polling settings corresponding to the technology
+        lps = ""
+        try:
+            lps = LivePollingSettings.objects.filter(technology=technology)
+        except Exception as e:
+            logger.info(e.message)
+
+        if lps:
+            for lp in lps:
+                lp_temp = dict()
+                lp_temp['id'] = lp.id
+                lp_temp['value'] = lp.alias
+                result['data']['lp_templates'].append(lp_temp)
+            result['message'] = "Successfully fetched live polling settings."
+            result['success'] = 1
+        return HttpResponse(json.dumps(result))
 
 
 class BulkFetchLPDataApi(View):
@@ -510,7 +580,8 @@ class BulkFetchLPDataApi(View):
                             image_partial = ts.gt_critical.upload_image
                         else:
                             icon = static('img/icons/wifi7.png')
-                        img_url = "/media/"+ str(image_partial) if "uploaded" in str(image_partial) else static("img/" + image_partial)
+                        img_url = "/media/" + str(image_partial) if "uploaded" in str(image_partial) else static(
+                            "img/" + image_partial)
                         icon = str(img_url)
                     except Exception as e:
                         icon = static('img/icons/wifi7.png')
@@ -520,9 +591,11 @@ class BulkFetchLPDataApi(View):
                     # if response_dict doesn't have key 'success'
                     if not response_dict.get('success'):
                         logger.info(response_dict.get('error_message'))
-                        result['data']['devices'][device_name]['message'] = "Failed to fetch data for '%s'." % device_name
+                        result['data']['devices'][device_name]['message'] = "Failed to fetch data for '%s'." % \
+                                                                            device_name
                     else:
-                        result['data']['devices'][device_name]['message'] = "Successfully fetch data for '%s'." % device_name
+                        result['data']['devices'][device_name]['message'] = "Successfully fetch data for '%s'." % \
+                                                                            device_name
 
             result['success'] = 1
             result['message'] = "Successfully fetched."
