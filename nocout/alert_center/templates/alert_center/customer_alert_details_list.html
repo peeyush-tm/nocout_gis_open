@@ -67,7 +67,7 @@
         <div class="box-body">
             <!-- cAlert_detail_container Start-->
             <div id="cAlert_detail_container">
-                
+
                 <div class="tabbable header-tabs">
                     <!-- nav-tab Start -->
                     <ul class="nav nav-tabs">
@@ -191,7 +191,7 @@
         /*Grid headers object*/
         var gridHeadersObj = $.parseJSON('{{ customer_ptp_block_table_header|safe }}');
         /*Ajax url to get grid data*/
-        var ajax_url = '{% url "Customer_PTP_Block_Table" %}';
+        var ajax_url = '{% url "Customer_PTP_Block_Table" %}?data_tab=' + 'P2P';
         /*Call createDataTable function of ourDataTableWidget class*/
         var destroy= false;
         dataTableInstance.createDataTable("customer_ptp_block_table", gridHeadersObj, ajax_url, destroy);

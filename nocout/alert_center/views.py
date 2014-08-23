@@ -130,14 +130,15 @@ class GetCustomerAlertDetail(BaseDatatableView):
             organizations = [logged_in_user.organization]
 
         organization_devices = list()
+        device_tab_technology = self.request.GET.get('data_tab')
+        device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
         for organization in organizations:
-            organization_devices += Device.objects.filter(is_added_to_nms=1, organization__id=organization.id)
+            organization_devices += Device.objects.filter(is_added_to_nms=1, organization__id=organization.id,
+                                                          device_technology=device_technology_id)
         # get the devices in an organisation which are added for monitoring
 
-        organization_substations_devices = [{'device_name': device.device_name,
-                                             'machine_name': device.machine.name}
-                                            for device in organization_devices if device.substation_set.exists()
-        ]
+        organization_substations_devices = [{'device_name': device.device_name, 'machine_name': device.machine.name} \
+                                            for device in organization_devices if device.substation_set.exists()]
 
         required_data_columns = ["id",
                                  "ip_address",
@@ -368,10 +369,11 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 dcount=Count('base_station'))
 
         sector_configured_on_devices = Device.objects.filter(is_added_to_nms=1, is_deleted=0,
-                                                             id__in=sector_configured_on_devices_ids)\
+                                                             id__in=sector_configured_on_devices_ids) \
             .values('device_name', 'machine__name')
 
-        device_list, performance_data = list(), list()
+        device_list, performance_data, data_sources_list = list(), list(), list()
+
         required_data_columns = ["id",
                                  "ip_address",
                                  "service_name",
@@ -394,15 +396,15 @@ class GetNetworkAlertDetail(BaseDatatableView):
         #Fetching the data for the device w.r.t to their machine.
         for machine, machine_device_list in machine_dict.items():
 
-            # data_sources_list = ['rta', 'pl']
-            #
-            # device_data += self.collective_query_result(
-            #     machine = machine,
-            #     table_name = "performance_eventnetwork",
-            #     devices = machine_device_list,
-            #     data_sources = data_sources_list,
-            #     columns = required_data_columns
-            # )
+            data_sources_list = ['rta', 'pl']
+
+            device_data += self.collective_query_result(
+                machine = machine,
+                table_name = "performance_eventnetwork",
+                devices = machine_device_list,
+                data_sources = data_sources_list,
+                columns = required_data_columns
+            )
 
             data_sources_list = []
             device_data += self.collective_query_result(
@@ -490,7 +492,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
         total_display_records = len(qs)
 
         # qs = self.ordering(qs)
-        qs = self.paging(qs)  # Removing pagination as of now to render all the data at once.
+        # qs = self.paging(qs)  # Removing pagination as of now to render all the data at once.
         # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
@@ -837,7 +839,8 @@ class CustomerAlertList(ListView):
             {'mData': 'current_value', 'sTitle': 'Event Value', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': True},
-            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
+            {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': True},
+            {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
             ]
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -851,9 +854,9 @@ class CustomerAlertListingTable(BaseDatatableView):
     """
     model = EventNetwork
     columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
-               'current_value', 'sys_timestamp', 'description']
+               'current_value', 'sys_date', 'sys_time', 'description']
     order_columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
-                     'current_value', 'sys_timestamp', 'description']
+                     'current_value', 'sys_date', 'sys_time', 'description']
 
     def filter_queryset(self, qs):
         """
@@ -962,8 +965,12 @@ class CustomerAlertListingTable(BaseDatatableView):
                             'sub_station__state': State.objects.get(id=device_substation.state).state_name,
                             'base_station': device_substation_base_station_name,
                             'current_value': data['current_value'],
-                            'sys_timestamp': str(
-                                datetime.datetime.fromtimestamp(float(data['sys_timestamp']))),
+                            'sys_time': datetime.datetime.fromtimestamp(
+                                float(data['sys_timestamp'])).strftime("%I:%M:%S %p"),
+                            'sys_date': datetime.datetime.fromtimestamp(
+                                float(data['sys_timestamp'])).strftime("%d/%B/%Y"),
+                            'sys_timestamp': datetime.datetime.fromtimestamp(
+                                float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
                             'description': data['description']
                         }
                         device_list.append(device_events)
