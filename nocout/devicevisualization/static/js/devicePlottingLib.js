@@ -98,14 +98,14 @@ function devicePlottingClass_gmap() {
 			if(window.location.pathname.indexOf("google_earth") > -1) {
 				mapObject = {
 					center    : new google.maps.LatLng(21.1500,79.0900),
-					zoom      : 4,
+					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.SATELLITE,
 					mapTypeControl : false
 				};
 			} else {
 				mapObject = {
 					center    : new google.maps.LatLng(21.1500,79.0900),
-					zoom      : 4,
+					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.ROADMAP,
 					mapTypeControl : false
 				};
