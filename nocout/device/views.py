@@ -259,7 +259,12 @@ class OperationalDeviceListingTable(BaseDatatableView):
 
             # img_url = static('img/nms_icons/circle_green.png')
             # dct.update(status_icon='<img src="{0}">'.format(img_url))
-            dct.update(status_icon='<i class="fa fa-circle green-dot"></i>')
+            if current_device.is_monitored_on_nms == 1:
+                status_icon_color = "green-dot"
+                dct.update(status_icon='<i class="fa fa-circle {0}"></i>'.format(status_icon_color))
+            else:
+                status_icon_color = "orange-dot"
+                dct.update(status_icon='<i class="fa fa-circle {0}"></i>'.format(status_icon_color))
 
             # There are two set of links in device list table
             # 1. Device Actions --> device detail, edit, delete from inventory. They are always present in device table if user role is 'Admin'
