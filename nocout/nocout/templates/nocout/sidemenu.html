@@ -232,7 +232,11 @@
                 </a>
                 <ul class="sub">
                     <li><a class="" href="/icon_settings/"><span class="sub-menu-text">Icon Settings</span></a></li>
-                    <li><a class="" href="/frequency/"><span class="sub-menu-text">Device Frequency</span></a></li>
+                    {% for group in user.groups.all %}
+                    {% if group.name != 'group_viewer' %}
+                        <li><a class="" href="/frequency/"><span class="sub-menu-text">Device Frequency</span></a></li>
+                    {% endif %}
+                    {% endfor %}
                     <li><a class="" href="/threshold_configuration/"><span class="sub-menu-text">Threshold Configuration</span></a></li>
                     <li><a class="" href="/live_polling_settings/"><span class="sub-menu-text">Live Polling Settings</span></a></li>
                     <li><a class="" href="/thematic_settings/"><span class="sub-menu-text">Thematic Settings</span></a></li>
