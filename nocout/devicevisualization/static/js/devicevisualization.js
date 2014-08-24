@@ -173,12 +173,22 @@ $("#createPolygonBtn").click(function(e) {
     $("#advFilterBtn").button("loading");
     $("#resetFilters").button("loading");
 
-    networkMapInstance.createPolygon();
+    networkMapInstance.initLivePolling();
 
     hasSelectDevice = 1;
 
     /*Call get_page_status function to show the current status*/
     get_page_status();
+});
+
+$("#tech_send").click(function(e) {
+
+    networkMapInstance.fetchPollingTemplate_gmap();
+});
+
+$("#fetch_polling").click(function(e) {
+
+    networkMapInstance.getDevicesPollingData();
 });
 
 /*triggers when clear selection button is clicked*/
