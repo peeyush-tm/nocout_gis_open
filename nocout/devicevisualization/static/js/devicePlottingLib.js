@@ -38,6 +38,7 @@ var mapInstance = "",
 	drawingManager = "",
 	dataArray = [],
 	leftMargin = 0,
+	calling_count = 0,
 	sectorArray = [],
 	circleArray = [],
 	servicesData = {},
@@ -1093,7 +1094,7 @@ function devicePlottingClass_gmap() {
 	 * @return {String} windowContent, It contains content to be shown on info window
 	 */
 	this.makeWindowContent = function(contentObject) {
-		console.log(contentObject);
+
 		var windowContent = "",
 			infoTable =  "",
 			perfContent = "",
@@ -1739,7 +1740,6 @@ function devicePlottingClass_gmap() {
 		            // (bool | optional) if you want it to fade out on its own or just sit there
 		            sticky: false
 		        });
-				// console.log(err);
 			}
 		});
 	};
@@ -1992,16 +1992,16 @@ function devicePlottingClass_gmap() {
      */
     this.fetchPollingTemplate_gmap = function() {
     	
-    	var selected_technology = $("#polling_tech option:selected").text();
+    	var selected_technology = $("#polling_tech").val();
 
-    	if($("#polling_tech").val() != "") {
+    	if(selected_technology != "") {
     		
     		$("#tech_send").button("loading");
 
     		/*ajax call for services & datasource*/
     		$.ajax({
-    			// url : window.location.origin+"/"+"device/lp_settings/?technology="+selected_technology,
-    			url : window.location.origin+"/"+"static/livePolling.json",
+    			url : window.location.origin+"/"+"device/lp_settings/?technology="+selected_technology,
+    			// url : window.location.origin+"/"+"static/livePolling.json",
     			success : function(results) {
 					
 					result = JSON.parse(results);
@@ -2076,16 +2076,69 @@ function devicePlottingClass_gmap() {
 									polygonSelectedDevices.push(allSS[k]);
 								}
 							}
+
+							var devicesTemplate = "<div class='deviceWellContainer'>";
+								
+							for(var i=0;i<polygonSelectedDevices.length;i++) {
+								
+								var new_device_name = "";
+
+								if(polygonSelectedDevices[i].device_name.indexOf(".") != -1) {
+									new_device_name = polygonSelectedDevices[i].device_name.split(".");
+									new_device_name = new_device_name.join("-");
+								} else {
+									new_device_name = polygonSelectedDevices[i].device_name;
+								}
+
+								devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+(i+1)+'.) '+polygonSelectedDevices[i].name+'</h5>';
+								devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
+								devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled"></ul>';
+								devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
+							}
+
+							devicesTemplate += "</div>";
+
+							$("#sideInfo > .panel-body > .col-md-12 > .devices_container").html(devicesTemplate);
 						});
 
 
     				} else {
-    					console.log(result.message);
+    					
+    					$("#tech_send").button("complete");
+    					$("#sideInfo .panel-body .col-md-12 .template_container").html("");
+
+    					if(!($("#fetch_polling").hasClass("hide"))) {
+    						$("#fetch_polling").addClass("hide");
+    					}
+
+    					$.gritter.add({
+				            // (string | mandatory) the heading of the notification
+				            title: 'Live Polling - Error',
+				            // (string | mandatory) the text inside the notification
+				            text: result.message,
+				            // (bool | optional) if you want it to fade out on its own or just sit there
+				            sticky: false
+				        });
     				}
 
     			},
     			error : function(err) {
-    				console.log(err.statusText);
+    				
+    				$("#tech_send").button("complete");
+    				$("#sideInfo .panel-body .col-md-12 .template_container").html("");
+
+    				if(!($("#fetch_polling").hasClass("hide"))) {
+						$("#fetch_polling").addClass("hide");
+					}
+    				
+    				$.gritter.add({
+			            // (string | mandatory) the heading of the notification
+			            title: 'Live Polling - Error',
+			            // (string | mandatory) the text inside the notification
+			            text: err.statusText,
+			            // (bool | optional) if you want it to fade out on its own or just sit there
+			            sticky: false
+			        });
     			}
     		});
 
@@ -2100,64 +2153,66 @@ function devicePlottingClass_gmap() {
 	 */
     this.getDevicesPollingData = function() {
 
-    	if(polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "") {    		
-
-    		var selected_lp_template = $("#lp_template_select").val();
-			var devicesTemplate = "<div class='deviceWellContainer'>";
-			
-			for(var i=0;i<polygonSelectedDevices.length;i++) {
-				
-				var new_device_name = "";
-
-				if(polygonSelectedDevices[i].device_name.indexOf(".") != -1) {
-					new_device_name = polygonSelectedDevices[i].device_name.split(".");
-					new_device_name = new_device_name.join("-");
-				} else {
-					new_device_name = polygonSelectedDevices[i].device_name;
-				}
-
-				devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+(i+1)+'.) '+polygonSelectedDevices[i].name+'</h5>';
-				devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'"><ul id="pollVal_'+new_device_name+'" class="list-unstyled"></ul><span id="sparkline_'+new_device_name+'"></span></div></div>';
+    	if(polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "") {
+			if($(".devices_container").hasClass("hide")) {
+				$(".devices_container").removeClass("hide");
 			}
+			var selected_lp_template = $("#lp_template_select").val();
 
-			devicesTemplate += "</div>";
+	    	$.ajax({
+				url : window.location.origin+"/"+"device/lp_bulk_data/?lp_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
+				// url : window.location.origin+"/"+"static/services.json",
+				success : function(results) {
 
-			$("#sideInfo > .panel-body > .col-md-12 > .devices_container").html(devicesTemplate);
+					var result = JSON.parse(results);
 
-			for(var i=0;i<polygonSelectedDevices.length;i++) {
+					if(result.success == 1) {
 
-				var new_device_name = "";
+						for(var i=0;i<allSSIds.length;i++) {
 
-				if(polygonSelectedDevices[i].device_name.indexOf(".") != -1) {
-					new_device_name = polygonSelectedDevices[i].device_name.split(".");
-					new_device_name = new_device_name.join("-");
-				} else {
-					new_device_name = polygonSelectedDevices[i].device_name;
-				}
+							var new_device_name = "";
+							if(allSSIds[i].indexOf(".") != -1) {
+								new_device_name = allSSIds[i].split('.');
+								new_device_name = new_device_name.join('-');
+							} else {
+								new_device_name = allSSIds[i];
+							}
 
-				$.ajax({
-					// url : window.location.origin+"/"+"device/lp_bulk_data/?lp_template="+selected_lp_template+"&devices=['"+allSSIds[i]+"']",
-    				url : window.location.origin+"/"+"static/services.json",
-					success : function(results) {
-						var result = JSON.parse(results);
-
-						if(result.success == 1) {
-
-							/*Check that polling value exist or not*/
-							if(result.data.value.length > 0) {
+							if(result.data.devices[allSSIds[i]] != undefined) {
 
 								var dateObj = new Date(),
 									current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(),
 									final_chart_data = [];
 
-								var fetchValString = "";
+								// $("#fetchVal_"+new_device_name).append("(<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+") , ");
 								
-								fetchValString += "<li id='fetchVal_"+new_device_name+"' style='margin-top:8px;margin-bottom:8px;'> (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.value[0]+")</li>";
-								fetchValString += "<li><span class='sparkline' id='sparkline_"+new_device_name+"'></span></li>";
+								if($("#fetchVal_"+new_device_name).length == 0) {
 
-								$("#pollVal_"+new_device_name).append(fetchValString);
-								/*Sparkline Chart Data*/
-								final_chart_data.push((+result.data.value[0]));
+									var fetchValString = "";
+									fetchValString += "<li id='fetchVal_"+new_device_name+"' style='margin-top:8px;margin-bottom:8px;'> (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+") <input type='hidden' name='chartVal_"+new_device_name+"' id='chartVal_"+new_device_name+"' value='"+result.data.devices[allSSIds[i]].value+"'/></li>";
+
+									$("#pollVal_"+new_device_name).append(fetchValString);
+									/*Sparkline Chart Data*/
+									final_chart_data.push((+result.data.devices[allSSIds[i]].value));
+								
+								} else {
+
+									var	string_val = [];
+
+									$("#chartVal_"+new_device_name).val($("#chartVal_"+new_device_name).val()+","+result.data.devices[allSSIds[i]].value);
+
+									string_val = $("#chartVal_"+new_device_name).val().split(",");
+
+									/*Create integer array from fetched values for sparkline chart*/
+									var chart_data = string_val.map(function(item) {
+									    return parseInt(item, 10);
+									});
+
+									$("#fetchVal_"+new_device_name).append(", (<i class='fa fa-clock-o'></i> "+current_time+", <i class='fa fa-arrow-circle-o-right'></i> "+result.data.devices[allSSIds[i]].value+")");
+									/*Sparkline Chart Data*/
+									final_chart_data = chart_data;
+								}
+
 
 								/*Plot sparkline chart with the fetched polling value*/
 								$("#sparkline_"+new_device_name).sparkline(final_chart_data, {
@@ -2166,16 +2221,12 @@ function devicePlottingClass_gmap() {
 							        spotColor : "orange",
 							        defaultPixelsPerValue : 10
 							    });
-							}
-
-							/*Check that markerurl exist or not*/
-							if(result.data.icon.length > 0) {
 
 								var isPlotted = 0;
-								var newIcon = window.location.origin+"/"+result.data.icon[0];
+								var newIcon = window.location.origin+"/"+result.data.devices[allSSIds[i]].icon;
 
 								$.grep(masterMarkersObj,function(markers) {
-									var plottedMarkerName = $.trim(markers.device_name);									
+									var plottedMarkerName = $.trim(markers.device_name);
 									if(plottedMarkerName == allSSIds[i]) {
 
 										isPlotted = 1;
@@ -2191,7 +2242,7 @@ function devicePlottingClass_gmap() {
 
 										var plottedSSName = $.trim(markers.name);
 
-										if(plottedSSName == allSSIds[i]) {
+										if(plottedSSName == polygonSelectedDevices[calling_count].name) {
 
 											markers.icon = newIcon;
 											markers.oldIcon = newIcon;
@@ -2203,40 +2254,43 @@ function devicePlottingClass_gmap() {
 
 								$.grep(main_devices_data_gmaps,function(devices) {
 									var sectors = devices.data.param.sector;
-
 									$.grep(sectors, function(sector) {
-
 										var sub_station = sector.sub_station;
-										
 										$.grep(sub_station,function(ss) {
-
-											if($.trim(ss.name) == $.trim(allSSIds[i])) {
-
+											if($.trim(ss.name) == $.trim(polygonSelectedDevices[calling_count].device_name)) {
 												ss.data.markerUrl = result.data.icon[0];
 											}
 										});
 									});
 								});
+
 							}
-
-						} else {
-
-							$.gritter.add({
-					            // (string | mandatory) the heading of the notification
-					            title: 'Live Polling - Error',
-					            // (string | mandatory) the text inside the notification
-					            text: result.message,
-					            // (bool | optional) if you want it to fade out on its own or just sit there
-					            sticky: false
-					        });
 						}
 
-					},
-					error : function(err) {
-						console.log(err.statusText);
+					} else {
+
+						$.gritter.add({
+				            // (string | mandatory) the heading of the notification
+				            title: 'Live Polling - Error',
+				            // (string | mandatory) the text inside the notification
+				            text: result.message,
+				            // (bool | optional) if you want it to fade out on its own or just sit there
+				            sticky: false
+				        });
 					}
-				});				
-			}
+
+				},
+				error : function(err) {
+					$.gritter.add({
+			            // (string | mandatory) the heading of the notification
+			            title: 'Live Polling - Error',
+			            // (string | mandatory) the text inside the notification
+			            text: err.statusText,
+			            // (bool | optional) if you want it to fade out on its own or just sit there
+			            sticky: false
+			        });
+				}
+			});
 
     	} else {
     		alert("Please select devices & polling template first.");
