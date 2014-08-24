@@ -1,86 +1,8 @@
 {
 	"success" : 1,
-	"message" : "Services Fetched Successfully",
+	"message" : "Live Polling Data Fetched Successfully",
 	"data" : {
-		"HindustanUnileverLtd" : {
-			"services" : [
-				{
-					"name" : "any_service_name2",
-					"value" : "65",
-					"datasource" : [
-						{
-							"name" : "any_service_datasource_name1",
-							"value" : "651"
-						},
-						{
-							"name" : "any_service_datasource_name2",
-							"value" : "652"
-						},
-						{
-							"name" : "any_service_datasource_name3",
-							"value" : "653"
-						}
-					]
-				},
-				{
-					"name" : "any_service_name3",
-					"value" : "66",
-					"datasource" : [
-						{
-							"name" : "any_service_datasource_name4",
-							"value" : "654"
-						},
-						{
-							"name" : "any_service_datasource_name5",
-							"value" : "655"
-						},
-						{
-							"name" : "any_service_datasource_name6",
-							"value" : "656"
-						}
-					]
-				}
-			]
-		},
-		"yerawada_bazar_ss" : {
-			"services" : [
-				{
-					"name" : "any_service_name4",
-					"value" : "6545",
-					"datasource" : [
-						{
-							"name" : "any_service_datasource_name7",
-							"value" : "657"
-						},
-						{
-							"name" : "any_service_datasource_name8",
-							"value" : "658"
-						},
-						{
-							"name" : "any_service_datasource_name9",
-							"value" : "659"
-						}
-					]
-				},
-				{
-					"name" : "any_service_name5",
-					"value" : "6598",
-					"datasource" : [
-						{
-							"name" : "any_service_datasource_name10",
-							"value" : "6510"
-						},
-						{
-							"name" : "any_service_datasource_name11",
-							"value" : "6511"
-						},
-						{
-							"name" : "any_service_datasource_name12",
-							"value" : "6512"
-						}
-					]
-				}
-			]
-		}
+		"value" : ["50"],
+		"icon" : ["static/img/marker/icon1_small.png"]
 	}
 }
