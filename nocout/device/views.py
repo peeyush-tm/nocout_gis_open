@@ -263,7 +263,7 @@ class OperationalDeviceListingTable(BaseDatatableView):
                 status_icon_color = "green-dot"
                 dct.update(status_icon='<i class="fa fa-circle {0}"></i>'.format(status_icon_color))
             else:
-                status_icon_color = "orange-dot"
+                status_icon_color = "light-green-dot"
                 dct.update(status_icon='<i class="fa fa-circle {0}"></i>'.format(status_icon_color))
 
             # There are two set of links in device list table
