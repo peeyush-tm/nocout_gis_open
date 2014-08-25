@@ -20,6 +20,10 @@
                         <td>{{ object.device_alias }}</td>
                     </tr>
                     <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Machine </td>
+                        <td>{{ object.machine.alias }}</td>
+                    </tr>
+                    <tr>
                         <td><i class="fa fa-arrow-right text-primary"></i> Site Instance </td>
                         <td>{{ object.site_instance.alias }}</td>
                     </tr>
@@ -44,10 +48,6 @@
                         <td>{{ device_type }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Parent </td>
-                        <td>{{ object.parent.device_alias }}</td>
-                    </tr>
-                    <tr>
                         <td><i class="fa fa-arrow-right text-primary"></i> Ports </td>
                         <td>
                             {% for port in object.ports.all %}
@@ -55,6 +55,10 @@
                                 {% if not forloop.last %},{% else %}  {% endif %}
                             {% endfor %}
                         </td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Parent </td>
+                        <td>{{ object.parent.device_alias }}</td>
                     </tr>
                     <tr>
                         <td><i class="fa fa-arrow-right text-primary"></i> IP Address </td>
@@ -81,7 +85,7 @@
                         <td>{{ object.host_priority }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Host State </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Host Monitoring State </td>
                         <td>{{ object.host_state }}</td>
                     </tr>
                     <tr>
