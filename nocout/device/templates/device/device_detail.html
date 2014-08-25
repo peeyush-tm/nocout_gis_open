@@ -11,15 +11,6 @@
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i> Device Detail - {{ object.device_alias }}</h4>
-
-            <div class="tools hidden-xs">
-                <a href="#box-config" data-toggle="modal" class="config">
-                    <i class="fa fa-cog"></i>
-                </a>
-                <a href="javascript:;" class="reload">
-                    <i class="fa fa-refresh"></i>
-                </a>
-            </div>
         </div>
         <div class="box-body">
             <div id="user_profile" class="col-md-6 col-md-offset-3">
@@ -27,6 +18,10 @@
                     <tr>
                         <td><i class="fa fa-arrow-right text-primary"></i> Device Alias </td>
                         <td>{{ object.device_alias }}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Machine </td>
+                        <td>{{ object.machine.alias }}</td>
                     </tr>
                     <tr>
                         <td><i class="fa fa-arrow-right text-primary"></i> Site Instance </td>
@@ -53,10 +48,6 @@
                         <td>{{ device_type }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Parent </td>
-                        <td>{{ object.parent.device_alias }}</td>
-                    </tr>
-                    <tr>
                         <td><i class="fa fa-arrow-right text-primary"></i> Ports </td>
                         <td>
                             {% for port in object.ports.all %}
@@ -64,6 +55,10 @@
                                 {% if not forloop.last %},{% else %}  {% endif %}
                             {% endfor %}
                         </td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Parent </td>
+                        <td>{{ object.parent.device_alias }}</td>
                     </tr>
                     <tr>
                         <td><i class="fa fa-arrow-right text-primary"></i> IP Address </td>
@@ -90,7 +85,7 @@
                         <td>{{ object.host_priority }}</td>
                     </tr>
                     <tr>
-                        <td><i class="fa fa-arrow-right text-primary"></i> Host State </td>
+                        <td><i class="fa fa-arrow-right text-primary"></i> Host Monitoring State </td>
                         <td>{{ object.host_state }}</td>
                     </tr>
                     <tr>

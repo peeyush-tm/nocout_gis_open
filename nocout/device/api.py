@@ -16,6 +16,7 @@ from sitesearch.views import DeviceSetFilters, prepare_result
 from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 logger=logging.getLogger(__name__)
 
+
 class DeviceStatsApi(View):
 
 
@@ -227,7 +228,7 @@ class LPServicesApi(View):
 
                         # loop through all the data sources associated with current service(dsc)
                         for sds in service_data_sources:
-                            sds_dict = {}
+                            sds_dict = dict()
                             sds_dict['name'] = sds.data_source
                             sds_dict['value'] = ServiceDataSource.objects.get(name=sds.data_source).id
                             # appending data source dict to data sources list for current service(dsc) data source list
@@ -588,6 +589,7 @@ class BulkFetchLPDataApi(View):
                         logger.info(e.message)
 
                     result['data']['devices'][device_name]['icon'] = icon
+
                     # if response_dict doesn't have key 'success'
                     if not response_dict.get('success'):
                         logger.info(response_dict.get('error_message'))
