@@ -305,10 +305,28 @@ def prepare_result(base_station_id):
             'param': {
                 'base_station': [
                     {
+                        'name': 'name',
+                        'title': 'Name',
+                        'show': 1,
+                        'value': base_station.name if base_station.name else 'N/A'
+                    },
+                    {
                         'name': 'alias',
                         'title': 'Alias',
                         'show': 1,
-                        'value': base_station.alias
+                        'value': base_station.alias if base_station.name else 'N/A'
+                    },
+                    {
+                        'name': 'bs_site_id',
+                        'title': 'Site Name',
+                        'show': 1,
+                        'value': base_station.bs_site_id if base_station.bs_site_id else 'N/A'
+                    },
+                    {
+                        'name': 'bs_site_type',
+                        'title': 'Site Type',
+                        'show': 1,
+                        'value': base_station.bs_site_type if base_station.bs_site_type else 'N/A'
                     },
                     {
                         'name': 'building_height',
@@ -323,10 +341,48 @@ def prepare_result(base_station_id):
                         'value': base_station.tower_height if base_station.tower_height else 'N/A'
                     },
                     {
-                    'name':'bs_technology',
-                    'title':'BS Technology',
-                    'show':1,
-                    'value': sectors[0].bs_technology.name if sectors[0].bs_technology else 'N/A'
+                        'name': 'bs_city',
+                        'title': 'City',
+                        'show': 1,
+                        'value': City.objects.get(id=base_station.city).city_name \
+                                 if base_station.city else 'N/A'
+                    },
+                    {
+                        'name': 'bs_state',
+                        'title': 'State',
+                        'show': 1,
+                        'value': State.objects.get(id=base_station.state).state_name \
+                                 if base_station.state else 'N/A'
+                    },
+                    {
+                        'name': 'tower_height',
+                        'title': 'Tower Height',
+                        'show': 1,
+                        'value': base_station.tower_height if base_station.tower_height else 'N/A'
+                    },
+                    {
+                        'name': 'bs_address',
+                        'title': 'Address',
+                        'show': 1,
+                        'value': base_station.address if base_station.address else 'N/A'
+                    },
+                    {
+                        'name': 'bs_gps_type',
+                        'title': 'GPS Type',
+                        'show': 1,
+                        'value': base_station.gps_type if base_station.gps_type else 'N/A'
+                    },
+                    {
+                        'name':'bs_technology',
+                        'title':'BS Technology',
+                        'show':1,
+                        'value': sectors[0].bs_technology.name if sectors[0].bs_technology else 'N/A'
+                    },
+                    {
+                        'name':'bs_type',
+                        'title':'BS Type',
+                        'show':1,
+                        'value': base_station.bs_type if base_station.bs_type else 'N/A'
                     }
                 ],
                 'backhual': [
@@ -540,7 +596,7 @@ def prepare_result(base_station_id):
                                                 'name': 'cktid',
                                                 'title': 'Circuit ID',
                                                 'show': 1,
-                                                'value': circuit.id if circuit.id else 'N/A'
+                                                'value': circuit.circuit_id if circuit.circuit_id else 'N/A'
                                             },
                                             {
                                                 'name': 'qos_bandwidth',
