@@ -127,7 +127,6 @@ MIDDLEWARE_CLASSES = (
     # 'nocout.middleware.UserProfileAuditMiddleware',
     'session_security.middleware.SessionSecurityMiddleware',
     'nocout.middlewares.LoginRequiredMiddleware.LoginRequiredMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
     #'audit_log.middleware.UserLoggingMiddleware',
     #'audit_log.middleware.AuditlogMiddleware',
     # Uncomment the next line for simple clickjacking protection:
@@ -173,7 +172,6 @@ INSTALLED_APPS = (
     'dajax',
     'django.contrib.admin',
     'actstream',
-    'debug_toolbar',
     'session_management',
     'corsheaders',
     'actstream',
@@ -256,13 +254,6 @@ GISVIEWER_ID= DEFAULT_USERS( USERNAME='gisviewer', ID=3)
 MPTT_TREE= namedtuple('MPTT_TREE', 'lft rght level')
 
 ISOLATED_NODE= MPTT_TREE(lft=1, rght=2, level=0)
-################################################################################
-#### TO : REMOVE ####
-
-DEBUG_TOOLBAR_PATCH_SETTINGS = False
-
-#### TO : REMOVE ####
-################################################################################
 
 # Import the local_settings.py file to override global settings
 
