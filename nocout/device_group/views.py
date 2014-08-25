@@ -187,7 +187,10 @@ class DeviceGroupCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object=form.save()
-        action.send(self.request.user, verb='Created', action_object = self.object)
+        try:
+            action.send(self.request.user, verb='Created', action_object = self.object)
+        except Exception as activity:
+            pass
         return HttpResponseRedirect( DeviceGroupCreate.success_url )
 
 
@@ -211,44 +214,48 @@ class DeviceGroupUpdate(UpdateView):
         """
         Submit the form and to log the user activity.
         """
+        try:
+            initial_field_dict = form.initial
 
-        initial_field_dict = form.initial
+            cleaned_data_field_dict={}
+            for field in form.cleaned_data.keys():
+                if field =='devices':
+                    cleaned_data_field_dict[field]=map(lambda obj: obj.pk, form.cleaned_data[field])
+                elif field in ('parent','organization'):
+                    cleaned_data_field_dict[field]= form.cleaned_data[field].pk if form.cleaned_data[field] else None
+                else:
+                    cleaned_data_field_dict[field]= form.cleaned_data[field]
 
-        cleaned_data_field_dict={}
-        for field in form.cleaned_data.keys():
-            if field =='devices':
-                cleaned_data_field_dict[field]=map(lambda obj: obj.pk, form.cleaned_data[field])
-            elif field in ('parent','organization'):
-                cleaned_data_field_dict[field]= form.cleaned_data[field].pk if form.cleaned_data[field] else None
-            else:
-                cleaned_data_field_dict[field]= form.cleaned_data[field]
+            changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
 
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+            if changed_fields_dict:
+                initial_field_dict['parent'] = DeviceGroup.objects.get(pk=initial_field_dict['parent']).name \
+                    if initial_field_dict['parent'] else str(None)
+                initial_field_dict['organization'] = Organization.objects.get(pk=initial_field_dict['organization']).name \
+                    if initial_field_dict['organization'] else str(None)
+                initial_field_dict['devices'] = ', '.join([Device.objects.get(pk=device).device_name for device in initial_field_dict['devices']])\
+                    if initial_field_dict['devices'] else str(None)
 
-        if changed_fields_dict:
-            initial_field_dict['parent'] = DeviceGroup.objects.get(pk=initial_field_dict['parent']).name \
-                if initial_field_dict['parent'] else str(None)
-            initial_field_dict['organization'] = Organization.objects.get(pk=initial_field_dict['organization']).name \
-                if initial_field_dict['organization'] else str(None)
-            initial_field_dict['devices'] = ', '.join([Device.objects.get(pk=device).device_name for device in initial_field_dict['devices']])\
-                if initial_field_dict['devices'] else str(None)
+                cleaned_data_field_dict['parent']= DeviceGroup.objects.get(pk=cleaned_data_field_dict['parent']).name \
+                    if cleaned_data_field_dict['parent'] else str(None)
+                cleaned_data_field_dict['organization']= Organization.objects.get(pk=cleaned_data_field_dict['organization']).name \
+                    if cleaned_data_field_dict['organization'] else str(None)
+                cleaned_data_field_dict['devices'] = ', '.join([Device.objects.get(pk=device).device_name for device in cleaned_data_field_dict['devices']])\
+                    if cleaned_data_field_dict['devices'] else str(None)
 
-            cleaned_data_field_dict['parent']= DeviceGroup.objects.get(pk=cleaned_data_field_dict['parent']).name \
-                if cleaned_data_field_dict['parent'] else str(None)
-            cleaned_data_field_dict['organization']= Organization.objects.get(pk=cleaned_data_field_dict['organization']).name \
-                if cleaned_data_field_dict['organization'] else str(None)
-            cleaned_data_field_dict['devices'] = ', '.join([Device.objects.get(pk=device).device_name for device in cleaned_data_field_dict['devices']])\
-                if cleaned_data_field_dict['devices'] else str(None)
+                verb_string = 'Changed values of Device Group: %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
+                                   for k in changed_fields_dict])+\
+                                   ' to '+\
+                                   ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+                if len(verb_string)>=255:
+                    verb_string=verb_string[:250] + '...'
 
-            verb_string = 'Changed values of Device Group: %s from initial values '%(self.object.name) + ', '.join(['%s: %s' %(k, initial_field_dict[k]) \
-                               for k in changed_fields_dict])+\
-                               ' to '+\
-                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string)>=255:
-                verb_string=verb_string[:250] + '...'
+                action.send(self.request.user, verb=verb_string)
 
-            action.send(self.request.user, verb=verb_string)
-            self.object=form.save()
+        except Exception as activity:
+            pass
+
+        self.object=form.save()
 
         return HttpResponseRedirect( DeviceGroupCreate.success_url )
 
@@ -273,7 +280,10 @@ class DeviceGroupDelete(DeleteView):
         """
         overriding the delete method to log the user activity.
         """
-        action.send(request.user, verb='deleting device group: %s'%(self.get_object().name))
+        try:
+            action.send(request.user, verb='deleting device group: %s'%(self.get_object().name))
+        except Exception as activity:
+            pass
         return super(DeviceGroupDelete, self).delete(request, *args, **kwargs)
 
 def device_group_devices_wrt_organization(request):

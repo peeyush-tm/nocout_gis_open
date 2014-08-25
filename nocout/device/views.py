@@ -1427,8 +1427,10 @@ class DeviceCreate(CreateView):
                 dtfv.save()
             except Exception as e:
                 logger.info(e.message)
-
-        action.send(self.request.user, verb='Created', action_object=device)
+        try:
+            action.send(self.request.user, verb='Created', action_object=device)
+        except Exception as activity:
+            pass
         return HttpResponseRedirect(DeviceCreate.success_url)
 
 
@@ -1652,7 +1654,10 @@ class DeviceDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        action.send(request.user, verb='deleting device: %s' % (self.get_object().device_name))
+        try:
+            action.send(request.user, verb='deleting device: %s' % (self.get_object().device_name))
+        except Exception as activity:
+            pass
         return super(DeviceDelete, self).delete(request, *args, **kwargs)
 
 
@@ -1820,7 +1825,10 @@ class DeviceTypeFieldsCreate(CreateView):
         If the form is valid, redirect to the supplied URL.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        try:
+            action.send(self.request.user, verb='Created', action_object=self.object)
+        except Exception as activity:
+            pass
         return HttpResponseRedirect(DeviceTypeFieldsCreate.success_url)
 
 
@@ -1851,23 +1859,26 @@ class DeviceTypeFieldsUpdate(UpdateView):
         if field in ('device_type') and form.cleaned_data[field] else form.cleaned_data[field] for field in
                                    form.cleaned_data.keys()}
 
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            initial_field_dict['device_type'] = DeviceType.objects.get(pk=initial_field_dict['device_type']).name if \
-                initial_field_dict['device_type'] else str(None)
-            cleaned_data_field_dict['device_type'] = DeviceType.objects.get(
-                pk=cleaned_data_field_dict['device_type']).name if cleaned_data_field_dict['device_type'] else str(None)
+        try:
+            changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+            if changed_fields_dict:
+                initial_field_dict['device_type'] = DeviceType.objects.get(pk=initial_field_dict['device_type']).name if \
+                    initial_field_dict['device_type'] else str(None)
+                cleaned_data_field_dict['device_type'] = DeviceType.objects.get(
+                    pk=cleaned_data_field_dict['device_type']).name if cleaned_data_field_dict['device_type'] else str(None)
 
-            verb_string = 'Changed values of Device Fields: %s from initial values ' % (
-                self.object.field_name) + ', '.join(['%s: %s' % (k, initial_field_dict[k]) \
-                                                     for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
+                verb_string = 'Changed values of Device Fields: %s from initial values ' % (
+                    self.object.field_name) + ', '.join(['%s: %s' % (k, initial_field_dict[k]) \
+                                                         for k in changed_fields_dict]) + \
+                              ' to ' + \
+                              ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+                if len(verb_string) >= 255:
+                    verb_string = verb_string[:250] + '...'
+                action.send(self.request.user, verb=verb_string)
+        except Exception as activity:
+            pass
 
-            self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
+        self.object = form.save()
         return HttpResponseRedirect(DeviceTypeFieldsCreate.success_url)
 
 
@@ -1890,7 +1901,10 @@ class DeviceTypeFieldsDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        action.send(request.user, verb='deleting device type field: %s' % self.get_object().field_name)
+        try:
+            action.send(request.user, verb='deleting device type field: %s' % self.get_object().field_name)
+        except Exception as activity:
+            pass
         return super(DeviceTypeFieldsDelete, self).delete(request, *args, **kwargs)
 
 
@@ -2087,8 +2101,10 @@ class DeviceTechnologyCreate(CreateView):
             tv.technology = device_technology
             tv.vendor = device_vendor
             tv.save()
-
-        action.send(self.request.user, verb='Created', action_object=device_technology)
+        try:
+            action.send(self.request.user, verb='Created', action_object=device_technology)
+        except Exception as activity:
+            pass
         return HttpResponseRedirect(DeviceTechnologyCreate.success_url)
 
 
@@ -2125,28 +2141,30 @@ class DeviceTechnologyUpdate(UpdateView):
             tv.technology = self.object
             tv.vendor = device_vendor
             tv.save()
+        try:
+            initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
 
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
+            cleaned_data_field_dict = {field: map(lambda obj: obj.pk, form.cleaned_data[field])
+            if field in ('device_vendors') and form.cleaned_data[field] else form.cleaned_data[field] for field in
+                                       form.cleaned_data.keys()}
 
-        cleaned_data_field_dict = {field: map(lambda obj: obj.pk, form.cleaned_data[field])
-        if field in ('device_vendors') and form.cleaned_data[field] else form.cleaned_data[field] for field in
-                                   form.cleaned_data.keys()}
+            changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+            if changed_fields_dict:
+                initial_field_dict['device_vendors'] = ', '.join(
+                    [DeviceVendor.objects.get(pk=vendor).name for vendor in initial_field_dict['device_vendors']])
+                cleaned_data_field_dict['device_vendors'] = ', '.join(
+                    [DeviceVendor.objects.get(pk=vendor).name for vendor in cleaned_data_field_dict['device_vendors']])
 
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            initial_field_dict['device_vendors'] = ', '.join(
-                [DeviceVendor.objects.get(pk=vendor).name for vendor in initial_field_dict['device_vendors']])
-            cleaned_data_field_dict['device_vendors'] = ', '.join(
-                [DeviceVendor.objects.get(pk=vendor).name for vendor in cleaned_data_field_dict['device_vendors']])
+                verb_string = 'Changed values of Device Technology : %s from initial values ' % (self.object.name) \
+                              + ', '.join(['%s: %s' % (k, initial_field_dict[k]) for k in changed_fields_dict]) \
+                              + ' to ' + \
+                              ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+                if len(verb_string) >= 255:
+                    verb_string = verb_string[:250] + '...'
 
-            verb_string = 'Changed values of Device Technology : %s from initial values ' % (self.object.name) \
-                          + ', '.join(['%s: %s' % (k, initial_field_dict[k]) for k in changed_fields_dict]) \
-                          + ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-
-            action.send(self.request.user, verb=verb_string)
+                action.send(self.request.user, verb=verb_string)
+        except Exception as activity:
+            pass
 
         return HttpResponseRedirect(DeviceTechnologyUpdate.success_url)
 
@@ -2170,7 +2188,10 @@ class DeviceTechnologyDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        action.send(request.user, verb='deleting device technology: %s' % self.get_object().name)
+        try:
+            action.send(request.user, verb='deleting device technology: %s' % self.get_object().name)
+        except Exception as activity:
+            pass
         return super(DeviceTechnologyDelete, self).delete(self, request, *args, **kwargs)
 
 
@@ -2361,8 +2382,10 @@ class DeviceVendorCreate(CreateView):
             vm.vendor = device_vendor
             vm.model = device_model
             vm.save()
-
-        action.send(self.request.user, verb='Created', action_object=device_vendor)
+        try:
+            action.send(self.request.user, verb='Created', action_object=device_vendor)
+        except Exception as activity:
+            pass
         return HttpResponseRedirect(DeviceVendorCreate.success_url)
 
 
@@ -2399,28 +2422,32 @@ class DeviceVendorUpdate(UpdateView):
             vm.vendor = self.object
             vm.model = device_model
             vm.save()
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
 
-        cleaned_data_field_dict = {field: map(lambda obj: obj.pk, form.cleaned_data[field])
-        if field in ('device_models') and form.cleaned_data[field] else form.cleaned_data[field]
-                                   for field in form.cleaned_data.keys()}
+        try:
+            initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
 
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            initial_field_dict['device_models'] = ', '.join(
-                [DeviceModel.objects.get(pk=vendor).name for vendor in initial_field_dict['device_models']])
-            cleaned_data_field_dict['device_models'] = ', '.join(
-                [DeviceModel.objects.get(pk=vendor).name for vendor in cleaned_data_field_dict['device_models']])
+            cleaned_data_field_dict = {field: map(lambda obj: obj.pk, form.cleaned_data[field])
+            if field in ('device_models') and form.cleaned_data[field] else form.cleaned_data[field]
+                                       for field in form.cleaned_data.keys()}
 
-            verb_string = 'Changed values of Device Vendor : %s from initial values ' % (self.object.name) \
-                          + ', '.join(['%s: %s' % (k, initial_field_dict[k]) for k in changed_fields_dict]) \
-                          + ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+            changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+            if changed_fields_dict:
+                initial_field_dict['device_models'] = ', '.join(
+                    [DeviceModel.objects.get(pk=vendor).name for vendor in initial_field_dict['device_models']])
+                cleaned_data_field_dict['device_models'] = ', '.join(
+                    [DeviceModel.objects.get(pk=vendor).name for vendor in cleaned_data_field_dict['device_models']])
 
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
+                verb_string = 'Changed values of Device Vendor : %s from initial values ' % (self.object.name) \
+                              + ', '.join(['%s: %s' % (k, initial_field_dict[k]) for k in changed_fields_dict]) \
+                              + ' to ' + \
+                              ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
 
-            action.send(self.request.user, verb=verb_string)
+                if len(verb_string) >= 255:
+                    verb_string = verb_string[:250] + '...'
+
+                action.send(self.request.user, verb=verb_string)
+        except Exception as activity:
+            pass
 
         return HttpResponseRedirect(DeviceVendorUpdate.success_url)
 
@@ -2444,7 +2471,10 @@ class DeviceVendorDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        action.send(request.user, verb='deleting device vendor: %s' % (self.get_object().name))
+        try:
+            action.send(request.user, verb='deleting device vendor: %s' % (self.get_object().name))
+        except Exception as activity:
+            pass
         return super(DeviceVendorDelete, self).delete(request, *args, **kwargs)
 
 
@@ -2634,7 +2664,10 @@ class DeviceModelCreate(CreateView):
             mt.type = device_type
             mt.save()
 
-        action.send(self.request.user, verb='Created', action_object=device_model)
+        try:
+            action.send(self.request.user, verb='Created', action_object=device_model)
+        except Exception as activity:
+            pass
         return HttpResponseRedirect(DeviceModelCreate.success_url)
 
 
@@ -2672,28 +2705,31 @@ class DeviceModelUpdate(UpdateView):
             mt.type = device_type
             mt.save()
 
-        initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
+        try:
+            initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
 
-        cleaned_data_field_dict = {field: map(lambda obj: obj.pk, form.cleaned_data[field])
-        if field in ('device_types') and form.cleaned_data[field] else form.cleaned_data[field]
-                                   for field in form.cleaned_data.keys()}
+            cleaned_data_field_dict = {field: map(lambda obj: obj.pk, form.cleaned_data[field])
+            if field in ('device_types') and form.cleaned_data[field] else form.cleaned_data[field]
+                                       for field in form.cleaned_data.keys()}
 
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            initial_field_dict['device_types'] = ', '.join(
-                [DeviceType.objects.get(pk=vendor).name for vendor in initial_field_dict['device_types']])
-            cleaned_data_field_dict['device_types'] = ', '.join(
-                [DeviceType.objects.get(pk=vendor).name for vendor in cleaned_data_field_dict['device_types']])
+            changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+            if changed_fields_dict:
+                initial_field_dict['device_types'] = ', '.join(
+                    [DeviceType.objects.get(pk=vendor).name for vendor in initial_field_dict['device_types']])
+                cleaned_data_field_dict['device_types'] = ', '.join(
+                    [DeviceType.objects.get(pk=vendor).name for vendor in cleaned_data_field_dict['device_types']])
 
-            verb_string = 'Changed values of Device Models : %s from initial values ' % self.object.name \
-                          + ', '.join(['%s: %s' % (k, initial_field_dict[k]) for k in changed_fields_dict]) \
-                          + ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+                verb_string = 'Changed values of Device Models : %s from initial values ' % self.object.name \
+                              + ', '.join(['%s: %s' % (k, initial_field_dict[k]) for k in changed_fields_dict]) \
+                              + ' to ' + \
+                              ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
 
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
+                if len(verb_string) >= 255:
+                    verb_string = verb_string[:250] + '...'
 
-            action.send(self.request.user, verb=verb_string)
+                action.send(self.request.user, verb=verb_string)
+        except Exception as activity:
+            pass
 
         return HttpResponseRedirect(DeviceModelUpdate.success_url)
 
@@ -2717,7 +2753,10 @@ class DeviceModelDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        action.send(request.user, verb='deleting device model: %s' % (self.get_object().name))
+        try:
+            action.send(request.user, verb='deleting device model: %s' % (self.get_object().name))
+        except Exception as activity:
+            pass
         return super(DeviceModelDelete, self).delete(request, *args, **kwargs)
 
 
@@ -2885,7 +2924,10 @@ class DeviceTypeCreate(CreateView):
         If the form is valid, redirect to the supplied URL.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        try:
+            action.send(self.request.user, verb='Created', action_object=self.object)
+        except Exception as activity:
+            pass
         return HttpResponseRedirect(DeviceTypeCreate.success_url)
 
 
@@ -2913,19 +2955,21 @@ class DeviceTypeUpdate(UpdateView):
         initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
 
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
+        try:
+            changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+            if changed_fields_dict:
 
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-
-            verb_string = 'Changed values of Device Type: %s from initial values ' % (self.object.name) + ', '.join(
-                ['%s: %s' % (k, initial_field_dict[k]) \
-                 for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
+                verb_string = 'Changed values of Device Type: %s from initial values ' % (self.object.name) + ', '.join(
+                    ['%s: %s' % (k, initial_field_dict[k]) \
+                     for k in changed_fields_dict]) + \
+                              ' to ' + \
+                              ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+                if len(verb_string) >= 255:
+                    verb_string = verb_string[:250] + '...'
+                action.send(self.request.user, verb=verb_string)
+        except Exception as activity:
+            pass
+        self.object = form.save()
         return HttpResponseRedirect(DeviceTypeUpdate.success_url)
 
 
@@ -2948,7 +2992,10 @@ class DeviceTypeDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        action.send(request.user, verb='deleting device type: %s' % (self.get_object().name))
+        try:
+            action.send(request.user, verb='deleting device type: %s' % (self.get_object().name))
+        except Exception as activity:
+            pass
         return super(DeviceTypeDelete, self).delete(request, *args, **kwargs)
 
 
@@ -3082,7 +3129,10 @@ class DevicePortCreate(CreateView):
         If the form is valid, redirect to the supplied URL.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        try:
+            action.send(self.request.user, verb='Created', action_object=self.object)
+        except Exception as activity:
+            pass
         return HttpResponseRedirect(DevicePortCreate.success_url)
 
 
@@ -3109,18 +3159,20 @@ class DevicePortUpdate(UpdateView):
         initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
 
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
+        try:
+            changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+            if changed_fields_dict:
 
-        changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-
-            verb_string = 'Changed values of DevicePort: %s from initial values ' % self.object.name + \
-                          ', '.join(['%s: %s' % (k, initial_field_dict[k]) for k in changed_fields_dict]) + \
-                          ' to ' + \
-                          ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
-            if len(verb_string) >= 255:
-                verb_string = verb_string[:250] + '...'
-            self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
+                verb_string = 'Changed values of DevicePort: %s from initial values ' % self.object.name + \
+                              ', '.join(['%s: %s' % (k, initial_field_dict[k]) for k in changed_fields_dict]) + \
+                              ' to ' + \
+                              ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
+                if len(verb_string) >= 255:
+                    verb_string = verb_string[:250] + '...'
+                action.send(self.request.user, verb=verb_string)
+        except Exception as activity:
+            pass
+        self.object = form.save()
         return HttpResponseRedirect(DevicePortUpdate.success_url)
 
 
@@ -3143,7 +3195,10 @@ class DevicePortDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        action.send(request.user, verb='deleting device port: %s' % (self.get_object().name))
+        try:
+            action.send(request.user, verb='deleting device port: %s' % (self.get_object().name))
+        except Exception as activity:
+            pass
         return super(DevicePortDelete, self).delete(request, *args, **kwargs)
 
 
@@ -3273,7 +3328,10 @@ class DeviceFrequencyCreate(CreateView):
         If the form is valid, redirect to the supplied URL.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        try:
+            action.send(self.request.user, verb='Created', action_object=self.object)
+        except Exception as activity:
+            pass
         return HttpResponseRedirect(DeviceFrequencyCreate.success_url)
 
 
@@ -3298,7 +3356,10 @@ class DeviceFrequencyUpdate(UpdateView):
         If the form is valid, redirect to the supplied URL.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        try:
+            action.send(self.request.user, verb='Created', action_object=self.object)
+        except Exception as activity:
+            pass
         return HttpResponseRedirect(DeviceFrequencyUpdate.success_url)
 
 
@@ -3321,5 +3382,8 @@ class DeviceFrequencyDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        action.send(request.user, verb='deleting device frequency: %s' % (self.get_object().value))
+        try:
+            action.send(request.user, verb='deleting device frequency: %s' % (self.get_object().value))
+        except Exception as activity:
+            pass
         return super(DeviceFrequencyDelete, self).delete(request, *args, **kwargs)
