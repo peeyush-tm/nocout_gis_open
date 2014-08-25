@@ -596,7 +596,7 @@ def prepare_result(base_station_id):
                                                 'name': 'cktid',
                                                 'title': 'Circuit ID',
                                                 'show': 1,
-                                                'value': circuit.id if circuit.id else 'N/A'
+                                                'value': circuit.circuit_id if circuit.circuit_id else 'N/A'
                                             },
                                             {
                                                 'name': 'qos_bandwidth',
