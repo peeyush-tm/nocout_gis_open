@@ -503,8 +503,8 @@ class Inventory_Device_Status(View):
                                                     'City', 'State', 'IP Address', 'MAC Address']
             result['data']['objects']['values'] = [base_station.name, substation.name,
                                                    substation.building_height, substation.tower_height,
-                                                   City.objects.get(id=substation.city).city_name,
-                                                   State.objects.get(id=substation.state).state_name,
+                                                   City.objects.get(id=substation.city).city_name if substation.city else "N/A",
+                                                   State.objects.get(id=substation.state).state_name if substation.state else "N/A",
                                                    substation_device.ip_address,
                                                    substation_device.mac_address]
 
@@ -521,8 +521,8 @@ class Inventory_Device_Status(View):
                 base_station = BaseStation.objects.get(id=base_station_list[0])
                 result['data']['objects']['values'] = [base_station.name, base_station.building_height,
                                                        base_station.tower_height,
-                                                       City.objects.get(id=base_station.city).city_name,
-                                                       State.objects.get(id=base_station.state).state_name,
+                                                       City.objects.get(id=base_station.city).city_name if base_station.city else "N/A",
+                                                       State.objects.get(id=base_station.state).state_name if base_station.state else "N/A",
                                                        sector_configured_on_device.ip_address,
                                                        sector_configured_on_device.mac_address]
 
