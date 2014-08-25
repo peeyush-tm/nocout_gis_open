@@ -26,10 +26,10 @@ from site_instance.models import SiteInstance
 from inventory.models import Backhaul, SubStation, Sector
 from django.contrib.staticfiles.templatetags.staticfiles import static
 
-if settings.DEBUG:
-    import logging
 
-    logger = logging.getLogger(__name__)
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ***************************************** Device Views ********************************************
 

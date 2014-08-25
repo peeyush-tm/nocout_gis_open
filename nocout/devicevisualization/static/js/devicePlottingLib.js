@@ -132,7 +132,13 @@ function devicePlottingClass_gmap() {
 	    		/*call fitbounts for the mapInstance with the place location bounds object*/
 	    		mapInstance.fitBounds(bounds)
 	    		/*Listener to reset zoom level if it exceeds to particular value*/
-
+                var listener = google.maps.event.addListener(mapInstance, "idle", function() {
+                    /*check for current zoom level*/
+                    if (mapInstance.getZoom() > 10) {
+                        mapInstance.setZoom(10);
+                    }
+                    google.maps.event.removeListener(listener);
+                });
 			});
 
 			/*Add Full Screen Control*/
