@@ -16,6 +16,7 @@ from sitesearch.views import DeviceSetFilters, prepare_result
 from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 logger=logging.getLogger(__name__)
 
+
 class DeviceStatsApi(View):
 
 
@@ -588,6 +589,7 @@ class BulkFetchLPDataApi(View):
                         logger.info(e.message)
 
                     result['data']['devices'][device_name]['icon'] = icon
+
                     # if response_dict doesn't have key 'success'
                     if not response_dict.get('success'):
                         logger.info(response_dict.get('error_message'))

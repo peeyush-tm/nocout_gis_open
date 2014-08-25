@@ -86,6 +86,12 @@
             // Initialize the select2 selectbox.
             $(".select2select").select2();
 
+            // getting values of select menu's on load
+            technology_val = $('#id_device_technology').val();
+            vendor_val = $('#id_device_vendor').val();
+            model_val = $('#id_device_model').val();
+            type_val = $('#id_device_type').val();
+
             // update 'device parent' select options
             if ($('#id_parent').val()) {
                 // called if 'device parent' is already selected i.e. after validation if form is invalid
@@ -99,7 +105,7 @@
             // update 'device technology' if it is already selected
             // i.e. after validation if form is invalid
             if ($('#id_device_technology').val()) {
-                Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
+                Dajaxice.device.after_update_vendor(Dajax.process, {'option': $('#id_device_technology').val(), 'selected': vendor_val});
             }
 
             // update 'device vendor' if it is already selected corresponding to 'device technology'
@@ -110,7 +116,7 @@
                 //$("#id_device_vendor").select2("val","");
             }
             else {
-                Dajaxice.device.update_model(Dajax.process, {'option': $('#id_device_vendor').val()});
+                Dajaxice.device.after_update_model(Dajax.process, {'option': $('#id_device_vendor').val(), 'selected': model_val});
             }
 
             // update 'device model' if it is already selected corresponding to 'device vendor'
@@ -121,7 +127,7 @@
                 //$("#id_device_model").select2("val","");
             }
             else {
-                Dajaxice.device.update_type(Dajax.process, {'option': $('#id_device_model').val()});
+                Dajaxice.device.after_update_type(Dajax.process, {'option': $('#id_device_model').val(), 'selected': type_val});
             }
 
             // update 'device type' if it is already selected corresponding to 'device model'
@@ -166,10 +172,11 @@
 
             if ($("#id_device_technology").val()) {
                 $("#id_device_type").select2("val","");
+                $("#s2id_id_device_vendor").find('.select2-chosen').text('Select');
                 Dajaxice.device.update_vendor(Dajax.process, {'option': $('#id_device_technology').val()});
-                $("#id_device_model").select2("val","");
+                $("#s2id_id_device_model").find('.select2-chosen').text('Select');
                 $("#id_device_model").empty();
-                $("#id_device_type").select2("val","");
+                $("#s2id_id_device_type").find('.select2-chosen').text('Select');
                 $("#id_device_type").empty();
                 $("#extra_fields").empty();
             }
