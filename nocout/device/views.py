@@ -259,7 +259,12 @@ class OperationalDeviceListingTable(BaseDatatableView):
 
             # img_url = static('img/nms_icons/circle_green.png')
             # dct.update(status_icon='<img src="{0}">'.format(img_url))
-            dct.update(status_icon='<i class="fa fa-circle green-dot"></i>')
+            if current_device.is_monitored_on_nms == 1:
+                status_icon_color = "green-dot"
+                dct.update(status_icon='<i class="fa fa-circle {0}"></i>'.format(status_icon_color))
+            else:
+                status_icon_color = "light-green-dot"
+                dct.update(status_icon='<i class="fa fa-circle {0}"></i>'.format(status_icon_color))
 
             # There are two set of links in device list table
             # 1. Device Actions --> device detail, edit, delete from inventory. They are always present in device table if user role is 'Admin'
@@ -545,8 +550,7 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             # checking whether device is 'backhaul configured on' or not
             try:
                 if Backhaul.objects.get(bh_configured_on=current_device):
-                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-info" title="Add Device"></i></a>\
-                        <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-info" title="Add Service"></i></a>'.format(
+                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-info" title="Add Device"></i></a>'.format(
                         dct['id']))
             except:
                 logger.info("Device is not a backhaul.")
@@ -554,8 +558,7 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             # checking whether device is 'sector configured on' or not
             try:
                 if Sector.objects.get(sector_configured_on=current_device):
-                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-success" title="Add Device"></i></a>\
-                        <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
+                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-success" title="Add Device"></i></a>'.format(
                         dct['id']))
             except:
                 logger.info("Device is not sector configured on.")
@@ -563,8 +566,7 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             # checking whether device is 'sub station' or not
             try:
                 if SubStation.objects.get(device=current_device):
-                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-danger"></i></a>\
-                        <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-danger" title="Add Service"></i></a>'.format(
+                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-danger"></i></a>'.format(
                         dct['id']))
             except:
                 logger.info("Device is not a substation.")
