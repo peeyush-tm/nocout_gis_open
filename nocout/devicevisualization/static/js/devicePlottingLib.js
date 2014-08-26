@@ -488,11 +488,11 @@ function devicePlottingClass_gmap() {
 			bsLonArray = [],
 			bs_ss_devices = [];
 
-		if($.trim(stationType) == "base_station") {
+		// if($.trim(stationType) == "base_station") {
 			bs_ss_devices = stationObject;
-		} else {
-			bs_ss_devices = stationObject.child_ss;
-		}
+		// } else {
+		// 	bs_ss_devices = stationObject.child_ss;
+		// }
 
 		for(var i=0;i<bs_ss_devices.length;i++) {
 
@@ -511,132 +511,132 @@ function devicePlottingClass_gmap() {
 				deviceData = bs_ss_devices[i].data.param.sub_station;
 			}
 
-			/*If base station then create all the sectors within it.*/
-			if($.trim(stationType) == "base_station") {
-
-		    	/*In case of PMP or WIMAX*/
-				if($.trim(bs_ss_devices[i].data.technology) != "PTP" && $.trim(bs_ss_devices[i].data.technology) != "P2P") {
-					
-					var sector_array = bs_ss_devices[i].data.param.sector;
-
-					$.grep(sector_array,function(sector) {
-
-		    			var lat = bs_ss_devices[i].data.lat;
-						var lon = bs_ss_devices[i].data.lon;
-						var azimuth = sector.azimuth_angle;
-						var beam_width = sector.beam_width;
-						var sector_color = sector.color;
-						var sectorInfo = sector.info;
-						var orientation = $.trim(sector.orientation);
-						var sector_child = sector.sub_station;
-						
-						var rad = 4;
-						var sectorRadius = (+sector.radius);
-
-						/*If radius is greater than 4 Kms then set it to 4.*/
-						if((sectorRadius <= 4) && (sectorRadius != null) && (sectorRadius > 0)) {
-							rad = sectorRadius;
-						}
-
-						/*Call createSectorData function to get the points array to plot the sector on google maps.*/
-						gmap_self.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
-
-							/*Plot sector on map with the retrived points*/
-							gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child);
-
-						});
-		    		});		    		
-		    		/*In case of PTP*/
-				} else {
-
-					var has_ss = bs_ss_devices[i].data.param.sector[0].sub_station.length;					
-					if(has_ss > 0) {
-
-						var ss_marker_obj = bs_ss_devices[i].data.param.sector[0].sub_station[0];
-
-						/*Create SS Marker Object*/
-						var ss_marker_object = {
-					    	position  	     : new google.maps.LatLng(ss_marker_obj.data.lat,ss_marker_obj.data.lon),
-					    	ptLat 		     : ss_marker_obj.data.lat,
-					    	ptLon 		     : ss_marker_obj.data.lon,
-					    	technology 	     : pt_technology,
-					    	map       	     : mapInstance,
-					    	icon 	  	     : window.location.origin+"/"+ss_marker_obj.data.markerUrl,
-					    	oldIcon 	     : window.location.origin+"/"+ss_marker_obj.data.markerUrl,
-					    	pointType	     : "sub_station",
-							dataset 	     : ss_marker_obj.data.param.sub_station,
-							bhInfo 			 : [],
-							antena_height    : ss_marker_obj.data.antena_height,
-							name 		 	 : ss_marker_obj.name,
-							device_name 	 : ss_marker_obj.device_name,
-							zIndex 			 : 200,
-                            optimized: false
-						};
-
-						/*Create SS Marker*/
-					    var ss_marker = new google.maps.Marker(ss_marker_object);
-
-					    bsLatArray.push(ss_marker_obj.data.lat);
-						bsLonArray.push(ss_marker_obj.data.lon);
-					    
-					    var startEndObj = {},
-					    	ss_info = {},
-					    	base_info = {};
-
-					    startEndObj["startLat"] = bs_ss_devices[i].data.lat;
-			    		startEndObj["startLon"] = bs_ss_devices[i].data.lon;
-					    
-					    startEndObj["endLat"] = ss_marker_obj.data.lat;
-			    		startEndObj["endLon"] = ss_marker_obj.data.lon;
-
-			    		/*Sub station info Object*/
-			    		ss_info["info"] = ss_marker_obj.data.param.sub_station;
-			    		ss_info["antena_height"] = ss_marker_obj.data.antena_height;
-
-			    		
-			    		/*Link color object*/
-			    		linkColor = ss_marker_obj.data.link_color;
-			    			
-		    			base_info["info"] = bs_ss_devices[i].data.param.base_station;
-		    			base_info["antena_height"] = bs_ss_devices[i].data.antena_height;
-		    			
-		    			if(ss_marker_obj.data.show_link == 1) {
-		    				/*Create the link between BS & SS or Sector & SS*/
-					    	var ss_link_line = gmap_self.createLink_gmaps(startEndObj,linkColor,base_info,ss_info);
-
-					    	ssLinkArray.push(ss_link_line);
-		    			}
-					    /*Add SS markers to the OverlappingMarkerSpiderfier*/
-		    			oms.addMarker(ss_marker);
-					}
-				}
-		    }
-
-		    /*Create BS or SS Marker Object*/
-			var station_marker_object = {
+			/*Create BS Marker Object*/
+			var bs_marker_object = {
 		    	position  	     : new google.maps.LatLng(bs_ss_devices[i].data.lat,bs_ss_devices[i].data.lon),
 		    	ptLat 		     : bs_ss_devices[i].data.lat,
 		    	ptLon 		     : bs_ss_devices[i].data.lon,
-		    	technology 	     : pt_technology,
 		    	map       	     : mapInstance,
 		    	icon 	  	     : window.location.origin+"/"+bs_ss_devices[i].data.markerUrl,
 		    	oldIcon 	     : window.location.origin+"/"+bs_ss_devices[i].data.markerUrl,
 		    	pointType	     : stationType,
 				child_ss   	     : bs_ss_devices[i].data.param.sector,
 				original_sectors : bs_ss_devices[i].data.param.sector,
-				dataset 	     : deviceData,
+				dataset 	     : bs_ss_devices[i].data.param.base_station,
 				device_name 	 : bs_ss_devices[i].data.device_name,
-				bsInfo 			 : bsInfo,
-				bhInfo 			 : bhInfo,
+				bsInfo 			 : bs_ss_devices[i].data.param.base_station,
+				bhInfo 			 : bs_ss_devices[i].data.param.backhual,
 				bs_name 		 : bs_ss_devices[i].name,
 				name 		 	 : bs_ss_devices[i].name,
 				antena_height    : bs_ss_devices[i].data.antena_height,
 				zIndex 			 : 200,
-                optimized: false
+                optimized 		 : false
 			};
 
-			/*Create BS or SS Marker*/
-		    var station_marker = new google.maps.Marker(station_marker_object);
+			/*Create BS Marker*/
+		    var bs_marker = new google.maps.Marker(bs_marker_object);
+
+
+	    	/*In case of PMP or WIMAX*/
+			// if($.trim(bs_ss_devices[i].data.technology) != "PTP" && $.trim(bs_ss_devices[i].data.technology) != "P2P") {
+				
+			var sector_array = bs_ss_devices[i].data.param.sector;
+			/*Plot Sector*/
+			for(var j=0;j<sector_array.length;j++) {
+
+    			var lat = bs_ss_devices[i].data.lat;
+				var lon = bs_ss_devices[i].data.lon;
+				var azimuth = sector_array[j].azimuth_angle;
+				var beam_width = sector_array[j].beam_width;
+				var sector_color = sector_array[j].color;
+				var sectorInfo = sector_array[j].info;
+				var orientation = $.trim(sector_array[j].orientation);
+				var sector_child = sector_array[j].sub_station;
+				
+				var rad = 4;
+				var sectorRadius = (+sector_array[j].radius);
+
+				/*If radius is greater than 4 Kms then set it to 4.*/
+				if((sectorRadius <= 4) && (sectorRadius != null) && (sectorRadius > 0)) {
+					rad = sectorRadius;
+				}
+
+				/*Call createSectorData function to get the points array to plot the sector on google maps.*/
+				gmap_self.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
+					
+					/*Plot sector on map with the retrived points*/
+					gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child);
+
+				});
+				/*Plot Sub-Station*/
+				for(var k=0;k<sector_child.length;k++) {
+
+				}
+    		}
+	    		/*In case of PTP*/
+			// } else {
+
+			// 	var has_ss = bs_ss_devices[i].data.param.sector[0].sub_station.length;					
+			// 	if(has_ss > 0) {
+
+			// 		var ss_marker_obj = bs_ss_devices[i].data.param.sector[0].sub_station[0];
+
+			// 		/*Create SS Marker Object*/
+			// 		var ss_marker_object = {
+			// 	    	position  	     : new google.maps.LatLng(ss_marker_obj.data.lat,ss_marker_obj.data.lon),
+			// 	    	ptLat 		     : ss_marker_obj.data.lat,
+			// 	    	ptLon 		     : ss_marker_obj.data.lon,
+			// 	    	technology 	     : pt_technology,
+			// 	    	map       	     : mapInstance,
+			// 	    	icon 	  	     : window.location.origin+"/"+ss_marker_obj.data.markerUrl,
+			// 	    	oldIcon 	     : window.location.origin+"/"+ss_marker_obj.data.markerUrl,
+			// 	    	pointType	     : "sub_station",
+			// 			dataset 	     : ss_marker_obj.data.param.sub_station,
+			// 			bhInfo 			 : [],
+			// 			antena_height    : ss_marker_obj.data.antena_height,
+			// 			name 		 	 : ss_marker_obj.name,
+			// 			device_name 	 : ss_marker_obj.device_name,
+			// 			zIndex 			 : 200,
+   //                      optimized: false
+			// 		};
+
+			// 		/*Create SS Marker*/
+			// 	    var ss_marker = new google.maps.Marker(ss_marker_object);
+
+			// 	    bsLatArray.push(ss_marker_obj.data.lat);
+			// 		bsLonArray.push(ss_marker_obj.data.lon);
+				    
+			// 	    var startEndObj = {},
+			// 	    	ss_info = {},
+			// 	    	base_info = {};
+
+			// 	    startEndObj["startLat"] = bs_ss_devices[i].data.lat;
+		 //    		startEndObj["startLon"] = bs_ss_devices[i].data.lon;
+				    
+			// 	    startEndObj["endLat"] = ss_marker_obj.data.lat;
+		 //    		startEndObj["endLon"] = ss_marker_obj.data.lon;
+
+		 //    		/*Sub station info Object*/
+		 //    		ss_info["info"] = ss_marker_obj.data.param.sub_station;
+		 //    		ss_info["antena_height"] = ss_marker_obj.data.antena_height;
+
+		    		
+		 //    		/*Link color object*/
+		 //    		linkColor = ss_marker_obj.data.link_color;
+		    			
+	  //   			base_info["info"] = bs_ss_devices[i].data.param.base_station;
+	  //   			base_info["antena_height"] = bs_ss_devices[i].data.antena_height;
+	    			
+	  //   			if(ss_marker_obj.data.show_link == 1) {
+	  //   				/*Create the link between BS & SS or Sector & SS*/
+			// 	    	var ss_link_line = gmap_self.createLink_gmaps(startEndObj,linkColor,base_info,ss_info);
+
+			// 	    	ssLinkArray.push(ss_link_line);
+	  //   			}
+			// 	    /*Add SS markers to the OverlappingMarkerSpiderfier*/
+	  //   			oms.addMarker(ss_marker);
+			// 	}
+			// }
 
 			/*Get All BS Lat & Lon*/
 			bsLatArray.push(bs_ss_devices[i].data.lat);
@@ -681,18 +681,18 @@ function devicePlottingClass_gmap() {
 		    	/*Push the created line in global line array*/
 		    	pathLineArray.push(polyLineObj);
 		    	/*Push the plotted SS to an array for further use*/
-		    	plottedSS.push(station_marker);
+		    	plottedSS.push(bs_marker);
 		    }
 
 		    if($.trim(stationType) == "base_station") {
 		    	
 		    	/*Add the master marker to the global master markers array*/
-		    	masterMarkersObj.push(station_marker);
-		    	masterMarkersObj.push(ss_marker);
+		    	masterMarkersObj.push(bs_marker);
+		    	// masterMarkersObj.push(ss_marker);
 		    }
 
 		    /*Add parent markers to the OverlappingMarkerSpiderfier*/
-		    oms.addMarker(station_marker);
+		    oms.addMarker(bs_marker);
 		}
 
 		/*Loop to change the icon for same location markers(to cluster icon)*/
