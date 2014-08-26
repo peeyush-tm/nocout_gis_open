@@ -329,7 +329,8 @@ class UserUpdate(UpdateView):
         To update the form before submitting and log the user activity.
         """
         self.object= form.save(commit=False)
-        self.object.set_password(form.cleaned_data["password2"])
+        if form.cleaned_data["password2"]:
+            self.object.set_password(form.cleaned_data["password2"])
         role= form.cleaned_data['role'][0]
         project_group_name= project_group_role_dict_mapper[role.role_name]
         project_group= Group.objects.get( name = project_group_name)
