@@ -351,14 +351,14 @@ function devicePlottingClass_gmap() {
                                 /*Add the master markers to the cluster MarkerCluster object*/
                                 masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
 
-								$.gritter.add({
-						            // (string | mandatory) the heading of the notification
-						            title: 'GIS',
-						            // (string | mandatory) the text inside the notification
-						            text: 'Device Loading Completed',
-						            // (bool | optional) if you want it to fade out on its own or just sit there
-						            sticky: false
-						        });
+								// $.gritter.add({
+						  //           // (string | mandatory) the heading of the notification
+						  //           title: 'GIS',
+						  //           // (string | mandatory) the text inside the notification
+						  //           text: 'Device Loading Completed',
+						  //           // (bool | optional) if you want it to fade out on its own or just sit there
+						  //           sticky: false
+						  //       });
 
 						        /*Recall the server after particular timeout if system is not freezed*/
 						        /*Hide The loading Icon*/
@@ -369,7 +369,7 @@ function devicePlottingClass_gmap() {
 
 								setTimeout(function(e){
 									gmap_self.recallServer_gmap();
-								},300000);
+								},1800000);
 							}							
 
 						} else {
@@ -381,14 +381,14 @@ function devicePlottingClass_gmap() {
                             masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
 
 
-							$.gritter.add({
-					            // (string | mandatory) the heading of the notification
-					            title: 'GIS',
-					            // (string | mandatory) the text inside the notification
-					            text: 'Device Loading Completed',
-					            // (bool | optional) if you want it to fade out on its own or just sit there
-					            sticky: false
-					        });
+							// $.gritter.add({
+					  //           // (string | mandatory) the heading of the notification
+					  //           title: 'GIS',
+					  //           // (string | mandatory) the text inside the notification
+					  //           text: 'Device Loading Completed',
+					  //           // (bool | optional) if you want it to fade out on its own or just sit there
+					  //           sticky: false
+					  //       });
 
 							/*Recall the server after particular timeout if system is not freezed*/
 							/*Hide The loading Icon*/
@@ -399,7 +399,7 @@ function devicePlottingClass_gmap() {
 
 							setTimeout(function(e){
 								gmap_self.recallServer_gmap();
-							},300000);
+							},1800000);
 						}
 
 					} else {
@@ -412,16 +412,14 @@ function devicePlottingClass_gmap() {
                         /*Add the master markers to the cluster MarkerCluster object*/
                         masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
 
-
-
-						$.gritter.add({
-				            // (string | mandatory) the heading of the notification
-				            title: 'GIS',
-				            // (string | mandatory) the text inside the notification
-				            text: result.message,
-				            // (bool | optional) if you want it to fade out on its own or just sit there
-				            sticky: false
-				        });
+						// $.gritter.add({
+				  //           // (string | mandatory) the heading of the notification
+				  //           title: 'GIS',
+				  //           // (string | mandatory) the text inside the notification
+				  //           text: result.message,
+				  //           // (bool | optional) if you want it to fade out on its own or just sit there
+				  //           sticky: false
+				  //       });
 				        
 				        /*Hide The loading Icon*/
 						$("#loadingIcon").hide();
@@ -432,7 +430,7 @@ function devicePlottingClass_gmap() {
 						/*Recall the server after particular timeout if system is not freezed*/
 						setTimeout(function(e) {
 							gmap_self.recallServer_gmap();
-						},300000);
+						},1800000);
 
 					}
 
@@ -457,7 +455,7 @@ function devicePlottingClass_gmap() {
 
 					setTimeout(function(e){
 						gmap_self.recallServer_gmap();
-					},300000);
+					},1800000);
 				}
 			});
 		} else {
@@ -474,7 +472,7 @@ function devicePlottingClass_gmap() {
 			/*Recall the server after particular timeout if system is not freezed*/
 			setTimeout(function(e){
 				gmap_self.recallServer_gmap();
-			},300000);
+			},1800000);
 		}
 	};
 
@@ -1858,29 +1856,11 @@ function devicePlottingClass_gmap() {
 	 		/*Check that after applying filters any data exist or not*/
 	 		if(filteredData.length === 0) {
 
-	 			$.gritter.add({
-		            // (string | mandatory) the heading of the notification
-		            title: 'GIS - Device Load Completed',
-		            // (string | mandatory) the text inside the notification
-		            text: "User Don't Have Any Devies For Selected Filters",
-		            // (bool | optional) if you want it to fade out on its own or just sit there
-		            sticky: false
-		        });
-
 	 			/*Reset the markers, polyline & filters*/
 	 			gmap_self.clearGmapElements();
 
 				masterMarkersObj = [];
 				slaveMarkersObj = [];
-
-				 /*Reset The basic filters dropdown*/
-			    $("#technology").val($("#technology option:first").val());
-			    $("#vendor").val($("#vendor option:first").val());
-			    $("#state").val($("#state option:first").val());
-			    $("#city").val($("#city option:first").val());
-
-				/*Populate the map with the all data*/
-	 			gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");	 			
 
 	 		} else {
 
@@ -1972,6 +1952,16 @@ function devicePlottingClass_gmap() {
      * @method initLivePolling
      */
     this.initLivePolling = function() {
+
+    	$("#sideInfo > .panel-body > .col-md-12 > .devices_container").html("");
+
+    	$("#tech_send").button("complete");
+		$("#sideInfo .panel-body .col-md-12 .template_container").html("");
+
+		if(!($("#fetch_polling").hasClass("hide"))) {
+			$("#fetch_polling").addClass("hide");
+		}
+		$("#polling_tech").val($("#polling_tech option:first").val());
 
     	if($("#sideInfoContainer").hasClass("hide")) {
 			$("#sideInfoContainer").removeClass("hide");
