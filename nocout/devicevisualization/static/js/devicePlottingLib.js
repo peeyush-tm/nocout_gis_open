@@ -1036,7 +1036,7 @@ function devicePlottingClass_gmap() {
 			path 		     : polyPathArray,
 			ptLat 		     : lat,
 			ptLon 		     : lon,
-			strokeColor      : bgColor,
+			strokeColor      : "#111111",
 			fillColor 	     : bgColor,
 			pointType	     : "sector",
 			strokeOpacity    : 1.0,
