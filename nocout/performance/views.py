@@ -503,8 +503,8 @@ class Inventory_Device_Status(View):
                                                     'City', 'State', 'IP Address', 'MAC Address']
             result['data']['objects']['values'] = [base_station.name, substation.name,
                                                    substation.building_height, substation.tower_height,
-                                                   City.objects.get(id=substation.city).city_name,
-                                                   State.objects.get(id=substation.state).state_name,
+                                                   City.objects.get(id=substation.city).city_name if substation.city else "N/A",
+                                                   State.objects.get(id=substation.state).state_name if substation.state else "N/A",
                                                    substation_device.ip_address,
                                                    substation_device.mac_address]
 
@@ -521,8 +521,8 @@ class Inventory_Device_Status(View):
                 base_station = BaseStation.objects.get(id=base_station_list[0])
                 result['data']['objects']['values'] = [base_station.name, base_station.building_height,
                                                        base_station.tower_height,
-                                                       City.objects.get(id=base_station.city).city_name,
-                                                       State.objects.get(id=base_station.state).state_name,
+                                                       City.objects.get(id=base_station.city).city_name if base_station.city else "N/A",
+                                                       State.objects.get(id=base_station.state).state_name if base_station.state else "N/A",
                                                        sector_configured_on_device.ip_address,
                                                        sector_configured_on_device.mac_address]
 
@@ -691,21 +691,26 @@ class Get_Service_Type_Performance_Data(View):
 
         start_date= self.request.GET.get('start_date','')
         end_date= self.request.GET.get('end_date','')
+        isSet = False
+
 
         if start_date and end_date:
             start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
             end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
             start_date= format( start_date_object, 'U')
             end_date= format( end_date_object, 'U')
-        else:
-
-            end_date = format(datetime.datetime.now(), 'U')
-            # now_minus_60_min = format(datetime.datetime.now() + datetime.timedelta(minutes=-60), 'U')
-            # now_minus_1day = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
-            start_date= format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
+            isSet = True
+        # else:
+        #
+        #     end_date = format(datetime.datetime.now(), 'U')
+        #     # now_minus_60_min = format(datetime.datetime.now() + datetime.timedelta(minutes=-60), 'U')
+        #     # now_minus_1day = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
+        #     start_date= format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
 
         if service_data_source_type in ['pl', 'rta']:
-
+            if not isSet:
+                end_date = format(datetime.datetime.now(), 'U')
+                start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
             performance_data = PerformanceNetwork.objects.filter(device_name=inventory_device_name,
                                                                  service_name=service_name,
                                                                  data_source=service_data_source_type,
@@ -716,6 +721,9 @@ class Get_Service_Type_Performance_Data(View):
             result = self.get_performance_data_result(performance_data)
 
         elif '_status' in service_name:
+            if not isSet:
+                end_date = format(datetime.datetime.now(), 'U')
+                start_date = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
             performance_data = PerformanceStatus.objects.filter(device_name=inventory_device_name,
                                                                 service_name=service_name,
                                                                 data_source=service_data_source_type,
@@ -726,7 +734,9 @@ class Get_Service_Type_Performance_Data(View):
             result = self.get_performance_data_result_for_status_and_invent_data_source(performance_data)
 
         elif '_invent' in service_name:
-
+            if not isSet:
+                end_date = format(datetime.datetime.now(), 'U')
+                start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
             performance_data = PerformanceInventory.objects.filter(device_name=inventory_device_name,
                                                                    service_name=service_name,
                                                                    data_source=service_data_source_type,
@@ -736,6 +746,9 @@ class Get_Service_Type_Performance_Data(View):
 
             result = self.get_performance_data_result_for_status_and_invent_data_source(performance_data)
         else:
+            if not isSet:
+                end_date = format(datetime.datetime.now(), 'U')
+                start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
             performance_data = PerformanceService.objects.filter(device_name=inventory_device_name,
                                                                  service_name=service_name,
                                                                  data_source=service_data_source_type,

@@ -39,6 +39,8 @@ class UserForm(forms.ModelForm):
                 self.fields['username'].widget.attrs['readonly'] = True
                 self.fields['parent'].widget.attrs['disabled'] = 'disabled'
                 self.fields['role'].widget.attrs['disabled'] = 'disabled'
+                self.fields['role'].widget.is_required = False
+                self.fields['role'].required = False
                 self.fields['organization'].widget.attrs['readonly'] = True
                 self.fields['parent'].label='Manager'
                 self.fields.pop('comment')

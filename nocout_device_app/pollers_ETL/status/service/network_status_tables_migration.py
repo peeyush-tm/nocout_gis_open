@@ -165,18 +165,23 @@ def insert_data(table, data_values, **kwargs):
 
 	Kwargs (dict): Dictionary to hold connection variables
 	"""
+	insert_dict = {'0':[],'1':[]}
 	db = utility_module.mysql_conn(configs=kwargs.get('configs'))
-	query = "SELECT * FROM %s " % table +\
-                "WHERE `device_name`='%s' AND `site_name`='%s' AND `service_name`='%s'" %(str(data_values[0][0]),
-		data_values[0][3],data_values[0][1])
-        cursor = db.cursor()
-        try:
-                cursor.execute(query)
-		result = cursor.fetchone()
-	except mysql.connector.Error as err:
-        	raise mysql.connector.Error, err
-	if result:
-		
+	for i in range(len(data_values)):
+		query = "SELECT * FROM %s " % table +\
+                	"WHERE `device_name`='%s' AND `site_name`='%s' AND `service_name`='%s'" %(str(data_values[i][0]),data_values[i][3],data_values[i][1])
+		cursor = db.cursor()
+        	try:
+                	cursor.execute(query)
+			result = cursor.fetchone()
+		except mysql.connector.Error as err:
+        		raise mysql.connector.Error, err
+		if result:
+			insert_dict['1'].append(data_values[i])
+		else:
+			insert_dict['0'].append(data_values[i])
+	
+	if len(insert_dict['1']):
  		query = "UPDATE `%s` " % table
 		query += """SET `device_name`=%s,`service_name`=%s,
 		`machine_name`=%s, `site_name`=%s, `data_source`=%s, `current_value`=%s,
@@ -186,14 +191,14 @@ def insert_data(table, data_values, **kwargs):
 		WHERE `device_name`=%s AND `site_name`=%s AND `service_name`=%s AND `data_source`=%s
 		"""
 		try:
-			data_values = map(lambda x: x + (x[0], x[3], x[1],x[4]), data_values)
+			data_values = map(lambda x: x + (x[0], x[3], x[1],x[4]), insert_dict.get('1'))
                 	cursor.executemany(query, data_values)
 		except mysql.connector.Error as err:
                 	raise mysql.connector.Error, err
                 db.commit()
 		cursor.close()
 
-	else:
+	if len(insert_dict['0']):
 		query = "INSERT INTO `%s`" % table
  		query+= """(device_name, service_name, machine_name, 
             	site_name, data_source, current_value, min_value, 
@@ -203,7 +208,7 @@ def insert_data(table, data_values, **kwargs):
 		"""
     		cursor = db.cursor()
     		try:
-        		cursor.executemany(query, data_values)
+        		cursor.executemany(query, insert_dict.get('0'))
     		except mysql.connector.Error as err:
 				raise mysql.connector.Error, err
     		db.commit()

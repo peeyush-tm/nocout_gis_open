@@ -15,7 +15,7 @@ from collections import namedtuple
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_DIR = os.path.dirname(__file__)
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -288,4 +288,4 @@ ACTSTREAM_SETTINGS = {
 ######################list of private IPs
 
 PRIVATE_IPS_PREFIX = ('10.', '172.', '192.', )
-GIS_MAP_MAX_DEVICE_LIMIT=20
+GIS_MAP_MAX_DEVICE_LIMIT=30
