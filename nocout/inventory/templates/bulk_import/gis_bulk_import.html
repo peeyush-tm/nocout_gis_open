@@ -60,9 +60,9 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
         <script type="text/javascript" src={% static "js/bootstrap-file-input/bootstrap-file-input.js" %}></script>
         <script type="text/javascript" src={% static "js/lodash/lodash.js" %}></script>
-        {# <script type="text/javascript" src={% static "js/shim/shim.js" %}></script> #}
+        <script type="text/javascript" src={% static "js/shim/shim.js" %}></script>
         <script type="text/javascript" src={% static "js/jszip/jszip.js" %}></script>
-        {# <script type="text/javascript" src={% static "js/js-xls/xls.js" %}></script> #}
+        <script type="text/javascript" src={% static "js/js-xls/xls.js" %}></script>
         <script type="text/javascript" src={% static "js/js-xlsx/xlsx.js" %}></script>
         <script type="text/javascript" src={% static "js/js-xlsx/xlsx-reader.js" %}></script>
     {% endblock %}
@@ -88,6 +88,21 @@
             $("#id_ptp_sheet").empty().append('<option value="">Select</option>');
         });
         $("#id_file_upload").change(function (event) {
+            var reader = new FileReader();
+            var name = this.files[0].name;
+            alert(name);
+            alert("Id File Upload");
+            reader.onload = function (e) {
+                alert('Hello');
+                var data = e.target.result;
+
+                /* if binary string, read with type 'binary' */
+                var wb = XLS.read(data, {type: 'binary'});
+                alert(wb);
+
+                /* DO SOMETHING WITH workbook HERE */
+            };
+/*
             var file = this.files[0], sheets;
             XLSXReader(file, true, function (xlsxData) {
                 sheets = xlsxData.sheets;
@@ -106,6 +121,7 @@
                 $("#id_ss_sheet").empty().append(sheets_options);
                 $("#id_ptp_sheet").empty().append(sheets_options);
             });
+            */
         });
 
         // reset 'PTP' select menu if either of 'BS' or 'SS' has value (i.e. selected value)
