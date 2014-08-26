@@ -432,7 +432,7 @@ def prepare_result(base_station_id):
                                                              'azimuth_angle': sector.antenna.azimuth_angle if sector.antenna else 0,
                                                              'beam_width': sector.antenna.beam_width if sector.antenna else 0,
                                                              'orientation': sector.antenna.polarization if sector.antenna else "vertical",
-                                                             's_technology':sector.bs_technology.name if sector.bs_technology else 'N/A',
+                                                             'technology':sector.bs_technology.name if sector.bs_technology else 'N/A',
                                                              'info': [{
                                                                           'name': 'sector_name',
                                                                           'title': 'Sector Name',
@@ -557,7 +557,7 @@ def prepare_result(base_station_id):
                                     "lat": substation_device.latitude,
                                     "lon": substation_device.longitude,
                                     "antenna_height": substation.antenna.height if substation.antenna else 0,
-                                    "ss_technology":sector.bs_technology.name,
+                                    "technology":sector.bs_technology.name,
                                     "markerUrl": "static/img/marker/icon4_small.png",
                                     "show_link": 1,
                                     "link_color": sector.frequency.color_hex_value if hasattr(
