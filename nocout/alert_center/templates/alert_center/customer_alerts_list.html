@@ -10,7 +10,7 @@
 
 {% block content %}
 
-    <div class="box border lite">
+    <div class="box border lite" style="overflow-x: auto; background: #fff;">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-bell"></i>CUSTOMER ALERT - {{ data_source|upper }}</h4>
         </div>
@@ -82,7 +82,7 @@
                     if (destroy){
                         $("#"+tableId).dataTable().fnDestroy();
                     }
-                    $("#"+tableId).DataTable({
+                    var dtable = $("#"+tableId).DataTable({
                         bAutoWidth: false,
                         bPaginate: true,
                         bProcessing : true,
@@ -93,7 +93,9 @@
                             /*Hide the spinner*/
                             hideSpinner();
                         },
-                        aoColumns:tableheaders
+                        aoColumns:tableheaders,
+                        sPaginationType: "bs_full",
+                        aaSorting: [[10, 'desc'],[0, 'asc']]
                     });
                 };
             }

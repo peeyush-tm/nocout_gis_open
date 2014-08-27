@@ -51,21 +51,18 @@ class Live_Performance(ListView):
         """
         context = super(Live_Performance, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
-            {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+            # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
+            {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False, 'bVisible': False},
             {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+            {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+            # {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': '10%', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': False},
+            {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'last_updated_date', 'sTitle': 'Last Updated Date', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': False},
-            {'mData': 'last_updated_time', 'sTitle': 'Last Updated Time', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': False},
+            {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
         ]
 
@@ -80,7 +77,7 @@ class LivePerformanceListing(BaseDatatableView):
 
     """
     model = NetworkStatus  # TODO change to NETWORK STATUS. PROBLEM is with DA, DA is not puttin gin RTA just PL
-    columns = ['site_instance', 'id', 'device_alias', 'device_alias', 'ip_address', 'device_type', 'city', 'state']
+    columns = ['id', 'device_name', 'device_technology', 'device_type', 'ip_address', 'city', 'state']
 
     def filter_queryset(self, qs):
         """
@@ -165,7 +162,8 @@ class LivePerformanceListing(BaseDatatableView):
                     "last_updated_time": "",
                     "city": City.objects.get(id=device['city']).city_name,
                     "state": State.objects.get(id=device['state']).state_name,
-                    "device_type": DeviceType.objects.get(pk=int(device['device_type'])).name
+                    "device_type": DeviceType.objects.get(pk=int(device['device_type'])).name,
+                    "device_technology": DeviceTechnology.objects.get(pk=int(device['device_technology'])).name
                 })
                 device_list.append(device)
 
@@ -224,7 +222,8 @@ class LivePerformanceListing(BaseDatatableView):
                     if d_src == "rta":
                         perf_result["latency"] = current_val
 
-                    perf_result["last_updated"] = str(datetime.datetime.fromtimestamp(float(data.sys_timestamp)))
+                    perf_result["last_updated"] = datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                    #datetime.datetime.fromtimestamp(float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
                     perf_result["last_updated_date"] = datetime.datetime.fromtimestamp(
                         float(data.sys_timestamp)).strftime("%d/%B/%Y")
                     perf_result["last_updated_time"] = datetime.datetime.fromtimestamp(
@@ -252,15 +251,15 @@ class LivePerformanceListing(BaseDatatableView):
                 if self.request.GET['page_type'] == 'customer':
                     substation_id = device.substation_set.values()[0]['id']
                     dct.update(
-                        actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-bar-chart-o text-info"></i></a>\
-                        <a href="/alert_center/{0}/device/{2}/service_tab/{3}/"><i class="fa fa-warning text-warning"></i></a> \
-                        <a href="/device/{2}"><i class="fa fa-dropbox text-muted"></i></a>'
+                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                        <a href="/alert_center/{0}/device/{2}/service_tab/{3}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
+                        <a href="/device/{2}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
                         .format(self.request.GET['page_type'], substation_id, device.id, 'latency'  if 'latency' in dct.keys() else 'packet_drop' ))
                 elif self.request.GET['page_type'] == 'network':
                     dct.update(
-                        actions='<a href="/performance/{0}_live/{1}/"><i class="fa fa-bar-chart-o text-info"></i></a> \
-                         <a href="/alert_center/{0}/device/{1}/service_tab/{2}/"><i class="fa fa-warning text-warning"></i></a> \
-                         <a href="/device/{1}"><i class="fa fa-dropbox text-muted"></i></a>'
+                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a> \
+                         <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
+                         <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'
                         .format(self.request.GET['page_type'], dct['id'], 'latency'  if 'latency' in dct.keys() else 'packet_drop'))
 
                 device_list.append({'device_name': dct["device_name"], 'device_machine': device.machine.name})
@@ -688,24 +687,27 @@ class Get_Service_Type_Performance_Data(View):
             inventory_device_name = device.device_name
             inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
+        try:
+            start_date= self.request.GET.get('start_date','')
+            end_date= self.request.GET.get('end_date','')
+            isSet = False
 
-        start_date= self.request.GET.get('start_date','')
-        end_date= self.request.GET.get('end_date','')
-        isSet = False
 
+            if len(start_date) and len(end_date):
+                start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
+                end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
+                start_date= format( start_date_object, 'U')
+                end_date= format( end_date_object, 'U')
+                isSet = True
+            # else:
+            #
+            #     end_date = format(datetime.datetime.now(), 'U')
+            #     # now_minus_60_min = format(datetime.datetime.now() + datetime.timedelta(minutes=-60), 'U')
+            #     # now_minus_1day = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
+            #     start_date= format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
 
-        if start_date and end_date:
-            start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
-            end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
-            start_date= format( start_date_object, 'U')
-            end_date= format( end_date_object, 'U')
-            isSet = True
-        # else:
-        #
-        #     end_date = format(datetime.datetime.now(), 'U')
-        #     # now_minus_60_min = format(datetime.datetime.now() + datetime.timedelta(minutes=-60), 'U')
-        #     # now_minus_1day = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
-        #     start_date= format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
+        except Exception as timeexception:
+            isSet = False
 
         if service_data_source_type in ['pl', 'rta']:
             if not isSet:
