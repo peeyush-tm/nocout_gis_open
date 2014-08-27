@@ -1,3 +1,4 @@
+from operator import itemgetter
 import re
 from django.contrib.auth.decorators import permission_required
 from django.shortcuts import render
@@ -1547,6 +1548,42 @@ class CircuitListingTable(BaseDatatableView):
 
         return qs
 
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except ValueError:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.get_order_columns()
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except ValueError:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ''
+
+            sortcol = order_columns[i_sort_col]
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            key_name=order[0][1:] if '-' in order[0] else order[0]
+            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
+            return sorted_device_data
+        return qs
+
+
     def get_context_data(self, *args, **kwargs):
         """
         The main method call to fetch, search, ordering , prepare and display the data on the data table.
@@ -1560,9 +1597,9 @@ class CircuitListingTable(BaseDatatableView):
         # number of records before filtering
         total_records = qs.count()
 
-
+        qs = self.filter_queryset(qs)
         # number of records after filtering
-        total_display_records = qs.count()
+        total_display_records = len(qs)
 
         qs = self.ordering(qs)
         qs = self.paging(qs)
@@ -1570,9 +1607,7 @@ class CircuitListingTable(BaseDatatableView):
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
 
-        # prepare output data
-        qs = self.prepare_results(qs)
-        aaData = self.filter_queryset(qs)
+        aaData = self.prepare_results(qs)
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,

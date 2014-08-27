@@ -287,17 +287,13 @@ def prepare_result(base_station_id):
     base_station = BaseStation.objects.get(id=base_station_id)
 
     sectors = Sector.objects.filter(base_station=base_station.id)
-    #because sectors of a base station would be of same technology
-    techno = sectors[0].bs_technology.name if sectors[0].bs_technology else 'N/A'
-
     base_station_info = {
         'id': base_station.id,
         'name': base_station.name,
         'data': {
             'lat': base_station.latitude,
             'lon': base_station.longitude,
-            "markerUrl": tech_marker_url(techno),
-            'technology': techno,
+            "markerUrl": 'static/img/marker/slave01.png',
             'antena_height': 0,
             'vendor':','.join(sectors[0].bs_technology.device_vendors.values_list('name', flat=True)),
             'city': City.objects.get(id=base_station.city).city_name if base_station.city else 'N/A',
@@ -373,12 +369,6 @@ def prepare_result(base_station_id):
                         'value': base_station.gps_type if base_station.gps_type else 'N/A'
                     },
                     {
-                        'name':'bs_technology',
-                        'title':'BS Technology',
-                        'show':1,
-                        'value': sectors[0].bs_technology.name if sectors[0].bs_technology else 'N/A'
-                    },
-                    {
                         'name':'bs_type',
                         'title':'BS Type',
                         'show':1,
@@ -439,9 +429,10 @@ def prepare_result(base_station_id):
                                                                  sector,
                                                                  'frequency') and sector.frequency else 'rgba(74,72,94,0.58)',
                                                              'radius': sector.cell_radius if sector.cell_radius else 0,
-                                                             'azimuth_angle': sector.antenna.azimuth_angle if sector.antenna.azimuth_angle else 0,
-                                                             'beam_width': sector.antenna.beam_width if sector.antenna.beam_width else 0,
-                                                             'orientation': sector.antenna.polarization if sector.antenna.polarization else "vertical",
+                                                             'azimuth_angle': sector.antenna.azimuth_angle if sector.antenna else 0,
+                                                             'beam_width': sector.antenna.beam_width if sector.antenna else 0,
+                                                             'orientation': sector.antenna.polarization if sector.antenna else "vertical",
+                                                             'technology':sector.bs_technology.name if sector.bs_technology else 'N/A',
                                                              'info': [{
                                                                           'name': 'sector_name',
                                                                           'title': 'Sector Name',
@@ -499,37 +490,37 @@ def prepare_result(base_station_id):
                                                                           'name': 'type_of_antenna',
                                                                           'title': 'Antenna Type',
                                                                           'show': 1,
-                                                                          'value': sector.antenna.mount_type if sector.antenna.mount_type else 'N/A'
+                                                                          'value': sector.antenna.mount_type if sector.antenna else 'N/A'
                                                                       },
                                                                       {
                                                                           'name': 'antenna_tilt',
                                                                           'title': 'Antenna Tilt',
                                                                           'show': 1,
-                                                                          'value': sector.antenna.tilt if sector.antenna.tilt else 'N/A'
+                                                                          'value': sector.antenna.tilt if sector.antenna else 'N/A'
                                                                       },
                                                                       {
-                                                                          'name': 'antena_height',
+                                                                          'name': 'antenna_height',
                                                                           'title': 'Antenna Height',
                                                                           'show': 1,
-                                                                          'value': sector.antenna.height if sector.antenna.height else 'N/A'
+                                                                          'value': sector.antenna.height if sector.antenna else 'N/A'
                                                                       },
                                                                       {
                                                                           'name': 'antenna_bw',
                                                                           'title': 'Antenna Beam Width',
                                                                           'show': 1,
-                                                                          'value': sector.antenna.beam_width if sector.antenna.beam_width else 'N/A'
+                                                                          'value': sector.antenna.beam_width if sector.antenna else 'N/A'
                                                                       },
                                                                       {
                                                                           'name': 'antenna_azimuth',
                                                                           'title': 'Antenna Azimuth Angle',
                                                                           'show': 1,
-                                                                          'value': sector.antenna.azimuth_angle if sector.antenna.azimuth_angle else 'N/A'
+                                                                          'value': sector.antenna.azimuth_angle if sector.antenna else 'N/A'
                                                                       },
                                                                       {
                                                                           'name': 'antenna_splitter_installed',
                                                                           'title': 'Installation of Splitter',
                                                                           'show': 1,
-                                                                          'value': sector.antenna.splitter_installed if sector.antenna.splitter_installed else 'N/A'
+                                                                          'value': sector.antenna.splitter_installed if sector.antenna else 'N/A'
                                                                       },
                                                                       {
                                                                           'name': 'city',
@@ -565,7 +556,8 @@ def prepare_result(base_station_id):
                                 'data': {
                                     "lat": substation_device.latitude,
                                     "lon": substation_device.longitude,
-                                    "antenmaina_height": sector.antenna.height,
+                                    "antenna_height": substation.antenna.height if substation.antenna else 0,
+                                    "technology":sector.bs_technology.name,
                                     "markerUrl": "static/img/marker/icon4_small.png",
                                     "show_link": 1,
                                     "link_color": sector.frequency.color_hex_value if hasattr(
@@ -605,10 +597,16 @@ def prepare_result(base_station_id):
                                                 'value': circuit.qos_bandwidth if circuit.qos_bandwidth else 'N/A'
                                             },
                                             {
+                                                'name': 'ss_technology',
+                                                'title': 'Technology',
+                                                'show': 1,
+                                                'value': sector.bs_technology.name if sector.bs_technology else 'N/A'
+                                            },
+                                            {
                                                 'name': 'antenna_height',
                                                 'title': 'Antenna Height',
                                                 'show': 1,
-                                                'value': sector.antenna.height if sector.antenna.height else 'N/A'
+                                                'value': sector.antenna.height if sector.antenna else 'N/A'
                                             },
                                             {
                                                 'name': 'building_height',
@@ -629,13 +627,13 @@ def prepare_result(base_station_id):
                                                 'title': 'Polarisation',
                                                 'show': 1,
                                                 'value': sector.antenna.polarization \
-                                                    if sector.antenna.polarization else 'N/A'
+                                                    if sector.antenna else 'N/A'
                                             },
                                             {
                                                 'name': 'mount_type',
                                                 'title': 'SS MountType',
                                                 'show': 1,
-                                                'value': sector.antenna.mount_type if sector.antenna.mount_type else 'N/A'
+                                                'value': sector.antenna.mount_type if sector.antenna else 'N/A'
                                             },
                                             {
 
@@ -643,7 +641,7 @@ def prepare_result(base_station_id):
                                                 'name': 'antenna_type',
                                                 'title': 'Antenna Type',
                                                 'show': 1,
-                                                'value': sector.antenna.antenna_type if sector.antenna.antenna_type else 'N/A'
+                                                'value': sector.antenna.antenna_type if sector.antenna else 'N/A'
                                             },
                                             {
                                                 'name': 'ethernet_extender',
@@ -652,7 +650,7 @@ def prepare_result(base_station_id):
                                                 'value': sector.antenna.ethernet_extender \
                                                     if hasattr(
                                                     sector.antenna,
-                                                    'ethernet_extender') and sector.antenna.ethernet_extender  else 'N/A'
+                                                    'ethernet_extender') and sector.antenna  else 'N/A'
                                             },
                                             {
                                                 'name': 'cable_length',
@@ -661,7 +659,7 @@ def prepare_result(base_station_id):
                                                 'value': sector.antenna.cable_length \
                                                     if hasattr(
                                                     sector.antenna,
-                                                    'cable_length') and sector.antenna.cable_length else 'N/A'
+                                                    'cable_length') and sector.antenna else 'N/A'
                                             },
                                             {
                                                 'name': 'customer_address',
