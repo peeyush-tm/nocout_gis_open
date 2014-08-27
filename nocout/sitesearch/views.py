@@ -554,8 +554,8 @@ def prepare_result(base_station_id):
                                 'name': substation.name,
                                 'device_name': substation.device.device_name,
                                 'data': {
-                                    "lat": substation_device.latitude,
-                                    "lon": substation_device.longitude,
+                                    "lat": substation.latitude if substation.latitude else substation_device.latitude,
+                                    "lon": substation.longitude if substation.longitude else substation_device.longitude,
                                     "antenna_height": substation.antenna.height if substation.antenna else 0,
                                     "technology":sector.bs_technology.name,
                                     "markerUrl": "static/img/marker/icon4_small.png",
@@ -606,21 +606,21 @@ def prepare_result(base_station_id):
                                                 'name': 'antenna_height',
                                                 'title': 'Antenna Height',
                                                 'show': 1,
-                                                'value': sector.antenna.height if sector.antenna else 'N/A'
+                                                'value': sector.antenna.height if sector.antenna else 0
                                             },
                                             {
                                                 'name': 'building_height',
                                                 'title': 'Building Height',
                                                 'show': 1,
                                                 'value': substation.building_height \
-                                                    if substation.building_height else 'N/A'
+                                                    if substation.building_height else 0
                                             },
                                             {
                                                 'name': 'tower_height',
                                                 'title': 'tower_height',
                                                 'show': 1,
                                                 'value': substation.tower_height \
-                                                    if substation.tower_height else 'N/A'
+                                                    if substation.tower_height else 0
                                             },
                                             {
                                                 'name': 'polarisation',
