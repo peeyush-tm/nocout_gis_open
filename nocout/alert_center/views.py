@@ -837,11 +837,11 @@ class CustomerAlertList(ListView):
             {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'sub_station', 'sTitle': 'Sub Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            # {'mData': 'sub_station', 'sTitle': 'Sub Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            #  'bSortable': True},
+            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'sub_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'sub_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
@@ -966,8 +966,12 @@ class CustomerAlertListingTable(BaseDatatableView):
                         circuit_object = Circuit.objects.get(sub_station__id=device_substation.id)
                         device_substation_base_station = circuit_object.sector.base_station
                         device_substation_base_station_name = device_substation_base_station.name
+                        city = City.objects.get(id=device_substation_base_station.city).city_name
+                        state= State.objects.get(id=device_substation_base_station.state).state_name
                     except:
                         device_substation_base_station_name = 'N/A'
+                        city = "N/A"
+                        state = "N/A"
                     try:
                         sector_id = circuit_object.sector.sector_id
                     except:
@@ -983,9 +987,9 @@ class CustomerAlertListingTable(BaseDatatableView):
                             # 'device_technology': DeviceTechnology.objects.get(id=device_object.device_technology).alias,
                             'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
                             'ip_address': device_object.ip_address,
-                            'sub_station': device_substation.name,
-                            'sub_station__city': City.objects.get(id=device_substation.city).city_name if device_substation.city else "N/A",
-                            'sub_station__state': State.objects.get(id=device_substation.state).state_name if device_substation.state else "N/A",
+                            # 'sub_station': device_substation.name,
+                            'city': city,
+                            'state': state,
                             'base_station': device_substation_base_station_name,
                             'circuit_id': circuit_object.circuit_id,
                             'sector_id': sector_id,
