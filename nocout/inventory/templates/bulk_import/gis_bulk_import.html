@@ -114,7 +114,7 @@
              arr.push(key);
              }
              sheets_array = arr.reverse();
-             for (var i = 0; i < sheets_array.length; i++) {
+             for (var i=0; i < sheets_array.length; i++) {
              // sheets_options += '<option value="' + parseInt(i) + '">' + sheets_array[i] + '</option>';
              sheets_options += '<option value="' + sheets_array[i] + '">' + sheets_array[i] + '</option>';
              }
@@ -130,6 +130,10 @@
                 data = e.target.result;
                 wb = XLS.read(data, {type: 'binary'});
                 alert(wb.SheetNames);
+                var sheets = wb.SheetNames;
+                for (var i=0; i<sheets.length; i++) {
+                    alert(i+" : "+sheets[i]);
+                }
             });
         });
 
