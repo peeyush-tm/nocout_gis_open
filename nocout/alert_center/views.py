@@ -734,6 +734,8 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
             )
 
             for data in performance_data:
+                circuit_id = "N/A"
+                sector_id = 'N/A'
                 sector = Sector.objects.filter(sector_configured_on__id=
                                                Device.objects.get(device_name= data['device_name']).id)
                 device_object = Device.objects.get(device_name= data['device_name'])
@@ -746,8 +748,6 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                     circuit = Circuit.objects.filter(sector=sector[0].id)
                     if len(circuit):
                         circuit_id = circuit[0].circuit_id
-                    else:
-                        circuit_id = "N/A"
 
                     device_base_station = sector[0].base_station
                     #only display warning or critical devices
@@ -987,12 +987,14 @@ class CustomerAlertListingTable(BaseDatatableView):
                 device = data['device_name']
                 substation = SubStation.objects.filter(device__device_name=device)
                 sector_id = "N/A"
-
+                circuit_id = "N/A"
+                device_substation_base_station_name = "N/A"
                 if len(substation):
                     device_substation = substation[0]
                     try:
                         #try exception if the device does not have any association with the circuit
                         circuit_object = Circuit.objects.get(sub_station__id=device_substation.id)
+                        circuit_id = circuit_object.circuit_id
                         device_substation_base_station = circuit_object.sector.base_station
                         device_substation_base_station_name = device_substation_base_station.name
                         city = City.objects.get(id=device_substation_base_station.city).city_name
@@ -1020,7 +1022,7 @@ class CustomerAlertListingTable(BaseDatatableView):
                             'city': city,
                             'state': state,
                             'base_station': device_substation_base_station_name,
-                            'circuit_id': circuit_object.circuit_id,
+                            'circuit_id': circuit_id,
                             'sector_id': sector_id,
                             'current_value': data['current_value'],
                             'sys_time': datetime.datetime.fromtimestamp(
