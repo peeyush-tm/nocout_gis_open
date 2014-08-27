@@ -2145,6 +2145,11 @@ function devicePlottingClass_gmap() {
 
 			var selected_lp_template = $("#lp_template_select").val();
 
+            // start spinner
+            if($("#fetch_spinner").hasClass("hide")) {
+				$("#fetch_spinner").removeClass("hide");
+			}
+
 	    	$.ajax({
 				url : window.location.origin+"/"+"device/lp_bulk_data/?lp_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
 				// url : window.location.origin+"/"+"static/services.json",
@@ -2153,6 +2158,11 @@ function devicePlottingClass_gmap() {
 					var result = JSON.parse(results);
 
 					if(result.success == 1) {
+                        
+                        // stop spinner
+                        if(!($("#fetch_spinner").hasClass("hide"))) {
+                            $("#fetch_spinner").addClass("hide");
+                        }
 
 						if($(".devices_container").hasClass("hide")) {
 							$(".devices_container").removeClass("hide");
@@ -2271,6 +2281,11 @@ function devicePlottingClass_gmap() {
 
 				},
 				error : function(err) {
+                    // stop spinner
+                    if(!($("#fetch_spinner").hasClass("hide"))) {
+						$("#fetch_spinner").addClass("hide");
+					}
+
 					$.gritter.add({
 			            // (string | mandatory) the heading of the notification
 			            title: 'Live Polling - Error',
@@ -2576,7 +2591,7 @@ function devicePlottingClass_gmap() {
 			if($("#fetch_spinner").hasClass("hide")) {
 				$("#fetch_spinner").removeClass("hide");
 			}
-			
+
 			if($("#fetchVal_"+deviceName+"_"+selectedDatasourceVal).length > 0) {
 				
 				var data_with_bracket = $("#fetchVal_"+deviceName+"_"+selectedDatasourceVal).html().split(":-")[1].replace(/ +/g, "").split(","),
