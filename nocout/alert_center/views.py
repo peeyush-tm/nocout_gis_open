@@ -62,8 +62,8 @@ def getCustomerAlertDetail(request):
         {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
         {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
-         'bSortable': True},
+        # {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
+        #  'bSortable': True},
         {'mData': 'sub_station', 'sTitle': 'Sub Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -293,8 +293,8 @@ def getNetworkAlertDetail(request):
         {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
         {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
-         'bSortable': True},
+        # {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
+        #  'bSortable': True},
         {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -524,12 +524,12 @@ class AlertCenterNetworkListing(ListView):
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
+            # {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            #  'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -546,12 +546,12 @@ class AlertCenterNetworkListing(ListView):
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
+            # {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            #  'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -567,12 +567,12 @@ class AlertCenterNetworkListing(ListView):
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
+            # {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            #  'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -588,12 +588,12 @@ class AlertCenterNetworkListing(ListView):
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
+            # {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            #  'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -832,11 +832,11 @@ class CustomerAlertList(ListView):
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            # {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            #  'bSortable': True},
+            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': True},
+            # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'sub_station', 'sTitle': 'Sub Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'sub_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -844,6 +844,10 @@ class CustomerAlertList(ListView):
             {'mData': 'sub_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'current_value', 'sTitle': 'Event Value', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
@@ -860,10 +864,10 @@ class CustomerAlertListingTable(BaseDatatableView):
     Generic Class Based View for the Alert Center Customer Listing Tables.
     """
     model = EventNetwork
-    columns = ['device_name', 'device_technology', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
-               'current_value', 'sys_date', 'sys_time', 'description']
-    order_columns = ['device_name', 'device_technology', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
-                     'current_value', 'sys_date', 'sys_time', 'description']
+    columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
+               'current_value', 'sys_timestamp', 'description']
+    order_columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
+                     'current_value', 'sys_timestamp', 'description']
 
     def filter_queryset(self, qs):
         """
@@ -950,15 +954,21 @@ class CustomerAlertListingTable(BaseDatatableView):
                 # for device in machine_device_list:
                 device = data['device_name']
                 substation = SubStation.objects.filter(device__device_name=device)
+                sector_id = "N/A"
+
                 if len(substation):
                     device_substation = substation[0]
                     try:
                         #try exception if the device does not have any association with the circuit
-                        device_substation_base_station = Circuit.objects.get(
-                            sub_station__id=device_substation.id).sector.base_station
+                        circuit_object = Circuit.objects.get(sub_station__id=device_substation.id)
+                        device_substation_base_station = circuit_object.sector.base_station
                         device_substation_base_station_name = device_substation_base_station.name
                     except:
                         device_substation_base_station_name = 'N/A'
+                    try:
+                        sector_id = circuit_object.sector.sector_id
+                    except:
+                        sector_id = "N/A"
                     #only display warning or critical devices
                     if data['severity'] in ['DOWN', 'CRITICAL', 'WARNING', 'UNKNOWN'] or \
                                     'WARN' in data['description'] or \
@@ -967,13 +977,15 @@ class CustomerAlertListingTable(BaseDatatableView):
                         device_events = {
                             'device_name': device,
                             'severity': data['severity'],
-                            'device_technology': DeviceTechnology.objects.get(id=device_object.device_technology).alias,
+                            # 'device_technology': DeviceTechnology.objects.get(id=device_object.device_technology).alias,
                             'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
                             'ip_address': device_object.ip_address,
                             'sub_station': device_substation.name,
                             'sub_station__city': City.objects.get(id=device_substation.city).city_name if device_substation.city else "N/A",
                             'sub_station__state': State.objects.get(id=device_substation.state).state_name if device_substation.state else "N/A",
                             'base_station': device_substation_base_station_name,
+                            'circuit_id': circuit_object.circuit_id,
+                            'sector_id': sector_id,
                             'current_value': data['current_value'],
                             'sys_time': datetime.datetime.fromtimestamp(
                                 float(data['sys_timestamp'])).strftime("%I:%M:%S %p"),
