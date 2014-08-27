@@ -43,7 +43,8 @@ function ourDataTableWidget()
                 /*Hide the spinner*/
                 hideSpinner();
             },
-            aoColumns:tableheaders
+            aoColumns:tableheaders,
+            sPaginationType: "bs_full"
  		});
     };
 }
