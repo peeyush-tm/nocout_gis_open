@@ -1076,7 +1076,7 @@ class SingleDeviceAlertDetails(View):
             end_date= self.request.GET.get('end_date','')
             isSet = False
 
-            if start_date and end_date:
+            if len(start_date) and len(end_date):
                 start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
                 end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
                 start_date= format( start_date_object, 'U')
@@ -1085,6 +1085,18 @@ class SingleDeviceAlertDetails(View):
                 if start_date == end_date:
                     # Converting the end date to the highest time in a day.
                     end_date_object = datetime.datetime.strptime(end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S")
+            else:
+                # The end date is the end limit we need to make query till.
+                end_date_object = datetime.datetime.now()
+                # The start date is the last monday of the week we need to calculate from.
+                start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
+                # Replacing the time, to start with the 00:00:00 of the last monday obtained.
+                start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
+                # Converting the date to epoch time or Unix Timestamp
+                end_date = format(end_date_object, 'U')
+                start_date = format(start_date_object, 'U')
+                isSet = True
+
 
         except Exception as timeexception:
             # The end date is the end limit we need to make query till.

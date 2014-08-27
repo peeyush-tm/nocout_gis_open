@@ -693,7 +693,7 @@ class Get_Service_Type_Performance_Data(View):
             isSet = False
 
 
-            if start_date and end_date:
+            if len(start_date) and len(end_date):
                 start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
                 end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
                 start_date= format( start_date_object, 'U')
