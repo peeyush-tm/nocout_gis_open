@@ -188,7 +188,7 @@ class DeviceSetFilters(View):
 
         result_data=list()
         request_query= self.request.GET.get('filters','')
-        result_data= filter_gis_map(request_query)
+        result_data= filter_gis_map(request_query, limit= GIS_MAP_MAX_DEVICE_LIMIT)
         self.result['data']['objects']= {"id" : "mainNode", "name" : "mainNodeName", "data" :
                                         { "unspiderfy_icon" : "static/img/marker/slave01.png" }
                                         }
@@ -201,7 +201,7 @@ class DeviceSetFilters(View):
         return HttpResponse(json.dumps(self.result))
 
 
-def filter_gis_map(request_query):
+def filter_gis_map(request_query, limit):
     result_list = list()
     if request_query:
         request_query = eval(request_query)
@@ -240,8 +240,8 @@ def filter_gis_map(request_query):
             else:
                 query_base_station.append("Q(%s__in=%s)" % (filter['field'], filter['value']))
 
-        exec_query_base_station += " | ".join(query_base_station) + ").values_list('id', flat=True)"
-        exec_query_circuit += " | ".join(query_circuit) + ").values_list('id', flat=True)"
+        exec_query_base_station += " | ".join(query_base_station) + ").values_list('id', flat=True)[:limit]"
+        exec_query_circuit += " | ".join(query_circuit) + ").values_list('id', flat=True)[:limit]"
 
         if query_base_station: exec exec_query_base_station
         if query_circuit: exec exec_query_circuit
