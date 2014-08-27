@@ -94,28 +94,37 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		if serv_disc.endswith('_status') or serv_disc == 'Check_MK':
 			continue
 		# Extracts the performance data from the rrdtool for services
-		if serv_disc == 'ping':
-			query_string = "GET services\nColumns: host_state\nFilter: host_name = %s\nOutputFormat: json\n" % (host)
-			query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
-			service_state = (query_output[0][0])
-			if service_state == 0:
-				service_state = "up"
-			elif service_state == 1:
-				service_state = "down"
-		else:
-			query_string = "GET services\nColumns: service_state\nFilter: " + \
-			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (serv_disc,host)
-			query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
-			if query_output:
-				service_state = (query_output[0][0])
-			if service_state == 0:
-				service_state = "OK"
-			elif service_state == 1:
-				service_state = "WARNING"
-			elif service_state == 2:
-				service_state = "CRITICAL"
-			elif service_state == 3:
-				service_state = "UNKNOWN"
+		try:
+			if serv_disc == 'ping':
+				query_string = "GET services\nColumns: host_state\nFilter: host_name = %s\nOutputFormat: json\n" % (host)
+				query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
+				if query_output:
+					service_state = (query_output[0][0])
+					if service_state == 0:
+						service_state = "up"
+					elif service_state == 1:
+						service_state = "down"
+				else:
+					service_state= "UNKNOWN"
+					
+			else:
+				query_string = "GET services\nColumns: service_state\nFilter: " + \
+				"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (serv_disc,host)
+				query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
+				if query_output:
+					service_state = (query_output[0][0])
+					if service_state == 0:
+						service_state = "OK"
+					elif service_state == 1:
+						service_state = "WARNING"
+					elif service_state == 2:
+						service_state = "CRITICAL"
+					elif service_state == 3:
+						service_state = "UNKNOWN"
+				else:
+					service_state = "UNKNOWN"
+		except:
+			service_state= "UNKNOWN"
 		
 		threshold_values = get_threshold(perf_data)
 		for ds in root.findall('DATASOURCE'):
@@ -159,7 +168,9 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 					)
 					# forcing to not add deuplicate entry in mongo db. currenltly suppose at time 45.00 50.00 data comes in
 					# in one iteration then in second iteration 50.00 55.00 data comes .So Not adding second iteration
-					# 50.00 data again. 
+					# 50.00 data again.
+					if ds_index == 'rta':
+						temp_dict.update({"min_value":d[-3],"max_value":d[-2]}) 
 					if start_time == temp_dict.get('time'):
 						data_dict.update({"local_timestamp":temp_dict.get('time')+timedelta(minutes=5),
 						"check_time":temp_dict.get('time')+ timedelta(minutes=5)})
