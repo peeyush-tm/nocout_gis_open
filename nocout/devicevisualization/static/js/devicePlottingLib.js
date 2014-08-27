@@ -2035,39 +2035,58 @@ function devicePlottingClass_gmap() {
 								});
 							});
 
+							var selected_polling_technology = $("#polling_tech option:selected").text();
+
 							for(var k=0;k<allSS.length;k++) {
 									
 								var point = new google.maps.LatLng(allSS[k].data.lat,allSS[k].data.lon);
 
 								if (google.maps.geometry.poly.containsLocation(point, polygon)) {
 
-									allSSIds.push(allSS[k].device_name);
-									polygonSelectedDevices.push(allSS[k]);
+									if($.trim(allSS[k].data.technology) == $.trim(selected_polling_technology)) {
+
+										allSSIds.push(allSS[k].device_name);
+										polygonSelectedDevices.push(allSS[k]);
+									}
 								}
 							}
 
-							var devicesTemplate = "<div class='deviceWellContainer'>";
-								
-							for(var i=0;i<polygonSelectedDevices.length;i++) {
-								
-								var new_device_name = "";
+							if(polygonSelectedDevices.length == 0) {
 
-								if(polygonSelectedDevices[i].device_name.indexOf(".") != -1) {
-									new_device_name = polygonSelectedDevices[i].device_name.split(".");
-									new_device_name = new_device_name.join("-");
-								} else {
-									new_device_name = polygonSelectedDevices[i].device_name;
+								bootbox.alert("No devices are under the selected area.Please re-select");
+								/*Remove current polygon from map*/
+								gmap_self.clearPolygon();
+
+							} else if(polygonSelectedDevices.length > 200) {
+
+								bootbox.alert("Max. limit for selecting devices is 200.Please re-select");
+								/*Remove current polygon from map*/
+								gmap_self.clearPolygon();
+							} else {
+
+								var devicesTemplate = "<div class='deviceWellContainer'>";
+									
+								for(var i=0;i<polygonSelectedDevices.length;i++) {
+									
+									var new_device_name = "";
+
+									if(polygonSelectedDevices[i].device_name.indexOf(".") != -1) {
+										new_device_name = polygonSelectedDevices[i].device_name.split(".");
+										new_device_name = new_device_name.join("-");
+									} else {
+										new_device_name = polygonSelectedDevices[i].device_name;
+									}
+
+									devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+(i+1)+'.) '+polygonSelectedDevices[i].name+'</h5>';
+									devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
+									devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled"></ul>';
+									devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
 								}
 
-								devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+(i+1)+'.) '+polygonSelectedDevices[i].name+'</h5>';
-								devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
-								devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled"></ul>';
-								devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
+								devicesTemplate += "</div>";
+
+								$("#sideInfo > .panel-body > .col-md-12 > .devices_container").html(devicesTemplate);
 							}
-
-							devicesTemplate += "</div>";
-
-							$("#sideInfo > .panel-body > .col-md-12 > .devices_container").html(devicesTemplate);
 						});
 
 
@@ -2123,9 +2142,7 @@ function devicePlottingClass_gmap() {
     this.getDevicesPollingData = function() {
 
     	if(polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "") {
-			if($(".devices_container").hasClass("hide")) {
-				$(".devices_container").removeClass("hide");
-			}
+
 			var selected_lp_template = $("#lp_template_select").val();
 
 	    	$.ajax({
@@ -2136,6 +2153,10 @@ function devicePlottingClass_gmap() {
 					var result = JSON.parse(results);
 
 					if(result.success == 1) {
+
+						if($(".devices_container").hasClass("hide")) {
+							$(".devices_container").removeClass("hide");
+						}
 
 						for(var i=0;i<allSSIds.length;i++) {
 
@@ -2262,7 +2283,7 @@ function devicePlottingClass_gmap() {
 			});
 
     	} else {
-    		alert("Please select devices & polling template first.");
+    		bootbox.alert("Please select devices & polling template first.");
     	}
     };
 
