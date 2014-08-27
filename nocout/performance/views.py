@@ -496,12 +496,17 @@ class Inventory_Device_Status(View):
 
             substation = SubStation.objects.get(id=device_id)
             substation_device = Device.objects.get(id=substation.device_id)
-            sector = Circuit.objects.get(sub_station=substation.id).sector
-            base_station = BaseStation.objects.get(id=Sector.objects.get(id=sector.id).base_station.id)
+            try:
+                sector = Circuit.objects.get(sub_station=substation.id).sector
+                base_station = BaseStation.objects.get(id=Sector.objects.get(id=sector.id).base_station.id)
+                bs_name = base_station.name
+            except:
+                bs_name = "N/A"
             result['data']['objects']['headers'] = ['BS Name', 'SSName', 'Building Height', 'Tower Height',
                                                     'City', 'State', 'IP Address', 'MAC Address']
-            result['data']['objects']['values'] = [base_station.name, substation.name,
-                                                   substation.building_height, substation.tower_height,
+            result['data']['objects']['values'] = [bs_name, substation.name,
+                                                   substation.building_height,
+                                                   substation.tower_height,
                                                    City.objects.get(id=substation.city).city_name if substation.city else "N/A",
                                                    State.objects.get(id=substation.state).state_name if substation.state else "N/A",
                                                    substation_device.ip_address,
