@@ -60,9 +60,9 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
         <script type="text/javascript" src={% static "js/bootstrap-file-input/bootstrap-file-input.js" %}></script>
         <script type="text/javascript" src={% static "js/lodash/lodash.js" %}></script>
-        {# <script type="text/javascript" src={% static "js/shim/shim.js" %}></script> #}
+        <script type="text/javascript" src={% static "js/shim/shim.js" %}></script>
         <script type="text/javascript" src={% static "js/jszip/jszip.js" %}></script>
-        {# <script type="text/javascript" src={% static "js/js-xls/xls.js" %}></script> #}
+        <script type="text/javascript" src={% static "js/js-xls/xls.js" %}></script>
         <script type="text/javascript" src={% static "js/js-xlsx/xlsx.js" %}></script>
         <script type="text/javascript" src={% static "js/js-xlsx/xlsx-reader.js" %}></script>
     {% endblock %}
@@ -87,38 +87,73 @@
             $("#id_ss_sheet").empty().append('<option value="">Select</option>');
             $("#id_ptp_sheet").empty().append('<option value="">Select</option>');
         });
-        $("#id_file_upload").change(function (event) {
-            var file = this.files[0], sheets;
-            XLSXReader(file, true, function (xlsxData) {
-                sheets = xlsxData.sheets;
-                console.log(sheets);
-                sheets_options = '<option value="">Select</option>';
-                var arr = [];
-                for (var key in sheets) {
-                    arr.push(key);
+        /*
+        function readFile(file) {
+            var reader = new FileReader();
+            alert(reader.onload)
+            reader.onload = readSuccess;
+            function readSuccess(evt) {
+                alert("It's reader.");
+                data = evt.target.result;
+                var wb = XLS.read(data, {type: 'binary'});
+                alert(wb);
+            }
+            //reader.readAsText(file);
+        }
+        $("#id_file_upload").change(function (e) {
+            alert(e.target.files[0].name);
+            readFile(e.target.files[0]);
+
+             var file = this.files[0], sheets;
+             XLSXReader(file, true, function (xlsxData) {
+             sheets = xlsxData.sheets;
+             console.log(sheets);
+             sheets_options = '<option value="">Select</option>';
+             var arr = [];
+             for (var key in sheets) {
+             arr.push(key);
+             }
+             sheets_array = arr.reverse();
+             for (var i=0; i < sheets_array.length; i++) {
+             // sheets_options += '<option value="' + parseInt(i) + '">' + sheets_array[i] + '</option>';
+             sheets_options += '<option value="' + sheets_array[i] + '">' + sheets_array[i] + '</option>';
+             }
+             $("#id_bs_sheet").empty().append(sheets_options);
+             $("#id_ss_sheet").empty().append(sheets_options);
+             $("#id_ptp_sheet").empty().append(sheets_options);
+             });
+        });
+        */
+        $('#id_file_upload').on('change', function (e) {
+            readFile(this.files[0], function (e) {
+                // use result in callback...
+                data = e.target.result;
+                wb = XLS.read(data, {type: 'binary'});
+                alert(wb.SheetNames);
+                var sheets = wb.SheetNames;
+                for (var i=0; i<sheets.length; i++) {
+                    alert(i+" : "+sheets[i]);
                 }
-                sheets_array = arr.reverse();
-                for (var i = 0; i < sheets_array.length; i++) {
-                    // sheets_options += '<option value="' + parseInt(i) + '">' + sheets_array[i] + '</option>';
-                    sheets_options += '<option value="' + sheets_array[i] + '">' + sheets_array[i] + '</option>';
-                }
-                $("#id_bs_sheet").empty().append(sheets_options);
-                $("#id_ss_sheet").empty().append(sheets_options);
-                $("#id_ptp_sheet").empty().append(sheets_options);
             });
         });
+
+        function readFile(file, onLoadCallback) {
+            var reader = new FileReader();
+            reader.onload = onLoadCallback;
+            reader.readAsBinaryString(file);
+        }
 
         // reset 'PTP' select menu if either of 'BS' or 'SS' has value (i.e. selected value)
         $("#id_ss_sheet").change(function () {
             if ($("#id_ss_sheet").val()) {
                 $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
-                $("#id_ptp_sheet").prop('selectedIndex',0);
+                $("#id_ptp_sheet").prop('selectedIndex', 0);
             }
         });
         $("#id_bs_sheet").change(function () {
             if ($("#id_bs_sheet").val()) {
                 $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
-                $("#id_ptp_sheet").prop('selectedIndex',0);
+                $("#id_ptp_sheet").prop('selectedIndex', 0);
             }
         });
 

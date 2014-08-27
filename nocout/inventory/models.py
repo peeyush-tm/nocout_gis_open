@@ -8,6 +8,7 @@ from django.utils.safestring import mark_safe
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 
+
 # inventory model --> mapper of user_group & device groups
 class Inventory(models.Model):
     """
