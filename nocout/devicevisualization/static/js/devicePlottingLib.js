@@ -135,8 +135,8 @@ function devicePlottingClass_gmap() {
 	    		/*Listener to reset zoom level if it exceeds to particular value*/
                 var listener = google.maps.event.addListener(mapInstance, "idle", function() {
                     /*check for current zoom level*/
-                    if (mapInstance.getZoom() > 10) {
-                        mapInstance.setZoom(10);
+                    if (mapInstance.getZoom() >= 15) {
+                        mapInstance.setZoom(15);
                     }
                     google.maps.event.removeListener(listener);
                 });
