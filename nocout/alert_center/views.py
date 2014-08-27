@@ -945,12 +945,18 @@ class CustomerAlertListingTable(BaseDatatableView):
                                             for device in organization_devices if device.substation_set.exists()]
         data_sources_list = list()
 
-        if self.request.GET['data_source'] == 'latency':
-            data_sources_list.append('rta')
-        elif self.request.GET['data_source'] == 'packet_drop':
-            data_sources_list.append('pl')
-
         extra_query_condition = "AND (`{0}`.`current_value` > 0 ) "
+
+        if self.request.GET['data_source'] == 'latency':
+            data_sources_list = ['rta']
+        elif self.request.GET['data_source'] == 'packet_drop':
+            data_sources_list = ['pl']
+            extra_query_condition = "AND (`{0}`.`current_value` BETWEEN 1 AND 99 ) "
+        elif self.request.GET['data_source'] == 'down':
+            data_sources_list = ['pl']
+            extra_query_condition = "AND (`{0}`.`current_value` = 100 ) "
+
+
 
         required_data_columns = ["id",
                                  "data_source",
@@ -1050,7 +1056,7 @@ class CustomerAlertListingTable(BaseDatatableView):
 
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-            service_tab = None
+            service_tab = 'down'
             # figure out which tab call is made.
             data_source = self.request.GET.get('data_source', '')
             if 'latency' == data_source:
