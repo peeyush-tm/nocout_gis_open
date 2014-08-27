@@ -156,15 +156,42 @@ function show_response_message(responseResult) {
 
 // add device to monitoring core
 function add_device(device_id) {
+    add_device_html = '<h5 class="">Configure ping service for device:</h5><br />';
+    add_device_html += '<div class=""><div class="box border red"><div class="box-title"><h4><i class="fa fa-table"></i>Ping Parameters:</h4></div>';
+    add_device_html += '<div class="box-body"><table class="table">';
+    add_device_html += '<thead><tr><th>Packets</th><th>Timeout</th><th></th></tr></thead>';
+    add_device_html += '<tbody>';
+    add_device_html += '<tr>';
+    add_device_html += '<td contenteditable="true" id="packets">6</td>';
+    add_device_html += '<td contenteditable="true" id="timeout">20</td>';
+    add_device_html += '</tr>';
+    add_device_html += '</tbody>';
+    add_device_html += '<thead><tr><th>Data Source</th><th>Warning</th><th>Critical</th></tr></thead>';
+    add_device_html += '<tbody>';
+    add_device_html += '<tr><td>RTA</td><td contenteditable="true" id="rta_warning">1500</td><td contenteditable="true" id="rta_critical">3000</td></tr>';
+    add_device_html += '<tr><td>PL</td><td contenteditable="true" id="pl_warning">80</td><td contenteditable="true" id="pl_critical">100</td></tr>';
+    add_device_html += '</tbody>';
+    add_device_html += '</table>';
+    add_device_html += '</div></div></div>';
+
     bootbox.dialog({
-        message: "Add device for monitoring.",
-        title: "<span class='text-danger'><i class='fa fa-times'></i> Add device to nms core. </span>",
+        message: add_device_html,
+        title: "<span class='text-danger'><i class='fa fa-plus'></i> Add device to nms core. </span>",
         buttons: {
             success: {
                 label: "Yes!",
                 className: "btn-success",
                 callback: function () {
-                    Dajaxice.device.add_device_to_nms_core(device_add_message, {'device_id': device_id});
+                    ping_data = {
+                        "rta_warning": parseInt($("#rta_warning").text()),
+                        "rta_critical": parseInt($("#rta_critical").text()),
+                        "pl_warning": parseInt($("#pl_warning").text()),
+                        "pl_critical": parseInt($("#pl_critical").text()),
+                        "packets": parseInt($("#packets").text()),
+                        "timeout": parseInt($("#timeout").text())
+                    };
+                    alert(JSON.stringify(ping_data));
+                    Dajaxice.device.add_device_to_nms_core(device_add_message, {'device_id': device_id, 'ping_data': ping_data});
                 }
             },
             danger: {

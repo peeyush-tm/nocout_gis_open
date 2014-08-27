@@ -702,7 +702,7 @@ def update_cities_after_invalid_form(request, option, city_id):
 
 
 @dajaxice_register
-def add_device_to_nms_core(request, device_id):
+def add_device_to_nms_core(request, device_id, ping_data):
     """Adding device to nms core
 
     Args:
@@ -731,6 +731,11 @@ def add_device_to_nms_core(request, device_id):
     result['message'] = "<i class=\"fa fa-times red-dot\"></i>Device addition failed."
     result['data']['meta'] = ''
     device = Device.objects.get(pk=device_id)
+    ping_levels = {"rta": (ping_data['rta_warning'], ping_data['rta_critical']),
+                   "loss": (ping_data['pl_warning'], ping_data['pl_critical']),
+                   "packets": ping_data['packets'],
+                   "timeout": ping_data['timeout']}
+
     if device.host_state != "Disable":
         # get 'agent_tag' from DeviceType model
         agent_tag = ""
@@ -739,14 +744,13 @@ def add_device_to_nms_core(request, device_id):
         except Exception as e:
             logger.info(e.message)
 
-        device_data = {'device_name': device.device_name,
-                       'device_alias': device.device_alias,
-                       'ip_address': device.ip_address,
-                       'agent_tag': agent_tag,
-                       'site': device.site_instance.name,
-                       'mode': 'addhost'}
-
-        print "Device data -------------------------------", device_data
+        device_data = {'device_name': str(device.device_name),
+                       'device_alias': str(device.device_alias),
+                       'ip_address': str(device.ip_address),
+                       'agent_tag': str(agent_tag),
+                       'site': str(device.site_instance.name),
+                       'mode': 'addhost',
+                       'ping_levels': ping_levels}
 
         # site to which configuration needs to be pushed
         master_site = SiteInstance.objects.get(name='master_UA')
@@ -758,8 +762,13 @@ def add_device_to_nms_core(request, device_id):
                                                                 master_site.machine.machine_ip,
                                                                 master_site.web_service_port,
                                                                 master_site.name)
-        # sending post request to device app for adding device to nms core
-        r = requests.post(url, data=device_data)
+
+        # encoding service_data
+        encoded_data = urllib.urlencode(device_data)
+
+        # sending post request to nocout device app to add single service at a time
+        r = requests.post(url, data=encoded_data)
+
         # converting string in 'r' to dictionary
         response_dict = ast.literal_eval(r.text)
         if r:
