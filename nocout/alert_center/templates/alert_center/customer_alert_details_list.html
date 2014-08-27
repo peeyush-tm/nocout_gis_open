@@ -170,7 +170,7 @@
                         if (destroy){
                             $("#"+tableId).dataTable().fnDestroy();
                         }
-                        $("#"+tableId).DataTable({
+                        var dtable = $("#"+tableId).DataTable({
                             bAutoWidth: false,
                             bPaginate: true,
                             bProcessing : true,
@@ -181,7 +181,8 @@
                                 /*Hide the spinner*/
                                 hideSpinner();
                             },
-                            aoColumns:tableheaders
+                            aoColumns:tableheaders,
+                            aaSorting: [[9, 'desc'],[0, 'asc']]
                         });
                     };
                 }

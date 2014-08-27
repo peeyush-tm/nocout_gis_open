@@ -6,7 +6,7 @@ from django.shortcuts import render_to_response, render
 from django.views.generic import ListView, View
 from django.template import RequestContext
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from device.models import Device, City, State, DeviceTechnology
+from device.models import Device, City, State, DeviceTechnology, DeviceType
 from inventory.models import BaseStation, Sector, SubStation, Circuit
 from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
 from django.utils.dateformat import format
@@ -76,9 +76,7 @@ def getCustomerAlertDetail(request):
          'bSortable': True},
         {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'description', 'sTitle': 'Alert Description', 'sWidth': 'null', 'bSortable': True},
-        {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': True},
-        {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True}, ]
+        {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True}, ]
 
     context = {'customer_ptp_block_table_header': json.dumps(customer_ptp_block_table_header)}
     return render(request, 'alert_center/customer_alert_details_list.html', context)
@@ -307,9 +305,7 @@ def getNetworkAlertDetail(request):
          'bSortable': True},
         {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'description', 'sTitle': 'Alert Description', 'sWidth': 'null', 'bSortable': True},
-        {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': True},
-        {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True}, ]
+        {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True}, ]
 
     context = {'network_ptp_block_table_header': json.dumps(network_ptp_block_table_header)}
     return render(request, 'alert_center/network_alert_details_list.html', context)
@@ -528,6 +524,10 @@ class AlertCenterNetworkListing(ListView):
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
+            {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
             {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -538,9 +538,7 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': True},
             {'mData': 'current_value', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'description', 'sTitle': 'Alert Description', 'sWidth': 'null', 'bSortable': True},
-            {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': True},
-            {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
+            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
             ]
 
@@ -548,6 +546,10 @@ class AlertCenterNetworkListing(ListView):
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
+            {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
             {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -558,15 +560,17 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': True},
             {'mData': 'current_value', 'sTitle': 'Packet Drop', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': True},
-            {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
-            {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': True},
+            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
             ]
         datatable_headers_down = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
+            {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
             {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -577,14 +581,16 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': True},
             {'mData': 'current_value', 'sTitle': 'Packet Drop', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': True},
-            {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': True},
-            {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
+            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
             ]
         datatable_headers_servicealerts = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
@@ -598,9 +604,7 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': True},
             {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': True},
-            {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': True},
-            {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
+            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
             ]
         context['datatable_headers_servicealerts'] = json.dumps(datatable_headers_servicealerts)
@@ -616,10 +620,10 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
     """
     model = EventNetwork
-    columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
-               'current_value', 'sys_time', 'sys_date', 'description']
-    order_columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
-                     'current_value', 'sys_time', 'sys_date', 'description']
+    columns = ['device_name', "device_technology", "device_type" ,'machine_name', 'site_name', 'ip_address', 'severity',
+               'current_value', "device_technology", "device_type", 'sys_timestamp', 'description']
+    order_columns = ['device_name',  "device_technology", "device_type", 'machine_name', 'site_name', 'ip_address', 'severity',
+                     'current_value', 'sys_timestamp', 'description']
 
     def filter_queryset(self, qs):
 
@@ -674,11 +678,13 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
         if 'latency' in self.request.path_info:
             data_sources_list.append('rta')
+            extra_query_condition = "AND (`{0}`.`current_value` > 0 ) "
         elif 'packetdrop' in self.request.path_info:
             data_sources_list.append('pl')
+            extra_query_condition = "AND (`{0}`.`current_value` BETWEEN 1 AND 99 ) "
         elif 'down' in self.request.path_info:
             data_sources_list.append('pl')
-            extra_query_condition = "AND (`{0}`.`current_value` = 100 OR `{0}`.`severity`='DOWN' ) "
+            extra_query_condition = "AND (`{0}`.`current_value` = 100 ) "
         elif 'service' in self.request.path_info:
             search_table = "performance_eventservice"
 
@@ -714,22 +720,21 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
             for data in performance_data:
                 sector = Sector.objects.filter(sector_configured_on__id=
                                                Device.objects.get(device_name= data['device_name']).id)
+                device_object = Device.objects.get(device_name= data['device_name'])
                 if len(sector):
                     device_base_station = sector[0].base_station
                     #only display warning or critical devices
                     if severity_level_check(list_to_check=[data['severity'], data['description']]):
                         ddata = {
                             'device_name': data['device_name'],
+                            'device_technology': DeviceTechnology.objects.get(id=device_object.device_technology).alias,
+                            'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
                             'severity': data['severity'],
                             'ip_address': data['ip_address'],
                             'base_station': device_base_station.name,
                             'base_station__city': City.objects.get(id=device_base_station.city).city_name if device_base_station.city else 'N/A',
                             'base_station__state': State.objects.get(id=device_base_station.state).state_name if device_base_station.state else "N/A",
                             'current_value': data['current_value'],
-                            'sys_time': datetime.datetime.fromtimestamp(
-                                float(data['sys_timestamp'])).strftime("%I:%M:%S %p"),
-                            'sys_date': datetime.datetime.fromtimestamp(
-                                float(data['sys_timestamp'])).strftime("%d/%B/%Y"),
                             'sys_timestamp': datetime.datetime.fromtimestamp(
                                 float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
                             'description': data['description']
@@ -767,9 +772,9 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
             for dct in qs:
                 device_id = Device.objects.get(device_name=dct['device_name']).id
-                dct.update(action='<a href="/alert_center/network/device/{0}/service_tab/{1}/"><i class="fa fa-warning text-warning"></i></a>\
-                                   <a href="/performance/network_live/{0}/"><i class="fa fa-bar-chart-o text-info"></i></a>\
-                                   <a href="/device/{0}"><i class="fa fa-dropbox text-muted"></i></a>'.format(device_id,
+                dct.update(action='<a href="/alert_center/network/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
+                                   <a href="/performance/network_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                                   <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.format(device_id,
                                                                                                               service_tab_name))
 
         return common_prepare_results(qs)
@@ -827,6 +832,10 @@ class CustomerAlertList(ListView):
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
+            {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
             {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': True},
             {'mData': 'sub_station', 'sTitle': 'Sub Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
@@ -838,9 +847,7 @@ class CustomerAlertList(ListView):
              'bSortable': True},
             {'mData': 'current_value', 'sTitle': 'Event Value', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'description', 'sTitle': 'Event Description', 'sWidth': 'null', 'bSortable': True},
-            {'mData': 'sys_date', 'sTitle': 'Date', 'sWidth': 'null', 'bSortable': True},
-            {'mData': 'sys_time', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
+            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
             ]
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -853,9 +860,9 @@ class CustomerAlertListingTable(BaseDatatableView):
     Generic Class Based View for the Alert Center Customer Listing Tables.
     """
     model = EventNetwork
-    columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
+    columns = ['device_name', 'device_technology', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
                'current_value', 'sys_date', 'sys_time', 'description']
-    order_columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
+    order_columns = ['device_name', 'device_technology', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
                      'current_value', 'sys_date', 'sys_time', 'description']
 
     def filter_queryset(self, qs):
@@ -956,10 +963,13 @@ class CustomerAlertListingTable(BaseDatatableView):
                     if data['severity'] in ['DOWN', 'CRITICAL', 'WARNING', 'UNKNOWN'] or \
                                     'WARN' in data['description'] or \
                                     'CRIT' in data['description']:
+                        device_object = Device.objects.get(device_name=device)
                         device_events = {
                             'device_name': device,
                             'severity': data['severity'],
-                            'ip_address': Device.objects.get(device_name=device).ip_address,
+                            'device_technology': DeviceTechnology.objects.get(id=device_object.device_technology).alias,
+                            'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
+                            'ip_address': device_object.ip_address,
                             'sub_station': device_substation.name,
                             'sub_station__city': City.objects.get(id=device_substation.city).city_name if device_substation.city else "N/A",
                             'sub_station__state': State.objects.get(id=device_substation.state).state_name if device_substation.state else "N/A",
@@ -1000,9 +1010,9 @@ class CustomerAlertListingTable(BaseDatatableView):
 
             for dct in qs:
                 device = Device.objects.get(device_name=dct['device_name'])
-                dct.update(action='<a href="/alert_center/customer/device/{0}/service_tab/{1}/"><i class="fa fa-warning text-warning"></i></a>\
-                                   <a href="/performance/customer_live/{2}/"><i class="fa fa-bar-chart-o text-info"></i></a>\
-                                   <a href="/device/{0}"><i class="fa fa-dropbox text-muted"></i></a>'.
+                dct.update(action='<a href="/alert_center/customer/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
+                                   <a href="/performance/customer_live/{2}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                                   <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
                            format(device.id, service_tab, device.substation_set.values()[0]['id']))
 
         return common_prepare_results(qs)
@@ -1060,20 +1070,23 @@ class SingleDeviceAlertDetails(View):
             organization = logged_in_user.organization
             devices_result = self.get_result(page_type, organization)
 
-        start_date = self.request.GET.get('start_date', '')
-        end_date = self.request.GET.get('end_date', '')
 
-        if start_date and end_date:
-            start_date_object = datetime.datetime.strptime(start_date + " 00:00:00", "%d-%m-%Y %H:%M:%S")
-            end_date_object = datetime.datetime.strptime(end_date + " 00:00:00", "%d-%m-%Y %H:%M:%S")
-            # If Both the date enterted are same and then we will fetch the whole day data.
-            if start_date == end_date:
-                # Converting the end date to the highest time in a day.
-                end_date_object = datetime.datetime.strptime(end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S")
+        try:
+            start_date= self.request.GET.get('start_date','')
+            end_date= self.request.GET.get('end_date','')
+            isSet = False
 
-            start_date = format(start_date_object, 'U')
-            end_date = format(end_date_object, 'U')
-        else:
+            if start_date and end_date:
+                start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
+                end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
+                start_date= format( start_date_object, 'U')
+                end_date= format( end_date_object, 'U')
+                isSet = True
+                if start_date == end_date:
+                    # Converting the end date to the highest time in a day.
+                    end_date_object = datetime.datetime.strptime(end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S")
+
+        except Exception as timeexception:
             # The end date is the end limit we need to make query till.
             end_date_object = datetime.datetime.now()
             # The start date is the last monday of the week we need to calculate from.
@@ -1083,6 +1096,8 @@ class SingleDeviceAlertDetails(View):
             # Converting the date to epoch time or Unix Timestamp
             end_date = format(end_date_object, 'U')
             start_date = format(start_date_object, 'U')
+            isSet = True
+
 
         device_obj = Device.objects.get(id=device_id)
         device_name = device_obj.device_name
@@ -1396,22 +1411,22 @@ def common_prepare_results(qs):
 
     for dct in qs:
         if dct['severity'] == 'DOWN' or "CRITICAL" in dct['description'] or dct['severity'] == 'CRITICAL':
-            dct['severity'] = '<i class="fa fa-circle red-dot"></i>'
+            dct['severity'] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">1</span></i>'
             dct['current_value'] = '<span class="text-danger">%s</span>' % (dct['current_value'])
             dct['description'] = '<span class="text-danger">%s</span>' % (dct['description'])
 
         elif dct['severity'] == 'WARNING' or "WARNING" in dct['description'] or "WARN" in dct['description']:
-            dct['severity'] = '<i class="fa fa-circle orange-dot"></i>'
+            dct['severity'] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">2</span></i>'
             dct['current_value'] = '<span class="text-warning">%s</span>' % (dct['current_value'])
             dct['description'] = '<span class="text-warning">%s</span>' % (dct['description'])
 
         elif dct['severity'] == 'UP' or "OK" in dct['description']:
-            dct['severity'] = '<i class="fa fa-circle green-dot"></i>'
+            dct['severity'] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">3</span></i>'
             dct['current_value'] = '<span class="text-success">%s</span>' % (dct['current_value'])
             dct['description'] = '<span class="text-success">%s</span>' % (dct['description'])
 
         else:
-            dct['severity'] = '<i class="fa fa-circle grey-dot"></i>'
+            dct['severity'] = '<i class="fa fa-circle grey-dot" value="4" title="Ok"><span style="display:none">4</span></i>'
             dct['current_value'] = '<span class="text-muted" >%s</span>' % (dct['current_value'])
             dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
 
