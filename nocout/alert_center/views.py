@@ -532,6 +532,10 @@ class AlertCenterNetworkListing(ListView):
             #  'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
             {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -554,6 +558,10 @@ class AlertCenterNetworkListing(ListView):
             #  'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
             {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -575,6 +583,10 @@ class AlertCenterNetworkListing(ListView):
             #  'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
             {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -595,6 +607,10 @@ class AlertCenterNetworkListing(ListView):
             # {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
             #  'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
@@ -721,7 +737,18 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                 sector = Sector.objects.filter(sector_configured_on__id=
                                                Device.objects.get(device_name= data['device_name']).id)
                 device_object = Device.objects.get(device_name= data['device_name'])
+
                 if len(sector):
+
+                    #add sector info
+                    sector_id = sector[0].sector_id
+                    #add circuit info
+                    circuit = Circuit.objects.filter(sector=sector[0].id)
+                    if len(circuit):
+                        circuit_id = circuit[0].circuit_id
+                    else:
+                        circuit_id = "N/A"
+
                     device_base_station = sector[0].base_station
                     #only display warning or critical devices
                     if severity_level_check(list_to_check=[data['severity'], data['description']]):
@@ -731,6 +758,8 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                             'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
                             'severity': data['severity'],
                             'ip_address': data['ip_address'],
+                            'circuit_id': circuit_id,
+                            'sector_id': sector_id,
                             'base_station': device_base_station.name,
                             'base_station__city': City.objects.get(id=device_base_station.city).city_name if device_base_station.city else 'N/A',
                             'base_station__state': State.objects.get(id=device_base_station.state).state_name if device_base_station.state else "N/A",
