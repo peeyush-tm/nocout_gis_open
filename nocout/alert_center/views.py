@@ -602,9 +602,9 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': True},
             {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
+            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
             {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
             ]
         context['datatable_headers_servicealerts'] = json.dumps(datatable_headers_servicealerts)
@@ -921,6 +921,8 @@ class CustomerAlertListingTable(BaseDatatableView):
         elif self.request.GET['data_source'] == 'packet_drop':
             data_sources_list.append('pl')
 
+        extra_query_condition = "AND (`{0}`.`current_value` > 0 ) "
+
         required_data_columns = ["id",
                                  "data_source",
                                  "device_name",
@@ -947,7 +949,8 @@ class CustomerAlertListingTable(BaseDatatableView):
                                                   table_name='performance_eventnetwork',
                                                   devices=machine_device_list,
                                                   data_sources=data_sources_list,
-                                                  columns=required_data_columns
+                                                  columns=required_data_columns,
+                                                  condition= extra_query_condition
             )
 
             for data in performance_data:
