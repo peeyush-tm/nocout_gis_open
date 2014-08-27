@@ -73,6 +73,15 @@ var mapInstance = "",
 	distance_label = {},
 	isFreeze = 0;
 
+function displayCoordinates(pnt) {
+      var coordsLabel = $("#cursor_lat_long");
+      var lat = pnt.lat();
+      lat = lat.toFixed(4);
+      var lng = pnt.lng();
+      lng = lng.toFixed(4);
+      coordsLabel.html("Latitude: " + lat + "  Longitude: " + lng);
+}
+
 /**
  * This class is used to plot the BS & SS on the google maps & performs their functionality.
  * @class gmap_devicePlottingLib
@@ -122,6 +131,10 @@ function devicePlottingClass_gmap() {
 			/*google search object for search text box*/
 			var searchBox = new google.maps.places.SearchBox(searchTxt);
 
+            /*show co ordinates on mouse move*/
+            google.maps.event.addListener(mapInstance, 'mousemove', function (event) {
+                displayCoordinates(event.latLng);
+            });
 			/*Event listener for search text box*/
 			google.maps.event.addListener(new google.maps.places.SearchBox(searchTxt), 'places_changed', function() {			
 				/*place object returned from map API*/
