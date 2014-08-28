@@ -702,7 +702,7 @@ def update_cities_after_invalid_form(request, option, city_id):
 
 
 @dajaxice_register
-def add_device_to_nms_core(request, device_id):
+def add_device_to_nms_core(request, device_id, ping_data):
     """Adding device to nms core
 
     Args:
@@ -731,6 +731,13 @@ def add_device_to_nms_core(request, device_id):
     result['message'] = "<i class=\"fa fa-times red-dot\"></i>Device addition failed."
     result['data']['meta'] = ''
     device = Device.objects.get(pk=device_id)
+    ping_levels = {"rta": (ping_data['rta_warning'] if ping_data['rta_warning'] else 1500,
+                           ping_data['rta_critical'] if ping_data['rta_critical'] else 3000),
+                   "loss": (ping_data['pl_warning'] if ping_data['pl_warning'] else 80,
+                            ping_data['pl_critical'] if ping_data['pl_critical'] else 100),
+                   "packets": ping_data['packets'] if ping_data['packets'] and ping_data['packets'] <= 20 else 6,
+                   "timeout": ping_data['timeout'] if ping_data['timeout'] else 20}
+
     if device.host_state != "Disable":
         # get 'agent_tag' from DeviceType model
         agent_tag = ""
@@ -739,14 +746,13 @@ def add_device_to_nms_core(request, device_id):
         except Exception as e:
             logger.info(e.message)
 
-        device_data = {'device_name': device.device_name,
-                       'device_alias': device.device_alias,
-                       'ip_address': device.ip_address,
-                       'agent_tag': agent_tag,
-                       'site': device.site_instance.name,
-                       'mode': 'addhost'}
-
-        print "Device data -------------------------------", device_data
+        device_data = {'device_name': str(device.device_name),
+                       'device_alias': str(device.device_alias),
+                       'ip_address': str(device.ip_address),
+                       'agent_tag': str(agent_tag),
+                       'site': str(device.site_instance.name),
+                       'mode': 'addhost',
+                       'ping_levels': ping_levels}
 
         # site to which configuration needs to be pushed
         master_site = SiteInstance.objects.get(name='master_UA')
@@ -758,8 +764,13 @@ def add_device_to_nms_core(request, device_id):
                                                                 master_site.machine.machine_ip,
                                                                 master_site.web_service_port,
                                                                 master_site.name)
-        # sending post request to device app for adding device to nms core
-        r = requests.post(url, data=device_data)
+
+        # encoding service_data
+        encoded_data = urllib.urlencode(device_data)
+
+        # sending post request to nocout device app to add single service at a time
+        r = requests.post(url, data=encoded_data)
+
         # converting string in 'r' to dictionary
         response_dict = ast.literal_eval(r.text)
         if r:
@@ -1616,7 +1627,7 @@ def get_new_configuration_for_svc_edit(request, service_id="", template_id=""):
 
 
 @dajaxice_register
-def edit_services(request, svc_data):
+def edit_services(request, svc_data, svc_ping=""):
     """Edit device services
 
     Args:
@@ -1685,6 +1696,67 @@ def edit_services(request, svc_data):
     # messages variable collects message coming from service addition api response
     messages = ""
 
+    # edit 'ping' service
+    try:
+        if svc_ping and svc_ping['device_id']:
+            device_name = Device.objects.get(pk=svc_ping['device_id']).device_name
+            serv_params = dict()
+            serv_params["normal_check_interval"] = svc_ping['normal_check_interval'] if svc_ping[
+                'normal_check_interval'] else 5
+            cmd_params = {"rta": (svc_ping['rta_warning'] if svc_ping['rta_warning'] else 1500,
+                                  svc_ping['rta_critical'] if svc_ping['rta_critical'] else 3000),
+                          "loss": (svc_ping['pl_warning'] if svc_ping['pl_warning'] else 80,
+                                   svc_ping['pl_critical'] if svc_ping['pl_critical'] else 100),
+                          "packets": svc_ping['packets'] if svc_ping['packets'] and svc_ping['packets'] <= 20 else 6,
+                          "timeout": svc_ping['timeout'] if svc_ping['timeout'] else 20}
+            ping_svc_data = {
+                "device_name": device_name,
+                "service_name": "ping",
+                "serv_params": serv_params,
+                "cmd_params": cmd_params,
+                "agent_tag": "",
+                "mode": "editservice",
+                "snmp_port": "",
+                "snmp_community": ""
+            }
+
+            # master site on which service needs to be added
+            master_site = SiteInstance.objects.get(name='master_UA')
+
+            # url for nocout.py
+            # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+            # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
+            url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                                    master_site.password,
+                                                                    master_site.machine.machine_ip,
+                                                                    master_site.web_service_port,
+                                                                    master_site.name)
+            # encoding service_data
+            encoded_data = urllib.urlencode(ping_svc_data)
+
+            # sending post request to nocout device app to add single service at a time
+            r = requests.post(url, data=encoded_data)
+
+            # converting post response data into python dict expression
+            response_dict = ast.literal_eval(r.text)
+
+            # if response(r) is given by post request than process it further to get success/failure messages
+            if r:
+                # if response_dict doesn't have key 'success'
+                if response_dict.get('success') != 1:
+                    logger.info(response_dict.get('error_message'))
+                    result['message'] += "<i class=\"fa fa-times red-dot\"></i>Failed to edit service ping. <br />"
+                    messages += result['message']
+                else:
+                    result['message'] += "<i class=\"fa fa-check green-dot\"></i>Successfully edited service 'ping'. <br />"
+                    messages += result['message']
+
+    except Exception as e:
+        logger.info(e.message)
+        result['message'] += "<i class=\"fa fa-times red-dot\"></i>Failed to edit service 'ping'. <br />"
+        messages += result['message']
+
+    # edit other services
     for sd in svc_data:
         service = ""
         result = dict()
