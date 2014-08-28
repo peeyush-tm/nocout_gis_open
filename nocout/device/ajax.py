@@ -735,7 +735,7 @@ def add_device_to_nms_core(request, device_id, ping_data):
                            ping_data['rta_critical'] if ping_data['rta_critical'] else 3000),
                    "loss": (ping_data['pl_warning'] if ping_data['pl_warning'] else 80,
                             ping_data['pl_critical'] if ping_data['pl_critical'] else 100),
-                   "packets": ping_data['packets'] if ping_data['packets'] else 6,
+                   "packets": ping_data['packets'] if ping_data['packets'] and ping_data['packets'] <= 20 else 6,
                    "timeout": ping_data['timeout'] if ping_data['timeout'] else 20}
 
     if device.host_state != "Disable":
@@ -1707,7 +1707,7 @@ def edit_services(request, svc_data, svc_ping=""):
                                   svc_ping['rta_critical'] if svc_ping['rta_critical'] else 3000),
                           "loss": (svc_ping['pl_warning'] if svc_ping['pl_warning'] else 80,
                                    svc_ping['pl_critical'] if svc_ping['pl_critical'] else 100),
-                          "packets": svc_ping['packets'] if svc_ping['packets'] else 6,
+                          "packets": svc_ping['packets'] if svc_ping['packets'] and svc_ping['packets'] <= 20 else 6,
                           "timeout": svc_ping['timeout'] if svc_ping['timeout'] else 20}
             ping_svc_data = {
                 "device_name": device_name,
