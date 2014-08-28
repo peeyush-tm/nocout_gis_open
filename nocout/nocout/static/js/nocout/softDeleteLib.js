@@ -460,7 +460,6 @@ function get_service_edit_form(content) {
                     service_edit_html += '</table>';
                     service_edit_html += '</div></div></div>';
                     service_edit_html += '</div>';
-                    $("#ping_svc").hide();
                     service_edit_html += '<hr />';
                     for (var i = 0, l = content.result.data.objects.services.length; i < l; i++) {
                         service_edit_html += '<div class="service">';
@@ -478,7 +477,38 @@ function get_service_edit_form(content) {
                 }
             }
             else {
-                service_edit_html += '<h5 class="text-danger">There are no operational services for device ' + '"' + content.result.data.objects.device_alias+'. </h5>';
+                // show service information
+                service_edit_html += '<h5 class="text-warning"><b>Device Info:</b></h5>';
+                service_edit_html += '<dl class="dl-horizontal">';
+                service_edit_html += '<dt>Device</dt><dd>'+content.result.data.objects.device_alias+'</dd>';
+                service_edit_html += '<dt>Services</dt><dd>Ping</dd></dl>';
+                service_edit_html += '<input type="hidden" id="device_id" value="' + content.result.data.objects.device_id + '" />';
+                service_edit_html += '<label class="control-label"><h5 class="text-warning"><b>Services:</b></h5></label>';
+                service_edit_html += '<label class="checkbox">';
+                service_edit_html += '<input class="uniform" id="ping_checkbox" type="checkbox" value="" onchange="hide_and_show_ping();">';
+                service_edit_html += '<p class="text-dark">Ping</p>';
+                service_edit_html += '</label>';
+                service_edit_html += '<div id="ping_svc" style="display: none;">';
+                service_edit_html += '<br />';
+                service_edit_html += '<h5 class="text-danger"><b>Ping configuration:</b></h5>';
+                service_edit_html += '<div class=""><div class="box border red"><div class="box-title"><h4><i class="fa fa-table"></i>Ping Parameters:</h4></div>';
+                service_edit_html += '<div class="box-body"><table class="table">';
+                service_edit_html += '<thead><tr><th>Packets</th><th>Timeout</th><th>Normal Check Interval</th></tr></thead>';
+                service_edit_html += '<tbody>';
+                service_edit_html += '<tr>';
+                service_edit_html += '<td contenteditable="true" id="packets">6</td>';
+                service_edit_html += '<td contenteditable="true" id="timeout">20</td>';
+                service_edit_html += '<td contenteditable="true" id="norm_check_interval">5</td>';
+                service_edit_html += '</tr>';
+                service_edit_html += '</tbody>';
+                service_edit_html += '<thead><tr><th>Data Source</th><th>Warning</th><th>Critical</th></tr></thead>';
+                service_edit_html += '<tbody>';
+                service_edit_html += '<tr><td>RTA</td><td contenteditable="true" id="rta_warning">1500</td><td contenteditable="true" id="rta_critical">3000</td></tr>';
+                service_edit_html += '<tr><td>PL</td><td contenteditable="true" id="pl_warning">80</td><td contenteditable="true" id="pl_critical">100</td></tr>';
+                service_edit_html += '</tbody>';
+                service_edit_html += '</table>';
+                service_edit_html += '</div></div></div>';
+                service_edit_html += '</div>';
             }
         }
         else{
@@ -591,7 +621,23 @@ function get_service_edit_form(content) {
                         Dajaxice.device.edit_services(edit_services_message, {'svc_data': service_data, 'svc_ping': ping_data});
                     }
                     else{
-                        $(".bootbox").modal("hide");
+                        if ($("#ping_checkbox").is(":checked")) {
+                            var ping_data = {
+                                "rta_warning": parseInt($("#rta_warning").text()),
+                                "rta_critical": parseInt($("#rta_critical").text()),
+                                "pl_warning": parseInt($("#pl_warning").text()),
+                                "pl_critical": parseInt($("#pl_critical").text()),
+                                "packets": parseInt($("#packets").text()),
+                                "timeout": parseInt($("#timeout").text()),
+                                "normal_check_interval": parseInt($("#norm_check_interval").text()),
+                                "device_id": parseInt($("#device_id").val())
+                            };
+                        }
+                        else {
+                            var ping_data = {};
+                        }
+                        Dajaxice.device.edit_services(edit_services_message, {'svc_data': "", 'svc_ping': ping_data});
+                        //$(".bootbox").modal("hide");
                     }
                 }
             },
