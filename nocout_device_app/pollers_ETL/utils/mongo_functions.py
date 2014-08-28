@@ -112,7 +112,6 @@ def mongo_db_update(db,matching_criteria,event_dict,flag):
 			elif flag == "serv_perf_data":
 				db.device_service_status.update(matching_criteria,event_dict,upsert=True)
 			elif flag == "network_perf_data":
-				print event_dict
 				db.device_network_status.update(matching_criteria,event_dict,upsert=True)
 			elif flag == "status_services":
 				db.device_status_services_status.update(matching_criteria,event_dict,upsert=True)

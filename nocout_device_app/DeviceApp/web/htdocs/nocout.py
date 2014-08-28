@@ -117,8 +117,16 @@ def addhost():
         "attr_alias": html.var("device_alias"),
         "attr_ipaddress": html.var("ip_address"),
         "site": html.var("site"),
-        "agent_tag": html.var("agent_tag")
+        "agent_tag": html.var("agent_tag"),
+	"ping_levels": html.var('ping_levels')
     }
+    try:
+	    ping_levels = ast.literal_eval(payload.get('ping_levels'))
+	    logger.debug('ping_levels: '  + pprint.pformat(ping_levels))
+    except Exception, e:
+	    logger.exception('ping levels: ' + pprint.pformat(e))
+    # Set rules for the ping service
+    set_ping_levels(payload.get('host'), ping_levels)
     logger.debug('payload : ' + pprint.pformat(payload))
     for key, attr in payload.items():
         if not attr:
@@ -242,6 +250,7 @@ def addservice():
             if not filter(lambda x: 'Check_MK' in x[3], n_c_i):
                 n_c_i.append((5, [], ALL_HOSTS, 'Check_MK'))
                 g_service_vars['extra_service_conf']['normal_check_interval'] = n_c_i
+	
 
         snmp_port_tuple = None
         if payload.get('snmp_port'):
@@ -365,14 +374,15 @@ def editservice():
                 logger.debug('cmd_params : ' + pprint.pformat(cmd_params))
                 if payload.get('service').strip().lower() == 'ping':
                     ping_attributes.update({
-                        'loss': (int(cmd_params.get('pl').get('warning', 80)), int(cmd_params.get('pl').get('critical', 100))),
-                        'rta': (int(cmd_params.get('rta').get('warning', 3000)), int(cmd_params.get('rta').get('critical', 5000))),
-                        'packets': int(cmd_params.get('packets', 20))
+                        'loss': cmd_params.get('loss'),
+                        'rta': cmd_params.get('rta'),
+                        'packets': cmd_params.get('packets'),
+			'timeout': cmd_params.get('timeout')
                     })
                     ping_level += (ping_attributes,)
-                    ping_level += ([],)
+                    ping_level += (['wan'],)
                     ping_level += ([payload.get('host')],)
-                    g_service_vars['ping_levels'].append(ping_levels)
+                    g_service_vars['ping_levels'].append(ping_level)
                 else:
                     for param, thresholds in cmd_params.items():
                         t = ()
@@ -387,23 +397,24 @@ def editservice():
                     "error_message": "cmd_params " + pprint.pformat(e)
                 })
 
-        serv_params = None
-        if payload.get('serv_params'):
-            try:
-                serv_params = ast.literal_eval(payload.get('serv_params'))
-                logger.debug('serv_params : ' + pprint.pformat(serv_params))
-            except Exception, e:
-                response.update({
-                    "success": 0,
-                    "message": "Service not added",
-                    "error_message": "serv_params " + pprint.pformat(e)
-                })
-		logger.error('Error in serv_params : ' + pprint.pformat(e))
-                return response
-            for param, val in serv_params.items():
-                t = (val, [], [payload.get('host')], payload.get('service'))
-                g_service_vars['extra_service_conf'][param].append(t)
-                t = ()
+	if payload.get('service').strip().lower() != 'ping':
+		serv_params = None
+		if payload.get('serv_params'):
+		    try:
+			serv_params = ast.literal_eval(payload.get('serv_params'))
+			logger.debug('serv_params : ' + pprint.pformat(serv_params))
+		    except Exception, e:
+			response.update({
+			    "success": 0,
+			    "message": "Service not added",
+			    "error_message": "serv_params " + pprint.pformat(e)
+			})
+			logger.error('Error in serv_params : ' + pprint.pformat(e))
+			return response
+		    for param, val in serv_params.items():
+			t = (val, [], [payload.get('host')], payload.get('service'))
+			g_service_vars['extra_service_conf'][param].append(t)
+			t = ()
 
         snmp_port_tuple = None
         if payload.get('snmp_port'):
@@ -518,6 +529,46 @@ def deleteservice():
         
     return response
 
+
+def set_ping_levels(host, ping_levels):
+	global g_service_vars
+	if ping_levels:
+		# Load rules file
+		g_service_vars = {
+	            "only_hosts": None,
+		    "ALL_HOSTS": [],
+	            "host_contactgroups": [],
+		    "bulkwalk_hosts": [],
+		    "extra_host_conf": {},
+		    "extra_service_conf": {
+	            "retry_check_interval": [],
+		    "max_check_attempts": [],
+		    "normal_check_interval": []
+		    },
+		    "static_checks": {},
+	            "ping_levels": [],
+		    "checks": [],
+		    "snmp_ports": [],
+		    "snmp_communities": []
+		}
+		os.open(rules_file, os.O_RDWR|os.O_CREAT)
+		execfile(rules_file, g_service_vars, g_service_vars)
+		del g_service_vars['__builtins__']
+
+                # Delete existing ping rules for that host, first
+                g_service_vars['ping_levels'] = filter(lambda t: host not in t[2], g_service_vars['ping_levels'])
+
+		ping_rule_set = ({
+			'loss': ping_levels.get('loss'),
+			'packets': ping_levels.get('packets'),
+			'rta': ping_levels.get('rta'),
+			'timeout': ping_levels.get('timeout')
+			},
+			['wan'], [host], {}
+		) 
+		logger.debug('ping_rule_set:' + pprint.pformat(ping_rule_set))
+		g_service_vars['ping_levels'].append(ping_rule_set)
+		write_new_host_rules()
 
 def delete_host_rules(hostname=None, servicename=None):
     global g_service_vars

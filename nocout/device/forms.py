@@ -690,7 +690,7 @@ class DeviceFrequencyForm(forms.ModelForm):
             logger.info(e.message)
 
         super(DeviceFrequencyForm, self).__init__(*args, **kwargs)
-        self.fields['color_hex_value'].widget.attrs.update({'value':"rgb(45,14,255,0.58)",'class':'colorpicker',\
+        self.fields['color_hex_value'].widget.attrs.update({'value':"rgba(45,14,255,0.58)",'class':'colorpicker',\
                                                             'data-color-format':'rgba' })
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):

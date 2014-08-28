@@ -57,7 +57,10 @@ class Live_Performance(ListView):
             {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
             # {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+            # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+            {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+            {'mData': 'circuit_id', 'sTitle': 'Circuit IDs', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+            {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
             {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
@@ -137,12 +140,12 @@ class LivePerformanceListing(BaseDatatableView):
             devices = Device.objects.filter(is_added_to_nms=1, is_deleted=0,
                                             organization__in=kwargs['organization_ids'], \
                                             device_technology=device_technology_id).values(
-                *self.columns + ['device_name', 'machine__name', device_association])
+                *self.columns + ['id', 'device_name', 'machine__name', device_association])
         else:
             # get only devices added to NMS and none other
             devices = Device.objects.filter(is_added_to_nms=1, is_deleted=0,
                                             organization__in=kwargs['organization_ids']). \
-                values(*self.columns + ['device_name', 'machine__name', device_association])
+                values(*self.columns + ['id', 'device_name', 'machine__name', device_association])
 
         # required_devices = []
         #
@@ -154,12 +157,45 @@ class LivePerformanceListing(BaseDatatableView):
 
         for device in devices:
             if device[device_association]:
+                sector_id = "N/A"
+                circuit_id = "N/A"
+                bs_name = "N/A"
+                if self.request.GET['page_type'] == 'network':
+                    sectors = Sector.objects.filter(sector_configured_on=device["id"]).values("id", "sector_id", "base_station")
+                    if len(sectors):
+                        sector_id_list = [x["id"] for x in sectors]
+                        sector_id = ", ".join(map(lambda x: str(x), [x["sector_id"] for x in sectors]))
+                        try:
+                            basestation = BaseStation.objects.get(id=sectors[0]["base_station"])
+                            bs_name = basestation.alias
+                        except:
+                            pass
+                        circuits = Circuit.objects.filter(sector__in=sector_id_list).values("circuit_id")
+                        if len(circuits):
+                            circuits_id_list = [x["circuit_id"] for x in circuits]
+                            circuit_id = ",".join(map(lambda x: str(x), circuits_id_list ))
+
+                elif self.request.GET['page_type'] == 'customer':
+                    substation = SubStation.objects.filter(device=device["id"])
+                    if len(substation):
+                        ss_object = substation[0]
+                        circuit = Circuit.objects.filter(sub_station=ss_object.id)
+                        if len(circuit):
+                            circuit_obj = circuit[0]
+                            circuit_id = circuit_obj.circuit_id
+                            sector_id = circuit_obj.sector.sector_id
+                            bs_name = circuit_obj.sector.base_station.alias
+                else:
+                    continue
                 device.update({
                     "packet_loss": "",
                     "latency": "",
                     "last_updated": "",
                     "last_updated_date": "",
                     "last_updated_time": "",
+                    "sector_id": sector_id,
+                    "circuit_id": circuit_id,
+                    "bs_name": bs_name,
                     "city": City.objects.get(id=device['city']).city_name,
                     "state": State.objects.get(id=device['state']).state_name,
                     "device_type": DeviceType.objects.get(pk=int(device['device_type'])).name,
@@ -496,12 +532,17 @@ class Inventory_Device_Status(View):
 
             substation = SubStation.objects.get(id=device_id)
             substation_device = Device.objects.get(id=substation.device_id)
-            sector = Circuit.objects.get(sub_station=substation.id).sector
-            base_station = BaseStation.objects.get(id=Sector.objects.get(id=sector.id).base_station.id)
+            try:
+                sector = Circuit.objects.get(sub_station=substation.id).sector
+                base_station = BaseStation.objects.get(id=Sector.objects.get(id=sector.id).base_station.id)
+                bs_name = base_station.name
+            except:
+                bs_name = "N/A"
             result['data']['objects']['headers'] = ['BS Name', 'SSName', 'Building Height', 'Tower Height',
                                                     'City', 'State', 'IP Address', 'MAC Address']
-            result['data']['objects']['values'] = [base_station.name, substation.name,
-                                                   substation.building_height, substation.tower_height,
+            result['data']['objects']['values'] = [bs_name, substation.name,
+                                                   substation.building_height,
+                                                   substation.tower_height,
                                                    City.objects.get(id=substation.city).city_name if substation.city else "N/A",
                                                    State.objects.get(id=substation.state).state_name if substation.state else "N/A",
                                                    substation_device.ip_address,

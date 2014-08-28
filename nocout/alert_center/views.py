@@ -392,15 +392,15 @@ class GetNetworkAlertDetail(BaseDatatableView):
         #Fetching the data for the device w.r.t to their machine.
         for machine, machine_device_list in machine_dict.items():
 
-            data_sources_list = ['rta', 'pl']
-
-            device_data += self.collective_query_result(
-                machine = machine,
-                table_name = "performance_eventnetwork",
-                devices = machine_device_list,
-                data_sources = data_sources_list,
-                columns = required_data_columns
-            )
+            # data_sources_list = ['rta', 'pl']
+            #
+            # device_data += self.collective_query_result(
+            #     machine = machine,
+            #     table_name = "performance_eventnetwork",
+            #     devices = machine_device_list,
+            #     data_sources = data_sources_list,
+            #     columns = required_data_columns
+            # )
 
             data_sources_list = []
             device_data += self.collective_query_result(
@@ -532,6 +532,10 @@ class AlertCenterNetworkListing(ListView):
             #  'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
             {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -554,6 +558,10 @@ class AlertCenterNetworkListing(ListView):
             #  'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
             {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -575,6 +583,10 @@ class AlertCenterNetworkListing(ListView):
             #  'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
             {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -595,6 +607,10 @@ class AlertCenterNetworkListing(ListView):
             # {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
             #  'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
@@ -718,10 +734,21 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
             )
 
             for data in performance_data:
+                circuit_id = "N/A"
+                sector_id = 'N/A'
                 sector = Sector.objects.filter(sector_configured_on__id=
                                                Device.objects.get(device_name= data['device_name']).id)
                 device_object = Device.objects.get(device_name= data['device_name'])
+
                 if len(sector):
+
+                    #add sector info
+                    sector_id = sector[0].sector_id
+                    #add circuit info
+                    circuit = Circuit.objects.filter(sector=sector[0].id)
+                    if len(circuit):
+                        circuit_id = circuit[0].circuit_id
+
                     device_base_station = sector[0].base_station
                     #only display warning or critical devices
                     if severity_level_check(list_to_check=[data['severity'], data['description']]):
@@ -731,6 +758,8 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                             'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
                             'severity': data['severity'],
                             'ip_address': data['ip_address'],
+                            'circuit_id': circuit_id,
+                            'sector_id': sector_id,
                             'base_station': device_base_station.name,
                             'base_station__city': City.objects.get(id=device_base_station.city).city_name if device_base_station.city else 'N/A',
                             'base_station__state': State.objects.get(id=device_base_station.state).state_name if device_base_station.state else "N/A",
@@ -837,11 +866,11 @@ class CustomerAlertList(ListView):
             {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': True},
-            {'mData': 'sub_station', 'sTitle': 'Sub Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            # {'mData': 'sub_station', 'sTitle': 'Sub Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            #  'bSortable': True},
+            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'sub_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'sub_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
@@ -916,12 +945,18 @@ class CustomerAlertListingTable(BaseDatatableView):
                                             for device in organization_devices if device.substation_set.exists()]
         data_sources_list = list()
 
-        if self.request.GET['data_source'] == 'latency':
-            data_sources_list.append('rta')
-        elif self.request.GET['data_source'] == 'packet_drop':
-            data_sources_list.append('pl')
-
         extra_query_condition = "AND (`{0}`.`current_value` > 0 ) "
+
+        if self.request.GET['data_source'] == 'latency':
+            data_sources_list = ['rta']
+        elif self.request.GET['data_source'] == 'packet_drop':
+            data_sources_list = ['pl']
+            extra_query_condition = "AND (`{0}`.`current_value` BETWEEN 1 AND 99 ) "
+        elif self.request.GET['data_source'] == 'down':
+            data_sources_list = ['pl']
+            extra_query_condition = "AND (`{0}`.`current_value` = 100 ) "
+
+
 
         required_data_columns = ["id",
                                  "data_source",
@@ -958,16 +993,22 @@ class CustomerAlertListingTable(BaseDatatableView):
                 device = data['device_name']
                 substation = SubStation.objects.filter(device__device_name=device)
                 sector_id = "N/A"
-
+                circuit_id = "N/A"
+                device_substation_base_station_name = "N/A"
                 if len(substation):
                     device_substation = substation[0]
                     try:
                         #try exception if the device does not have any association with the circuit
                         circuit_object = Circuit.objects.get(sub_station__id=device_substation.id)
+                        circuit_id = circuit_object.circuit_id
                         device_substation_base_station = circuit_object.sector.base_station
                         device_substation_base_station_name = device_substation_base_station.name
+                        city = City.objects.get(id=device_substation_base_station.city).city_name
+                        state= State.objects.get(id=device_substation_base_station.state).state_name
                     except:
                         device_substation_base_station_name = 'N/A'
+                        city = "N/A"
+                        state = "N/A"
                     try:
                         sector_id = circuit_object.sector.sector_id
                     except:
@@ -983,11 +1024,11 @@ class CustomerAlertListingTable(BaseDatatableView):
                             # 'device_technology': DeviceTechnology.objects.get(id=device_object.device_technology).alias,
                             'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
                             'ip_address': device_object.ip_address,
-                            'sub_station': device_substation.name,
-                            'sub_station__city': City.objects.get(id=device_substation.city).city_name if device_substation.city else "N/A",
-                            'sub_station__state': State.objects.get(id=device_substation.state).state_name if device_substation.state else "N/A",
+                            # 'sub_station': device_substation.name,
+                            'city': city,
+                            'state': state,
                             'base_station': device_substation_base_station_name,
-                            'circuit_id': circuit_object.circuit_id,
+                            'circuit_id': circuit_id,
                             'sector_id': sector_id,
                             'current_value': data['current_value'],
                             'sys_time': datetime.datetime.fromtimestamp(
@@ -1015,7 +1056,7 @@ class CustomerAlertListingTable(BaseDatatableView):
 
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-            service_tab = None
+            service_tab = 'down'
             # figure out which tab call is made.
             data_source = self.request.GET.get('data_source', '')
             if 'latency' == data_source:
