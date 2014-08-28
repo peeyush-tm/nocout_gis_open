@@ -105,7 +105,9 @@
                             /*Hide the spinner*/
                             hideSpinner();
                         },
-                        aoColumns:tableheaders
+                        aoColumns:tableheaders,
+                        sPaginationType: "bs_full",
+                        aaSorting: [[10, 'desc'],[0, 'asc']]
                     });
                 };
             }

@@ -188,7 +188,7 @@ class DeviceSetFilters(View):
 
         result_data=list()
         request_query= self.request.GET.get('filters','')
-        result_data= filter_gis_map(request_query)
+        result_data= filter_gis_map(request_query, limit= GIS_MAP_MAX_DEVICE_LIMIT)
         self.result['data']['objects']= {"id" : "mainNode", "name" : "mainNodeName", "data" :
                                         { "unspiderfy_icon" : "static/img/marker/slave01.png" }
                                         }
@@ -201,7 +201,7 @@ class DeviceSetFilters(View):
         return HttpResponse(json.dumps(self.result))
 
 
-def filter_gis_map(request_query):
+def filter_gis_map(request_query, limit):
     result_list = list()
     if request_query:
         request_query = eval(request_query)
@@ -240,8 +240,8 @@ def filter_gis_map(request_query):
             else:
                 query_base_station.append("Q(%s__in=%s)" % (filter['field'], filter['value']))
 
-        exec_query_base_station += " | ".join(query_base_station) + ").values_list('id', flat=True)"
-        exec_query_circuit += " | ".join(query_circuit) + ").values_list('id', flat=True)"
+        exec_query_base_station += " | ".join(query_base_station) + ").values_list('id', flat=True)[:limit]"
+        exec_query_circuit += " | ".join(query_circuit) + ").values_list('id', flat=True)[:limit]"
 
         if query_base_station: exec exec_query_base_station
         if query_circuit: exec exec_query_circuit
@@ -579,8 +579,8 @@ def prepare_result(base_station_id):
                                 'name': substation.name,
                                 'device_name': substation.device.device_name,
                                 'data': {
-                                    "lat": substation_device.latitude,
-                                    "lon": substation_device.longitude,
+                                    "lat": substation.latitude if substation.latitude else substation_device.latitude,
+                                    "lon": substation.longitude if substation.longitude else substation_device.longitude,
                                     "antenna_height": substation.antenna.height if substation.antenna else 0,
                                     "technology":sector.bs_technology.name,
                                     "markerUrl": tech_marker_url_slave(sector.bs_technology.name),
@@ -631,21 +631,21 @@ def prepare_result(base_station_id):
                                                 'name': 'antenna_height',
                                                 'title': 'Antenna Height',
                                                 'show': 1,
-                                                'value': sector.antenna.height if sector.antenna else 'N/A'
+                                                'value': sector.antenna.height if sector.antenna else 0
                                             },
                                             {
                                                 'name': 'building_height',
                                                 'title': 'Building Height',
                                                 'show': 1,
                                                 'value': substation.building_height \
-                                                    if substation.building_height else 'N/A'
+                                                    if substation.building_height else 0
                                             },
                                             {
                                                 'name': 'tower_height',
                                                 'title': 'tower_height',
                                                 'show': 1,
                                                 'value': substation.tower_height \
-                                                    if substation.tower_height else 'N/A'
+                                                    if substation.tower_height else 0
                                             },
                                             {
                                                 'name': 'polarisation',

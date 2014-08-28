@@ -9,7 +9,8 @@
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
     <!-- JQUERY UI-->
-    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
+    <link rel="stylesheet" type="text/css"
+          href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
 {% endblock %}
 
 {% block page_setting_block %}
@@ -21,16 +22,24 @@
                     <b>Status</b><br/> <span id="gis_status_txt"></span>
                 </li>
                 <li>
-                    <button id="advFilterBtn" class="btn btn-info" onclick="showAdvFilters();" data-complete-text="<i class='fa fa-filter'></i> Advance Filters" data-loading-text="Please Wait...">
+                    <button id="advFilterBtn" class="btn btn-info" onclick="showAdvFilters();"
+                            data-complete-text="<i class='fa fa-filter'></i> Advance Filters"
+                            data-loading-text="Please Wait...">
                         <i class='fa fa-filter'></i> Advance Filters
                     </button>
-                    <button id="removeFilterBtn" class="btn btn-danger hide" onclick="removeAdvFilters();" style="margin-left:10px;">
+                    <button id="removeFilterBtn" class="btn btn-danger hide" onclick="removeAdvFilters();"
+                            style="margin-left:10px;">
                         <i class='fa fa-times'></i> Remove Filters
                     </button>
                 </li>
                 <li>
-                    <button class="btn btn-info" id="createPolygonBtn"  data-complete-text="<i class='fa fa-location-arrow'></i> Select Devices" data-loading-text="Please Wait..."><i class="fa fa-location-arrow"></i> Select Devices</button>
-                    <button class="btn btn-xs btn-danger hide" id="clearPolygonBtn"><i class="fa fa-times"></i> Clear Selection</button>
+                    <button class="btn btn-info" id="createPolygonBtn"
+                            data-complete-text="<i class='fa fa-location-arrow'></i> Select Devices"
+                            data-loading-text="Please Wait..."><i class="fa fa-location-arrow"></i> Select Devices
+                    </button>
+                    <button class="btn btn-xs btn-danger hide" id="clearPolygonBtn"><i class="fa fa-times"></i> Clear
+                        Selection
+                    </button>
                 </li>
                 <li>
                     <button id="showToolsBtn" class="btn btn-info" onclick="showToolsPanel();">
@@ -41,6 +50,8 @@
                     </button>
                 </li>
             </ul>
+        </div>
+        <div style="position: relative; display: block;" id="cursor_lat_long">
         </div>
     </span>
     <!-- /DATE RANGE PICKER -->
@@ -53,11 +64,13 @@
         <!-- Advance Filters Content Start-->
         <div id="advFilterContainerBlock" class="hide">
             <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Advance Filters</h4>
+
             <div id="advFilterFormContainer" class="col-md-8 col-md-offset-2"></div>
             <div class="clearfix"></div>
 
-            <div class="col-md-8 col-md-offset-2">                
-                <button class="pull-right btn btn-danger" style="margin-left:10px;" id="cancelAdvFilterBtn">Cancel</button>
+            <div class="col-md-8 col-md-offset-2">
+                <button class="pull-right btn btn-danger" style="margin-left:10px;" id="cancelAdvFilterBtn">Cancel
+                </button>
                 <button class="pull-right btn btn-success" id="setAdvFilterBtn">Filter</button>
             </div>
             <div class="clearfix"></div>
@@ -69,8 +82,12 @@
         <div id="selectDeviceContainerBlock" class="hide">
             <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Select Devices</h4>
             <ul class="list-unstyled list-inline">
-                <li class="hide">Show Connected SS <input type="checkbox" name="showAllSS" id="showAllSS" onclick="networkMapInstance.plotAllDevice_gmap()" style="vertical-align: text-top;" checked="checked" /></li>
-                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines" onclick="networkMapInstance.showConnectionLines_gmap()" style="vertical-align: text-top;" /></li>
+                <li class="hide">Show Connected SS <input type="checkbox" name="showAllSS" id="showAllSS"
+                                                          onclick="networkMapInstance.plotAllDevice_gmap()"
+                                                          style="vertical-align: text-top;" checked="checked"/></li>
+                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
+                                                   onclick="networkMapInstance.showConnectionLines_gmap()"
+                                                   style="vertical-align: text-top;"/></li>
             </ul>
             <div class="divide-20"></div>
         </div>
@@ -91,7 +108,7 @@
                 <li>
                     <button id="line_select" class="btn btn-info">Add Line</button>
                     <button id="line_remove" class="btn btn-danger hide">Remove Line</button>
-                </li>                        
+                </li>
                 <li>
                     <button id="freeze_select" class="btn btn-info">Freeze</button>
                     <button id="freeze_remove" class="btn btn-danger hide">Un-Freeze</button>
@@ -106,57 +123,60 @@
         <div class="clearfix"></div>
     </div>
 
-<div class='box border lite mapContainerBlock'>
-    <div class='box-title'>
-        <h4 class="col-md-3"><i class='fa fa-map-marker'></i> GOOGLE MAPS <i class="fa fa-spinner fa fa-spin" id="loadingIcon">&nbsp;</i></h4>
-        <!--Filters Block Start-->
-        <div class="col-md-9">
-            <ul class="pull-right list-unstyled list-inline">
-                <li>
-                    <input type="text" name="searchTxt" id="searchTxt" class="form-control col-xs-1 input-sm" placeholder="Address">
-                </li>
-                <li>
-                    <!--technology Filter-->
-                    <select name="technology" id="technology" class="form-control col-xs-1 input-sm">
-                        <option value="">Select Technology</option>
-                    </select>   
-                </li>
-                <li>
-                    <!--vendor Filter-->
-                    <select name="vendor" id="vendor" class="form-control col-xs-1 input-sm">
-                        <option value="">Select Vendor</option>
-                    </select>
-                </li>
-                <li>
-                    <!--State Filter-->
-                    <select name="state" id="state" class="form-control col-xs-1 input-sm">
-                        <option value="">Select State</option>
-                    </select>
-                </li>
-                <li>
-                    <!--City Filter-->
-                    <select name="city" id="city" class="form-control col-xs-1 input-sm">
-                        <option value="">Select City</option>
-                    </select>   
-                </li>
-                <li>
-                    <!--Reset Button-->
-                    <button class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters" data-complete-text="<i class='fa fa-refresh'></i> Reset" data-loading-text="Please Wait...">
-                        <i class="fa fa-refresh">&nbsp;</i> Reset
-                    </button>
-                </li>
-            </ul>
+    <div class='box border lite mapContainerBlock'>
+        <div class='box-title'>
+            <!--Filters Block Start-->
+            <div class="row">
+                <div class="col-md-12">
+                    <ul class="list-unstyled list-inline">
+                        <li>
+                            <input type="text" name="searchTxt" id="searchTxt" class="form-control col-xs-1" style="width:290px;"
+                                   placeholder="Address">
+                        </li>
+                        <li>
+                            <!--technology Filter-->
+                            <select name="technology" id="technology" class="form-control col-xs-1 input-sm">
+                                <option value="">Select Technology</option>
+                            </select>
+                        </li>
+                        <li>
+                            <!--vendor Filter-->
+                            <select name="vendor" id="vendor" class="form-control col-xs-1 input-sm">
+                                <option value="">Select Vendor</option>
+                            </select>
+                        </li>
+                        <li>
+                            <!--State Filter-->
+                            <select name="state" id="state" class="form-control col-xs-1 input-sm">
+                                <option value="">Select State</option>
+                            </select>
+                        </li>
+                        <li>
+                            <!--City Filter-->
+                            <select name="city" id="city" class="form-control col-xs-1 input-sm">
+                                <option value="">Select City</option>
+                            </select>
+                        </li>
+                        <li>
+                            <!--Reset Button-->
+                            <button class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters"
+                                    data-complete-text="<i class='fa fa-refresh'></i> Reset"
+                                    data-loading-text="Please Wait...">
+                                <i class="fa fa-refresh">&nbsp;</i> Reset
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <!--Filters Block End-->
+            <div class="clearfix"></div>
         </div>
-        <!--Filters Block End-->
-        <div class="clearfix"></div>
-    </div>
 
-    <div class='box-body' style="position:relative">
+        <div class='box-body' style="position:relative">
 
-        <!--Map Container Start-->
-        <div id="deviceMap"></div>
-        <!--Map Container End-->
-
+            <!--Map Container Start-->
+            <div id="deviceMap"></div>
+            <!--Map Container End-->
         <!--SideInfo Panel Start-->
         <div id="sideInfoContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide">
             <div class="panel panel-default">
@@ -176,91 +196,93 @@
                             <div class="divide-20 clearfix"></div>
                             <div class="template_container"></div>
                             <div class="divide-10"></div>
-                            <button class="btn btn-primary hide" data-complete-text="Fetch" data-loading-text="Please Wait..." id="fetch_polling">Fetch</button>
+                            <button class="btn btn-primary hide" data-complete-text="Fetch" data-loading-text="Please Wait..." id="fetch_polling">Fetch <i class='fa fa-spinner fa fa-spin hide' id='fetch_spinner'>&nbsp;</i></button>
                             <div class="divide-20 clearfix"></div>
-                            <div class="devices_container hide"></div>
+                            <div class="devices_container"></div>
+
                         </div>
-                        
                     </div>
                 </div>
             </div>
-        </div>
         <!--SideInfo Panel End-->
+        </div>
     </div>
-</div>
 
-<!-- Google Map Library-->
-<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
-<!--This library is used to draw label on google maps-->
-<script type="text/javascript" src={% static "js/infobox.js" %}></script>
-<!--This library is used for marker clustering-->
-<script type="text/javascript" src={% static "js/markerclusterer.js" %}></script>
-<!--OverlappingMarkerSpiderfier Library for marker spiderify effect-->
-<script type="text/javascript" src={% static "js/oms.min.js" %}></script>
-<!-- Our Library to plot the devices on map & performs functionality accordingly-->
-<script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
-<!-- Our Library to plot the devices on map or earth & performs functionality accordingly-->
-<script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
-<!-- SPARKLINES -->
-<script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
-<!-- Custon Script for this template-->
-<script type="text/javascript" src={% static "js/devicevisualization.js" %}></script>
-<!-- Script for full screen google maps-->
-<script type="text/javascript" src={% static "js/fullScreenControl.js" %}></script>
-<!--Flot Chart Library for Fresnel zone-->
-<script src={% static "js/flot/jquery.flot.min.js" %}></script>
-<script type="text/javascript">
+    <!-- Google Map Library-->
+    <script type="text/javascript"
+            src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
+    <!--This library is used to draw label on google maps-->
+    <script type="text/javascript" src={% static "js/infobox.js" %}></script>
+    <!--This library is used for marker clustering-->
+    <script type="text/javascript" src={% static "js/markerclusterer.js" %}></script>
+    <!--OverlappingMarkerSpiderfier Library for marker spiderify effect-->
+    <script type="text/javascript" src={% static "js/oms.min.js" %}></script>
+    <!-- Our Library to plot the devices on map & performs functionality accordingly-->
+    <script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
+    <!-- Our Library to plot the devices on map or earth & performs functionality accordingly-->
+    <script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
+    <!-- SPARKLINES -->
+    <script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
+    <!-- Custon Script for this template-->
+    <script type="text/javascript" src={% static "js/devicevisualization.js" %}></script>
+    <!-- Script for full screen google maps-->
+    <script type="text/javascript" src={% static "js/fullScreenControl.js" %}></script>
+    <!--Flot Chart Library for Fresnel zone-->
+    <script src={% static "js/flot/jquery.flot.min.js" %}></script>
+    <script type="text/javascript">
 
-    var networkMapInstance = "",
-        getFilterApi = "",
-        setFilterApi = "",
-        advSearch = "",
-        deviceName = "";
+        var networkMapInstance = "",
+                getFilterApi = "",
+                setFilterApi = "",
+                advSearch = "",
+                deviceName = "";
 
-    $(document).ready(function(e) {
+        $(document).ready(function (e) {
 
-        getFilterApi = "{{get_filter_api}}";
-        setFilterApi = "{{set_filter_api}}";
-        deviceName = "{{ device_name }}";
-        
-        /*Create a instance of gmap_devicePlottingLib*/
-        networkMapInstance = new devicePlottingClass_gmap();
+            getFilterApi = "{{get_filter_api}}";
+            setFilterApi = "{{set_filter_api}}";
+            deviceName = "{{ device_name }}";
 
-        /*Create a instance of advanceSearchClass*/
-        advSearch = new advanceSearchClass();
+            /*Create a instance of gmap_devicePlottingLib*/
+            networkMapInstance = new devicePlottingClass_gmap();
 
-        /*Call the function to create map*/
-        networkMapInstance.createMap("deviceMap");
+            /*Create a instance of advanceSearchClass*/
+            advSearch = new advanceSearchClass();
 
-        if($.trim(deviceName) == "default_device_name") {
-            if(typeof google != "undefined") {
-                /*Call the make network to create the BS-SS network on the google map*/
-                networkMapInstance.getDevicesData_gmap();
+            /*Call the function to create map*/
+            networkMapInstance.createMap("deviceMap");
+
+            if ($.trim(deviceName) == "default_device_name") {
+                if (typeof google != "undefined") {
+                    /*Call the make network to create the BS-SS network on the google map*/
+                    networkMapInstance.getDevicesData_gmap();
+                }
+
+            } else {
+
+                var searchString = JSON.stringify([
+                                                      {"field": "device_name", "value": [deviceName]}
+                                                  ]);
+                advSearch.setFilters(searchString, setFilterApi);
+
+                /*Hide Remove Filters button*/
+                if (!$("#removeFilterBtn").hasClass("hide")) {
+                    $("#removeFilterBtn").addClass("hide");
+                }
             }
-
-        } else {
-
-            var searchString = JSON.stringify([{"field":"device_name","value":[deviceName]}]);
-            advSearch.setFilters(searchString,setFilterApi);
-
-            /*Hide Remove Filters button*/
-            if(!$("#removeFilterBtn").hasClass("hide")) {
-                $("#removeFilterBtn").addClass("hide");
-            }
-        }
-        /*Call getBasicFilters funtion to fetch & populate basic filters dropdown*/
-        networkMapInstance.getBasicFilters();
-    });
-</script>
+            /*Call getBasicFilters funtion to fetch & populate basic filters dropdown*/
+            networkMapInstance.getBasicFilters();
+        });
+    </script>
 {% endblock %}
 
 {% block load_js %}
-<!-- /JAVASCRIPTS -->
+    <!-- /JAVASCRIPTS -->
 
-<script>
-    jQuery(document).ready(function () {
-        App.setPage("");  //Set current page
-        App.init(); //Initialise plugins and elements
-    });
-</script>
+    <script>
+        jQuery(document).ready(function () {
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+        });
+    </script>
 {% endblock %}

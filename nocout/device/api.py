@@ -338,7 +338,7 @@ class FetchLPDataApi(View):
                             image_partial = ts.gt_critical.upload_image
                         else:
                             icon = static('img/icons/wifi7.png')
-                        img_url = "/media/" + str(image_partial) if "uploaded" in str(image_partial) else static(
+                        img_url = "media/" + str(image_partial) if "uploaded" in str(image_partial) else static(
                             "img/" + image_partial)
                         icon = str(img_url)
                     except Exception as e:

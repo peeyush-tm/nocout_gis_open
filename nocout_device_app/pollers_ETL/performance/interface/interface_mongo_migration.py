@@ -115,7 +115,7 @@ def build_data(doc):
 	"""
 	values_list = []
 	time = doc.get('time')
-        configs = config.parse_config_obj()
+        configs = config_module.parse_config_obj()
 	for config, options in configs.items():
 		machine_name = options.get('machine')
         t = (

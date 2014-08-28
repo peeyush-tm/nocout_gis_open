@@ -73,6 +73,15 @@ var mapInstance = "",
 	distance_label = {},
 	isFreeze = 0;
 
+function displayCoordinates(pnt) {
+      var coordsLabel = $("#cursor_lat_long");
+      var lat = pnt.lat();
+      lat = lat.toFixed(4);
+      var lng = pnt.lng();
+      lng = lng.toFixed(4);
+      coordsLabel.html("Latitude: " + lat + "  Longitude: " + lng);
+}
+
 /**
  * This class is used to plot the BS & SS on the google maps & performs their functionality.
  * @class gmap_devicePlottingLib
@@ -122,6 +131,10 @@ function devicePlottingClass_gmap() {
 			/*google search object for search text box*/
 			var searchBox = new google.maps.places.SearchBox(searchTxt);
 
+            /*show co ordinates on mouse move*/
+            google.maps.event.addListener(mapInstance, 'mousemove', function (event) {
+                displayCoordinates(event.latLng);
+            });
 			/*Event listener for search text box*/
 			google.maps.event.addListener(new google.maps.places.SearchBox(searchTxt), 'places_changed', function() {			
 				/*place object returned from map API*/
@@ -135,8 +148,8 @@ function devicePlottingClass_gmap() {
 	    		/*Listener to reset zoom level if it exceeds to particular value*/
                 var listener = google.maps.event.addListener(mapInstance, "idle", function() {
                     /*check for current zoom level*/
-                    if (mapInstance.getZoom() > 10) {
-                        mapInstance.setZoom(10);
+                    if (mapInstance.getZoom() >= 15) {
+                        mapInstance.setZoom(15);
                     }
                     google.maps.event.removeListener(listener);
                 });
@@ -2145,6 +2158,11 @@ function devicePlottingClass_gmap() {
 
 			var selected_lp_template = $("#lp_template_select").val();
 
+            // start spinner
+            if($("#fetch_spinner").hasClass("hide")) {
+				$("#fetch_spinner").removeClass("hide");
+			}
+
 	    	$.ajax({
 				url : window.location.origin+"/"+"device/lp_bulk_data/?lp_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
 				// url : window.location.origin+"/"+"static/services.json",
@@ -2153,6 +2171,11 @@ function devicePlottingClass_gmap() {
 					var result = JSON.parse(results);
 
 					if(result.success == 1) {
+                        
+                        // stop spinner
+                        if(!($("#fetch_spinner").hasClass("hide"))) {
+                            $("#fetch_spinner").addClass("hide");
+                        }
 
 						if($(".devices_container").hasClass("hide")) {
 							$(".devices_container").removeClass("hide");
@@ -2271,6 +2294,11 @@ function devicePlottingClass_gmap() {
 
 				},
 				error : function(err) {
+                    // stop spinner
+                    if(!($("#fetch_spinner").hasClass("hide"))) {
+						$("#fetch_spinner").addClass("hide");
+					}
+
 					$.gritter.add({
 			            // (string | mandatory) the heading of the notification
 			            title: 'Live Polling - Error',
@@ -2576,7 +2604,7 @@ function devicePlottingClass_gmap() {
 			if($("#fetch_spinner").hasClass("hide")) {
 				$("#fetch_spinner").removeClass("hide");
 			}
-			
+
 			if($("#fetchVal_"+deviceName+"_"+selectedDatasourceVal).length > 0) {
 				
 				var data_with_bracket = $("#fetchVal_"+deviceName+"_"+selectedDatasourceVal).html().split(":-")[1].replace(/ +/g, "").split(","),
