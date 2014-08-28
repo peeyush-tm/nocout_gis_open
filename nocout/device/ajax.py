@@ -2464,7 +2464,7 @@ def add_services(request, svc_data):
             # data_sources --> contains list of data sources
             data_sources = []
             try:
-                if 'data' in sd:
+                if 'data_source' in sd:
                     for sds in sd['data_source']:
                         temp_dict = dict()
                         temp_dict['name'] = str(sds['name']) if sds['name'] != "" else ""
@@ -2529,7 +2529,6 @@ def add_services(request, svc_data):
 
             # converting post response data into python dict expression
             response_dict = ast.literal_eval(r.text)
-
             # if response(r) is given by post request than process it further to get success/failure messages
             if r:
                 result['data'] = service_data
