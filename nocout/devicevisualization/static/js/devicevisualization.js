@@ -117,7 +117,8 @@ function showAdvFilters() {
 
     /*Show the spinner*/
     showSpinner();
-    advSearch.getFilterInfo("filterInfoModal","Advance Filters","advFilterBtn",getFilterApi,setFilterApi);
+//  advSearch.getFilterInfo("filterInfoModal","Advance Filters","advFilterBtn",getFilterApi,setFilterApi);
+    advSearch.getFilterInfofrompagedata("filterInfoModal", "Advance Filters", "advFilterBtn");
 }
     
 /*If 'Filter' button of advance filter is clicked*/
