@@ -190,7 +190,7 @@ function add_device(device_id) {
                         "packets": parseInt($("#packets").text()),
                         "timeout": parseInt($("#timeout").text())
                     };
-                    alert(JSON.stringify(ping_data));
+                    //alert(JSON.stringify(ping_data));
                     Dajaxice.device.add_device_to_nms_core(device_add_message, {'device_id': device_id, 'ping_data': ping_data});
                 }
             },
@@ -434,6 +434,33 @@ function get_service_edit_form(content) {
                 // service display
                 if (!(typeof content.result.data.objects.services === 'undefined')) {
                     service_edit_html += '<label class="control-label"><h5 class="text-warning"><b>Services:</b></h5></label>';
+                    service_edit_html += '<label class="checkbox">';
+                    service_edit_html += '<input class="uniform" id="ping_checkbox" type="checkbox" value="" onchange="hide_and_show_ping();">';
+                    service_edit_html += '<p class="text-dark">Ping</p>';
+                    service_edit_html += '</label>';
+                    service_edit_html += '<div id="ping_svc" style="display: none;">';
+                    service_edit_html += '<br />';
+                    service_edit_html += '<h5 class="text-danger"><b>Ping configuration:</b></h5>';
+                    service_edit_html += '<div class=""><div class="box border red"><div class="box-title"><h4><i class="fa fa-table"></i>Ping Parameters:</h4></div>';
+                    service_edit_html += '<div class="box-body"><table class="table">';
+                    service_edit_html += '<thead><tr><th>Packets</th><th>Timeout</th><th>Normal Check Interval</th></tr></thead>';
+                    service_edit_html += '<tbody>';
+                    service_edit_html += '<tr>';
+                    service_edit_html += '<td contenteditable="true" id="packets">6</td>';
+                    service_edit_html += '<td contenteditable="true" id="timeout">20</td>';
+                    service_edit_html += '<td contenteditable="true" id="norm_check_interval">5</td>';
+                    service_edit_html += '</tr>';
+                    service_edit_html += '</tbody>';
+                    service_edit_html += '<thead><tr><th>Data Source</th><th>Warning</th><th>Critical</th></tr></thead>';
+                    service_edit_html += '<tbody>';
+                    service_edit_html += '<tr><td>RTA</td><td contenteditable="true" id="rta_warning">1500</td><td contenteditable="true" id="rta_critical">3000</td></tr>';
+                    service_edit_html += '<tr><td>PL</td><td contenteditable="true" id="pl_warning">80</td><td contenteditable="true" id="pl_critical">100</td></tr>';
+                    service_edit_html += '</tbody>';
+                    service_edit_html += '</table>';
+                    service_edit_html += '</div></div></div>';
+                    service_edit_html += '</div>';
+                    $("#ping_svc").hide();
+                    service_edit_html += '<hr />';
                     for (var i = 0, l = content.result.data.objects.services.length; i < l; i++) {
                         service_edit_html += '<div class="service">';
                         service_edit_html += '<label class="checkbox">';
@@ -471,6 +498,21 @@ function get_service_edit_form(content) {
                 callback: function () {
                     //if services are present on then send the call to add service else just hide the bootbox
                     if (!(typeof content.result.data.objects.services === 'undefined') && !(Object.keys(content.result.data.objects.services).length === 0)) {
+                        if ($("#ping_checkbox").is(":checked")) {
+                            var ping_data = {
+                                "rta_warning": parseInt($("#rta_warning").text()),
+                                "rta_critical": parseInt($("#rta_critical").text()),
+                                "pl_warning": parseInt($("#pl_warning").text()),
+                                "pl_critical": parseInt($("#pl_critical").text()),
+                                "packets": parseInt($("#packets").text()),
+                                "timeout": parseInt($("#timeout").text()),
+                                "normal_check_interval": parseInt($("#norm_check_interval").text()),
+                                "device_id": parseInt($("#device_id").val())
+                            };
+                        }
+                        else {
+                            var ping_data = {};
+                        }
                         var service_data = [];
                         $(".service").each(function (index) {
                             var $this = $(this);
@@ -498,7 +540,8 @@ function get_service_edit_form(content) {
                                 service_data.push(svc);
                             }
                         });
-                        // alert(JSON.stringify(service_data));
+                        alert(JSON.stringify(service_data));
+                        alert(JSON.stringify(ping_data));
 
                         // below is the 'service_data' we are passing through ajax
                         /*
@@ -544,7 +587,7 @@ function get_service_edit_form(content) {
                             }
                         ]
                          */
-                        Dajaxice.device.edit_services(edit_services_message, {'svc_data': service_data});
+                        Dajaxice.device.edit_services(edit_services_message, {'svc_data': service_data, 'svc_ping': ping_data});
                     }
                     else{
                         $(".bootbox").modal("hide");
@@ -562,6 +605,15 @@ function get_service_edit_form(content) {
     });
 }
 
+// hide and show ping based on checkbox selected or not
+function hide_and_show_ping() {
+    if ($("#ping_checkbox").is(":checked")) {
+        $("#ping_svc").show();
+    }
+    else {
+        $("#ping_svc").hide();
+    }
+}
 
 // display service templates select menu
 function show_old_configuration_for_svc_edit(value) {

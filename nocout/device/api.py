@@ -269,9 +269,9 @@ class FetchLPDataApi(View):
         """Returns json containing live polling value and icon url"""
 
         # converting 'json' into python object
-        devices = eval(str(self.request.GET.get('device',None)))
-        services = eval(str(self.request.GET.get('service',None)))
-        datasources = eval(str(self.request.GET.get('datasource',None)))
+        devices = eval(str(self.request.GET.get('device', None)))
+        services = eval(str(self.request.GET.get('service', None)))
+        datasources = eval(str(self.request.GET.get('datasource', None)))
 
         result = {
             "success": 0,
