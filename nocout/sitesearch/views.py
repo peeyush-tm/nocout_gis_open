@@ -268,7 +268,7 @@ def filter_gis_map(request_query, limit):
 
     return result_list
 
-def tech_marker_url(techno):
+def tech_marker_url_master(techno):
     """
 
     :param techno: technology P2P,
@@ -282,6 +282,24 @@ def tech_marker_url(techno):
         return "static/img/icons/mobilephonetower3.png"
     else:
         return "static/img/marker/icon2_small.png"
+
+def tech_marker_url_slave(techno):
+    """
+
+    :param techno: technology P2P,
+    :return: technology markers
+    """
+    if techno == "P2P":
+        return "static/img/icons/wifi1.png"
+    elif techno == "PMP":
+        return "static/img/icons/wifi2.png"
+    elif techno == "WiMAX":
+        return "static/img/icons/wifi3.png"
+    else:
+        return "static/img/marker/icon4_small.png"
+
+
+
 
 def prepare_result(base_station_id):
     base_station = BaseStation.objects.get(id=base_station_id)
@@ -412,7 +430,10 @@ def prepare_result(base_station_id):
         }
 
     base_station_info['data']['param']['sector'] = []
-
+    base_station_info['sector_ss_vendor']=''
+    base_station_info['sector_ss_technology']=''
+    base_station_info['sector_configured_on_devices']=''
+    base_station_info['circuit_ids']=''
     for sector in sectors:
         if Sector.objects.get(id=sector.id).sector_configured_on.is_deleted == 1:
             continue
@@ -431,6 +452,7 @@ def prepare_result(base_station_id):
                                                              'radius': sector.cell_radius if sector.cell_radius else 0,
                                                              'azimuth_angle': sector.antenna.azimuth_angle if sector.antenna else 0,
                                                              'beam_width': sector.antenna.beam_width if sector.antenna else 0,
+                                                             "markerUrl": "static/img/marker/icon4_small.png",
                                                              'orientation': sector.antenna.polarization if sector.antenna else "vertical",
                                                              'technology':sector.bs_technology.name if sector.bs_technology else 'N/A',
                                                              'info': [{
@@ -542,6 +564,9 @@ def prepare_result(base_station_id):
                                                              'sub_station': []
 
                                                          }]
+        base_station_info['sector_ss_vendor']+= DeviceVendor.objects.get(id=sector.sector_configured_on.device_vendor).name +', '
+        base_station_info['sector_ss_technology']+= DeviceTechnology.objects.get(id=sector.sector_configured_on.device_technology).name +', '
+        base_station_info['sector_configured_on_devices']+= sector.sector_configured_on.device_name +'('+ sector.sector_configured_on.ip_address +')' + ', '
 
         circuits = Circuit.objects.filter(sector=sector.id)
         for circuit in circuits:
@@ -558,7 +583,7 @@ def prepare_result(base_station_id):
                                     "lon": substation.longitude if substation.longitude else substation_device.longitude,
                                     "antenna_height": substation.antenna.height if substation.antenna else 0,
                                     "technology":sector.bs_technology.name,
-                                    "markerUrl": "static/img/marker/icon4_small.png",
+                                    "markerUrl": tech_marker_url_slave(sector.bs_technology.name),
                                     "show_link": 1,
                                     "link_color": sector.frequency.color_hex_value if hasattr(
                                         sector,
@@ -727,7 +752,7 @@ def prepare_result(base_station_id):
                         'title': 'Antenna Mount Type',
                         'show': 1,
                         'value': Antenna.objects.get(id=substation.antenna.id).mount_type \
-                            if substation.antenna.id else 'N/A'
+                            if substation.antenna else 'N/A'
                     },
                     {
                         'name': 'throughput_during_acceptance',
@@ -744,5 +769,19 @@ def prepare_result(base_station_id):
                     }]
 
             base_station_info['data']['param']['sector'][-1]['sub_station']+= substation_list
+            base_station_info['sector_ss_vendor']+= DeviceVendor.objects.get(id=substation.device.device_vendor).name +', '
+            base_station_info['sector_ss_technology']+= DeviceTechnology.objects.get(id=substation.device.device_technology).name +', '
+            base_station_info['circuit_ids']+= circuit.circuit_id +', '
+
+    # Additional Information required to filter the data in the gis maps
+    base_station_sector_ss_vendor= base_station_info['sector_ss_vendor'].split(', ')
+    base_station_sector_ss_technology= base_station_info['sector_ss_technology'].split(', ')
+    base_station_sector_configured_on= base_station_info['sector_configured_on_devices'].split(', ')
+    base_station_circuit_ids= base_station_info['circuit_ids'].split(', ')
+
+    base_station_info['sector_ss_vendor']= " ".join(sorted(set(base_station_sector_ss_vendor), key=base_station_sector_ss_vendor.index))
+    base_station_info['sector_ss_technology']= " ".join(sorted(set(base_station_sector_ss_technology), key=base_station_sector_ss_technology.index))
+    base_station_info['sector_configured_on_devices']= " ".join(sorted(set(base_station_sector_configured_on), key=base_station_sector_configured_on.index))
+    base_station_info['circuit_ids']= " ".join(sorted(set(base_station_circuit_ids), key=base_station_circuit_ids.index))
 
     return base_station_info

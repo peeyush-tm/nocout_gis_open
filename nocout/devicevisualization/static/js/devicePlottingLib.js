@@ -3109,3 +3109,216 @@ function devicePlottingClass_gmap() {
 		ssLinkArray = [];
 	};
 }
+
+
+function prepare_data_for_filter(){
+
+    var filter_data_bs_name_collection=[],
+        filter_data_bs_lat_collection =[],
+        filter_data_bs_lon_collection=[],
+        filter_data_bs_city_collection=[];
+        filter_data_bs_state_collection=[];
+        filter_data_sector_ss_technology_collection=[];
+        filter_data_sector_ss_vendor_collection=[];
+        filter_data_sector_configured_on_collection=[];
+        filter_data_sector_circuit_ids_collection=[];
+
+    if ( main_devices_data_gmaps.length >0 )
+        {
+
+            for (i=0; i< main_devices_data_gmaps.length; i++)
+            {
+                filter_data_bs_name_collection.push({ 'id':[main_devices_data_gmaps[i].id],
+                                                      'value':main_devices_data_gmaps[i].name });
+
+                filter_data_bs_lat_collection.push({ 'id':[main_devices_data_gmaps[i].id] ,
+                                                     'value':main_devices_data_gmaps[i].data.lat });
+
+                filter_data_bs_lon_collection.push({ 'id':[main_devices_data_gmaps[i].id],
+                                                     'value':main_devices_data_gmaps[i].data.lon });
+
+                filter_data_sector_configured_on_value= main_devices_data_gmaps[i].sector_configured_on_devices.split(' ').filter(function (n) { return n != ""})
+                for (var k=0;k<filter_data_sector_configured_on_value.length;k++){
+                    filter_data_sector_configured_on_collection.push({ 'id':[main_devices_data_gmaps[i].id],
+                                                     'value':filter_data_sector_configured_on_value[k] });
+                }
+
+                filter_data_sector_circuit_ids_values= main_devices_data_gmaps[i].circuit_ids.split(' ').filter(function (n) { return n != ""})
+
+                for (var k=0;k<filter_data_sector_circuit_ids_values.length;k++){
+                    filter_data_sector_circuit_ids_collection.push({ 'id':[main_devices_data_gmaps[i].id],
+                                                     'value':filter_data_sector_circuit_ids_values[k] });
+                }
+
+                filter_data_sector_ss_technology_value= main_devices_data_gmaps[i].sector_ss_technology.split(' ').filter(function (n) { return n != ""})
+                filter_data_sector_ss_technology_collection.push({ 'id': main_devices_data_gmaps[i].id ,
+                        'value':filter_data_sector_ss_technology_value });
+
+
+                filter_data_sector_ss_vendor_value= main_devices_data_gmaps[i].sector_ss_vendor.split(' ').filter(function (n) { return n != ""})
+                filter_data_sector_ss_vendor_collection.push({ 'id':main_devices_data_gmaps[i].id,
+                                                      'value':filter_data_sector_ss_vendor_value });
+
+
+                /*removing the devices which do not have the states and city entered.*/
+                if (main_devices_data_gmaps[i].data.state != 'N/A'){
+                    filter_data_bs_state_collection.push({ 'id': main_devices_data_gmaps[i].id,
+                            'value': main_devices_data_gmaps[i].data.state });
+                }
+
+                if (main_devices_data_gmaps[i].data.city != 'N/A'){
+                    filter_data_bs_city_collection.push({ 'id': main_devices_data_gmaps[i].id,
+                            'value': main_devices_data_gmaps[i].data.city });
+                }
+            }
+
+            var filter_data_bs_state_collection= unique_values_field_and_with_base_station_ids(filter_data_bs_state_collection);
+            var filter_data_bs_city_collection= unique_values_field_and_with_base_station_ids(filter_data_bs_city_collection);
+            var filter_data_sector_ss_technology_collection= unique_values_field_and_with_base_station_ids(filter_data_sector_ss_technology_collection,'technology');
+            var filter_data_sector_ss_vendor_collection= unique_values_field_and_with_base_station_ids(filter_data_sector_ss_vendor_collection,'vendor');
+
+
+            var filter_data=[
+                {
+                'element_type':'multiselect',
+                'field_type':'string',
+                'key':'name',
+                'title':'BS Name',
+                'values':filter_data_bs_name_collection
+                },
+                {
+                'element_type':'multiselect',
+                'field_type':'string',
+                'key':'technology',
+                'title':'Technology',
+                'values':filter_data_sector_ss_technology_collection
+                },
+                {
+                'element_type':'multiselect',
+                'field_type':'string',
+                'key':'vendor',
+                'title':'Vendor',
+                'values':filter_data_sector_ss_vendor_collection
+                },
+                {
+                'element_type':'multiselect',
+                'field_type':'string',
+                'key':'state',
+                'title':'BS State',
+                'values':filter_data_bs_state_collection
+                },
+                {
+                'element_type':'multiselect',
+                'field_type':'string',
+                'key':'city',
+                'title':'BS City',
+                'values':filter_data_bs_city_collection
+                },
+                {
+                'element_type':'multiselect',
+                'field_type':'string',
+                'key':'latitude',
+                'title':'BS Latitude',
+                'values':filter_data_bs_lat_collection
+                },
+                {
+                'element_type':'multiselect',
+                'field_type':'string',
+                'key':'longitude',
+                'title':'BS Longitude',
+                'values':filter_data_bs_lon_collection
+                },
+                {
+                'element_type':'multiselect',
+                'field_type':'string',
+                'key':'Sector_configured_on',
+                'title':'Sector Configured On',
+                'values':filter_data_sector_configured_on_collection
+                },
+                {
+                'element_type':'multiselect',
+                'field_type':'string',
+                'key':'circuit_ids',
+                'title':'Circuit Id',
+                'values':filter_data_sector_circuit_ids_collection
+                }
+            ];
+    }//if condition closed
+    return filter_data
+
+}//function closed
+
+
+
+function unique_values_field_and_with_base_station_ids(filter_data_collection, type){
+    /*Unique mappper names.*/
+
+    /*Incase of technology and vendor the two values can appear for the sector_configured_on device as well as Substation.*/
+    var unique_names={};
+    if (type=='technology' || type=='vendor'){
+
+        for (var i=0;i< filter_data_collection.length; i++)
+        {
+            if (filter_data_collection[i].value.length>1)
+            {
+                for(var j=0;j< filter_data_collection[i].value.length; j++)
+                {
+                    unique_names[filter_data_collection[i].value[j]]=true
+                }
+            }
+            else {
+
+                unique_names[filter_data_collection[i].value]=true
+            }
+        }
+
+    } else {
+        for (var i=0;i< filter_data_collection.length; i++)
+        {
+            unique_names[filter_data_collection[i].value]=true
+        }
+
+    }
+    unique_names= Object.keys(unique_names);
+
+    /*All the devices_ids w.r.t to the mappers*/
+    var result_bs_collection=[];
+    for (var i=0;i< unique_names.length; i++)
+        {
+            var unique_device_ids=[];
+
+            for(var j=0;j< filter_data_collection.length; j++)
+            {
+
+                if (type=='technology' || type=='vendor'){
+
+                    if (filter_data_collection[j].value.length>1)
+                    {
+                       for(var k=0;k< filter_data_collection[j].value.length; k++)
+                       {
+                          if(unique_names[i]== filter_data_collection[j].value[k])
+                          {
+                            unique_device_ids.push(filter_data_collection[j].id)
+                          }
+                       }
+                    }
+                    else{
+                        if(unique_names[i]== filter_data_collection[j].value[0])
+                        {
+                            unique_device_ids.push(filter_data_collection[j].id)
+                        }
+                    }
+                } else {
+                        if (unique_names[i]== filter_data_collection[j].value)
+                        {
+                            unique_device_ids.push(filter_data_collection[j].id)
+                        }
+
+                }
+            }
+
+        result_bs_collection.push({'id':unique_device_ids, 'value': unique_names[i] });
+
+        }
+    return result_bs_collection
+}
