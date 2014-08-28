@@ -159,11 +159,12 @@ function add_device(device_id) {
     add_device_html = '<h5 class="">Configure ping service for device:</h5><br />';
     add_device_html += '<div class=""><div class="box border red"><div class="box-title"><h4><i class="fa fa-table"></i>Ping Parameters:</h4></div>';
     add_device_html += '<div class="box-body"><table class="table">';
-    add_device_html += '<thead><tr><th>Packets</th><th>Timeout</th><th></th></tr></thead>';
+    add_device_html += '<thead><tr><th>Packets</th><th>Timeout</th><th>Normal Check Interval</th></tr></thead>';
     add_device_html += '<tbody>';
     add_device_html += '<tr>';
     add_device_html += '<td contenteditable="true" id="packets">6</td>';
     add_device_html += '<td contenteditable="true" id="timeout">20</td>';
+    add_device_html += '<td contenteditable="true" id="normal_check_interval">5</td>';
     add_device_html += '</tr>';
     add_device_html += '</tbody>';
     add_device_html += '<thead><tr><th>Data Source</th><th>Warning</th><th>Critical</th></tr></thead>';
@@ -477,7 +478,7 @@ function get_service_edit_form(content) {
                 }
             }
             else {
-                service_edit_html += '<h5 class="text-warning">There are no operational services for device ' + '"' + content.result.data.objects.device_alias+'. </h5>';
+                service_edit_html += '<h5 class="text-danger">There are no operational services for device ' + '"' + content.result.data.objects.device_alias+'. </h5>';
             }
         }
         else{
@@ -540,8 +541,8 @@ function get_service_edit_form(content) {
                                 service_data.push(svc);
                             }
                         });
-                        alert(JSON.stringify(service_data));
-                        alert(JSON.stringify(ping_data));
+                        //alert(JSON.stringify(service_data));
+                        //alert(JSON.stringify(ping_data));
 
                         // below is the 'service_data' we are passing through ajax
                         /*
@@ -974,7 +975,7 @@ function device_services_status_frame(content) {
         services_status_html += '<thead><tr><th>Service</th><th>Data Sources</th></tr></thead>';
         services_status_html += '<tbody>';
         services_status_html += '<tr>';
-        services_status_html += '<td align="right"><span class="text-danger">No service is operational on this device.</span></td>';
+        services_status_html += '<td align="right"><span class="text-danger">No service is operational on this device or there is no service for this device.</span></td>';
         services_status_html += '</tr>';
         services_status_html += '</tbody></table>';
         services_status_html += '</div></div></div>';
@@ -995,12 +996,12 @@ function device_services_status_frame(content) {
         services_status_html += '</div></div></div>';
     }
     else{
-        services_status_html += '<div class=""><div class="box border orange"><div class="box-title"><h4><i class="fa fa-table"></i>Operational Services</h4></div>';
+        services_status_html += '<div class=""><div class="box border orange"><div class="box-title"><h4><i class="fa fa-table"></i>Non Operational Services</h4></div>';
         services_status_html += '<div class="box-body"><table class="table">';
         services_status_html += '<thead><tr><th>Service</th><th>Data Sources</th></tr></thead>';
         services_status_html += '<tbody>';
         services_status_html += '<tr>';
-        services_status_html += '<td align="right"><span class="text-danger">All services are operational for this device.</span></td>';
+        services_status_html += '<td align="right"><span class="text-danger">All services are operational for this device or there is no service for this device.</span></td>';
         services_status_html += '</tr>';
         services_status_html += '</tbody></table>';
         services_status_html += '</div></div></div>';
