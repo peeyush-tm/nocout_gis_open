@@ -133,6 +133,11 @@ def build_data(doc):
     local_time_epoch += 300
     for entry in doc.get('data'):
 	check_time_epoch = utility_module.get_epoch_time(entry.get('time'))
+	if doc.get('ds') == 'rta':
+                rtmin = entry.get('min_value')
+                rtmax = entry.get('max_value')
+        else:
+                rtmin=rtmax=entry.get('value')
         t = (
        		#uuid,
                 doc.get('host'),
@@ -141,8 +146,8 @@ def build_data(doc):
                 doc.get('site'),
                 doc.get('ds'),
                 entry.get('value'),
-                entry.get('value'),
-                entry.get('value'),
+                rtmin,
+                rtmax,
                 entry.get('value'),
                 doc.get('meta').get('war'),
                 doc.get('meta').get('cric'),
