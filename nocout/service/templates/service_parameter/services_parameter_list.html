@@ -7,7 +7,13 @@
 {% block content_title %}Service Parameters Management{% endblock %}
 {% block content_description %}List of service parameters{% endblock %}
 {% block content %}
-    <p><a href="/service_parameter/new"><i class="fa fa-plus">&nbsp;</i> Create Service Parameter</a></p>
+
+    {% for group in user.groups.all %}
+        {% if group.name == 'group_admin' %}
+            <p><a href="/service_parameter/new"><i class="fa fa-plus">&nbsp;</i> Create Service Parameter</a></p>
+        {% endif %}
+    {% endfor %}
+
 
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">

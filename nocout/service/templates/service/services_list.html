@@ -7,7 +7,14 @@
 {% block content_title %}Service Management{% endblock %}
 {% block content_description %}List of services{% endblock %}
 {% block content %}
-    <p><a href="/service/new"><i class="fa fa-plus">&nbsp;</i> Create Service</a></p>
+    {% for group in user.groups.all %}
+        {% if group.name == 'group_admin' %}
+            <p>
+                <p><a href="/service/new"><i class="fa fa-plus">&nbsp;</i> Create Service</a></p>
+            </p>
+        {% endif %}
+    {% endfor %}
+
 
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">

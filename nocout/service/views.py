@@ -42,8 +42,9 @@ class ServiceList(ListView):
             {'mData': 'parameters__parameter_description', 'sTitle': 'Default Parameters', 'sWidth': 'null', },
             {'mData': 'service_data_sources__alias', 'sTitle': 'Data Sources', 'sWidth': 'null', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}]
-
+        ]
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -270,8 +271,9 @@ class ServiceParametersList(ListView):
              'sClass': 'hidden-xs'},
             {'mData': 'retry_check_interval', 'sTitle': 'Retry Check Intervals', 'sWidth': 'null', },
             {'mData': 'max_check_attempts', 'sTitle': 'Max Check Attempts', 'sWidth': 'null', },
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
         ]
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -476,8 +478,10 @@ class ServiceDataSourceList(ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             {'mData': 'warning', 'sTitle': 'Warning', 'sWidth': 'null', },
             {'mData': 'critical', 'sTitle': 'Critical', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
         ]
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -681,8 +685,9 @@ class ProtocolList(ListView):
             {'mData': 'security_level', 'sTitle': 'Security Level', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             {'mData': 'private_phase', 'sTitle': 'Private Phase', 'sWidth': 'null', },
             {'mData': 'private_pass_phase', 'sTitle': 'Private Pass Phase', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%','bSortable': False }
         ]
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -892,7 +897,10 @@ class DeviceServiceConfigurationList(ListView):
             {'mData':'critical',                'sTitle' : 'Critical',              'sWidth':'null',},
             {'mData':'added_on',                'sTitle' : 'Added On',              'sWidth':'null',},
             {'mData':'modified_on',             'sTitle' : 'Updated On',            'sWidth':'null',},
-            {'mData':'actions',                 'sTitle' : 'Actions',               'sWidth':'null','bSortable': False}]
+        ]
+
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
