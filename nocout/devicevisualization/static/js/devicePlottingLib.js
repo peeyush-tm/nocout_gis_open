@@ -1669,7 +1669,7 @@ function devicePlottingClass_gmap() {
 				/*Populate City dropdown*/
 				var cityOptions = "<option value=''>Select City</option>";
 				$.grep(cityData,function(city) {
-					cityOptions += "<option value='"+city.id+"'>"+city.value.toUpperCase()+"</option>";
+					cityOptions += "<option state_id='"+city.state_id+"' state_name='"+city.state_name+"' value='"+city.id+"'>"+city.value.toUpperCase()+"</option>";
 				});
 				$("#city").html(cityOptions);
 
