@@ -356,7 +356,7 @@ function devicePlottingClass_gmap() {
 								/*Call the function after 3 sec. for lazyloading*/
 								setTimeout(function() {
 									gmap_self.getDevicesData_gmap();
-								},1000);
+								},10);
 								
 							} else {
 
