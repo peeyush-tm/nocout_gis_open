@@ -72,6 +72,9 @@ var mapInstance = "",
 	ruler_pt_count = 0,
 	distance_label = {},
 	isFreeze = 0;
+    map_points_array = [];
+    map_point_count = 0;
+
 
 function displayCoordinates(pnt) {
       var coordsLabel = $("#cursor_lat_long");
@@ -2773,13 +2776,15 @@ function devicePlottingClass_gmap() {
 	 * @method addRulerTool_gmap
 	 */
 	this.addRulerTool_gmap = function() {
+        //first clear the click listners. point tool might be in use
+        google.maps.event.clearListeners(mapInstance,'click');
 
-		google.maps.event.addListener(mapInstance,'click',function(e) { 
+		google.maps.event.addListener(mapInstance,'click',function(e) {
 
 			if(isCreated == 0) {
 
 				if(ruler_pt_count < 2) {
-					
+
 					/*Create Point*/
 					ruler_point = new google.maps.Marker({position: e.latLng, map: mapInstance});
 					ruler_array.push(ruler_point);
@@ -2794,7 +2799,7 @@ function devicePlottingClass_gmap() {
 							"endLat" : ruler_array[1].getPosition().lat(),
 							"endLon" : ruler_array[1].getPosition().lng()
 						};
-						
+
 						var ruler_line = gmap_self.createLink_gmaps(latLonObj);
 						tools_line_array.push(ruler_line);
 
@@ -2844,7 +2849,7 @@ function devicePlottingClass_gmap() {
 					}
 
 				} else {
-						
+
 					for(var i=0;i<ruler_array.length;i++) {
 						ruler_array[i].setMap(null);
 					}
@@ -2868,7 +2873,7 @@ function devicePlottingClass_gmap() {
 				ruler_pt_count++;
 
 			} else {
-					
+
 				for(var i=0;i<ruler_array.length;i++) {
 					ruler_array[i].setMap(null);
 				}
@@ -2887,7 +2892,7 @@ function devicePlottingClass_gmap() {
 
 				isCreated = 0;
 				ruler_pt_count = 0;
-			}			
+			}
 		});
 	};
 
@@ -2927,8 +2932,50 @@ function devicePlottingClass_gmap() {
 			gmap_self.recallServer_gmap();
 		}
 
-		/*Remove click listener from google maps*/
-		google.maps.event.clearListeners(mapInstance,'click');
+        if (map_point_count == 0){
+            /*Remove click listener from google maps*/
+		    google.maps.event.clearListeners(mapInstance,'click');
+        }
+	};
+
+    /**
+	 * This function enables point tool & perform corresponding functionality.
+	 * @method addPointTool_gmap
+	 */
+	this.addPointTool_gmap = function() {
+
+        //first clear the listners. as ruler tool might be in place
+        google.maps.event.clearListeners(mapInstance,'click');
+
+        var image = '/static/img/icons/caution.png';
+		google.maps.event.addListener(mapInstance,'click',function(e) {
+
+            map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image});
+
+            map_points_array.push(map_point);
+
+            map_point_count ++;
+
+		});
+	};
+
+    /**
+	 * This function enables point tool & perform corresponding functionality.
+	 * @method clearPointTool_gmap
+	 */
+	this.clearPointTool_gmap = function() {
+
+        console.log(map_points_array);
+
+		for(var j=0;j<map_points_array.length;j++) {
+			map_points_array[j].setMap(null);
+		}
+        map_points_array = [];
+        map_point_count = 0;
+        /*Remove click listener from google maps*/
+        if (ruler_pt_count == 0){
+            google.maps.event.clearListeners(mapInstance,'click');
+        }
 	};
 
 	/**

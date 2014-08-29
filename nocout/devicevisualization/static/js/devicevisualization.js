@@ -262,6 +262,9 @@ function removetoolsPanel() {
     }
 
     networkMapInstance.clearToolsParams_gmap();
+
+    networkMapInstance.clearPointTool_gmap();
+
     /*Call get_page_status function to show the current status*/
     get_page_status();
 }
@@ -297,6 +300,34 @@ $("#ruler_remove").click(function(e) {
     networkMapInstance.clearToolsParams_gmap();
 });
 
+
+/**
+ * This event trigger when clicked on "Ruler" button
+ * @event click
+ */
+ $("#point_select").click(function(e) {
+
+    if($("#point_remove").hasClass("hide")) {
+        $("#point_select").addClass("hide");
+        $("#point_remove").removeClass("hide");
+    }
+
+    networkMapInstance.addPointTool_gmap();
+ });
+
+ /**
+  * This event unbind ruler click event & show the Ruler button again
+  * @event click
+  */
+$("#point_remove").click(function(e) {
+
+    if(!($("#point_remove").hasClass("hide"))) {
+        $("#point_select").removeClass("hide");
+        $("#point_remove").addClass("hide");
+    }
+
+    networkMapInstance.clearPointTool_gmap();
+});
 
 /**
  * This event trigger when clicked on "Ruler" button
