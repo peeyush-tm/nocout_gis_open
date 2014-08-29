@@ -44,7 +44,7 @@
                                                 &nbsp;
                                                 <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i>Reset</button>
                                                 &nbsp;
-                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/vendor/')"><i class="fa fa-times"></i>Cancel</button>
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('/frequency/')"><i class="fa fa-times"></i>Cancel</button>
                                             </div>
                                         </div>
                                     </form>
@@ -61,14 +61,29 @@
     {% endblock %}
     <script type="text/javascript" src={% static "js/colorpicker/js/bootstrap-colorpicker.min.js" %}></script>
     <script>
-    $(document).ready(function(){
-        // console.log($('.colorpicker'));
-        // $('.colorpicker').colorpicker();
-        $("#id_color_hex_value").parent().append('<div class="pick" style="height:40px; width:40px; background:#ac725e; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(172, 114, 94, 1)</div><div class="pick" style="height:40px; width:40px; background:#d06b64; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(208, 107, 100, 1)</div><div class="pick" style="height:40px; width:40px; background:#f83a22; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(248, 58, 34, 1)</div><div class="pick" style="height:40px; width:40px; background:#fa573c; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(250, 87, 60, 1)</div><div class="pick" style="height:40px; width:40px; background:#ff7537; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(255, 117, 55, 1)</div><div class="pick" style="height:40px; width:40px; background:#ffad46; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(255, 173, 70, 1)</div><div class="pick" style="height:40px; width:40px; background:#42d692; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(66, 214, 146, 1)</div><div class="pick" style="height:40px; width:40px; background:#16a765; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(22, 167, 101, 1)</div><div class="pick" style="height:40px; width:40px; background:#7bd148; text-indent:-999px; float:left; padding:5px; margin:5px">#rgba(123, 209, 72, 1)</div><div class="pick" style="height:40px; width:40px; background:#b3dc6c; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(179, 220, 108, 1)</div><div class="pick" style="height:40px; width:40px; background:#fbe983; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(251, 233, 131, 1)</div><div class="pick" style="height:40px; width:40px; background:#fad165; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(250, 209, 101, 1)</div><div class="pick" style="height:40px; width:40px; background:#92e1c0; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(146, 225, 192, 1)</div><div class="pick" style="height:40px; width:40px; background:#9fe1e7; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(159, 225, 231, 1)</div><div class="pick" style="height:40px; width:40px; background:#9fc6e7; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(159, 198, 231, 1)</div><div class="pick" style="height:40px; width:40px; background:#4986e7; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(73, 134, 231, 1)</div><div class="pick" style="height:40px; width:40px; background:#9a9cff; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(154, 156, 255, 1)</div><div class="pick" style="height:40px; width:40px; background:#b99aff; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(185, 154, 255, 1)</div><div class="pick" style="height:40px; width:40px; background:#c2c2c2; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(194, 194, 194, 1)</div><div class="pick" style="height:40px; width:40px; background:#cabdbf; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(202, 189, 191, 1)</div><div class="pick" style="height:40px; width:40px; background:#cca6ac; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(204, 166, 172, 1)</div><div class="pick" style="height:40px; width:40px; background:#f691b2; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(246, 145, 178, 1)</div><div class="pick" style="height:40px; width:40px; background:#cd74e6; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(205, 116, 230, 1)</div><div class="pick" style="height:40px; width:40px; background:#a47ae2; text-indent:-999px; float:left; padding:5px; margin:5px">rgba(164, 122, 226, 1)</div>');
-        $('.pick').click(function(){
-            $("#id_color_hex_value").val($(this).text());
+        $(document).ready(function(){
+        $(".colorpicker").spectrum({
+            preferredFormat: "rgb",
+            showInitial: true,
+            showPaletteOnly: true,
+            togglePaletteOnly: true,
+            togglePaletteMoreText: 'more',
+            togglePaletteLessText: 'less',
+            showAlpha: true,
+            color: 'black',
+            palette: [
+                ["rgba(0, 0, 0, 1)","rgba(68, 68, 68, 1)","rgba(102, 102, 102, 1)","rgba(153, 153, 153, 1)","rgba(204, 204, 204, 1)","rgba(238, 238, 238, 1)","rgba(243, 243, 243, 1)","rgba(255, 255, 255, 1)"],
+                ["#f00","#f90","#ff0","#0f0","#0ff","#00f","#90f","#f0f"],
+                ["#f4cccc","#fce5cd","#fff2cc","#d9ead3","#d0e0e3","#cfe2f3","#d9d2e9","#ead1dc"],
+                ["#ea9999","#f9cb9c","#ffe599","#b6d7a8","#a2c4c9","#9fc5e8","#b4a7d6","#d5a6bd"],
+                ["#e06666","#f6b26b","#ffd966","#93c47d","#76a5af","#6fa8dc","#8e7cc3","#c27ba0"],
+                ["#c00","#e69138","#f1c232","#6aa84f","#45818e","#3d85c6","#674ea7","#a64d79"],
+                ["#900","#b45f06","#bf9000","#38761d","#134f5c","#0b5394","#351c75","#741b47"],
+                ["#600","#783f04","#7f6000","#274e13","#0c343d","#073763","#20124d","#4c1130"]
+            ]
         });
     });
+    </script>
     </script>
 
 {% endblock %}
