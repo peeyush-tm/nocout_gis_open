@@ -219,7 +219,11 @@
                     <li><a class="" href="/user_group/"><span class="sub-menu-text">User Groups</span></a></li>
                     <li><a class="" href="/sm/"><span class="sub-menu-text">User Session</span></a></li>
                     <li><a class="" href="/organization/"><span class="sub-menu-text">Organization</span></a></li>
-                    <li><a class="" href="/logs/actions/"><span class="sub-menu-text">User Logs</span></a></li>
+                    {% for group in user.groups.all %}
+                    {% if group.name == 'group_admin' %}
+                        <li><a class="" href="/logs/actions/"><span class="sub-menu-text">User Logs</span></a></li>
+                    {% endif %}
+                    {% endfor %}
                 </ul>
             </li>
             <li>
