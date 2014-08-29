@@ -76,7 +76,10 @@ def getCustomerAlertDetail(request):
          'bSortable': True},
         {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True}, ]
+        {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
+        {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'sClass': 'hidden-xs',
+         'bSortable': False},
+        ]
 
     context = {'customer_ptp_block_table_header': json.dumps(customer_ptp_block_table_header)}
     return render(request, 'alert_center/customer_alert_details_list.html', context)
@@ -245,6 +248,31 @@ class GetCustomerAlertDetail(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
 
+            service_tab_name = 'service'
+            for dct in qs:
+                device_object = Device.objects.get(device_name=dct['device_name'])
+                device_id = device_object.id
+                try:
+                    substation_id = Device.objects.get(id=device_id).substation_set.values().get()["id"]
+                    dct.update(action=''
+                        '<a href="/alert_center/customer/device/{0}/service_tab/{2}/" title="Device Alerts">'
+                        '<i class="fa fa-warning text-warning"></i>'
+                        '</a>'
+                        '<a href="/performance/customer_live/{1}/" title="Device Performance">'
+                        '<i class="fa fa-bar-chart-o text-info"></i>'
+                        '</a>'
+                        '<a href="/device/{0}" title="Device Inventory">'
+                        '<i class="fa fa-dropbox text-muted"></i>'
+                        '</a>'.format(device_id, substation_id, service_tab_name))
+
+                except:
+                    dct.update(action=''
+                       '<a href="/alert_center/customer/device/{0}/service_tab/{1}/" title="Device Alerts">'
+                       '<i class="fa fa-warning text-warning"></i>'
+                       '</a>'
+                       '<a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'
+                       .format(device_id,service_tab_name))
+
         return common_prepare_results(qs)
 
 
@@ -305,7 +333,9 @@ def getNetworkAlertDetail(request):
          'bSortable': True},
         {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True}, ]
+        {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
+        {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
+        ]
 
     context = {'network_ptp_block_table_header': json.dumps(network_ptp_block_table_header)}
     return render(request, 'alert_center/network_alert_details_list.html', context)
@@ -465,6 +495,13 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+            service_tab_name = 'service'
+            for dct in qs:
+                device_id = Device.objects.get(device_name=dct['device_name']).id
+                dct.update(action='<a href="/alert_center/network/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
+                                   <a href="/performance/network_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                                   <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.format(device_id,
+                                                                                                              service_tab_name))
 
         return common_prepare_results(qs)
 
@@ -540,7 +577,7 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': True},
             {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'current_value', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'current_value', 'sTitle': 'Latency (ms)', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
@@ -566,7 +603,7 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': True},
             {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'current_value', 'sTitle': 'Packet Drop', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'current_value', 'sTitle': 'Packet Drop (%)', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
@@ -591,7 +628,7 @@ class AlertCenterNetworkListing(ListView):
              'bSortable': True},
             {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'current_value', 'sTitle': 'Packet Drop', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'current_value', 'sTitle': 'Packet Drop (%)', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
@@ -1056,16 +1093,19 @@ class CustomerAlertListingTable(BaseDatatableView):
 
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+            data_unit = "%"
             service_tab = 'down'
             # figure out which tab call is made.
             data_source = self.request.GET.get('data_source', '')
             if 'latency' == data_source:
                 service_tab = 'latency'
+                data_unit = "ms"
             elif 'packet_drop' == data_source:
                 service_tab = 'packet_drop'
 
             for dct in qs:
                 device = Device.objects.get(device_name=dct['device_name'])
+                dct.update(current_value = dct["current_value"] + " " + data_unit)
                 dct.update(action='<a href="/alert_center/customer/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
                                    <a href="/performance/customer_live/{2}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
                                    <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
