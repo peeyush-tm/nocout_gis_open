@@ -41,14 +41,18 @@
                         Selection
                     </button>
                 </li>
-                <li>
-                    <button id="showToolsBtn" class="btn btn-info" onclick="showToolsPanel();">
-                        <i class='fa fa-cog'></i> Tools
-                    </button>
-                    <button id="removeToolsBtn" class="btn btn-danger hide" onclick="removetoolsPanel();">
-                        <i class='fa fa-times'></i> Remove Tools
-                    </button>
-                </li>
+                {% for group in user.groups.all %}
+                    {% if group.name == 'group_admin' %}
+                        <li>
+                            <button id="showToolsBtn" class="btn btn-info" onclick="showToolsPanel();">
+                                <i class='fa fa-cog'></i> Tools
+                            </button>
+                            <button id="removeToolsBtn" class="btn btn-danger hide" onclick="removetoolsPanel();">
+                                <i class='fa fa-times'></i> Remove Tools
+                            </button>
+                        </li>
+                    {% endif %}
+                {% endfor %}
             </ul>
         </div>
         <div style="position: fixed; display: block; bottom:0; right: 20px; z-index:999;background: #fff;width: auto;padding: 10px;" id="cursor_lat_long">
