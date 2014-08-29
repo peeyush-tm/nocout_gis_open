@@ -61,16 +61,19 @@
     {% endblock %}
     <script type="text/javascript" src={% static "js/colorpicker/js/bootstrap-colorpicker.min.js" %}></script>
     <script>
-        $(document).ready(function(){
+    $(document).ready(function(){
         $(".colorpicker").spectrum({
             preferredFormat: "rgb",
+            flat: true,
             showInitial: true,
-            showPaletteOnly: true,
+            showPalette: true,
+            showPaletteOnly: false,
             togglePaletteOnly: true,
             togglePaletteMoreText: 'more',
             togglePaletteLessText: 'less',
+            showSelectionPalette: true,
             showAlpha: true,
-            color: 'black',
+            color: $(".colorpicker").text(),
             palette: [
                 ["rgba(0, 0, 0, 1)","rgba(68, 68, 68, 1)","rgba(102, 102, 102, 1)","rgba(153, 153, 153, 1)","rgba(204, 204, 204, 1)","rgba(238, 238, 238, 1)","rgba(243, 243, 243, 1)","rgba(255, 255, 255, 1)"],
                 ["#f00","#f90","#ff0","#0f0","#0ff","#00f","#90f","#f0f"],
@@ -83,7 +86,6 @@
             ]
         });
     });
-    </script>
     </script>
 
 {% endblock %}
