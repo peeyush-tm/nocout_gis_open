@@ -67,8 +67,11 @@
         <script type="text/javascript" src={% static "js/js-xlsx/xlsx-reader.js" %}></script>
     {% endblock %}
     <script>
+
+        // initialize field settings
         $(document).ready(function () {
-            // Changing labels of form fields
+
+            // changing labels of form fields
             $("label[for=id_bs_sheet]").text('BS Sheet');
             $("label[for=id_ss_sheet]").text('SS Sheet');
             $("label[for=id_ptp_sheet]").text('PTP Sheet');
@@ -77,66 +80,94 @@
             var image_uploader = "#id_file_upload";
             $(image_uploader).bootstrapFileInput();
             $(image_uploader).prev().text("Upload file");
-            // Initialize the select2 selectbox.
+
+            // initialize the select2 selectbox.
             $(".select2select").select2();
             $('.tip-focus').tooltip({
                 placement: 'right',
                 trigger: 'focus'
             });
+
+            // initialize select fields with 'Select' option
             $("#id_bs_sheet").empty().append('<option value="">Select</option>');
             $("#id_ss_sheet").empty().append('<option value="">Select</option>');
             $("#id_ptp_sheet").empty().append('<option value="">Select</option>');
         });
-        /*
-        function readFile(file) {
-            var reader = new FileReader();
-            alert(reader.onload)
-            reader.onload = readSuccess;
-            function readSuccess(evt) {
-                alert("It's reader.");
-                data = evt.target.result;
-                var wb = XLS.read(data, {type: 'binary'});
-                alert(wb);
-            }
-            //reader.readAsText(file);
-        }
-        $("#id_file_upload").change(function (e) {
-            alert(e.target.files[0].name);
-            readFile(e.target.files[0]);
 
-             var file = this.files[0], sheets;
-             XLSXReader(file, true, function (xlsxData) {
-             sheets = xlsxData.sheets;
-             console.log(sheets);
-             sheets_options = '<option value="">Select</option>';
-             var arr = [];
-             for (var key in sheets) {
-             arr.push(key);
-             }
-             sheets_array = arr.reverse();
-             for (var i=0; i < sheets_array.length; i++) {
-             // sheets_options += '<option value="' + parseInt(i) + '">' + sheets_array[i] + '</option>';
-             sheets_options += '<option value="' + sheets_array[i] + '">' + sheets_array[i] + '</option>';
-             }
-             $("#id_bs_sheet").empty().append(sheets_options);
-             $("#id_ss_sheet").empty().append(sheets_options);
-             $("#id_ptp_sheet").empty().append(sheets_options);
-             });
-        });
-        */
+        // execute this everytime after uploading file
         $('#id_file_upload').on('change', function (e) {
-            readFile(this.files[0], function (e) {
-                // use result in callback...
-                data = e.target.result;
-                wb = XLS.read(data, {type: 'binary'});
-                alert(wb.SheetNames);
-                var sheets = wb.SheetNames;
-                for (var i=0; i<sheets.length; i++) {
-                    alert(i+" : "+sheets[i]);
-                }
-            });
+
+            // if uploaded file extension is '.xls' or '.XLS' then execute this
+            if (this.files[0].name.split('.').pop().toUpperCase() === 'XLS') {
+                readFile(this.files[0], function (e) {
+                    // use result in callback...
+                    data = e.target.result;
+
+                    // reading excel(workbook) file
+                    wb = XLS.read(data, {type: 'binary'});
+
+                    // array containing excel file sheetnames
+                    var sheets = wb.SheetNames;
+
+                    // preparing sheets select menu options
+                    sheets_options = '<option value="">Select</option>';
+                    for (var i = 0; i < sheets.length; i++) {
+                        // alert(i + " : " + sheets[i]);
+                        sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                    }
+
+                    // modifying sheet select options to current file sheet names
+                    $("#id_bs_sheet").empty().append(sheets_options);
+                    $("#id_ss_sheet").empty().append(sheets_options);
+                    $("#id_ptp_sheet").empty().append(sheets_options);
+                });
+            }
+
+            // if uploaded file extension is '.xlsx' or '.XLSX'
+            else if (this.files[0].name.split('.').pop().toUpperCase() === 'XLSX') {
+                readFile(this.files[0], function (e) {
+                    // use result in callback...
+                    data = e.target.result;
+
+                    // reading excel(workbook) file
+                    wb = XLSX.read(data, {type: 'binary'});
+
+                    // array containing excel file sheetnames
+                    var sheets = wb.SheetNames;
+
+                    // preparing sheets select menu options
+                    sheets_options = '<option value="">Select</option>';
+                    for (var i = 0; i < sheets.length; i++) {
+                        // alert(i + " : " + sheets[i]);
+                        sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                    }
+
+                    // modifying sheet select options to current file sheet names
+                    $("#id_bs_sheet").empty().append(sheets_options);
+                    $("#id_ss_sheet").empty().append(sheets_options);
+                    $("#id_ptp_sheet").empty().append(sheets_options);
+                });
+            }
+
+            // if uploaded file extension is other than '.xls' or '.xlsx'
+            else {
+                bootbox.alert("Please only choose microsoft excel (.xls or .xlsx) files.");
+
+                // reset file upload field
+                $('#id_file_upload').val('');
+
+                // reset sheet select menu options
+                sheets_options = '<option value="">Select</option>';
+                $("#s2id_id_bs_sheet").find(".select2-chosen").text('Select');
+                $("#id_bs_sheet").empty().append(sheets_options);
+                $("#s2id_id_ss_sheet").find(".select2-chosen").text('Select');
+                $("#id_ss_sheet").empty().append(sheets_options);
+                $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
+                $("#id_ptp_sheet").empty().append(sheets_options);
+            }
         });
 
+        // file reader
         function readFile(file, onLoadCallback) {
             var reader = new FileReader();
             reader.onload = onLoadCallback;
