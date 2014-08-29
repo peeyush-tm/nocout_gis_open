@@ -32,8 +32,9 @@ class SiteInstanceList(ListView):
             {'mData':'live_status_tcp_port',  'sTitle' : 'Live Status TCP Port',  'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'web_service_port',      'sTitle' : 'Web Service Port',      'sWidth':'null',},
             {'mData':'username',              'sTitle' : 'Username',              'sWidth':'null',},
-            {'mData':'actions',               'sTitle' : 'Actions',               'sWidth':'5%' ,'bSortable': False}
-            ,]
+        ]
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
