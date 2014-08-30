@@ -44,6 +44,8 @@ var mapInstance = "",
 	servicesData = {},
 	/*Variables used in fresnel zone calculation*/
 	isDialogOpen = true,
+	bts1_name = "",
+	bts2_name = "",
 	fresnelLat1 = "",
 	fresnelLon1 = "",
 	fresnelLat2 = "",
@@ -57,8 +59,8 @@ var mapInstance = "",
 	HEIGHT_CHANGED = false,
 	clear_factor = 100,
 	/*Default antina heights*/
-	antenaHight1 = 40.0,
-	antenaHight2 = 40.0,
+	antenaHight1 = Math.floor(Math.random() * (70 - 40 + 1)) + 40,
+	antenaHight2 = Math.floor(Math.random() * (70 - 40 + 1)) + 40,
 	/*Colors for fresnel zone graph*/
 	pinPointsColor = 'rgb(170,102,102)',
 	altitudeColor = '#EDC240',
@@ -285,7 +287,7 @@ function devicePlottingClass_gmap() {
 			get_param_filter = JSON.stringify(appliedAdvFilter);
 		} else {
 			get_param_filter = "";
-		}		
+		}
 
 		if(counter > 0 || counter == -999) {
 
@@ -388,11 +390,8 @@ function devicePlottingClass_gmap() {
 								},10);
 								
 							} else {
-
-                                /*Cluster options object*/
-                                var clusterOptions = {gridSize: 70, maxZoom: 8};
-                                /*Add the master markers to the cluster MarkerCluster object*/
-                                masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
+								isCallCompleted = 1;
+								gmap_self.plotDevices_gmap([],"base_station");
 
 								// $.gritter.add({
 						  //           // (string | mandatory) the heading of the notification
@@ -416,13 +415,9 @@ function devicePlottingClass_gmap() {
 							}							
 
 						} else {
-
-
-                            /*Cluster options object*/
-                            var clusterOptions = {gridSize: 70, maxZoom: 8};
-                            /*Add the master markers to the cluster MarkerCluster object*/
-                            masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
-
+							
+							isCallCompleted = 1;
+							gmap_self.plotDevices_gmap([],"base_station");
 
 							// $.gritter.add({
 					  //           // (string | mandatory) the heading of the notification
@@ -448,11 +443,7 @@ function devicePlottingClass_gmap() {
 					} else {
 
 						isCallCompleted = 1;
-
-                        /*Cluster options object*/
-                        var clusterOptions = {gridSize: 70, maxZoom: 8};
-                        /*Add the master markers to the cluster MarkerCluster object*/
-                        masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
+						gmap_self.plotDevices_gmap([],"base_station");
 
 						// $.gritter.add({
 				  //           // (string | mandatory) the heading of the notification
@@ -462,12 +453,6 @@ function devicePlottingClass_gmap() {
 				  //           // (bool | optional) if you want it to fade out on its own or just sit there
 				  //           sticky: false
 				  //       });
-				        
-				        /*Hide The loading Icon*/
-						$("#loadingIcon").hide();
-
-						/*Enable the refresh button*/
-						$("#resetFilters").button("complete");
 
 						/*Recall the server after particular timeout if system is not freezed*/
 						setTimeout(function(e) {
@@ -504,13 +489,8 @@ function devicePlottingClass_gmap() {
 
 			/*Ajax call not completed yet*/
 			isCallCompleted = 1;
+			gmap_self.plotDevices_gmap([],"base_station");
 			
-			/*Hide The loading Icon*/
-			$("#loadingIcon").hide();
-
-			/*Enable the refresh button*/
-			$("#resetFilters").button("complete");
-
 			/*Recall the server after particular timeout if system is not freezed*/
 			setTimeout(function(e){
 				gmap_self.recallServer_gmap();
@@ -677,7 +657,7 @@ function devicePlottingClass_gmap() {
 	    			
 	    			if(ss_marker_obj.data.show_link == 1) {
 	    				/*Create the link between BS & SS or Sector & SS*/
-				    	var ss_link_line = gmap_self.createLink_gmaps(startEndObj,linkColor,base_info,ss_info);
+				    	var ss_link_line = gmap_self.createLink_gmaps(startEndObj,linkColor,base_info,ss_info,sector_array[j].sector_configured_on,ss_marker_obj.name);
 
 				    	ssLinkArray.push(ss_link_line);
 	    			}
@@ -720,6 +700,11 @@ function devicePlottingClass_gmap() {
 
 			/*Enable the refresh button*/
 			$("#resetFilters").button("complete");
+
+			/*Cluster options object*/
+            var clusterOptions = {gridSize: 70, maxZoom: 8};
+            /*Add the master markers to the cluster MarkerCluster object*/
+            masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
 		}
 	};
 
@@ -810,9 +795,11 @@ function devicePlottingClass_gmap() {
 	 * @param linkColor {String}, It contains the color for link line.
 	 * @param bs_info {Object}, It contains the start point information json object.
 	 * @param ss_info {Object}, It contains the end point information json object.
+	 * @param sector_name {String}, It contains the name of sector configured device.
+	 * @param ss_name {String}, It contains the name of sub-station.
 	 * @return {Object} pathConnector, It contains gmaps polyline object.
 	 */
-	this.createLink_gmaps = function(startEndObj,linkColor,bs_info,ss_info) {
+	this.createLink_gmaps = function(startEndObj,linkColor,bs_info,ss_info,sector_name,ss_name) {
 
 		var pathDataObject = [
 			new google.maps.LatLng(startEndObj.startLat,startEndObj.startLon),
@@ -857,6 +844,8 @@ function devicePlottingClass_gmap() {
 			bs_info 		: bs_info_obj,
 			bs_lon 			: startEndObj.startLon,
 			bs_height 		: bs_height,
+			sectorName 	    : sector_name,
+			ssName 		    : ss_name,
 			zIndex 			: 9999
 		};
 
@@ -1141,8 +1130,15 @@ function devicePlottingClass_gmap() {
 			infoTable += "</tr>";
 			infoTable += "</tbody></table>";
 
+			var sector_ss_name_obj = {
+				sector_name : contentObject.sectorName,
+				ss_name : contentObject.ssName,
+			};
+
+			var sector_ss_name = JSON.stringify(sector_ss_name_obj);
+
 			/*Concat infowindow content*/
-			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.bs_lat+","+contentObject.bs_lon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+");'>Fresnel Zone</button></li></ul></div></div></div>";
+			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.bs_lat+","+contentObject.bs_lon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
 
 		} else if (clickedType == 'sector_Marker') {
 /*
@@ -1216,8 +1212,14 @@ function devicePlottingClass_gmap() {
 	 * @param lon2 {Number}, It contains longitude of second point
 	 * @param height1 {Number}, It contains antina height of first point
 	 * @param height2 {Number}, It contains antina height of second point
+	 * @param sector_name {String}, It contains the name of sector configured device
+	 * @param ss_name {String}, It contains the sub-station name
 	 */
-	this.claculateFresnelZone = function(lat1,lon1,lat2,lon2,height1,height2) {
+	this.claculateFresnelZone = function(lat1,lon1,lat2,lon2,height1,height2,sector_ss_obj) {
+
+		/*Save sector & ss name in global variables*/
+		bts1_name = sector_ss_obj.sector_name;
+		bts2_name = sector_ss_obj.ss_name;
 
 		/** Converts numeric degrees to radians */
 		Number.prototype.toRad = function() {
@@ -1235,7 +1237,7 @@ function devicePlottingClass_gmap() {
 		fresnelLon2 = lon2;
 		/*Set the antina height to the available heights*/
 		if(height1 == 0 || height1 == undefined) {
-			antenaHight1 = antenaHight1;			
+			antenaHight1 = antenaHight1;
 		} else {
 			antenaHight1 = height1;
 		}
@@ -1474,12 +1476,12 @@ function devicePlottingClass_gmap() {
 
 		if(isDialogOpen) {
 			/*Fresnel template String*/
-			var leftSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal1" class="form-control" value="'+antenaHight1+'"></div><div class="clearfix"></div><div id="antina_height1" style="height:300px;" class="slider slider-blue"></div><div class="col-md-12">BTS-1 Height</div></div>';
+			var leftSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal1" class="form-control" value="'+antenaHight1+'"></div><div class="clearfix"></div><div id="antina_height1" style="height:300px;" class="slider slider-blue"></div><div class="col-md-12">'+bts1_name+' Height</div></div>';
 			var chart_detail = '<div id="chart-details"><div><span id="longitude-lbl" class="chart-detail-lbl">Longitude </span> <span id="longitude"></span></div><div><span id="latitude-lbl" class="chart-detail-lbl">Latitude </span> <span id="latitude"></span></div><div><span id="distance-lbl" class="chart-detail-lbl">Distance </span> <span id="distance"></span></div><div><span id="altitude-lbl" class="chart-detail-lbl">Altitude </span> <span id="altitude"></span></div><div><span id="obstacle-lbl" class="chart-detail-lbl">Obstacle </span> <span id="obstacle"></span></div><div><span id="los-lbl" class="chart-detail-lbl">LOS </span> <span id="los"></span></div><div><span id="fresnel1-lbl" class="chart-detail-lbl">Fresnel-1 </span> <span id="fresnel1"></span></div><div><span id="fresnel2-lbl" class="chart-detail-lbl">Fresnel-2 </span> <span id="fresnel2"></span></div><div><span id="fresnel2-altitude-lbl" class="chart-detail-lbl">Clearance </span> <span id="fresnel-altitude"></span></div></div>';
 			var middleBlock = '<div class="col-md-8 mid_fresnel_container"><div align="center"><div class="col-md-12">Clearance Factor</div><div class="col-md-4 col-md-offset-3"><div id="clear-factor" class="slider slider-red"></div></div><div class="col-md-2"><input type="text" id="clear-factor_val" class="form-control" value="'+clear_factor+'"></div><div class="clearfix"></div></div><div id="chart_div" style="width:600px;max-width:100%;height:300px;"></div><div class="clearfix divide-10"></div><div id="pin-points-container" class="col-md-12" align="center"></div></div>';
-			var rightSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal2" class="form-control" value="'+antenaHight2+'"></div><div class="clearfix"></div><div id="antina_height2" class="slider slider-blue" style="height:300px;"></div><div class="col-md-12">BTS-2 Height</div></div>';
+			var rightSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal2" class="form-control" value="'+antenaHight2+'"></div><div class="clearfix"></div><div id="antina_height2" class="slider slider-blue" style="height:300px;"></div><div class="col-md-12">'+bts2_name+' Height</div></div>';
 
-			var fresnelTemplate = '<div class="fresnelContainer row" style="height:400px;overflow-y:auto;">'+leftSlider+' '+middleBlock+' '+rightSlider+'</div>'+chart_detail;
+			var fresnelTemplate = "<div class='fresnelContainer row' style='height:400px;overflow-y:auto;'>"+leftSlider+" "+middleBlock+" "+rightSlider+"</div>"+chart_detail;
 
 			/*Call the bootbox to show the popup with Fresnel Zone Graph*/
 			bootbox.dialog({
@@ -1925,7 +1927,7 @@ function devicePlottingClass_gmap() {
 		        });
 
 		        /*Populate the map with the All markers*/
-	 			gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
+	 			// gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
 
 	 		} else {
 
@@ -3041,8 +3043,6 @@ function devicePlottingClass_gmap() {
 	 * @method clearPointTool_gmap
 	 */
 	this.clearPointTool_gmap = function() {
-
-        console.log(map_points_array);
 
 		for(var j=0;j<map_points_array.length;j++) {
 			map_points_array[j].setMap(null);
