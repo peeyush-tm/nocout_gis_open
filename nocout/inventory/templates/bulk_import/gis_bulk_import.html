@@ -64,8 +64,9 @@
                         <div class="box-body" style="overflow-x: scroll">
                             <table id="example-stats"
                                    class="table table-stats table-condensed table-striped table-sortable">
-                                <thead id="dummy_header"></thead>
-                                <tbody id="dummy_table"></tbody>
+                                <thead id="excel_table_header"></thead>
+                                <tbody id="excel_table_table"></tbody>
+                                <thead id="excel_table_header_bottom"></thead>
                             </table>
                         </div>
                     </div>
@@ -146,8 +147,8 @@
         $(document).ready(function () {
 
             // changing labels of form fields
-            $("label[for=id_bs_sheet]").text('BS Sheet');
-            $("label[for=id_ss_sheet]").text('SS Sheet');
+            $("label[for=id_bs_sheet]").text('Wimax/PMP BS Sheet');
+            $("label[for=id_ss_sheet]").text('Wimax/PMP SS Sheet');
             $("label[for=id_ptp_sheet]").text('PTP Sheet');
 
             // modify image upload field
@@ -202,9 +203,9 @@
                     // preparing ss sheets select menu options
                     ss_sheets_options = '<option value="">Select</option>';
                     for (var i = 0; i < sheets.length; i++) {
-                        if (sheets[i].indexOf('SS') == -1){continue}
-                        // alert(i + " : " + sheets[i]);
-                        ss_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                        if ((sheets[i].indexOf('SM') != -1) || (sheets[i].indexOf('SS') != -1)) {
+                            ss_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                        }
                     }
 
                     // preparing ptp sheets select menu options
@@ -230,11 +231,9 @@
 
                     // reading excel(workbook) file
                     wb = XLSX.read(data, {type: 'binary'});
-                    alert(wb);
 
                     // array containing excel file sheetnames
                     var sheets = wb.SheetNames;
-
                     // preparing bs sheets select menu options
                     bs_sheets_options = '<option value="">Select</option>';
                     for (var i = 0; i < sheets.length; i++) {
@@ -246,9 +245,9 @@
                     // preparing ss sheets select menu options
                     ss_sheets_options = '<option value="">Select</option>';
                     for (var i = 0; i < sheets.length; i++) {
-                        if (sheets[i].indexOf('SS') == -1){continue}
-                        // alert(i + " : " + sheets[i]);
-                        ss_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                        if ((sheets[i].indexOf('SM') != -1) || (sheets[i].indexOf('SS') != -1)) {
+                            ss_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                        }
                     }
 
                     // preparing ptp sheets select menu options
@@ -344,10 +343,13 @@
                 }
 
                 // changing content of table body
-                $("#dummy_table").empty().html(output);
+                $("#excel_table_table").empty().html(output);
 
                 // changing content of table header
-                $("#dummy_header").empty().html(header);
+                $("#excel_table_header").empty().html(header);
+
+                // changing content of table header
+                $("#excel_table_header_bottom").empty().html(header);
 
                 $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
                 $("#id_ptp_sheet").prop('selectedIndex', 0);
@@ -405,10 +407,13 @@
                 }
 
                 // changing content of table body
-                $("#dummy_table").empty().html(output);
+                $("#excel_table_table").empty().html(output);
 
                 // changing content of table header
-                $("#dummy_header").empty().html(header);
+                $("#excel_table_header").empty().html(header);
+
+                // changing content of table header
+                $("#excel_table_header_bottom").empty().html(header);
 
                 $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
                 $("#id_ptp_sheet").prop('selectedIndex', 0);
@@ -467,10 +472,14 @@
                 }
 
                 // changing content of table body
-                $("#dummy_table").empty().html(output);
+                $("#excel_table_table").empty().html(output);
 
                 // changing content of table header
-                $("#dummy_header").empty().html(header);
+                $("#excel_table_header").empty().html(header);
+
+                // changing content of table header
+                $("#excel_table_header_bottom").empty().html(header);
+
                 $("#s2id_id_bs_sheet").find(".select2-chosen").text('Select');
                 $("#s2id_id_ss_sheet").find(".select2-chosen").text('Select');
                 $("#id_bs_sheet").prop('selectedIndex',0);
