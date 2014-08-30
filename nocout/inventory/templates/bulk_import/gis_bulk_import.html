@@ -54,6 +54,24 @@
                     </div>
                 </div>
             </div>
+            <div class="row hide" id="preview_table">
+                <div class="col-md-12">
+                    <!-- BOX -->
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bar-chart-o"></i>Excel Preview</h4>
+                        </div>
+                        <div class="box-body" style="overflow-x: scroll">
+                            <table id="example-stats"
+                                   class="table table-stats table-condensed table-striped table-sortable">
+                                <thead id="dummy_header"></thead>
+                                <tbody id="dummy_table"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- /BOX -->
+                </div>
+            </div>
         </div>
     </div>
     {% block content_js %}
@@ -67,6 +85,62 @@
         <script type="text/javascript" src={% static "js/js-xlsx/xlsx-reader.js" %}></script>
     {% endblock %}
     <script>
+        // dictionary containing all 'pts bs' fields
+        var ptp_bs_fields = ['City', 'State', 'Ckt ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
+                         'Qos(BW)', 'Latitude', 'Longititude', 'Antenna height', 'Polarisation', 'Antenna Type',
+                         'Antena Gain', 'Antenna mount type', 'Ethernet Extender', 'Building height',
+                         'Tower/Pole height', 'Cable Length', 'RSSI during acceptance',
+                         'Throughput during acceptance', 'Date of acceptance', 'BH BSO', 'IP', 'MAC', 'HSSU used',
+                         'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP',
+                         'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
+                         'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type',
+                         'BH Circuit ID', 'PE Hostname', 'PE IP', 'TTSL CIRCUIT ID'];
+
+        // dictionary containing all 'pmp bs' fields
+        var pmp_bs_fields = ['City', 'State', 'Address', 'BS Name', 'Type_Of_BS(Technology)', 'Site_Type',
+                         'Infra Provider', 'Site ID', 'Building_Height', 'Tower_Height', 'Latitude', 'Longitude',
+                         'ODU IP', 'Sector_name', 'Make of Antenna', 'Antenna Polarisation', 'Antenna_Tilt',
+                         'Antenna_Height', 'Antenna_BeamWidth', 'Azimuth', 'Sync Splitter Used(Y/N)',
+                         'Type of GPS', 'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port',
+                         'BS Converter IP', 'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
+                         'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID',
+                         'PE Hostname', 'PE IP', 'DR site', 'TTSL CIRCUIT ID'];
+
+        // dictionary containing all 'wimax bs' fields
+        var wimax_bs_fields = ['City', 'State', 'Address', 'BS Name', 'Type_Of_BS(Technology)', 'Site_Type',
+                           'Infra Provider', 'Site ID', 'Building_Height', 'Tower_Height', 'Latitude', 'Longitude',
+                           'IDU IP', 'Sector_name', 'PMP', 'Make of Antenna', 'Antenna Polarisation', 'Antenna_Tilt',
+                           'Antenna_Height', 'Antenna_BeamWidth', 'Azimuth', 'Installation of Splitter',
+                           'Type of GPS', 'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port',
+                           'BS Converter IP', 'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
+                           'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID',
+                           'PE Hostname', 'PE IP', 'DR site', 'TTSL CIRCUIT ID'];
+
+        // dictionary containing all 'ptp ss' fields
+        var ptp_ss_fields = ['City', 'State', 'Ckt ID', 'Customer Name', 'Customer Address', 'BS NAME', 'Qos(BW)',
+                         'Latitide', 'Longitude', 'MIMO/Diversity', 'Antenna height', 'Polarisation', 'Antenna Type',
+                         'Antena Gain', 'Antenna mount type', 'Ethernet Extender', 'Building height',
+                         'Tower/Pole height', 'Cable Length', 'RSSI during acceptance', 'Throughput during acceptance',
+                         'Date of acceptance', 'BH BSO', 'IP', 'MAC'];
+
+        // dictionary containing all 'pmp ss' fields
+        var pmp_ss_fields = ['Customer Name', 'Ckt ID', 'Qos(BW)', 'Latitude', 'Longitude', 'Building height',
+                         'Tower/Pole height', 'Antenna height', 'Polarisation', 'Antenna Type', 'SS mount type',
+                         'Ethernet Extender', 'Cable Length', 'DL RSSI during acceptance', 'DL CINR during acceptance',
+                         'Customer Address', 'Date of acceptance', 'SS IP', 'Lens/Reflector', 'Antenna Beamwidth'];
+
+        // dictionary containing all 'wimax ss' fields
+        var wimax_ss_fields = ['Customer Name', 'Ckt ID', 'Qos(BW)', 'Latitude', 'Longitude', 'Building height',
+                           'Tower/Pole height', 'Antenna height', 'Polarisation(Horizontal/Vertical)',
+                           'Antenna Type(Narrowbeam/Normal)', 'SS mount type (Wallmount/pole mount/Mast)',
+                           'Ethernet Extender (Yes/no)', 'Cable Length', 'DL RSSI during acceptance',
+                           'DL CINR during acceptance', 'Customer Address', 'Date of acceptance', 'SS IP'];
+
+        // regex for splitting a string by commas but ignore commas within double-quotes
+        var csvRegex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+
+        // initialize excel file (workbook)
+        var wb;
 
         // initialize field settings
         $(document).ready(function () {
@@ -86,6 +160,14 @@
             $('.tip-focus').tooltip({
                 placement: 'right',
                 trigger: 'focus'
+            });
+
+            $("#example-stats").tablecloth({
+                theme: "default",
+                sortable: true,
+                condensed: true,
+                striped: true,
+                clean: true
             });
 
             // initialize select fields with 'Select' option
@@ -109,17 +191,34 @@
                     // array containing excel file sheetnames
                     var sheets = wb.SheetNames;
 
-                    // preparing sheets select menu options
-                    sheets_options = '<option value="">Select</option>';
+                    // preparing bs sheets select menu options
+                    bs_sheets_options = '<option value="">Select</option>';
                     for (var i = 0; i < sheets.length; i++) {
+                        if (sheets[i].indexOf('BS') == -1){continue}
                         // alert(i + " : " + sheets[i]);
-                        sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                        bs_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                    }
+
+                    // preparing ss sheets select menu options
+                    ss_sheets_options = '<option value="">Select</option>';
+                    for (var i = 0; i < sheets.length; i++) {
+                        if (sheets[i].indexOf('SS') == -1){continue}
+                        // alert(i + " : " + sheets[i]);
+                        ss_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                    }
+
+                    // preparing ptp sheets select menu options
+                    ptp_sheets_options = '<option value="">Select</option>';
+                    for (var i = 0; i < sheets.length; i++) {
+                        if (sheets[i].indexOf('PTP') == -1){continue}
+                        // alert(i + " : " + sheets[i]);
+                        ptp_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
                     }
 
                     // modifying sheet select options to current file sheet names
-                    $("#id_bs_sheet").empty().append(sheets_options);
-                    $("#id_ss_sheet").empty().append(sheets_options);
-                    $("#id_ptp_sheet").empty().append(sheets_options);
+                    $("#id_bs_sheet").empty().append(bs_sheets_options);
+                    $("#id_ss_sheet").empty().append(ss_sheets_options);
+                    $("#id_ptp_sheet").empty().append(ptp_sheets_options);
                 });
             }
 
@@ -131,21 +230,39 @@
 
                     // reading excel(workbook) file
                     wb = XLSX.read(data, {type: 'binary'});
+                    alert(wb);
 
                     // array containing excel file sheetnames
                     var sheets = wb.SheetNames;
 
-                    // preparing sheets select menu options
-                    sheets_options = '<option value="">Select</option>';
+                    // preparing bs sheets select menu options
+                    bs_sheets_options = '<option value="">Select</option>';
                     for (var i = 0; i < sheets.length; i++) {
+                        if (sheets[i].indexOf('BS') == -1){continue}
                         // alert(i + " : " + sheets[i]);
-                        sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                        bs_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                    }
+
+                    // preparing ss sheets select menu options
+                    ss_sheets_options = '<option value="">Select</option>';
+                    for (var i = 0; i < sheets.length; i++) {
+                        if (sheets[i].indexOf('SS') == -1){continue}
+                        // alert(i + " : " + sheets[i]);
+                        ss_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
+                    }
+
+                    // preparing ptp sheets select menu options
+                    ptp_sheets_options = '<option value="">Select</option>';
+                    for (var i = 0; i < sheets.length; i++) {
+                        if (sheets[i].indexOf('PTP') == -1){continue}
+                        // alert(i + " : " + sheets[i]);
+                        ptp_sheets_options += '<option value="' + sheets[i] + '">' + sheets[i] + '</option>';
                     }
 
                     // modifying sheet select options to current file sheet names
-                    $("#id_bs_sheet").empty().append(sheets_options);
-                    $("#id_ss_sheet").empty().append(sheets_options);
-                    $("#id_ptp_sheet").empty().append(sheets_options);
+                    $("#id_bs_sheet").empty().append(bs_sheets_options);
+                    $("#id_ss_sheet").empty().append(ss_sheets_options);
+                    $("#id_ptp_sheet").empty().append(ptp_sheets_options);
                 });
             }
 
@@ -177,12 +294,122 @@
         // reset 'PTP' select menu if either of 'BS' or 'SS' has value (i.e. selected value)
         $("#id_ss_sheet").change(function () {
             if ($("#id_ss_sheet").val()) {
+
+                // get sheet name
+                var sheet_name = $("#id_ss_sheet").val();
+
+                // array containing excel file sheetnames
+                var sheets = wb.SheetNames;
+                var ws = wb.Sheets[sheet_name];
+
+                // converting excel file to csv
+                csv_data = XLS.utils.sheet_to_csv(ws);
+
+                // creating array 'lines' form csv format
+                var lines = csv_data.split("\n"),
+                    output = [],
+                    i;
+
+                // initializing header variable
+                var header = [];
+
+                // creating html for table header
+                header.push("<tr class='headerSortable'><th>"
+                            + lines[0].slice(0, -1).split(csvRegex).join("</th><th>")
+                            + "</th></tr>");
+
+                // creating html for table body
+                for (i = 1; i < 10; i++) {
+                    if (i%2==0) {
+                    output.push("<tr class='ss_tr_even'><td>"
+                            + lines[i].slice(0, -1).split(csvRegex).join("</td><td>")
+                            + "</td></tr>");
+                    }
+                    else {
+                    output.push("<tr class='ss_tr_odd'><td>"
+                            + lines[i].slice(0, -1).split(csvRegex).join("</td><td>")
+                            + "</td></tr>");
+                    }
+                }
+
+                // creating a string from output array
+                output = output.join("");
+
+                // creating string from header array
+                header = header.join("");
+
+                // show table if hidden
+                if ($("#preview_table").hasClass('hide')) {
+                    $("#preview_table").removeClass('hide');
+                }
+
+                // changing content of table body
+                $("#dummy_table").empty().html(output);
+
+                // changing content of table header
+                $("#dummy_header").empty().html(header);
+
                 $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
                 $("#id_ptp_sheet").prop('selectedIndex', 0);
             }
         });
         $("#id_bs_sheet").change(function () {
             if ($("#id_bs_sheet").val()) {
+
+                // get sheet name
+                var sheet_name = $("#id_bs_sheet").val();
+
+                // array containing excel file sheetnames
+                var sheets = wb.SheetNames;
+                var ws = wb.Sheets[sheet_name];
+
+                // converting excel file to csv
+                csv_data = XLS.utils.sheet_to_csv(ws);
+
+                // creating array 'lines' form csv format
+                var lines = csv_data.split("\n"),
+                    output = [],
+                    i;
+
+                // initializing header variable
+                var header = [];
+
+                // creating html for table header
+                header.push("<tr class='headerSortable'><th>"
+                            + lines[0].slice(0, -1).split(csvRegex).join("</th><th>")
+                            + "</th></tr>");
+
+                // creating html for table body
+                for (i = 1; i < 10; i++) {
+                    if (i%2==0) {
+                    output.push("<tr class='ss_tr_even'><td>"
+                            + lines[i].slice(0, -1).split(csvRegex).join("</td><td>")
+                            + "</td></tr>");
+                    }
+                    else {
+                    output.push("<tr class='ss_tr_odd'><td>"
+                            + lines[i].slice(0, -1).split(csvRegex).join("</td><td>")
+                            + "</td></tr>");
+                    }
+                }
+
+                // creating a string from output array
+                output = output.join("");
+
+                // creating string from header array
+                header = header.join("");
+
+                // show table if hidden
+                if ($("#preview_table").hasClass('hide')) {
+                    $("#preview_table").removeClass('hide');
+                }
+
+                // changing content of table body
+                $("#dummy_table").empty().html(output);
+
+                // changing content of table header
+                $("#dummy_header").empty().html(header);
+
                 $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
                 $("#id_ptp_sheet").prop('selectedIndex', 0);
             }
@@ -191,6 +418,59 @@
         // reset 'BS' and 'SS' select menu if 'PTP' has value (i.e. selected value)
         $("#id_ptp_sheet").change(function () {
             if ($("#id_ptp_sheet").val()) {
+                // get sheet name
+                var sheet_name = $("#id_ptp_sheet").val();
+
+                // array containing excel file sheetnames
+                var sheets = wb.SheetNames;
+                var ws = wb.Sheets[sheet_name];
+
+                // converting excel file to csv
+                csv_data = XLS.utils.sheet_to_csv(ws);
+
+                // creating array 'lines' form csv format
+                var lines = csv_data.split("\n"),
+                    output = [],
+                    i;
+
+                // initializing header variable
+                var header = [];
+
+                // creating html for table header
+                header.push("<tr class='headerSortable'><th>"
+                            + lines[0].slice(0, -1).split(csvRegex).join("</th><th>")
+                            + "</th></tr>");
+
+                // creating html for table body
+                for (i = 1; i < 10; i++) {
+                    if (i%2==0) {
+                    output.push("<tr class='ss_tr_even'><td>"
+                            + lines[i].slice(0, -1).split(csvRegex).join("</td><td>")
+                            + "</td></tr>");
+                    }
+                    else {
+                    output.push("<tr class='ss_tr_odd'><td>"
+                            + lines[i].slice(0, -1).split(csvRegex).join("</td><td>")
+                            + "</td></tr>");
+                    }
+                }
+
+                // creating a string from output array
+                output = output.join("");
+
+                // creating string from header array
+                header = header.join("");
+
+                // show table if hidden
+                if ($("#preview_table").hasClass('hide')) {
+                    $("#preview_table").removeClass('hide');
+                }
+
+                // changing content of table body
+                $("#dummy_table").empty().html(output);
+
+                // changing content of table header
+                $("#dummy_header").empty().html(header);
                 $("#s2id_id_bs_sheet").find(".select2-chosen").text('Select');
                 $("#s2id_id_ss_sheet").find(".select2-chosen").text('Select');
                 $("#id_bs_sheet").prop('selectedIndex',0);

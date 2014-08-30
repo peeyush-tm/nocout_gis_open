@@ -2508,24 +2508,65 @@ class GISInventoryBulkImport(FormView):
         print "************************ form_valid **********************", form
         uploaded_file = self.request.FILES['file_upload']
 
+        # dictionary containing all 'pts bs' fields
+        ptp_bs_fields = ['City', 'State', 'Ckt ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
+                         'Qos(BW)', 'Latitude', 'Longititude', 'Antenna height', 'Polarisation', 'Antenna Type',
+                         'Antena Gain', 'Antenna mount type', 'Ethernet Extender', 'Building height',
+                         'Tower/Pole height', 'Cable Length', 'RSSI during acceptance',
+                         'Throughput during acceptance', 'Date of acceptance', 'BH BSO', 'IP', 'MAC', 'HSSU used',
+                         'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP',
+                         'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
+                         'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type',
+                         'BH Circuit ID', 'PE Hostname', 'PE IP', 'TTSL CIRCUIT ID']
+
         # dictionary containing all 'pmp bs' fields
         pmp_bs_fields = ['City', 'State', 'Address', 'BS Name', 'Type_Of_BS(Technology)', 'Site_Type',
                          'Infra Provider', 'Site ID', 'Building_Height', 'Tower_Height', 'Latitude', 'Longitude',
-                         'IDU IP', 'Sector_name', 'PMP', 'Make of Antenna', 'Antenna Polarisation', 'Antenna_Tilt',
-                         'Antenna_Height', 'Antenna_BeamWidth', 'Azimuth', 'Installation of Splitter',
+                         'ODU IP', 'Sector_name', 'Make of Antenna', 'Antenna Polarisation', 'Antenna_Tilt',
+                         'Antenna_Height', 'Antenna_BeamWidth', 'Azimuth', 'Sync Splitter Used(Y/N)',
                          'Type of GPS', 'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port',
                          'BS Converter IP', 'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
                          'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID',
                          'PE Hostname', 'PE IP', 'DR site', 'TTSL CIRCUIT ID']
+
+        # dictionary containing all 'wimax bs' fields
+        wimax_bs_fields = ['City', 'State', 'Address', 'BS Name', 'Type_Of_BS(Technology)', 'Site_Type',
+                           'Infra Provider', 'Site ID', 'Building_Height', 'Tower_Height', 'Latitude', 'Longitude',
+                           'IDU IP', 'Sector_name', 'PMP', 'Make of Antenna', 'Antenna Polarisation', 'Antenna_Tilt',
+                           'Antenna_Height', 'Antenna_BeamWidth', 'Azimuth', 'Installation of Splitter',
+                           'Type of GPS', 'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port',
+                           'BS Converter IP', 'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
+                           'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID',
+                           'PE Hostname', 'PE IP', 'DR site', 'TTSL CIRCUIT ID']
+
+        # dictionary containing all 'ptp ss' fields
+        ptp_ss_fields = ['City', 'State', 'Ckt ID', 'Customer Name', 'Customer Address', 'BS NAME', 'Qos(BW)',
+                         'Latitide', 'Longitude', 'MIMO/Diversity', 'Antenna height', 'Polarisation', 'Antenna Type',
+                         'Antena Gain', 'Antenna mount type', 'Ethernet Extender', 'Building height',
+                         'Tower/Pole height', 'Cable Length', 'RSSI during acceptance', 'Throughput during acceptance',
+                         'Date of acceptance', 'BH BSO', 'IP', 'MAC']
+
+        # dictionary containing all 'pmp ss' fields
+        pmp_ss_fields = ['Customer Name', 'Ckt ID', 'Qos(BW)', 'Latitude', 'Longitude', 'Building height',
+                         'Tower/Pole height', 'Antenna height', 'Polarisation', 'Antenna Type', 'SS mount type',
+                         'Ethernet Extender', 'Cable Length', 'DL RSSI during acceptance', 'DL CINR during acceptance',
+                         'Customer Address', 'Date of acceptance', 'SS IP', 'Lens/Reflector', 'Antenna Beamwidth']
+
+        # dictionary containing all 'wimax ss' fields
+        wimax_ss_fields = ['Customer Name', 'Ckt ID', 'Qos(BW)', 'Latitude', 'Longitude', 'Building height',
+                           'Tower/Pole height', 'Antenna height', 'Polarisation(Horizontal/Vertical)',
+                           'Antenna Type(Narrowbeam/Normal)', 'SS mount type (Wallmount/pole mount/Mast)',
+                           'Ethernet Extender(Yes/no)', 'Cable Length', 'DL RSSI during acceptance',
+                           'DL CINR during acceptance', 'Customer Address', 'Date of acceptance', 'SS IP']
 
         bs_sheet = ""
         ss_sheet = ""
         ptp_sheet = ""
 
         try:
-            bs_sheet = int(self.request.POST['bs_sheet'])
-            ss_sheet = int(self.request.POST['ss_sheet'])
-            ptp_sheet = int(self.request.POST['ptp_sheet'])
+            bs_sheet = str(self.request.POST['bs_sheet'])
+            ss_sheet = str(self.request.POST['ss_sheet'])
+            ptp_sheet = str(self.request.POST['ptp_sheet'])
         except Exception as e:
             logger.info(e.message)
 
@@ -2535,7 +2576,7 @@ class GISInventoryBulkImport(FormView):
         book = xlrd.open_workbook(uploaded_file.name, file_contents=uploaded_file.read())
 
         if bs_sheet and ss_sheet:
-            sheet = book.sheet_by_index(bs_sheet)
+            sheet = book.sheet_by_name(bs_sheet)
             print "***************** sheet - ", sheet
             print "***************** no. of rows - ", sheet.nrows
             print "***************** 1st row - ", sheet.row(0)
