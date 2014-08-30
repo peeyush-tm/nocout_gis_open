@@ -11,6 +11,11 @@
     <!-- JQUERY UI-->
     <link rel="stylesheet" type="text/css"
           href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
+    <style>
+        select option[disabled] {
+            display: none;
+        }
+    </style>
 {% endblock %}
 
 {% block page_setting_block %}
@@ -276,7 +281,7 @@
             }
             /*Call getBasicFilters funtion to fetch & populate basic filters dropdown*/
             networkMapInstance.getBasicFilters();
-
+            /*
             $("#state").change(function(){
                 var state_id = $(this).val();
                 if (state_id != ""){
@@ -293,6 +298,7 @@
                     $("#state").val(state_id);
                 }
             });
+            */
         });
     </script>
 {% endblock %}

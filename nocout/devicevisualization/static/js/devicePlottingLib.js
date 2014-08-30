@@ -1898,8 +1898,15 @@ function devicePlottingClass_gmap() {
         	appliedFilterObj_gmaps["state"] = $("#state option:selected").text();
         }
 
-        if($("#city").val().length > 0) {
-        	appliedFilterObj_gmaps["city"] = $("#city option:selected").text();
+
+        try {
+            if($("#city").val().length > 0) {
+            	appliedFilterObj_gmaps["city"] = $("#city option:selected").text();
+            }
+        }
+        catch(err) {
+            //PASS
+            //PASS
         }
 
         /*Get The Length Of Filter Array*/
