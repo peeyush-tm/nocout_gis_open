@@ -261,7 +261,7 @@ function devicePlottingClass_gmap() {
 			get_param_filter = JSON.stringify(appliedAdvFilter);
 		} else {
 			get_param_filter = "";
-		}		
+		}
 
 		if(counter > 0 || counter == -999) {
 
@@ -364,11 +364,8 @@ function devicePlottingClass_gmap() {
 								},10);
 								
 							} else {
-
-                                /*Cluster options object*/
-                                var clusterOptions = {gridSize: 70, maxZoom: 8};
-                                /*Add the master markers to the cluster MarkerCluster object*/
-                                masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
+								isCallCompleted = 1;
+								gmap_self.plotDevices_gmap([],"base_station");
 
 								// $.gritter.add({
 						  //           // (string | mandatory) the heading of the notification
@@ -392,13 +389,9 @@ function devicePlottingClass_gmap() {
 							}							
 
 						} else {
-
-
-                            /*Cluster options object*/
-                            var clusterOptions = {gridSize: 70, maxZoom: 8};
-                            /*Add the master markers to the cluster MarkerCluster object*/
-                            masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
-
+							
+							isCallCompleted = 1;
+							gmap_self.plotDevices_gmap([],"base_station");
 
 							// $.gritter.add({
 					  //           // (string | mandatory) the heading of the notification
@@ -424,11 +417,7 @@ function devicePlottingClass_gmap() {
 					} else {
 
 						isCallCompleted = 1;
-
-                        /*Cluster options object*/
-                        var clusterOptions = {gridSize: 70, maxZoom: 8};
-                        /*Add the master markers to the cluster MarkerCluster object*/
-                        masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
+						gmap_self.plotDevices_gmap([],"base_station");
 
 						// $.gritter.add({
 				  //           // (string | mandatory) the heading of the notification
@@ -438,12 +427,6 @@ function devicePlottingClass_gmap() {
 				  //           // (bool | optional) if you want it to fade out on its own or just sit there
 				  //           sticky: false
 				  //       });
-				        
-				        /*Hide The loading Icon*/
-						$("#loadingIcon").hide();
-
-						/*Enable the refresh button*/
-						$("#resetFilters").button("complete");
 
 						/*Recall the server after particular timeout if system is not freezed*/
 						setTimeout(function(e) {
@@ -480,13 +463,8 @@ function devicePlottingClass_gmap() {
 
 			/*Ajax call not completed yet*/
 			isCallCompleted = 1;
+			gmap_self.plotDevices_gmap([],"base_station");
 			
-			/*Hide The loading Icon*/
-			$("#loadingIcon").hide();
-
-			/*Enable the refresh button*/
-			$("#resetFilters").button("complete");
-
 			/*Recall the server after particular timeout if system is not freezed*/
 			setTimeout(function(e){
 				gmap_self.recallServer_gmap();
@@ -675,6 +653,11 @@ function devicePlottingClass_gmap() {
 
 			/*Enable the refresh button*/
 			$("#resetFilters").button("complete");
+
+			/*Cluster options object*/
+            var clusterOptions = {gridSize: 70, maxZoom: 8};
+            /*Add the master markers to the cluster MarkerCluster object*/
+            masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
 		}
 	};
 
@@ -1874,7 +1857,7 @@ function devicePlottingClass_gmap() {
 		        });
 
 		        /*Populate the map with the All markers*/
-	 			gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
+	 			// gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
 
 	 		} else {
 
