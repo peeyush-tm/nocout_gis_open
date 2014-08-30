@@ -41,7 +41,7 @@ class StateGeoInfo(models.Model):
 
 
 class DeviceFrequency(models.Model):
-    value = models.CharField(max_length=50)
+    value = models.CharField(max_length=50, help_text="MHz")
     color_hex_value = models.CharField(max_length=100)
 
     def __unicode__(self):

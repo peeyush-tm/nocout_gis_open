@@ -41,14 +41,18 @@
                         Selection
                     </button>
                 </li>
-                <li>
-                    <button id="showToolsBtn" class="btn btn-info" onclick="showToolsPanel();">
-                        <i class='fa fa-cog'></i> Tools
-                    </button>
-                    <button id="removeToolsBtn" class="btn btn-danger hide" onclick="removetoolsPanel();">
-                        <i class='fa fa-times'></i> Remove Tools
-                    </button>
-                </li>
+                {% for group in user.groups.all %}
+                    {% if group.name == 'group_admin' %}
+                        <li>
+                            <button id="showToolsBtn" class="btn btn-info" onclick="showToolsPanel();">
+                                <i class='fa fa-cog'></i> Tools
+                            </button>
+                            <button id="removeToolsBtn" class="btn btn-danger hide" onclick="removetoolsPanel();">
+                                <i class='fa fa-times'></i> Remove Tools
+                            </button>
+                        </li>
+                    {% endif %}
+                {% endfor %}
             </ul>
         </div>
         <div style="position: fixed; display: block; bottom:0; right: 20px; z-index:999;background: #fff;width: auto;padding: 10px;" id="cursor_lat_long">
@@ -135,25 +139,25 @@
                         </li>
                         <li>
                             <!--technology Filter-->
-                            <select name="technology" id="technology" class="form-control col-xs-1 input-sm">
+                            <select name="technology" id="technology" class="form-control col-xs-1 input-sm" style="width: 150px;">
                                 <option value="">Select Technology</option>
                             </select>
                         </li>
                         <li>
                             <!--vendor Filter-->
-                            <select name="vendor" id="vendor" class="form-control col-xs-1 input-sm">
+                            <select name="vendor" id="vendor" class="form-control col-xs-1 input-sm" style="width: 150px;">
                                 <option value="">Select Vendor</option>
                             </select>
                         </li>
                         <li>
                             <!--State Filter-->
-                            <select name="state" id="state" class="form-control col-xs-1 input-sm">
+                            <select name="state" id="state" class="form-control col-xs-1 input-sm" style="width: 150px;">
                                 <option value="">Select State</option>
                             </select>
                         </li>
                         <li>
                             <!--City Filter-->
-                            <select name="city" id="city" class="form-control col-xs-1 input-sm">
+                            <select name="city" id="city" class="form-control col-xs-1 input-sm" style="width: 150px;">
                                 <option value="">Select City</option>
                             </select>
                         </li>
@@ -272,6 +276,23 @@
             }
             /*Call getBasicFilters funtion to fetch & populate basic filters dropdown*/
             networkMapInstance.getBasicFilters();
+
+            $("#state").change(function(){
+                var state_id = $(this).val();
+                if (state_id != ""){
+                    $("#city").children().show();
+                    $("#city").children('option:not([state_id='+state_id+'])').hide();
+                }
+                else{
+                    $("#city").children().show();
+                }
+            });
+            $("#city").change(function(){
+                if ( $(this).val() != ""){
+                    var state_id = $("#city :selected").attr("state_id");
+                    $("#state").val(state_id);
+                }
+            });
         });
     </script>
 {% endblock %}

@@ -7,7 +7,14 @@
 {% block content_title %}Service Data Source Management{% endblock %}
 {% block content_description %}List of service data source{% endblock %}
 {% block content %}
-    <p><a href="/service_data_source/new"><i class="fa fa-plus">&nbsp;</i> Create Service Data Source</a></p>
+    {% for group in user.groups.all %}
+        {% if group.name == 'group_admin' %}
+            <p>
+                <p><a href="/service_data_source/new"><i class="fa fa-plus">&nbsp;</i> Create Service Data Source</a></p>
+            </p>
+        {% endif %}
+    {% endfor %}
+
     
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">

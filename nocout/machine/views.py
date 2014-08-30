@@ -33,9 +33,10 @@ class MachineList(ListView):
             {'mData':'alias',                    'sTitle' : 'Alias',                'sWidth':'null','sClass':'hidden-xs'},
             {'mData':'machine_ip',               'sTitle' : 'Machine IP',           'sWidth':'null',},
             {'mData':'agent_port',               'sTitle' : 'Agent Port',           'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'description',              'sTitle' : 'Description',          'sWidth':'null',},
-            {'mData':'actions',                  'sTitle' : 'Actions',              'sWidth':'10%' ,'bSortable': False}
-            ]
+            {'mData':'description',              'sTitle' : 'Description',          'sWidth':'null',}
+        ]
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 

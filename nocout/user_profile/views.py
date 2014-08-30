@@ -116,7 +116,7 @@ class UserListingTable(BaseDatatableView):
 
             for dct in qs:
                 dct.update( actions='''<a href="/user/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                            <a href="#" onclick='Dajaxice.user_profile.user_soft_delete_form( get_soft_delete_form,\
+                            <a href="#UserListing" onclick='Dajaxice.user_profile.user_soft_delete_form( get_soft_delete_form,\
                             {{ \"value\": {0} , \"datatable_headers\": {1} }})'><i class="fa fa-trash-o text-danger">\
                             </i></a>'''.format(dct['id'], datatable_headers),
                             last_login=dct['last_login'].strftime("%Y-%m-%d %H:%M:%S")
@@ -214,8 +214,8 @@ class UserArchivedListingTable(BaseDatatableView):
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             for dct in qs:
 
-                dct.update( actions= '<a href="#" onclick= "add_confirmation(id={0})"<i class="fa fa-plus text-success"></i></a>    <a href="#"\
-                onclick= "hard_delete_confirmation(id={0})"<i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id'])
+                dct.update( actions= '<a href="#UserArchivedListing" onclick= "add_confirmation(id={0})"<i class="fa fa-plus text-success"></i></a>'
+                                     '<a href="#UserArchivedListing" onclick= "hard_delete_confirmation(id={0})"<i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id'])
                 )
 
         return qs

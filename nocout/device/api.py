@@ -88,14 +88,20 @@ class DeviceFilterApi(View):
         for vendor in DeviceVendor.objects.all():
             vendor_data.append({ 'id':vendor.id,
                                      'value':vendor.name })
-
-        for state in State.objects.all():
-            state_data.append({ 'id':state.id,
-                                     'value':state.state_name })
-
+        #
+        # for state in State.objects.all():
+        #     state_data.append({ 'id':state.id,
+        #                              'value':state.state_name })
+        state_list = []
         for city in City.objects.all():
-            city_data.append({ 'id':city.id,
-                                     'value':city.city_name })
+            city_data.append({'id':city.id,
+                             'value':city.city_name,
+                             'state_id': city.state.id,
+                             'state_name': city.state.state_name }
+            )
+            if city.state.id not in state_list:
+                state_list.append(city.state.id)
+                state_data.append({ 'id':city.state.id,'value':city.state.state_name })
 
         self.result['data']['objects']['technology']={'data':technology_data}
         self.result['data']['objects']['vendor']={'data':vendor_data}
