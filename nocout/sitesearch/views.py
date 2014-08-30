@@ -452,12 +452,29 @@ def prepare_result(base_station_id):
                                                              'radius': sector.cell_radius if sector.cell_radius else 0,
                                                              'azimuth_angle': sector.antenna.azimuth_angle if sector.antenna else 0,
                                                              'beam_width': sector.antenna.beam_width if sector.antenna else 0,
-                                                             "markerUrl": "static/img/marker/icon4_small.png",
+                                                             "markerUrl": tech_marker_url_master(sector.bs_technology.name) if sector.bs_technology else "static/img/marker/icon2_small.png",
                                                              'orientation': sector.antenna.polarization if sector.antenna else "vertical",
                                                              'technology':sector.bs_technology.name if sector.bs_technology else 'N/A',
                                                              'vendor': DeviceVendor.objects.get(id=sector.sector_configured_on.device_vendor).name,
                                                              'sector_configured_on':sector.sector_configured_on.device_name,
                                                              'circuit_id':None,
+
+                                                             'device_info':[
+
+                                                                 {
+                                                                     "name": "device_name",
+                                                                     "title": "Device Name",
+                                                                     "show": 1,
+                                                                     "value": sector.sector_configured_on.device_name
+                                                                 },
+                                                                 {
+                                                                     "name": "device_id",
+                                                                     "title": "Device ID",
+                                                                     "show": 0,
+                                                                     "value": sector.sector_configured_on.id
+                                                                 }
+
+                                                             ],
                                                              'info': [{
                                                                           'name': 'sector_name',
                                                                           'title': 'Sector Name',
