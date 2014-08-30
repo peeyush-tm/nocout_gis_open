@@ -3278,7 +3278,7 @@ function prepare_data_for_filter(){
                 {
                 'element_type':'multiselect',
                 'field_type':'string',
-                'key':'Sector_configured_on',
+                'key':'sector_configured_on',
                 'title':'Sector Configured On',
                 'values':filter_data_sector_configured_on_collection
                 },
@@ -3360,12 +3360,9 @@ function unique_values_field_and_with_base_station_ids(filter_data_collection, t
                         {
                             unique_device_ids.push(filter_data_collection[j].id)
                         }
-
                 }
             }
-
         result_bs_collection.push({'id':unique_device_ids, 'value': unique_names[i] });
-
         }
     return result_bs_collection
 }

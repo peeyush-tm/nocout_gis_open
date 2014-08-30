@@ -455,6 +455,9 @@ def prepare_result(base_station_id):
                                                              "markerUrl": "static/img/marker/icon4_small.png",
                                                              'orientation': sector.antenna.polarization if sector.antenna else "vertical",
                                                              'technology':sector.bs_technology.name if sector.bs_technology else 'N/A',
+                                                             'vendor': DeviceVendor.objects.get(id=sector.sector_configured_on.device_vendor).name,
+                                                             'sector_configured_on':sector.sector_configured_on.device_name,
+                                                             'circuit_id':None,
                                                              'info': [{
                                                                           'name': 'sector_name',
                                                                           'title': 'Sector Name',
@@ -769,6 +772,7 @@ def prepare_result(base_station_id):
                     }]
 
             base_station_info['data']['param']['sector'][-1]['sub_station']+= substation_list
+            base_station_info['data']['param']['sector'][-1]['circuit_id']= circuit.circuit_id
             base_station_info['sector_ss_vendor']+= DeviceVendor.objects.get(id=substation.device.device_vendor).name +', '
             base_station_info['sector_ss_technology']+= DeviceTechnology.objects.get(id=substation.device.device_technology).name +', '
             base_station_info['circuit_ids']+= circuit.circuit_id +', '
