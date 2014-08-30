@@ -38,18 +38,18 @@ $("#state").change(function(e) {
         var city_obj = $("#city").children('option:not([state_id='+state_id+'])');
 //        city_obj.hide();
 //        city_obj.attr('disabled', true);
+        $("#city").prepend('<option value="">Select City</option>');
         city_obj.each(function(){
             city_options.push($(this));
             $(this).remove();
         });
-        $("#city").prepend('<option value="">Select City</option>')
     }
     else{
         $("#city").children().show();
         for (var j =0 ; j < city_options.length; j++){
             $("#city").append(city_options[j]);
         }
-        $("#city").children('option:not([state_id='+state_id+'])').attr('disabled', false);
+//        $("#city").children('option:not([state_id='+state_id+'])').attr('disabled', false);
     }
     networkMapInstance.makeFiltersArray(mapPageType);
 });
@@ -76,6 +76,10 @@ $("#vendor").change(function(e) {
 $("#technology").change(function(e) {
 
     getPageType();
+    var tech_id = $(this).val();
+    if (tech_id != ""){
+        $("#vendor").val(tech_id);
+    }
     networkMapInstance.makeFiltersArray(mapPageType);
 });
 

@@ -1665,7 +1665,7 @@ function devicePlottingClass_gmap() {
 				/*Populate Vendor dropdown*/
 				var vendorOptions = "<option value=''>Select Vendor</option>";
 				$.grep(vendorData,function(vendor) {
-					vendorOptions += "<option value='"+vendor.id+"'>"+vendor.value.toUpperCase()+"</option>";
+					vendorOptions += "<option value='"+vendor.id+"' tech_id='"+vendor.tech_id+"' tech_name='"+vendor.tech_name+"'>"+vendor.value.toUpperCase()+"</option>";
 				});
 				$("#vendor").html(vendorOptions);
 
