@@ -1680,8 +1680,9 @@ class DeviceTypeFieldsList(ListView):
             {'mData': 'field_name', 'sTitle': 'Name', 'sWidth': 'null', },
             {'mData': 'field_display_name', 'sTitle': 'Field Display Name', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             {'mData': 'device_type__name', 'sTitle': 'Device Type', 'sWidth': 'null'},
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
-            , ]
+        ]
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -1927,9 +1928,10 @@ class DeviceTechnologyList(ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null'},
             {'mData': 'device_vendor', 'sTitle': 'Device Vendor', 'sWidth': '10%'},
             {'mData': 'device_vendor__model__name', 'sTitle': 'Device Model', 'sWidth': '10%', },
-            {'mData': 'device_vendor__model_type__name', 'sTitle': 'Device Type', 'sWidth': '10%', },
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
+            {'mData': 'device_vendor__model_type__name', 'sTitle': 'Device Type', 'sWidth': '10%', }
         ]
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -2213,7 +2215,9 @@ class DeviceVendorList(ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
             {'mData': 'device_models', 'sTitle': 'Device Models', 'sWidth': 'null', },
             {'mData': 'device_types', 'sTitle': 'Device Types', 'sWidth': 'null', },
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}]
+        ]
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -2496,8 +2500,10 @@ class DeviceModelList(ListView):
         datatable_headers = [
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'device_types', 'sTitle': 'Device Types', 'sWidth': 'null', },
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}]
+            {'mData': 'device_types', 'sTitle': 'Device Types', 'sWidth': 'null', }
+        ]
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -2778,9 +2784,11 @@ class DeviceTypeList(ListView):
         datatable_headers = [
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'agent_tag', 'sTitle': 'Agent tag', 'sWidth': 'null', },
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False}
+            {'mData': 'agent_tag', 'sTitle': 'Agent tag', 'sWidth': 'null', }
         ]
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -3016,8 +3024,9 @@ class DevicePortList(ListView):
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
             {'mData': 'value', 'sTitle': 'Value', 'sWidth': 'null', },
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
         ]
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -3216,9 +3225,11 @@ class DeviceFrequencyListing(ListView):
         context = super(DeviceFrequencyListing, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'value', 'sTitle': 'Value', 'sWidth': 'null', },
-            {'mData': 'color_hex_value', 'sTitle': 'Hex Value', 'sWidth': 'null', },
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False},
+            {'mData': 'color_hex_value', 'sTitle': 'Hex Value', 'sWidth': 'null', }
         ]
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -3264,6 +3275,7 @@ class DeviceFrequencyListingTable(BaseDatatableView):
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             if "color_hex_value" in dct:
+                dct.update(value = dct["value"] + " MHz")
                 dct.update(
                     color_hex_value="<div style='float:left; display:block; height:20px; width:20px; background:{0}'>"
                                     "</div>" \

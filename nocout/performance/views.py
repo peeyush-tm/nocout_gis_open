@@ -368,10 +368,19 @@ class Get_Perfomance(View):
     """
 
     def get(self, request, page_type="no_page", device_id=0):
+
         device = Device.objects.get(id=device_id)
+        realdevice = device
+        if page_type == "customer":
+            try:
+                realdevice = SubStation.objects.get(id=device_id).device
+            except:
+                pass
+
         page_data = {
             'page_title': page_type.capitalize(),
             'device': device,
+            'realdevice': realdevice,
             'get_devices_url': 'performance/get_inventory_devices/' + str(page_type),
             'get_status_url': 'performance/get_inventory_device_status/' + str(page_type) + '/device/' + str(device_id),
             'get_services_url': 'performance/get_inventory_service_data_sources/' + str(page_type) + '/device/' + str(

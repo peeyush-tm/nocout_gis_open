@@ -7,7 +7,14 @@
 {% block content_title %}SNMP Parameters Management{% endblock %}
 {% block content_description %}List of SNMP parameters{% endblock %}
 {% block content %}
-    <p><a href="/protocol/new"><i class="fa fa-plus">&nbsp;</i> Create SNMP Parameters</a></p>
+    {% for group in user.groups.all %}
+        {% if group.name == 'group_admin' %}
+            <p>
+                <p><a href="/protocol/new"><i class="fa fa-plus">&nbsp;</i> Create SNMP Parameters</a></p>
+            </p>
+        {% endif %}
+    {% endfor %}
+
     
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">

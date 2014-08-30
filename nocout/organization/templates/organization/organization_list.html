@@ -9,8 +9,12 @@
 {% block content_title %}Organization Management{% endblock %}
 {% block content_description %}List of organizations{% endblock %}
 {% block content %}
-    
-    <p><a href="/organization/new"><i class="fa fa-plus">&nbsp;</i> Create Organization</a></p>
+    {% for group in user.groups.all %}
+        {% if group.name == 'group_admin' %}
+            <p><a href="/organization/new"><i class="fa fa-plus">&nbsp;</i> Create Organization</a></p>
+        {% endif %}
+    {% endfor %}
+
     <div class="box border lite">
     <div id="tableContainer_div" class="box-title">
         <h4><i class="fa fa-table"></i>ORGANIZATION LISTING</h4>
