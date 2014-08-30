@@ -75,7 +75,7 @@ var mapInstance = "",
 	distance_label = {},
 	isFreeze = 0;
     map_points_array = [];
-    map_point_count = 0, sector_MarkersArray= [];
+    map_point_count = 0, sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 10;
 
 
 function displayCoordinates(pnt) {
@@ -85,18 +85,6 @@ function displayCoordinates(pnt) {
       var lng = pnt.lng();
       lng = lng.toFixed(4);
       coordsLabel.html("Latitude: " + lat + "  Longitude: " + lng);
-}
-
-function bindInfoWindowToSectorMarker(marker) {
-	console.log(marker);
-
-	var iW= new google.maps.InfoWindow({
-		content: 'This is a Dummy Text'
-	});
-
-	google.maps.event.addListener(marker, 'click', function() {
-		iW.open(mapInstance, marker);
-	});
 }
 
 /**
@@ -155,7 +143,7 @@ function devicePlottingClass_gmap() {
 
             google.maps.event.addListener(mapInstance, 'zoom_changed', function() {
             	var zoom = mapInstance.getZoom();
-            	if( zoom > 10) {
+            	if( zoom > zoomAtWhichSectorMarkerAppears) {
             		for (var i = 0; i < sector_MarkersArray.length; i++) {    
             			sector_MarkersArray[i].setMap(mapInstance);
             		}
@@ -505,7 +493,6 @@ function devicePlottingClass_gmap() {
      * @param stationType {String}, It contains that the points are for BS or SS.
 	 */
 	this.plotDevices_gmap = function(bs_ss_devices,stationType) {
-
 		var bsLatArray = [],
 			bsLonArray = [];
 
@@ -538,10 +525,9 @@ function devicePlottingClass_gmap() {
 			
 			/*Sectors Array*/
 			var sector_array = bs_ss_devices[i].data.param.sector;
-
+var deviceIDArray= [];
 			/*Plot Sector*/
 			for(var j=0;j<sector_array.length;j++) {
-
     			var lat = bs_ss_devices[i].data.lat,
     				lon = bs_ss_devices[i].data.lon,
     				azimuth = sector_array[j].azimuth_angle,
@@ -554,6 +540,8 @@ function devicePlottingClass_gmap() {
     				sectorRadius = (+sector_array[j].radius),
     				startLon = "",
     				startLat = "";
+
+    				
 
 				/*If radius is greater than 4 Kms then set it to 4.*/
 				if((sectorRadius <= 4) && (sectorRadius != null) && (sectorRadius > 0)) {
@@ -577,28 +565,31 @@ function devicePlottingClass_gmap() {
 		    			startEndObj["startLon"] = bs_ss_devices[i].data.lon;
 					}
 				});
+				if(deviceIDArray.indexOf(sector_array[j]['device_info'][1]['value']) === -1) {
 
-				var sectors_Markers_Obj= {
-					position: new google.maps.LatLng(lat, lon),
-					ptLat 		     : bs_ss_devices[i].data.lat,
-					ptLon 		     : bs_ss_devices[i].data.lon,
-					icon 	  	     : '',
-					oldIcon 	     : '',
-					pointType	     : 'sector_Marker',
-					technology       : sector_array[j].technology,
-					name 		     : sector_array[j].info[0].value,
-					address     	 : sector_array[j].info[5].value,
-					towerheight      : sector_array[j].info[7].value,
-					antennaheight    : sector_array[j].info[10].value,
-					zIndex 			 : 200,
-					optimized 		 : false
+					var sectors_Markers_Obj= {
+						position: new google.maps.LatLng(lat, lon),
+						ptLat 		     : bs_ss_devices[i].data.lat,
+						ptLon 		     : bs_ss_devices[i].data.lon,
+						oldIcon 	  	     : window.location.origin+"/"+sector_array[j].markerUrl,
+						pointType	     : 'sector_Marker',
+						technology: sector_array[j].technology,
+						vendor: sector_array[j].vendor,
+						deviceExtraInfo: sector_array[j].info,
+						deviceInfo: sector_array[j].device_info,
+						zIndex 			 : 200,
+						optimized 		 : false
+					}
+
+					var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
+
+					sector_MarkersArray.push(sector_Marker);
+
+					oms.addMarker(sector_Marker);
+
+					deviceIDArray.push(sector_array[j]['device_info'][1]['value']);
 				}
 
-				var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
-
-				sector_MarkersArray.push(sector_Marker);
-
-				oms.addMarker(sector_Marker);
 				/*Plot Sub-Station*/
 				for(var k=0;k<sector_child.length;k++) {
 
@@ -1142,22 +1133,24 @@ function devicePlottingClass_gmap() {
 
 		} else if (clickedType == 'sector_Marker') {
 /*
-					technology       : sector_array[j].technology,
-					name 		     : sector_array[j].info[0].value,
-					address     	 : sector_array[j].info[5].value,
-					towerheight      : sector_array[j].info[7].value,
-					antennaheight    : sector_array[j].info[10].value,
+						technology: sector_array[j].technology,
+						vendor: sector_array[j].vendor,
+						deviceExtraInfo: sector_array[j].info,
+						deviceInfo: sector_array[j].device_info,
  */
 			infoTable += "<table class='table table-bordered'><tbody>";
-
-			infoTable += "<tr><td>Name</td><td>"+contentObject.name+"</td></tr>";
+			for(var i=0; i< contentObject['deviceInfo'].length; i++) {
+				if(contentObject['deviceInfo'][i].show) {
+					infoTable += "<tr><td>"+contentObject['deviceInfo'][i]['title']+"</td><td>"+contentObject['deviceInfo'][i]['value']+"</td></tr>";		
+				}
+			}
 			infoTable += "<tr><td>Technology</td><td>"+contentObject.technology+"</td></tr>";
-			/*Set the lat lon of the point*/
-			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.ptLat+", "+contentObject.ptLon+"</td></tr>";
-			infoTable += "<tr><td>Address</td><td>"+contentObject.address+"</td></tr>";
-			infoTable += "<tr><td>Tower Height</td><td>"+contentObject.towerheight+"</td></tr>";
-			infoTable += "<tr><td>Antenna Height</td><td>"+contentObject.antennaheight+"</td></tr>";
-
+			infoTable += "<tr><td>Vendor</td><td>"+contentObject.vendor+"</td></tr>";
+			for(var i=0; i< contentObject['deviceExtraInfo'].length; i++) {
+				if(contentObject['deviceExtraInfo'][i].show) {
+					infoTable += "<tr><td>"+contentObject['deviceExtraInfo'][i]['title']+"</td><td>"+contentObject['deviceExtraInfo'][i]['value']+"</td></tr>";		
+				}
+			}
 
 			infoTable += "</tbody></table>";
 
