@@ -26,6 +26,9 @@
                 <li class="alert alert-block alert-info">
                     <b>Status</b><br/> <span id="gis_status_txt"></span>
                 </li>
+                <li><button id="advSearchBtn" class="btn btn-info" onclick="showAdvSearch();">
+                    <i class="fa fa-filter"></i>Advance Search
+                </button></li>
                 <li>
                     <button id="advFilterBtn" class="btn btn-info" onclick="showAdvFilters();"
                             data-complete-text="<i class='fa fa-filter'></i> Advance Filters"
@@ -69,6 +72,26 @@
 {% block content %}
 
     <div class="col-md-12">
+
+        <!-- Advance Search Division -->
+        <div id="advSearchContainerBlock" class="hide">
+            <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Advance Search</h4>
+
+            <div id="advSearchFormContainer" class="col-md-8 col-md-offset-2"></div>
+            <div class="clearfix"></div>
+
+            <div class="col-md-8 col-md-offset-2">
+                <button class="pull-right btn btn-danger" style="margin-left:10px;" id="cancelAdvSearchBtn">Cancel
+                </button>
+                <button class="pull-right btn btn-danger" id="resetSearchForm" style="margin-left:10px;">
+                        <i class="fa fa-times"></i> Reset Search
+                    </button>
+                <button class="pull-right btn btn-success" id="setAdvSearchBtn">Search</button>
+            </div>
+            <div class="clearfix"></div>
+            <div class="divide-20"></div>
+        </div>
+        <!-- End of Advance Search Division -->
 
         <!-- Advance Filters Content Start-->
         <div id="advFilterContainerBlock" class="hide">
@@ -230,6 +253,8 @@
     <script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
     <!-- Our Library to plot the devices on map or earth & performs functionality accordingly-->
     <script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
+
+    <script type="text/javascript" src={% static "js/advanceSimpleSearch.js" %}></script>
     <!-- SPARKLINES -->
     <script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
     <!-- Custon Script for this template-->
@@ -244,7 +269,7 @@
                 getFilterApi = "",
                 setFilterApi = "",
                 advSearch = "",
-                deviceName = "";
+                deviceName = "", advJustSearch= "";
 
         $(document).ready(function (e) {
 
@@ -257,7 +282,7 @@
 
             /*Create a instance of advanceSearchClass*/
             advSearch = new advanceSearchClass();
-
+            advJustSearch= new advanceJustSearchClass();
             /*Call the function to create map*/
             networkMapInstance.createMap("deviceMap");
 
