@@ -3160,42 +3160,42 @@ function devicePlottingClass_gmap() {
 
 function prepare_data_for_filter(){
 
-    var filter_data_bs_name_collection=[],
-        filter_data_bs_lat_collection =[],
-        filter_data_bs_lon_collection=[],
-        filter_data_bs_city_collection=[];
+//    filter_data_bs_name_collection=[],
+//        filter_data_bs_lat_collection =[],
+//        filter_data_bs_lon_collection=[],
+    var filter_data_bs_city_collection=[];
         filter_data_bs_state_collection=[];
         filter_data_sector_ss_technology_collection=[];
         filter_data_sector_ss_vendor_collection=[];
-        filter_data_sector_configured_on_collection=[];
-        filter_data_sector_circuit_ids_collection=[];
+//        filter_data_sector_configured_on_collection=[];
+//        filter_data_sector_circuit_ids_collection=[];
 
     if ( main_devices_data_gmaps.length >0 )
         {
 
             for (i=0; i< main_devices_data_gmaps.length; i++)
             {
-                filter_data_bs_name_collection.push({ 'id':[main_devices_data_gmaps[i].id],
-                                                      'value':main_devices_data_gmaps[i].name });
+//                filter_data_bs_name_collection.push({ 'id':[main_devices_data_gmaps[i].id],
+//                                                      'value':main_devices_data_gmaps[i].name });
+//
+//                filter_data_bs_lat_collection.push({ 'id':[main_devices_data_gmaps[i].id] ,
+//                                                     'value':main_devices_data_gmaps[i].data.lat });
+//
+//                filter_data_bs_lon_collection.push({ 'id':[main_devices_data_gmaps[i].id],
+//                                                     'value':main_devices_data_gmaps[i].data.lon });
 
-                filter_data_bs_lat_collection.push({ 'id':[main_devices_data_gmaps[i].id] ,
-                                                     'value':main_devices_data_gmaps[i].data.lat });
+//                filter_data_sector_configured_on_value= main_devices_data_gmaps[i].sector_configured_on_devices.split(' ').filter(function (n) { return n != ""})
+//                for (var k=0;k<filter_data_sector_configured_on_value.length;k++){
+//                    filter_data_sector_configured_on_collection.push({ 'id':[main_devices_data_gmaps[i].id],
+//                                                     'value':filter_data_sector_configured_on_value[k] });
+//                }
 
-                filter_data_bs_lon_collection.push({ 'id':[main_devices_data_gmaps[i].id],
-                                                     'value':main_devices_data_gmaps[i].data.lon });
+//                filter_data_sector_circuit_ids_values= main_devices_data_gmaps[i].circuit_ids.split(' ').filter(function (n) { return n != ""})
 
-                filter_data_sector_configured_on_value= main_devices_data_gmaps[i].sector_configured_on_devices.split(' ').filter(function (n) { return n != ""})
-                for (var k=0;k<filter_data_sector_configured_on_value.length;k++){
-                    filter_data_sector_configured_on_collection.push({ 'id':[main_devices_data_gmaps[i].id],
-                                                     'value':filter_data_sector_configured_on_value[k] });
-                }
-
-                filter_data_sector_circuit_ids_values= main_devices_data_gmaps[i].circuit_ids.split(' ').filter(function (n) { return n != ""})
-
-                for (var k=0;k<filter_data_sector_circuit_ids_values.length;k++){
-                    filter_data_sector_circuit_ids_collection.push({ 'id':[main_devices_data_gmaps[i].id],
-                                                     'value':filter_data_sector_circuit_ids_values[k] });
-                }
+//                for (var k=0;k<filter_data_sector_circuit_ids_values.length;k++){
+//                    filter_data_sector_circuit_ids_collection.push({ 'id':[main_devices_data_gmaps[i].id],
+//                                                     'value':filter_data_sector_circuit_ids_values[k] });
+//                }
 
                 filter_data_sector_ss_technology_value= main_devices_data_gmaps[i].sector_ss_technology.split(' ').filter(function (n) { return n != ""})
                 filter_data_sector_ss_technology_collection.push({ 'id': main_devices_data_gmaps[i].id ,
@@ -3219,20 +3219,20 @@ function prepare_data_for_filter(){
                 }
             }
 
-            var filter_data_bs_state_collection= unique_values_field_and_with_base_station_ids(filter_data_bs_state_collection);
-            var filter_data_bs_city_collection= unique_values_field_and_with_base_station_ids(filter_data_bs_city_collection);
-            var filter_data_sector_ss_technology_collection= unique_values_field_and_with_base_station_ids(filter_data_sector_ss_technology_collection,'technology');
-            var filter_data_sector_ss_vendor_collection= unique_values_field_and_with_base_station_ids(filter_data_sector_ss_vendor_collection,'vendor');
+            filter_data_bs_state_collection= unique_values_field_and_with_base_station_ids(filter_data_bs_state_collection);
+            filter_data_bs_city_collection= unique_values_field_and_with_base_station_ids(filter_data_bs_city_collection);
+            filter_data_sector_ss_technology_collection= unique_values_field_and_with_base_station_ids(filter_data_sector_ss_technology_collection,'technology');
+            filter_data_sector_ss_vendor_collection= unique_values_field_and_with_base_station_ids(filter_data_sector_ss_vendor_collection,'vendor');
 
 
             var filter_data=[
-                {
-                'element_type':'multiselect',
-                'field_type':'string',
-                'key':'name',
-                'title':'BS Name',
-                'values':filter_data_bs_name_collection
-                },
+//                {
+//                'element_type':'multiselect',
+//                'field_type':'string',
+//                'key':'name',
+//                'title':'BS Name',
+//                'values':filter_data_bs_name_collection
+//                },
                 {
                 'element_type':'multiselect',
                 'field_type':'string',
@@ -3260,35 +3260,35 @@ function prepare_data_for_filter(){
                 'key':'city',
                 'title':'BS City',
                 'values':filter_data_bs_city_collection
-                },
-                {
-                'element_type':'multiselect',
-                'field_type':'string',
-                'key':'latitude',
-                'title':'BS Latitude',
-                'values':filter_data_bs_lat_collection
-                },
-                {
-                'element_type':'multiselect',
-                'field_type':'string',
-                'key':'longitude',
-                'title':'BS Longitude',
-                'values':filter_data_bs_lon_collection
-                },
-                {
-                'element_type':'multiselect',
-                'field_type':'string',
-                'key':'sector_configured_on',
-                'title':'Sector Configured On',
-                'values':filter_data_sector_configured_on_collection
-                },
-                {
-                'element_type':'multiselect',
-                'field_type':'string',
-                'key':'circuit_ids',
-                'title':'Circuit Id',
-                'values':filter_data_sector_circuit_ids_collection
                 }
+//                {
+//                'element_type':'multiselect',
+//                'field_type':'string',
+//                'key':'latitude',
+//                'title':'BS Latitude',
+//                'values':filter_data_bs_lat_collection
+//                },
+//                {
+//                'element_type':'multiselect',
+//                'field_type':'string',
+//                'key':'longitude',
+//                'title':'BS Longitude',
+//                'values':filter_data_bs_lon_collection
+//                },
+//                {
+//                'element_type':'multiselect',
+//                'field_type':'string',
+//                'key':'sector_configured_on',
+//                'title':'Sector Configured On',
+//                'values':filter_data_sector_configured_on_collection
+//                },
+//                {
+//                'element_type':'multiselect',
+//                'field_type':'string',
+//                'key':'circuit_ids',
+//                'title':'Circuit Id',
+//                'values':filter_data_sector_circuit_ids_collection
+//                }
             ];
     }//if condition closed
     return filter_data
