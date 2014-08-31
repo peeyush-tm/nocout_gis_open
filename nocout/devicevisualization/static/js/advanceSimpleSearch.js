@@ -13,7 +13,7 @@ var advJustSearch_self = "",
     searchJustParameters = "",
     lastJustSelectedValues = [];
     searchJustquery_data=[];
-    result_Just_plot_devices=[], maxZoomLevel= 15;
+    result_Just_plot_devices=[], maxZoomLevel= 15, statusText= "Advance Search Applied";
 /**
  * This class is used to create th filter form by calling the get_filter API & the call the set_filter API with the selected filters
  * @class advanceSearchLib
@@ -28,9 +28,8 @@ function advanceJustSearchClass() {
 
 
     this.getFilterInfofrompagedata = function(domElemet, windowTitle, buttonId){
-
     	//Get filter Data
-        filtersJustInfoArray= prepare_data_for_filter();
+        filtersJustInfoArray= getDataForAdvanceSearch();
 
         if(appliedJustAdvSearch_Active.length != 0) {
 			lastJustSelectedValues = appliedJustAdvSearch_Active;
@@ -167,6 +166,19 @@ function advanceJustSearchClass() {
 	    hideSpinner();
 
     };
+
+    this.showNotification= function() {
+    	if(!$("span#gis_search_status_txt").length) {
+    		$("<br /><span id='gis_search_status_txt'>Advance Search Applied</span>").insertAfter("#gis_status_txt");
+    	}
+    }
+
+    this.hideNotification= function() {
+    	if($("span#gis_search_status_txt").length) {
+    		$("span#gis_search_status_txt").prev().remove();
+    		$("span#gis_search_status_txt").remove();
+    	}
+    }
 
     this.getInputArray= function() {
     	var ob= {};
@@ -316,6 +328,7 @@ function advanceJustSearchClass() {
 			if(mapInstance.getZoom() >= maxZoomLevel) {
 				mapInstance.setZoom(maxZoomLevel);
 			}
+			advJustSearch_self.showNotification();
 		} else {
 			$.gritter.add({
 				// (string | mandatory) the heading of the notification
@@ -328,6 +341,8 @@ function advanceJustSearchClass() {
 
 			mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
 			mapInstance.setZoom(5);
+			advJustSearch_self.hideNotification();
+
 		}
 
 		hideSpinner();
@@ -335,50 +350,6 @@ function advanceJustSearchClass() {
 		if(!($("#advSearchContainerBlock").hasClass("hide"))) {
 			$("#advSearchContainerBlock").addClass("hide");
 		}
-		// function searchAndCenter(inputVal) {
-		// 	var searchedDevicesArray= [];
-		// 	var searchedDevicesLatLong= [];
-		// 	for(var i=0; i< main_devices_data_gmaps.length; i++) {
-		// 		if((main_devices_data_gmaps[i]['sector_ss_technology'].toLowerCase()).indexOf(inputVal.toLowerCase()) !== -1 || (main_devices_data_gmaps[i]['data']['vendor'].toLowerCase()).indexOf(inputVal.toLowerCase()) !== -1 || (main_devices_data_gmaps[i]['data']['city'].toLowerCase()).indexOf(inputVal.toLowerCase()) !== -1 || (main_devices_data_gmaps[i]['data']['state'].toLowerCase()).indexOf(inputVal.toLowerCase()) !== -1) {
-		// 			searchedDevicesArray.push(main_devices_data_gmaps[i]);
-		// 			searchedDevicesLatLong.push(new google.maps.LatLng(main_devices_data_gmaps[i]['data']['lat'], main_devices_data_gmaps[i]['data']['lon']));
-		// 		}
-
-		// 		var bsSectors= main_devices_data_gmaps[i]['data']['param']['sector'];
-		// 		for(var j=0; j< bsSectors.length; j++) {
-		// 			if((bsSectors[j]['technology'].toLowerCase()).indexOf(inputVal.toLowerCase()) !== -1 || (bsSectors[j]['info'][14]['value'].toLowerCase()) !== -1 || (bsSectors[j]['info'][15]['value'].toLowerCase()) !== -1) {
-		// 				searchedDevicesArray.push(bsSectors[j]);
-		// 			}
-
-		// 			var bsSubStations= bsSectors[j]['sub_station'];
-		// 			for(var k=0; k< bsSubStations.length; k++) {
-		// 				if((bsSubStations[k]['data']['technology'].toLowerCase()).indexOf(inputVal.toLowerCase()) !== -1) {
-		// 					searchedDevicesArray.push(bsSubStations[k]);
-		// 					searchedDevicesLatLong.push(new google.maps.LatLng(bsSubStations[k]['data']['lat'], bsSubStations[k]['data']['lon']));
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-
-		// 	var bounds= new google.maps.LatLngBounds();
-		// 	for(var i=0; i< searchedDevicesLatLong.length; i++) {
-		// 		bounds.extend(searchedDevicesLatLong[i]);
-		// 	}
-
-		// 	if(searchedDevicesLatLong.length) {
-		// 		mapInstance.fitBounds(bounds);	
-		// 	} else {
-		// 		$.gritter.add({
-		// 			// (string | mandatory) the heading of the notification
-		// 			title: 'GIS : Search',
-		// 			// (string | mandatory) the text inside the notification
-		// 			text: 'No data found for the given Searchterm.',
-		// 			// (bool | optional) if you want it to fade out on its own or just sit there
-		// 			sticky: false
-		// 		});
-		// 	}
-		// }
-
 	}
 
 	/**
