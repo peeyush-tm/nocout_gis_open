@@ -113,9 +113,53 @@ function disableAdvanceButton(status) {
 	}
 }
 
-function openBSRightClickMenu(event) {
-	if(mapInstance.getZoom() > zoomAfterRightClickComes) {
 
+var markerContextInfoWindow;
+function openBSRightClickMenu(event, marker) {
+	if(mapInstance.getZoom() > zoomAfterRightClickComes) {
+		
+		var latlng= marker.getPosition();
+		// markerContextInfoWindow= new google.maps.InfoWindow({pixelOffset: });
+		var contentString= '<div class="box border" style="width:90%;float:left;"><div class="box-title">Base Station Maintenance Settings</div><div class="box-body"><form action="#" class="form-horizontal "><div class="form-group"><label class="col-md-4 control-label">Maintainance:</label><div class="col-md-8"><input type="checkbox" name="maintenance-checkbox"></div></div></form></div></div>';
+
+		if(markerContextInfoWindow) {
+			markerContextInfoWindow.close();
+		}
+		markerContextInfoWindow= new InfoBox({
+			content: contentString,
+			boxStyle: {
+				background: "white",
+				color: "black",
+				width: '300px'
+			},
+			disableAutoPan: true,
+			pixelOffset: new google.maps.Size(-25, 0),
+			position: latlng,
+			closeBoxURL: "",
+			isHidden: false,
+			enableEventPropagation: false,
+			zIndex_: 10000,
+			closeBoxURL: "http://www.google.com/intl/en_us/mapfiles/close.gif"
+		});
+
+		markerContextInfoWindow.open(mapInstance);
+		setTimeout(function() {
+			$("[name='maintenance-checkbox']").bootstrapSwitch({
+				size: 'small',
+				offColor: 'danger'
+			});
+			var image = '/static/img/icons/caution.png';
+
+			var maintenanceMarker= new google.maps.Marker({position: marker.getPosition(), icon: image, oldIcon: image});
+			oms.addMarker(maintenanceMarker);
+			$('input[name="maintenance-checkbox"]').on('switchChange.bootstrapSwitch', function(event, state) {
+				if(state) {
+					maintenanceMarker.setMap(mapInstance);
+				} else {
+					maintenanceMarker.setMap(null);
+				}
+			});
+		},100);
 	}
 }
 
@@ -569,10 +613,13 @@ function devicePlottingClass_gmap() {
 		    /*
 		    Add Context menu event to the marker
 		     */
-		    google.maps.event.addListener(bs_marker, 'rightclick', function(event) {
-		    	openBSRightClickMenu(event);
-		    	event.preventDefault();
-		    });
+		    (function bindRightMenuToMarker(marker) {
+		    	var markerRightClick= google.maps.event.addListener(marker, 'rightclick', function(event) {
+		    		openBSRightClickMenu(event, marker);
+		    	});
+		    	console.log(markerRightClick);
+		    	return markerRightClick;
+		    })(bs_marker);
 			
 			/*Sectors Array*/
 			var sector_array = bs_ss_devices[i].data.param.sector;
@@ -1274,7 +1321,7 @@ var deviceIDArray= [];
 	 * @param ss_name {String}, It contains the sub-station name
 	 */
 	this.claculateFresnelZone = function(lat1,lon1,lat2,lon2,height1,height2,sector_ss_obj) {
-
+console.log(height2, height1);
 		/*Save sector & ss name in global variables*/
 		bts1_name = sector_ss_obj.sector_name;
 		bts2_name = sector_ss_obj.ss_name;
@@ -1868,7 +1915,7 @@ var deviceIDArray= [];
 
 		 				var selectedVal1 = filtersArray[filterKey[0]].toLowerCase();
 
-	 					if(dataVal1.indexOf(selectedVal1) > -1) {
+	 					if(dataVal1!== "" && dataVal1.indexOf(selectedVal1) > -1) {
 
 		 					/*Check For The Duplicacy*/
 		 					if(masterIds.indexOf(master.id) == -1) {
@@ -1894,7 +1941,7 @@ var deviceIDArray= [];
 		 				var dataVal2 = master.data[filterKey[1]].toLowerCase().split(",");
 		 				var selectedVal2 = filtersArray[filterKey[1]].toLowerCase();
 
-	 					if((dataVal1.indexOf(selectedVal1) > -1) && (dataVal2.indexOf(selectedVal2) > -1)) {
+	 					if(dataVal1!== "" && dataVal2 !== "" && (dataVal1.indexOf(selectedVal1) > -1) && (dataVal2.indexOf(selectedVal2) > -1)) {
 
 		 					/*Check For The Duplicacy*/
 		 					if(masterIds.indexOf(master.id) == -1) {
@@ -1921,7 +1968,7 @@ var deviceIDArray= [];
 		 				var dataVal3 = master.data[filterKey[2]].toLowerCase().split(",");
 		 				var selectedVal3 = filtersArray[filterKey[2]].toLowerCase();
 		 				
-		 				if((dataVal1.indexOf(selectedVal1) > -1) && (dataVal2.indexOf(selectedVal2) > -1) && (dataVal3.indexOf(selectedVal3) > -1)) {
+		 				if(dataVal1!== "" && dataVal2 !== "" && dataVal3 !== "" && (dataVal1.indexOf(selectedVal1) > -1) && (dataVal2.indexOf(selectedVal2) > -1) && (dataVal3.indexOf(selectedVal3) > -1)) {
 
 		 					/*Check For The Duplicacy*/
 		 					if(masterIds.indexOf(master.id) == -1) {
@@ -1951,7 +1998,7 @@ var deviceIDArray= [];
 		 				var dataVal4 = master.data[filterKey[3]].toLowerCase().split(",");
 		 				var selectedVal4 = filtersArray[filterKey[3]].toLowerCase();
 
-		 				if((dataVal1.indexOf(selectedVal1) > -1) && (dataVal2.indexOf(selectedVal2) > -1) && (dataVal3.indexOf(selectedVal3) > -1) && (dataVal4.indexOf(selectedVal4) > -1)) {
+		 				if(dataVal1!== "" && dataVal2 !== "" && dataVal3 !== "" && dataVal4 !== "" && (dataVal1.indexOf(selectedVal1) > -1) && (dataVal2.indexOf(selectedVal2) > -1) && (dataVal3.indexOf(selectedVal3) > -1) && (dataVal4.indexOf(selectedVal4) > -1)) {
 
 		 					/*Check For The Duplicacy*/
 		 					if(masterIds.indexOf(master.id) == -1) {
