@@ -78,7 +78,7 @@ function advanceJustSearchClass() {
 
                                 if(($.trim(filterValues[j].id) != null && $.trim(filterValues[j].value) != null) && ($.trim(filterValues[j].id) != "" && $.trim(filterValues[j].value) != "")) {
 
-                                    formElements += '<option value="'+filterValues[j].id+'">'+filterValues[j].value+'</option>';
+                                    formElements += '<option value="'+filterValues[j].value+'">'+filterValues[j].value+'</option>';
                                 }
                             }
                         }
@@ -155,11 +155,9 @@ function advanceJustSearchClass() {
 
         /*Initialize the select2*/
         $(".advanceSearchContainer select").select2();
-
-        console.log(lastJustSelectedValues);
         /*loop to show the last selected values*/
         for(var k=0;k<lastJustSelectedValues.length;k++) {
-        	console.log($("#search_"+lastJustSelectedValues[k].field));
+        	console.log(lastJustSelectedValues);
         	$("#search_"+lastJustSelectedValues[k].field).select2("val", lastJustSelectedValues[k].value);
         }
 	    /*Hide the spinner*/
@@ -216,18 +214,22 @@ function advanceJustSearchClass() {
 			for(var key in selectedInputs) {
 				if(selectedInputs.hasOwnProperty(key)) {
 					if(selectedInputs[key].length) {
+
+						//Check BS NAME
 						if(key==='BS Name') {
-							if(selectedInputs[key].indexOf(deviceJson.name) !== -1) {
+							if(((String(deviceJson.name)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.name)).toLowerCase()) != -1) {
 							} else {
 								return false;
 							}
 						}
+
+						//Check BS Technology
 						if(key==='Technology') {
 							var deviceTechnology= deviceJson.sector_ss_technology;
 							var deviceTechnologyArray= deviceTechnology.split(" ");
 							var isTechnologyPresent= false;
 							for(var z=0; z< deviceTechnologyArray.length; z++) {
-								if(selectedInputs[key].indexOf(deviceTechnologyArray[z]) !== -1) {
+								if(((String(deviceTechnologyArray[z])).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceTechnologyArray[z])).toLowerCase()) != -1) {
 									isTechnologyPresent= true;
 								}	
 							}
@@ -237,12 +239,13 @@ function advanceJustSearchClass() {
 							}
 						}
 
+						//Check BS Vendor
 						if(key==='Vendor') {
 							var deviceVendor= deviceJson.sector_ss_vendor;
 							var deviceVendorArray= deviceVendor.split(" ");
 							var isVendorPresent= false;
 							for(var z=0; z< deviceVendorArray.length; z++) {
-								if(selectedInputs[key].indexOf(deviceVendorArray[z]) !== -1) {
+								if(((String(deviceVendorArray[z])).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceVendorArray[z])).toLowerCase()) != -1) {
 									isVendorPresent= true;
 								}	
 							}
@@ -251,41 +254,46 @@ function advanceJustSearchClass() {
 								return false;
 							}
 						}
+
+						//Check BS State
 						if(key === 'BS State') {
-							if(selectedInputs[key].indexOf(deviceJson.data.state) !== -1) {
+							if(((String(deviceJson.data.state)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.state)).toLowerCase()) != -1) {
 							} else {
 								return false;
 							}							
 						}
 
+						//Check BS City
 						if(key === 'BS City') {
-							if(selectedInputs[key].indexOf(deviceJson.data.city) !== -1) {
+							if(((String(deviceJson.data.city)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.city)).toLowerCase()) != -1) {
 							} else {
 								return false;
 							}	
 						}
 
+						//Check BS Latitude
 						if(key === 'BS Latitude') {
-							if(selectedInputs[key].indexOf(deviceJson.data.lat) !== -1) {
+							if(((String(deviceJson.data.lat)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lat)).toLowerCase()) != -1) {
 							} else {
 								return false;
 							}	
 						}
 
+						//Check BS Longitude
 						if(key === 'BS Longitude') {
-							if(selectedInputs[key].indexOf(deviceJson.data.lon) !== -1) {
+							if(((String(deviceJson.data.lon)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lon)).toLowerCase()) != -1) {
 							} else {
 								return false;
 							}	
 						}
 
+						//Check BS Sector Configured On
 						if(key === 'Sector Configured On') {
-
 							var deivceConfiguredOn= deviceJson.sector_configured_on_devices;
 							var deivceConfiguredOnArray= deivceConfiguredOn.split(" ");
 							var isSectorIsConfigured= false;
 							for(var z=0; z< deivceConfiguredOnArray.length; z++) {
-								if(selectedInputs[key].indexOf(deivceConfiguredOnArray[z]) !== -1) {
+								if(((String(deivceConfiguredOnArray[z])).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deivceConfiguredOnArray[z])).toLowerCase()) != -1) {
 									isSectorIsConfigured= true;
 								}	
 							}
@@ -300,7 +308,7 @@ function advanceJustSearchClass() {
 							var deviceCircuitIDSArray= deviceCircuitIDs.split(" ");
 							var isCircuitPresent= false;
 							for(var z=0; z< deviceCircuitIDSArray.length; z++) {
-								if(selectedInputs[key].indexOf(deviceCircuitIDSArray[z]) !== -1) {
+								if(((String(deviceCircuitIDSArray[z])).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceCircuitIDSArray[z])).toLowerCase()) != -1) {
 									isCircuitPresent= true;
 								}	
 							}

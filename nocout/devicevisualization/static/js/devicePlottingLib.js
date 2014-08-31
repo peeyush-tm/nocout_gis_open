@@ -75,7 +75,7 @@ var mapInstance = "",
 	distance_label = {},
 	isFreeze = 0;
     map_points_array = [];
-    map_point_count = 0, sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 13, zoomAfterRightClickComes= 10;
+    map_point_count = 0, sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 15, zoomAfterRightClickComes= 10, fresnelData= {};
 
 
 function displayCoordinates(pnt) {
@@ -113,9 +113,53 @@ function disableAdvanceButton(status) {
 	}
 }
 
-function openBSRightClickMenu(event) {
-	if(mapInstance.getZoom() > zoomAfterRightClickComes) {
 
+var markerContextInfoWindow;
+function openBSRightClickMenu(event, marker) {
+	if(mapInstance.getZoom() > zoomAfterRightClickComes) {
+		
+		var latlng= marker.getPosition();
+		// markerContextInfoWindow= new google.maps.InfoWindow({pixelOffset: });
+		var contentString= '<div class="box border" style="width:90%;float:left;"><div class="box-title">Base Station Maintenance Settings</div><div class="box-body"><form action="#" class="form-horizontal "><div class="form-group"><label class="col-md-4 control-label">Maintainance:</label><div class="col-md-8"><input type="checkbox" name="maintenance-checkbox"></div></div></form></div></div>';
+
+		if(markerContextInfoWindow) {
+			markerContextInfoWindow.close();
+		}
+		markerContextInfoWindow= new InfoBox({
+			content: contentString,
+			boxStyle: {
+				background: "white",
+				color: "black",
+				width: '300px'
+			},
+			disableAutoPan: true,
+			pixelOffset: new google.maps.Size(-25, 0),
+			position: latlng,
+			closeBoxURL: "",
+			isHidden: false,
+			enableEventPropagation: false,
+			zIndex_: 10000,
+			closeBoxURL: "http://www.google.com/intl/en_us/mapfiles/close.gif"
+		});
+
+		markerContextInfoWindow.open(mapInstance);
+		setTimeout(function() {
+			$("[name='maintenance-checkbox']").bootstrapSwitch({
+				size: 'small',
+				offColor: 'danger'
+			});
+			var image = '/static/img/icons/caution.png';
+
+			var maintenanceMarker= new google.maps.Marker({position: marker.getPosition(), icon: image, oldIcon: image});
+			oms.addMarker(maintenanceMarker);
+			$('input[name="maintenance-checkbox"]').on('switchChange.bootstrapSwitch', function(event, state) {
+				if(state) {
+					maintenanceMarker.setMap(mapInstance);
+				} else {
+					maintenanceMarker.setMap(null);
+				}
+			});
+		},100);
 	}
 }
 
@@ -176,17 +220,17 @@ function devicePlottingClass_gmap() {
 
 
             google.maps.event.addListener(mapInstance, 'zoom_changed', function() {
-            	var zoom = mapInstance.getZoom();
-            	if( zoom > zoomAtWhichSectorMarkerAppears) {
-            		for (var i = 0; i < sector_MarkersArray.length; i++) {    
-            			sector_MarkersArray[i].setMap(mapInstance);
-            		}
-            	}
-            	else {
-            		for (var i = 0; i < sector_MarkersArray.length; i++) {    
-            			sector_MarkersArray[i].setMap(null);
-            		}
-            	}
+            	// var zoom = mapInstance.getZoom();
+            	// if( zoom > zoomAtWhichSectorMarkerAppears) {
+            	// 	for (var i = 0; i < sector_MarkersArray.length; i++) {    
+            	// 		sector_MarkersArray[i].setMap(mapInstance);
+            	// 	}
+            	// }
+            	// else {
+            	// 	for (var i = 0; i < sector_MarkersArray.length; i++) {    
+            	// 		sector_MarkersArray[i].setMap(null);
+            	// 	}
+            	// }
             });
 			/*Event listener for search text box*/
 			google.maps.event.addListener(new google.maps.places.SearchBox(searchTxt), 'places_changed', function() {			
@@ -569,10 +613,42 @@ function devicePlottingClass_gmap() {
 		    /*
 		    Add Context menu event to the marker
 		     */
-		    google.maps.event.addListener(bs_marker, 'rightclick', function(event) {
-		    	openBSRightClickMenu(event);
-		    	event.preventDefault();
-		    });
+		    (function bindRightMenuToMarker(marker) {
+		    	var markerRightClick= google.maps.event.addListener(marker, 'rightclick', function(event) {
+		    		openBSRightClickMenu(event, marker);
+		    	});
+		    	
+		    	return markerRightClick;
+		    })(bs_marker);
+
+
+            // google.maps.event.addListener(mapInstance, 'zoom_changed', function() {
+            // 	var zoom = mapInstance.getZoom();
+            // 	if( zoom > zoomAtWhichSectorMarkerAppears) {
+            // 		for (var i = 0; i < sector_MarkersArray.length; i++) {    
+            // 			sector_MarkersArray[i].setMap(mapInstance);
+            // 		}
+            // 	}
+            // 	else {
+            // 		for (var i = 0; i < sector_MarkersArray.length; i++) {    
+            // 			sector_MarkersArray[i].setMap(null);
+            // 		}
+            // 	}
+            // });
+
+		    // google.maps.event.addListener(bs_marker, 'click', function(e) {
+		    // 	var zoom = mapInstance.getZoom();
+		    // 	if( zoom > zoomAtWhichSectorMarkerAppears) {
+		    // 		for (var i = 0; i < sector_MarkersArray.length; i++) {    
+      //       			sector_MarkersArray[i].setMap(mapInstance);
+      //       		}
+      //       	}
+      //       	else {
+      //       		for (var i = 0; i < sector_MarkersArray.length; i++) {    
+      //       			sector_MarkersArray[i].setMap(null);
+      //       		}
+      //       	}
+		    // });
 			
 			/*Sectors Array*/
 			var sector_array = bs_ss_devices[i].data.param.sector;
@@ -638,6 +714,8 @@ function devicePlottingClass_gmap() {
 					var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
 
 					sector_MarkersArray.push(sector_Marker);
+
+					// masterMarkersObj.push(sector_Marker);
 
 					oms.addMarker(sector_Marker);
 
@@ -848,6 +926,7 @@ function devicePlottingClass_gmap() {
 	 */
 	this.createLink_gmaps = function(startEndObj,linkColor,bs_info,ss_info,sector_name, sect_height,ss_name) {
 
+
 		var pathDataObject = [
 			new google.maps.LatLng(startEndObj.startLat,startEndObj.startLon),
 			new google.maps.LatLng(startEndObj.endLat,startEndObj.endLon)
@@ -893,11 +972,11 @@ function devicePlottingClass_gmap() {
 			ss_info			: ss_info_obj,
 			ss_lat 			: startEndObj.endLat,
 			ss_lon 			: startEndObj.endLon,
-			ss_height 		: ss_height,
+			bs_height 		: ss_height,
 			bs_lat 			: startEndObj.startLat,
 			bs_info 		: bs_info_obj,
 			bs_lon 			: startEndObj.startLon,
-			bs_height 		: sect_height,
+			ss_height 		: sect_height,
 			sectorName 	    : sector_name,
 			ssName 		    : ss_name,
 			zIndex 			: 9999
@@ -909,7 +988,7 @@ function devicePlottingClass_gmap() {
 
 		/*Bind Click Event on Link Path Between Master & Slave*/
 		google.maps.event.addListener(pathConnector, 'click', function(e) {
-
+console.log(this);
 			/*Call the function to create info window content*/
 			var content = gmap_self.makeWindowContent(this);
 			/*Set the content for infowindow*/
@@ -1136,7 +1215,7 @@ function devicePlottingClass_gmap() {
 	 * @return {String} windowContent, It contains content to be shown on info window
 	 */
 	this.makeWindowContent = function(contentObject) {
-
+console.log(contentObject);
 		var windowContent = "",
 			infoTable =  "",
 			perfContent = "",
@@ -1185,11 +1264,14 @@ function devicePlottingClass_gmap() {
 			infoTable += "</tbody></table>";
 
 			var sector_ss_name_obj = {
+				sector_Alias: contentObject.bs_info[0].value,
 				sector_name : contentObject.sectorName,
-				ss_name : contentObject.ssName
+				ss_name : contentObject.ssName,
+				ss_customerName: contentObject.ss_info[17].value,
+				ss_circuitId: contentObject.ss_info[3].value
 			};
 
-//            console.log(contentObject);
+           // console.log(contentObject);
 
 			var sector_ss_name = JSON.stringify(sector_ss_name_obj);
 
@@ -1274,10 +1356,13 @@ function devicePlottingClass_gmap() {
 	 * @param ss_name {String}, It contains the sub-station name
 	 */
 	this.claculateFresnelZone = function(lat1,lon1,lat2,lon2,height1,height2,sector_ss_obj) {
-
 		/*Save sector & ss name in global variables*/
 		bts1_name = sector_ss_obj.sector_name;
 		bts2_name = sector_ss_obj.ss_name;
+
+		fresnelData.bts1_alias= sector_ss_obj.sector_Alias;
+		fresnelData.bts2_customerName= sector_ss_obj.ss_customerName;
+		fresnelData.bts2_circuitId= sector_ss_obj.ss_circuitId;
 
 		/** Converts numeric degrees to radians */
 		Number.prototype.toRad = function() {
@@ -1532,12 +1617,19 @@ function devicePlottingClass_gmap() {
 			dataPinpoints.push([parseFloat(latLongArray[i][3]), parseFloat(latLongArray[i][9])]);
 		}
 
+
+
+
+		// fresnelData.bts1_alias= sector_ss_obj.sector_Alias;
+		// fresnelData.bts2_customerName= sector_ss_obj.ss_customerName;
+		// fresnelData.bts2_circuitId= sector_ss_obj.ss_circuitId;
+
 		if(isDialogOpen) {
 			/*Fresnel template String*/
-			var leftSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal1" class="form-control" value="'+antenaHight1+'"></div><div class="clearfix"></div><div id="antina_height1" style="height:300px;" class="slider slider-blue"></div><div class="col-md-12">'+bts1_name+' Height</div></div>';
+			var leftSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal1" class="form-control" value="'+antenaHight1+'"></div><div class="clearfix"></div><div id="antina_height1" style="height:300px;" class="slider slider-blue"></div><div class="col-md-12">'+fresnelData.bts1_alias+"<br />"+bts1_name+'<br /> (Height)</div></div>';
 			var chart_detail = '<div id="chart-details"><div><span id="longitude-lbl" class="chart-detail-lbl">Longitude </span> <span id="longitude"></span></div><div><span id="latitude-lbl" class="chart-detail-lbl">Latitude </span> <span id="latitude"></span></div><div><span id="distance-lbl" class="chart-detail-lbl">Distance </span> <span id="distance"></span></div><div><span id="altitude-lbl" class="chart-detail-lbl">Altitude </span> <span id="altitude"></span></div><div><span id="obstacle-lbl" class="chart-detail-lbl">Obstacle </span> <span id="obstacle"></span></div><div><span id="los-lbl" class="chart-detail-lbl">LOS </span> <span id="los"></span></div><div><span id="fresnel1-lbl" class="chart-detail-lbl">Fresnel-1 </span> <span id="fresnel1"></span></div><div><span id="fresnel2-lbl" class="chart-detail-lbl">Fresnel-2 </span> <span id="fresnel2"></span></div><div><span id="fresnel2-altitude-lbl" class="chart-detail-lbl">Clearance </span> <span id="fresnel-altitude"></span></div></div>';
 			var middleBlock = '<div class="col-md-8 mid_fresnel_container"><div align="center"><div class="col-md-12">Clearance Factor</div><div class="col-md-4 col-md-offset-3"><div id="clear-factor" class="slider slider-red"></div></div><div class="col-md-2"><input type="text" id="clear-factor_val" class="form-control" value="'+clear_factor+'"></div><div class="clearfix"></div></div><div id="chart_div" style="width:600px;max-width:100%;height:300px;"></div><div class="clearfix divide-10"></div><div id="pin-points-container" class="col-md-12" align="center"></div></div>';
-			var rightSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal2" class="form-control" value="'+antenaHight2+'"></div><div class="clearfix"></div><div id="antina_height2" class="slider slider-blue" style="height:300px;"></div><div class="col-md-12">'+bts2_name+' Height</div></div>';
+			var rightSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal2" class="form-control" value="'+antenaHight2+'"></div><div class="clearfix"></div><div id="antina_height2" class="slider slider-blue" style="height:300px;"></div><div class="col-md-12">'+fresnelData.bts2_customerName+"<br />"+fresnelData.bts2_circuitId+ "<br />"+ bts2_name+' (Height)</div></div>';
 
 			var fresnelTemplate = "<div class='fresnelContainer row' style='height:400px;overflow-y:auto;'>"+leftSlider+" "+middleBlock+" "+rightSlider+"</div>"+chart_detail;
 
@@ -1835,6 +1927,13 @@ function devicePlottingClass_gmap() {
 
 		var	filteredData = [];
 
+
+	 		/*Check that after applying filters any data exist or not*/
+	 	// 	if(filteredData.length === 0) {
+
+	 	// 		Reset the markers, polyline & filters
+	 	// 		gmap_self.clearGmapElements();
+	 	// }
         for(var i=0;i<main_devices_data_gmaps.length;i++)
         {
 
@@ -1850,6 +1949,8 @@ function devicePlottingClass_gmap() {
                     (filtersArray['city'] ? filtersArray['city'].toLowerCase() == main_devices_data_gmaps[i].data.city.toLowerCase(): true) &&
                     (filtersArray['state'] ? filtersArray['state'].toLowerCase() == main_devices_data_gmaps[i].data.state.toLowerCase(): true))
                 {
+                	// console.log(sector.technology);
+                	// console.log(sector.vendor);
                     bs_data.data.param.sector.push(sector);
                 }
             }
@@ -3126,6 +3227,9 @@ function devicePlottingClass_gmap() {
 		for(var i=0;i<masterMarkersObj.length;i++) {
 
 			masterMarkersObj[i].setMap(null);
+		}
+		for(var i=0;i<sector_MarkersArray.length; i++) {
+			sector_MarkersArray[i].setMap(null)
 		}
 
 		/*Clear the existing SS for same point*/
