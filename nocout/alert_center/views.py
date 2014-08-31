@@ -200,10 +200,16 @@ class GetCustomerAlertDetail(BaseDatatableView):
             device_object = Device.objects.get(device_name=data['device_name'])
 
             if device_object.substation_set.exists():
-
+                
+                device_circuit = ""
+                device_basestation = ""
+                has_circuit = False
                 device_substation= SubStation.objects.get(id= device_object.substation_set.values_list('id', flat=True)[0])
-                device_circuit= Circuit.objects.get(id= device_substation.circuit_set.values_list('id', flat=True)[0])
-                device_basestation= device_circuit.sector.base_station.name
+                circuit_obj = Circuit.objects.filter(id= device_substation.circuit_set.values_list('id', flat=True))
+                if len(circuit_obj):
+                    device_circuit= circuit_obj[0]
+                    device_basestation = device_circuit.sector.base_station.name
+                    has_circuit = True
 
                 if severity_level_check(list_to_check=[data['severity'], data['description']]):
                     device_events = {
@@ -212,8 +218,8 @@ class GetCustomerAlertDetail(BaseDatatableView):
                         'severity': data['severity'],
                         # 'ip_address': data["ip_address"],
                         'base_station': device_basestation,
-                        'circuit_id': device_circuit.circuit_id,
-                        'sector_id': device_circuit.sector.sector_id,
+                        'circuit_id': device_circuit.circuit_id if has_circuit else "",
+                        'sector_id': device_circuit.sector.sector_id if has_circuit else "",
                         'device__city': City.objects.get(id=device_object.city).city_name if device_object.city else 'N/A',
                         'device__state': State.objects.get(id=device_object.state).state_name if device_object.state else 'N/A',
                         'data_source_name': data["data_source"],
