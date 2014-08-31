@@ -791,9 +791,9 @@ console.log(lastSelectedValues);
                     loop3:
                         for(var k=0; k<main_devices_data_gmaps[j].data.param.sector.length;k++)
                         {
-                            technology_check_condition= technology_choice.length>0 ? technology_choice == main_devices_data_gmaps[j].data.param.sector[k].technology: true;
+                            technology_check_condition= technology_choice.length>0 ? technology_choice.indexOf(main_devices_data_gmaps[j].data.param.sector[k].technology)>=0 : true;
                             /*If vendor choice exist then check in the sector, if the vendor_choice is null then make it true by default to check the technology condition.*/
-                            vendor_check_condition= vendor_choice.length>0 ? vendor_choice == main_devices_data_gmaps[j].data.param.sector[k].vendor: true;
+                            vendor_check_condition= vendor_choice.length>0 ? vendor_choice.indexOf(main_devices_data_gmaps[j].data.param.sector[k].vendor)>=0 : true;
 
                             /*And the condition when technology_check_condition and vendor_check_condition will become true and their
                             length is also zero.Then they will not appear in the depth search. */
