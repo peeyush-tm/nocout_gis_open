@@ -154,6 +154,7 @@ function showAdvSearch() {
 
 $("#setAdvSearchBtn").click(function(e) {
     showSpinner();
+    advJustSearch.showNotification();
     advJustSearch.searchAndCenterData(main_devices_data_gmaps);
 });
 
@@ -163,13 +164,14 @@ $("#cancelAdvSearchBtn").click(function(e) {
     if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
         $("#advSearchContainerBlock").addClass("hide");
     }
-    advJustSearch.resetVariables();
+    // advJustSearch.resetVariables();
 });
 
 $("#resetSearchForm").click(function(e) {
     $("#searchInfoModal_form").find('select').each(function(i, el) {$(el).select2("val", [])});
     advJustSearch.resetVariables();
     $("#setAdvSearchBtn").trigger('click');
+    advJustSearch.hideNotification();
 });
 
 /**

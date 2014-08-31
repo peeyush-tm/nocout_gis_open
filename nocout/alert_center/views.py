@@ -62,8 +62,8 @@ def getCustomerAlertDetail(request):
         {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
         {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
-        # {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
-        #  'bSortable': True},
+        {'mData': 'device_type', 'sTitle': 'Device type', 'sWidth': 'null', 'sClass': 'hidden-xs',
+        'bSortable': True},
         {'mData': 'sub_station', 'sTitle': 'Sub Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -90,9 +90,9 @@ class GetCustomerAlertDetail(BaseDatatableView):
     Generic Class Based View for the Alert Center Customer Listing Tables.
     """
     model = EventNetwork
-    columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
+    columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
                'current_value', 'sys_timestamp', 'description']
-    order_columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
+    order_columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
                      'current_value', 'sys_timestamp', 'description']
 
     def filter_queryset(self, qs):
@@ -204,8 +204,8 @@ class GetCustomerAlertDetail(BaseDatatableView):
 
         device_list = []
         for data in performance_data:
-
-            substation = SubStation.objects.filter(device__device_name=data["device_name"])
+            device_object = Device.objects.get(device_name=data['device_name'])
+            substation = SubStation.objects.filter(device__id= device_object.id)
             if len(substation):
                 device_substation = substation[0]
                 try:
@@ -219,6 +219,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
                 if severity_level_check(list_to_check=[data['severity'], data['description']]):
                     device_events = {
                         'device_name': data["device_name"],
+                        'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
                         'severity': data['severity'],
                         'ip_address': data["ip_address"],
                         'sub_station': device_substation.name,
@@ -321,8 +322,8 @@ def getNetworkAlertDetail(request):
         {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
         {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
-        # {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
-        #  'bSortable': True},
+        {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
+        'bSortable': True},
         {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -347,9 +348,9 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
     """
     model = EventNetwork
-    columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
+    columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
                'current_value', 'sys_time', 'sys_date', 'description']
-    order_columns = ['device_name', 'machine_name', 'site_name', 'ip_address', 'severity',
+    order_columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
                      'current_value', 'sys_time', 'sys_date', 'description']
 
     def filter_queryset(self, qs):
@@ -460,15 +461,15 @@ class GetNetworkAlertDetail(BaseDatatableView):
         )
 
         for data in performance_data:
-
-            sector = Sector.objects.filter(sector_configured_on__id=
-                                           Device.objects.get(device_name=data['device_name']).id)
+            device_object = Device.objects.get(device_name=data['device_name'])
+            sector = Sector.objects.filter(sector_configured_on__id=device_object.id)
             if len(sector):
                 device_base_station = sector[0].base_station
                 # only display warning or critical devices
                 if severity_level_check(list_to_check=[data['severity'], data['description']]):
                     ddata = {
                         'device_name': data['device_name'],
+                        'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
                         'severity': data['severity'],
                         'ip_address': data['ip_address'],
                         'base_station': device_base_station.name,
