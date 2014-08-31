@@ -12,6 +12,7 @@ import requests
 from nocout.utils import logged_in_user_organizations
 from service.models import DeviceServiceConfiguration, Service, ServiceDataSource
 from django.contrib.staticfiles.templatetags.staticfiles import static
+from site_instance.models import SiteInstance
 from sitesearch.views import DeviceSetFilters, prepare_result
 from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 logger=logging.getLogger(__name__)
@@ -543,78 +544,137 @@ class BulkFetchLPDataApi(View):
         }
 
         result['data']['devices'] = dict()
+        # get machines associated with current devices
+        machine_list = []
+        for device in devices:
+            try:
+                machine = Device.objects.get(device_name=device).machine.id
+                machine_list.append(machine)
+            except Exception as e:
+                logger.info(e.message)
+        machines = set(machine_list)
+
         try:
-            lp_template = LivePollingSettings.objects.get(pk=lp_template_id)
+            for machine_id in machines:
+                # live polling setting
+                lp_template = LivePollingSettings.objects.get(pk=lp_template_id)
 
-            for device_name in devices:
-                result['data']['devices'][device_name] = dict()
+                # current machine devices
+                current_devices_list = []
 
-                # live polling data dictionary (payload for nocout.py api call)
-                lp_data = dict()
-                lp_data['mode'] = "live"
-                lp_data['device'] = device_name
-                lp_data['service'] = str(service.name)
-                lp_data['ds'] = list()
-                lp_data['ds'].append(str(data_source.name))
-
-                # current device object
-                device = Device.objects.get(device_name=device_name)
-
-                # url for nocout.py
-                url = "http://{}:{}@{}:{}/{}/check_mk/nocout_live.py".format(device.site_instance.username,
-                                                                             device.site_instance.password,
-                                                                             device.machine.machine_ip,
-                                                                             device.site_instance.web_service_port,
-                                                                             device.site_instance.name)
-
-                # encoding 'lp_data'
-                encoded_data = urllib.urlencode(lp_data)
-
-                # sending post request to nocout device app to fetch service live polling value
-                r = requests.post(url, data=encoded_data)
-
-                # converting post response data into python dict expression
-                response_dict = ast.literal_eval(r.text)
-                # if response(r) is given by post request than process it further to get success/failure messages
-                if r:
-                    result['data']['devices'][device_name]['value'] = response_dict.get('value')[0] if response_dict.get('value') else ""
-
-                    # threshold configuration for getting warning, critical comparison values
-                    tc = ThresholdConfiguration.objects.get(live_polling_template=lp_template)
-
-                    # thematic settings for getting icon url
-                    ts = ThematicSettings.objects.get(threshold_template=tc)
-
-                    # comparing threshold values to get icon
+                for device_name in devices:
                     try:
-                        value = int(response_dict.get('value')[0])
-                        image_partial = "img/icons/wifi7.png"
-                        if abs(int(value)) > abs(int(tc.warning)):
-                            image_partial = ts.gt_warning.upload_image
-                        elif abs(int(tc.warning)) >= abs(int(value)) >= abs(int(tc.critical)):
-                            image_partial = ts.bt_w_c.upload_image
-                        elif abs(int(value)) > abs(int(tc.critical)):
-                            image_partial = ts.gt_critical.upload_image
-                        else:
-                            icon = static('img/icons/wifi7.png')
-                        img_url = "/media/" + str(image_partial) if "uploaded" in str(image_partial) else static(
-                            "img/" + image_partial)
-                        icon = str(img_url)
+                        device = Device.objects.get(device_name=device_name)
+                        if device.machine.id == machine_id:
+                            current_devices_list.append(str(device.device_name))
                     except Exception as e:
-                        icon = static('img/icons/wifi7.png')
                         logger.info(e.message)
 
-                    result['data']['devices'][device_name]['icon'] = icon
+                site_instances_list = []
+                for device_name in current_devices_list:
+                    try:
+                        device = Device.objects.get(device_name=device_name)
+                        site_instances_list.append(device.site_instance.id)
+                    except Exception as e:
+                        logger.info(e.message)
+                sites = set(site_instances_list)
 
-                    # if response_dict doesn't have key 'success'
-                    if not response_dict.get('success'):
-                        logger.info(response_dict.get('error_message'))
-                        result['data']['devices'][device_name]['message'] = "Failed to fetch data for '%s'." % \
-                                                                            device_name
-                    else:
-                        result['data']['devices'][device_name]['message'] = "Successfully fetch data for '%s'." % \
-                                                                            device_name
+                # sites associated with current devices
+                for site_id in sites:
+                    site = SiteInstance.objects.get(pk=site_id)
+                    devices_in_current_site = []
+                    for device_name in current_devices_list:
+                        try:
+                            device = Device.objects.get(device_name=device_name)
+                            if device.site_instance.id == site_id:
+                                devices_in_current_site.append(device.device_name)
+                        except Exception as e:
+                            logger.info(e.message)
+                    
+                    # live polling data dictionary (payload for nocout.py api call)
+                    lp_data = dict()
+                    lp_data['mode'] = "live"
+                    lp_data['device_list'] = devices_in_current_site
+                    lp_data['service_list'] = [str(lp_template.service.name)]
+                    lp_data['ds'] = [str(lp_template.data_source.name)]
 
+                    # url for nocout.py
+                    # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+                    # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
+                    url = "http://{}:{}@{}:{}/{}/check_mk/nocout_live.py".format(site.username,
+                                                                                 site.password,
+                                                                                 site.machine.machine_ip,
+                                                                                 site.web_service_port,
+                                                                                 site.name)
+
+                    # encoding 'lp_data'
+                    encoded_data = urllib.urlencode(lp_data)
+
+                    # sending post request to nocout device app to fetch service live polling value
+                    try:
+                        r = requests.post(url, data=encoded_data)
+                    except Exception as e:
+                        print "r error: "
+                        logger.info(e.message)
+
+                    # converting post response data into python dict expression
+                    response_dict = ast.literal_eval(r.text)
+
+                    # if response(r) is given by post request than process it further to get success/failure messages
+                    if r:
+                        devices_in_response = response_dict.get('value')
+
+                        for device_dict in devices_in_response:
+                            device_name = ""
+                            device_value = ""
+
+                            for device, val in device_dict.items():
+                                device_name = device
+                                try:
+                                    device_value = val[0]
+                                except Exception as e:
+                                    device_value = ""
+                                    logger.info(e.message)
+
+                            result['data']['devices'][device_name] = dict()
+
+                            result['data']['devices'][device_name]['value'] = device_value
+
+                            # threshold configuration for getting warning, critical comparison values
+                            tc = ThresholdConfiguration.objects.get(live_polling_template=lp_template)
+
+                            # thematic settings for getting icon url
+                            ts = ThematicSettings.objects.get(threshold_template=tc)
+
+                            # comparing threshold values to get icon
+                            try:
+                                value = device_value
+                                image_partial = "img/icons/wifi7.png"
+                                if abs(int(value)) > abs(int(tc.warning)):
+                                    image_partial = ts.gt_warning.upload_image
+                                elif abs(int(tc.warning)) >= abs(int(value)) >= abs(int(tc.critical)):
+                                    image_partial = ts.bt_w_c.upload_image
+                                elif abs(int(value)) > abs(int(tc.critical)):
+                                    image_partial = ts.gt_critical.upload_image
+                                else:
+                                    icon = static('img/icons/wifi7.png')
+                                img_url = "/media/" + str(image_partial) if "uploaded" in str(image_partial) else static(
+                                    "img/" + image_partial)
+                                icon = str(img_url)
+                            except Exception as e:
+                                icon = static('img/icons/wifi7.png')
+                                logger.info(e.message)
+
+                            result['data']['devices'][device_name]['icon'] = icon
+
+                            # if response_dict doesn't have key 'success'
+                            if not response_dict.get('success'):
+                                logger.info(response_dict.get('error_message'))
+                                result['data']['devices'][device_name]['message'] = "Failed to fetch data for '%s'." % \
+                                                                                    device_name
+                            else:
+                                result['data']['devices'][device_name]['message'] = "Successfully fetch data for '%s'." % \
+                                                                                    device_name
             result['success'] = 1
             result['message'] = "Successfully fetched."
         except Exception as e:
