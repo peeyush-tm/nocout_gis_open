@@ -911,7 +911,9 @@ class CustomerAlertList(ListView):
         Preparing the Context Variable required in the template rendering.
 
         """
+
         context = super(CustomerAlertList, self).get_context_data(**kwargs)
+        data_source=self.kwargs.get('data_source','')
         datatable_headers = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -933,11 +935,19 @@ class CustomerAlertList(ListView):
              'bSortable': True},
             {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'current_value', 'sTitle': 'Event Value', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
+            {'mData': 'current_value', 'sTitle': 'Packet Drop %', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True }
+             if data_source.lower() in ['down','packet_drop'] else
+            {'mData': 'current_value', 'sTitle': 'Latency Average(ms)', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True },
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
             ]
+
+        if data_source.lower() =='latency' : datatable_headers.insert(len(datatable_headers)-2,
+        {'mData': 'max_value', 'sTitle': 'Max Latency(ms)', 'sWidth': 'null', 'sClass': 'hidden-xs',
+        'bSortable': True })
+
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['data_source'] = " ".join(self.kwargs['data_source'].split('_')).title()
         return context
@@ -1018,6 +1028,7 @@ class CustomerAlertListingTable(BaseDatatableView):
                                  "device_name",
                                  "severity",
                                  "current_value",
+                                 "max_value",
                                  "sys_timestamp",
                                  "description"]
 
@@ -1086,6 +1097,7 @@ class CustomerAlertListingTable(BaseDatatableView):
                             'circuit_id': circuit_id,
                             'sector_id': sector_id,
                             'current_value': data['current_value'],
+                            'max_value':data['max_value'],
                             'sys_time': datetime.datetime.fromtimestamp(
                                 float(data['sys_timestamp'])).strftime("%I:%M:%S %p"),
                             'sys_date': datetime.datetime.fromtimestamp(
@@ -1094,6 +1106,7 @@ class CustomerAlertListingTable(BaseDatatableView):
                                 float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
                             'description': data['description']
                         }
+
                         device_list.append(device_events)
 
             sorted_device_list = sorted(device_list, key=itemgetter('sys_timestamp'), reverse=True)
