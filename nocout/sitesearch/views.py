@@ -16,6 +16,8 @@ from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 from nocout.utils import logged_in_user_organizations
 logger = logging.getLogger(__name__)
 
+from random import randint
+
 # removing duplicate entries in the dictionaries in a list
 removing_duplicate_entries = lambda lst: [dict(t) for t in set([tuple(sorted(d.items())) for d in lst])]
 
@@ -312,7 +314,7 @@ def prepare_result(base_station_id):
             'lat': base_station.latitude,
             'lon': base_station.longitude,
             "markerUrl": 'static/img/marker/slave01.png',
-            'antena_height': 0,
+            'antenna_height': 0,
             'vendor':','.join(sectors[0].bs_technology.device_vendors.values_list('name', flat=True)),
             'city': City.objects.get(id=base_station.city).city_name if base_station.city else 'N/A',
             'state': State.objects.get(id=base_station.state).state_name if base_station.state else 'N/A',
@@ -458,7 +460,7 @@ def prepare_result(base_station_id):
                                                              'vendor': DeviceVendor.objects.get(id=sector.sector_configured_on.device_vendor).name,
                                                              'sector_configured_on':sector.sector_configured_on.device_name,
                                                              'circuit_id':None,
-
+                                                             'antenna_height': sector.antenna.height if sector.antenna else randint(40,70),
                                                              'device_info':[
 
                                                                  {
@@ -601,7 +603,7 @@ def prepare_result(base_station_id):
                                 'data': {
                                     "lat": substation.latitude if substation.latitude else substation_device.latitude,
                                     "lon": substation.longitude if substation.longitude else substation_device.longitude,
-                                    "antenna_height": substation.antenna.height if substation.antenna else 0,
+                                    "antenna_height": substation.antenna.height if substation.antenna else randint(40,70),
                                     "technology":sector.bs_technology.name,
                                     "markerUrl": tech_marker_url_slave(sector.bs_technology.name),
                                     "show_link": 1,

@@ -515,7 +515,7 @@ function devicePlottingClass_gmap() {
 				bhInfo 			 : bs_ss_devices[i].data.param.backhual,
 				bs_name 		 : bs_ss_devices[i].name,
 				name 		 	 : bs_ss_devices[i].name,
-				antena_height    : bs_ss_devices[i].data.antena_height,
+				antenna_height    : bs_ss_devices[i].data.antenna_height,
 				zIndex 			 : 200,
                 optimized 		 : false
 			};
@@ -578,8 +578,11 @@ var deviceIDArray= [];
 						deviceExtraInfo: sector_array[j].info,
 						deviceInfo: sector_array[j].device_info,
 						zIndex 			 : 200,
-						optimized 		 : false
+						optimized 		 : false,
+                        antenna_height    : sector_array[j].antenna_height
 					}
+
+                    var sect_height = sector_array[j].antenna_height;
 
 					var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
 
@@ -607,12 +610,14 @@ var deviceIDArray= [];
 				    	pointType	     : "sub_station",
 						dataset 	     : ss_marker_obj.data.param.sub_station,
 						bhInfo 			 : [],
-						antena_height    : ss_marker_obj.data.antena_height,
+						antenna_height    : ss_marker_obj.data.antenna_height,
 						name 		 	 : ss_marker_obj.name,
 						device_name 	 : ss_marker_obj.device_name,
 						zIndex 			 : 200,
                         optimized 		 : false
 					};
+
+
 
 					/*Create SS Marker*/
 				    var ss_marker = new google.maps.Marker(ss_marker_object);
@@ -637,18 +642,18 @@ var deviceIDArray= [];
 
 		    		/*Sub station info Object*/
 		    		ss_info["info"] = ss_marker_obj.data.param.sub_station;
-		    		ss_info["antena_height"] = ss_marker_obj.data.antena_height;
+		    		ss_info["antenna_height"] = ss_marker_obj.data.antenna_height;
 
 		    		
 		    		/*Link color object*/
 		    		linkColor = ss_marker_obj.data.link_color;
 		    			
 	    			base_info["info"] = bs_ss_devices[i].data.param.base_station;
-	    			base_info["antena_height"] = bs_ss_devices[i].data.antena_height;
+	    			base_info["antenna_height"] = bs_ss_devices[i].data.antenna_height;
 	    			
 	    			if(ss_marker_obj.data.show_link == 1) {
 	    				/*Create the link between BS & SS or Sector & SS*/
-				    	var ss_link_line = gmap_self.createLink_gmaps(startEndObj,linkColor,base_info,ss_info,sector_array[j].sector_configured_on,ss_marker_obj.name);
+				    	var ss_link_line = gmap_self.createLink_gmaps(startEndObj,linkColor,base_info,ss_info,sector_array[j].sector_configured_on, sect_height,ss_marker_obj.name);
 
 				    	ssLinkArray.push(ss_link_line);
 	    			}
@@ -790,7 +795,7 @@ var deviceIDArray= [];
 	 * @param ss_name {String}, It contains the name of sub-station.
 	 * @return {Object} pathConnector, It contains gmaps polyline object.
 	 */
-	this.createLink_gmaps = function(startEndObj,linkColor,bs_info,ss_info,sector_name,ss_name) {
+	this.createLink_gmaps = function(startEndObj,linkColor,bs_info,ss_info,sector_name, sect_height,ss_name) {
 
 		var pathDataObject = [
 			new google.maps.LatLng(startEndObj.startLat,startEndObj.startLon),
@@ -804,21 +809,28 @@ var deviceIDArray= [];
 
 		if(ss_info != undefined || ss_info == "") {
 			ss_info_obj = ss_info.info;
-			ss_height = ss_info.antena_height;
+			ss_height = ss_info.antenna_height;
 		} else {
 			ss_info_obj = "";
 			ss_height = 40;
 		}
-
+//        console.log(ss_info);
 		var bs_info_obj = "",
 			bs_height = 40;
 		if(bs_info != undefined || bs_info == "") {
 			bs_info_obj = bs_info.info;
-			bs_height = bs_info.antena_height;
+			bs_height = bs_info.antenna_height;
 		} else {
 			bs_info_obj = "";
 			bs_height = 40;
 		}
+
+        if (sect_height == undefined || sect_height == ""){
+            sect_height = 47;
+        }
+
+//        console.log(sect_height);
+//        console.log(ss_height);
 
 		linkObject = {
 			path 			: pathDataObject,
@@ -834,7 +846,7 @@ var deviceIDArray= [];
 			bs_lat 			: startEndObj.startLat,
 			bs_info 		: bs_info_obj,
 			bs_lon 			: startEndObj.startLon,
-			bs_height 		: bs_height,
+			bs_height 		: sect_height,
 			sectorName 	    : sector_name,
 			ssName 		    : ss_name,
 			zIndex 			: 9999
@@ -1123,8 +1135,10 @@ var deviceIDArray= [];
 
 			var sector_ss_name_obj = {
 				sector_name : contentObject.sectorName,
-				ss_name : contentObject.ssName,
+				ss_name : contentObject.ssName
 			};
+
+//            console.log(contentObject);
 
 			var sector_ss_name = JSON.stringify(sector_ss_name_obj);
 
