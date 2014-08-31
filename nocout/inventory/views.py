@@ -1,7 +1,7 @@
 from operator import itemgetter
 import re
 from django.contrib.auth.decorators import permission_required
-from django.shortcuts import render
+from django.shortcuts import render, render_to_response
 import json
 from actstream import action
 from django.db.models.query import ValuesQuerySet
@@ -25,6 +25,8 @@ from device.models import Country, State, City
 from django.contrib.staticfiles.templatetags.staticfiles import static
 import xlrd
 import logging
+from django.template import RequestContext
+
 logger = logging.getLogger(__name__)
 
 
@@ -2508,34 +2510,87 @@ class GISInventoryBulkImport(FormView):
         print "************************ form_valid **********************", form
         uploaded_file = self.request.FILES['file_upload']
 
+        # dictionary containing all 'pts bs' fields
+        ptp_bs_fields = ['City', 'State', 'Ckt ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
+                         'Qos(BW)', 'Latitude', 'Longititude', 'Antenna height', 'Polarisation', 'Antenna Type',
+                         'Antena Gain', 'Antenna mount type', 'Ethernet Extender', 'Building height',
+                         'Tower/Pole height', 'Cable Length', 'RSSI during acceptance',
+                         'Throughput during acceptance', 'Date of acceptance', 'BH BSO', 'IP', 'MAC', 'HSSU used',
+                         'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP',
+                         'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
+                         'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type',
+                         'BH Circuit ID', 'PE Hostname', 'PE IP', 'TTSL CIRCUIT ID']
+
         # dictionary containing all 'pmp bs' fields
         pmp_bs_fields = ['City', 'State', 'Address', 'BS Name', 'Type_Of_BS(Technology)', 'Site_Type',
                          'Infra Provider', 'Site ID', 'Building_Height', 'Tower_Height', 'Latitude', 'Longitude',
-                         'IDU IP', 'Sector_name', 'PMP', 'Make of Antenna', 'Antenna Polarisation', 'Antenna_Tilt',
-                         'Antenna_Height', 'Antenna_BeamWidth', 'Azimuth', 'Installation of Splitter',
+                         'ODU IP', 'Sector_name', 'Make of Antenna', 'Antenna Polarisation', 'Antenna_Tilt',
+                         'Antenna_Height', 'Antenna_BeamWidth', 'Azimuth', 'Sync Splitter Used(Y/N)',
                          'Type of GPS', 'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port',
                          'BS Converter IP', 'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
                          'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID',
                          'PE Hostname', 'PE IP', 'DR site', 'TTSL CIRCUIT ID']
 
+        # dictionary containing all 'wimax bs' fields
+        wimax_bs_fields = ['City', 'State', 'Address', 'BS Name', 'Type_Of_BS(Technology)', 'Site_Type',
+                           'Infra Provider', 'Site ID', 'Building_Height', 'Tower_Height', 'Latitude', 'Longitude',
+                           'IDU IP', 'Sector_name', 'PMP', 'Make of Antenna', 'Antenna Polarisation', 'Antenna_Tilt',
+                           'Antenna_Height', 'Antenna_BeamWidth', 'Azimuth', 'Installation of Splitter',
+                           'Type of GPS', 'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port',
+                           'BS Converter IP', 'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
+                           'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID',
+                           'PE Hostname', 'PE IP', 'DR site', 'TTSL CIRCUIT ID']
+
+        # dictionary containing all 'ptp ss' fields
+        ptp_ss_fields = ['City', 'State', 'Ckt ID', 'Customer Name', 'Customer Address', 'BS NAME', 'Qos(BW)',
+                         'Latitide', 'Longitude', 'MIMO/Diversity', 'Antenna height', 'Polarisation', 'Antenna Type',
+                         'Antena Gain', 'Antenna mount type', 'Ethernet Extender', 'Building height',
+                         'Tower/Pole height', 'Cable Length', 'RSSI during acceptance', 'Throughput during acceptance',
+                         'Date of acceptance', 'BH BSO', 'IP', 'MAC']
+
+        # dictionary containing all 'pmp ss' fields
+        pmp_ss_fields = ['Customer Name', 'Ckt ID', 'Qos(BW)', 'Latitude', 'Longitude', 'Building height',
+                         'Tower/Pole height', 'Antenna height', 'Polarisation', 'Antenna Type', 'SS mount type',
+                         'Ethernet Extender', 'Cable Length', 'DL RSSI during acceptance', 'DL CINR during acceptance',
+                         'Customer Address', 'Date of acceptance', 'SS IP', 'Lens/Reflector', 'Antenna Beamwidth']
+
+        # dictionary containing all 'wimax ss' fields
+        wimax_ss_fields = ['Customer Name', 'Ckt ID', 'Qos(BW)', 'Latitude', 'Longitude', 'Building height',
+                           'Tower/Pole height', 'Antenna height', 'Polarisation(Horizontal/Vertical)',
+                           'Antenna Type(Narrowbeam/Normal)', 'SS mount type (Wallmount/pole mount/Mast)',
+                           'Ethernet Extender(Yes/no)', 'Cable Length', 'DL RSSI during acceptance',
+                           'DL CINR during acceptance', 'Customer Address', 'Date of acceptance', 'SS IP']
+
+        # initialize variables for bs sheet name, ss sheet name, ptp sheet name
         bs_sheet = ""
         ss_sheet = ""
         ptp_sheet = ""
 
         try:
-            bs_sheet = int(self.request.POST['bs_sheet'])
-            ss_sheet = int(self.request.POST['ss_sheet'])
-            ptp_sheet = int(self.request.POST['ptp_sheet'])
+            bs_sheet = self.request.POST['bs_sheet'] if self.request.POST['bs_sheet'] else ""
+            ss_sheet = self.request.POST['ss_sheet'] if self.request.POST['ss_sheet'] else ""
+            ptp_sheet = self.request.POST['ptp_sheet'] if self.request.POST['ptp_sheet'] else ""
         except Exception as e:
             logger.info(e.message)
 
         print "***************** bs_sheet - ", bs_sheet
         print "***************** ss_sheet - ", ss_sheet
         print "***************** ptp_sheet - ", ptp_sheet
+
+        # reading workbook using 'xlrd' module
         book = xlrd.open_workbook(uploaded_file.name, file_contents=uploaded_file.read())
 
-        if bs_sheet and ss_sheet:
-            sheet = book.sheet_by_index(bs_sheet)
+        # execute only if a valid sheet is selected from form
+        if bs_sheet or ss_sheet or ptp_sheet:
+            if bs_sheet:
+                sheet = book.sheet_by_name(bs_sheet)
+            elif ss_sheet:
+                sheet = book.sheet_by_name(ss_sheet)
+            elif ptp_sheet:
+                sheet = book.sheet_by_name(ptp_sheet)
+            else:
+                sheet = ""
+
             print "***************** sheet - ", sheet
             print "***************** no. of rows - ", sheet.nrows
             print "***************** 1st row - ", sheet.row(0)
@@ -2543,8 +2598,8 @@ class GISInventoryBulkImport(FormView):
             print "&&&&&&&&&&&&&&&&&"
             print len(keys)
             print "&&&&&&&&&&&&&&&&&"
-            keys_list = [str(x) for x in keys]
-            print keys_list
+            keys_list = [x.encode('utf-8') for x in keys]
+            print "******************** keys_list - ", keys_list
             valid_rows_list = []
             invalid_rows_list = []
             for row_index in xrange(1, sheet.nrows):
@@ -2553,45 +2608,178 @@ class GISInventoryBulkImport(FormView):
                 # print "***************************************************"
                 # print str(d['Make of Antenna'])
                 # print "***************************************************"
-                city = d['City']
-                state = d['State']
-                address = d['Address']
-                bs_name = d['BS Name']
-                type_of_bs = d['Type_Of_BS(Technology)']
-                site_type = d['Site_Type']
-                infra_provider = d['Infra Provider']
-                site_id = str(int(d['Site ID'])) if isinstance(d['Site ID'], float) else str(d['Site ID'])
-                building_height = d['Building_Height']
-                tower_height = d['Tower_Height']
-                latitude = d['Latitude']
-                longitude = d['Longitude']
-                idu_ip = d['IDU IP']
-                sector_name = d['Sector_name']
-                pmp = int(d['PMP']) if isinstance(d['PMP'], float) else d['PMP']
-                make_of_antenna = "#N/A" if isinstance(d['Make of Antenna'], int) else d['Make of Antenna']
-                antenna_polarization = d['Antenna Polarisation']
-                antenna_tilt = int(d['Antenna_Tilt']) if isinstance(d['Antenna_Tilt'], float) else d['Antenna_Tilt']
-                antenna_height = d['Antenna_Height']
-                antenna_beamwidth = int(d['Antenna_BeamWidth']) if isinstance(d['Antenna_BeamWidth'], float) else d['Antenna_BeamWidth']
-                azimuth = d['Azimuth']
-                installation_of_splitter = d['Installation of Splitter']
-                type_of_gps = d['Type of GPS']
-                bs_switch_ip = d['BS Switch IP']
-                aggregation_switch = d['Aggregation Switch']
-                aggregation_switch_port = d['Aggregation Switch Port']
-                bs_converter_ip = d['BS Converter IP']
-                pop_converter_ip = d['POP Converter IP']
-                converter_type = d['Converter Type']
-                bh_configured_on = d['BH Configured On Switch/Converter']
-                switch_or_converter_port = d['Switch/Converter Port']
-                bh_capacity = int(d['BH Capacity']) if isinstance(d['BH Capacity'], float) else d['BH Capacity']
-                bh_off_or_onnet = d['BH Offnet/Onnet']
-                backhaul_type = d['Backhaul Type']
-                bh_circuit_id = d['BH Circuit ID']
-                pe_hostname = d['PE Hostname']
-                pe_ip = d['PE IP']
-                dr_site = d['DR site']
-                ttsl_circuit_id = d['TTSL CIRCUIT ID']
+
+                # wimax bs fields but common with pmp bs
+                if 'City' in d.keys():
+                    city = d['City'] if d['City'] else ""
+                else:
+                    city = ""
+                if 'State' in d.keys():
+                    state = d['State'] if d['State'] else ""
+                else:
+                    state = ""
+                if 'Address' in d.keys():
+                    address = d['Address'] if d['Address'] else ""
+                else:
+                    address = ""
+                if 'BS Name' in d.keys():
+                    bs_name = d['BS Name'] if d['BS Name'] else ""
+                else:
+                    bs_name = ""
+                if 'Type_Of_BS(Technology)' in d.keys():
+                    type_of_bs = d['Type_Of_BS(Technology)'] if d['Type_Of_BS(Technology)'] else ""
+                else:
+                    type_of_bs = ""
+                if 'Site_Type' in d.keys():
+                    site_type = d['Site_Type'] if d['Site_Type'] else ""
+                else:
+                    site_type = ""
+                if 'Infra Provider' in d.keys():
+                    infra_provider = d['Infra Provider'] if d['Infra Provider'] else ""
+                else:
+                    infra_provider = ""
+                if 'Site ID' in d.keys():
+                    site_id = str(int(d['Site ID'])) if isinstance(d['Site ID'], float) else str(d['Site ID'])
+                else:
+                    site_id = ""
+                if 'Building_Height' in d.keys():
+                    building_height = d['Building_Height'] if d['Building_Height'] else ""
+                else:
+                    building_height = ""
+                if 'Tower_Height' in d.keys():
+                    tower_height = d['Tower_Height'] if d['Tower_Height'] else ""
+                else:
+                    tower_height = ""
+                if 'Latitude' in d.keys():
+                    latitude = d['Latitude'] if d['Latitude'] else ""
+                else:
+                    latitude = ""
+                if 'Longitude' in d.keys():
+                    longitude = d['Longitude'] if d['Longitude'] else ""
+                else:
+                    longitude = ""
+                if 'Sector_name' in d.keys():
+                    sector_name = d['Sector_name'] if d['Sector_name'] else ""
+                else:
+                    sector_name = ""
+                if 'Make of Antenna' in d.keys():
+                    make_of_antenna = "#N/A" if isinstance(d['Make of Antenna'], int) else d['Make of Antenna']
+                else:
+                    make_of_antenna = ""
+                if 'Antenna Polarisation' in d.keys():
+                    antenna_polarization = d['Antenna Polarisation'] if d['Antenna Polarisation'] else ""
+                else:
+                    antenna_polarization = ""
+                if 'Antenna_Tilt' in d.keys():
+                    antenna_tilt = int(d['Antenna_Tilt']) if isinstance(d['Antenna_Tilt'], float) else d['Antenna_Tilt']
+                else:
+                    antenna_tilt = ""
+                if 'Antenna_Height' in d.keys():
+                    antenna_height = d['Antenna_Height'] if d['Antenna_Height'] else ""
+                else:
+                    antenna_height = ""
+                if 'Antenna_BeamWidth' in d.keys():
+                    antenna_beamwidth = int(d['Antenna_BeamWidth']) if isinstance(d['Antenna_BeamWidth'], float) else d['Antenna_BeamWidth']
+                else:
+                    antenna_beamwidth = ""
+                if 'Azimuth' in d.keys():
+                    azimuth = d['Azimuth'] if d['Azimuth'] else ""
+                else:
+                    azimuth = ""
+                if 'Type of GPS' in d.keys():
+                    type_of_gps = d['Type of GPS'] if d['Type of GPS'] else ""
+                else:
+                    type_of_gps = ""
+                if 'BS Switch IP' in d.keys():
+                    bs_switch_ip = d['BS Switch IP'] if d['BS Switch IP'] else ""
+                else:
+                    bs_switch_ip = ""
+                if 'Aggregation Switch' in d.keys():
+                    aggregation_switch = d['Aggregation Switch'] if d['Aggregation Switch'] else ""
+                else:
+                    aggregation_switch = ""
+                if 'Aggregation Switch Port' in d.keys():
+                    aggregation_switch_port = d['Aggregation Switch Port'] if d['Aggregation Switch Port'] else ""
+                else:
+                    aggregation_switch_port = ""
+                if 'BS Converter IP' in d.keys():
+                    bs_converter_ip = d['BS Converter IP'] if d['BS Converter IP'] else ""
+                else:
+                    bs_converter_ip = ""
+                if 'POP Converter IP' in d.keys():
+                    pop_converter_ip = d['POP Converter IP'] if d['POP Converter IP'] else ""
+                else:
+                    pop_converter_ip = ""
+                if 'Converter Type' in d.keys():
+                    converter_type = d['Converter Type'] if d['Converter Type'] else ""
+                else:
+                    converter_type = ""
+                if 'BH Configured On Switch/Converter' in d.keys():
+                    bh_configured_on = d['BH Configured On Switch/Converter'] if d['BH Configured On Switch/Converter'] else ""
+                else:
+                    bh_configured_on = ""
+                if 'Switch/Converter Port' in d.keys():
+                    switch_or_converter_port = d['Switch/Converter Port'] if d['Switch/Converter Port'] else ""
+                else:
+                    switch_or_converter_port = ""
+                if 'BH Capacity' in d.keys():
+                    bh_capacity = int(d['BH Capacity']) if isinstance(d['BH Capacity'], float) else d['BH Capacity']
+                else:
+                    bh_capacity = ""
+                if 'BH Offnet/Onnet' in d.keys():
+                    bh_off_or_onnet = d['BH Offnet/Onnet'] if d['BH Offnet/Onnet'] else ""
+                else:
+                    bh_off_or_onnet = ""
+                if 'Backhaul Type' in d.keys():
+                    backhaul_type = d['Backhaul Type'] if d['Backhaul Type'] else ""
+                else:
+                    backhaul_type = ""
+                if 'BH Circuit ID' in d.keys():
+                    bh_circuit_id = d['BH Circuit ID'] if d['BH Circuit ID'] else ""
+                else:
+                    bh_circuit_id = ""
+                if 'PE Hostname' in d.keys():
+                    pe_hostname = d['PE Hostname'] if d['PE Hostname'] else ""
+                else:
+                    pe_hostname = ""
+                if 'PE IP' in d.keys():
+                    pe_ip = d['PE IP'] if d['PE IP'] else ""
+                else:
+                    pe_ip = ""
+                if 'DR site' in d.keys():
+                    dr_site = d['DR site'] if d['DR site'] else ""
+                else:
+                    dr_site = ""
+                if 'TTSL CIRCUIT ID' in d.keys():
+                    ttsl_circuit_id = d['TTSL CIRCUIT ID'] if d['TTSL CIRCUIT ID'] else ""
+                else:
+                    ttsl_circuit_id = ""
+
+                # wimax bs fields
+                if 'PMP' in d.keys():
+                    pmp = int(d['PMP']) if isinstance(d['PMP'], float) else d['PMP']
+                else:
+                    pmp = ""
+                if 'Installation of Splitter' in d.keys():
+                    installation_of_splitter = d['Installation of Splitter'] if d['Installation of Splitter'] else ""
+                else:
+                    installation_of_splitter = ""
+                if 'IDU IP' in d.keys():
+                    idu_ip = d['IDU IP'] if d['IDU IP'] else ""
+                else:
+                    idu_ip = ""
+
+                # pmp bs fields
+                if 'Sync Splitter Used(Y/N)' in d.keys():
+                    sync_splitter_used = d['Sync Splitter Used(Y/N)'] if d['Sync Splitter Used(Y/N)'] else ""
+                else:
+                    sync_splitter_used = ""
+                if 'ODU IP' in d.keys():
+                    odu_ip = d['ODU IP'] if d['ODU IP'] else ""
+                else:
+                    odu_ip = ""
+
+                # errors field for excel sheet validation errors
                 errors = ""
 
                 # dropdown lists
@@ -2600,11 +2788,11 @@ class GISInventoryBulkImport(FormView):
                 infra_provider_list = ['TVI', 'VIOM', 'INDUS', 'ATC', 'IDEA', 'QUIPPO', 'SPICE', 'TTML', 'TCL', 'TOWER VISION', 'RIL', 'WTTIL', 'OTHER']
                 make_of_antenna_list = ['MTI H Pol', 'Xhat', 'Andrew', 'MTI', 'Twin', 'Proshape']
                 antenna_polarisation_list = ['Vertical', 'Horizontal', 'Cross', 'Dual']
-                bh_off_or_onnet_list = ['OFFNET', 'ONNET', 'OFFNET+ONNET', 'OFFNET+ONNET UBR', 'ONNET+UBR', 'ONNET COLO','ONNET COLO+UBR']
+                bh_off_or_onnet_list = ['OFFNET', 'ONNET', 'OFFNET+ONNET', 'OFFNET+ONNET UBR', 'ONNET+UBR', 'ONNET COLO', 'ONNET COLO+UBR']
                 backhaul_type_list = ['SDH', 'Ethernet', 'E1', 'EoSDH', 'Dark Fibre', 'UBR']
                 pmp_list = [1, 2]
                 azimuth_angles_list = range(0, 361)
-                installation_of_splitter_list = ['Yes', 'No']
+                yes_or_no = ['Yes', 'No']
                 dr_site_list = ['Yes', 'No']
 
                 # regex for checking whether string contains only numbers and .(dot)
@@ -2620,6 +2808,7 @@ class GISInventoryBulkImport(FormView):
                 regex_alnum_hyphen = '^[a-zA-Z0-9-]+$'
                 regex_alnum_space = '^[a-zA-Z0-9\s]+$'
 
+                # wimax bs fields validations but common with pmp bs
                 # 'city' validation (must be alphabetical and can contain space)
                 if city:
                     if not re.match(regex_alpha_space, str(city).strip()):
@@ -2740,7 +2929,7 @@ class GISInventoryBulkImport(FormView):
 
                 # 'installation of splitter' validation (must be 'Yes' or 'No')
                 if installation_of_splitter:
-                    if installation_of_splitter.strip().lower() not in [x.lower() for x in installation_of_splitter_list]:
+                    if installation_of_splitter.strip().lower() not in [x.lower() for x in yes_or_no]:
                         errors += 'Installation of splitter must be from \'Yes\' or \'No\'.\n'
                 else:
                     errors += 'Installation of splitter must not be empty.\n'
@@ -2772,8 +2961,7 @@ class GISInventoryBulkImport(FormView):
                 if aggregation_switch_port:
                     if aggregation_switch_port != 'NA':
                         if not re.match(regex_alnum_comma_hyphen_fslash_underscore_space, aggregation_switch_port.strip()):
-                            errors += 'Aggregation Switch Port can only contains alphanumeric, underscore, hyphen, space, \
-                                       comma, forward slash.\n'
+                            errors += 'Aggregation Switch Port can only contains alphanumeric, underscore, hyphen, space, comma, forward slash.\n'
 
                 # 'bs converter ip' validation (must be an ip address)
                 if bs_converter_ip:
@@ -2810,8 +2998,7 @@ class GISInventoryBulkImport(FormView):
                 # (can only contains alphanumeric, underscore, hyphen, space, comma, forward slash)
                 if switch_or_converter_port:
                     if not re.match(regex_alnum_comma_hyphen_fslash_underscore_space, switch_or_converter_port.strip()):
-                        errors += 'Switch/Converter Port {} can only contains alphanumeric, underscore, hyphen, space, \
-                                   comma, forward slash.\n'.format(switch_or_converter_port)
+                        errors += 'Switch/Converter Port {} can only contains alphanumeric, underscore, hyphen, space, comma, forward slash.\n'.format(switch_or_converter_port)
                 else:
                     errors += 'Switch/Converter Port must not be empty.\n'
 
@@ -2860,6 +3047,21 @@ class GISInventoryBulkImport(FormView):
                     if dr_site.strip().lower() not in [x.lower() for x in dr_site_list]:
                         errors += 'DR Site {} must be from \'Yes\' or \'No\'.\n'.format(dr_site)
 
+                # pmp fields validations
+                # 'sync splitter used' validation (must be 'Yes' or 'No')
+                if sync_splitter_used:
+                    if sync_splitter_used.strip().lower() not in [x.lower() for x in yes_or_no]:
+                        errors += 'Sync splitter used must be from \'Yes\' or \'No\'.\n'
+                else:
+                    errors += 'Installation of splitter must not be empty.\n'
+
+                # 'odu ip' validation (must be an ip address)
+                if odu_ip:
+                    if not re.match(regex_ip_address, odu_ip.strip()):
+                        errors += 'ODU IP must be an ip address.'
+                else:
+                    errors += 'ODU IP must not be empty.\n'
+
                 # # 'ttsl circuit id' validation
                 # # (can only contains alphanumeric, underscore, space, comma)
                 # if ttsl_circuit_id:
@@ -2888,13 +3090,18 @@ class GISInventoryBulkImport(FormView):
             for row in valid_rows_list:
                 print "It's valid."
                 print "**********************************"
-                print row['errors']
+                print row
             print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"
             print "\n\n\n\n\n\n\n\n\n"
             print "InValid - "
             for row in invalid_rows_list:
                 print "**********************************"
-                print row['errors']
+                print row
+            hello = "Hello"
+            return render_to_response('bulk_import/gis_bulk_validator.html', {'form_data': json.dumps(valid_rows_list),
+                                                                              'headers': keys_list,
+                                                                              'hello': hello},
+                                      context_instance=RequestContext(self.request))
         else:
-            print "There are no BS & SS."
+            print "No sheet is selected."
         return super(GISInventoryBulkImport, self).get(self, form)

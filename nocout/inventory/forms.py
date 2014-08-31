@@ -1022,11 +1022,19 @@ class ThematicSettingsForm(forms.ModelForm):
 #*********************************** Bulk Import ***************************************
 class GISInventoryBulkImportForm(forms.Form):
     IMPORT_FILE_TYPES = ['.xlsx', '.xls']
-    SHEET_CHOICES = [('', 'Select')] + [(str(id), str(id)) for id in range(50)]
-
+    # SHEET_CHOICES = [('', 'Select')] + [(str(id), str(id)) for id in range(50)]
+    SHEET_CHOICES = (
+        ("", "Select"),
+        ("Wimax BS", "Wimax BS"),
+        ("Wimax SS", "Wimax SS"),
+        ("PMP BS", "Wimax BS"),
+        ("PMP SM", "PMP SM"),
+        ("Converter", "Converter"),
+        ("PTP", "PTP")
+    )
     file_upload = forms.FileField(label='Inventory Excel Sheet')
-    bs_sheet = forms.ChoiceField(label='BS Sheet', choices=SHEET_CHOICES, required=False)
-    ss_sheet = forms.ChoiceField(label='SS Sheet', choices=SHEET_CHOICES, required=False)
+    bs_sheet = forms.ChoiceField(label='Wimax/PMP BS Sheet', choices=SHEET_CHOICES, required=False)
+    ss_sheet = forms.ChoiceField(label='Wimax/PMP SS Sheet', choices=SHEET_CHOICES, required=False)
     ptp_sheet = forms.ChoiceField(label='PTP Sheet', choices=SHEET_CHOICES, required=False)
 
     def __init__(self, *args, **kwargs):
