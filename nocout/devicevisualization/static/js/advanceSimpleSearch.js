@@ -1,0 +1,400 @@
+/*Global Variables*/
+var advJustSearch_self = "",
+	gmapJustInstance = "",
+	setJustFilterApiUrl = "",
+	earthJustInstance = "",
+    filtersJustInfoArray = [],
+    templateJustData = "",
+    formJustElements = "",
+    elementsJustArray = [],
+    resultantJustObject = {},
+    appliedJustAdvFilter = [],
+    appliedJustAdvSearch_Active = [],
+    searchJustParameters = "",
+    lastJustSelectedValues = [];
+    searchJustquery_data=[];
+    result_Just_plot_devices=[], maxZoomLevel= 15;
+/**
+ * This class is used to create th filter form by calling the get_filter API & the call the set_filter API with the selected filters
+ * @class advanceSearchLib
+ * @uses jQuery
+ * @uses Select2
+ * Coded By :- Yogender Purohit
+ */
+function advanceJustSearchClass() {
+
+	/*Store the reference of current pointer in a global variable*/
+	advJustSearch_self = this; // Name of current pointer referencing element in all files should be different otherwise conflicts occurs
+
+
+    this.getFilterInfofrompagedata = function(domElemet, windowTitle, buttonId){
+
+    	//Get filter Data
+        filtersJustInfoArray= prepare_data_for_filter();
+
+        if(appliedJustAdvSearch_Active.length != 0) {
+			lastJustSelectedValues = appliedJustAdvSearch_Active;
+		}
+
+        var templateData = "", elementsArray = [];
+        templateData += '<div class="iframe-container"><div class="content-container"><div id="'+domElemet+'" class="advanceSearchContainer">';
+        templateData += '<form id="'+domElemet+'_form"><div class="form-group form-horizontal">';
+
+        formElements = "";
+        /*Reset the appliedJustAdvFilter*/
+        appliedJustAdvFilter = [];
+        appliedJustAdvSearch_Active = [];
+
+        for(var i=0;i<filtersJustInfoArray.length;i++) {
+
+            if(filtersJustInfoArray[i] != null) {
+
+                formElements += '<div class="form-group"><label for="'+filtersJustInfoArray[i].key+'" class="col-sm-4 control-label">';
+                formElements += filtersJustInfoArray[i].title;
+                formElements += '</label><div class="col-sm-8">';
+
+                var currentKey = $.trim(filtersJustInfoArray[i].key);
+                var elementType = $.trim(filtersJustInfoArray[i].element_type);
+                /*Check Element Type*/
+                if(elementType == "multiselect") {
+
+                    var filterValues = filtersJustInfoArray[i].values;
+                    if(filterValues.length > 0) {
+
+                                                formElements += '<select multiple class="multiSelectBox col-md-12" id="search_'+filtersJustInfoArray[i].key+'">';
+
+                        /*Condition for mapped tables to pass the ID in the values else pass the value*/
+                        if(currentKey == "device_group" || currentKey == "device_type" || currentKey == "device_technology" || currentKey == "device_vendor") {
+
+                            for(var j=0;j<filterValues.length;j++) {
+
+                                if(($.trim(filterValues[j].id) != null && $.trim(filterValues[j].value) != null) && ($.trim(filterValues[j].id) != "" && $.trim(filterValues[j].value) != "")) {
+
+                                    formElements += '<option value="'+filterValues[j].value+'">'+filterValues[j].value+'</option>';
+                                }
+                            }
+                        } else {
+
+                            for(var j=0;j<filterValues.length;j++) {
+
+                                if(($.trim(filterValues[j].id) != null && $.trim(filterValues[j].value) != null) && ($.trim(filterValues[j].id) != "" && $.trim(filterValues[j].value) != "")) {
+
+                                    formElements += '<option value="'+filterValues[j].id+'">'+filterValues[j].value+'</option>';
+                                }
+                            }
+                        }
+
+                        formElements += '</select>';
+                    } else {
+
+                        formElements += '<input type="text" id="search_'+filtersJustInfoArray[i].key+'" name="'+filtersJustInfoArray[i].key+'"  class="form-control"/>';
+                    }
+                } else if(elementType == "select") {
+
+                    var filterValues = filtersJustInfoArray[i].values;
+                    if(filterValues.length > 0) {
+
+                        formElements += '<select class="multiSelectBox col-md-12" id="search_'+filtersJustInfoArray[i].key+'">';
+
+                        for(var j=0;j<filterValues.length;j++) {
+
+                            formElements += '<option value="'+filterValues[j].id+'">'+filterValues[j].value+'</option>';
+                        }
+
+                        formElements += '</select>';
+                    } else {
+
+                        formElements += '<input type="text" id="search_'+filtersJustInfoArray[i].key+'" name="'+filtersJustInfoArray[i].key+'"  class="form-control"/>';
+                    }
+                }
+                else if(elementType == "radio") {
+
+                    var filterValues = filtersJustInfoArray[i].values;
+                    if(filterValues.length > 0) {
+
+                        for(var j=0;j<filterValues.length;j++) {
+
+                            formElements += '<label class="radio-inline"><input type="radio" id="radio_'+filterValues[j].id+'" class="radioField" value="'+filterValues[j].id+'" name="'+filtersJustInfoArray[i].key+'"> '+filterValues[j].value+'</label>';
+                        }
+                    } else {
+
+                        formElements += '<input type="text" id="search_'+filtersJustInfoArray[i].key+'" name="'+filtersJustInfoArray[i].key+'"  class="form-control"/>';
+                    }
+                } else if(elementType == "checkbox") {
+
+                    var filterValues = filtersJustInfoArray[i].values;
+                    if(filterValues.length > 0) {
+
+                        for(var j=0;j<filterValues.length;j++) {
+
+                            formElements += '<label class="checkbox-inline"><input type="checkbox" class="checkboxField" id="checkbox_'+filterValues[j].id+'" value="'+filterValues[j].id+'" name="'+filterValues[j].id+'"> '+filterValues[j].value+'</label>';
+                        }
+                    } else {
+
+                        formElements += '<input type="text" id="search_'+filtersJustInfoArray[i].key+'" name="'+filtersJustInfoArray[i].key+'"  class="form-control"/>';
+                    }
+                } else {
+
+                    formElements += '<input type="text" id="search_'+filtersJustInfoArray[i].key+'" name="'+filtersJustInfoArray[i].key+'"  class="form-control"/>';
+                }
+
+                formElements += '</div></div>';
+                elementsArray.push(formElements);
+                formElements = "";
+            }
+        }
+
+        templateData += elementsArray.join('');
+        templateData += '<div class="clearfix"></div></div><div class="clearfix"></div></form>';
+        templateData += '<div class="clearfix"></div></div></div><iframe class="iframeshim" frameborder="0" scrolling="no"></iframe></div><div class="clearfix"></div>';
+
+        $("#advSearchFormContainer").html(templateData);
+
+        if($("#advSearchContainerBlock").hasClass("hide")) {
+            $("#advSearchContainerBlock").removeClass("hide");
+        }
+
+        /*Initialize the select2*/
+        $(".advanceSearchContainer select").select2();
+
+        console.log(lastJustSelectedValues);
+        /*loop to show the last selected values*/
+        for(var k=0;k<lastJustSelectedValues.length;k++) {
+        	console.log($("#search_"+lastJustSelectedValues[k].field));
+        	$("#search_"+lastJustSelectedValues[k].field).select2("val", lastJustSelectedValues[k].value);
+        }
+	    /*Hide the spinner*/
+	    hideSpinner();
+
+    };
+
+    this.getInputArray= function() {
+    	var ob= {};
+    	$("form#searchInfoModal_form > div.form-group .form-group").each(function(i , formEl) {
+    		var key= $(formEl).find('label.control-label').html();
+
+    		var selectedValues= [];
+
+    		$(formEl).find('ul.select2-choices li.select2-search-choice').each(function(i, selectedli) {
+    			selectedValues.push($(selectedli).find('div').html());
+    		});
+
+    		ob[key]= selectedValues;
+
+    		var selectedSelectId= $(formEl).find('select').select2('val');
+
+    		var forAttr= $(formEl).find('label.control-label').attr('for');
+    		appliedJustAdvSearch_Active.push({field: forAttr, value: selectedSelectId});
+    	});
+
+    	
+    	return ob;
+    }
+
+    /**
+	 * This method generates get parameter for setfilter API & call setFilter function
+	 * @method callSetFilter
+	 */
+	this.searchAndCenterData = function(main_devices_data_gmaps) {
+
+		var selectedInputs= advJustSearch_self.getInputArray();
+
+
+		function checkIfValid(deviceJson) {
+			for(var key in selectedInputs) {
+				if(selectedInputs.hasOwnProperty(key)) {
+					if(selectedInputs[key].length) {
+						if(key==='BS Name') {
+							if(selectedInputs[key].indexOf(deviceJson.name) !== -1) {
+							} else {
+								return false;
+							}
+						}
+						if(key==='Technology') {
+							var deviceTechnology= deviceJson.sector_ss_technology;
+							var deviceTechnologyArray= deviceTechnology.split(" ");
+							var isTechnologyPresent= false;
+							for(var z=0; z< deviceTechnologyArray.length; z++) {
+								if(selectedInputs[key].indexOf(deviceTechnologyArray[z]) !== -1) {
+									isTechnologyPresent= true;
+								}	
+							}
+
+							if(!isTechnologyPresent) {
+								return false;
+							}
+						}
+
+						if(key==='Vendor') {
+							var deviceVendor= deviceJson.sector_ss_vendor;
+							var deviceVendorArray= deviceVendor.split(" ");
+							var isVendorPresent= false;
+							for(var z=0; z< deviceVendorArray.length; z++) {
+								if(selectedInputs[key].indexOf(deviceVendorArray[z]) !== -1) {
+									isVendorPresent= true;
+								}	
+							}
+
+							if(!isVendorPresent) {
+								return false;
+							}
+						}
+						if(key === 'BS State') {
+							if(selectedInputs[key].indexOf(deviceJson.data.state) !== -1) {
+							} else {
+								return false;
+							}							
+						}
+
+						if(key === 'BS City') {
+							if(selectedInputs[key].indexOf(deviceJson.data.city) !== -1) {
+							} else {
+								return false;
+							}	
+						}
+
+						if(key === 'BS Latitude') {
+							if(selectedInputs[key].indexOf(deviceJson.data.lat) !== -1) {
+							} else {
+								return false;
+							}	
+						}
+
+						if(key === 'BS Longitude') {
+							if(selectedInputs[key].indexOf(deviceJson.data.lon) !== -1) {
+							} else {
+								return false;
+							}	
+						}
+
+						if(key === 'Sector Configured On') {
+
+							var deivceConfiguredOn= deviceJson.sector_configured_on_devices;
+							var deivceConfiguredOnArray= deivceConfiguredOn.split(" ");
+							var isSectorIsConfigured= false;
+							for(var z=0; z< deivceConfiguredOnArray.length; z++) {
+								if(selectedInputs[key].indexOf(deivceConfiguredOnArray[z]) !== -1) {
+									isSectorIsConfigured= true;
+								}	
+							}
+
+							if(!isSectorIsConfigured) {
+								return false;
+							}
+						}
+
+						if(key === 'Circuit Id') {
+							var deviceCircuitIDs= deviceJson.circuit_ids;
+							var deviceCircuitIDSArray= deviceCircuitIDs.split(" ");
+							var isCircuitPresent= false;
+							for(var z=0; z< deviceCircuitIDSArray.length; z++) {
+								if(selectedInputs[key].indexOf(deviceCircuitIDSArray[z]) !== -1) {
+									isCircuitPresent= true;
+								}	
+							}
+
+							if(!isCircuitPresent) {
+								return false;
+							}
+						}
+					}
+				}
+			}
+			return true;
+		}
+
+		var searchedStations= [];
+		var bounds= new google.maps.LatLngBounds();
+		for(var i=0; i< main_devices_data_gmaps.length; i++) {
+			if(checkIfValid(main_devices_data_gmaps[i])) {
+				searchedStations.push(main_devices_data_gmaps[i]);
+				bounds.extend(new google.maps.LatLng(main_devices_data_gmaps[i]['data']['lat'], main_devices_data_gmaps[i]['data']['lon']));
+			}
+		}
+		if(searchedStations.length) {
+			mapInstance.fitBounds(bounds);
+			if(mapInstance.getZoom() >= maxZoomLevel) {
+				mapInstance.setZoom(maxZoomLevel);
+			}
+		} else {
+			$.gritter.add({
+				// (string | mandatory) the heading of the notification
+				title: 'GIS : Search',
+				// (string | mandatory) the text inside the notification
+				text: 'No data found for the given Searchterm.',
+				// (bool | optional) if you want it to fade out on its own or just sit there
+				sticky: false
+			});
+
+			mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
+			mapInstance.setZoom(5);
+		}
+
+		hideSpinner();
+		$("#advSearchFormContainer").html("");
+		if(!($("#advSearchContainerBlock").hasClass("hide"))) {
+			$("#advSearchContainerBlock").addClass("hide");
+		}
+		// function searchAndCenter(inputVal) {
+		// 	var searchedDevicesArray= [];
+		// 	var searchedDevicesLatLong= [];
+		// 	for(var i=0; i< main_devices_data_gmaps.length; i++) {
+		// 		if((main_devices_data_gmaps[i]['sector_ss_technology'].toLowerCase()).indexOf(inputVal.toLowerCase()) !== -1 || (main_devices_data_gmaps[i]['data']['vendor'].toLowerCase()).indexOf(inputVal.toLowerCase()) !== -1 || (main_devices_data_gmaps[i]['data']['city'].toLowerCase()).indexOf(inputVal.toLowerCase()) !== -1 || (main_devices_data_gmaps[i]['data']['state'].toLowerCase()).indexOf(inputVal.toLowerCase()) !== -1) {
+		// 			searchedDevicesArray.push(main_devices_data_gmaps[i]);
+		// 			searchedDevicesLatLong.push(new google.maps.LatLng(main_devices_data_gmaps[i]['data']['lat'], main_devices_data_gmaps[i]['data']['lon']));
+		// 		}
+
+		// 		var bsSectors= main_devices_data_gmaps[i]['data']['param']['sector'];
+		// 		for(var j=0; j< bsSectors.length; j++) {
+		// 			if((bsSectors[j]['technology'].toLowerCase()).indexOf(inputVal.toLowerCase()) !== -1 || (bsSectors[j]['info'][14]['value'].toLowerCase()) !== -1 || (bsSectors[j]['info'][15]['value'].toLowerCase()) !== -1) {
+		// 				searchedDevicesArray.push(bsSectors[j]);
+		// 			}
+
+		// 			var bsSubStations= bsSectors[j]['sub_station'];
+		// 			for(var k=0; k< bsSubStations.length; k++) {
+		// 				if((bsSubStations[k]['data']['technology'].toLowerCase()).indexOf(inputVal.toLowerCase()) !== -1) {
+		// 					searchedDevicesArray.push(bsSubStations[k]);
+		// 					searchedDevicesLatLong.push(new google.maps.LatLng(bsSubStations[k]['data']['lat'], bsSubStations[k]['data']['lon']));
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+
+		// 	var bounds= new google.maps.LatLngBounds();
+		// 	for(var i=0; i< searchedDevicesLatLong.length; i++) {
+		// 		bounds.extend(searchedDevicesLatLong[i]);
+		// 	}
+
+		// 	if(searchedDevicesLatLong.length) {
+		// 		mapInstance.fitBounds(bounds);	
+		// 	} else {
+		// 		$.gritter.add({
+		// 			// (string | mandatory) the heading of the notification
+		// 			title: 'GIS : Search',
+		// 			// (string | mandatory) the text inside the notification
+		// 			text: 'No data found for the given Searchterm.',
+		// 			// (bool | optional) if you want it to fade out on its own or just sit there
+		// 			sticky: false
+		// 		});
+		// 	}
+		// }
+
+	}
+
+	/**
+	 * This function reset all variable used in the process
+	 * @class advanceSearchLib
+	 * @method resetVariables
+	 */
+	this.resetVariables = function() {
+
+		/*Reset the variable*/
+		filtersJustInfoArray = [];
+		templateJustData = "";
+		formJustElements = "";
+		elementsJustArray = [];
+		resultantJustObject = {};
+		searchJustParameters = "";
+		appliedJustAdvSearch_Active= [];
+	};
+}

@@ -81,14 +81,24 @@ class DeviceFilterApi(View):
             }
         }
 
+        vendor_list = []
         technology_data,vendor_data,state_data,city_data=[],[],[],[]
         for device_technology in DeviceTechnology.objects.all():
             technology_data.append({ 'id':device_technology.id,
                                      'value':device_technology.name })
-        for vendor in DeviceVendor.objects.all():
-            vendor_data.append({ 'id':vendor.id,
-                                     'value':vendor.name })
-        #
+            vendors = device_technology.device_vendors.all()
+            for vendor in vendors:
+                if vendor not in vendor_list:
+                    vendor_list.append(vendor.id)
+                    vendor_data.append({ 'id':vendor.id,
+                                         'value':vendor.name,
+                                         'tech_id': device_technology.id,
+                                         'tech_name': device_technology.name
+                    })
+        # for vendor in DeviceVendor.objects.all():
+        #     vendor_data.append({ 'id':vendor.id,
+        #                              'value':vendor.name })
+        # #
         # for state in State.objects.all():
         #     state_data.append({ 'id':state.id,
         #                              'value':state.state_name })

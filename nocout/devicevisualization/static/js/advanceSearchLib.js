@@ -76,7 +76,7 @@ function advanceSearchClass() {
 					appliedAdvFilter = [];
 
 					for(var i=0;i<filtersInfoArray.length;i++) {
-
+console.log(filtersInfoArray);
 						if(filtersInfoArray[i] != null) {
 
 							formElements += '<div class="form-group"><label for="'+filtersInfoArray[i].key+'" class="col-sm-4 control-label">';
@@ -283,7 +283,7 @@ function advanceSearchClass() {
         appliedAdvFilter_Active = [];
 
         for(var i=0;i<filtersInfoArray.length;i++) {
-
+console.log(lastSelectedValues);
             if(filtersInfoArray[i] != null) {
 
                 formElements += '<div class="form-group"><label for="'+filtersInfoArray[i].key+'" class="col-sm-4 control-label">';

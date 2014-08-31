@@ -21,10 +21,36 @@ function getPageType() {
     }
 }
 
+//defining global varible for city options
+city_options = []
+
 /*This event trigger when state dropdown value is changes*/
 $("#state").change(function(e) {
 
     getPageType();
+
+    var state_id = $(this).val();
+    if (state_id != ""){
+        $("#city").children().show();
+        for (var j =0 ; j < city_options.length; j++){
+            $("#city").append(city_options[j]);
+        }
+        var city_obj = $("#city").children('option:not([state_id='+state_id+'])');
+//        city_obj.hide();
+//        city_obj.attr('disabled', true);
+        $("#city").prepend('<option value="">Select City</option>');
+        city_obj.each(function(){
+            city_options.push($(this));
+            $(this).remove();
+        });
+    }
+    else{
+        $("#city").children().show();
+        for (var j =0 ; j < city_options.length; j++){
+            $("#city").append(city_options[j]);
+        }
+//        $("#city").children('option:not([state_id='+state_id+'])').attr('disabled', false);
+    }
     networkMapInstance.makeFiltersArray(mapPageType);
 });
 
@@ -32,6 +58,10 @@ $("#state").change(function(e) {
 $("#city").change(function(e) {
 
     getPageType();
+    if ( $(this).val() != ""){
+        var state_id = $("#city :selected").attr("state_id");
+        $("#state").val(state_id);
+    }
     networkMapInstance.makeFiltersArray(mapPageType);
 });
 
@@ -46,6 +76,10 @@ $("#vendor").change(function(e) {
 $("#technology").change(function(e) {
 
     getPageType();
+    var tech_id = $(this).val();
+    if (tech_id != ""){
+        $("#vendor").val(tech_id);
+    }
     networkMapInstance.makeFiltersArray(mapPageType);
 });
 
@@ -61,6 +95,7 @@ $("#resetFilters").click(function(e) {
         $("#vendor").val($("#vendor option:first").val());
         $("#state").val($("#state option:first").val());
         $("#city").val($("#city option:first").val());
+        isCallCompleted = 1;
     }    
 
     if(window.location.pathname.indexOf("google_earth") > -1) {
@@ -104,9 +139,37 @@ $("#resetFilters").click(function(e) {
             networkMapInstance.resetVariables_gmap();
 
             /*Call the make network to create the BS-SS network on the google map*/
-            networkMapInstance.getDevicesData_gmap();
+            // networkMapInstance.getDevicesData_gmap();
+            networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
         }
     }
+});
+
+function showAdvSearch() {
+    showSpinner();
+    $("#advFilterContainerBlock").hide();
+    $("#advSearchContainerBlock").show();
+    advJustSearch.getFilterInfofrompagedata("searchInfoModal", "Advance Search", "advSearchBtn");
+}
+
+$("#setAdvSearchBtn").click(function(e) {
+    showSpinner();
+    advJustSearch.searchAndCenterData(main_devices_data_gmaps);
+});
+
+$("#cancelAdvSearchBtn").click(function(e) {
+    $("#advFilterFormContainer").html("");
+
+    if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
+        $("#advSearchContainerBlock").addClass("hide");
+    }
+    advJustSearch.resetVariables();
+});
+
+$("#resetSearchForm").click(function(e) {
+    $("#searchInfoModal_form").find('select').each(function(i, el) {$(el).select2("val", [])});
+    advJustSearch.resetVariables();
+    $("#setAdvSearchBtn").trigger('click');
 });
 
 /**
@@ -117,6 +180,9 @@ function showAdvFilters() {
 
     /*Show the spinner*/
     showSpinner();
+
+    $("#advSearchContainerBlock").hide();
+    $("#advFilterContainerBlock").show();
 //  advSearch.getFilterInfo("filterInfoModal","Advance Filters","advFilterBtn",getFilterApi,setFilterApi);
     advSearch.getFilterInfofrompagedata("filterInfoModal", "Advance Filters", "advFilterBtn");
 }
