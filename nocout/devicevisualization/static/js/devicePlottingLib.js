@@ -75,7 +75,7 @@ var mapInstance = "",
 	distance_label = {},
 	isFreeze = 0;
     map_points_array = [];
-    map_point_count = 0, sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 10;
+    map_point_count = 0, sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 13, zoomAfterRightClickComes= 10;
 
 
 function displayCoordinates(pnt) {
@@ -85,6 +85,38 @@ function displayCoordinates(pnt) {
       var lng = pnt.lng();
       lng = lng.toFixed(4);
       coordsLabel.html("Latitude: " + lat + "  Longitude: " + lng);
+}
+
+/*
+Function is used to Disable Advance Search, Advance Filter Button when Call for data is going on.
+When call is completed, we use the same function to enable Button by passing 'no' in parameter.
+ */
+function disableAdvanceButton(status) {
+	var buttonEls= ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn'];
+	var selectBoxes= ['technology', 'vendor', 'state', 'city'];
+	var textBoxes= ['searchTxt'];
+	var disablingBit= false;
+	if(status=== undefined) {
+		disablingBit= true;
+	}
+
+	for(var i=0; i< buttonEls.length; i++) {
+		$('#'+buttonEls[i]).prop('disabled', disablingBit);
+	}
+
+	for(var i=0; i< selectBoxes.length; i++) {
+		document.getElementById(selectBoxes[i]).disabled = disablingBit;	
+	}
+
+	for(var i=0; i< textBoxes.length; i++) {
+		document.getElementById(textBoxes[i]).disabled = disablingBit;
+	}
+}
+
+function openBSRightClickMenu(event) {
+	if(mapInstance.getZoom() > zoomAfterRightClickComes) {
+
+	}
 }
 
 /**
@@ -140,6 +172,8 @@ function devicePlottingClass_gmap() {
             google.maps.event.addListener(mapInstance, 'mousemove', function (event) {
                 displayCoordinates(event.latLng);
             });
+
+
 
             google.maps.event.addListener(mapInstance, 'zoom_changed', function() {
             	var zoom = mapInstance.getZoom();
@@ -218,6 +252,7 @@ function devicePlottingClass_gmap() {
 				/*Open the info window*/
 				infowindow.open(mapInstance);
 			});
+
 			/*Event when the markers cluster expands or spiderify*/
 			oms.addListener('spiderfy', function(e,markers) {
 				/*Change the markers icon from cluster icon to thrie own icon*/
@@ -338,6 +373,9 @@ function devicePlottingClass_gmap() {
 								}
 
 								if(counter == -999) {
+									//display advance search, filter etc button when call is going on.
+									disableAdvanceButton();
+
 									counter = Math.floor(devicesCount / showLimit);
 								}
 
@@ -380,6 +418,8 @@ function devicePlottingClass_gmap() {
 							} else {
 								isCallCompleted = 1;
 								gmap_self.plotDevices_gmap([],"base_station");
+
+								disableAdvanceButton('no');
 
 								// $.gritter.add({
 						  //           // (string | mandatory) the heading of the notification
@@ -433,6 +473,7 @@ function devicePlottingClass_gmap() {
 						isCallCompleted = 1;
 						gmap_self.plotDevices_gmap([],"base_station");
 
+						disableAdvanceButton('no');
 						// $.gritter.add({
 				  //           // (string | mandatory) the heading of the notification
 				  //           title: 'GIS',
@@ -478,6 +519,8 @@ function devicePlottingClass_gmap() {
 			/*Ajax call not completed yet*/
 			isCallCompleted = 1;
 			gmap_self.plotDevices_gmap([],"base_station");
+
+			disableAdvanceButton('no');
 			
 			/*Recall the server after particular timeout if system is not freezed*/
 			setTimeout(function(e){
@@ -521,7 +564,15 @@ function devicePlottingClass_gmap() {
 			};
 
 			/*Create BS Marker*/
-		    var bs_marker = new google.maps.Marker(bs_marker_object);		    
+		    var bs_marker = new google.maps.Marker(bs_marker_object);
+
+		    /*
+		    Add Context menu event to the marker
+		     */
+		    google.maps.event.addListener(bs_marker, 'rightclick', function(event) {
+		    	openBSRightClickMenu(event);
+		    	event.preventDefault();
+		    });
 			
 			/*Sectors Array*/
 			var sector_array = bs_ss_devices[i].data.param.sector;
@@ -3378,6 +3429,83 @@ function prepare_data_for_filter(){
     return filter_data
 
 }//function closed
+
+
+function getDataForAdvanceSearch() {
+	//extra form elements that will be showing in Advance Search. We will get other Elements like City, Vendor, Technology from prepare_data_for_filter();
+	var filter_data_bs_name_collection=[],
+	filter_data_bs_lat_collection =[],
+	filter_data_bs_lon_collection=[],
+	filter_data_sector_configured_on_collection=[];
+	filter_data_sector_circuit_ids_collection=[];
+
+    if(main_devices_data_gmaps.length >0) {
+    	for (i=0; i< main_devices_data_gmaps.length; i++) {
+
+    		filter_data_bs_name_collection.push({ 'id':[main_devices_data_gmaps[i].id], 'value':main_devices_data_gmaps[i].name });
+
+    		filter_data_bs_lat_collection.push({ 'id':[main_devices_data_gmaps[i].id] , 'value':main_devices_data_gmaps[i].data.lat });
+
+    		filter_data_bs_lon_collection.push({ 'id':[main_devices_data_gmaps[i].id], 'value':main_devices_data_gmaps[i].data.lon });
+
+    		filter_data_sector_configured_on_value= main_devices_data_gmaps[i].sector_configured_on_devices.split(' ').filter(function (n) { return n != ""});
+
+    		for (var k=0;k<filter_data_sector_configured_on_value.length;k++) {
+    			filter_data_sector_configured_on_collection.push({ 'id':[main_devices_data_gmaps[i].id], 'value':filter_data_sector_configured_on_value[k] });
+    		}
+
+    		filter_data_sector_circuit_ids_values= main_devices_data_gmaps[i].circuit_ids.split(' ').filter(function (n) { return n != ""});
+
+    		for (var k=0;k<filter_data_sector_circuit_ids_values.length;k++){
+    			filter_data_sector_circuit_ids_collection.push({ 'id':[main_devices_data_gmaps[i].id], 'value':filter_data_sector_circuit_ids_values[k] });
+    		}
+    	}
+
+    	var advanceSearchFilterData= prepare_data_for_filter();
+
+    	advanceSearchFilterData.push({
+    			'element_type':'multiselect',
+    			'field_type':'string',
+    			'key':'name',
+    			'title':'BS Name',
+    			'values':filter_data_bs_name_collection
+    		});
+
+    	advanceSearchFilterData.push({
+    			'element_type':'multiselect',
+    			'field_type':'string',
+    			'key':'latitude',
+    			'title':'BS Latitude',
+    			'values':filter_data_bs_lat_collection
+    		});
+
+    	advanceSearchFilterData.push({
+    			'element_type':'multiselect',
+    			'field_type':'string',
+    			'key':'longitude',
+    			'title':'BS Longitude',
+    			'values':filter_data_bs_lon_collection
+    		});
+
+    	advanceSearchFilterData.push({
+    			'element_type':'multiselect',
+    			'field_type':'string',
+    			'key':'sector_configured_on',
+    			'title':'Sector Configured On',
+    			'values':filter_data_sector_configured_on_collection
+    		});
+
+    	advanceSearchFilterData.push({
+    			'element_type':'multiselect',
+    			'field_type':'string',
+    			'key':'circuit_ids',
+    			'title':'Circuit Id',
+    			'values':filter_data_sector_circuit_ids_collection
+    		});
+    	
+    }//if condition closed
+    return advanceSearchFilterData;
+}
 
 
 
