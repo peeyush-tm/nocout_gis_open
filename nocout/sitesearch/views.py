@@ -16,6 +16,8 @@ from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 from nocout.utils import logged_in_user_organizations
 logger = logging.getLogger(__name__)
 
+from random import randint
+
 # removing duplicate entries in the dictionaries in a list
 removing_duplicate_entries = lambda lst: [dict(t) for t in set([tuple(sorted(d.items())) for d in lst])]
 
@@ -312,7 +314,7 @@ def prepare_result(base_station_id):
             'lat': base_station.latitude,
             'lon': base_station.longitude,
             "markerUrl": 'static/img/marker/slave01.png',
-            'antena_height': 0,
+            'antenna_height': 0,
             'vendor':','.join(sectors[0].bs_technology.device_vendors.values_list('name', flat=True)),
             'city': City.objects.get(id=base_station.city).city_name if base_station.city else 'N/A',
             'state': State.objects.get(id=base_station.state).state_name if base_station.state else 'N/A',
@@ -452,12 +454,29 @@ def prepare_result(base_station_id):
                                                              'radius': sector.cell_radius if sector.cell_radius else 0,
                                                              'azimuth_angle': sector.antenna.azimuth_angle if sector.antenna else 0,
                                                              'beam_width': sector.antenna.beam_width if sector.antenna else 0,
-                                                             "markerUrl": "static/img/marker/icon4_small.png",
+                                                             "markerUrl": tech_marker_url_master(sector.bs_technology.name) if sector.bs_technology else "static/img/marker/icon2_small.png",
                                                              'orientation': sector.antenna.polarization if sector.antenna else "vertical",
                                                              'technology':sector.bs_technology.name if sector.bs_technology else 'N/A',
                                                              'vendor': DeviceVendor.objects.get(id=sector.sector_configured_on.device_vendor).name,
                                                              'sector_configured_on':sector.sector_configured_on.device_name,
                                                              'circuit_id':None,
+                                                             'antenna_height': sector.antenna.height if sector.antenna else randint(40,70),
+                                                             'device_info':[
+
+                                                                 {
+                                                                     "name": "device_name",
+                                                                     "title": "Device Name",
+                                                                     "show": 1,
+                                                                     "value": sector.sector_configured_on.device_name
+                                                                 },
+                                                                 {
+                                                                     "name": "device_id",
+                                                                     "title": "Device ID",
+                                                                     "show": 0,
+                                                                     "value": sector.sector_configured_on.id
+                                                                 }
+
+                                                             ],
                                                              'info': [{
                                                                           'name': 'sector_name',
                                                                           'title': 'Sector Name',
@@ -584,7 +603,7 @@ def prepare_result(base_station_id):
                                 'data': {
                                     "lat": substation.latitude if substation.latitude else substation_device.latitude,
                                     "lon": substation.longitude if substation.longitude else substation_device.longitude,
-                                    "antenna_height": substation.antenna.height if substation.antenna else 0,
+                                    "antenna_height": substation.antenna.height if substation.antenna else randint(40,70),
                                     "technology":sector.bs_technology.name,
                                     "markerUrl": tech_marker_url_slave(sector.bs_technology.name),
                                     "show_link": 1,

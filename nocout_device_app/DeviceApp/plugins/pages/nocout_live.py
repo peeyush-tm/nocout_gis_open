@@ -1,5 +1,5 @@
-import nocout_live
+import nocout_live_bulk
 
 pagehandlers.update({
-	"nocout_live": nocout_live.main	
+	"nocout_live": nocout_live_bulk.main	
 })

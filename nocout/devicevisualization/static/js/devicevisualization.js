@@ -145,6 +145,35 @@ $("#resetFilters").click(function(e) {
     }
 });
 
+function showAdvSearch() {
+    showSpinner();
+    $("#advFilterContainerBlock").hide();
+    $("#advSearchContainerBlock").show();
+    advJustSearch.getFilterInfofrompagedata("searchInfoModal", "Advance Search", "advSearchBtn");
+}
+
+$("#setAdvSearchBtn").click(function(e) {
+    showSpinner();
+    advJustSearch.showNotification();
+    advJustSearch.searchAndCenterData(main_devices_data_gmaps);
+});
+
+$("#cancelAdvSearchBtn").click(function(e) {
+    $("#advFilterFormContainer").html("");
+
+    if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
+        $("#advSearchContainerBlock").addClass("hide");
+    }
+    // advJustSearch.resetVariables();
+});
+
+$("#resetSearchForm").click(function(e) {
+    $("#searchInfoModal_form").find('select').each(function(i, el) {$(el).select2("val", [])});
+    advJustSearch.resetVariables();
+    $("#setAdvSearchBtn").trigger('click');
+    advJustSearch.hideNotification();
+});
+
 /**
  * This function triggers when "Advance Filters" button is pressed
  * @method showAdvFilters
@@ -153,6 +182,9 @@ function showAdvFilters() {
 
     /*Show the spinner*/
     showSpinner();
+
+    $("#advSearchContainerBlock").hide();
+    $("#advFilterContainerBlock").show();
 //  advSearch.getFilterInfo("filterInfoModal","Advance Filters","advFilterBtn",getFilterApi,setFilterApi);
     advSearch.getFilterInfofrompagedata("filterInfoModal", "Advance Filters", "advFilterBtn");
 }

@@ -76,7 +76,7 @@ function advanceSearchClass() {
 					appliedAdvFilter = [];
 
 					for(var i=0;i<filtersInfoArray.length;i++) {
-
+console.log(filtersInfoArray);
 						if(filtersInfoArray[i] != null) {
 
 							formElements += '<div class="form-group"><label for="'+filtersInfoArray[i].key+'" class="col-sm-4 control-label">';
@@ -283,7 +283,7 @@ function advanceSearchClass() {
         appliedAdvFilter_Active = [];
 
         for(var i=0;i<filtersInfoArray.length;i++) {
-
+console.log(lastSelectedValues);
             if(filtersInfoArray[i] != null) {
 
                 formElements += '<div class="form-group"><label for="'+filtersInfoArray[i].key+'" class="col-sm-4 control-label">';
@@ -593,48 +593,122 @@ function advanceSearchClass() {
 //
 //				appliedAdvFilter.push(resultantObject);
 //			}
-        var direct_search_options= ['name','city', 'state','latitude','longitude'];
-        var direct_search_bs_ids= [];
-        var depth_search_bs_ids= [];
+        var search_options= ['technology','vendor', 'city', 'state'];
+        city_search_bs_ids =[];
+        state_search_bs_ids=[];
+        technology_search_bs_ids=[];
+        vendor_search_bs_ids=[];
+//        var direct_search_bs_ids= [];
+//        var depth_search_bs_ids= [];
         for(var a=0; a<appliedAdvFilter.length; a++)
         {
-            if($.inArray(appliedAdvFilter[a].selectId, direct_search_options) >=0)
+            if(appliedAdvFilter[a].selectId == search_options[2])
             {
-                direct_search_bs_ids=direct_search_bs_ids.concat(appliedAdvFilter[a].ids)
+                city_search_bs_ids= city_search_bs_ids.concat(appliedAdvFilter[a].ids)
             }
-            else
+            else if(appliedAdvFilter[a].selectId == search_options[3])
             {
-                depth_search_bs_ids=depth_search_bs_ids.concat(appliedAdvFilter[a].ids)
+                state_search_bs_ids= state_search_bs_ids.concat(appliedAdvFilter[a].ids)
 
+            }else if(appliedAdvFilter[a].selectId == search_options[0])
+            {
+                technology_search_bs_ids= technology_search_bs_ids.concat(appliedAdvFilter[a].ids)
+
+            }else if(appliedAdvFilter[a].selectId == search_options[1])
+            {
+                vendor_search_bs_ids= vendor_search_bs_ids.concat(appliedAdvFilter[a].ids)
             }
         }
-        direct_search_bs_ids= advSearch_self.unique_list(direct_search_bs_ids);
+        var total_ids_list=[];
 
-        /*Intersection of BS ids.The advance filters are in or condition so, depth search is only required for the
-        unique ids so there by calculating interection between two arrays*/
-        if (depth_search_bs_ids.length>0){
-            depth_search_bs_ids= (direct_search_bs_ids).concat(depth_search_bs_ids);
-            depth_search_bs_ids= advSearch_self.unique_list(depth_search_bs_ids);
+        function total_ids(array_ids){
+            if (array_ids.length>0){
+                total_ids_list.push(array_ids)
+            }
         }
 
-//        appliedAdvFilter= advSearch_self.unique_list(appliedAdvFilter);
-		/*Stringify the object array to pass it in the query parameters for in set filter API*/
+        total_ids(city_search_bs_ids);
+        total_ids(state_search_bs_ids);
+        total_ids(technology_search_bs_ids);
+        total_ids(vendor_search_bs_ids);
 
-		/*call the setFilters function with the search parameters & setFilters API url*/
-        if (direct_search_bs_ids.length>0){
-            console.log('direct_search_bs_ids');
-		    direct_search_bs_ids = JSON.stringify(direct_search_bs_ids);
-		    advSearch_self.setFilters(direct_search_bs_ids, 'direct' );
+        /*Taking out the intersection of all the ids available from the search option.*/
+        function containsAll() {
+            var output = [];
+            var cntObj = {};
+            var array, item, cnt;
+            // for each array passed as an argument to the function
+            for (var i = 0; i < arguments.length; i++) {
+                array = arguments[i];
+                // for each element in the array
+                for (
+                    var j = 0; j < array.length; j++) {
+                    item = "-" + array[j];
+                    cnt = cntObj[item] || 0;
+                    // if cnt is exactly the number of previous arrays,
+                    // then increment by one so we count only one per array
+                    if (cnt == i) {
+                        cntObj[item] = cnt + 1;
+                    }
+                }
+            }
+            // now collect all results that are in all arrays
+            for (item in cntObj) {
+                if (cntObj.hasOwnProperty(item) && cntObj[item] === arguments.length) {
+                    output.push(item.substring(1));
+                }
+            }
+            return(output);
         }
-        if (depth_search_bs_ids.length>0){
-            console.log('depth_search_bs_ids');
-		    depth_search_bs_ids = JSON.stringify(depth_search_bs_ids);
-		    advSearch_self.setFilters(depth_search_bs_ids, 'depth' );
+        var result_ids = containsAll.apply(this, total_ids_list);
+
+        if (technology_search_bs_ids.length>0 || vendor_search_bs_ids.length){
+		    result_ids = JSON.stringify(result_ids);
+		    advSearch_self.setFilters(result_ids, 'depth' );
+        }else{
+            result_ids = JSON.stringify(result_ids);
+		    advSearch_self.setFilters(result_ids, 'direct' );
         }
+
+
+//        /*Unique Direct Search Ids*/
+//        direct_search_bs_ids= advSearch_self.unique_list(direct_search_bs_ids);
+//        /*Unique Depth Search Ids*/
+//        depth_search_bs_ids= advSearch_self.unique_list(depth_search_bs_ids);
+//
+//
+//        /* Intersection of BS ids. The advance filters are in 'AND' condition.
+//        So there by calculating intersection between two arrays */
+//        /*If the direct search id is empty then the intersection between them will bw empty array.*/
+//        if( direct_search_bs_ids.length>0 ){
+//           depth_search_bs_ids= $(direct_search_bs_ids).filter(depth_search_bs_ids);
+//        }
+//
+////        if (depth_search_bs_ids.length>0){
+////            depth_search_bs_ids= (direct_search_bs_ids).concat(depth_search_bs_ids);
+////            depth_search_bs_ids= advSearch_self.unique_list(depth_search_bs_ids);
+////        }
+//
+////        appliedAdvFilter= advSearch_self.unique_list(appliedAdvFilter);
+//		/*Stringify the object array to pass it in the query parameters for in set filter API*/
+//
+//		/*call the setFilters function with the search parameters & setFilters API url*/
+//        if (depth_search_bs_ids.length>0){
+//		    depth_search_bs_ids = JSON.stringify(depth_search_bs_ids);
+//		    advSearch_self.setFilters(depth_search_bs_ids, 'depth' );
+//        }else if(direct_search_bs_ids.length>0){
+//            direct_search_bs_ids = JSON.stringify(direct_search_bs_ids);
+//		    advSearch_self.setFilters(direct_search_bs_ids, 'direct' );
+//        }
+
+
+
+
         /*Call the tp plot result of the devices to plot*/
-        advSearch_self.result_plotting();
-		/*Call the reset function*/
-		advSearch_self.resetVariables();
+         advSearch_self.result_plotting();
+            /*Call the reset function*/
+
+         advSearch_self.resetVariables();
 
          /*Hide the spinner*/
         hideSpinner();
@@ -653,7 +727,7 @@ function advanceSearchClass() {
 		/*Enable the refresh button*/
 		$("#resetFilters").button("loading");
 
-	}
+	};
 
 
     this.unique_list= function(list){
@@ -692,40 +766,57 @@ function advanceSearchClass() {
                         }
                     }
                 }
-            console.log(result_plot_devices)
         }else if(search_type='depth')
         {
             var technology_choice=''
             $.each($('#s2id_filter_technology').select2('data'), function( index, value ){ technology_choice+=value.text })
             var vendor_choice= ''
             $.each($('#s2id_filter_vendor').select2('data'), function( index, value ){ vendor_choice+=value.text })
-            var sector_configured_on_choice= ''
-            $.each($('#s2id_filter_sector_configured_on').select2('data'), function( index, value ){ sector_configured_on_choice+=value.text })
-            var circuit_ids_choice= ''
-            $.each($('#s2id_filter_circuit_ids').select2('data'), function( index, value ){ circuit_ids_choice+=value.text })
-
-            for (var i=0; i<main_devices_data_gmaps.length; i++)
+//            var sector_configured_on_choice= ''
+//            $.each($('#s2id_filter_sector_configured_on').select2('data'), function( index, value ){ sector_configured_on_choice+=value.text })
+//            var circuit_ids_choice= ''
+//            $.each($('#s2id_filter_circuit_ids').select2('data'), function( index, value ){ circuit_ids_choice+=value.text })
+            console.log(technology_choice, vendor_choice);
+        loop1:
+            for (var i=0; i<searchString.length; i++)
             {
-                var result_plot_data= $.extend( true, {}, main_devices_data_gmaps[i] );
-                result_plot_data.data.param.sector=[];
-                for(var j=0; j<main_devices_data_gmaps[i].data.param.sector.length;j++)
+            loop2:
+                for(var j= 0;main_devices_data_gmaps.length>j;j++)
                 {
-
-                    if( technology_choice.indexOf(main_devices_data_gmaps[i].data.param.sector[j].technology) >=0
-                      || vendor_choice.indexOf(main_devices_data_gmaps[i].data.param.sector[j].vendor) >=0
-                      || sector_configured_on_choice.indexOf(main_devices_data_gmaps[i].data.param.sector[j].sector_configured_on) >=0
-                      || circuit_ids_choice.indexOf(main_devices_data_gmaps[i].data.param.sector[j].circuit_id) >=0)
+                    if (searchString[i]== main_devices_data_gmaps[j].id)
                     {
-                        result_plot_data.data.param.sector= result_plot_data.data.param.sector.concat(main_devices_data_gmaps[i].data.param.sector[j])
-                    }
-                }
-                if(result_plot_data.data.param.sector.length !=0)
-                {
-                    result_plot_devices.push(result_plot_data)
+                        /*Deep Copy of the main_devices_data_gmaps*/
+                        var result_plot_data= $.extend( true, {}, main_devices_data_gmaps[j] );
+                        result_plot_data.data.param.sector=[];
+                    loop3:
+                        for(var k=0; k<main_devices_data_gmaps[j].data.param.sector.length;k++)
+                        {
+                            technology_check_condition= technology_choice.length>0 ? technology_choice == main_devices_data_gmaps[j].data.param.sector[k].technology: true;
+                            /*If vendor choice exist then check in the sector, if the vendor_choice is null then make it true by default to check the technology condition.*/
+                            vendor_check_condition= vendor_choice.length>0 ? vendor_choice == main_devices_data_gmaps[j].data.param.sector[k].vendor: true;
+
+                            /*And the condition when technology_check_condition and vendor_check_condition will become true and their
+                            length is also zero.Then they will not appear in the depth search. */
+
+                            /*Condition to check both the technology and vendor are present in the sector.*/
+                            if( technology_check_condition && vendor_check_condition)
+        //                      || sector_configured_on_choice.indexOf(main_devices_data_gmaps[i].data.param.sector[j].sector_configured_on) >=0
+        //                      || circuit_ids_choice.indexOf(main_devices_data_gmaps[i].data.param.sector[j].circuit_id) >=0)
+                            {
+                                result_plot_data.data.param.sector= result_plot_data.data.param.sector.concat(main_devices_data_gmaps[j].data.param.sector[k])
+                            }
+                        }
+                        /*If any relevant sector according to search condition is found then appending (BS with Sector-SS) to the result.*/
+                        if(result_plot_data.data.param.sector.length !=0)
+                        {
+                            result_plot_devices.push(result_plot_data)
+                        }
+
+                    break loop2
+                    }// if condition closed.
                 }
             }
         }
-
         /*Reset The basic filters dropdown*/
         $("#technology").val($("#technology option:first").val());
         $("#vendor").val($("#vendor option:first").val());
