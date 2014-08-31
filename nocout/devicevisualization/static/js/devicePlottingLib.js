@@ -525,7 +525,7 @@ function devicePlottingClass_gmap() {
 			
 			/*Sectors Array*/
 			var sector_array = bs_ss_devices[i].data.param.sector;
-var deviceIDArray= [];
+            var deviceIDArray= [];
 			/*Plot Sector*/
 			for(var j=0;j<sector_array.length;j++) {
     			var lat = bs_ss_devices[i].data.lat,
@@ -1782,172 +1782,65 @@ var deviceIDArray= [];
 	 */
 	this.applyFilter_gmaps = function(filtersArray) {
 
-		var filterKey = [],
-			filteredData = [],
-			masterIds = [];
+		var	filteredData = [];
 
-		/*Fetch the keys from the filter array*/
-		$.each(filtersArray, function(key, value) {
+        for(var i=0;i<main_devices_data_gmaps.length;i++)
+        {
 
-		    filterKey.push(key);
-		});
+            /*Deep Copy of the main_devices_data_gmaps*/
+            var bs_data= $.extend( true, {}, main_devices_data_gmaps[i]);
+            bs_data.data.param.sector=[];
+            /*Sectors Array*/
+            for(var j=0;j< main_devices_data_gmaps[i].data.param.sector.length;j++) {
+                var sector=main_devices_data_gmaps[i].data.param.sector[j];
 
-	 	if(main_devices_data_gmaps.length > 0) {
+                if ((filtersArray['technology'] ? filtersArray['technology'].toLowerCase() == sector.technology.toLowerCase(): true) &&
+                    (filtersArray['vendor'] ? filtersArray['vendor'].toLowerCase() == sector.vendor.toLowerCase(): true) &&
+                    (filtersArray['city'] ? filtersArray['city'].toLowerCase() == main_devices_data_gmaps[i].data.city.toLowerCase(): true) &&
+                    (filtersArray['state'] ? filtersArray['state'].toLowerCase() == main_devices_data_gmaps[i].data.state.toLowerCase(): true))
+                {
+                    bs_data.data.param.sector.push(sector);
+                }
+            }
+            if ( bs_data.data.param.sector.length >0){
+                filteredData.push(bs_data)
+            }
 
-	 		for(var i=0;i<main_devices_data_gmaps.length;i++) {
+        }
+        /*Check that after applying filters any data exist or not*/
+        if(filteredData.length === 0) {
 
-	 			var master = main_devices_data_gmaps[i];
+            /*Reset the markers, polyline & filters*/
+            gmap_self.clearGmapElements();
 
- 				/*Sectors Array*/
-				var sector_array = main_devices_data_gmaps[i].data.param.sector;
+            masterMarkersObj = [];
+            slaveMarkersObj = [];
 
- 				for(var j=0;j<sector_array.length;j++) {
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: 'GIS : Filters',
+                // (string | mandatory) the text inside the notification
+                text: 'No data available for applied filters.',
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false
+            });
 
- 					var ss_data = sector_array[j].sub_station;
- 					var sector = sector_array[j];
+            /*Populate the map with the All markers*/
+            // gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
 
-					/*Conditions as per the number of filters*/
-		 			if(filterKey.length == 1) {
+        } else {
 
-		 				if(filterKey.indexOf("technology") > -1) {
-		 					var dataVal1 = sector.technology.toLowerCase().split(",");
-		 				} else {
-		 					var dataVal1 = master.data[filterKey[0]].toLowerCase().split(",");
-		 				}
+            /*Reset the markers, polyline & filters*/
+            gmap_self.clearGmapElements();
 
-		 				var selectedVal1 = filtersArray[filterKey[0]].toLowerCase();
+            masterMarkersObj = [];
+            slaveMarkersObj = [];
 
-	 					if(dataVal1.indexOf(selectedVal1) > -1) {
-
-		 					/*Check For The Duplicacy*/
-		 					if(masterIds.indexOf(master.id) == -1) {
-
-		 						/*Save the BS id's to array to remove duplicacy*/
-		 						masterIds.push(master.id);
-
-		 						filteredData.push(main_devices_data_gmaps[i]);
-		 					}
-		 				}
-
-		 			} else if(filterKey.length == 2) {
-
-
-		 				if(filterKey.indexOf("technology") > -1) {
-		 					var dataVal1 = sector.technology.toLowerCase().split(",");
-		 				} else {
-		 					var dataVal1 = master.data[filterKey[0]].toLowerCase().split(",");
-		 				}
-
-		 				var selectedVal1 = filtersArray[filterKey[0]].toLowerCase();
-
-		 				var dataVal2 = master.data[filterKey[1]].toLowerCase().split(",");
-		 				var selectedVal2 = filtersArray[filterKey[1]].toLowerCase();
-
-	 					if((dataVal1.indexOf(selectedVal1) > -1) && (dataVal2.indexOf(selectedVal2) > -1)) {
-
-		 					/*Check For The Duplicacy*/
-		 					if(masterIds.indexOf(master.id) == -1) {
-
-		 						/*Save the BS id's to array to remove duplicacy*/
-		 						masterIds.push(master.id);
-
-		 						filteredData.push(main_devices_data_gmaps[i]);
-		 					}
-		 				}
-		 			} else if(filterKey.length == 3) {
-
-		 				if(filterKey.indexOf("technology") > -1) {
-		 					var dataVal1 = sector.technology.toLowerCase().split(",");
-		 				} else {
-		 					var dataVal1 = master.data[filterKey[0]].toLowerCase().split(",");
-		 				}
-
-		 				var selectedVal1 = filtersArray[filterKey[0]].toLowerCase();
-
-		 				var dataVal2 = master.data[filterKey[1]].toLowerCase().split(",");
-		 				var selectedVal2 = filtersArray[filterKey[1]].toLowerCase();
-
-		 				var dataVal3 = master.data[filterKey[2]].toLowerCase().split(",");
-		 				var selectedVal3 = filtersArray[filterKey[2]].toLowerCase();
-		 				
-		 				if((dataVal1.indexOf(selectedVal1) > -1) && (dataVal2.indexOf(selectedVal2) > -1) && (dataVal3.indexOf(selectedVal3) > -1)) {
-
-		 					/*Check For The Duplicacy*/
-		 					if(masterIds.indexOf(master.id) == -1) {
-
-		 						/*Save the BS id's to array to remove duplicacy*/
-		 						masterIds.push(master.id);
-
-		 						filteredData.push(main_devices_data_gmaps[i]);
-		 					}
-		 				}
-		 			} else if(filterKey.length == 4) {
-
-		 				if(filterKey.indexOf("technology") > -1) {
-		 					var dataVal1 = sector.technology.toLowerCase().split(",");
-		 				} else {
-		 					var dataVal1 = master.data[filterKey[0]].toLowerCase().split(",");
-		 				}
-
-		 				var selectedVal1 = filtersArray[filterKey[0]].toLowerCase();
-
-		 				var dataVal2 = master.data[filterKey[1]].toLowerCase().split(",");
-		 				var selectedVal2 = filtersArray[filterKey[1]].toLowerCase();
-
-		 				var dataVal3 = master.data[filterKey[2]].toLowerCase().split(",");
-		 				var selectedVal3 = filtersArray[filterKey[2]].toLowerCase();
-
-		 				var dataVal4 = master.data[filterKey[3]].toLowerCase().split(",");
-		 				var selectedVal4 = filtersArray[filterKey[3]].toLowerCase();
-
-		 				if((dataVal1.indexOf(selectedVal1) > -1) && (dataVal2.indexOf(selectedVal2) > -1) && (dataVal3.indexOf(selectedVal3) > -1) && (dataVal4.indexOf(selectedVal4) > -1)) {
-
-		 					/*Check For The Duplicacy*/
-		 					if(masterIds.indexOf(master.id) == -1) {
-
-		 						/*Save the BS id's to array to remove duplicacy*/
-		 						masterIds.push(master.id);
-
-		 						filteredData.push(main_devices_data_gmaps[i]);
-		 					}
-		 				}
-		 			}
-				}
-	 		}
-
-	 		/*Check that after applying filters any data exist or not*/
-	 		if(filteredData.length === 0) {
-
-	 			/*Reset the markers, polyline & filters*/
-	 			gmap_self.clearGmapElements();
-
-				masterMarkersObj = [];
-				slaveMarkersObj = [];
-
-				$.gritter.add({
-		            // (string | mandatory) the heading of the notification
-		            title: 'GIS : Filters',
-		            // (string | mandatory) the text inside the notification
-		            text: 'No data available for applied filters.',
-		            // (bool | optional) if you want it to fade out on its own or just sit there
-		            sticky: false
-		        });
-
-		        /*Populate the map with the All markers*/
-	 			// gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
-
-	 		} else {
-
-				/*Reset the markers, polyline & filters*/
-	 			gmap_self.clearGmapElements();
-
-				masterMarkersObj = [];
-				slaveMarkersObj = [];
-
-				/*Populate the map with the filtered markers*/
-	 			gmap_self.plotDevices_gmap(filteredData,"base_station");
-	 		}	 		
-	 	}	
+            /*Populate the map with the filtered markers*/
+            gmap_self.plotDevices_gmap(filteredData,"base_station");
+            /*Resetting filter data to Empty.*/
+            filteredData=[]
+        }
 	};
 
 	/**
@@ -3384,7 +3277,7 @@ function prepare_data_for_filter(){
 function unique_values_field_and_with_base_station_ids(filter_data_collection, type){
     /*Unique mappper names.*/
 
-    /*Incase of technology and vendor the two values can appear for the sector_configured_on device as well as Substation.*/
+    /*Incase of technology and vendor the two values can appear for the sector_configured_on device as well as in  Substation.*/
     var unique_names={};
     if (type=='technology' || type=='vendor'){
 
