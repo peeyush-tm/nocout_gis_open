@@ -727,7 +727,7 @@ class DeviceFrequencyForm(forms.ModelForm):
 
         # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
         try:
-            if not re.match(r'^[A-Za-z0-9\.]+$', name):
+            if not re.match(r'^[0-9\.]+$', name):
                 self._errors['value'] = ErrorList(
                     [u"Value must be alphanumeric & can only contains .(dot)"])
         except Exception as e:
