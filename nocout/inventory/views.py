@@ -1,7 +1,7 @@
 from operator import itemgetter
 import re
 from django.contrib.auth.decorators import permission_required
-from django.shortcuts import render
+from django.shortcuts import render, render_to_response
 import json
 from actstream import action
 from django.db.models.query import ValuesQuerySet
@@ -25,6 +25,8 @@ from device.models import Country, State, City
 from django.contrib.staticfiles.templatetags.staticfiles import static
 import xlrd
 import logging
+from django.template import RequestContext
+
 logger = logging.getLogger(__name__)
 
 
@@ -2959,8 +2961,7 @@ class GISInventoryBulkImport(FormView):
                 if aggregation_switch_port:
                     if aggregation_switch_port != 'NA':
                         if not re.match(regex_alnum_comma_hyphen_fslash_underscore_space, aggregation_switch_port.strip()):
-                            errors += 'Aggregation Switch Port can only contains alphanumeric, underscore, hyphen, space, \
-                                       comma, forward slash.\n'
+                            errors += 'Aggregation Switch Port can only contains alphanumeric, underscore, hyphen, space, comma, forward slash.\n'
 
                 # 'bs converter ip' validation (must be an ip address)
                 if bs_converter_ip:
@@ -2997,8 +2998,7 @@ class GISInventoryBulkImport(FormView):
                 # (can only contains alphanumeric, underscore, hyphen, space, comma, forward slash)
                 if switch_or_converter_port:
                     if not re.match(regex_alnum_comma_hyphen_fslash_underscore_space, switch_or_converter_port.strip()):
-                        errors += 'Switch/Converter Port {} can only contains alphanumeric, underscore, hyphen, space, \
-                                   comma, forward slash.\n'.format(switch_or_converter_port)
+                        errors += 'Switch/Converter Port {} can only contains alphanumeric, underscore, hyphen, space, comma, forward slash.\n'.format(switch_or_converter_port)
                 else:
                     errors += 'Switch/Converter Port must not be empty.\n'
 
@@ -3097,6 +3097,11 @@ class GISInventoryBulkImport(FormView):
             for row in invalid_rows_list:
                 print "**********************************"
                 print row
+            hello = "Hello"
+            return render_to_response('bulk_import/gis_bulk_validator.html', {'form_data': json.dumps(valid_rows_list),
+                                                                              'headers': keys_list,
+                                                                              'hello': hello},
+                                      context_instance=RequestContext(self.request))
         else:
             print "No sheet is selected."
         return super(GISInventoryBulkImport, self).get(self, form)
