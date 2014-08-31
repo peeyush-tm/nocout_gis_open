@@ -51,7 +51,7 @@
                     </button>
                 </li>
                 {% for group in user.groups.all %}
-                    {% if group.name == 'group_admin' %}
+                    {% if group.name == 'group_admin' or group.name == 'group_operator' %}
                         <li>
                             <button id="showToolsBtn" class="btn btn-info" onclick="showToolsPanel();">
                                 <i class='fa fa-cog'></i> Tools

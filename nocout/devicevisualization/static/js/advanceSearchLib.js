@@ -817,7 +817,6 @@ console.log(lastSelectedValues);
                 }
             }
         }
-        console.log(result_plot_devices)
         /*Reset The basic filters dropdown*/
         $("#technology").val($("#technology option:first").val());
         $("#vendor").val($("#vendor option:first").val());
