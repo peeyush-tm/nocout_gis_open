@@ -274,12 +274,11 @@ class LivePerformanceListing(BaseDatatableView):
             for dct in qs:
                 device = Device.objects.get(id=dct['id'])
                 if device.substation_set.exists():
-                    substation_id = device.substation_set.values()[0]['id']
                     dct.update(
                         actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
-                        <a href="/alert_center/{0}/device/{2}/service_tab/{3}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
-                        <a href="/device/{2}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
-                        .format('customer', substation_id, device.id, 'latency'  if 'latency' in dct.keys() else 'packet_drop'))
+                        <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
+                        <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
+                        .format('customer', dct['id'], 'latency'  if 'latency' in dct.keys() else 'packet_drop'))
                 elif device.sector_configured_on.exists():
                     dct.update(
                         actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a> \
@@ -360,12 +359,6 @@ class Get_Perfomance(View):
 
         device = Device.objects.get(id=device_id)
         realdevice = device
-        if page_type == "customer":
-            try:
-                realdevice = SubStation.objects.get(id=device_id).device
-            except:
-                pass
-
         page_data = {
             'page_title': page_type.capitalize(),
             'device': device,
@@ -528,8 +521,12 @@ class Inventory_Device_Status(View):
         result['data']['objects']['values'] = list()
         if page_type == 'customer':
 
-            substation = SubStation.objects.get(id=device_id)
-            substation_device = Device.objects.get(id=substation.device_id)
+            # substation = SubStation.objects.get(id= device_id)
+            # substation_device = Device.objects.get(id=substation.device_id)
+
+            substation_device = Device.objects.get(id= device_id)
+            substation = SubStation.objects.get(id= substation_device.id)
+
             try:
                 sector = Circuit.objects.get(sub_station=substation.id).sector
                 base_station = BaseStation.objects.get(id=Sector.objects.get(id=sector.id).base_station.id)
@@ -604,11 +601,9 @@ class Inventory_Device_Service_Data_Source(View):
         inventory_device_service_name = []
         if page_type == 'customer':
             # The device id is the substation id.
-            inventory_device = SubStation.objects.get(id=int(device_id))
-            #device_id= Device.objects.get(id= inventory_device.device_id).id
             #Fetch the Service names that are configured w.r.t to a device.
             inventory_device_service_name = DeviceServiceConfiguration.objects.filter(
-                device_name= Device.objects.get(id=Device.objects.get(id=inventory_device.device_id).id).device_name) \
+                device_name= Device.objects.get(id=device_id).device_name) \
                 .values_list('service_name', 'data_source')
 
         elif page_type == 'network':
