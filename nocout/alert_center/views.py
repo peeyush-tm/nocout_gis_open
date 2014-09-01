@@ -274,19 +274,19 @@ class GetCustomerAlertDetail(BaseDatatableView):
                 device_id = device_object.id
                 if device_object.substation_set.exists():
 
-                    substation_id = Device.objects.get(id=device_id).substation_set.values_list('id', flat=True)[0]
                     dct.update(action=''
-                        '<a href="/alert_center/customer/device/{0}/service_tab/{2}/" title="Device Alerts">'
+                        '<a href="/alert_center/customer/device/{0}/service_tab/{1}/" title="Device Alerts">'
                         '<i class="fa fa-warning text-warning"></i>'
                         '</a>'
-                        '<a href="/performance/customer_live/{1}/" title="Device Performance">'
+                        '<a href="/performance/customer_live/{0}/" title="Device Performance">'
                         '<i class="fa fa-bar-chart-o text-info"></i>'
                         '</a>'
                         '<a href="/device/{0}" title="Device Inventory">'
                         '<i class="fa fa-dropbox text-muted"></i>'
-                        '</a>'.format(device_id, substation_id, service_tab_name))
+                        '</a>'.format(device_id, service_tab_name))
 
                 elif device_object.sector_configured_on.exists():
+
                     dct.update(action=''
                        '<a href="/alert_center/customer/device/{0}/service_tab/{1}/" title="Device Alerts">'
                        '<i class="fa fa-warning text-warning"></i>'
@@ -327,11 +327,12 @@ class GetCustomerAlertDetail(BaseDatatableView):
 
         # prepare output data
         aaData = self.prepare_results(qs)
-        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+        ret = {
+               'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
                'aaData': aaData
-        }
+              }
         return ret
 
 
@@ -730,114 +731,116 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        logged_in_user = self.request.user.userprofile
+        # logged_in_user = self.request.user.userprofile
+        #
+        # if logged_in_user.role.values_list('role_name', flat=True)[0] == 'admin':
+        #     organizations = list(logged_in_user.organization.get_descendants(include_self=True))
+        # else:
+        #     organizations = [logged_in_user.organization]
+        # sector_configured_on_devices_ids = list()
+        #
+        # for organization in organizations:
+        #     sector_configured_on_devices_ids += Sector.objects.filter(
+        #         sector_configured_on__id__in=organization.device_set \
+        #         .values_list('id', flat=True)).values_list('sector_configured_on', flat=True).annotate(
+        #         dcount=Count('base_station'))
+        #
+        # sector_configured_on_devices = Device.objects.filter(is_added_to_nms=1, is_deleted=0,
+        #                                                      id__in=sector_configured_on_devices_ids) \
+        #     .values('device_name', 'machine__name')
+        #
+        # device_list, performance_data, data_sources_list = list(), list(), list()
+        # extra_query_condition = None
+        #
+        # search_table = "performance_eventnetwork"
+        #
+        # if 'latency' in self.request.path_info:
+        #     data_sources_list.append('rta')
+        #     extra_query_condition = "AND (`{0}`.`current_value` > 0 ) "
+        # elif 'packetdrop' in self.request.path_info:
+        #     data_sources_list.append('pl')
+        #     extra_query_condition = "AND (`{0}`.`current_value` BETWEEN 1 AND 99 ) "
+        # elif 'down' in self.request.path_info:
+        #     data_sources_list.append('pl')
+        #     extra_query_condition = "AND (`{0}`.`current_value` = 100 ) "
+        # elif 'service' in self.request.path_info:
+        #     search_table = "performance_eventservice"
+        #
+        # required_data_columns = ["id",
+        #                          "ip_address",
+        #                          "service_name",
+        #                          "device_name",
+        #                          "data_source",
+        #                          "severity",
+        #                          "current_value",
+        #                          "sys_timestamp",
+        #                          "description"
+        # ]
+        # # Unique machine from the sector_configured_on_devices
+        # unique_device_machine_list = {device['machine__name']: True for device in sector_configured_on_devices}.keys()
+        # machine_dict, device_data = dict(), list()
+        # # Creating the machine as a key and device_name as a list for that machine.
+        # for machine in unique_device_machine_list:
+        #     machine_dict[machine] = [device['device_name'] for device in sector_configured_on_devices if
+        #                              device['machine__name'] == machine]
+        # #Fetching the data for the device w.r.t to their machine.
+        # for machine, machine_device_list in machine_dict.items():
+        #
+        #     performance_data = raw_prepare_result(performance_data=performance_data,
+        #                                           machine=machine,
+        #                                           table_name=search_table,
+        #                                           devices=machine_device_list,
+        #                                           data_sources=data_sources_list,
+        #                                           columns=required_data_columns,
+        #                                           condition=extra_query_condition if extra_query_condition else None
+        #     )
+        #
+        #     for data in performance_data:
+        #         circuit_id = "N/A"
+        #         sector_id = 'N/A'
+        #         sector = Sector.objects.filter(sector_configured_on__id=
+        #                                        Device.objects.get(device_name= data['device_name']).id)
+        #         device_object = Device.objects.get(device_name= data['device_name'])
+        #
+        #         if len(sector):
+        #
+        #             #add sector info
+        #             sector_id = sector[0].sector_id
+        #             #add circuit info
+        #             circuit = Circuit.objects.filter(sector=sector[0].id)
+        #             if len(circuit):
+        #                 circuit_id = circuit[0].circuit_id
+        #
+        #             device_base_station = sector[0].base_station
+        #             #only display warning or critical devices
+        #             if severity_level_check(list_to_check=[data['severity'], data['description']]):
+        #                 ddata = {
+        #                     'device_name': data['device_name'],
+        #                     'device_technology': DeviceTechnology.objects.get(id=device_object.device_technology).alias,
+        #                     'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
+        #                     'severity': data['severity'],
+        #                     'ip_address': data['ip_address'],
+        #                     'circuit_id': circuit_id,
+        #                     'sector_id': sector_id,
+        #                     'base_station': device_base_station.name,
+        #                     'base_station__city': City.objects.get(id=device_base_station.city).city_name if device_base_station.city else 'N/A',
+        #                     'base_station__state': State.objects.get(id=device_base_station.state).state_name if device_base_station.state else "N/A",
+        #                     'current_value': data['current_value'],
+        #                     'sys_timestamp': datetime.datetime.fromtimestamp(
+        #                         float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+        #                     'description': data['description']
+        #                 }
+        #                 #If service tab is requested then add an another key:data_source_name to render in the data table.
+        #                 if 'service' in self.request.path_info:
+        #                     ddata.update({'data_source_name': data['data_source']})
+        #                 device_data.append(ddata)
+        # if device_data:
+        #     sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
+        #     return sorted_device_data
+        #
+        # return device_list
+        return []
 
-        if logged_in_user.role.values_list('role_name', flat=True)[0] == 'admin':
-            organizations = list(logged_in_user.organization.get_descendants(include_self=True))
-        else:
-            organizations = [logged_in_user.organization]
-        sector_configured_on_devices_ids = list()
-
-        for organization in organizations:
-            sector_configured_on_devices_ids += Sector.objects.filter(
-                sector_configured_on__id__in=organization.device_set \
-                .values_list('id', flat=True)).values_list('sector_configured_on', flat=True).annotate(
-                dcount=Count('base_station'))
-
-        sector_configured_on_devices = Device.objects.filter(is_added_to_nms=1, is_deleted=0,
-                                                             id__in=sector_configured_on_devices_ids) \
-            .values('device_name', 'machine__name')
-
-        device_list, performance_data, data_sources_list = list(), list(), list()
-        extra_query_condition = None
-
-        search_table = "performance_eventnetwork"
-
-        if 'latency' in self.request.path_info:
-            data_sources_list.append('rta')
-            extra_query_condition = "AND (`{0}`.`current_value` > 0 ) "
-        elif 'packetdrop' in self.request.path_info:
-            data_sources_list.append('pl')
-            extra_query_condition = "AND (`{0}`.`current_value` BETWEEN 1 AND 99 ) "
-        elif 'down' in self.request.path_info:
-            data_sources_list.append('pl')
-            extra_query_condition = "AND (`{0}`.`current_value` = 100 ) "
-        elif 'service' in self.request.path_info:
-            search_table = "performance_eventservice"
-
-        required_data_columns = ["id",
-                                 "ip_address",
-                                 "service_name",
-                                 "device_name",
-                                 "data_source",
-                                 "severity",
-                                 "current_value",
-                                 "sys_timestamp",
-                                 "description"
-        ]
-        # Unique machine from the sector_configured_on_devices
-        unique_device_machine_list = {device['machine__name']: True for device in sector_configured_on_devices}.keys()
-        machine_dict, device_data = dict(), list()
-        # Creating the machine as a key and device_name as a list for that machine.
-        for machine in unique_device_machine_list:
-            machine_dict[machine] = [device['device_name'] for device in sector_configured_on_devices if
-                                     device['machine__name'] == machine]
-        #Fetching the data for the device w.r.t to their machine.
-        for machine, machine_device_list in machine_dict.items():
-
-            performance_data = raw_prepare_result(performance_data=performance_data,
-                                                  machine=machine,
-                                                  table_name=search_table,
-                                                  devices=machine_device_list,
-                                                  data_sources=data_sources_list,
-                                                  columns=required_data_columns,
-                                                  condition=extra_query_condition if extra_query_condition else None
-            )
-
-            for data in performance_data:
-                circuit_id = "N/A"
-                sector_id = 'N/A'
-                sector = Sector.objects.filter(sector_configured_on__id=
-                                               Device.objects.get(device_name= data['device_name']).id)
-                device_object = Device.objects.get(device_name= data['device_name'])
-
-                if len(sector):
-
-                    #add sector info
-                    sector_id = sector[0].sector_id
-                    #add circuit info
-                    circuit = Circuit.objects.filter(sector=sector[0].id)
-                    if len(circuit):
-                        circuit_id = circuit[0].circuit_id
-
-                    device_base_station = sector[0].base_station
-                    #only display warning or critical devices
-                    if severity_level_check(list_to_check=[data['severity'], data['description']]):
-                        ddata = {
-                            'device_name': data['device_name'],
-                            'device_technology': DeviceTechnology.objects.get(id=device_object.device_technology).alias,
-                            'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
-                            'severity': data['severity'],
-                            'ip_address': data['ip_address'],
-                            'circuit_id': circuit_id,
-                            'sector_id': sector_id,
-                            'base_station': device_base_station.name,
-                            'base_station__city': City.objects.get(id=device_base_station.city).city_name if device_base_station.city else 'N/A',
-                            'base_station__state': State.objects.get(id=device_base_station.state).state_name if device_base_station.state else "N/A",
-                            'current_value': data['current_value'],
-                            'sys_timestamp': datetime.datetime.fromtimestamp(
-                                float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                            'description': data['description']
-                        }
-                        #If service tab is requested then add an another key:data_source_name to render in the data table.
-                        if 'service' in self.request.path_info:
-                            ddata.update({'data_source_name': data['data_source']})
-                        device_data.append(ddata)
-        if device_data:
-            sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
-            return sorted_device_data
-
-        return device_list
 
     def prepare_results(self, qs):
         """
@@ -1013,7 +1016,8 @@ class CustomerAlertListingTable(BaseDatatableView):
         # get the devices in an organisation which are added for monitoring
 
         organization_substations_devices = [{'device_name': device.device_name, 'machine_name': device.machine.name} \
-                                            for device in organization_devices if device.substation_set.exists()]
+           for device in organization_devices if device.substation_set.exists() or device.sector_configured_on.exists()]
+
         data_sources_list = list()
 
         extra_query_condition = "AND (`{0}`.`current_value` > 0 ) "
@@ -1026,8 +1030,6 @@ class CustomerAlertListingTable(BaseDatatableView):
         elif self.request.GET['data_source'] == 'down':
             data_sources_list = ['pl']
             extra_query_condition = "AND (`{0}`.`current_value` = 100 ) "
-
-
 
         required_data_columns = ["id",
                                  "data_source",
@@ -1057,34 +1059,32 @@ class CustomerAlertListingTable(BaseDatatableView):
                                                   devices=machine_device_list,
                                                   data_sources=data_sources_list,
                                                   columns=required_data_columns,
-                                                  condition= extra_query_condition
-            )
+                                                  condition= extra_query_condition )
 
             for data in performance_data:
                 # for device in machine_device_list:
                 device = data['device_name']
-                substation = SubStation.objects.filter(device__device_name=device)
-                sector_id = "N/A"
-                circuit_id = "N/A"
-                device_substation_base_station_name = "N/A"
-                if len(substation):
-                    device_substation = substation[0]
-                    try:
-                        #try exception if the device does not have any association with the circuit
-                        circuit_object = Circuit.objects.get(sub_station__id=device_substation.id)
+                device_object = Device.objects.get(device_name=device)
+
+
+                if device_object.substation_set.exists():
+                    device_substation = SubStation.objects.get(id= device_object.substation_set.values_list('id', flat=True)[0])
+
+                    if device_substation.circuit_set.exists():
+                        circuit_object = Circuit.objects.get(sub_station__id= device_substation.id)
                         circuit_id = circuit_object.circuit_id
+                        sector_id = circuit_object.sector.sector_id
                         device_substation_base_station = circuit_object.sector.base_station
                         device_substation_base_station_name = device_substation_base_station.name
                         city = City.objects.get(id=device_substation_base_station.city).city_name
                         state= State.objects.get(id=device_substation_base_station.state).state_name
-                    except:
+                    else:
                         device_substation_base_station_name = 'N/A'
                         city = "N/A"
                         state = "N/A"
-                    try:
-                        sector_id = circuit_object.sector.sector_id
-                    except:
                         sector_id = "N/A"
+                        circuit_id = "N/A"
+
                     #only display warning or critical devices
                     if data['severity'] in ['DOWN', 'CRITICAL', 'WARNING', 'UNKNOWN'] or \
                                     'WARN' in data['description'] or \
@@ -1095,7 +1095,7 @@ class CustomerAlertListingTable(BaseDatatableView):
                             'severity': data['severity'],
                             # 'device_technology': DeviceTechnology.objects.get(id=device_object.device_technology).alias,
                             'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
-                            'ip_address': device_object.ip_address,
+                            # 'ip_address': device_object.ip_address,
                             # 'sub_station': device_substation.name,
                             'city': city,
                             'state': state,
@@ -1112,8 +1112,45 @@ class CustomerAlertListingTable(BaseDatatableView):
                                 float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
                             'description': data['description']
                         }
-
                         device_list.append(device_events)
+
+                if device_object.sector_configured_on.exists():
+
+                    circuit_id = "N/A"
+                    sector_id = 'N/A'
+
+                    sectors = Sector.objects.filter(sector_configured_on=device_object.id).values("id", "sector_id", "base_station")
+                    sector_id_list = [x["id"] for x in sectors]
+                    sector_id = ", ".join(map( str, [ x["sector_id"] for x in sectors ] ))
+
+                    circuits = Circuit.objects.filter(sector__in= sector_id_list).values("circuit_id")
+                    if len(circuits):
+                        circuits_id_list = [x["circuit_id"] for x in circuits]
+                        circuit_id = ",".join(map(lambda x: str(x), circuits_id_list ))
+
+                    device_base_station = BaseStation.objects.get(id= sectors[0]["base_station"] )
+                    #only display warning or critical devices
+                    if severity_level_check(list_to_check=[data['severity'], data['description']]):
+                        ddata = {
+                            'device_name': data['device_name'],
+                            # 'device_technology': DeviceTechnology.objects.get(id=device_object.device_technology).alias,
+                            'device_type': DeviceType.objects.get(id= device_object.device_type).alias,
+                            'severity': data['severity'],
+                            'circuit_id': circuit_id,
+                            'sector_id': sector_id,
+                            'base_station': device_base_station.name,
+                            'city': City.objects.get(id=device_base_station.city).city_name if device_base_station.city else 'N/A',
+                            'state': State.objects.get(id=device_base_station.state).state_name if device_base_station.state else "N/A",
+                            'current_value': data['current_value'],
+                            'max_value':data['max_value'],
+                            'sys_timestamp': datetime.datetime.fromtimestamp(
+                                float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                            'description': data['description']
+                        }
+                        #If service tab is requested then add an another key:data_source_name to render in the data table.
+                        # if 'service' in self.request.path_info:
+                        #     ddata.update({'data_source_name': data['data_source']})
+                        device_list.append(ddata)
 
             sorted_device_list = sorted(device_list, key=itemgetter('sys_timestamp'), reverse=True)
             return sorted_device_list
@@ -1141,12 +1178,19 @@ class CustomerAlertListingTable(BaseDatatableView):
                 service_tab = 'packet_drop'
 
             for dct in qs:
-                device = Device.objects.get(device_name=dct['device_name'])
+                device = Device.objects.get(device_name= dct['device_name'])
                 dct.update(current_value = dct["current_value"] + " " + data_unit)
-                dct.update(action='<a href="/alert_center/customer/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
-                                   <a href="/performance/customer_live/{2}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
-                                   <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
-                           format(device.id, service_tab, device.substation_set.values()[0]['id']))
+                if device.sector_configured_on.exists():
+                    dct.update(action= '<a href="/alert_center/network/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
+                                        <a href="/performance/network_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                                        <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
+                               format(device.id, service_tab ))
+
+                elif device.substation_set.exists():
+                    dct.update(action='<a href="/alert_center/customer/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
+                                       <a href="/performance/customer_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                                       <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
+                               format(device.id, service_tab ))
 
         return common_prepare_results(qs)
 
