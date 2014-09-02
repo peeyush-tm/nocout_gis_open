@@ -1,11 +1,16 @@
-import threading
+'''
+nocout_live_bulk.py
+===================
+
+Script that fetches current data for a list of services running
+on a set of devices
+'''
 from wato import *
 from pprint import pformat
+import os
 from multiprocessing import Process, Queue
 from ast import literal_eval
 #import Queue
-import os
-import time
 from nocout_live import get_current_value, nocout_log
 
 
@@ -44,8 +49,6 @@ def main():
 
 def poll_device():
 	response = []
-	current_values = []
-	ds_value = None
 	logger.info('[Polling Iteration Start]')
 	device_list = literal_eval(html.var('device_list'))
 	service_list = literal_eval(html.var('service_list'))
@@ -55,10 +58,10 @@ def poll_device():
 		data_source_list = literal_eval(html.var('ds'))
 	except Exception:
 		data_source_list = ['']
-		logger.error('No ds provided in request object', exc_info=True)
+		#logger.error('No ds provided in request object', exc_info=True)
 	if not data_source_list:
 		data_source_list = ['']
-	logger.debug('data_source_list : %s' % data_source_list)
+	#logger.debug('data_source_list : %s' % data_source_list)
 
 	#current_values = get_current_value(device, service, data_source_list)
 
@@ -88,28 +91,23 @@ def poll_device():
 					}
 				) for device in device_list
 			]
-
 	for j in jobs:
 	        j.start()
 	for k in jobs:
 	        k.join()
-		#ds_value = current_values
-		#current_values = []
-	        #logger.debug('Queue ' + pformat(q.qsize()))
-	#response.append(q.get())
-	#time.sleep(4)
+
 	##logger.debug('Queue ' + pformat(q.qsize()))
 	while True:
 		if not q.empty():
 			response.append(q.get())
 		else:
 			break
-	
-	##q.join()
-	#for device in device_list:
-	#	response = get_current_value(response, device=device, service_list=service_list, data_source_list=data_source_list)
-
+	logger.info('[Polling Iteration End]')
 
 	return response
 
+
+def poll_processes():
+	logger.debug('Parent Process ID: ' + pformat(os.getppid()))
+	logger.debug('Process ID: ' + pformat(os.getpid()))
 

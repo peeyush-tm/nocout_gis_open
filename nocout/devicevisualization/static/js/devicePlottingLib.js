@@ -2405,7 +2405,7 @@ console.log(contentObject);
 										var sub_station = sector.sub_station;
 										$.grep(sub_station,function(ss) {
 											if($.trim(ss.name) == $.trim(polygonSelectedDevices[calling_count].device_name)) {
-												ss.data.markerUrl = result.data.icon[0];
+												ss.data.markerUrl = result.data.icon;
 											}
 										});
 									});
