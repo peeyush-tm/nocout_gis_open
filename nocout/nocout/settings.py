@@ -176,6 +176,7 @@ INSTALLED_APPS = (
     'corsheaders',
     'actstream',
     'activity_stream',
+    'jsonify'
 )
 
 CORS_ORIGIN_ALLOW_ALL = True

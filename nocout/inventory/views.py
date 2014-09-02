@@ -2600,8 +2600,10 @@ class GISInventoryBulkImport(FormView):
             print "&&&&&&&&&&&&&&&&&"
             keys_list = [x.encode('utf-8') for x in keys]
             print "******************** keys_list - ", keys_list
-            valid_rows_list = []
-            invalid_rows_list = []
+            valid_rows_dicts = []
+            invalid_rows_dicts = []
+            valid_rows_lists = []
+            invalid_rows_lists = []
             for row_index in xrange(1, sheet.nrows):
                 d = {keys[col_index]: sheet.cell(row_index, col_index).value
                      for col_index in xrange(sheet.ncols)}
@@ -3075,9 +3077,9 @@ class GISInventoryBulkImport(FormView):
                 # check whether there are errors exist or not
                 try:
                     if not errors:
-                        valid_rows_list.append(d)
+                        valid_rows_dicts.append(d)
                     else:
-                        invalid_rows_list.append(d)
+                        invalid_rows_dicts.append(d)
                 except Exception as e:
                     logger.info(e.message)
 
@@ -3087,20 +3089,37 @@ class GISInventoryBulkImport(FormView):
                 # print d
                 # print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
             print "Valid - "
-            for row in valid_rows_list:
-                print "It's valid."
-                print "**********************************"
-                print row
+            for row in valid_rows_dicts:
+                #print "It's valid."
+                #print "**********************************"
+                #print row
+                pass
             print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"
             print "\n\n\n\n\n\n\n\n\n"
             print "InValid - "
-            for row in invalid_rows_list:
-                print "**********************************"
-                print row
+            for row in invalid_rows_dicts:
+                #print "**********************************"
+                #print row
+                pass
             hello = "Hello"
-            return render_to_response('bulk_import/gis_bulk_validator.html', {'form_data': json.dumps(valid_rows_list),
-                                                                              'headers': keys_list,
-                                                                              'hello': hello},
+            keys_list.append('errors')
+            for val in valid_rows_dicts:
+                print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ val - ", val
+                temp_list = list()
+                for key in keys_list:
+                    temp_list.append(val[key])
+                valid_rows_lists.append(temp_list)
+            for val in invalid_rows_dicts:
+                print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ val - ", val
+                temp_list = list()
+                for key in keys_list:
+                    temp_list.append(val[key])
+                invalid_rows_lists.append(temp_list)
+            print "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ invalid_rows_lists - ", invalid_rows_lists
+            print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ keys_list- ", keys_list
+            return render_to_response('bulk_import/gis_bulk_validator.html', {'headers': keys_list,
+                                                                              'valid_rows': valid_rows_lists,
+                                                                              'invalid_rows': invalid_rows_lists},
                                       context_instance=RequestContext(self.request))
         else:
             print "No sheet is selected."

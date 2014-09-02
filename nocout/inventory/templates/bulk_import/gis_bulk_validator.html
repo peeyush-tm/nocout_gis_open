@@ -1,5 +1,6 @@
 {% extends "inventory/inventory.html" %}
 {% load staticfiles %}
+{% load jsonify %}
 {% block breadcrumb_title %}
     <li>Inventory</li>
     <li>Bulk Import</li>
@@ -12,13 +13,13 @@
 {% block content_title %}GIS Inventory Validator{% endblock %}
 {% block content_description %}GIS Inventory Validator{% endblock %}
 {% block content %}
-    <div class="row formContainer">
-        <div class="col-md-12">
-            <div class="row">
-                <div class="col-md-12">
-                    <p>{% for item in headers%}{{ item }}{% endfor %}</p>
-                </div>
-            </div>
+    <div class="box border lite" style="overflow-x: auto; background: #fff;">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>VALIDATED INVENTORY FILE</h4>
+        </div>
+        <div id="tableContainer" class="box-body">
+            <div id="demo"></div>
+            </table>
         </div>
     </div>
     {% block content_js %}
@@ -33,6 +34,16 @@
             $('.tip-focus').tooltip({
                 placement: 'right',
                 trigger: 'focus'
+            });
+        });
+        $(document).ready(function () {
+            $('#demo').html('<table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="example">');
+
+            $('#example').dataTable({
+                "aaData": {{ invalid_rows|jsonify }},
+                "aoColumns": [
+                    {% for header in headers %}{ "sTitle": "{{ header }}" },{% endfor %}
+                ]
             });
         });
     </script>
