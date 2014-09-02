@@ -1,6 +1,7 @@
 import ast, sys
 import json, logging
 import urllib
+from multiprocessing import Process, Queue
 from django.db.models import Q, Count
 from django.views.generic.base import View
 from django.http import HttpResponse
@@ -523,9 +524,11 @@ class BulkFetchLPDataApi(View):
 
         # converting 'json' into python object
         devices = eval(str(self.request.GET.get('devices', None)))
+
         lp_template_id = int(self.request.GET.get('lp_template', None))
         service = ""
         data_source = ""
+        # Responsed form multiprocessing
 
         # getting service and data source form live polling settings
         try:
@@ -556,6 +559,10 @@ class BulkFetchLPDataApi(View):
 
         try:
             for machine_id in machines:
+                response_dict = {
+                    'value': []
+                }
+                responses = []
                 # live polling setting
                 lp_template = LivePollingSettings.objects.get(pk=lp_template_id)
 
@@ -577,11 +584,10 @@ class BulkFetchLPDataApi(View):
                         site_instances_list.append(device.site_instance.id)
                     except Exception as e:
                         logger.info(e.message)
-                sites = set(site_instances_list)
 
-                # sites associated with current devices
+                sites = set(site_instances_list)
+                site_list = []
                 for site_id in sites:
-                    site = SiteInstance.objects.get(pk=site_id)
                     devices_in_current_site = []
                     for device_name in current_devices_list:
                         try:
@@ -590,94 +596,132 @@ class BulkFetchLPDataApi(View):
                                 devices_in_current_site.append(device.device_name)
                         except Exception as e:
                             logger.info(e.message)
-                    
+
                     # live polling data dictionary (payload for nocout.py api call)
                     lp_data = dict()
                     lp_data['mode'] = "live"
                     lp_data['device_list'] = devices_in_current_site
                     lp_data['service_list'] = [str(lp_template.service.name)]
                     lp_data['ds'] = [str(lp_template.data_source.name)]
+                    site = SiteInstance.objects.get(pk=int(site_id))
+                    site_list.append({
+                        'username': site.username,
+                        'password': site.password,
+                        'port': site.web_service_port,
+                        'machine': site.machine.machine_ip,
+                        'site_name': site.name,
+                        'lp_data': lp_data
+                    })
 
-                    # url for nocout.py
-                    # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
-                    # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
-                    url = "http://{}:{}@{}:{}/{}/check_mk/nocout_live.py".format(site.username,
-                                                                                 site.password,
-                                                                                 site.machine.machine_ip,
-                                                                                 site.web_service_port,
-                                                                                 site.name)
+                # Multiprocessing
+                q = Queue()
+                jobs = [
+                    Process(
+                        target=nocout_live_polling,
+                        args=(q, site,)
+                    ) for site in site_list
+                ]
 
-                    # encoding 'lp_data'
-                    encoded_data = urllib.urlencode(lp_data)
+                for j in jobs:
+                    j.start()
+                for k in jobs:
+                    k.join()
 
-                    # sending post request to nocout device app to fetch service live polling value
-                    try:
-                        r = requests.post(url, data=encoded_data)
-                    except Exception as e:
-                        print "r error: "
-                        logger.info(e.message)
+                while True:
+                    if not q.empty():
+                        responses.append(q.get())
+                    else:
+                        break
+                for entry in responses:
+                    response_dict['value'].extend(entry.get('value'))
 
-                    # converting post response data into python dict expression
-                    response_dict = ast.literal_eval(r.text)
+                # if response(r) is given by post request than process it further to get success/failure messages
+                if len(response_dict):
+                    devices_in_response = response_dict.get('value')
 
-                    # if response(r) is given by post request than process it further to get success/failure messages
-                    if r:
-                        devices_in_response = response_dict.get('value')
+                    for device_dict in devices_in_response:
+                        device_name = ""
+                        device_value = ""
 
-                        for device_dict in devices_in_response:
-                            device_name = ""
-                            device_value = ""
-
-                            for device, val in device_dict.items():
-                                device_name = device
-                                try:
-                                    device_value = val[0]
-                                except Exception as e:
-                                    device_value = ""
-                                    logger.info(e.message)
-
-                            result['data']['devices'][device_name] = dict()
-
-                            result['data']['devices'][device_name]['value'] = device_value
-
-                            # threshold configuration for getting warning, critical comparison values
-                            tc = ThresholdConfiguration.objects.get(live_polling_template=lp_template)
-
-                            # thematic settings for getting icon url
-                            ts = ThematicSettings.objects.get(threshold_template=tc)
-
-                            # comparing threshold values to get icon
+                        for device, val in device_dict.items():
+                            device_name = device
                             try:
-                                value = device_value
-                                image_partial = "img/icons/wifi7.png"
-                                if abs(int(value)) > abs(int(tc.warning)):
-                                    image_partial = ts.gt_warning.upload_image
-                                elif abs(int(tc.warning)) >= abs(int(value)) >= abs(int(tc.critical)):
-                                    image_partial = ts.bt_w_c.upload_image
-                                elif abs(int(value)) > abs(int(tc.critical)):
-                                    image_partial = ts.gt_critical.upload_image
-                                else:
-                                    icon = static('img/icons/wifi7.png')
-                                img_url = "/media/" + str(image_partial) if "uploaded" in str(image_partial) else static(
-                                    "img/" + image_partial)
-                                icon = str(img_url)
+                                device_value = val[0]
                             except Exception as e:
-                                icon = static('img/icons/wifi7.png')
+                                device_value = ""
                                 logger.info(e.message)
 
-                            result['data']['devices'][device_name]['icon'] = icon
+                        result['data']['devices'][device_name] = dict()
 
-                            # if response_dict doesn't have key 'success'
-                            if not response_dict.get('success'):
-                                logger.info(response_dict.get('error_message'))
-                                result['data']['devices'][device_name]['message'] = "Failed to fetch data for '%s'." % \
-                                                                                    device_name
+                        result['data']['devices'][device_name]['value'] = device_value
+
+                        # threshold configuration for getting warning, critical comparison values
+                        tc = ThresholdConfiguration.objects.get(live_polling_template=lp_template)
+
+                        # thematic settings for getting icon url
+                        ts = ThematicSettings.objects.get(threshold_template=tc)
+
+                        # comparing threshold values to get icon
+                        try:
+                            value = device_value
+                            image_partial = "img/icons/wifi7.png"
+                            if abs(int(value)) > abs(int(tc.warning)):
+                                image_partial = ts.gt_warning.upload_image
+                            elif abs(int(tc.warning)) >= abs(int(value)) >= abs(int(tc.critical)):
+                                image_partial = ts.bt_w_c.upload_image
+                            elif abs(int(value)) > abs(int(tc.critical)):
+                                image_partial = ts.gt_critical.upload_image
                             else:
-                                result['data']['devices'][device_name]['message'] = "Successfully fetch data for '%s'." % \
-                                                                                    device_name
+                                icon = static('img/icons/wifi7.png')
+                            img_url = "/media/" + str(image_partial) if "uploaded" in str(image_partial) else static(
+                                "img/" + str(image_partial))
+                            icon = str(img_url)
+                        except Exception as e:
+                            icon = static('img/icons/wifi7.png')
+                            logger.info(e.message)
+
+                        result['data']['devices'][device_name]['icon'] = icon
+
+                        # if response_dict doesn't have key 'success'
+                        if not response_dict.get('success'):
+                            logger.info(response_dict.get('error_message'))
+                            result['data']['devices'][device_name]['message'] = "Failed to fetch data for '%s'." % \
+                                                                                device_name
+                        else:
+                            result['data']['devices'][device_name]['message'] = "Successfully fetch data for '%s'." % \
+                                                                                device_name
             result['success'] = 1
             result['message'] = "Successfully fetched."
         except Exception as e:
             result['message'] = e.message
             logger.info(e)
         return HttpResponse(json.dumps(result))
+
+
+def nocout_live_polling(q, site):
+    response_dict = {}
+
+    # url for nocout.py
+    # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+    # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
+    url = "http://{}:{}@{}:{}/{}/check_mk/nocout_live.py".format(site.get('username'),
+                                                                 site.get('password'),
+                                                                 site.get('machine'),
+                                                                 site.get('port'),
+                                                                 site.get('site_name'))
+
+    # encoding 'lp_data'
+    encoded_data = urllib.urlencode(site.get('lp_data'))
+
+    # sending post request to nocout device app to fetch service live polling value
+    try:
+        r = requests.post(url, data=encoded_data)
+        response_dict = ast.literal_eval(r.text)
+        if len(response_dict):
+            q.put(response_dict)
+    except Exception as e:
+        logger.info(e.message)
+
+    
+
+

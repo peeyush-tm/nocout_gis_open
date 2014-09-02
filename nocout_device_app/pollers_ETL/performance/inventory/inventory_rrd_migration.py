@@ -58,22 +58,25 @@ def inventory_perf_data(site,hostlist):
 			query_string = "GET services\nColumns: service_state plugin_output host_address\nFilter: " + \
 			"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" 	 	% (service,host[0])
 			query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
-			if query_output[0][1]:
-				plugin_output = str(query_output[0][1].split('- ')[1])
-				service_state = (query_output[0][0])
-				if service_state == 0:
-					service_state = "OK"
-				elif service_state == 1:
-					service_state = "WARNING"
-				elif service_state == 2:
-					service_state = "CRITICAL"
-				elif service_state == 3:
-					service_state = "UNKNOWN"
-				host_ip = str(query_output[0][2])
-			else:
+			try:
+				if query_output[0][1]:
+					plugin_output = str(query_output[0][1].split('- ')[1])
+					service_state = (query_output[0][0])
+					if service_state == 0:
+						service_state = "OK"
+					elif service_state == 1:
+						service_state = "WARNING"
+					elif service_state == 2:
+						service_state = "CRITICAL"
+					elif service_state == 3:
+						service_state = "UNKNOWN"
+					host_ip = str(query_output[0][2])
+				else:
+					continue
+				ds=service.split('_')[1:-1]
+				ds = ('_').join(ds)
+			except:
 				continue
-			ds=service.split('_')[1:-1]
-			ds = ('_').join(ds)
 			current_time = int(time.time())
 			invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host[0]),
 						service_name=service,current_value=plugin_output,min_value=0,max_value=0,avg_value=0,
