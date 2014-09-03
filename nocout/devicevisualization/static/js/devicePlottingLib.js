@@ -3194,7 +3194,8 @@ function devicePlottingClass_gmap() {
 			$("#clearPolygonBtn").addClass("hide");
 		}
 
-		$("#advFilterBtn").button("complete");
+		/*Enable other buttons*/
+    	disableAdvanceButton("no");
     	$("#resetFilters").button("complete");
 
 		if(Object.keys(currentPolygon).length > 0) {
@@ -3345,9 +3346,8 @@ function prepare_data_for_filter(){
 
     if ( main_devices_data_gmaps.length >0 )
         {
-
             for (i=0; i< main_devices_data_gmaps.length; i++)
-            {
+            {            	
 //                filter_data_bs_name_collection.push({ 'id':[main_devices_data_gmaps[i].id],
 //                                                      'value':main_devices_data_gmaps[i].name });
 //
@@ -3396,7 +3396,6 @@ function prepare_data_for_filter(){
             filter_data_bs_city_collection= unique_values_field_and_with_base_station_ids(filter_data_bs_city_collection);
             filter_data_sector_ss_technology_collection= unique_values_field_and_with_base_station_ids(filter_data_sector_ss_technology_collection,'technology');
             filter_data_sector_ss_vendor_collection= unique_values_field_and_with_base_station_ids(filter_data_sector_ss_vendor_collection,'vendor');
-
 
             var filter_data=[
 //                {
