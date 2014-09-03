@@ -76,7 +76,7 @@ var mapInstance = "",
 	isFreeze = 0;
     map_points_array = [];
     map_point_count = 0, sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 10, zoomAfterRightClickComes= 10, fresnelData= {}, sectorMarkersMasterObj= {},
-    tempFilteredData=[];
+    tempFilteredData=[], markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}};
 
 
 function displayCoordinates(pnt) {
@@ -214,7 +214,10 @@ function devicePlottingClass_gmap() {
 					center    : new google.maps.LatLng(21.1500,79.0900),
 					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.ROADMAP,
-					mapTypeControl : false
+					mapTypeControl : true,
+					mapTypeControlOptions: {
+						style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+					}
 				};
 			}
 
@@ -274,6 +277,9 @@ function devicePlottingClass_gmap() {
 
 			/*Add Full Screen Control*/
 			mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(new FullScreenControl(mapInstance));
+
+			//Add Map Type Screen Control
+			// mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].
 
 			/*Create a instance of OverlappingMarkerSpiderfier*/
 			oms = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
@@ -352,6 +358,9 @@ function devicePlottingClass_gmap() {
 			get_param_filter = "";
 		}
 
+		//display advance search, filter etc button when call is going on.
+		disableAdvanceButton();
+
 		if(counter > 0 || counter == -999) {
 
 			/*Ajax call not completed yet*/
@@ -413,8 +422,6 @@ function devicePlottingClass_gmap() {
 								}
 
 								if(counter == -999) {
-									//display advance search, filter etc button when call is going on.
-									disableAdvanceButton();
 
 									counter = Math.floor(devicesCount / showLimit);
 								}
@@ -572,6 +579,8 @@ function devicePlottingClass_gmap() {
 			/*Create BS Marker*/
 		    var bs_marker = new google.maps.Marker(bs_marker_object);
 
+		    //Add markers to markersMasterObj with LatLong at key so it can be fetched later.
+		    markersMasterObj['BS'][String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= bs_marker;
 		    /*
 		    Add Context menu event to the marker
 		     */
@@ -686,6 +695,8 @@ function devicePlottingClass_gmap() {
 					/*Create SS Marker*/
 				    var ss_marker = new google.maps.Marker(ss_marker_object);
 
+				    markersMasterObj['SS'][String(ss_marker_obj.data.lat)+ ss_marker_obj.data.lon]= ss_marker;
+
 				    total_bs.push(ss_marker);
 
 				    /*Add the master marker to the global master markers array*/
@@ -737,7 +748,6 @@ function devicePlottingClass_gmap() {
 			bsLatArray.push(bs_ss_devices[i].data.lat);
 			bsLonArray.push(bs_ss_devices[i].data.lon);
 		}
-console.log(sectorMarkersMasterObj);
 		/*Loop to change the icon for same location markers(to cluster icon)*/
 		for(var k=0;k<masterMarkersObj.length;k++) {
 			
@@ -925,7 +935,6 @@ console.log(sectorMarkersMasterObj);
 
 		/*Bind Click Event on Link Path Between Master & Slave*/
 		google.maps.event.addListener(pathConnector, 'click', function(e) {
-console.log(this);
 			/*Call the function to create info window content*/
 			var content = gmap_self.makeWindowContent(this);
 			/*Set the content for infowindow*/
@@ -935,6 +944,8 @@ console.log(this);
 			/*Open the info window*/
 			infowindow.open(mapInstance);
 		});
+
+		markersMasterObj['Lines'][String(startEndObj.startLat)+ startEndObj.startLon+ startEndObj.endLat+ startEndObj.endLon]= pathConnector;
 
 		/*returns gmap polyline object */
 		return pathConnector;
@@ -1983,6 +1994,7 @@ console.log(contentObject);
         	if($.trim(mapPageType) == "gmap") {
         		gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps);
         	} else {
+        		// earth_instance.applyFilter_earth(appliedFilterObj_gmaps);
         		earth_instance.applyFilter_earth(appliedFilterObj_gmaps);
         	}
         }
