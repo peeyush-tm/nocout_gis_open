@@ -1,7 +1,7 @@
 import csv
 import json
 import datetime
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, render
@@ -9,6 +9,7 @@ from django.views.generic import ListView
 from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
 import xlwt
+from alert_center.views import PTP_TECHNOLOGY_ID
 from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation
 from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus, ServiceStatus, InventoryStatus, \
@@ -118,11 +119,12 @@ class LivePerformanceListing(BaseDatatableView):
                 return self.get_initial_query_set_data(organization_ids=organization_ids)
 
             elif self.request.GET['page_type'] == 'network':
+                return self.get_initial_query_set_data(organization_ids=organization_ids,
+                                                       device_association='sector_configured_on')
+            else:
                 return []
-                # return self.get_initial_query_set_data(organization_ids=organization_ids)
-            # else:
 
-    def get_initial_query_set_data(self, **kwargs):
+    def get_initial_query_set_data(self, device_association='', **kwargs):
         """
         Generic function required to fetch the initial data with respect to the page_type parameter in the get request requested.
 
@@ -131,18 +133,18 @@ class LivePerformanceListing(BaseDatatableView):
         :return: list of devices
         """
         device_list = list()
-        # if self.request.GET['page_type'] != 'network':
-        device_tab_technology = self.request.GET.get('data_tab')
-        device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
-        # get only devices added to NMS and none other
-        devices = Device.objects.filter(is_added_to_nms=1, is_deleted=0, organization__in=kwargs['organization_ids'],\
-                  device_technology=device_technology_id).values(*self.columns + ['id', 'device_name', 'machine__name',\
-                                                                                  'sector_configured_on','substation'])
-        # else:
-        #     # get only devices added to NMS and none other
-        #     devices = Device.objects.filter(is_added_to_nms=1, is_deleted=0,
-        #                                     organization__in=kwargs['organization_ids']). \
-        #         values(*self.columns + ['id', 'device_name', 'machine__name'])
+        if self.request.GET['page_type'] != 'network':
+            device_tab_technology = self.request.GET.get('data_tab')
+            device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
+            # get only devices added to NMS and none other
+            devices = Device.objects.filter(is_added_to_nms= 1,  is_deleted= 0, organization__in= kwargs['organization_ids'],\
+                                            device_technology= device_technology_id).values(*self.columns +\
+                                            ['id', 'device_name', 'machine__name','sector_configured_on', 'substation'])
+        else:
+            # get only devices added to NMS and none other
+            devices = Device.objects.filter(~Q(device_technology = PTP_TECHNOLOGY_ID), is_added_to_nms=1, is_deleted=0,
+                                            organization__in= kwargs['organization_ids']). \
+                                     values(*self.columns + ['id', 'device_name', 'machine__name', device_association])
 
         for device in devices:
             if device['sector_configured_on'] or device['substation']:
@@ -703,7 +705,7 @@ class Get_Service_Type_Performance_Data(View):
         """
         self.result = {
             'success': 0,
-            'message': 'Substation Service Not Fetched.',
+            'message': 'No Data.',
             'data': {
                 'meta': {},
                 'objects': {}
