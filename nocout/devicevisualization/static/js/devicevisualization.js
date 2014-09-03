@@ -96,7 +96,7 @@ $("#resetFilters").click(function(e) {
         $("#state").val($("#state option:first").val());
         $("#city").val($("#city option:first").val());
         isCallCompleted = 1;
-    }    
+    }
 
     if(window.location.pathname.indexOf("google_earth") > -1) {
         
@@ -112,7 +112,8 @@ $("#resetFilters").click(function(e) {
             networkMapInstance.resetVariables_gmap();
 
             /*Call the make network to create the BS-SS network on the google map*/
-            networkMapInstance.getDevicesData_gmap();
+            // networkMapInstance.getDevicesData_gmap();
+            networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
         }
 
         /***************GOOGLE EARTH CODE*******************/
@@ -136,8 +137,7 @@ $("#resetFilters").click(function(e) {
             networkMapInstance.clearGmapElements();
 
             /*Reset Global Variables & Filters*/
-            networkMapInstance.resetVariables_gmap();
-
+            networkMapInstance.resetVariables_gmap();            
             /*Call the make network to create the BS-SS network on the google map*/
             // networkMapInstance.getDevicesData_gmap();
             networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
