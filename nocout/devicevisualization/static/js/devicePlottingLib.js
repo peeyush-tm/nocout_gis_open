@@ -75,7 +75,8 @@ var mapInstance = "",
 	distance_label = {},
 	isFreeze = 0;
     map_points_array = [];
-    map_point_count = 0, sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 15, zoomAfterRightClickComes= 10, fresnelData= {};
+    map_point_count = 0, sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 10, zoomAfterRightClickComes= 10, fresnelData= {}, sectorMarkersMasterObj= {},
+    tempFilteredData=[], markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}};
 
 
 function displayCoordinates(pnt) {
@@ -163,6 +164,19 @@ function openBSRightClickMenu(event, marker) {
 	}
 }
 
+
+function showRequiredSectorMarker(filteredData) {
+	var zoom = mapInstance.getZoom();
+	for(var i=0; i< filteredData.length; i++) {
+		(function showMarker(lat, lon) {
+			if( zoom > zoomAtWhichSectorMarkerAppears) {
+				sectorMarkersMasterObj[uniqueKey].setMap(mapInstance);
+			}
+			return ;
+		})(filteredData[i].data.lat, filteredData[i].data.lon);
+	}
+}
+
 /**
  * This class is used to plot the BS & SS on the google maps & performs their functionality.
  * @class gmap_devicePlottingLib
@@ -201,7 +215,10 @@ function devicePlottingClass_gmap() {
 					center    : new google.maps.LatLng(21.1500,79.0900),
 					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.ROADMAP,
-					mapTypeControl : false
+					mapTypeControl : true,
+					mapTypeControlOptions: {
+						style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+					}
 				};
 			}
 
@@ -219,6 +236,25 @@ function devicePlottingClass_gmap() {
             });
 
             google.maps.event.addListener(mapInstance, 'zoom_changed', function() {
+// <<<<<<< HEAD
+//             	var zoom = mapInstance.getZoom();
+//             	if( zoom > zoomAtWhichSectorMarkerAppears && tempFilteredData.length) {
+//             		for(var i=0; i< tempFilteredData.length; i++) {
+//             			(function showMarker(lat, lon) {
+//             				var uniqueKey= String(lat)+lon;
+//             				if( zoom > zoomAtWhichSectorMarkerAppears) {
+//             					sectorMarkersMasterObj[uniqueKey].setMap(mapInstance);
+//             				}
+//             				return ;
+//             			})(tempFilteredData[i].data.lat, tempFilteredData[i].data.lon);
+//             		}
+//             	}
+//             	else {
+//             		for (var i = 0; i < sector_MarkersArray.length; i++) {    
+//             			sector_MarkersArray[i].setMap(null);
+//             		}
+//             	}
+// =======
             	// var zoom = mapInstance.getZoom();
             	// if( zoom > zoomAtWhichSectorMarkerAppears) {
             	// 	for (var i = 0; i < sector_MarkersArray.length; i++) {    
@@ -247,6 +283,7 @@ function devicePlottingClass_gmap() {
 				// 	    );
 				//     }
 				// }
+// >>>>>>> fc94dc2d6efa780fddebc414eeac2d4b0d62e5d2
             });
 
 			/*Event listener for search text box*/
@@ -272,6 +309,9 @@ function devicePlottingClass_gmap() {
 			/*Add Full Screen Control*/
 			mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(new FullScreenControl(mapInstance));
 
+			//Add Map Type Screen Control
+			// mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].
+
 			/*Create a instance of OverlappingMarkerSpiderfier*/
 			oms = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
 
@@ -279,30 +319,6 @@ function devicePlottingClass_gmap() {
 			infowindow = new google.maps.InfoWindow();		
 
 			oms.addListener('click', function(marker,e) {
-
-				// var isChecked = $("#showAllSS:checked").length;
-				
-				// if($.trim(marker.pointType) == 'base_station') {
-
-				// 	if(isChecked != 1) {
-
-				// 		/*Clear the existing SS for same point*/
-				// 		for(var i=0;i<plottedSS.length;i++) {
-				// 			plottedSS[i].setMap(null);
-				// 		}
-
-				// 		Clear all the link between BS & SS  or Sector & SS
-				// 		for(var j=0;j<pathLineArray.length;j++) {
-				// 			pathLineArray[j].setMap(null);	
-				// 		}
-				// 		/*Reset global variables*/
-				// 		plottedSS = [];
-				// 		pathLineArray = [];
-
-				// 		gmap_self.plotSubStation_gmap(marker);
-				// 	}
-				// }
-
 				var windowPosition = new google.maps.LatLng(marker.ptLat,marker.ptLon);
 				/*Call the function to create info window content*/
 				var content = gmap_self.makeWindowContent(marker);
@@ -413,6 +429,9 @@ function devicePlottingClass_gmap() {
 			get_param_filter = "";
 		}
 
+		//display advance search, filter etc button when call is going on.
+		disableAdvanceButton();
+
 		if(counter > 0 || counter == -999) {
 
 			/*Ajax call not completed yet*/
@@ -474,18 +493,9 @@ function devicePlottingClass_gmap() {
 								}
 
 								if(counter == -999) {
-									//display advance search, filter etc button when call is going on.
-									disableAdvanceButton();
 
 									counter = Math.floor(devicesCount / showLimit);
 								}
-
-//								/*If cluster icon exist then save it to global variable else make the global variable blank*/
-//								if(devicesObject.data.objects.data.unspiderfy_icon == undefined) {
-//									clusterIcon = "";
-//								} else {
-//									clusterIcon = window.location.origin+"/"+devicesObject.data.objects.data.unspiderfy_icon;
-//								}
 
 								/*Check that any advance filter is applied or not*/
 								if(appliedAdvFilter.length <= 0) {
@@ -522,16 +532,7 @@ function devicePlottingClass_gmap() {
 
 								disableAdvanceButton('no');
 
-								// $.gritter.add({
-						  //           // (string | mandatory) the heading of the notification
-						  //           title: 'GIS',
-						  //           // (string | mandatory) the text inside the notification
-						  //           text: 'Device Loading Completed',
-						  //           // (bool | optional) if you want it to fade out on its own or just sit there
-						  //           sticky: false
-						  //       });
-
-						        /*Recall the server after particular timeout if system is not freezed*/
+								/*Recall the server after particular timeout if system is not freezed*/
 						        /*Hide The loading Icon*/
 								$("#loadingIcon").hide();
 
@@ -548,16 +549,6 @@ function devicePlottingClass_gmap() {
 							isCallCompleted = 1;
 							gmap_self.plotDevices_gmap([],"base_station");
 
-							// $.gritter.add({
-					  //           // (string | mandatory) the heading of the notification
-					  //           title: 'GIS',
-					  //           // (string | mandatory) the text inside the notification
-					  //           text: 'Device Loading Completed',
-					  //           // (bool | optional) if you want it to fade out on its own or just sit there
-					  //           sticky: false
-					  //       });
-
-							/*Recall the server after particular timeout if system is not freezed*/
 							/*Hide The loading Icon*/
 							$("#loadingIcon").hide();
 
@@ -575,14 +566,6 @@ function devicePlottingClass_gmap() {
 						gmap_self.plotDevices_gmap([],"base_station");
 
 						disableAdvanceButton('no');
-						// $.gritter.add({
-				  //           // (string | mandatory) the heading of the notification
-				  //           title: 'GIS',
-				  //           // (string | mandatory) the text inside the notification
-				  //           text: result.message,
-				  //           // (bool | optional) if you want it to fade out on its own or just sit there
-				  //           sticky: false
-				  //       });
 
 						/*Recall the server after particular timeout if system is not freezed*/
 						setTimeout(function(e) {
@@ -667,6 +650,8 @@ function devicePlottingClass_gmap() {
 			/*Create BS Marker*/
 		    var bs_marker = new google.maps.Marker(bs_marker_object);
 
+		    //Add markers to markersMasterObj with LatLong at key so it can be fetched later.
+		    markersMasterObj['BS'][String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= bs_marker;
 		    /*
 		    Add Context menu event to the marker
 		     */
@@ -678,36 +663,7 @@ function devicePlottingClass_gmap() {
 		    	return markerRightClick;
 		    })(bs_marker);
 
-
-            // google.maps.event.addListener(mapInstance, 'zoom_changed', function() {
-            // 	var zoom = mapInstance.getZoom();
-            // 	if( zoom > zoomAtWhichSectorMarkerAppears) {
-            // 		for (var i = 0; i < sector_MarkersArray.length; i++) {    
-            // 			sector_MarkersArray[i].setMap(mapInstance);
-            // 		}
-            // 	}
-            // 	else {
-            // 		for (var i = 0; i < sector_MarkersArray.length; i++) {    
-            // 			sector_MarkersArray[i].setMap(null);
-            // 		}
-            // 	}
-            // });
-
-		    // google.maps.event.addListener(bs_marker, 'click', function(e) {
-		    // 	var zoom = mapInstance.getZoom();
-		    // 	if( zoom > zoomAtWhichSectorMarkerAppears) {
-		    // 		for (var i = 0; i < sector_MarkersArray.length; i++) {    
-      //       			sector_MarkersArray[i].setMap(mapInstance);
-      //       		}
-      //       	}
-      //       	else {
-      //       		for (var i = 0; i < sector_MarkersArray.length; i++) {    
-      //       			sector_MarkersArray[i].setMap(null);
-      //       		}
-      //       	}
-		    // });
-			
-			/*Sectors Array*/
+		    /*Sectors Array*/
 			var sector_array = bs_ss_devices[i].data.param.sector;
             var deviceIDArray= [];
 			/*Plot Sector*/
@@ -772,6 +728,8 @@ function devicePlottingClass_gmap() {
 
 					sector_MarkersArray.push(sector_Marker);
 
+					sectorMarkersMasterObj[String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= sector_Marker;
+
 					// masterMarkersObj.push(sector_Marker);
 
 					oms.addMarker(sector_Marker);
@@ -822,6 +780,10 @@ function devicePlottingClass_gmap() {
 					/*Create SS Marker*/
 				    var ss_marker = new google.maps.Marker(ss_marker_object);
 
+				    markersMasterObj['SS'][String(ss_marker_obj.data.lat)+ ss_marker_obj.data.lon]= ss_marker;
+
+				    total_bs.push(ss_marker);
+
 				    /*Add the master marker to the global master markers array*/
 			    	masterMarkersObj.push(ss_marker);
 
@@ -859,6 +821,8 @@ function devicePlottingClass_gmap() {
 				}
     		}
 
+
+
     		/*Add the master marker to the global master markers array*/
 	    	masterMarkersObj.push(bs_marker);
 
@@ -869,7 +833,6 @@ function devicePlottingClass_gmap() {
 			bsLatArray.push(bs_ss_devices[i].data.lat);
 			bsLonArray.push(bs_ss_devices[i].data.lon);
 		}
-
 		/*Loop to change the icon for same location markers(to cluster icon)*/
 		for(var k=0;k<masterMarkersObj.length;k++) {
 			
@@ -1065,6 +1028,8 @@ function devicePlottingClass_gmap() {
 			/*Open the info window*/
 			infowindow.open(mapInstance);
 		});
+
+		markersMasterObj['Lines'][String(startEndObj.startLat)+ startEndObj.startLon+ startEndObj.endLat+ startEndObj.endLon]= pathConnector;
 
 		/*returns gmap polyline object */
 		return pathConnector;
@@ -2040,6 +2005,7 @@ function devicePlottingClass_gmap() {
                 sticky: false
             });
 
+            tempFilteredData= main_devices_data_gmaps;
             /*Populate the map with the All markers*/
             // gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
 
@@ -2051,6 +2017,9 @@ function devicePlottingClass_gmap() {
             masterMarkersObj = [];
             slaveMarkersObj = [];
 
+            showRequiredSectorMarker(filteredData);
+
+            tempFilteredData= filteredData;
             /*Populate the map with the filtered markers*/
             gmap_self.plotDevices_gmap(filteredData,"base_station");
             /*Resetting filter data to Empty.*/
@@ -2105,6 +2074,7 @@ function devicePlottingClass_gmap() {
         	if($.trim(mapPageType) == "gmap") {
         		gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps);
         	} else {
+        		// earth_instance.applyFilter_earth(appliedFilterObj_gmaps);
         		earth_instance.applyFilter_earth(appliedFilterObj_gmaps);
         	}
         }

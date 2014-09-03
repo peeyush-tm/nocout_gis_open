@@ -13,7 +13,7 @@ get_page_status();
 function getPageType() {
 
     if(window.location.pathname.indexOf("google_earth") > -1) {
-        mapPageType = "gmap";
+        mapPageType = "earth";
         // mapPageType = "earth";
         // networkMapInstance = mapsLibInstance;
     } else {
@@ -77,7 +77,15 @@ $("#technology").change(function(e) {
 
     getPageType();
     var tech_id = $(this).val();
+
     if (tech_id != ""){
+        // $("select#vendor > option").each(function() {
+        //     if($(this).attr('tech_id')=== tech_id) {
+        //         $(this).show();
+        //     } else {
+        //         $(this).hide();
+        //     }
+        // });
         $("#vendor").val(tech_id);
     }
     networkMapInstance.makeFiltersArray(mapPageType);
@@ -168,10 +176,20 @@ $("#cancelAdvSearchBtn").click(function(e) {
 });
 
 $("#resetSearchForm").click(function(e) {
-    $("#searchInfoModal_form").find('select').each(function(i, el) {$(el).select2("val", [])});
+    $("form#searchInfoModal_form").find('select').each(function(i, el) {
+        $(el).select2("val", [])
+        if(i== $("form#searchInfoModal_form").find('select').length-1) {
+               if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
+                $("#advSearchContainerBlock").addClass("hide");
+            } 
+        }
+    });
+    advJustSearch.resetPreviousSearchedMarkers();
     advJustSearch.resetVariables();
-    $("#setAdvSearchBtn").trigger('click');
+    mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
+    mapInstance.setZoom(5);
     advJustSearch.hideNotification();
+
 });
 
 /**
@@ -179,10 +197,8 @@ $("#resetSearchForm").click(function(e) {
  * @method showAdvFilters
  */
 function showAdvFilters() {
-
     /*Show the spinner*/
     showSpinner();
-
     $("#advSearchContainerBlock").hide();
     $("#advFilterContainerBlock").show();
 //  advSearch.getFilterInfo("filterInfoModal","Advance Filters","advFilterBtn",getFilterApi,setFilterApi);
@@ -454,3 +470,22 @@ function get_page_status() {
 
     $("#gis_status_txt").html(status_txt);
 }
+
+// function updateAllMarkers(icon) {
+//     for(var i=0; i< masterMarkersObj.length; i++) {
+//         console.log(i);
+//     }
+// }
+
+
+// $("input:radio[name='sex']").change(function () {
+//     var val= $(this).val();
+
+//     if(val=='small') {
+//         updateAllMarkers('11');
+//     } else if (val == 'medium') {
+
+//     } else {
+
+//     }
+// });
