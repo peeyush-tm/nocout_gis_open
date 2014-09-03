@@ -9,10 +9,8 @@ from wato import *
 from pprint import pformat
 import subprocess
 #import time
-import datetime
 import re
 import os
-import signal
 from ast import literal_eval
 import logging
 
@@ -135,10 +133,10 @@ def get_current_value_old(current_values, device=None, service=None, data_source
             for ds in data_source_list:
 		# Parse the output to get current value for that data source
                 desired_ds = filter(lambda x: ds in x.split('=')[0], ds_values)
-                logger.debug('desired_ds : %s' % desired_ds)
+                #logger.debug('desired_ds : %s' % desired_ds)
                 current_values.extend(map(lambda x: x.split('=')[1].split(';')[0], desired_ds))
-            logger.info('current_values : %s' % current_values)
-            logger.info('[Polling Iteration End]')
+            #logger.info('current_values : %s' % current_values)
+            #logger.info('[Polling Iteration End]')
 
     return current_values
 
@@ -148,8 +146,6 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None):
      # Teramatrix poller on which this device is being monitored
      site_name = get_site_name()
      #logger.debug('service_list: ' + pformat(service_list))
-     host_data_dict = {}
-     timeout = 7
 
      # Pass our custom alarm handler function to signal
      #signal.signal(signal.SIGALRM, alarm_handler)
@@ -157,28 +153,23 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None):
      #signal.alarm(0.5)
      for service in service_list:
 	     # Getting result from compiled checks output
-             cmd = '/opt/omd/sites/%s/bin/cmk -nvp --cache --checks=%s %s' % (site_name, service, device)
-	     start = datetime.datetime.now()
+             cmd = '/opt/omd/sites/%s/bin/cmk -nvp --checks=%s %s' % (site_name, service, device)
+	     #start = datetime.datetime.now()
              # Fork a subprocess
-             #p = subprocess.Popen(['/opt/omd/sites/pardeep_slave_1/bin/cmk', '-nvp', '--cache', '--checks=radwin_rssi', '14.141.83.236'], stdout=subprocess.PIPE, shell=True)
              p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-	     #check_output, error = p.communicate()
-	     while p.poll() is None:
-		     time.sleep(0.1)
-		     now = datetime.datetime.now()
-		     #logger.debug('In while')
-		     if (now-start).seconds > timeout:
-			     logger.debug('now-start ' + pformat((now-start).seconds))
-			     os.kill(p.pid, signal.SIGKILL)
-			     os.waitpid(-1, os.WNOHANG)
-			     data_dict = {device: []}
-			     q.put(data_dict)
-			     return
-	     check_output,error = p.communicate()
-	     #check_output = p.stdout.read()
-	     #error = None
-             #logger.debug('Thread started at: ' + pformat(datetime.datetime.now()))
-	     #logger.debug('check_out : ' + pformat(check_output))
+	#     while p.poll() is None:
+	#	     time.sleep(0.1)
+	#	     now = datetime.datetime.now()
+	#	     #logger.debug('In while')
+	#	     if (now-start).seconds > timeout:
+	#		     #logger.debug('now-start ' + pformat((now-start).seconds))
+	#		     os.kill(p.pid, signal.SIGKILL)
+	#		     os.waitpid(-1, os.WNOHANG)
+	#		     data_dict = {device: []}
+	#		     q.put(data_dict)
+	#		     return
+	     check_output, error = p.communicate()
+	     logger.debug('check_out : ' + pformat(check_output))
              if check_output:
                  reg_exp1 = re.compile(r'(?<=\()[^)]*(?=\)$)', re.MULTILINE)
                  # Parse perfdata for all services running on that device
@@ -190,7 +181,7 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None):
                          ds_values = ds_current_states[0].split(' ')
                          #logger.info('ds_values : %s' % ds_values)
                          for ds in data_source_list:
-             #                    # Parse the output to get current value for that data source
+                                 # Parse the output to get current value for that data source
                                  desired_ds = filter(lambda x: ds in x.split('=')[0], ds_values)
                                  #logger.debug('desired_ds : %s' % desired_ds)
                                  data_values = (map(lambda x: x.split('=')[1].split(';')[0], desired_ds))
@@ -218,11 +209,11 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None):
 		 else:
 			 data_dict = {device: []}
 			 q.put(data_dict)
-             if error:
+             #if error:
 		     # Log the process error code
-		     logging.debug('Process exits with error code: ' + pformat(error))
+		     #logging.debug('Process exits with error code: ' + pformat(error))
      #q.put(host_data_dict)
-     return data_dict
+     #return data_dict
 
 
 def alarm_handler(signum, frame):
