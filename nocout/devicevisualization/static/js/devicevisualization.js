@@ -15,7 +15,7 @@ function getPageType() {
     if(window.location.pathname.indexOf("google_earth") > -1) {
         mapPageType = "gmap";
         // mapPageType = "earth";
-        networkMapInstance = mapsLibInstance;
+        // networkMapInstance = mapsLibInstance;
     } else {
         mapPageType = "gmap";
     }
