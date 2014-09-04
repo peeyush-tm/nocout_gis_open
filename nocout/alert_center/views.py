@@ -7,7 +7,7 @@ from django.views.generic import ListView, View
 from django.template import RequestContext
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from device.models import Device, City, State, DeviceTechnology, DeviceType
-from inventory.models import BaseStation, Sector, SubStation, Circuit
+from inventory.models import BaseStation, Sector, SubStation, Circuit, Backhaul
 from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
 from django.utils.dateformat import format
 from django.db.models import Q
@@ -413,17 +413,52 @@ class GetNetworkAlertDetail(BaseDatatableView):
         else:
             organizations = [logged_in_user.organization]
         sector_configured_on_devices_ids = list()
+        #here we would have to get the TAB wise content
+        # we need to check the tabs
+        # we need to check the data requested
+        tab_id = None
+        if self.request.GET.get("data_source"):
+            tab_id = self.request.GET.get("data_source")
+        else:
+            return []
 
-        for organization in organizations:
-            sector_configured_on_devices_ids += Sector.objects.filter(
-                sector_configured_on__id__in=organization.device_set \
-                .values_list('id', flat=True)).values_list('sector_configured_on', flat=True).annotate(
-                dcount=Count('base_station'))
+        ptp_backhaul_devices=[]
+        sector_configured_on_devices = []
 
-        sector_configured_on_devices = Device.objects.filter(~Q(device_technology = int(P2P.ID)),
-                                                             is_added_to_nms=1, is_deleted=0,
-                                                             id__in= sector_configured_on_devices_ids)\
-                                                             .values('device_name', 'machine__name')
+        if tab_id:
+            if tab_id == "ptp_backhaul":
+                #we need to search for devices with PTP backhaul type
+                try:
+                    #need to add device with Circuit Type as : Backhaul (@TODO: make this a dropdown menu item and must for the user)
+                    #for technology = PTP and Circuit Type as Backhaul get the Device BH Configured On
+
+                    circuit_ptp_bh = Circuit.objects.filter(circuit_type="Backhaul")
+                    for cc in circuit_ptp_bh:
+                        if cc.sector.base_station.backhaul.bh_configured_on.organization_id in organizations:
+                            ptp_backhaul_devices.append({
+                                "machine__name" : cc.sector.base_station.backhaul.bh_configured_on.machine.name,
+                                "device_name" : cc.sector.base_station.backhaul.bh_configured_on.device_name
+                            })
+                        sector_configured_on_devices += ptp_backhaul_devices
+
+                except:
+                        pass
+                        ##dont waste time on values if there are none
+
+
+        else:
+            return []
+
+        # for organization in organizations:
+        #     sector_configured_on_devices_ids += Sector.objects.filter(
+        #         sector_configured_on__id__in=organization.device_set \
+        #         .values_list('id', flat=True)).values_list('sector_configured_on', flat=True).annotate(
+        #         dcount=Count('base_station'))
+        #
+        # sector_configured_on_devices = Device.objects.filter(~Q(device_technology = int(P2P.ID)),
+        #                                                      is_added_to_nms=1, is_deleted=0,
+        #                                                      id__in= sector_configured_on_devices_ids)\
+        #                                                      .values('device_name', 'machine__name')
 
         device_list, performance_data, data_sources_list = list(), list(), list()
 
@@ -465,7 +500,8 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 table_name = "performance_eventservice",
                 devices = machine_device_list,
                 data_sources = data_sources_list,
-                columns = required_data_columns
+                columns = required_data_columns,
+                tab_source = tab_id
             )
 
         if device_data:
@@ -475,7 +511,9 @@ class GetNetworkAlertDetail(BaseDatatableView):
         return device_list
 
 
-    def collective_query_result(self, machine, table_name, devices, data_sources, columns):
+    def collective_query_result(self, machine, table_name, devices, data_sources, columns, tab_source = "None"):
+        if not tab_source:
+            return []
         result_data = []
         performance_data = list() #self.model.objects.raw(query).using(alias=machine)
         performance_data = raw_prepare_result(performance_data=performance_data,
@@ -487,28 +525,45 @@ class GetNetworkAlertDetail(BaseDatatableView):
         )
 
         for data in performance_data:
+
+            city_name = ""
+            state_name = ""
+            base_station_name = ""
+
             device_object = Device.objects.get(device_name=data['device_name'])
-            sector = Sector.objects.filter(sector_configured_on__id=device_object.id)
-            if len(sector):
-                device_base_station = sector[0].base_station
-                # only display warning or critical devices
-                if severity_level_check(list_to_check=[data['severity'], data['description']]):
-                    ddata = {
-                        'device_name': data['device_name'],
-                        'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
-                        'severity': data['severity'],
-                        'ip_address': data['ip_address'],
-                        'base_station': device_base_station.name,
-                        'base_station__city': City.objects.get(id=device_base_station.city).city_name if device_base_station.city else "N/A",
-                        'base_station__state': State.objects.get(id=device_base_station.state).state_name if device_base_station.state else "N/A",
-                        'data_source_name': data['data_source'],
-                        'current_value': data['current_value'],
-                        'sys_time': datetime.datetime.fromtimestamp(float(data['sys_timestamp'])).strftime("%I:%M:%S %p"),
-                        'sys_date': datetime.datetime.fromtimestamp(float(data['sys_timestamp'])).strftime("%d/%B/%Y"),
-                        'sys_timestamp': datetime.datetime.fromtimestamp(float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                        'description': data['description']
-                    }
-                    result_data.append(ddata)
+
+            if tab_source == "ptp_backhaul":
+                #ok now we have PTP backhaul device
+
+                circuit_ptp_bh = Circuit.objects.filter(circuit_type="Backhaul")
+                for cc in circuit_ptp_bh:
+                    if cc.sector.base_station.backhaul.bh_configured_on.device_name == data["device_name"]:
+                        base_station_obj = cc.sector.base_station
+                        if base_station_obj:
+                            base_station_name = base_station_obj.name
+                            city_name = City.objects.get(id=base_station_obj.city).city_name if base_station_obj.city else 'N/A'
+                            state_name = State.objects.get(id=base_station_obj.state).state_name if base_station_obj.state else "N/A"
+
+                        if severity_level_check(list_to_check=[data['severity'], data['description']]):
+                            ddata = {
+                                'device_name': data['device_name'],
+                                'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
+                                'severity': data['severity'],
+                                'ip_address': data['ip_address'],
+                                'base_station': base_station_name,
+                                'base_station__city': city_name,
+                                'base_station__state': state_name,
+                                'data_source_name': data['data_source'],
+                                'current_value': data['current_value'],
+                                'sys_time': datetime.datetime.fromtimestamp(float(data['sys_timestamp'])).strftime("%I:%M:%S %p"),
+                                'sys_date': datetime.datetime.fromtimestamp(float(data['sys_timestamp'])).strftime("%d/%B/%Y"),
+                                'sys_timestamp': datetime.datetime.fromtimestamp(float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                                'description': data['description']
+                            }
+                            result_data.append(ddata)
+            else:
+                #we just have a case for PTP backhaul for now
+                pass
 
         return result_data
 
@@ -745,6 +800,28 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                                                              organization__in= organizations_ids)\
                                                              .values('device_name', 'machine__name')
 
+
+
+        sector_configured_on_devices = list(sector_configured_on_devices)
+        ptp_backhaul_devices = []
+
+        try:
+            #need to add device with Circuit Type as : Backhaul (@TODO: make this a dropdown menu item and must for the user)
+            #for technology = PTP and Circuit Type as Backhaul get the Device BH Configured On
+
+            circuit_ptp_bh = Circuit.objects.filter(circuit_type="Backhaul")
+            for cc in circuit_ptp_bh:
+                ptp_backhaul_devices.append({
+                    "machine__name" : cc.sector.base_station.backhaul.bh_configured_on.machine.name,
+                    "device_name" : cc.sector.base_station.backhaul.bh_configured_on.device_name
+                })
+            sector_configured_on_devices += ptp_backhaul_devices
+        except Exception as e:
+            pass
+            ##dont waste time on values if there are none
+
+
+
         device_list, performance_data, data_sources_list = list(), list(), list()
         extra_query_condition = None
 
@@ -791,12 +868,18 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                                                   condition=extra_query_condition if extra_query_condition else None
             )
 
+
             for data in performance_data:
+
                 circuit_id = "N/A"
                 sector_id = 'N/A'
                 sector = Sector.objects.filter(sector_configured_on__id=
                                                Device.objects.get(device_name= data['device_name']).id)
                 device_object = Device.objects.get(device_name= data['device_name'])
+                #now comes special case; wherein device is either backhaul or sector configured on
+                #we need to make a check to identify whats what
+
+                backhaul = Backhaul.objects.filter(bh_configured_on__device_name=data['device_name'])
 
                 if len(sector):
 
@@ -830,6 +913,46 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                         if 'service' in self.request.path_info:
                             ddata.update({'data_source_name': data['data_source']})
                         device_data.append(ddata)
+
+                elif len(backhaul):
+                    #no sector circuit in that case : Just an assumption. Needs to be checked with the client
+                    #one backhaul might be serving many a base staions # TODO resolve this
+                    circuit_id = ""
+                    sector_id = ""
+                    device_base_station = ""
+                    city = ""
+                    state = ""
+                    device_base_station_obj = backhaul[0].basestation_set.filter()
+                    if len(device_base_station_obj):
+                        device_base_station = device_base_station_obj[0]
+                        city = City.objects.get(id=device_base_station.city).city_name if device_base_station.city else 'N/A'
+                        state = State.objects.get(id=device_base_station.state).state_name if device_base_station.state else "N/A"
+                    #we have got ourselves a backhaul device that too of a PTP
+                    # if not PTP then exception and let it pass
+                    if severity_level_check(list_to_check=[data['severity'], data['description']]):
+                        ddata = {
+                            'device_name': data['device_name'],
+                            'device_technology': DeviceTechnology.objects.get(id=device_object.device_technology).alias,
+                            'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
+                            'severity': data['severity'],
+                            'ip_address': data['ip_address'],
+                            'circuit_id': circuit_id,
+                            'sector_id': sector_id,
+                            'base_station': device_base_station.name,
+                            'base_station__city': city,
+                            'base_station__state': state,
+                            'current_value': data['current_value'],
+                            'sys_timestamp': datetime.datetime.fromtimestamp(
+                                float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                            'description': data['description']
+                        }
+                        #If service tab is requested then add an another key:data_source_name to render in the data table.
+                        if 'service' in self.request.path_info:
+                            ddata.update({'data_source_name': data['data_source']})
+                        device_data.append(ddata)
+                else:
+                    #go on for loop. we are not concerned
+                    pass
         if device_data:
             sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
             return sorted_device_data
