@@ -603,8 +603,8 @@ function devicePlottingClass_gmap() {
 		    	ptLat 		     : bs_ss_devices[i].data.lat,
 		    	ptLon 		     : bs_ss_devices[i].data.lon,
 		    	map       	     : mapInstance,
-		    	icon 	  	     : '',
-		    	oldIcon 	     : '',
+		    	icon 	  	     : '/static/img/icons/bs.png',
+		    	oldIcon 	     : '/static/img/icons/bs.png',
 		    	pointType	     : stationType,
 				child_ss   	     : bs_ss_devices[i].data.param.sector,
 				original_sectors : bs_ss_devices[i].data.param.sector,
@@ -3280,38 +3280,68 @@ function devicePlottingClass_gmap() {
 
 	this.updateAllMarkersWithNewIcon= function(iconSize) {
 
-		var largeur, hauteur;
+		var largeur= 32, hauteur= 37, divideBy;
+		var originX, originY, anchorX, anchorY;
 		if(iconSize=== 'small') {
-			largeur= 10;
-			hauteur= 16;
+			divideBy= 1.4;
+			anchorX= 0.4;
 		} else if(iconSize=== 'medium') {
-			largeur= 15;
-			hauteur= 24;
+			divideBy= 1;
+			anchorX= 0;
 		} else {
-			largeur= 20;
-			hauteur= 32;
+			divideBy= 0.8;
+			anchorX= -0.2;
 		}
+
 		for(i=0; i< masterMarkersObj.length; i++ ) {
 			var icon = masterMarkersObj[i].getIcon();
+			console.log(icon);
+			var markerImage;
 			if(icon != "") {
-				console.log(icon);
-				var markerImage= {
-					url: icon.url,
-					size: new google.maps.Size(largeur, hauteur)
+				if(typeof(icon) == 'string') {
+					markerImage= new google.maps.MarkerImage(
+					icon,
+					new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
+					new google.maps.Point(0, 0), 
+					new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
+					new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)));
+				masterMarkersObj[i].setIcon(markerImage);
+				} else {
+					markerImage= new google.maps.MarkerImage(
+					icon.url,
+					new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
+					new google.maps.Point(0, 0), 
+					new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
+					new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)));
+				masterMarkersObj[i].setIcon(markerImage);
+				masterMarkersObj[i].oldIcon= markerImage;	
 				}
-				markersMasterObj[i].setIcon(markerImage);
-				// console.log(masterMarkersObj[i]);
-				// masterMarkersObj[i].setIcon(new google.maps.MarkerImage(
-				// 	icon.url,
-				// 	new google.maps.Size(largeur, hauteur),
-				// 	new google.maps.Point(0, 0),
-				// 	new google.maps.Point(18, 23),
-				// 	new google.maps.Size(largeur, hauteur))
-				// );
-				// console.log('halo');
-				// masterMarkersObj[i].setMap(null);
+				
+			} else if (icon == '/static/img/icons/bs.png') {
+				console.log(1);
+				
+				// masterMarkersObj[i].oldIcon= markerImage;
+			}else {
+
+				// var image = {
+				// 	url: icon.url,
+				// 	// This marker is 20 pixels wide by 32 pixels tall.
+				// 	size: new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
+				// 	// The origin for this image is 0,0.
+				// 	origin: new google.maps.Point(0, 0),
+				// 	// The anchor for this image is the base of the flagpole at 0,32.
+				// 	anchor: google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy))
+  		// 		};
+				// masterMarkersObj[i].setIcon(image);
+				// masterMarkersObj[i].oldIcon= image;
 			}
 		}
+
+		// for(var key in markersMasterObj['BS']) {
+		// 	console.log(key);
+		// 	var icon = markersMasterObj['BS'][key];
+		// 	console.log(icon);
+		// }
 	}
 
 	/**
