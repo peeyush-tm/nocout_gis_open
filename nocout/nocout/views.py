@@ -8,10 +8,10 @@ from django.contrib.auth.models import User
 from nocout import settings
 from session_management.models import Visitor
 
-if settings.DEBUG:
-    import logging
 
-    logger = logging.getLogger(__name__)
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @csrf_protect
@@ -184,6 +184,15 @@ def logout(request):
     """
     Logout the logged in user.
     """
+    try:
+        user_audit = {
+            "user": request.user,
+            "verb": u'username : %s : Logoff '% (request.user.username)
+        }
+        action.send(user_audit["user"], verb=user_audit["verb"])
+    except:
+        #dont log in case of exception
+        pass
     auth.logout(request)
     return HttpResponseRedirect(settings.LOGIN_URL)
 

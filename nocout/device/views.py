@@ -3369,7 +3369,7 @@ class DeviceFrequencyUpdate(UpdateView):
         """
         self.object = form.save()
         try:
-            action.send(self.request.user, verb='Created', action_object=self.object)
+            action.send(self.request.user, verb='Updated', action_object=self.object)
         except Exception as activity:
             pass
         return HttpResponseRedirect(DeviceFrequencyUpdate.success_url)

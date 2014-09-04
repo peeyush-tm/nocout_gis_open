@@ -4,7 +4,26 @@ from django.db.models.query import ValuesQuerySet
 from django.views.generic import ListView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.db.models import Q
+from django.conf import settings
 from user_profile.models import UserProfile
+
+from datetime import datetime,timedelta
+from pytz import timezone
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def time_converter(time_real):
+
+    # Current time in UTC
+    now_utc = time_real
+
+    # Convert to Indoia time zone
+    now_india = now_utc.astimezone(timezone(settings.TIME_ZONE))
+
+    return now_india.strftime("%Y-%m-%d %H:%M:%S")
 
 
 class ActionList(ListView):
@@ -20,9 +39,9 @@ class ActionList(ListView):
 
         """
         context=super(ActionList, self).get_context_data(**kwargs)
-        context['datatable_headers'] = json.dumps([ {'mData':'actor', 'sTitle' : 'User','sWidth':'15%','bSortable': False},
+        context['datatable_headers'] = json.dumps([ {'mData':'actor', 'sTitle' : 'User','sWidth':'15%','bSortable': True},
                                                     {'mData':'__unicode__', 'sTitle' : 'Actions','bSortable': False},
-                                                    {'mData':'timestamp', 'sTitle': 'Timestamp','sWidth':'17%','bSortable': False} ])
+                                                    {'mData':'timestamp', 'sTitle': 'Timestamp','sWidth':'17%','bSortable': True} ])
         return context
 
 
@@ -45,7 +64,7 @@ class ActionListingTable(BaseDatatableView):
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             actor_objects_ids_list = UserProfile.objects.filter(username__icontains=sSearch).values_list('id', flat=True)
-            qs =Action.objects.filter( actor_object_id__in=actor_objects_ids_list ).values('id','timestamp')
+            qs =Action.objects.filter( actor_object_id__in=actor_objects_ids_list ).values('id', 'timestamp')
         return qs
 
     def get_initial_queryset(self):
@@ -55,7 +74,23 @@ class ActionListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Action.objects.values(*self.columns+['id'])
+
+        startdate = datetime.now()
+        enddate = startdate + timedelta(days=15)
+
+        qs = []
+        limit = 10
+        offset = 0
+        start = 0
+        for x in range(0, Action.objects.count(), limit):
+            offset = start + limit
+            qs += Action.objects.filter(
+                timestamp__range=(startdate.strftime("%Y-%m-%d 00:00:00"), enddate.strftime("%Y-%m-%d 00:00:00"))
+            ).values("id", "timestamp")[start:offset]
+            start += limit
+
+
+        return qs
 
     def prepare_results(self, qs):
         """
@@ -68,11 +103,13 @@ class ActionListingTable(BaseDatatableView):
 
         if qs:
             for dct in qs:
+                dct['timestamp'] = time_converter(dct['timestamp'])
+                # logger.debug(dct)
                 for key, val in dct.items():
-                    dct['timestamp']= dct['timestamp'].strftime("%Y-%m-%d %H:%M:%S")
                     if key=='id':
-                        dct['__unicode__'] = Action.objects.get(pk= val).__unicode__()
-                        dct['actor'] = Action.objects.get(pk= val).actor.username
+                        action_object = Action.objects.get(pk= val)
+                        dct['__unicode__'] = action_object.__unicode__()
+                        dct['actor'] = action_object.actor.username
                     else:
                         dct[key] = val
             return list(qs)
@@ -90,15 +127,15 @@ class ActionListingTable(BaseDatatableView):
 
         # number of records before filtering
         total_records = len(qs)
-        qs = self.filter_queryset(qs)
+        # qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = len(qs)
 
-        qs = self.ordering(qs)
-        qs = self.paging(qs)
+        # qs = self.ordering(qs)
+        # qs = self.paging(qs)
         #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
-        if not qs and isinstance(qs, ValuesQuerySet):
+        if not (qs and isinstance(qs, ValuesQuerySet)) and len(qs):
             qs=list(qs)
 
         # prepare output data

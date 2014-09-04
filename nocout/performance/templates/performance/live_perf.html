@@ -136,6 +136,9 @@
         jQuery(document).ready(function () {
             App.setPage("");  //Set current page
             App.init(); //Initialise plugins and elements
+
+            //remove select class from network live and add it to customer live in side menu.
+            $("li.current").removeClass('current').prev().addClass('current');
         });
     </script>
 {% endblock %}

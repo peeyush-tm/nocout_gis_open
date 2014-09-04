@@ -14,12 +14,21 @@ var advJustSearch_self = "",
     lastJustSelectedValues = [];
     searchJustquery_data=[];
     result_Just_plot_devices=[], maxZoomLevel= 15, statusText= "Advance Search Applied";
+
+var advanceSearchMasterObj= {};
+advanceSearchMasterObj.previouslySearchedMarkersList= [];
+advanceSearchMasterObj.searchedIconUrl= 'https://maps.gstatic.com/mapfiles/ms2/micons/marina.png';
+advanceSearchMasterObj.searchedLinesByCircuitIDs= [];
+advanceSearchMasterObj.searchedLinesIconUrl= 'http://maps.google.com/mapfiles/kml/pal5/icon6.png';
+advanceSearchMasterObj.maxSearchLevelNumber= 20;
+advanceSearchMasterObj.searchNumberLimitMessage= 'Too many Searched Results. Please filter again. No Markers drawn'
+
 /**
- * This class is used to create th filter form by calling the get_filter API & the call the set_filter API with the selected filters
- * @class advanceSearchLib
+ * This class is used to Advance Search.
+ * @class advanceSearchLibrary
  * @uses jQuery
  * @uses Select2
- * Coded By :- Yogender Purohit
+ * Coded By :- Rahul Garg
  */
 function advanceJustSearchClass() {
 
@@ -43,7 +52,6 @@ function advanceJustSearchClass() {
         /*Reset the appliedJustAdvFilter*/
         appliedJustAdvFilter = [];
         appliedJustAdvSearch_Active = [];
-
         for(var i=0;i<filtersJustInfoArray.length;i++) {
 
             if(filtersJustInfoArray[i] != null) {
@@ -157,7 +165,7 @@ function advanceJustSearchClass() {
         $(".advanceSearchContainer select").select2();
         /*loop to show the last selected values*/
         for(var k=0;k<lastJustSelectedValues.length;k++) {
-        	console.log(lastJustSelectedValues);
+        	
         	$("#search_"+lastJustSelectedValues[k].field).select2("val", lastJustSelectedValues[k].value);
         }
 	    /*Hide the spinner*/
@@ -177,6 +185,75 @@ function advanceJustSearchClass() {
     		$("span#gis_search_status_txt").remove();
     	}
     }
+
+    //We will remove all Setted Search Markers here in the Array from the map and then clear the Array.
+    this.resetPreviousSearchedMarkers= function() {
+    	var previousSearchedMarkers= advanceSearchMasterObj.previouslySearchedMarkersList;
+    	for(var i=0; i< previousSearchedMarkers.length; i++) {
+    		previousSearchedMarkers[i].setMap(null);
+    	}
+    	previousSearchedMarkers= [];
+    }
+
+    //Here we create a new Marker based on the lat, long and show it on the map. Also push the marker to the previouslySeachedMarkersList array
+    this.applyIconToSearchedResult= function(lat, long, iconUrl) {
+        //create a new lat long
+        var searchedMarkerLatLong= new google.maps.LatLng(lat, long)
+        //create a new marker
+        var showSearchedResultMarker= new google.maps.Marker({position: searchedMarkerLatLong, zIndex: 99999})
+        //push marker in the previouslySearchedMarkersList array
+        advanceSearchMasterObj.previouslySearchedMarkersList.push(showSearchedResultMarker);
+
+//IF NOT FILTER APPLIED IS IN CITY OR STATE, THEN WE WILL NOT CHANGE ANY ICONS
+    
+        var selectedInputs= advJustSearch_self.getInputArray();
+        var isOnlyStateorCityIsApplied= true;
+        if(selectedInputs['BS Name'].length || selectedInputs['BS Latitude'].length || selectedInputs['BS Longitude'].length || selectedInputs['Circuit Id'].length || selectedInputs['Sector Configured On'].length || selectedInputs['Vendor'].length || selectedInputs['Technology'].length) {
+            isOnlyStateorCityIsApplied= false;
+        }
+        if(!isOnlyStateorCityIsApplied) {
+            if(iconUrl) {
+                //set icon from global object
+                showSearchedResultMarker.setIcon(iconUrl);  
+            } else {
+                //set icon from global object
+                showSearchedResultMarker.setIcon(advanceSearchMasterObj.searchedIconUrl);
+            }
+            //set animation to bounce
+            showSearchedResultMarker.setAnimation(google.maps.Animation.BOUNCE);
+            //show the marker on map.
+            showSearchedResultMarker.setMap(mapInstance);
+        }
+
+        google.maps.event.addListener(showSearchedResultMarker, 'click', function() {
+            if(iconUrl) {
+                google.maps.event.trigger(markersMasterObj['SS'][String(lat)+long], 'click');
+            } else {
+                google.maps.event.trigger(markersMasterObj['BS'][String(lat)+long], 'click');
+                
+            }
+            
+        });
+
+        
+    	return ;
+    }
+
+    this.resetPreviousSearchedLines= function() {
+    	advanceSearchMasterObj.searchedLinesByCircuitIDs= [];
+    }
+
+    this.findTheLineToUpdate= function(device,searchedText) {
+        for(var i=0; i< device['data']['param']['sector'].length; i++) {
+            for(var j=0; j< searchedText.length; j++) {
+                if((String(searchedText[j]).toLowerCase())== (String(device['data']['param']['sector'][i]['circuit_id']).toLowerCase())) {
+                    advJustSearch_self.applyIconToSearchedResult(device['data']['param']['sector'][i]['sub_station'][0]['data']['lat'], device['data']['param']['sector'][i]['sub_station'][0]['data']['lon'], advanceSearchMasterObj.searchedLinesIconUrl);
+                    advanceSearchMasterObj.searchedLinesByCircuitIDs.push(new google.maps.LatLng(device['data']['param']['sector'][i]['sub_station'][0]['data']['lat'], device['data']['param']['sector'][i]['sub_station'][0]['data']['lon']));
+                }    
+            }
+        }
+    }
+
 
     this.getInputArray= function() {
     	var ob= {};
@@ -304,11 +381,13 @@ function advanceJustSearchClass() {
 						}
 
 						if(key === 'Circuit Id') {
+
 							var deviceCircuitIDs= deviceJson.circuit_ids;
 							var deviceCircuitIDSArray= deviceCircuitIDs.split(" ");
 							var isCircuitPresent= false;
 							for(var z=0; z< deviceCircuitIDSArray.length; z++) {
 								if(((String(deviceCircuitIDSArray[z])).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceCircuitIDSArray[z])).toLowerCase()) != -1) {
+									advJustSearch_self.findTheLineToUpdate(deviceJson, selectedInputs[key]);
 									isCircuitPresent= true;
 								}	
 							}
@@ -324,20 +403,48 @@ function advanceJustSearchClass() {
 		}
 
 		var searchedStations= [];
+
+		//reset previous markers
+		advJustSearch_self.resetPreviousSearchedMarkers();
+
+		//Reset Lines
+		advJustSearch_self.resetPreviousSearchedLines();
 		var bounds= new google.maps.LatLngBounds();
 		for(var i=0; i< main_devices_data_gmaps.length; i++) {
 			if(checkIfValid(main_devices_data_gmaps[i])) {
 				searchedStations.push(main_devices_data_gmaps[i]);
 				bounds.extend(new google.maps.LatLng(main_devices_data_gmaps[i]['data']['lat'], main_devices_data_gmaps[i]['data']['lon']));
+				advJustSearch_self.applyIconToSearchedResult(main_devices_data_gmaps[i]['data']['lat'], main_devices_data_gmaps[i]['data']['lon']);
 			}
 		}
+
+
+        if(advanceSearchMasterObj.searchedLinesByCircuitIDs.length) {
+            for(var i=0; i< advanceSearchMasterObj.searchedLinesByCircuitIDs.length; i++) {
+                bounds.extend(advanceSearchMasterObj.searchedLinesByCircuitIDs[i]);
+            }
+        }
+
 		if(searchedStations.length) {
-			mapInstance.fitBounds(bounds);
-			if(mapInstance.getZoom() >= maxZoomLevel) {
-				mapInstance.setZoom(maxZoomLevel);
-			}
-			advJustSearch_self.showNotification();
-		} else {
+			if(searchedStations.length > advanceSearchMasterObj.maxSearchLevelNumber) {
+   //              // $.gritter.add({
+   //              //     // (string | mandatory) the heading of the notification
+   //              //     title: 'GIS : Search',
+   //              //     // (string | mandatory) the text inside the notification
+   //              //     text: advanceSearchMasterObj.searchNumberLimitMessage,
+   //              //     // (bool | optional) if you want it to fade out on its own or just sit there
+   //              //     sticky: false
+   //              // });
+                advanceSearchMasterObj.searchedLinesByCircuitIDs= [];
+                advJustSearch_self.resetPreviousSearchedMarkers();
+            }
+
+            mapInstance.fitBounds(bounds);
+            if(mapInstance.getZoom() >= maxZoomLevel) {
+                mapInstance.setZoom(maxZoomLevel);
+            }
+            advJustSearch_self.showNotification();
+        } else {
 			$.gritter.add({
 				// (string | mandatory) the heading of the notification
 				title: 'GIS : Search',
@@ -350,7 +457,6 @@ function advanceJustSearchClass() {
 			mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
 			mapInstance.setZoom(5);
 			advJustSearch_self.hideNotification();
-
 		}
 
 		hideSpinner();
@@ -375,5 +481,42 @@ function advanceJustSearchClass() {
 		resultantJustObject = {};
 		searchJustParameters = "";
 		appliedJustAdvSearch_Active= [];
+        advanceSearchMasterObj.searchedLinesByCircuitIDs= [];
+        filtersJustInfoArray = [],
+        resultantJustObject = {},
+        appliedJustAdvFilter = [],
+        appliedJustAdvSearch_Active = [],
+        searchJustParameters = "",
+        lastJustSelectedValues = [];
+        searchJustquery_data=[];
+        result_Just_plot_devices=[]
 	};
 }
+
+
+/*Deprecated Area*/
+
+/*This code finds the actual marker, and change it. This functionality was changed. */
+        // var latLongOfBS= String(lat)+ long;
+        // THIS CODE WILL REPLACE THE BS MARKER AND REPLEASE IT WITH SEARCH ICON
+        // if(markersMasterObj['BS'] && markersMasterObj['BS'][latLongOfBS]) {
+        //  var markerIs= markersMasterObj['BS'][latLongOfBS];
+        //  markerIs.setIcon(advanceSearchMasterObj.searchedIconUrl);
+        //  advanceSearchMasterObj.previouslySearchedMarkersList.push(markerIs);
+
+        //  markerIs.setAnimation(google.maps.Animation.BOUNCE);
+        // }
+        // 
+        // 
+        // Here we will create a new Marker and show it at the place.
+        // if(markersMasterObj['BS'] && markersMasterObj['BS'][latLongOfBS]) {
+     //        var searchedMarkerLatLong= new google.maps.LatLng(lat, long)
+
+     //        var showSearchedResultMarker= new google.maps.Marker({position: })
+
+        //  var markerIs= markersMasterObj['BS'][latLongOfBS];
+        //  markerIs.setIcon(advanceSearchMasterObj.searchedIconUrl);
+        //  advanceSearchMasterObj.previouslySearchedMarkersList.push(markerIs);
+
+        //  markerIs.setAnimation(google.maps.Animation.BOUNCE);
+        // }
