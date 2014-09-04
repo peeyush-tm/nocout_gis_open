@@ -3294,6 +3294,12 @@ function devicePlottingClass_gmap() {
 		for(i=0; i< masterMarkersObj.length; i++ ) {
 			var icon = masterMarkersObj[i].getIcon();
 			if(icon != "") {
+				console.log(icon);
+				var markerImage= {
+					url: icon.url,
+					size: new google.maps.Size(largeur, hauteur)
+				}
+				markersMasterObj[i].setIcon(markerImage);
 				// console.log(masterMarkersObj[i]);
 				// masterMarkersObj[i].setIcon(new google.maps.MarkerImage(
 				// 	icon.url,
@@ -3303,7 +3309,7 @@ function devicePlottingClass_gmap() {
 				// 	new google.maps.Size(largeur, hauteur))
 				// );
 				// console.log('halo');
-				masterMarkersObj[i].setMap(null);
+				// masterMarkersObj[i].setMap(null);
 			}
 		}
 	}

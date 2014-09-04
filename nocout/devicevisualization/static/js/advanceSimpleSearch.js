@@ -219,6 +219,10 @@ function advanceJustSearchClass() {
                 //set icon from global object
                 showSearchedResultMarker.setIcon(advanceSearchMasterObj.searchedIconUrl);
             }
+            //set animation to bounce
+            showSearchedResultMarker.setAnimation(google.maps.Animation.BOUNCE);
+            //show the marker on map.
+            showSearchedResultMarker.setMap(mapInstance);
         }
 
         google.maps.event.addListener(showSearchedResultMarker, 'click', function() {
@@ -230,10 +234,6 @@ function advanceJustSearchClass() {
             }
             
         });
-        //set animation to bounce
-        showSearchedResultMarker.setAnimation(google.maps.Animation.BOUNCE);
-        //show the marker on map.
-        showSearchedResultMarker.setMap(mapInstance);
 
         
     	return ;
@@ -426,7 +426,7 @@ function advanceJustSearchClass() {
         }
 
 		if(searchedStations.length) {
-			// if(searchedStations.length > advanceSearchMasterObj.maxSearchLevelNumber) {
+			if(searchedStations.length > advanceSearchMasterObj.maxSearchLevelNumber) {
    //              // $.gritter.add({
    //              //     // (string | mandatory) the heading of the notification
    //              //     title: 'GIS : Search',
@@ -435,9 +435,9 @@ function advanceJustSearchClass() {
    //              //     // (bool | optional) if you want it to fade out on its own or just sit there
    //              //     sticky: false
    //              // });
-   //              advanceSearchMasterObj.searchedLinesByCircuitIDs= [];
-   //              advJustSearch_self.resetPreviousSearchedMarkers();
-   //          }
+                advanceSearchMasterObj.searchedLinesByCircuitIDs= [];
+                advJustSearch_self.resetPreviousSearchedMarkers();
+            }
 
             mapInstance.fitBounds(bounds);
             if(mapInstance.getZoom() >= maxZoomLevel) {

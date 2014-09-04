@@ -478,5 +478,5 @@ function get_page_status() {
 //On change of Icon Size, call updateAllMarkers function in DevicePlottingLib with the value.
 $("select#icon_Size_Select_In_Tools").change(function() {
     var val= $(this).val();
-    // networkMapInstance.updateAllMarkersWithNewIcon(val);
+    networkMapInstance.updateAllMarkersWithNewIcon(val);
 });
