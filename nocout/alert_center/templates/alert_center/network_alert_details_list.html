@@ -1,4 +1,5 @@
 {% extends "nocout/base.html" %}
+{% load url from future %}
 {% block breadcrumb_title %}
     <li>Alert Center</li>
     <li>Alert Details</li>
@@ -315,7 +316,7 @@
         /*Grid headers object*/
         var gridHeadersObj = $.parseJSON('{{ network_ptp_block_table_header|safe }}');
         /*Ajax url to get grid data*/
-        var ajax_url = '{% url "Network_PTP_Block_Table" %}';
+        var ajax_url = '{% url "Network_PTP_Block_Table" %}' + '?data_source=ptp_backhaul';
         /*Call createDataTable function of ourDataTableWidget class*/
         var destroy= false;
         dataTableInstance.createDataTable("network_ptp_block_table", gridHeadersObj, ajax_url, destroy);
