@@ -2157,6 +2157,14 @@ function devicePlottingClass_gmap() {
 									google.maps.drawing.OverlayType.POLYGON,
 								]
 							},
+                            polygonOptions: {
+                              fillColor: '#ffffff',
+                              fillOpacity: 0,
+                              strokeWeight: 2,
+                              clickable: false,
+                              editable: true,
+                              zIndex: 1
+                            },
 							map : mapInstance
 						});
 						
