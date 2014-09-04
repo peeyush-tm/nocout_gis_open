@@ -262,7 +262,7 @@ def prepare_result(base_station_id):
     bs_state_name = "N/A"
     try:
         if base_station.city:
-            bs_city = City.objects.prefetch_related.filter(id=base_station.city)[0]
+            bs_city =  City.objects.prefetch_related('state').filter(id=base_station.city)[0]
             bs_city_name = bs_city.city_name
             bs_state_name =  bs_city.state.state_name
     except:
