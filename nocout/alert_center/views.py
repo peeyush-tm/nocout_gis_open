@@ -10,7 +10,8 @@ from device.models import Device, City, State, DeviceTechnology, DeviceType
 from inventory.models import BaseStation, Sector, SubStation, Circuit
 from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
 from django.utils.dateformat import format
-
+from django.db.models import Q
+from nocout.settings import P2P
 # going deep with sql cursor to fetch the db results. as the RAW query executes everythong it is recursively used
 from django.db import connections
 
@@ -419,9 +420,10 @@ class GetNetworkAlertDetail(BaseDatatableView):
                 .values_list('id', flat=True)).values_list('sector_configured_on', flat=True).annotate(
                 dcount=Count('base_station'))
 
-        sector_configured_on_devices = Device.objects.filter(is_added_to_nms=1, is_deleted=0,
-                                                             id__in=sector_configured_on_devices_ids) \
-            .values('device_name', 'machine__name')
+        sector_configured_on_devices = Device.objects.filter(~Q(device_technology = int(P2P.ID)),
+                                                             is_added_to_nms=1, is_deleted=0,
+                                                             id__in= sector_configured_on_devices_ids)\
+                                                             .values('device_name', 'machine__name')
 
         device_list, performance_data, data_sources_list = list(), list(), list()
 
@@ -435,42 +437,42 @@ class GetNetworkAlertDetail(BaseDatatableView):
                                  "sys_timestamp",
                                  "description"
                                 ]
-        # # Unique machine from the sector_configured_on_devices
-        # unique_device_machine_list = {device['machine__name']: True for device in sector_configured_on_devices}.keys()
-        # machine_dict, device_data = dict(), list()
-        # # Creating the machine as a key and device_name as a list for that machine.
-        # for machine in unique_device_machine_list:
-        #     machine_dict[machine] = [device['device_name']
-        #                              for device in sector_configured_on_devices
-        #                              if device['machine__name'] == machine]
-        #
-        # #Fetching the data for the device w.r.t to their machine.
-        # for machine, machine_device_list in machine_dict.items():
-        #
-        #     # data_sources_list = ['rta', 'pl']
-        #     #
-        #     # device_data += self.collective_query_result(
-        #     #     machine = machine,
-        #     #     table_name = "performance_eventnetwork",
-        #     #     devices = machine_device_list,
-        #     #     data_sources = data_sources_list,
-        #     #     columns = required_data_columns
-        #     # )
-        #
-        #     data_sources_list = []
-        #     device_data += self.collective_query_result(
-        #         machine = machine,
-        #         table_name = "performance_eventservice",
-        #         devices = machine_device_list,
-        #         data_sources = data_sources_list,
-        #         columns = required_data_columns
-        #     )
-        #
-        # if device_data:
-        #     sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
-        #     return sorted_device_data
+        # Unique machine from the sector_configured_on_devices
+        unique_device_machine_list = {device['machine__name']: True for device in sector_configured_on_devices}.keys()
+        machine_dict, device_data = dict(), list()
+        # Creating the machine as a key and device_name as a list for that machine.
+        for machine in unique_device_machine_list:
+            machine_dict[machine] = [device['device_name']
+                                     for device in sector_configured_on_devices
+                                     if device['machine__name'] == machine]
 
-        return list()
+        #Fetching the data for the device w.r.t to their machine.
+        for machine, machine_device_list in machine_dict.items():
+
+            # data_sources_list = ['rta', 'pl']
+            #
+            # device_data += self.collective_query_result(
+            #     machine = machine,
+            #     table_name = "performance_eventnetwork",
+            #     devices = machine_device_list,
+            #     data_sources = data_sources_list,
+            #     columns = required_data_columns
+            # )
+
+            data_sources_list = []
+            device_data += self.collective_query_result(
+                machine = machine,
+                table_name = "performance_eventservice",
+                devices = machine_device_list,
+                data_sources = data_sources_list,
+                columns = required_data_columns
+            )
+
+        if device_data:
+            sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
+            return sorted_device_data
+
+        return device_list
 
 
     def collective_query_result(self, machine, table_name, devices, data_sources, columns):
@@ -731,115 +733,108 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        # logged_in_user = self.request.user.userprofile
-        #
-        # if logged_in_user.role.values_list('role_name', flat=True)[0] == 'admin':
-        #     organizations = list(logged_in_user.organization.get_descendants(include_self=True))
-        # else:
-        #     organizations = [logged_in_user.organization]
-        # sector_configured_on_devices_ids = list()
-        #
-        # for organization in organizations:
-        #     sector_configured_on_devices_ids += Sector.objects.filter(
-        #         sector_configured_on__id__in=organization.device_set \
-        #         .values_list('id', flat=True)).values_list('sector_configured_on', flat=True).annotate(
-        #         dcount=Count('base_station'))
-        #
-        # sector_configured_on_devices = Device.objects.filter(is_added_to_nms=1, is_deleted=0,
-        #                                                      id__in=sector_configured_on_devices_ids) \
-        #     .values('device_name', 'machine__name')
-        #
-        # device_list, performance_data, data_sources_list = list(), list(), list()
-        # extra_query_condition = None
-        #
-        # search_table = "performance_eventnetwork"
-        #
-        # if 'latency' in self.request.path_info:
-        #     data_sources_list.append('rta')
-        #     extra_query_condition = "AND (`{0}`.`current_value` > 0 ) "
-        # elif 'packetdrop' in self.request.path_info:
-        #     data_sources_list.append('pl')
-        #     extra_query_condition = "AND (`{0}`.`current_value` BETWEEN 1 AND 99 ) "
-        # elif 'down' in self.request.path_info:
-        #     data_sources_list.append('pl')
-        #     extra_query_condition = "AND (`{0}`.`current_value` = 100 ) "
-        # elif 'service' in self.request.path_info:
-        #     search_table = "performance_eventservice"
-        #
-        # required_data_columns = ["id",
-        #                          "ip_address",
-        #                          "service_name",
-        #                          "device_name",
-        #                          "data_source",
-        #                          "severity",
-        #                          "current_value",
-        #                          "sys_timestamp",
-        #                          "description"
-        # ]
-        # # Unique machine from the sector_configured_on_devices
-        # unique_device_machine_list = {device['machine__name']: True for device in sector_configured_on_devices}.keys()
-        # machine_dict, device_data = dict(), list()
-        # # Creating the machine as a key and device_name as a list for that machine.
-        # for machine in unique_device_machine_list:
-        #     machine_dict[machine] = [device['device_name'] for device in sector_configured_on_devices if
-        #                              device['machine__name'] == machine]
-        # #Fetching the data for the device w.r.t to their machine.
-        # for machine, machine_device_list in machine_dict.items():
-        #
-        #     performance_data = raw_prepare_result(performance_data=performance_data,
-        #                                           machine=machine,
-        #                                           table_name=search_table,
-        #                                           devices=machine_device_list,
-        #                                           data_sources=data_sources_list,
-        #                                           columns=required_data_columns,
-        #                                           condition=extra_query_condition if extra_query_condition else None
-        #     )
-        #
-        #     for data in performance_data:
-        #         circuit_id = "N/A"
-        #         sector_id = 'N/A'
-        #         sector = Sector.objects.filter(sector_configured_on__id=
-        #                                        Device.objects.get(device_name= data['device_name']).id)
-        #         device_object = Device.objects.get(device_name= data['device_name'])
-        #
-        #         if len(sector):
-        #
-        #             #add sector info
-        #             sector_id = sector[0].sector_id
-        #             #add circuit info
-        #             circuit = Circuit.objects.filter(sector=sector[0].id)
-        #             if len(circuit):
-        #                 circuit_id = circuit[0].circuit_id
-        #
-        #             device_base_station = sector[0].base_station
-        #             #only display warning or critical devices
-        #             if severity_level_check(list_to_check=[data['severity'], data['description']]):
-        #                 ddata = {
-        #                     'device_name': data['device_name'],
-        #                     'device_technology': DeviceTechnology.objects.get(id=device_object.device_technology).alias,
-        #                     'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
-        #                     'severity': data['severity'],
-        #                     'ip_address': data['ip_address'],
-        #                     'circuit_id': circuit_id,
-        #                     'sector_id': sector_id,
-        #                     'base_station': device_base_station.name,
-        #                     'base_station__city': City.objects.get(id=device_base_station.city).city_name if device_base_station.city else 'N/A',
-        #                     'base_station__state': State.objects.get(id=device_base_station.state).state_name if device_base_station.state else "N/A",
-        #                     'current_value': data['current_value'],
-        #                     'sys_timestamp': datetime.datetime.fromtimestamp(
-        #                         float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-        #                     'description': data['description']
-        #                 }
-        #                 #If service tab is requested then add an another key:data_source_name to render in the data table.
-        #                 if 'service' in self.request.path_info:
-        #                     ddata.update({'data_source_name': data['data_source']})
-        #                 device_data.append(ddata)
-        # if device_data:
-        #     sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
-        #     return sorted_device_data
-        #
-        # return device_list
-        return []
+        logged_in_user = self.request.user.userprofile
+
+        if logged_in_user.role.values_list('role_name', flat=True)[0] == 'admin':
+            organizations_ids = list(logged_in_user.organization.get_descendants(include_self=True).values_list('id', flat=True))
+        else:
+            organizations_ids = [logged_in_user.organization.id]
+
+        sector_configured_on_devices = Device.objects.filter(~Q(device_technology = int(P2P.ID)), is_added_to_nms=1,
+                                                             is_deleted=0, sector_configured_on__isnull=False,
+                                                             organization__in= organizations_ids)\
+                                                             .values('device_name', 'machine__name')
+
+        device_list, performance_data, data_sources_list = list(), list(), list()
+        extra_query_condition = None
+
+        search_table = "performance_eventnetwork"
+
+        if 'latency' in self.request.path_info:
+            data_sources_list.append('rta')
+            extra_query_condition = "AND (`{0}`.`current_value` > 0 ) "
+        elif 'packetdrop' in self.request.path_info:
+            data_sources_list.append('pl')
+            extra_query_condition = "AND (`{0}`.`current_value` BETWEEN 1 AND 99 ) "
+        elif 'down' in self.request.path_info:
+            data_sources_list.append('pl')
+            extra_query_condition = "AND (`{0}`.`current_value` = 100 ) "
+        elif 'service' in self.request.path_info:
+            search_table = "performance_eventservice"
+
+        required_data_columns = ["id",
+                                 "ip_address",
+                                 "service_name",
+                                 "device_name",
+                                 "data_source",
+                                 "severity",
+                                 "current_value",
+                                 "sys_timestamp",
+                                 "description"
+        ]
+        # Unique machine from the sector_configured_on_devices
+        unique_device_machine_list = {device['machine__name']: True for device in sector_configured_on_devices}.keys()
+        machine_dict, device_data = dict(), list()
+        # Creating the machine as a key and device_name as a list for that machine.
+        for machine in unique_device_machine_list:
+            machine_dict[machine] = [device['device_name'] for device in sector_configured_on_devices if
+                                     device['machine__name'] == machine]
+        #Fetching the data for the device w.r.t to their machine.
+        for machine, machine_device_list in machine_dict.items():
+
+            performance_data = raw_prepare_result(performance_data=performance_data,
+                                                  machine=machine,
+                                                  table_name=search_table,
+                                                  devices=machine_device_list,
+                                                  data_sources=data_sources_list,
+                                                  columns=required_data_columns,
+                                                  condition=extra_query_condition if extra_query_condition else None
+            )
+
+            for data in performance_data:
+                circuit_id = "N/A"
+                sector_id = 'N/A'
+                sector = Sector.objects.filter(sector_configured_on__id=
+                                               Device.objects.get(device_name= data['device_name']).id)
+                device_object = Device.objects.get(device_name= data['device_name'])
+
+                if len(sector):
+
+                    #add sector info
+                    sector_id = sector[0].sector_id
+                    #add circuit info
+                    circuit = Circuit.objects.filter(sector=sector[0].id)
+                    if len(circuit):
+                        circuit_id = circuit[0].circuit_id
+
+                    device_base_station = sector[0].base_station
+                    #only display warning or critical devices
+                    if severity_level_check(list_to_check=[data['severity'], data['description']]):
+                        ddata = {
+                            'device_name': data['device_name'],
+                            'device_technology': DeviceTechnology.objects.get(id=device_object.device_technology).alias,
+                            'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
+                            'severity': data['severity'],
+                            'ip_address': data['ip_address'],
+                            'circuit_id': circuit_id,
+                            'sector_id': sector_id,
+                            'base_station': device_base_station.name,
+                            'base_station__city': City.objects.get(id=device_base_station.city).city_name if device_base_station.city else 'N/A',
+                            'base_station__state': State.objects.get(id=device_base_station.state).state_name if device_base_station.state else "N/A",
+                            'current_value': data['current_value'],
+                            'sys_timestamp': datetime.datetime.fromtimestamp(
+                                float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                            'description': data['description']
+                        }
+                        #If service tab is requested then add an another key:data_source_name to render in the data table.
+                        if 'service' in self.request.path_info:
+                            ddata.update({'data_source_name': data['data_source']})
+                        device_data.append(ddata)
+        if device_data:
+            sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
+            return sorted_device_data
+
+        return device_list
 
 
     def prepare_results(self, qs):
@@ -1003,20 +998,26 @@ class CustomerAlertListingTable(BaseDatatableView):
         logged_in_user = self.request.user.userprofile
 
         if logged_in_user.role.values_list('role_name', flat=True)[0] == 'admin':
-            organizations = list(logged_in_user.organization.get_descendants(include_self=True))
+            organizations_ids = list(logged_in_user.organization.get_descendants(include_self=True).values_list('id', flat=True))
         else:
-            organizations = [logged_in_user.organization]
+            organizations_ids = [logged_in_user.organization]
 
-        organization_devices = list()
-        device_tab_technology = self.request.GET.get('data_tab')
-        device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
-        for organization in organizations:
-            organization_devices += Device.objects.filter(is_added_to_nms=1, organization__id=organization.id,
-                                                          device_technology=device_technology_id)
-        # get the devices in an organisation which are added for monitoring
+        device_tab_name = self.request.GET.get('data_tab')
+        device_technology_id = DeviceTechnology.objects.get(name= device_tab_name).id
+        #IF Device Technology is P2P then fetch sector_configured_on as well as substation foreign keys relation present device
+        if device_technology_id ==int(P2P.ID):
+            devices = Device.objects.filter(Q(sector_configured_on__isnull=False) | Q(substation__isnull=False),
+                                            is_added_to_nms=1, organization__in= organizations_ids,
+                                                          device_technology= device_technology_id,
+                                                         )
+        #else Fecth all the devices which has substation as a foreign key relation present with the device.
+        else:
+            devices = Device.objects.filter(substation__isnull=False,
+                                            is_added_to_nms=1, organization__in= organizations_ids,
+                                            device_technology= device_technology_id)
 
-        organization_substations_devices = [{'device_name': device.device_name, 'machine_name': device.machine.name} \
-           for device in organization_devices if device.substation_set.exists() or device.sector_configured_on.exists()]
+        organization_substations_devices = [ {'device_name': device.device_name, 'machine_name': device.machine.name} \
+                                             for device in devices ]
 
         data_sources_list = list()
 
@@ -1180,19 +1181,14 @@ class CustomerAlertListingTable(BaseDatatableView):
             for dct in qs:
                 device = Device.objects.get(device_name= dct['device_name'])
                 dct.update(current_value = dct["current_value"] + " " + data_unit)
-                if device.sector_configured_on.exists():
-                    dct.update(action= '<a href="/alert_center/network/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
-                                        <a href="/performance/network_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
-                                        <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
-                               format(device.id, service_tab ))
-
-                elif device.substation_set.exists():
-                    dct.update(action='<a href="/alert_center/customer/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
+                dct.update(action='<a href="/alert_center/customer/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
                                        <a href="/performance/customer_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
                                        <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
                                format(device.id, service_tab ))
 
-        return common_prepare_results(qs)
+            return common_prepare_results(qs)
+
+        return []
 
 
     def get_context_data(self, *args, **kwargs):
@@ -1240,42 +1236,26 @@ class SingleDeviceAlertDetails(View):
         logged_in_user, devices_result = request.user.userprofile, list()
 
         if 'admin' in logged_in_user.role.values_list('role_name', flat=True):
-            organizations = logged_in_user.organization.get_descendants(include_self=True)
-            for organization in organizations:
-                devices_result += self.get_result(page_type, organization)
+            organizations_ids = list(logged_in_user.organization.get_descendants(include_self=True).values_list('id', flat=True))
         else:
-            organization = logged_in_user.organization
-            devices_result = self.get_result(page_type, organization)
+            organizations_ids = [logged_in_user.organization.id]
 
+        devices_result += self.get_result(page_type, organizations_ids)
 
-        try:
-            start_date= self.request.GET.get('start_date','')
-            end_date= self.request.GET.get('end_date','')
-            isSet = False
+        start_date= self.request.GET.get('start_date','')
+        end_date= self.request.GET.get('end_date','')
+        isSet = False
 
-            if len(start_date) and len(end_date):
-                start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
-                end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
-                start_date= format( start_date_object, 'U')
-                end_date= format( end_date_object, 'U')
-                isSet = True
-                if start_date == end_date:
-                    # Converting the end date to the highest time in a day.
-                    end_date_object = datetime.datetime.strptime(end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S")
-            else:
-                # The end date is the end limit we need to make query till.
-                end_date_object = datetime.datetime.now()
-                # The start date is the last monday of the week we need to calculate from.
-                start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
-                # Replacing the time, to start with the 00:00:00 of the last monday obtained.
-                start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
-                # Converting the date to epoch time or Unix Timestamp
-                end_date = format(end_date_object, 'U')
-                start_date = format(start_date_object, 'U')
-                isSet = True
-
-
-        except Exception as timeexception:
+        if len(start_date) and len(end_date):
+            start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
+            end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
+            start_date= format( start_date_object, 'U')
+            end_date= format( end_date_object, 'U')
+            isSet = True
+            if start_date == end_date:
+                # Converting the end date to the highest time in a day.
+                end_date_object = datetime.datetime.strptime(end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S")
+        else:
             # The end date is the end limit we need to make query till.
             end_date_object = datetime.datetime.now()
             # The start date is the last monday of the week we need to calculate from.
@@ -1288,7 +1268,7 @@ class SingleDeviceAlertDetails(View):
             isSet = True
 
 
-        device_obj = Device.objects.get(id=device_id)
+        device_obj = Device.objects.get(id= device_id)
         device_name = device_obj.device_name
         machine_name = device_obj.machine.name
 
@@ -1420,7 +1400,7 @@ class SingleDeviceAlertDetails(View):
 
             return render(request, 'alert_center/single_device_alert.html', context)
 
-    def get_result(self, page_type, organization):
+    def get_result(self, page_type, organizations_ids):
         """
         Generic function to return the result w.r.t the page_type and organization of the current logged in user.
 
@@ -1429,52 +1409,48 @@ class SingleDeviceAlertDetails(View):
         return result
         """
 
-        if page_type == "customer":
-            substation_result = self.organization_devices_substations(organization)
+        if page_type == "customer" :
+            substation_result = self.organization_customer_devices(organizations_ids)
             return substation_result
         elif page_type == "network":
-            basestation_result = self.organization_devices_basestations(organization)
+            basestation_result = self.organization_network_devices(organizations_ids)
             return basestation_result
 
 
-    def organization_devices_substations(self, organization):
+    def organization_customer_devices(self, organizations_ids):
         """
-        To result back the all the substations from the respective organization..
+        To result back the all the customer devices from the respective organization..
 
         :param organization:
-        :return list of substation
+        :return list of customer devices
         """
-        organization_substations = SubStation.objects.filter(device__in=Device.objects.filter(
-            is_added_to_nms=1, is_deleted=0,
-            organization=organization.id).values_list('id', flat=True)).values_list('id', 'name', 'alias')
-
+        organization_customer_devices= Device.objects.filter(
+                                       Q(sector_configured_on__isnull=False) | Q(substation__isnull=False),
+                                       is_added_to_nms=1,
+                                       is_deleted=0,
+                                       organization__in=
+                                       organizations_ids)
         result = list()
-        for substation in organization_substations:
-            result.append({'id': substation[0], 'name': substation[1], 'alias': substation[2]})
+        for device in organization_customer_devices:
+            result.append({'id': device.id, 'name':  device.device_name, 'alias': device.device_alias })
 
         return result
 
-    def organization_devices_basestations(self, organization):
+    def organization_network_devices(self, organizations_ids):
         """
-        To result back the all the basestation from the respective organization..
+        To result back the all the network devices from the respective organization..
 
         :param organization:
-        :return list of basestation
+        :return list of network devices
         """
-
-        sector_configured_on_devices_list = Sector.objects.filter(sector_configured_on__id__in=organization.device_set. \
-                                                                  values_list('id', flat=True)).values_list(
-            'sector_configured_on').annotate(dcount=Count('base_station'))
-        # single sector will have single base station
-        # but base staiton can have multiple sectors
-
-        sector_configured_on_devices_ids = map(lambda x: x[0], sector_configured_on_devices_list)
-        sector_configured_on_devices = Device.objects.filter(is_added_to_nms=1, is_deleted=0,
-                                                             id__in=sector_configured_on_devices_ids)
+        organization_customer_devices= Device.objects.filter(
+                                       ~Q(device_technology = int(P2P.ID)),
+                                       is_added_to_nms=1,
+                                       is_deleted=0,
+                                       organization__in= organizations_ids)
         result = list()
-        for sector_configured_on_device in sector_configured_on_devices:
-            result.append({'id': sector_configured_on_device.id, 'name': sector_configured_on_device.device_name,
-                           'alias': sector_configured_on_device.device_alias})
+        for device in organization_customer_devices:
+            result.append({'id': device.id, 'name':  device.device_name, 'alias': device.device_alias })
 
         return result
 
