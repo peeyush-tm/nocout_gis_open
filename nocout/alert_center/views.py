@@ -912,6 +912,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
                 elif len(backhaul):
                     #no sector circuit in that case : Just an assumption. Needs to be checked with the client
+                    #one backhaul might be serving many a base staions # TODO resolve this
                     circuit_id = ""
                     sector_id = ""
                     device_base_station = ""
