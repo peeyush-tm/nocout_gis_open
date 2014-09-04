@@ -150,11 +150,38 @@
                 <li>
                     <button class="btn btn-info">Export Data</button>
                 </li>
-                <li>
-                    <label>Icon Size</label>
-                    <input type="radio" name="icon_size" value="small">Small
-                    <input type="radio" name="icon_size" value="medium" checked>Medium
-                    <input type="radio" name="icon_size" value="medium">Large
+                <li class="fright">
+                    <form action="#" class="form-horizontal">
+                        <div class="form-group">
+                            <label class="control-label">Icon Size: </label>
+                            <select id="icon_Size_Select_In_Tools">
+                                <option value="small">Small</option>
+                                <option value="medium" selected="1">Medium</option>
+                                <option value="large">Large</option>
+                            </select>
+                                <!-- <label class="radio-inline">
+                                    <div class="radio">
+                                        <span><input type="radio" value="option1" name="optionsRadios2" class="uniform"></span>
+                                    </div>
+                                 Small </label>
+                                 <label class="radio-inline">
+                                    <div class="radio">
+                                        <span><input type="radio" checked="" value="option2" name="optionsRadios2" class="uniform"></span>
+                                    </div>
+                                 Medium </label>
+                                 <label class="radio-inline">
+                                    <div class="radio">
+                                        <span><input type="radio" value="option3" name="optionsRadios2" class="uniform"></span>
+                                    </div>
+                                 Large </label> -->
+                        </div>
+                    </form>
+<!--                     <div class="btn btn-default">
+                        <label>Icon Size: </label>
+                        <input type="radio" name="icon_size" value="small">Small
+                        <input type="radio" name="icon_size" value="medium" checked>Medium
+                        <input type="radio" name="icon_size" value="medium">Large
+                    </div> -->
                 </li>
             </ul>
             <div class="divide-10"></div>
