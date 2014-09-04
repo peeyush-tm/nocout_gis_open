@@ -254,9 +254,13 @@ $("#createPolygonBtn").click(function(e) {
         $("#selectDeviceContainerBlock").removeClass("hide");
     }
 
-    $("#createPolygonBtn").button("loading");
-    $("#advFilterBtn").button("loading");
+    // $("#createPolygonBtn").button("loading");
+    // $("#advFilterBtn").button("loading");
+    // $("#advSearchBtn").button("loading");
+    // $("#resetFilters").button("loading");
+    disableAdvanceButton();
     $("#resetFilters").button("loading");
+    $("#showToolsBtn").removeAttr("disabled");
 
     networkMapInstance.initLivePolling();
 

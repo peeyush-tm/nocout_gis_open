@@ -74,9 +74,7 @@ function advanceSearchClass() {
 					formElements = "";
 					/*Reset the appliedAdvFilter*/
 					appliedAdvFilter = [];
-
-					for(var i=0;i<filtersInfoArray.length;i++) {
-console.log(filtersInfoArray);
+					for(var i=0;i<filtersInfoArray.length;i++) {					
 						if(filtersInfoArray[i] != null) {
 
 							formElements += '<div class="form-group"><label for="'+filtersInfoArray[i].key+'" class="col-sm-4 control-label">';
@@ -283,7 +281,7 @@ console.log(filtersInfoArray);
         appliedAdvFilter_Active = [];
 
         for(var i=0;i<filtersInfoArray.length;i++) {
-console.log(lastSelectedValues);
+
             if(filtersInfoArray[i] != null) {
 
                 formElements += '<div class="form-group"><label for="'+filtersInfoArray[i].key+'" class="col-sm-4 control-label">';
@@ -296,9 +294,9 @@ console.log(lastSelectedValues);
                 if(elementType == "multiselect") {
 
                     var filterValues = filtersInfoArray[i].values;
-                    if(filterValues.length > 0) {
+                    // if(filterValues.length > 0) {
 
-                                                formElements += '<select multiple class="multiSelectBox col-md-12" id="filter_'+filtersInfoArray[i].key+'">';
+		                formElements += '<select multiple class="multiSelectBox col-md-12" id="filter_'+filtersInfoArray[i].key+'">';
 
                         /*Condition for mapped tables to pass the ID in the values else pass the value*/
                         if(currentKey == "device_group" || currentKey == "device_type" || currentKey == "device_technology" || currentKey == "device_vendor") {
@@ -322,10 +320,10 @@ console.log(lastSelectedValues);
                         }
 
                         formElements += '</select>';
-                    } else {
+                    // } else {
 
-                        formElements += '<input type="text" id="filter_'+filtersInfoArray[i].key+'" name="'+filtersInfoArray[i].key+'"  class="form-control"/>';
-                    }
+                    //     formElements += '<input type="text" id="filter_'+filtersInfoArray[i].key+'" name="'+filtersInfoArray[i].key+'"  class="form-control"/>';
+                    // }
                 } else if(elementType == "select") {
 
                     var filterValues = filtersInfoArray[i].values;
@@ -513,28 +511,23 @@ console.log(lastSelectedValues);
         val_final=[];
 		for(var j=0;j<filtersInfoArray.length;j++) {
 //			var resultantObject = {};
-
 			var elementType = $.trim(filtersInfoArray[j].element_type);
 			var selectId = filtersInfoArray[j].key;
 			/*Check Element Type*/
 			if(elementType == "multiselect") {
-				            var val = $("#filter_"+selectId).select2("val");
-                            if(val.length > 0)
-                            {
-                                for(var k=0; k<val.length; k++)
-                                {
-                                    if( val[k].indexOf(',')>=0)
-                                    {
-                                      appliedAdvFilter.push({'selectId':selectId, 'ids': val[k].split(',')})
-                                    }
-                                    else
-                                    {
-                                      appliedAdvFilter.push({'selectId':selectId, 'ids': val[k] })
-                                    }
-                                }
-                            }
-                    appliedAdvFilter_Active.push({ 'field':selectId, 'value':val });
-		            }}
+	            var val = $("#filter_"+selectId).select2("val");
+                if(val.length > 0) {
+                    for(var k=0; k<val.length; k++) {
+                        if( val[k].indexOf(',')>=0) {
+                          appliedAdvFilter.push({'selectId':selectId, 'ids': val[k].split(',')})
+                        } else {
+                          appliedAdvFilter.push({'selectId':selectId, 'ids': val[k] })
+                        }
+                    }
+                }
+                appliedAdvFilter_Active.push({ 'field':selectId, 'value':val });
+            }
+        }
 //			else if(elementType == "select") {
 //
 //				var selectedVal = $("#filter_"+selectId).select2("val");
@@ -746,7 +739,6 @@ console.log(lastSelectedValues);
 	 */
 
 	this.setFilters = function(searchString, search_type) {
-        console.log(searchString);
 		/*Show Remove Filters button*/
 		if($("#removeFilterBtn").hasClass("hide")) {
 			$("#removeFilterBtn").removeClass("hide");
@@ -776,7 +768,6 @@ console.log(lastSelectedValues);
 //            $.each($('#s2id_filter_sector_configured_on').select2('data'), function( index, value ){ sector_configured_on_choice+=value.text })
 //            var circuit_ids_choice= ''
 //            $.each($('#s2id_filter_circuit_ids').select2('data'), function( index, value ){ circuit_ids_choice+=value.text })
-            console.log(technology_choice, vendor_choice);
         loop1:
             for (var i=0; i<searchString.length; i++)
             {
