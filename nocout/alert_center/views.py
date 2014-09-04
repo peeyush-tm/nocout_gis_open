@@ -922,7 +922,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                     device_base_station = ""
                     city = ""
                     state = ""
-                    device_base_station_obj = backhaul.basestation_set.filter()
+                    device_base_station_obj = backhaul[0].basestation_set.filter()
                     if len(device_base_station_obj):
                         device_base_station = device_base_station_obj[0]
                         city = City.objects.get(id=device_base_station.city).city_name if device_base_station.city else 'N/A'
