@@ -475,21 +475,8 @@ function get_page_status() {
     $("#gis_status_txt").html(status_txt);
 }
 
-// function updateAllMarkers(icon) {
-//     for(var i=0; i< masterMarkersObj.length; i++) {
-//         console.log(i);
-//     }
-// }
-
-
-// $("input:radio[name='sex']").change(function () {
-//     var val= $(this).val();
-
-//     if(val=='small') {
-//         updateAllMarkers('11');
-//     } else if (val == 'medium') {
-
-//     } else {
-
-//     }
-// });
+//On change of Icon Size, call updateAllMarkers function in DevicePlottingLib with the value.
+$("select#icon_Size_Select_In_Tools").change(function() {
+    var val= $(this).val();
+    // networkMapInstance.updateAllMarkersWithNewIcon(val);
+});

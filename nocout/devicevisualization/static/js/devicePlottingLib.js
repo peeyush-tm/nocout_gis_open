@@ -165,17 +165,17 @@ function openBSRightClickMenu(event, marker) {
 }
 
 
-function showRequiredSectorMarker(filteredData) {
-	var zoom = mapInstance.getZoom();
-	for(var i=0; i< filteredData.length; i++) {
-		(function showMarker(lat, lon) {
-			if( zoom > zoomAtWhichSectorMarkerAppears) {
-				sectorMarkersMasterObj[uniqueKey].setMap(mapInstance);
-			}
-			return ;
-		})(filteredData[i].data.lat, filteredData[i].data.lon);
-	}
-}
+// function showRequiredSectorMarker(filteredData) {
+// 	var zoom = mapInstance.getZoom();
+// 	for(var i=0; i< filteredData.length; i++) {
+// 		(function showMarker(lat, lon) {
+// 			if( zoom > zoomAtWhichSectorMarkerAppears) {
+// 				sectorMarkersMasterObj[uniqueKey].setMap(mapInstance);
+// 			}
+// 			return ;
+// 		})(filteredData[i].data.lat, filteredData[i].data.lon);
+// 	}
+// }
 
 /**
  * This class is used to plot the BS & SS on the google maps & performs their functionality.
@@ -236,29 +236,17 @@ function devicePlottingClass_gmap() {
             });
 
             google.maps.event.addListener(mapInstance, 'zoom_changed', function() {
-// <<<<<<< HEAD
-//             	var zoom = mapInstance.getZoom();
-//             	if( zoom > zoomAtWhichSectorMarkerAppears && tempFilteredData.length) {
-//             		for(var i=0; i< tempFilteredData.length; i++) {
-//             			(function showMarker(lat, lon) {
-//             				var uniqueKey= String(lat)+lon;
-//             				if( zoom > zoomAtWhichSectorMarkerAppears) {
-//             					sectorMarkersMasterObj[uniqueKey].setMap(mapInstance);
-//             				}
-//             				return ;
-//             			})(tempFilteredData[i].data.lat, tempFilteredData[i].data.lon);
-//             		}
-//             	}
-//             	else {
-//             		for (var i = 0; i < sector_MarkersArray.length; i++) {    
-//             			sector_MarkersArray[i].setMap(null);
-//             		}
-//             	}
-// =======
-            	// var zoom = mapInstance.getZoom();
-            	// if( zoom > zoomAtWhichSectorMarkerAppears) {
-            	// 	for (var i = 0; i < sector_MarkersArray.length; i++) {    
-            	// 		sector_MarkersArray[i].setMap(mapInstance);
+            	var zoom = mapInstance.getZoom();
+
+            	// if( zoom > zoomAtWhichSectorMarkerAppears && tempFilteredData.length) {
+            	// 	for(var i=0; i< tempFilteredData.length; i++) {
+            	// 		(function showMarker(lat, lon) {
+            	// 			var uniqueKey= String(lat)+lon;
+            	// 			if( zoom > zoomAtWhichSectorMarkerAppears) {
+            	// 				sectorMarkersMasterObj[uniqueKey].setMap(mapInstance);
+            	// 			}
+            	// 			return ;
+            	// 		})(tempFilteredData[i].data.lat, tempFilteredData[i].data.lon);
             	// 	}
             	// }
             	// else {
@@ -266,24 +254,8 @@ function devicePlottingClass_gmap() {
             	// 		sector_MarkersArray[i].setMap(null);
             	// 	}
             	// }
-            	var zoom = mapInstance.getZoom();
 
-    //         	var largeur = 15 + (5 *(zoom - 5));
-			 //    var hauteur = 20 * 1.16;
-			    
-    //         	for(i=0; i< masterMarkersObj.length; i++ ) {
-				//     var icon = masterMarkersObj[i].getIcon();
-				//     if(icon != "") {
-				//     	masterMarkersObj[i].setIcon(new google.maps.MarkerImage(
-				// 	        icon.url,
-				// 	        new google.maps.Size(largeur, hauteur),
-				// 	        new google.maps.Point(0, 0),
-				// 	        new google.maps.Point(18, 23),
-				// 	        new google.maps.Size(largeur, hauteur))
-				// 	    );
-				//     }
-				// }
-// >>>>>>> fc94dc2d6efa780fddebc414eeac2d4b0d62e5d2
+
             });
 
 			/*Event listener for search text box*/
@@ -3305,6 +3277,36 @@ function devicePlottingClass_gmap() {
 			masterClusterInstance.clearMarkers();
 		}		
 	};
+
+	this.updateAllMarkersWithNewIcon= function(iconSize) {
+
+		var largeur, hauteur;
+		if(iconSize=== 'small') {
+			largeur= 10;
+			hauteur= 16;
+		} else if(iconSize=== 'medium') {
+			largeur= 15;
+			hauteur= 24;
+		} else {
+			largeur= 20;
+			hauteur= 32;
+		}
+		for(i=0; i< masterMarkersObj.length; i++ ) {
+			var icon = masterMarkersObj[i].getIcon();
+			if(icon != "") {
+				// console.log(masterMarkersObj[i]);
+				// masterMarkersObj[i].setIcon(new google.maps.MarkerImage(
+				// 	icon.url,
+				// 	new google.maps.Size(largeur, hauteur),
+				// 	new google.maps.Point(0, 0),
+				// 	new google.maps.Point(18, 23),
+				// 	new google.maps.Size(largeur, hauteur))
+				// );
+				// console.log('halo');
+				masterMarkersObj[i].setMap(null);
+			}
+		}
+	}
 
 	/**
 	 * This function reset all global variable used in the process
