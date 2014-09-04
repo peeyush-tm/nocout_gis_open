@@ -3574,7 +3574,7 @@ function getDataForAdvanceSearch() {
     			'element_type':'multiselect',
     			'field_type':'string',
     			'key':'sector_configured_on',
-    			'title':'Sector Configured On',
+    			'title':'IP',
     			'values':filter_data_sector_configured_on_collection
     		});
 
