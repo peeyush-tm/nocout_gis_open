@@ -52,7 +52,6 @@ function advanceJustSearchClass() {
         /*Reset the appliedJustAdvFilter*/
         appliedJustAdvFilter = [];
         appliedJustAdvSearch_Active = [];
-
         for(var i=0;i<filtersJustInfoArray.length;i++) {
 
             if(filtersJustInfoArray[i] != null) {
@@ -198,7 +197,6 @@ function advanceJustSearchClass() {
 
     //Here we create a new Marker based on the lat, long and show it on the map. Also push the marker to the previouslySeachedMarkersList array
     this.applyIconToSearchedResult= function(lat, long, iconUrl) {
-        // console.log("apply icon to "+ lat + " "+ long)
         //create a new lat long
         var searchedMarkerLatLong= new google.maps.LatLng(lat, long)
         //create a new marker
@@ -221,6 +219,10 @@ function advanceJustSearchClass() {
                 //set icon from global object
                 showSearchedResultMarker.setIcon(advanceSearchMasterObj.searchedIconUrl);
             }
+            //set animation to bounce
+            showSearchedResultMarker.setAnimation(google.maps.Animation.BOUNCE);
+            //show the marker on map.
+            showSearchedResultMarker.setMap(mapInstance);
         }
 
         google.maps.event.addListener(showSearchedResultMarker, 'click', function() {
@@ -232,10 +234,6 @@ function advanceJustSearchClass() {
             }
             
         });
-        //set animation to bounce
-        showSearchedResultMarker.setAnimation(google.maps.Animation.BOUNCE);
-        //show the marker on map.
-        showSearchedResultMarker.setMap(mapInstance);
 
         
     	return ;
@@ -427,19 +425,16 @@ function advanceJustSearchClass() {
             }
         }
 
-
-        // console.log()
-
 		if(searchedStations.length) {
 			if(searchedStations.length > advanceSearchMasterObj.maxSearchLevelNumber) {
-                $.gritter.add({
-                    // (string | mandatory) the heading of the notification
-                    title: 'GIS : Search',
-                    // (string | mandatory) the text inside the notification
-                    text: advanceSearchMasterObj.searchNumberLimitMessage,
-                    // (bool | optional) if you want it to fade out on its own or just sit there
-                    sticky: false
-                });
+   //              // $.gritter.add({
+   //              //     // (string | mandatory) the heading of the notification
+   //              //     title: 'GIS : Search',
+   //              //     // (string | mandatory) the text inside the notification
+   //              //     text: advanceSearchMasterObj.searchNumberLimitMessage,
+   //              //     // (bool | optional) if you want it to fade out on its own or just sit there
+   //              //     sticky: false
+   //              // });
                 advanceSearchMasterObj.searchedLinesByCircuitIDs= [];
                 advJustSearch_self.resetPreviousSearchedMarkers();
             }
