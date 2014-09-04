@@ -800,6 +800,9 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                                                              organization__in= organizations_ids)\
                                                              .values('device_name', 'machine__name')
 
+
+
+        sector_configured_on_devices = list(sector_configured_on_devices)
         ptp_backhaul_devices = []
 
         try:
@@ -813,8 +816,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                     "device_name" : cc.sector.base_station.backhaul.bh_configured_on.device_name
                 })
             sector_configured_on_devices += ptp_backhaul_devices
-
-        except:
+        except Exception as e:
             pass
             ##dont waste time on values if there are none
 
@@ -866,7 +868,9 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                                                   condition=extra_query_condition if extra_query_condition else None
             )
 
+
             for data in performance_data:
+
                 circuit_id = "N/A"
                 sector_id = 'N/A'
                 sector = Sector.objects.filter(sector_configured_on__id=
