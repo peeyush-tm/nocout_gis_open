@@ -297,9 +297,12 @@ function devicePlottingClass_gmap() {
 				/*Set the content for infowindow*/
 				infowindow.setContent(content);
 				/*Set The Position for InfoWindow*/
-				infowindow.setPosition(windowPosition);
+				infowindow.setPosition(windowPosition);				
 				/*Open the info window*/
 				infowindow.open(mapInstance);
+
+				/*Show only 5 rows, hide others*/
+				gmap_self.show_hide_info();
 			});
 
 			/*Event when the markers cluster expands or spiderify*/
@@ -999,6 +1002,9 @@ function devicePlottingClass_gmap() {
 			infowindow.setPosition(e.latLng);
 			/*Open the info window*/
 			infowindow.open(mapInstance);
+
+			/*Show only 5 rows, hide others*/
+			gmap_self.show_hide_info();
 		});
 
 		markersMasterObj['Lines'][String(startEndObj.startLat)+ startEndObj.startLon+ startEndObj.endLat+ startEndObj.endLon]= pathConnector;
@@ -1209,6 +1215,8 @@ function devicePlottingClass_gmap() {
 			infowindow.setPosition(windowPosition);
 			/*Open the info window*/
 			infowindow.open(mapInstance);
+			/*Show only 5 rows, hide others*/
+			gmap_self.show_hide_info();
 		});
 	};
 
@@ -1278,7 +1286,7 @@ function devicePlottingClass_gmap() {
 			var sector_ss_name = JSON.stringify(sector_ss_name_obj);
 
 			/*Concat infowindow content*/
-			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.bs_lat+","+contentObject.bs_lon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
+			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.bs_lat+","+contentObject.bs_lon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
 
 		} else if (clickedType == 'sector_Marker') {
 /*
@@ -1304,7 +1312,7 @@ function devicePlottingClass_gmap() {
 			infoTable += "</tbody></table>";
 
 			/*Final infowindow content string*/
-			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>Base Station Device</h4></div><div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div></div></div></div>";
+			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>Base Station Device</h4></div><div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div></div></div></div>";
 		} else {
 
 			infoTable += "<table class='table table-bordered'><tbody>";
@@ -1339,10 +1347,45 @@ function devicePlottingClass_gmap() {
 			infoTable += "</tbody></table>";
 
 			/*Final infowindow content string*/
-			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+contentObject.pointType.toUpperCase()+"</h4></div><div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div></div></div></div>";
+			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+contentObject.pointType.toUpperCase()+"</h4></div><div class='box-body'><div class='' align='center'>"+infoTable+"</div><div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div></div></div></div>";
 		}
 		/*Return the info window content*/
 		return windowContent;
+	};
+
+	/**
+	 * This function show or hide extra info on info window
+	 * @method show_hide_info
+	 */
+	this.show_hide_info = function() {
+		
+		var tables = $(".windowContainer table");
+
+		if(tables.length == 1) {
+			/*Show only 5 rows, hide others*/
+			for(var i=5;i<$(".windowContainer table tbody tr").length;i++) {
+				if($(".windowContainer table tbody tr")[i].className.indexOf("hide") == -1) {
+					$("#more_less_btn").html("More");
+					$(".windowContainer table tbody tr")[i].className = "hide";
+				} else {
+					$("#more_less_btn").html("Less");
+					$(".windowContainer table tbody tr")[i].className = "";
+				}
+			}
+		} else {			
+			for(var i=1;i<tables.length;i++) {
+				for(var j=5;j<tables[i].children[0].children.length;j++) {
+					if(tables[i].children[0].children[j].className.indexOf("hide") == -1) {
+						$("#more_less_btn").html("More");
+						tables[i].children[0].children[j].className = "hide";
+					} else {
+						$("#more_less_btn").html("Less");
+						tables[i].children[0].children[j].className = "";
+					}
+				}
+					
+			}
+		}
 	};
 
 	/**
@@ -1848,6 +1891,7 @@ function devicePlottingClass_gmap() {
 	 * @method heightChanged
 	 */
 	this.heightChanged = function() {
+		
 		HEIGHT_CHANGED = true;
 		isDialogOpen = false;
 		latLongArrayCopy = latLongArray;
@@ -1855,7 +1899,15 @@ function devicePlottingClass_gmap() {
 		antenaHight2 = $("#antinaVal2").val();
 		clear_factor = $("#clear-factor_val").val();
 
-		gmap_self.claculateFresnelZone(fresnelLat1,fresnelLon1,fresnelLat2,fresnelLon2,antenaHight1,antenaHight2);
+		var sector_ss_obj = {
+			"sector_name" : bts1_name,
+			"ss_name" : bts2_name,
+			"sector_Alias" : fresnelData.bts1_alias,
+			"ss_customerName" : fresnelData.bts2_customerName,
+			"ss_circuitId" : fresnelData.bts2_circuitId
+		};
+
+		gmap_self.claculateFresnelZone(fresnelLat1,fresnelLon1,fresnelLat2,fresnelLon2,antenaHight1,antenaHight2,sector_ss_obj);
 	};
 
 	/**
@@ -1989,7 +2041,7 @@ function devicePlottingClass_gmap() {
             masterMarkersObj = [];
             slaveMarkersObj = [];
 
-            showRequiredSectorMarker(filteredData);
+            // showRequiredSectorMarker(filteredData);
 
             tempFilteredData= filteredData;
             /*Populate the map with the filtered markers*/
@@ -3303,7 +3355,7 @@ function devicePlottingClass_gmap() {
 
 		for(i=0; i< masterMarkersObj.length; i++ ) {
 			var icon = masterMarkersObj[i].getIcon();
-			console.log(icon);
+
 			var markerImage;
 			if(icon != "") {
 				if(typeof(icon) == 'string') {
