@@ -4,6 +4,8 @@ var mapInstance = "",
 	currentDomElement = "",
 	main_devices_data_gmaps = [],
 	oms = "",
+    oms_ss = "",
+    oms_sect = ""
 	pathConnector = "",
 	infowindow = "",	
 	devicesObject = {},
@@ -191,6 +193,105 @@ function hideSubSectorMarkers() {
 	}
 }
 
+function prepare_oms_object(oms_instance) {
+    oms_instance.addListener('click', function(marker,e) {
+        var windowPosition = new google.maps.LatLng(marker.ptLat,marker.ptLon);
+        /*Call the function to create info window content*/
+        var content = gmap_self.makeWindowContent(marker);
+        /*Set the content for infowindow*/
+        infowindow.setContent(content);
+        /*Set The Position for InfoWindow*/
+        infowindow.setPosition(windowPosition);
+        /*Open the info window*/
+        infowindow.open(mapInstance);
+
+        /*Show only 5 rows, hide others*/
+        gmap_self.show_hide_info();
+    });
+
+    /*Event when the markers cluster expands or spiderify*/
+    oms_instance.addListener('spiderfy', function(e,markers) {
+        /*Change the markers icon from cluster icon to thrie own icon*/
+        for(var i=0;i<e.length;i++) {
+            /*Change the icon of marker*/
+            e[i].setOptions({"icon":e[i].oldIcon});
+            for(var j=0;j<ssLinkArray.length;j++) {
+                var pt_type = $.trim(e[i].pointType);
+
+                if(pt_type == "sub_station") {
+                    if($.trim(ssLinkArray[j].ssName) == $.trim(e[i].name)) {
+                        var pathArray = [];
+                        pathArray.push(new google.maps.LatLng(e[i].position.k,e[i].position.B));
+                        pathArray.push(new google.maps.LatLng(ssLinkArray[j].bs_lat,ssLinkArray[j].bs_lon));
+                        ssLinkArray[j].setPath(pathArray);
+                    }
+                } else if(pt_type == "base_station") {
+                    if($.trim(ssLinkArray[j].bsName) == $.trim(e[i].name)) {
+                        var pathArray = [];
+                        pathArray.push(new google.maps.LatLng(e[i].position.k,e[i].position.B));
+                        pathArray.push(new google.maps.LatLng(ssLinkArray[j].ss_lat,ssLinkArray[j].ss_lon));
+                        ssLinkArray[j].setPath(pathArray);
+                    }
+                }
+            }
+        }
+        //freeze the map when spiderified
+        isFreeze = 1;
+        infowindow.close();
+    });
+    /*Event when markers cluster is collapsed or unspiderify*/
+    oms_instance.addListener('unspiderfy', function(e,markers) {
+        //un freeze the map when in normal state
+        isFreeze = 0;
+        var latArray = [],
+            lonArray = [];
+
+        $.grep(e, function (elem) {
+            latArray.push(elem.ptLat);
+            lonArray.push(elem.ptLon);
+        });
+
+        /*Reset the marker icon to cluster icon*/
+        for(var i=0;i<e.length;i++) {
+
+            var latCount = $.grep(latArray, function (elem) {return elem === e[i].ptLat;}).length;
+            var lonCount = $.grep(lonArray, function (elem) {return elem === e[i].ptLon;}).length;
+
+            if(lonCount > 1 && latCount > 1) {
+                if(e[i].pointType=== "sector_Marker") {
+                    e[i].setOptions({"icon":new google.maps.MarkerImage(
+                                    'http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
+                                    null,
+                                    null,
+                                    null
+                                   )});
+                } else {
+                    e[i].setOptions({"icon":clusterIcon});
+                }
+            }
+
+            for(var j=0;j<ssLinkArray.length;j++) {
+                var pt_type = $.trim(e[i].pointType);
+
+                if(pt_type == "sub_station") {
+                    if($.trim(ssLinkArray[j].ssName) == $.trim(e[i].name)) {
+                        var pathArray = [];
+                        pathArray.push(new google.maps.LatLng(e[i].ptLat,e[i].ptLon));
+                        pathArray.push(new google.maps.LatLng(ssLinkArray[j].bs_lat,ssLinkArray[j].bs_lon));
+                        ssLinkArray[j].setPath(pathArray);
+                    }
+                } else if(pt_type == "base_station") {
+                    if($.trim(ssLinkArray[j].bsName) == $.trim(e[i].name)) {
+                        var pathArray = [];
+                        pathArray.push(new google.maps.LatLng(e[i].ptLat,e[i].ptLon));
+                        pathArray.push(new google.maps.LatLng(ssLinkArray[j].ss_lat,ssLinkArray[j].ss_lon));
+                        ssLinkArray[j].setPath(pathArray);
+                    }
+                }
+            }
+        }
+    });
+}
 
 /**
  * This class is used to plot the BS & SS on the google maps & performs their functionality.
@@ -321,107 +422,15 @@ function devicePlottingClass_gmap() {
 
 			/*Create a instance of OverlappingMarkerSpiderfier*/
 			oms = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
+            oms_ss = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
+
+            prepare_oms_object(oms);
+            prepare_oms_object(oms_ss);
 
 			/*Create a instance of google map info window*/
 			infowindow = new google.maps.InfoWindow();		
 
-			oms.addListener('click', function(marker,e) {
-				var windowPosition = new google.maps.LatLng(marker.ptLat,marker.ptLon);
-				/*Call the function to create info window content*/
-				var content = gmap_self.makeWindowContent(marker);
-				/*Set the content for infowindow*/
-				infowindow.setContent(content);
-				/*Set The Position for InfoWindow*/
-				infowindow.setPosition(windowPosition);				
-				/*Open the info window*/
-				infowindow.open(mapInstance);
 
-				/*Show only 5 rows, hide others*/
-				gmap_self.show_hide_info();
-			});
-
-			/*Event when the markers cluster expands or spiderify*/
-			oms.addListener('spiderfy', function(e,markers) {
-				/*Change the markers icon from cluster icon to thrie own icon*/
-				for(var i=0;i<e.length;i++) {
-					/*Change the icon of marker*/
-					e[i].setOptions({"icon":e[i].oldIcon});
-					for(var j=0;j<ssLinkArray.length;j++) {
-						var pt_type = $.trim(e[i].pointType);
-
-						if(pt_type == "sub_station") {
-							if($.trim(ssLinkArray[j].ssName) == $.trim(e[i].name)) {
-								var pathArray = [];
-								pathArray.push(new google.maps.LatLng(e[i].position.k,e[i].position.B));
-								pathArray.push(new google.maps.LatLng(ssLinkArray[j].bs_lat,ssLinkArray[j].bs_lon));
-								ssLinkArray[j].setPath(pathArray);
-							}
-						} else if(pt_type == "base_station") {
-							if($.trim(ssLinkArray[j].bsName) == $.trim(e[i].name)) {
-								var pathArray = [];
-								pathArray.push(new google.maps.LatLng(e[i].position.k,e[i].position.B));
-								pathArray.push(new google.maps.LatLng(ssLinkArray[j].ss_lat,ssLinkArray[j].ss_lon));
-								ssLinkArray[j].setPath(pathArray);
-							}
-						}
-					}
-				}
-                //freeze the map when spiderified
-                isFreeze = 1;
-				infowindow.close();
-			});
-			/*Event when markers cluster is collapsed or unspiderify*/
-			oms.addListener('unspiderfy', function(e,markers) {
-                //un freeze the map when in normal state
-                isFreeze = 0;
-				var latArray = [],
-					lonArray = [];
-
-				$.grep(e, function (elem) {
-					latArray.push(elem.ptLat);
-					lonArray.push(elem.ptLon);
-				});
-
-				/*Reset the marker icon to cluster icon*/
-				for(var i=0;i<e.length;i++) {
-
-					var latCount = $.grep(latArray, function (elem) {return elem === e[i].ptLat;}).length;
-					var lonCount = $.grep(lonArray, function (elem) {return elem === e[i].ptLon;}).length;
-
-					if(lonCount > 1 && latCount > 1) {
-						if(e[i].pointType=== "sector_Marker") {
-							e[i].setOptions({"icon":new google.maps.MarkerImage(
-									        'http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
-									        null,
-									        null,
-									        null
-									       )});
-						} else {
-							e[i].setOptions({"icon":clusterIcon});	
-						}
-					}
-
-					for(var j=0;j<ssLinkArray.length;j++) {
-						var pt_type = $.trim(e[i].pointType);
-
-						if(pt_type == "sub_station") {
-							if($.trim(ssLinkArray[j].ssName) == $.trim(e[i].name)) {
-								var pathArray = [];
-								pathArray.push(new google.maps.LatLng(e[i].ptLat,e[i].ptLon));
-								pathArray.push(new google.maps.LatLng(ssLinkArray[j].bs_lat,ssLinkArray[j].bs_lon));
-								ssLinkArray[j].setPath(pathArray);
-							}
-						} else if(pt_type == "base_station") {
-							if($.trim(ssLinkArray[j].bsName) == $.trim(e[i].name)) {
-								var pathArray = [];
-								pathArray.push(new google.maps.LatLng(e[i].ptLat,e[i].ptLon));
-								pathArray.push(new google.maps.LatLng(ssLinkArray[j].ss_lat,ssLinkArray[j].ss_lon));
-								ssLinkArray[j].setPath(pathArray);
-							}
-						}
-					}
-				}
-			});
 		} else {
 			$.gritter.add({
 	            // (string | mandatory) the heading of the notification
@@ -815,7 +824,7 @@ function devicePlottingClass_gmap() {
 			    	masterMarkersObj.push(ss_marker);
 
 			    	/*Add parent markers to the OverlappingMarkerSpiderfier*/
-				    oms.addMarker(ss_marker);
+				    oms_ss.addMarker(ss_marker);
 
 				    /*Push All SS Lat & Lon*/
 		    	    bsLatArray.push(ss_marker_obj.data.lat);
@@ -3388,6 +3397,7 @@ gmap_self.updateAllMarkersWithNewIcon(defaultIconSize);
 
 		/*Clear the marker array of OverlappingMarkerSpiderfier*/
 		oms.clearMarkers();
+        oms_ss.clearMarkers();
 
 		/*Clear master marker cluster objects*/
 		if(masterClusterInstance != "") {
