@@ -9,12 +9,16 @@ from nocout_site_name import *
 import mysql.connector
 from datetime import datetime, timedelta
 from events_rrd_migration import get_latest_event_entry
-import socket
+from pprint import pformat
 import imp
 import time
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+logging_module = imp.load_source('get_site_logger', '/opt/omd/sites/%s/nocout/utils/nocout_site_logs.py' % nocout_site_name)
+
+# Get logger object
+logger = logging_module.get_site_logger('events_migrations.log')
 
 def main(**configs):
     """

@@ -9,6 +9,7 @@ This script collects and stores data for all services running on all configured 
 from nocout_site_name import *
 import os
 import demjson,json
+from pprint import pformat
 import re
 from datetime import datetime, timedelta
 from xml.etree import ElementTree as ET
@@ -20,6 +21,10 @@ import time
 utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+logging_module = imp.load_source('get_site_logger', '/opt/omd/sites/%s/nocout/utils/nocout_site_logs.py' % nocout_site_name)
+
+# Logger would write all activities to rrd_migration.log file
+logger = logging_module.get_site_logger('rrd_migration.log')
 
 def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 	"""
@@ -31,7 +36,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
                 mongo_db (mongo db connection),mongo_port(port for mongodb)
 	Return : None
         Raises:
-	     Exception: IOError 
+	    Exception: None
 	"""
 	_folder = '/opt/omd/sites/%s/var/pnp4nagios/perfdata/%s/' % (site,host)
 	xml_file_list = []
@@ -261,7 +266,7 @@ def do_export(site, host, file_name,data_source, start_time, serv):
     #start_epoch -= 19800
     #end_epoch -= 19800
 
-    print start_epoch,end_epoch
+    logger.debug('[do_export] - start_epoch, end_epoch: ' + pformat(start_epoch) + ' ' + pformat(end_epoch))
     # Command for rrdtool data extraction
     cmd = '/omd/sites/%s/bin/rrdtool xport --json --daemon unix:/omd/sites/%s/tmp/run/rrdcached.sock -s %s -e %s --step 300 '\
         %(site,site, str(start_epoch), str(end_epoch))
@@ -457,8 +462,9 @@ def rrd_migration_main(site,host,services,ip, mongo_host, mongo_db, mongo_port):
 	Raise
 	    Exception : None
 	"""
+	logger.info('[-- rrd_migration start --]')
 	build_export(site, host, ip, mongo_host, mongo_db, mongo_port)
-        #for service in services[0]:
+	logger.info('[-- rrd_migration end --]')
 
 """if __name__ == '__main__':
     build_export('BT','AM-400','PING')
