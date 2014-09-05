@@ -164,6 +164,24 @@ function openBSRightClickMenu(event, marker) {
 	}
 }
 
+function showSubSectorMarkers() {
+	for(var i=0; i< tempFilteredData.length; i++) {
+		(function showMarker(lat, lon) {
+			var uniqueKey= String(lat)+lon;
+			if( zoom > zoomAtWhichSectorMarkerAppears) {
+				sectorMarkersMasterObj[uniqueKey].setMap(mapInstance);
+			}
+			return ;
+		})(tempFilteredData[i].data.lat, tempFilteredData[i].data.lon);
+	}
+}
+
+function hideSubSectorMarkers() {
+			for(var i=0;i<sector_MarkersArray.length; i++) {
+			sector_MarkersArray[i].setMap(null)
+		}
+}
+
 
 // function showRequiredSectorMarker(filteredData) {
 // 	var zoom = mapInstance.getZoom();
@@ -237,25 +255,14 @@ function devicePlottingClass_gmap() {
 
             google.maps.event.addListener(mapInstance, 'zoom_changed', function() {
             	var zoom = mapInstance.getZoom();
-
-            	// if( zoom > zoomAtWhichSectorMarkerAppears && tempFilteredData.length) {
-            	// 	for(var i=0; i< tempFilteredData.length; i++) {
-            	// 		(function showMarker(lat, lon) {
-            	// 			var uniqueKey= String(lat)+lon;
-            	// 			if( zoom > zoomAtWhichSectorMarkerAppears) {
-            	// 				sectorMarkersMasterObj[uniqueKey].setMap(mapInstance);
-            	// 			}
-            	// 			return ;
-            	// 		})(tempFilteredData[i].data.lat, tempFilteredData[i].data.lon);
-            	// 	}
-            	// }
-            	// else {
-            	// 	for (var i = 0; i < sector_MarkersArray.length; i++) {    
-            	// 		sector_MarkersArray[i].setMap(null);
-            	// 	}
-            	// }
-
-
+            	if( zoom > zoomAtWhichSectorMarkerAppears && tempFilteredData.length) {
+            		showSubSectorMarkers();
+            	}
+            	else {
+            		for (var i = 0; i < sector_MarkersArray.length; i++) {    
+            			sector_MarkersArray[i].setMap(null);
+            		}
+            	}
             });
 
 			/*Event listener for search text box*/
@@ -696,6 +703,7 @@ function devicePlottingClass_gmap() {
 
                     var sect_height = sector_array[j].antenna_height;
 
+/*Create Sector Marker*/
 					var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
 
 					sector_MarkersArray.push(sector_Marker);
@@ -705,6 +713,7 @@ function devicePlottingClass_gmap() {
 					// masterMarkersObj.push(sector_Marker);
 
 					oms.addMarker(sector_Marker);
+/*End of Create Sector Marker*/
 
 					deviceIDArray.push(sector_array[j]['device_info'][1]['value']);
 				}
