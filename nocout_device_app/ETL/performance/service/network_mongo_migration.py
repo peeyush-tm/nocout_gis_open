@@ -12,6 +12,7 @@ Network services include : Ping
 from nocout_site_name import *
 import mysql.connector
 from datetime import datetime, timedelta
+from pprint import pformat
 import subprocess
 import socket
 import imp
@@ -20,6 +21,11 @@ import time
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+logging_module = imp.load_source('get_site_logger', '/opt/omd/sites/%s/nocout/utils/nocout_site_logs.py' % nocout_site_name)
+
+
+# Get logger object
+logger = logging_module.get_site_logger('migrations.log')
 
 def main(**configs):
     """
@@ -73,9 +79,9 @@ def main(**configs):
         	data_values.extend(values_list)
     if data_values:
     	insert_data(configs.get('table_name'), data_values, configs=configs)
-    	print "Data inserted into mysql db"
+    	logger.info("Data inserted into mysql db")
     else:
-	print "No data in the mongo db in this time frame"
+	logger.info("No data in the mongo db in this time frame")
     
 
 def read_data(start_time, end_time, **kwargs):
@@ -187,7 +193,7 @@ def insert_data(table, data_values, **kwargs):
     try:
         cursor.executemany(query, data_values)
     except mysql.connector.Error as err:
-        raise mysql.connector.Error, err
+	    logger.error('[-- insert data --] Mysql Conn error: ' + pformat(e))
     db.commit()
     cursor.close()
 

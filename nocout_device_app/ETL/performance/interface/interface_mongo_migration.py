@@ -12,12 +12,16 @@ Interface services include : Services which runs once an Hour.
 from nocout_site_name import *
 import mysql.connector
 from datetime import datetime, timedelta
-import socket
 import imp
+from pprint import pformat
 import time
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+logging_module = imp.load_source('get_site_logger', '/opt/omd/sites/%s/nocout/utils/nocout_site_logs.py' % nocout_site_name)
+
+# Get logger
+logger = logging_module.get_site_logger('interface_migrations.log')
 
 def main(**configs):
     """
@@ -57,7 +61,7 @@ def main(**configs):
     start_epoch = int(time.mktime(start_time.timetuple()))
     end_epoch = int(time.mktime(end_time.timetuple()))
 
-    print start_time,end_time
+    logger.debug('[-- main --] start_time, end_time: ' + pformat(start_time) + ' ' + pformat(end_time))
     
     for i in range(len(configs.get('mongo_conf'))):
     	docs = read_data(start_epoch, end_epoch, configs=configs.get('mongo_conf')[i], db_name=configs.get('nosql_db'))
@@ -66,9 +70,9 @@ def main(**configs):
         	data_values.extend(values_list)
     if data_values:
     	insert_data(configs.get('table_name'), data_values, configs=configs)
-    	print "Data inserted into performance_performancestatus table"
+    	logger.debug("Data inserted into performance_performancestatus table")
     else:
-	print "No data in the mongo db in this time frame"
+	logger.debug("No data in the mongo db in this time frame")
     
 
 def read_data(start_time, end_time, **kwargs):
