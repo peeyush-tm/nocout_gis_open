@@ -9,13 +9,17 @@ from nocout_site_name import *
 import mysql.connector
 from datetime import datetime
 from datetime import timedelta
+from pprint import pformat
 from events_rrd_migration import get_latest_event_entry
-import socket
 import imp
 import time
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+logging_module = imp.load_source('get_site_logger', '/opt/omd/sites/%s/nocout/utils/nocout_site_logs.py' % nocout_site_name)
+
+# Get logger
+logger = logging_module.get_site_logger('events_migrations.log')
 
 def main(**configs):
     """
@@ -52,9 +56,9 @@ def main(**configs):
         	data_values.extend(values_list)
     if data_values:
         insert_data(configs.get('table_name'), data_values, configs=configs)
-        print "Data inserted into mysql db"
+        logger.debug("Data inserted into mysql db")
     else:
-        print "No data in the mongo db in this time frame"
+        logger.debug("No data in the mongo db in this time frame")
 
 def read_data(start_time, end_time, **kwargs):
     """

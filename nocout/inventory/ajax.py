@@ -9,7 +9,7 @@ from django.contrib.staticfiles.templatetags.staticfiles import static
 logger = logging.getLogger(__name__)
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def update_states(request, option):
     """
     updating states corresponding to the selected country
@@ -26,7 +26,7 @@ def update_states(request, option):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def update_cities(request, option):
     """
     updating cities corresponding to the selected state
@@ -43,7 +43,7 @@ def update_cities(request, option):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def update_states_after_invalid_form(request, option, state_id):
     """
     after invalid form submission
@@ -64,7 +64,7 @@ def update_states_after_invalid_form(request, option, state_id):
     dajax.assign('#id_state', 'innerHTML', ''.join(out))
     return dajax.json()
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def update_cities_after_invalid_form(request, option, city_id):
     """
     updating cities corresponding to the selected state
@@ -84,7 +84,7 @@ def update_cities_after_invalid_form(request, option, city_id):
     dajax.assign('#id_city', 'innerHTML', ''.join(out))
     return dajax.json()
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def update_services_as_per_technology(request, tech_id=""):
     """
     update service according to the technology selected
@@ -125,7 +125,7 @@ def update_services_as_per_technology(request, tech_id=""):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def update_data_sources_as_per_service(request, svc_id=""):
     """
     update data sources as per service
@@ -149,7 +149,7 @@ def update_data_sources_as_per_service(request, svc_id=""):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def after_update_services_as_per_technology(request, tech_id="", selected=""):
     """
     update service according to the technology selected
@@ -194,7 +194,7 @@ def after_update_services_as_per_technology(request, tech_id="", selected=""):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def after_update_data_sources_as_per_service(request, svc_id="", selected=""):
     """
     update data sources as per service
@@ -223,7 +223,7 @@ def after_update_data_sources_as_per_service(request, svc_id="", selected=""):
 
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def gt_warning_choices(request, option):
     """
     update 'gt_warning' field choices
@@ -253,7 +253,7 @@ def gt_warning_choices(request, option):
     dajax.assign("#id_gt_warning", 'innerHTML', ''.join(out))
     return dajax.json()
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def gt_warning_initial_choices(request):
     """
     update 'gt_warning' initial field choices
@@ -273,7 +273,7 @@ def gt_warning_initial_choices(request):
     dajax.assign('#id_gt_warning', 'innerHTML', ''.join(out))
     return dajax.json()
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def bt_w_c_choices(request, option):
     """
     update 'bt_w_c' field choices
@@ -301,7 +301,7 @@ def bt_w_c_choices(request, option):
     dajax.assign("#id_bt_w_c", 'innerHTML', ''.join(out))
     return dajax.json()
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def bt_w_c_initial_choices(request):
     """
     update 'bt_w_c' initial field choices
@@ -321,7 +321,7 @@ def bt_w_c_initial_choices(request):
     dajax.assign('#id_bt_w_c', 'innerHTML', ''.join(out))
     return dajax.json()
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def gt_critical_choices(request, option):
     """
     update 'gt_critical' field choices
@@ -350,7 +350,7 @@ def gt_critical_choices(request, option):
     dajax.assign("#id_gt_critical", 'innerHTML', ''.join(out))
     return dajax.json()
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def gt_critical_initial_choices(request):
     """
     update 'gt_critical' initial field choices
@@ -368,7 +368,7 @@ def gt_critical_initial_choices(request):
     return dajax.json()
 
 
-# @dajaxice_register
+# @dajaxice_register(method='GET')
 # def load_sheet_no_select_menu(request, uploaded_file):
 #     dajax = Dajax()
 #     book = xlrd.open_workbook(uploaded_file, file_contents=uploaded_file.read())
@@ -380,7 +380,7 @@ def gt_critical_initial_choices(request):
 #     print "*********************** uploaded_file - ", uploaded_file
 #     return dajax.json()
 #
-# @dajaxice_register
+# @dajaxice_register(method='GET')
 # def update_sheet_no_select_menu(request, uploaded_file):
 #     print "********************** uploaded_file - ", uploaded_file
 #     dajax = Dajax()
