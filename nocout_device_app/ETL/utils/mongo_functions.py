@@ -14,6 +14,10 @@ from operator import itemgetter
 import imp
 
 utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
+logging_module = imp.load_source('get_site_logger', '/opt/omd/sites/%s/nocout/utils/nocout_site_logs.py' % nocout_site_name)
+
+# Get logget
+logger = logging_module.get_site_logger('utils.log')
 
 
 def mongo_conn(**kwargs):
@@ -90,7 +94,7 @@ def mongo_db_insert(db,event_dict,flag):
 			db.status_perf.insert(event_dict)
                 return success
         else:
-                print "Mongo_db insertion failed"
+                logger.debug("Mongo_db insertion failed")
                 return failure
 
 def mongo_db_update(db,matching_criteria,event_dict,flag):
@@ -117,11 +121,11 @@ def mongo_db_update(db,matching_criteria,event_dict,flag):
 				db.device_status_services_status.update(matching_criteria,event_dict,upsert=True)
                 	return success
 		except Exception, ReferenceError:
-        		print "Mongodb updation failed"
+        		logger.debug("Mongodb updation failed")
 
 				
         else:
-                print "Mongo_db updatation failed"
+                logger.debug("Mongo_db updatation failed")
                 return failure
 
 

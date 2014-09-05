@@ -1,7 +1,14 @@
+from nocout_site_name import *
 import MySQLdb
+import imp
+from pprint import pformat
+
+logging_module = imp.load_source('get_site_logger', '/opt/omd/sites/%s/nocout/utils/nocout_site_logs.py' % nocout_site_name)
+
+# Get logger
+logger = logging_module.get_site_logger('utils.log')
 
 def mysql_execute(query,event_db):
-	out = None
 	conn = MySQLdb.connect(host= "localhost",
                   user="root",
                   passwd="lnmiit",
@@ -13,7 +20,7 @@ def mysql_execute(query,event_db):
    		conn.commit()
 
 	except MySQLdb.Error, e:
-		print "Error %d: %s" %(e.args[0],e.args[1])
+		logger.error('Error in Mysql Conn: ' + pformat(e))
    		conn.rollback()
 
 	finally:

@@ -1,7 +1,7 @@
 import csv
 import json
 import datetime
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, render
@@ -11,11 +11,10 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 import xlwt
 from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation
+from nocout.settings import P2P, WiMAX, PMP
 from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus, ServiceStatus, InventoryStatus, \
     PerformanceStatus, PerformanceInventory, Status
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
-from operator import is_not
-from functools import partial
 from django.utils.dateformat import format
 from operator import itemgetter
 
@@ -118,11 +117,12 @@ class LivePerformanceListing(BaseDatatableView):
                 return self.get_initial_query_set_data(organization_ids=organization_ids)
 
             elif self.request.GET['page_type'] == 'network':
+                return self.get_initial_query_set_data(organization_ids=organization_ids,
+                                                       device_association='sector_configured_on')
+            else:
                 return []
-                # return self.get_initial_query_set_data(organization_ids=organization_ids)
-            # else:
 
-    def get_initial_query_set_data(self, **kwargs):
+    def get_initial_query_set_data(self, device_association='', **kwargs):
         """
         Generic function required to fetch the initial data with respect to the page_type parameter in the get request requested.
 
@@ -131,18 +131,20 @@ class LivePerformanceListing(BaseDatatableView):
         :return: list of devices
         """
         device_list = list()
-        # if self.request.GET['page_type'] != 'network':
-        device_tab_technology = self.request.GET.get('data_tab')
-        device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
-        # get only devices added to NMS and none other
-        devices = Device.objects.filter(is_added_to_nms=1, is_deleted=0, organization__in=kwargs['organization_ids'],\
-                  device_technology=device_technology_id).values(*self.columns + ['id', 'device_name', 'machine__name',\
-                                                                                  'sector_configured_on','substation'])
-        # else:
-        #     # get only devices added to NMS and none other
-        #     devices = Device.objects.filter(is_added_to_nms=1, is_deleted=0,
-        #                                     organization__in=kwargs['organization_ids']). \
-        #         values(*self.columns + ['id', 'device_name', 'machine__name'])
+        if self.request.GET['page_type'] == 'customer':
+            device_tab_technology = self.request.GET.get('data_tab')
+            device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
+            # get only devices added to NMS and none other
+            devices = Device.objects.filter(is_added_to_nms= 1,  is_deleted= 0,
+                                            organization__in= kwargs['organization_ids'],\
+                                            device_technology= device_technology_id).values(*self.columns +\
+                                            ['id', 'device_name', 'machine__name','sector_configured_on', 'substation'])
+        else:
+            # get only devices added to NMS and devices which are not P2P, and must be either PMP or WiMAX.
+            devices = Device.objects.filter(~Q(device_technology = int(P2P.ID)),
+                                             Q(device_technology = int(WiMAX.ID)) | Q(device_technology = int(PMP.ID)),
+                                             is_added_to_nms=1, is_deleted=0, organization__in= kwargs['organization_ids']). \
+                                             values(*self.columns + ['id', 'device_name', 'machine__name', device_association])
 
         for device in devices:
             if device['sector_configured_on'] or device['substation']:
@@ -209,7 +211,7 @@ class LivePerformanceListing(BaseDatatableView):
                        "last_updated": "N/A",
                        "last_updated_date": "N/A",
                        "last_updated_time": "N/A"
-        }
+                      }
 
         query = prepare_query(table_name="performance_networkstatus",
                               devices=device_list,
@@ -273,6 +275,7 @@ class LivePerformanceListing(BaseDatatableView):
         if qs:
             for dct in qs:
                 device = Device.objects.get(id=dct['id'])
+
                 if device.substation_set.exists():
                     dct.update(
                         actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
@@ -284,7 +287,9 @@ class LivePerformanceListing(BaseDatatableView):
                         actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a> \
                          <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
                          <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'
-                        .format('network', dct['id'], 'latency'  if 'latency' in dct.keys() else 'packet_drop'))
+                        .format('customer' if dct['device_technology'] == P2P.NAME else 'network',
+                                dct['id'],
+                                'latency'  if 'latency' in dct.keys() else 'packet_drop'))
 
                 device_list.append({'device_name': dct["device_name"], 'device_machine': device.machine.name})
 
@@ -363,9 +368,9 @@ class Get_Perfomance(View):
             'page_title': page_type.capitalize(),
             'device': device,
             'realdevice': realdevice,
-            'get_devices_url': 'performance/get_inventory_devices/' + str(page_type),
-            'get_status_url': 'performance/get_inventory_device_status/' + str(page_type) + '/device/' + str(device_id),
-            'get_services_url': 'performance/get_inventory_service_data_sources/' + str(page_type) + '/device/' + str(
+            'get_devices_url': 'performance/get_inventory_devices/' + page_type,
+            'get_status_url':  'performance/get_inventory_device_status/' + page_type + '/device/' + str(device_id),
+            'get_services_url': 'performance/get_inventory_service_data_sources/device/' + str(
                 device_id),
             'page_type':page_type
             }
@@ -433,18 +438,17 @@ class Fetch_Inventory_Devices(View):
         logged_in_user = request.user.userprofile
 
         if 'admin' in logged_in_user.role.values_list('role_name', flat=True):
-            organizations = logged_in_user.organization.get_descendants(include_self=True)
-            for organization in organizations:
-                result['data']['objects'] += self.get_result(page_type, organization)
+            organizations_ids = list(logged_in_user.organization.get_descendants(include_self=True).values_list('id', flat=True))
         else:
-            organization = logged_in_user.organization
-            result['data']['objects'] += self.get_result(page_type, organization)
+            organizations_ids = [logged_in_user.organization.id]
+
+        result['data']['objects'] += self.get_result(page_type, organizations_ids)
 
         result['success'] = 1
         result['message'] = 'Substation Devices Fetched Successfully.'
         return HttpResponse(json.dumps(result))
 
-    def get_result(self, page_type, organization):
+    def get_result(self, page_type, organizations_ids):
         """
         Generic function to return the result w.r.t the page_type and organization of the current logged in user.
 
@@ -454,47 +458,42 @@ class Fetch_Inventory_Devices(View):
         """
 
         if page_type == "customer":
-            substation_result = self.organization_devices_substations(organization)
-            return substation_result
-        elif page_type == "network":
-            basestation_result = self.organization_devices_basestations(organization)
-            return basestation_result
+            customer_device_result = self.organization_customer_devices(organizations_ids)
+            return customer_device_result
 
-    def organization_devices_substations(self, organization):
+        elif page_type == "network":
+            network_device_result = self.organization_network_devices(organizations_ids)
+            return network_device_result
+
+    def organization_customer_devices(self, organizations_ids):
         """
-        To result back the all the substations from the respective organization..
+        To result back the all the customer devices from the respective organization..
 
         :param organization:
-        :return list of substation
+        :return list of customer devices
         """
-
-        organization_substations = SubStation.objects.filter(device__in=Device.objects.filter(
-            is_added_to_nms=1, is_deleted=0,
-            organization=organization.id).values_list('id', flat=True)).values_list('id', 'device__device_name')
+        organization_customer_devices= Device.objects.filter(Q(sector_configured_on__isnull=False) | Q(substation__isnull=False),
+            is_added_to_nms=1, is_deleted=0, organization__in= organizations_ids)
         result = list()
-        for substation in organization_substations:
-            result.append({'id': substation[0], 'alias': substation[1]})
+        for device in organization_customer_devices:
+            result.append({'id': device.id, 'alias': device.device_name })
 
         return result
 
-    def organization_devices_basestations(self, organization):
+    def organization_network_devices(self, organization):
         """
-        To result back the all the basestation from the respective organization..
+        To result back the all the network devices from the respective organization..
 
         :param organization:
-        :return list of basestation
+        :return list of network devices
         """
-
-        sector_configured_on_devices_list = Sector.objects.filter(sector_configured_on__id__in=organization.device_set. \
-                                                                  values_list('id', flat=True)).values_list(
-            'sector_configured_on').annotate(dcount=Count('base_station'))
-
-        sector_configured_on_devices_ids = map(lambda x: x[0], sector_configured_on_devices_list)
-        sector_configured_on_devices = Device.objects.filter(is_added_to_nms=1, is_deleted=0,
-                                                             id__in=sector_configured_on_devices_ids)
+        organization_network_devices = Device.objects.filter(~Q(device_technology = int(P2P.ID)),
+                                       is_added_to_nms=1, is_deleted=0, organization= organization.id)
         result = list()
-        for sector_configured_on_device in sector_configured_on_devices:
-            result.append({'id': sector_configured_on_device.id, 'alias': sector_configured_on_device.device_alias})
+        #Validate the condition if the sector_configured_on(master) exists
+        for device in organization_network_devices:
+            if device.sector_configured_on.exists():
+                result.append({'id': device.id, 'alias': device.device_name})
 
         return result
 
@@ -519,20 +518,21 @@ class Inventory_Device_Status(View):
             }
         }
         result['data']['objects']['values'] = list()
+
+        device=Device.objects.get(id= device_id)
+
+        if device.sector_configured_on.exists(): page_type='network'
+
         if page_type == 'customer':
+            substation = SubStation.objects.get(device= device.id)
 
-            # substation = SubStation.objects.get(id= device_id)
-            # substation_device = Device.objects.get(id=substation.device_id)
-
-            substation_device = Device.objects.get(id= device_id)
-            substation = SubStation.objects.get(id= substation_device.id)
-
-            try:
+            if substation.circuit_set.exists():
                 sector = Circuit.objects.get(sub_station=substation.id).sector
                 base_station = BaseStation.objects.get(id=Sector.objects.get(id=sector.id).base_station.id)
                 bs_name = base_station.name
-            except:
+            else:
                 bs_name = "N/A"
+
             result['data']['objects']['headers'] = ['BS Name', 'SSName', 'Building Height', 'Tower Height',
                                                     'City', 'State', 'IP Address', 'MAC Address']
             result['data']['objects']['values'] = [bs_name, substation.name,
@@ -540,26 +540,24 @@ class Inventory_Device_Status(View):
                                                    substation.tower_height,
                                                    City.objects.get(id=substation.city).city_name if substation.city else "N/A",
                                                    State.objects.get(id=substation.state).state_name if substation.state else "N/A",
-                                                   substation_device.ip_address,
-                                                   substation_device.mac_address]
+                                                   device.ip_address,
+                                                   device.mac_address]
 
         elif page_type == 'network':
 
-            # base_station= BaseStation.objects.get(id=device_id)
-            # sector_configured_on_device= Sector.objects.filter(base_station= base_station.id).values_list('sector_configured_on', flat=True)
-            sector_configured_on_device = Device.objects.get(id=int(device_id))
+            base_station_list = Sector.objects.filter(sector_configured_on=device.id).values_list(
+                'base_station', flat=True)
+
             result['data']['objects']['headers'] = ['BS Name', 'Building Height', 'Tower Height',
                                                     'City', 'State', 'IP Address', 'MAC Address']
-            base_station_list = Sector.objects.filter(sector_configured_on=sector_configured_on_device.id).values_list(
-                'base_station', flat=True)
             if base_station_list:
-                base_station = BaseStation.objects.get(id=base_station_list[0])
+                base_station = BaseStation.objects.get(id= base_station_list[0])
                 result['data']['objects']['values'] = [base_station.name, base_station.building_height,
                                                        base_station.tower_height,
                                                        City.objects.get(id=base_station.city).city_name if base_station.city else "N/A",
                                                        State.objects.get(id=base_station.state).state_name if base_station.state else "N/A",
-                                                       sector_configured_on_device.ip_address,
-                                                       sector_configured_on_device.mac_address]
+                                                       device.ip_address,
+                                                       device.mac_address]
 
         result['data']['objects']['values'] = map(lambda val: val if val else 'N/A',
                                                   result['data']['objects']['values'])
@@ -574,19 +572,18 @@ class Inventory_Device_Service_Data_Source(View):
 
     """
 
-    def get(self, request, page_type, device_id):
+    def get(self, request, device_id):
         """
         Handles the get Request w.r.t to the page type and device id requested
 
         :params request object:
-        :params page_type:
         :params device_id:
         :return result
         """
 
         result = {
             'success': 0,
-            'message': 'Substation Devices Services Data Source Not Fetched Successfully.',
+            'message': 'Services Data Source Not Fetched Successfully.',
             'data': {
                 'meta': {},
                 'objects': {
@@ -597,21 +594,11 @@ class Inventory_Device_Service_Data_Source(View):
                 }
             }
         }
-        inventory_device_type_id = None
-        inventory_device_service_name = []
-        if page_type == 'customer':
-            # The device id is the substation id.
-            #Fetch the Service names that are configured w.r.t to a device.
-            inventory_device_service_name = DeviceServiceConfiguration.objects.filter(
-                device_name= Device.objects.get(id=device_id).device_name) \
-                .values_list('service_name', 'data_source')
-
-        elif page_type == 'network':
-            # The device_id is the sector_configured_on device id.
-            #Fetch the Service names that are configured w.r.t to a device.
-            inventory_device_service_name = DeviceServiceConfiguration.objects.filter(
-                device_name= Device.objects.get(id=device_id).device_name)\
-                .values_list('service_name', 'data_source')
+        device= Device.objects.get(id=device_id)
+        #Fetch the Service names that are configured w.r.t to a device.
+        inventory_device_service_name = DeviceServiceConfiguration.objects.filter(
+            device_name= device.device_name)\
+            .values_list('service_name', 'data_source')
 
         # TODO:to remove this code as the services are getting multi added with their port.
         inventory_device_service_name = list(set(inventory_device_service_name))
@@ -620,7 +607,7 @@ class Inventory_Device_Service_Data_Source(View):
             {
                 'name': "rta",
                 'title': "Latency",
-                'url': 'performance/service/ping/service_data_source/rta/' + page_type + '/device/' + str(device_id),
+                'url': 'performance/service/ping/service_data_source/rta/device/' + str(device_id),
                 'active': 0,
                 'service_type_tab': 'network_perf_tab'
             })
@@ -628,7 +615,7 @@ class Inventory_Device_Service_Data_Source(View):
             {
                 'name': "pl",
                 'title': "Packet Drop",
-                'url': 'performance/service/ping/service_data_source/pl/' + page_type + '/device/' + str(device_id),
+                'url': 'performance/service/ping/service_data_source/pl/device/' + str(device_id),
                 'active': 0,
                 'service_type_tab': 'network_perf_tab'
             })
@@ -644,10 +631,10 @@ class Inventory_Device_Service_Data_Source(View):
                                  " : " +
                                  ServiceDataSource.objects.filter(name=service_data_source)[0].alias
                                     if len(ServiceDataSource.objects.filter(name=service_data_source)) else service_data_source,
-                        'url': 'performance/service/' + service_name + '/service_data_source/' + service_data_source + '/' + page_type + '/device/' + str(
+                        'url': 'performance/service/' + service_name + '/service_data_source/' + service_data_source + '/device/' + str(
                             device_id),
                         'active': 0,
-                        })
+                    })
 
             elif '_invent' in service_name:
                 # service_data_sources = Service.objects.get(name=service_name).service_data_sources.all()
@@ -659,10 +646,10 @@ class Inventory_Device_Service_Data_Source(View):
                                  " : " +
                                  ServiceDataSource.objects.filter(name=service_data_source)[0].alias
                                     if len(ServiceDataSource.objects.filter(name=service_data_source)) else service_data_source,
-                        'url': 'performance/service/' + service_name + '/service_data_source/' + service_data_source + '/' + page_type + '/device/' + str(
+                        'url': 'performance/service/' + service_name + '/service_data_source/' + service_data_source + '/device/' + str(
                             device_id),
                         'active': 0,
-                        })
+                    })
             else:
                 # service_data_sources = Service.objects.get(name=service_name).service_data_sources.all()
                 # for service_data_source in service_data_sources:
@@ -673,10 +660,10 @@ class Inventory_Device_Service_Data_Source(View):
                                  " : " +
                                  ServiceDataSource.objects.filter(name=service_data_source)[0].alias
                                     if len(ServiceDataSource.objects.filter(name=service_data_source)) else service_data_source,
-                        'url': 'performance/service/' + service_name + '/service_data_source/' + service_data_source + '/' + page_type + '/device/' + str(
+                        'url': 'performance/service/' + service_name + '/service_data_source/' + service_data_source + '/device/' + str(
                             device_id),
                         'active': 0,
-                        })
+                    })
 
         result['success'] = 1
         result['message'] = 'Substation Devices Services Data Source Fetched Successfully.'
@@ -689,12 +676,11 @@ class Get_Service_Type_Performance_Data(View):
 
     """
 
-    def get(self, request, page_type, service_name, service_data_source_type, device_id):
+    def get(self, request, service_name, service_data_source_type, device_id):
         """
         Handles the get request to fetch performance data w.r.t to arguments requested.
 
         :params request object:
-        :params page_type:
         :params service_name:
         :params service_data_source_type:
         :params device_id:
@@ -703,50 +689,33 @@ class Get_Service_Type_Performance_Data(View):
         """
         self.result = {
             'success': 0,
-            'message': 'Substation Service Not Fetched.',
+            'message': 'No Data.',
             'data': {
                 'meta': {},
                 'objects': {}
             }
         }
 
-        inventory_device_name, inventory_device_machine_name = None, None
-        if page_type == 'customer':
-            substation = SubStation.objects.get(id=int(device_id))
-            inventory_device_name = substation.device.device_name
-            inventory_device_machine_name = substation.device.machine.name  # Device Machine Name required in Query to fetch data.
+        device = Device.objects.get(id=int(device_id))
+        inventory_device_name = device.device_name
+        inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
 
-        elif page_type == 'network':
-            device = Device.objects.get(id=int(device_id))
-            inventory_device_name = device.device_name
-            inventory_device_machine_name = device.machine.name  # Device Machine Name required in Query to fetch data.
+        start_date= self.request.GET.get('start_date','')
+        end_date= self.request.GET.get('end_date','')
+        isSet = False
 
-        try:
-            start_date= self.request.GET.get('start_date','')
-            end_date= self.request.GET.get('end_date','')
-            isSet = False
-
-
-            if len(start_date) and len(end_date):
-                start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
-                end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
-                start_date= format( start_date_object, 'U')
-                end_date= format( end_date_object, 'U')
-                isSet = True
-            # else:
-            #
-            #     end_date = format(datetime.datetime.now(), 'U')
-            #     # now_minus_60_min = format(datetime.datetime.now() + datetime.timedelta(minutes=-60), 'U')
-            #     # now_minus_1day = format(datetime.datetime.now() + datetime.timedelta(days=-1), 'U')
-            #     start_date= format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
-
-        except Exception as timeexception:
-            isSet = False
+        if len(start_date) and len(end_date):
+            start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
+            end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
+            start_date= format( start_date_object, 'U')
+            end_date= format( end_date_object, 'U')
+            isSet = True
 
         if service_data_source_type in ['pl', 'rta']:
             if not isSet:
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
+
             performance_data = PerformanceNetwork.objects.filter(device_name=inventory_device_name,
                                                                  service_name=service_name,
                                                                  data_source=service_data_source_type,
@@ -796,7 +765,6 @@ class Get_Service_Type_Performance_Data(View):
 
         download_excel= self.request.GET.get('download_excel', '')
         download_csv= self.request.GET.get('download_csv', '')
-
 
         if download_excel:
 
@@ -849,7 +817,6 @@ class Get_Service_Type_Performance_Data(View):
             return response
 
         else:
-
             return HttpResponse(json.dumps(result), mimetype="application/json")
 
     def return_table_header_and_table_data(self, service_name, result ):
@@ -869,7 +836,6 @@ class Get_Service_Type_Performance_Data(View):
                     'value':data['y'],
                     }]
             table_data=data_list
-
         return table_data, table_header
 
 
@@ -896,7 +862,6 @@ class Get_Service_Type_Performance_Data(View):
         return self.result
 
     def get_performance_data_result(self, performance_data):
-
 
         if performance_data:
             data_list, warn_data_list, crit_data_list, aggregate_data = list(), list(), list(), dict()
