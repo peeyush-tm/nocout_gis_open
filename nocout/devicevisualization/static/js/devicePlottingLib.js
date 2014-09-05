@@ -79,6 +79,8 @@ var mapInstance = "",
     tempFilteredData=[], markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}};
 var defaultIconSize= 'medium';
 
+var place_markers = [];
+
 function displayCoordinates(pnt) {
       var coordsLabel = $("#cursor_lat_long");
       var lat = pnt.lat();
@@ -260,15 +262,47 @@ function devicePlottingClass_gmap() {
             });
 
 			/*Event listener for search text box*/
-			google.maps.event.addListener(new google.maps.places.SearchBox(searchTxt), 'places_changed', function() {			
+			google.maps.event.addListener(new google.maps.places.SearchBox(searchTxt), 'places_changed', function() {
+
+                for (var i = 0, marker; marker = place_markers[i]; i++) {
+                    marker.setMap(null);
+                }
+
 				/*place object returned from map API*/
 	    		var places = searchBox.getPlaces();
-	    		/*initialize bounds object*/
-	    		var bounds = new google.maps.LatLngBounds();
-	    		/*point bounds to the place location*/
-	    		bounds.extend(places[0].geometry.location);
-	    		/*call fitbounts for the mapInstance with the place location bounds object*/
-	    		mapInstance.fitBounds(bounds)
+
+                if (places.length == 0) {
+                    return;
+                }
+
+
+                // For each place, get the icon, place name, and location.
+                place_markers = [];
+                var bounds = new google.maps.LatLngBounds();
+                for (var i = 0, place; place = places[i]; i++) {
+                  var image = {
+                    url: place.icon,
+                    size: new google.maps.Size(71, 71),
+                    origin: new google.maps.Point(0, 0),
+                    anchor: new google.maps.Point(17, 34),
+                    scaledSize: new google.maps.Size(25, 25)
+                  };
+
+                  // Create a marker for each place.
+                  var marker = new google.maps.Marker({
+                    map: mapInstance,
+                    icon: image,
+                    title: place.name,
+                    position: place.geometry.location
+                  });
+
+                  place_markers.push(marker);
+
+                  bounds.extend(place.geometry.location);
+                }
+
+                mapInstance.fitBounds(bounds);
+
 	    		/*Listener to reset zoom level if it exceeds to particular value*/
                 var listener = google.maps.event.addListener(mapInstance, "idle", function() {
                     /*check for current zoom level*/
