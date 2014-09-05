@@ -75,7 +75,7 @@ var mapInstance = "",
 	distance_label = {},
 	isFreeze = 0;
     map_points_array = [];
-    map_point_count = 0, sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 10, zoomAfterRightClickComes= 10, fresnelData= {}, sectorMarkersMasterObj= {},
+    map_point_count = 0, sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 6, zoomAfterRightClickComes= 10, fresnelData= {}, sectorMarkersMasterObj= {},
     tempFilteredData=[], markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}};
 var defaultIconSize= 'medium';
 
@@ -175,7 +175,8 @@ function showSelectedSubSectorMarkers(array) {
 function showSubSectorMarkers() {
 	for(var i=0;i<sector_MarkersArray.length; i++) {
 		(function showSectorMarker(marker) {
-			marker.setMap(mapInstance)
+			marker.setMap(null);
+			marker.setMap(mapInstance);
 		})(sector_MarkersArray[i]);
 	}
 }
@@ -248,14 +249,9 @@ function devicePlottingClass_gmap() {
             });
 
             google.maps.event.addListener(mapInstance, 'zoom_changed', function() {
-            	// var zoom = mapInstance.getZoom();
-            	// if( zoom > zoomAtWhichSectorMarkerAppears) {
-            	// 	if(tempFilteredData.length){
-            	// 		showSelectedSubSectorMarkers(tempFilteredData);
-            	// 	} else {
-            	// 		showSubSectorMarkers();
-            	// 	}
-            	// }
+            	var zoom = mapInstance.getZoom();
+            	if( zoom > zoomAtWhichSectorMarkerAppears) {
+            		showSubSectorMarkers();}
             	// else {
             	// 	for (var i = 0; i < sector_MarkersArray.length; i++) {    
             	// 		sector_MarkersArray[i].setMap(null);
@@ -722,7 +718,7 @@ function devicePlottingClass_gmap() {
 
 					sectorMarkersMasterObj[String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= sector_Marker;
 
-					sector_Marker.setMap(mapInstance);
+					// sector_Marker.setMap(mapInstance);
 
 					// sector_Marker.setVisible(false);
 
