@@ -13,6 +13,7 @@ from django.contrib import auth
 from user_profile.models import UserProfile
 from django.db.models import Q
 
+from django.views.decorators.csrf import csrf_exempt
 
 class UserStatusList(ListView):
     """
@@ -182,7 +183,7 @@ class UserStatusTable(BaseDatatableView):
         }
         return ret
 
-
+@csrf_exempt
 def dialog_action(request):
     """
     The Action of the Dialog box appears on the screen.
@@ -228,7 +229,7 @@ def dialog_action(request):
         }
         return HttpResponse(json.dumps(result), mimetype='application/json')
 
-
+@csrf_exempt
 def change_user_status(request):
     """
 
@@ -257,7 +258,7 @@ def change_user_status(request):
 
     return HttpResponse(json.dumps(result), mimetype='application/json')
 
-
+@csrf_exempt
 def dialog_for_page_refresh(request):
     """
         The Ajax request to refresh the page is user status is changed to not active.
@@ -280,7 +281,7 @@ def dialog_for_page_refresh(request):
 
     return HttpResponse(json.dumps(result), mimetype='application/json')
 
-
+@csrf_exempt
 def dialog_expired_logout_user(request):
     """
     To logout the user if the dialog appearing with the timestamp expires.
@@ -299,7 +300,7 @@ def dialog_expired_logout_user(request):
     }
     return HttpResponse(json.dumps(result), mimetype='application/json')
 
-
+@csrf_exempt
 def logout_user(request):
     """
     request to logout the user from the system.
