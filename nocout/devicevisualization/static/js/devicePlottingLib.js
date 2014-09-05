@@ -75,9 +75,9 @@ var mapInstance = "",
 	distance_label = {},
 	isFreeze = 0;
     map_points_array = [];
-    map_point_count = 0, sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 10, zoomAfterRightClickComes= 10, fresnelData= {}, sectorMarkersMasterObj= {},
+    map_point_count = 0, sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 6, zoomAfterRightClickComes= 10, fresnelData= {}, sectorMarkersMasterObj= {},
     tempFilteredData=[], markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}};
-
+var defaultIconSize= 'medium';
 
 function displayCoordinates(pnt) {
       var coordsLabel = $("#cursor_lat_long");
@@ -164,18 +164,31 @@ function openBSRightClickMenu(event, marker) {
 	}
 }
 
+function showSelectedSubSectorMarkers(array) {
+	for(var i=0;i<array.length; i++) {
+		(function showSectorMarker(marker) {
+			sectorMarkersMasterObj[String(marker.data.lat)+ marker.data.lon].setMap(mapInstance);
+		})(array[i]);
+	}
+}
 
-// function showRequiredSectorMarker(filteredData) {
-// 	var zoom = mapInstance.getZoom();
-// 	for(var i=0; i< filteredData.length; i++) {
-// 		(function showMarker(lat, lon) {
-// 			if( zoom > zoomAtWhichSectorMarkerAppears) {
-// 				sectorMarkersMasterObj[uniqueKey].setMap(mapInstance);
-// 			}
-// 			return ;
-// 		})(filteredData[i].data.lat, filteredData[i].data.lon);
-// 	}
-// }
+function showSubSectorMarkers() {
+	for(var i=0;i<sector_MarkersArray.length; i++) {
+		(function showSectorMarker(marker) {
+			marker.setMap(null);
+			marker.setMap(mapInstance);
+		})(sector_MarkersArray[i]);
+	}
+}
+
+function hideSubSectorMarkers() {
+	for(var i=0;i<sector_MarkersArray.length; i++) {
+		(function showSectorMarker(marker) {
+			marker.setMap(null)
+		})(sector_MarkersArray[i]);
+	}
+}
+
 
 /**
  * This class is used to plot the BS & SS on the google maps & performs their functionality.
@@ -237,25 +250,13 @@ function devicePlottingClass_gmap() {
 
             google.maps.event.addListener(mapInstance, 'zoom_changed', function() {
             	var zoom = mapInstance.getZoom();
-
-            	// if( zoom > zoomAtWhichSectorMarkerAppears && tempFilteredData.length) {
-            	// 	for(var i=0; i< tempFilteredData.length; i++) {
-            	// 		(function showMarker(lat, lon) {
-            	// 			var uniqueKey= String(lat)+lon;
-            	// 			if( zoom > zoomAtWhichSectorMarkerAppears) {
-            	// 				sectorMarkersMasterObj[uniqueKey].setMap(mapInstance);
-            	// 			}
-            	// 			return ;
-            	// 		})(tempFilteredData[i].data.lat, tempFilteredData[i].data.lon);
-            	// 	}
-            	// }
+            	if( zoom > zoomAtWhichSectorMarkerAppears) {
+            		showSubSectorMarkers();}
             	// else {
             	// 	for (var i = 0; i < sector_MarkersArray.length; i++) {    
             	// 		sector_MarkersArray[i].setMap(null);
             	// 	}
             	// }
-
-
             });
 
 			/*Event listener for search text box*/
@@ -354,7 +355,16 @@ function devicePlottingClass_gmap() {
 					var lonCount = $.grep(lonArray, function (elem) {return elem === e[i].ptLon;}).length;
 
 					if(lonCount > 1 && latCount > 1) {
-						e[i].setOptions({"icon":clusterIcon});
+						if(e[i].pointType=== "sector_Marker") {
+							e[i].setOptions({"icon":new google.maps.MarkerImage(
+									        'http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
+									        null,
+									        null,
+									        null
+									       )});
+						} else {
+							e[i].setOptions({"icon":clusterIcon});	
+						}
 					}
 
 					for(var j=0;j<ssLinkArray.length;j++) {
@@ -606,7 +616,7 @@ function devicePlottingClass_gmap() {
 		    	ptLat 		     : bs_ss_devices[i].data.lat,
 		    	ptLon 		     : bs_ss_devices[i].data.lon,
 		    	map       	     : mapInstance,
-		    	icon 	  	     : '/static/img/icons/bs.png',
+		    	icon 	  	     : '',
 		    	oldIcon 	     : '/static/img/icons/bs.png',
 		    	pointType	     : stationType,
 				child_ss   	     : bs_ss_devices[i].data.param.sector,
@@ -619,7 +629,8 @@ function devicePlottingClass_gmap() {
 				name 		 	 : bs_ss_devices[i].name,
 				antenna_height    : bs_ss_devices[i].data.antenna_height,
 				zIndex 			 : 200,
-                optimized 		 : false
+                optimized 		 : false,
+                markerType: 'BS'
 			};
 
 			/*Create BS Marker*/
@@ -686,6 +697,7 @@ function devicePlottingClass_gmap() {
 						position: new google.maps.LatLng(lat, lon),
 						ptLat 		     : bs_ss_devices[i].data.lat,
 						ptLon 		     : bs_ss_devices[i].data.lon,
+						icon: 'http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
 						oldIcon 	  	     : window.location.origin+"/"+sector_array[j].markerUrl,
 						pointType	     : 'sector_Marker',
 						technology: sector_array[j].technology,
@@ -699,15 +711,21 @@ function devicePlottingClass_gmap() {
 
                     var sect_height = sector_array[j].antenna_height;
 
+/*Create Sector Marker*/
 					var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
 
 					sector_MarkersArray.push(sector_Marker);
 
 					sectorMarkersMasterObj[String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= sector_Marker;
 
+					// sector_Marker.setMap(mapInstance);
+
+					// sector_Marker.setVisible(false);
+
 					// masterMarkersObj.push(sector_Marker);
 
 					oms.addMarker(sector_Marker);
+/*End of Create Sector Marker*/
 
 					deviceIDArray.push(sector_array[j]['device_info'][1]['value']);
 				}
@@ -832,6 +850,7 @@ function devicePlottingClass_gmap() {
 
 			/*Enable the refresh button*/
 			$("#resetFilters").button("complete");
+gmap_self.updateAllMarkersWithNewIcon(defaultIconSize);
 
 			/*Cluster options object*/
             var clusterOptions = {gridSize: 70, maxZoom: 8};
@@ -1323,6 +1342,7 @@ function devicePlottingClass_gmap() {
 			} else {
 				startPtInfo = contentObject.dataset;	
 			}
+			console.log(JSON.stringify(startPtInfo));
 			for(var i=0;i<startPtInfo.length;i++) {
 
 				if(startPtInfo[i].show == 1) {
@@ -2013,8 +2033,7 @@ function devicePlottingClass_gmap() {
         }
         /*Check that after applying filters any data exist or not*/
         if(filteredData.length === 0) {
-
-            /*Reset the markers, polyline & filters*/
+        	/*Reset the markers, polyline & filters*/
             gmap_self.clearGmapElements();
 
             masterMarkersObj = [];
@@ -2030,6 +2049,8 @@ function devicePlottingClass_gmap() {
             });
 
             tempFilteredData= main_devices_data_gmaps;
+
+
             /*Populate the map with the All markers*/
             // gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
 
@@ -2048,7 +2069,9 @@ function devicePlottingClass_gmap() {
             gmap_self.plotDevices_gmap(filteredData,"base_station");
             /*Resetting filter data to Empty.*/
             filteredData=[]
+            // showSelectedSubSectorMarkers(tempFilteredData);
         }
+
 	};
 
 	/**
@@ -3302,9 +3325,9 @@ function devicePlottingClass_gmap() {
 
 			masterMarkersObj[i].setMap(null);
 		}
-		for(var i=0;i<sector_MarkersArray.length; i++) {
-			sector_MarkersArray[i].setMap(null)
-		}
+		// for(var i=0;i<sector_MarkersArray.length; i++) {
+		// 	sector_MarkersArray[i].setMap(null)
+		// }
 
 		/*Clear the existing SS for same point*/
 		for(var i=0;i<plottedSS.length;i++) {
@@ -3338,10 +3361,11 @@ function devicePlottingClass_gmap() {
 		}		
 	};
 
+	//This function updates the Marker Icon with the new Size.
 	this.updateAllMarkersWithNewIcon= function(iconSize) {
 
 		var largeur= 32, hauteur= 37, divideBy;
-		var originX, originY, anchorX, anchorY;
+		var anchorX, i, markerImage, markerImage2, icon;
 		if(iconSize=== 'small') {
 			divideBy= 1.4;
 			anchorX= 0.4;
@@ -3353,55 +3377,75 @@ function devicePlottingClass_gmap() {
 			anchorX= -0.2;
 		}
 
-		for(i=0; i< masterMarkersObj.length; i++ ) {
-			var icon = masterMarkersObj[i].getIcon();
-
-			var markerImage;
-			if(icon != "") {
-				if(typeof(icon) == 'string') {
-					markerImage= new google.maps.MarkerImage(
-					icon,
-					new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
-					new google.maps.Point(0, 0), 
-					new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
-					new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)));
-				masterMarkersObj[i].setIcon(markerImage);
+	//Loop through the sector markers
+		for(i=0; i< sector_MarkersArray.length; i++) {
+			(function updateSectMarker(markerIcon) {
+				icon= markerIcon;
+				var iconUrl;
+				if(typeof(icon.oldIcon)=== "string") {
+					iconUrl= icon.oldIcon;
 				} else {
-					markerImage= new google.maps.MarkerImage(
-					icon.url,
+					iconUrl= icon.oldIcon.url;
+				}
+				//Create a new marker Image according to the value selected
+				markerImage= new google.maps.MarkerImage(
+					iconUrl,
 					new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
 					new google.maps.Point(0, 0), 
 					new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
 					new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)));
-				masterMarkersObj[i].setIcon(markerImage);
-				masterMarkersObj[i].oldIcon= markerImage;	
-				}
-				
-			} else if (icon == '/static/img/icons/bs.png') {
-				console.log(1);
-				
-				// masterMarkersObj[i].oldIcon= markerImage;
-			}else {
-
-				// var image = {
-				// 	url: icon.url,
-				// 	// This marker is 20 pixels wide by 32 pixels tall.
-				// 	size: new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
-				// 	// The origin for this image is 0,0.
-				// 	origin: new google.maps.Point(0, 0),
-				// 	// The anchor for this image is the base of the flagpole at 0,32.
-				// 	anchor: google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy))
-  		// 		};
-				// masterMarkersObj[i].setIcon(image);
-				// masterMarkersObj[i].oldIcon= image;
-			}
+				//Set oldIcon for Sector Marker to the new image.
+				markerIcon.oldIcon= markerImage;
+			})(sector_MarkersArray[i]);
 		}
+	//End of Loop through the sector markers
 
-		// for(var key in markersMasterObj['BS']) {
-		// 	console.log(key);
-		// 	var icon = markersMasterObj['BS'][key];
-		// 	console.log(icon);
-		// }
+
+	//Loop through the Master Markers
+		for(var i=0; i< masterMarkersObj.length; i++ ) {
+			(function updateMasterMarker(markerIcon) {
+				icon = markerIcon.getIcon();
+				//If icon is "" it mean it is a BS marker
+				if(markerIcon.pointType=== "base_station") {
+					var iconUrl;
+					if(typeof(markerIcon.oldIcon)=== "string") {
+						iconUrl= markerIcon.oldIcon;
+					} else {
+						iconUrl= markerIcon.oldIcon.url;
+					}
+					//Create a new marker Image for BS Marker according to the value selected.
+					markerImage= new google.maps.MarkerImage(
+						iconUrl,
+						new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
+						new google.maps.Point(0, 0), 
+						new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
+						new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)));
+					//Set oldIcon for BS Marker to the new image
+					markerIcon.oldIcon= markerImage;
+					//Else icon is for SSpointType	     : "sub_station",
+				} else if (markerIcon.pointType === "sub_station") {
+					//Create a new marker Image for SS Marker according to the value selected.
+					markerImage= new google.maps.MarkerImage(
+						icon.url,
+						new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
+						new google.maps.Point(0, 0), 
+						new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
+						new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)));
+					//Create a new marker Imge for SS marker according to the value selected for OLD ICON.
+					markerImage2= new google.maps.MarkerImage(
+						markerIcon.oldIcon.url,
+						new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
+						new google.maps.Point(0, 0), 
+						new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
+						new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)));
+					//Set icon to Marker Image
+					markerIcon.setIcon(markerImage);
+					//Set oldIcon to Marker Image
+					markerIcon.oldIcon= markerImage2;	
+				}
+			})(masterMarkersObj[i]);
+		}
+	//End of Loop through the Master Markers
 	}
 
 	/**

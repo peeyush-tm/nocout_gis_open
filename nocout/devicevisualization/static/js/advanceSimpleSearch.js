@@ -208,7 +208,7 @@ function advanceJustSearchClass() {
     
         var selectedInputs= advJustSearch_self.getInputArray();
         var isOnlyStateorCityIsApplied= true;
-        if(selectedInputs['BS Name'].length || selectedInputs['BS Latitude'].length || selectedInputs['BS Longitude'].length || selectedInputs['Circuit Id'].length || selectedInputs['Sector Configured On'].length || selectedInputs['Vendor'].length || selectedInputs['Technology'].length) {
+        if(selectedInputs['BS Name'].length || selectedInputs['BS Latitude'].length || selectedInputs['BS Longitude'].length || selectedInputs['Circuit Id'].length || selectedInputs['IP'].length || selectedInputs['Vendor'].length || selectedInputs['Technology'].length) {
             isOnlyStateorCityIsApplied= false;
         }
         if(!isOnlyStateorCityIsApplied) {
