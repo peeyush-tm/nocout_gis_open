@@ -396,4 +396,3 @@ def gt_critical_initial_choices(request):
 
 
 
-

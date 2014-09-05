@@ -7,19 +7,46 @@
     <li>GIS Inventory Validator {{ hello }}</li>
 {% endblock %}
 {% block css %}
-	<!-- JQUERY UI-->
-    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
+    <!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css"
+          href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}/>
 {% endblock %}
 {% block content_title %}GIS Inventory Validator{% endblock %}
 {% block content_description %}GIS Inventory Validator{% endblock %}
 {% block content %}
+    <h5><b>File Name:</b> {{ filename }}</h5>
+    <h5><b>Sheet Name:</b> {{ sheet_name }}</h5>
+    <br />
     <div class="box border lite" style="overflow-x: auto; background: #fff;">
-        <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i>VALIDATED INVENTORY FILE</h4>
+        <div id="tableContainer_div1" class="box-title">
+            <h4><i class="fa fa-table"></i>VALID INVENTORY FILE</h4>
+            <div class="tools hidden-xs">
+                <a class="reload" href="javascript:;">
+                    <i class="fa fa-refresh"></i>
+                </a>
+                <a id="valid_rows_link" href="{% url 'ExcelWriterRowByRow' %}?filename={{ filename }}&sheetname={{ sheet_name }}&sheettype='valid'" title="Download Valid Inventory Excel">
+                    <i class="fa fa-download"></i>
+                </a>
+            </div>
         </div>
-        <div id="tableContainer" class="box-body">
-            <div id="demo"></div>
-            </table>
+        <div id="tableContainer1" class="box-body">
+            <div id="valid_rows"></div>
+        </div>
+    </div>
+    <div class="box border lite" style="overflow-x: auto; background: #fff;">
+        <div id="tableContainer_div2" class="box-title">
+            <h4><i class="fa fa-table"></i>INVALID INVENTORY FILE</h4>
+            <div class="tools hidden-xs">
+                <a class="reload" href="javascript:;">
+                    <i class="fa fa-refresh"></i>
+                </a>
+                <a id="invalid_rows_link" href="{% url 'ExcelWriterRowByRow' %}?filename={{ filename }}&sheetname={{ sheet_name }}&sheettype='invalid'" title="Download Invalid Inventory Excel">
+                    <i class="fa fa-download"></i>
+                </a>
+            </div>
+        </div>
+        <div id="tableContainer2" class="box-body">
+            <div id="invalid_rows"></div>
         </div>
     </div>
     {% block content_js %}
@@ -35,16 +62,35 @@
                 placement: 'right',
                 trigger: 'focus'
             });
-        });
-        $(document).ready(function () {
-            $('#demo').html('<table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="example">');
-
-            $('#example').dataTable({
+            $('#valid_rows').html('<table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="valid_rows_table">');
+            $('#valid_rows_table').dataTable({
+                "aaData": {{ valid_rows|jsonify }},
+                "aoColumns": [
+                    {% for header in headers %}{ "sTitle": "{{ header }}" },{% endfor %}
+                ]
+            });
+            $('#invalid_rows').html('<table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="invalid_rows_table">');
+            $('#invalid_rows_table').dataTable({
                 "aaData": {{ invalid_rows|jsonify }},
                 "aoColumns": [
                     {% for header in headers %}{ "sTitle": "{{ header }}" },{% endfor %}
                 ]
             });
         });
+{#        $('#invalid_rows_link').click(function(e) {#}
+{##}
+{#            $.ajax({#}
+{#                type: "POST",#}
+{#                url: "{% url 'ExcelWriterRowByRow' %}",#}
+{#                data: {#}
+{#                    'headers': "{{ headers }}",#}
+{#                    'content': "{{ invalid_rows|safe }}",#}
+{#                    'filename': "{{ filename }}",#}
+{#                    'sheetname': "{{ sheet_name }}"#}
+{#                    // all of this data is submitted via POST to your view.#}
+{#                    // in django, request.POST['background-color']#}
+{#                }#}
+{#            });#}
+{#        });#}
     </script>
 {% endblock %}

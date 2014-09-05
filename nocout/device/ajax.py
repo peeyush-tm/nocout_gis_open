@@ -15,7 +15,7 @@ from site_instance.models import SiteInstance
 logger = logging.getLogger(__name__)
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def update_vendor(request, option):
     """Updating vendors corresponding to selected technology
 
@@ -44,7 +44,7 @@ def update_vendor(request, option):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def update_model(request, option):
     """Updating models corresponding to the selected vendor
 
@@ -73,7 +73,7 @@ def update_model(request, option):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def update_type(request, option):
     """Updating types corresponding to the selected model
 
@@ -103,7 +103,7 @@ def update_type(request, option):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def update_ports(request, option):
     """Updating ports corresponding to the selected type
 
@@ -133,7 +133,7 @@ def update_ports(request, option):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def after_update_vendor(request, option, selected=''):
     """Get vendor selection menu with last time selected vendor as selected option after unsuccessful form submission
 
@@ -168,7 +168,7 @@ def after_update_vendor(request, option, selected=''):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def after_update_model(request, option, selected=''):
     """Get model selection menu with last time selected model as selected option after unsuccessful form submission
 
@@ -203,7 +203,7 @@ def after_update_model(request, option, selected=''):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def after_update_type(request, option, selected=''):
     """Get type selection menu with last time selected type as selected option after unsuccessful form submission
 
@@ -238,7 +238,7 @@ def after_update_type(request, option, selected=''):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def after_update_ports(request, option, selected=[]):
     """Get ports selection menu with last time selected port as selected option after unsuccessful form submission
 
@@ -278,7 +278,7 @@ def after_update_ports(request, option, selected=[]):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def device_type_extra_fields(request, option):
     """Show extra fields associated with device type on selecting device type
 
@@ -310,7 +310,7 @@ def device_type_extra_fields(request, option):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def device_parent_choices_initial(request):
     """Get parent selection menu having option titles including ip address
 
@@ -334,7 +334,7 @@ def device_parent_choices_initial(request):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def device_parent_choices_selected(request, option):
     """Get parent selection menu having option titles including ip address after unsuccessful form submission
 
@@ -364,7 +364,7 @@ def device_parent_choices_selected(request, option):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def device_extra_fields_update(request, device_type, device_name):
     """Show device extra fields in device update form
 
@@ -408,7 +408,7 @@ def device_extra_fields_update(request, device_type, device_name):
 
 
 # generate content for soft delete popup form
-@dajaxice_register
+@dajaxice_register(method='GET')
 def device_soft_delete_form(request, value):
     """Get data to show on device soft delete form
 
@@ -502,7 +502,7 @@ def device_soft_delete_form(request, value):
     return json.dumps({'result': result})
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def device_soft_delete(request, device_id, new_parent_id):
     """ Soft delete device i.e. not deleting device from database, it just set
         it's is_deleted field value to 1 & remove it's relationship with any other device
@@ -582,7 +582,7 @@ def device_soft_delete(request, device_id, new_parent_id):
     return json.dumps({'result': result})
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def update_states(request, option):
     """Updating states corresponding to the selected country
 
@@ -610,7 +610,7 @@ def update_states(request, option):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def update_cities(request, option):
     """Updating cities corresponding to the selected state
 
@@ -638,7 +638,7 @@ def update_cities(request, option):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def update_states_after_invalid_form(request, option, state_id):
     """Updating states corresponding to the selected country after invalid form submission
 
@@ -670,7 +670,7 @@ def update_states_after_invalid_form(request, option, state_id):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def update_cities_after_invalid_form(request, option, city_id):
     """Updating cities corresponding to the selected state after invalid form submission
 
@@ -701,7 +701,7 @@ def update_cities_after_invalid_form(request, option, city_id):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def add_device_to_nms_core(request, device_id, ping_data):
     """Adding device to nms core
 
@@ -788,7 +788,7 @@ def add_device_to_nms_core(request, device_id, ping_data):
     return json.dumps({'result': result})
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def edit_device_in_nms_core(request, device_id):
     """Editing device in nms core
 
@@ -866,7 +866,7 @@ def edit_device_in_nms_core(request, device_id):
     return json.dumps({'result': result})
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def delete_device_from_nms_core(request, device_id):
     """Delete device from nms core
 
@@ -933,7 +933,7 @@ def delete_device_from_nms_core(request, device_id):
     return json.dumps({'result': result})
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def sync_device_with_nms_core(request, device_id):
     """Sync devices configuration to nms core
 
@@ -985,7 +985,7 @@ def sync_device_with_nms_core(request, device_id):
     return json.dumps({'result': result})
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def edit_single_service_form(request, dsc_id):
     """Edit single service for a device from nms core
 
@@ -1071,7 +1071,7 @@ def edit_single_service_form(request, dsc_id):
     return json.dumps({'result': result})
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def get_service_para_table(request, device_name, service_name, template_id=""):
     """Get service parameters and data source tables for service edit form
 
@@ -1119,7 +1119,7 @@ def get_service_para_table(request, device_name, service_name, template_id=""):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
     """Edit single service form nms core
 
@@ -1266,7 +1266,7 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
 
 
 # delete single service form
-@dajaxice_register
+@dajaxice_register(method='GET')
 def delete_single_service_form(request, dsc_id):
     """Get parameters in the form of JSON object for delete form
 
@@ -1325,7 +1325,7 @@ def delete_single_service_form(request, dsc_id):
     return json.dumps({'result': result})
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def delete_single_service(request, device_name, service_name):
     """Delete single service for a device
 
@@ -1408,7 +1408,7 @@ def delete_single_service(request, device_name, service_name):
     return json.dumps({'result': result})
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def edit_service_form(request, value):
     """Get parameters for service edit form
 
@@ -1494,7 +1494,7 @@ def edit_service_form(request, value):
     return json.dumps({'result': result})
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def get_old_configuration_for_svc_edit(request, option="", service_id="", device_id=""):
     """Show currently present information of service in schema
 
@@ -1569,7 +1569,7 @@ def get_old_configuration_for_svc_edit(request, option="", service_id="", device
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def get_new_configuration_for_svc_edit(request, service_id="", template_id=""):
     """Show modified information of service
 
@@ -1626,7 +1626,7 @@ def get_new_configuration_for_svc_edit(request, service_id="", template_id=""):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def edit_services(request, svc_data, svc_ping=""):
     """Edit device services
 
@@ -1898,7 +1898,7 @@ def edit_services(request, svc_data, svc_ping=""):
     return json.dumps({'result': result})
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def delete_service_form(request, value):
     """Get parameters for service delete form
 
@@ -2011,7 +2011,7 @@ def delete_service_form(request, value):
     return json.dumps({'result': result})
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def delete_services(request, service_data):
     """Delete device services
 
@@ -2117,7 +2117,7 @@ def delete_services(request, service_data):
     return json.dumps({'result': result})
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def add_service_form(request, value):
     """Show add service form
 
@@ -2271,7 +2271,7 @@ def add_service_form(request, value):
     return json.dumps({'result': result})
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def get_old_configuration_for_svc_add(request, option="", service_id="", device_id=""):
     """Show currently present information of service in schema
 
@@ -2318,7 +2318,7 @@ def get_old_configuration_for_svc_add(request, option="", service_id="", device_
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def get_new_configuration_for_svc_add(request, service_id="", template_id=""):
     """Show modified information of service
 
@@ -2372,7 +2372,7 @@ def get_new_configuration_for_svc_add(request, service_id="", template_id=""):
     return dajax.json()
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def add_services(request, svc_data):
     """Add device services
 
@@ -2602,7 +2602,7 @@ def add_services(request, svc_data):
     return json.dumps({'result': result})
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def device_services_status(request, device_id):
     """Show current device services status
 
