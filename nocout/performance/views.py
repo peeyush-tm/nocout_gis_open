@@ -11,7 +11,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 import xlwt
 from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation
-from nocout.settings import P2P
+from nocout.settings import P2P, WiMAX, PMP
 from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus, ServiceStatus, InventoryStatus, \
     PerformanceStatus, PerformanceInventory, Status
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
@@ -140,10 +140,11 @@ class LivePerformanceListing(BaseDatatableView):
                                             device_technology= device_technology_id).values(*self.columns +\
                                             ['id', 'device_name', 'machine__name','sector_configured_on', 'substation'])
         else:
-            # get only devices added to NMS and none other and devices which are not P2P.
-            devices = Device.objects.filter(~Q(device_technology = int(P2P.ID)), is_added_to_nms=1, is_deleted=0,
-                                            organization__in= kwargs['organization_ids']). \
-                                     values(*self.columns + ['id', 'device_name', 'machine__name', device_association])
+            # get only devices added to NMS and devices which are not P2P, and must be either PMP or WiMAX.
+            devices = Device.objects.filter(~Q(device_technology = int(P2P.ID)),
+                                             Q(device_technology = int(WiMAX.ID)) | Q(device_technology = int(PMP.ID)),
+                                             is_added_to_nms=1, is_deleted=0, organization__in= kwargs['organization_ids']). \
+                                             values(*self.columns + ['id', 'device_name', 'machine__name', device_association])
 
         for device in devices:
             if device['sector_configured_on'] or device['substation']:
