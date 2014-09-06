@@ -129,9 +129,14 @@ MIDDLEWARE_CLASSES = (
     'nocout.middlewares.LoginRequiredMiddleware.LoginRequiredMiddleware',
     #'audit_log.middleware.UserLoggingMiddleware',
     #'audit_log.middleware.AuditlogMiddleware',
-    # Uncomment the next line for simple clickjacking protection:
-    # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Uncomment the next line for simple clickjacking protection
+    #required for GISS SCAN
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
+
+#cookies settings
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SECURE = True
 
 ROOT_URLCONF = 'nocout.urls'
 
@@ -176,6 +181,7 @@ INSTALLED_APPS = (
     'corsheaders',
     'actstream',
     'activity_stream',
+    'jsonify'
 )
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -209,7 +215,7 @@ LOGGING = {
         'logfile': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join( BASE_DIR,'nocout_main.log' ),
+            'filename': os.path.join( '/tmp/nocout_main.log' ),
             'maxBytes': 1000000000,
             'backupCount':10,
             'formatter': 'verbose',
@@ -250,6 +256,16 @@ DEFAULT_USERS= namedtuple('DEFAULT_USERS', 'USERNAME ID')
 GISADMIN= DEFAULT_USERS( USERNAME='gisadmin', ID=2)
 GISOPERATOR_ID= DEFAULT_USERS( USERNAME='gisoperator', ID=3)
 GISVIEWER_ID= DEFAULT_USERS( USERNAME='gisviewer', ID=3)
+
+
+DEVICE_TECHNOLOGY = namedtuple('DEVICE_TECHNOLOGY','NAME ID' )
+P2P = DEVICE_TECHNOLOGY('P2P', '2')
+WiMAX = DEVICE_TECHNOLOGY('WiMAX', '3')
+PMP = DEVICE_TECHNOLOGY('PMP', '4')
+Switch = DEVICE_TECHNOLOGY('Switch', '7')
+TCLPTPPOP = DEVICE_TECHNOLOGY('TCLPTPPOP', '9')
+
+
 
 MPTT_TREE= namedtuple('MPTT_TREE', 'lft rght level')
 

@@ -532,29 +532,34 @@ def deleteservice():
 
 def set_ping_levels(host, ping_levels):
 	global g_service_vars
-	if ping_levels:
-		# Load rules file
-		g_service_vars = {
-	            "only_hosts": None,
-		    "ALL_HOSTS": [],
-	            "host_contactgroups": [],
-		    "bulkwalk_hosts": [],
-		    "extra_host_conf": {},
-		    "extra_service_conf": {
-	            "retry_check_interval": [],
-		    "max_check_attempts": [],
-		    "normal_check_interval": []
-		    },
-		    "static_checks": {},
-	            "ping_levels": [],
-		    "checks": [],
-		    "snmp_ports": [],
-		    "snmp_communities": []
-		}
-		os.open(rules_file, os.O_RDWR|os.O_CREAT)
-		execfile(rules_file, g_service_vars, g_service_vars)
-		del g_service_vars['__builtins__']
+	# Load rules file
+	g_service_vars = {
+    	"only_hosts": None,
+    	"ALL_HOSTS": [],
+    	"host_contactgroups": [],
+    	"bulkwalk_hosts": [],
+    	"extra_host_conf": {},
+    	"extra_service_conf": {
+            "retry_check_interval": [],
+            "max_check_attempts": [],
+            "normal_check_interval": []
+    	   },
+        "static_checks": {},
+        "ping_levels": [],
+        "checks": [],
+        "snmp_ports": [],
+        "snmp_communities": []
+    	}
+        os.open(rules_file, os.O_RDWR|os.O_CREAT)
+        execfile(rules_file, g_service_vars, g_service_vars)
+        del g_service_vars['__builtins__']
+	# Add tag for SNMP V2c devices in bulkwalk_hosts
+	v2_hosts = g_service_vars['bulkwalk_hosts']
+	if not filter(lambda x: 'snmp-v2' in x[0], v2_hosts):
+		v2_hosts.append((["snmp-v2"], ALL_HOSTS))
+		g_service_vars['bulkwalk_hosts'] = v2_hosts
 
+	if ping_levels:
                 # Delete existing ping rules for that host, first
                 g_service_vars['ping_levels'] = filter(lambda t: host not in t[2], g_service_vars['ping_levels'])
 
@@ -568,7 +573,7 @@ def set_ping_levels(host, ping_levels):
 		) 
 		logger.debug('ping_rule_set:' + pprint.pformat(ping_rule_set))
 		g_service_vars['ping_levels'].append(ping_rule_set)
-		write_new_host_rules()
+	write_new_host_rules()
 
 def delete_host_rules(hostname=None, servicename=None):
     global g_service_vars

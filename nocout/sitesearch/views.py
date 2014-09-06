@@ -205,68 +205,16 @@ class DeviceSetFilters(View):
 
 def filter_gis_map(request_query, limit):
     result_list = list()
-    if request_query:
-        request_query = eval(request_query)
-        base_station_ids, circuit_ids = list(), list()
-        exec_query_base_station = "base_station_ids = BaseStation.objects.filter("
-        exec_query_circuit = "circuit_ids = Circuit.objects.filter("
-
-        query_circuit, query_base_station = list(), list()
-        for filter in request_query:
-
-            if filter['field'] == 'circuit_name':
-                query_circuit.append("Q(name__in=%s)" % (filter['value']))
-            elif filter['field'] == 'city':
-
-                city_ids = City.objects.filter(city_name__in=filter['value']).values_list('id', flat=True)
-                query_base_station.append("Q(%s__in=%s)" % (filter['field'], str(city_ids)))
-
-            elif filter['field'] == 'state':
-
-                state_ids = State.objects.filter(state_name__in=filter['value']).values_list('id', flat=True)
-                query_base_station.append("Q(%s__in=%s)" % (filter['field'], str(state_ids)))
-
-            # elif filter['field']=='bs_technology':
-            #
-            #     dt_ids= DeviceTechnology.objects.filter(name__in= filter['value']).values_list('id', flat=True)
-            #     query_base_station.append("Q(%s__in=%s)"%(filter['field'],str(dt_ids)))
-
-            elif filter['field'] == 'sector_configured_on':
-                #removing the () brackets and anything between it and then strip it to remove any space left.
-                value_list = [re.sub("\([^]]*\)", lambda x: '', value).strip() for value in filter['value']]
-                devices = Device.objects.filter(device_name__in=value_list).values_list('id', flat=True)
-                bs_ids = Sector.objects.filter(sector_configured_on__in=devices).values_list('base_station__id',
-                                                                                             flat=True)
-                base_station_ids += bs_ids
-
-            else:
-                query_base_station.append("Q(%s__in=%s)" % (filter['field'], filter['value']))
-
-        exec_query_base_station += " | ".join(query_base_station) + ").values_list('id', flat=True)[:limit]"
-        exec_query_circuit += " | ".join(query_circuit) + ").values_list('id', flat=True)[:limit]"
-
-        if query_base_station: exec exec_query_base_station
-        if query_circuit: exec exec_query_circuit
-
-        if base_station_ids:
-            for base_station_id in base_station_ids:
-                try:
-                    base_station_info = prepare_result(base_station_id)
-                    result_list.append(base_station_info)
-                except Exception as e:
-                    logger.error("SetFilters API Error Message: %s" % (e.message), exc_info=True)
-                    pass
-
-        if circuit_ids:
-            for circuit_id in circuit_ids:
-                circuit = Circuit.objects.get(id=circuit_id)
-                base_station_id = circuit.sector.base_station.id
-                try:
-                    base_station_info = prepare_result(base_station_id)
-                    result_list.append(base_station_info)
-                except Exception as e:
-                    logger.error("SetFilters API Error Message: %s" % (e.message), exc_info=True)
-                    pass
+    # if request_query:
+    base_station_ids = BaseStation.objects.values_list("id", flat=True)[:limit]
+    if base_station_ids:
+        for base_station_id in base_station_ids:
+            try:
+                base_station_info = prepare_result(base_station_id)
+                result_list.append(base_station_info)
+            except Exception as e:
+                logger.error("SetFilters API Error Message: %s" % (e.message), exc_info=True)
+                pass
 
     return result_list
 
@@ -304,9 +252,22 @@ def tech_marker_url_slave(techno):
 
 
 def prepare_result(base_station_id):
-    base_station = BaseStation.objects.get(id=base_station_id)
 
-    sectors = Sector.objects.filter(base_station=base_station.id)
+    base_station = BaseStation.objects.prefetch_related('sector', 'backhaul').filter(id=base_station_id)[0]
+    #BaseStation.objects.get(id=base_station_id).prefetch_all()
+    sectors = base_station.sector.filter(sector_configured_on__is_deleted = 0)
+    backhaul = base_station.backhaul
+
+    bs_city_name = "N/A"
+    bs_state_name = "N/A"
+    try:
+        if base_station.city:
+            bs_city =  City.objects.prefetch_related('state').filter(id=base_station.city)[0]
+            bs_city_name = bs_city.city_name
+            bs_state_name =  bs_city.state.state_name
+    except:
+        pass
+
     base_station_info = {
         'id': base_station.id,
         'name': base_station.name,
@@ -316,8 +277,8 @@ def prepare_result(base_station_id):
             "markerUrl": 'static/img/marker/slave01.png',
             'antenna_height': 0,
             'vendor':','.join(sectors[0].bs_technology.device_vendors.values_list('name', flat=True)),
-            'city': City.objects.get(id=base_station.city).city_name if base_station.city else 'N/A',
-            'state': State.objects.get(id=base_station.state).state_name if base_station.state else 'N/A',
+            'city': bs_city_name,
+            'state': bs_state_name,
             'param': {
                 'base_station': [
                     {
@@ -360,15 +321,13 @@ def prepare_result(base_station_id):
                         'name': 'bs_city',
                         'title': 'City',
                         'show': 1,
-                        'value': City.objects.get(id=base_station.city).city_name \
-                                 if base_station.city else 'N/A'
+                        'value': bs_city_name
                     },
                     {
                         'name': 'bs_state',
                         'title': 'State',
                         'show': 1,
-                        'value': State.objects.get(id=base_station.state).state_name \
-                                 if base_station.state else 'N/A'
+                        'value': bs_state_name
                     },
                     {
                         'name': 'tower_height',
@@ -400,31 +359,31 @@ def prepare_result(base_station_id):
                         'name': 'bh_configured_on',
                         'title': 'BH Configured On',
                         'show': 1,
-                        'value': base_station.backhaul.bh_configured_on.device_name if base_station.backhaul.bh_configured_on.device_name else 'N/A'
+                        'value': backhaul.bh_configured_on.device_name if backhaul else 'N/A'
                     },
                     {
                         'name': 'bh_capacity',
                         'title': 'BH Capacity',
                         'show': 1,
-                        'value': base_station.backhaul.bh_capacity if base_station.backhaul.bh_capacity else 'N/A'
+                        'value': backhaul.bh_capacity if backhaul else 'N/A'
                     },
                     {
                         'name': 'bh_type',
                         'title': 'BH Type',
                         'show': 1,
-                        'value': base_station.backhaul.bh_type if base_station.backhaul.bh_type else 'N/A'
+                        'value': backhaul.bh_type if backhaul else 'N/A'
                     },
                     {
                         'name': 'pe_ip',
                         'title': 'PE IP',
                         'show': 1,
-                        'value': base_station.backhaul.pe_ip if base_station.backhaul.pe_ip else 'N/A'
+                        'value': backhaul.pe_ip if backhaul else 'N/A'
                     },
                     {
                         'name': 'bh_connectivity',
                         'title': 'BH Connectivity',
                         'show': 1,
-                        'value': base_station.backhaul.bh_connectivity if base_station.backhaul.bh_connectivity else 'N/A'
+                        'value': backhaul.bh_connectivity if backhaul else 'N/A'
                     },
                     ]}
 
@@ -437,8 +396,10 @@ def prepare_result(base_station_id):
     base_station_info['sector_configured_on_devices']=''
     base_station_info['circuit_ids']=''
     for sector in sectors:
-        if Sector.objects.get(id=sector.id).sector_configured_on.is_deleted == 1:
-            continue
+        # if Sector.objects.get(id=sector.id).sector_configured_on.is_deleted == 1:
+        #     continue
+
+        circuits = sector.circuit_set.all()
 
         # for bsname in base_station_info['data']:
         #     if 'technology' not in bsname:
@@ -487,8 +448,8 @@ def prepare_result(base_station_id):
                                                                           'name': 'type_of_bs',
                                                                           'title': 'Type of BS',
                                                                           'show': 1,
-                                                                          'value': sector.base_station.bs_type \
-                                                                              if sector.base_station.bs_type else 'N/A'
+                                                                          'value': base_station.bs_type \
+                                                                              if base_station.bs_type else 'N/A'
                                                                       },
                                                                       {
                                                                           'name': 'building_height',
@@ -570,17 +531,13 @@ def prepare_result(base_station_id):
                                                                           'name': 'city',
                                                                           'title': 'City',
                                                                           'show': 1,
-                                                                          'value': City.objects.get(
-                                                                              id=base_station.city).city_name \
-                                                                              if sector.base_station.city else 'N/A'
+                                                                          'value': bs_city_name
                                                                       },
                                                                       {
                                                                           'name': 'state',
                                                                           'title': 'State',
                                                                           'show': 1,
-                                                                          'value': State.objects.get(
-                                                                              id=base_station.state).state_name \
-                                                                              if base_station.state else 'N/A'
+                                                                          'value': bs_state_name
                                                                       },
                                                                       ],
                                                              'sub_station': []
@@ -590,10 +547,10 @@ def prepare_result(base_station_id):
         base_station_info['sector_ss_technology']+= DeviceTechnology.objects.get(id=sector.sector_configured_on.device_technology).name +', '
         base_station_info['sector_configured_on_devices']+= sector.sector_configured_on.device_name +'('+ sector.sector_configured_on.ip_address +')' + ', '
 
-        circuits = Circuit.objects.filter(sector=sector.id)
+
         for circuit in circuits:
-            substation = SubStation.objects.get(id=circuit.sub_station.id)
-            substation_device = Device.objects.get(id=substation.device.id)
+            substation = circuit.sub_station #SubStation.objects.get(id=circuit.sub_station.id)
+            substation_device = substation.device #Device.objects.get(id=substation.device.id)
             if substation_device.is_deleted == 1:
                 continue
             substation_list= [{
@@ -619,19 +576,6 @@ def prepare_result(base_station_id):
                                                 'value': substation.name if substation.name else 'N/A'
                                             },
                                             {
-                                                'name': 'alias',
-                                                'title': 'Alias',
-                                                'show': 1,
-                                                'value': substation_device.device_alias if substation_device.device_alias else 'N/A'
-                                            },
-                                            {
-                                                'name': 'ss_ip',
-                                                'title': 'SS IP',
-                                                'show': 1,
-                                                'value': substation_device.ip_address if substation_device.ip_address else 'N/A'
-
-                                            },
-                                            {
                                                 'name': 'cktid',
                                                 'title': 'Circuit ID',
                                                 'show': 1,
@@ -644,16 +588,35 @@ def prepare_result(base_station_id):
                                                 'value': circuit.qos_bandwidth if circuit.qos_bandwidth else 'N/A'
                                             },
                                             {
-                                                'name': 'ss_technology',
-                                                'title': 'Technology',
+                                                'name': 'latitude',
+                                                'title': 'Latitude',
                                                 'show': 1,
-                                                'value': sector.bs_technology.name if sector.bs_technology else 'N/A'
+                                                'value': substation.latitude if substation.latitude else substation_device.latitude
+                                            },
+                                            {
+                                                'name': 'longitude',
+                                                'title': 'Longitude',
+                                                'show': 1,
+                                                'value': substation.longitude if substation.longitude else substation_device.longitude
                                             },
                                             {
                                                 'name': 'antenna_height',
                                                 'title': 'Antenna Height',
                                                 'show': 1,
-                                                'value': sector.antenna.height if sector.antenna else 0
+                                                'value': substation.antenna.height if substation.antenna else randint(40,70)
+                                            },
+                                            {
+                                                'name': 'polarisation',
+                                                'title': 'Polarisation',
+                                                'show': 1,
+                                                'value': sector.antenna.polarization \
+                                                    if sector.antenna else 'N/A'
+                                            },
+                                            {
+                                                'name': 'ss_technology',
+                                                'title': 'Technology',
+                                                'show': 1,
+                                                'value': sector.bs_technology.name if sector.bs_technology else 'N/A'
                                             },
                                             {
                                                 'name': 'building_height',
@@ -670,21 +633,25 @@ def prepare_result(base_station_id):
                                                     if substation.tower_height else 0
                                             },
                                             {
-                                                'name': 'polarisation',
-                                                'title': 'Polarisation',
-                                                'show': 1,
-                                                'value': sector.antenna.polarization \
-                                                    if sector.antenna else 'N/A'
-                                            },
-                                            {
                                                 'name': 'mount_type',
                                                 'title': 'SS MountType',
                                                 'show': 1,
                                                 'value': sector.antenna.mount_type if sector.antenna else 'N/A'
                                             },
                                             {
+                                                'name': 'alias',
+                                                'title': 'Alias',
+                                                'show': 1,
+                                                'value': substation_device.device_alias if substation_device.device_alias else 'N/A'
+                                            },
+                                            {
+                                                'name': 'ss_ip',
+                                                'title': 'SS IP',
+                                                'show': 1,
+                                                'value': substation_device.ip_address if substation_device.ip_address else 'N/A'
 
-
+                                            },
+                                            {
                                                 'name': 'antenna_type',
                                                 'title': 'Antenna Type',
                                                 'show': 1,

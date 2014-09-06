@@ -26,6 +26,7 @@ from site_instance.models import SiteInstance
 from inventory.models import Backhaul, SubStation, Sector
 from django.contrib.staticfiles.templatetags.staticfiles import static
 
+from django.views.decorators.csrf import csrf_exempt
 
 import logging
 
@@ -282,7 +283,7 @@ class OperationalDeviceListingTable(BaseDatatableView):
             # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
             # checking whether device is 'backhaul configured on' or not
             try:
-                if Backhaul.objects.get(bh_configured_on=current_device):
+                if len(Backhaul.objects.filter(bh_configured_on=current_device)):
                     dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-info" title="Services Status"></i></a>\
                                             <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-info" title="Delete Device"></i></a>\
                                             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-info" title="Add Services"></i></a>\
@@ -304,7 +305,7 @@ class OperationalDeviceListingTable(BaseDatatableView):
 
             # checking whether device is 'sector configured on' or not
             try:
-                if Sector.objects.get(sector_configured_on=current_device):
+                if len(Sector.objects.filter(sector_configured_on=current_device)):
                     dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.device_services_status(device_services_status_frame, {{\'device_id\': {0}}})"><i class="fa fa-list-alt text-success" title="Services Status"></i></a>\
                                             <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-success" title="Delete Device"></i></a>\
                                             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Services"></i></a>\
@@ -3369,7 +3370,7 @@ class DeviceFrequencyUpdate(UpdateView):
         """
         self.object = form.save()
         try:
-            action.send(self.request.user, verb='Created', action_object=self.object)
+            action.send(self.request.user, verb='Updated', action_object=self.object)
         except Exception as activity:
             pass
         return HttpResponseRedirect(DeviceFrequencyUpdate.success_url)

@@ -61,7 +61,7 @@
                         <h2 class="bigintro">Sign In</h2>
 
                         <div class="divide-40"></div>
-                        <form id='login_form' role="form" action="/auth/" method="post">{% csrf_token %}
+                        <form id='login_form' role="form" action="/auth/" method="post" autocomplete="off">{% csrf_token %}
                             <div class="form-group">
                                 <label for="username">Username</label>
                                 <i class="fa fa-envelope"></i>
