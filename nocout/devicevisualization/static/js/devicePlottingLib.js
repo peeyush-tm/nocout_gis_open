@@ -3713,3 +3713,26 @@ function unique_values_field_and_with_base_station_ids(filter_data_collection, t
         }
     return result_bs_collection
 }
+
+function include_performancedata()
+{
+    var sco_devices=[];
+    var circuit_ids=[];
+    for (var i=0; i<main_devices_data_gmaps.length; i++)
+    {
+        sco_devices.push(main_devices_data_gmaps[i].sector_configured_on_devices.split(' '))
+        circuit_ids.push(main_devices_data_gmaps[i].circuit_ids.split(' '))
+    }
+
+    $.ajax({
+        url : window.location.origin+"/performance/gismap_data/",
+	    type : "POST",
+        data:{'sco_devices':sco_devices,'circuit_ids':circuit_ids },
+	    dataType : "json",
+	    /*If data fetched successful*/
+	    success : function(result){
+            console.log(result)
+        }
+    })
+}
+

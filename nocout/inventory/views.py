@@ -7,7 +7,7 @@ from actstream import action
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect, HttpResponse
 from django.utils.decorators import method_decorator
-from django.views.generic import ListView, DetailView, TemplateView
+from django.views.generic import ListView, DetailView, TemplateView, View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -2122,8 +2122,8 @@ class ThresholdConfigurationList(ListView):
             {'mData': 'name',                           'sTitle': 'Name',                   'sWidth': 'null'},
             {'mData': 'alias',                          'sTitle': 'Alias',                  'sWidth': 'null'},
             {'mData': 'live_polling_template__alias',   'sTitle': 'Live Polling Template',  'sWidth': 'null'},
-            {'mData': 'warning',                        'sTitle': 'Warning',                'sWidth': 'null'},
-            {'mData': 'critical',                       'sTitle': 'Critical',               'sWidth': 'null'},
+            # {'mData': 'warning',                        'sTitle': 'Warning',                'sWidth': 'null'},
+            # {'mData': 'critical',                       'sTitle': 'Critical',               'sWidth': 'null'},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
@@ -2139,8 +2139,8 @@ class ThresholdConfigurationListingTable(BaseDatatableView):
     Class based View to render ThresholdConfiguration Data table.
     """
     model = ThresholdConfiguration
-    columns = ['name', 'alias', 'live_polling_template__alias', 'warning', 'critical']
-    order_columns = ['name', 'alias', 'live_polling_template__alias', 'warning', 'critical']
+    columns = ['name', 'alias', 'live_polling_template__alias']
+    order_columns = ['name', 'alias', 'live_polling_template__alias']
 
     def filter_queryset(self, qs):
         """
@@ -2319,9 +2319,9 @@ class ThematicSettingsList(ListView):
             {'mData': 'name',                    'sTitle': 'Name',                      'sWidth': 'null'},
             {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'null'},
             {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'null'},
-            {'mData': 'gt_warning__name',        'sTitle': '> Warning',                 'sWidth': 'null'},
-            {'mData': 'bt_w_c__name',            'sTitle': 'Warning > > Critical',      'sWidth': 'null'},
-            {'mData': 'gt_critical__name',       'sTitle': '> Critical',                'sWidth': 'null'},
+            # {'mData': 'gt_warning__name',        'sTitle': '> Warning',                 'sWidth': 'null'},
+            # {'mData': 'bt_w_c__name',            'sTitle': 'Warning > > Critical',      'sWidth': 'null'},
+            # {'mData': 'gt_critical__name',       'sTitle': '> Critical',                'sWidth': 'null'},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
@@ -2337,8 +2337,8 @@ class ThematicSettingsListingTable(BaseDatatableView):
     Class based View to render Thematic Settings Data table.
     """
     model = ThematicSettings
-    columns = ['name', 'alias', 'threshold_template', 'gt_warning__name', 'bt_w_c__name', 'gt_critical__name']
-    order_columns = ['name', 'alias', 'threshold_template', 'gt_warning__name', 'bt_w_c__name', 'gt_critical__name']
+    columns = ['name', 'alias', 'threshold_template']
+    order_columns = ['name', 'alias', 'threshold_template']
     def filter_queryset(self, qs):
         """
         The filtering of the queryset with respect to the search keyword entered.
@@ -2498,6 +2498,52 @@ class ThematicSettingsDelete(DeleteView):
         The request dispatch method restricted with the permissions.
         """
         return super(ThematicSettingsDelete, self).dispatch(*args, **kwargs)
+
+
+class Get_Threshold_Ranges_And_Icon_For_Thematic_Settings(View):
+    """
+    The Class Based View to Response the Ajax call on click to return the respective
+    ranges for the  threshold_template_id selected in the template.
+    """
+
+    def get(self, request):
+
+        self.result = {
+            "success": 0,
+            "message": "Threshold range not fetched.",
+            "data": {
+                "meta": None,
+                "objects": {}
+            }
+        }
+
+        threshold_template_id= self.request.GET.get('threshold_template_id','')
+        if threshold_template_id:
+           threshold_configuration_selected=ThresholdConfiguration.objects.get(id=int(threshold_template_id))
+           self.get_all_ranges(threshold_configuration_selected)
+           if self.result['data']['objects']['range_list']:
+              self.get_icon_details()
+
+           return HttpResponse(json.dumps(self.result))
+        else:
+           return HttpResponse(json.dumps(self.result))
+
+    def get_all_ranges(self, threshold_configuration_object):
+        range_list=list()
+        for ran in range(1, 11):
+
+            range_start= None
+
+            query= "range_start= threshold_configuration_object.range{0}_{1}".format(ran, 'start')
+            exec query
+            if range_start:
+               range_list.append('range {0}'.format(ran))
+
+        self.result['data']['objects']['range_list'] = range_list
+
+    def get_icon_details(self):
+        icon_details= IconSettings.objects.all().values('id','name', 'upload_image')
+        self.result['data']['objects']['icon_details'] =list(icon_details)
 
 
 #************************************ GIS Inventory Bulk Upload ******************************************

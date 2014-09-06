@@ -250,8 +250,49 @@ class ThresholdConfiguration(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     live_polling_template = models.ForeignKey(LivePollingSettings)
-    warning = models.CharField('Warning', max_length=20, null=True, blank=True)
-    critical = models.CharField('Critical', max_length=20, null=True, blank=True)
+
+    range1_start = models.CharField('Range1 Start', max_length=20, null=True, blank=True)
+    range1_end = models.CharField('Range1 End', max_length=20, null=True, blank=True)
+    range1_icon = models.ForeignKey(IconSettings, related_name='range1_icon', null=True)
+
+    range2_start = models.CharField('Range2 Start', max_length=20, null=True, blank=True)
+    range2_end = models.CharField('Range2 End', max_length=20, null=True, blank=True)
+    range2_icon = models.ForeignKey(IconSettings, related_name='range2_icon', null=True)
+
+    range3_start = models.CharField('Range3 Start', max_length=20, null=True, blank=True)
+    range3_end = models.CharField('Range3 End', max_length=20, null=True, blank=True)
+    range3_icon = models.ForeignKey(IconSettings, related_name='range3_icon', null=True)
+
+
+    range4_start = models.CharField('Range4 Start', max_length=20, null=True, blank=True)
+    range4_end = models.CharField('Range4 End', max_length=20, null=True, blank=True)
+    range4_icon = models.ForeignKey(IconSettings, related_name='range4_icon', null=True)
+
+    range5_start = models.CharField('Range5 Start', max_length=20, null=True, blank=True)
+    range5_end = models.CharField('Range5 End', max_length=20, null=True, blank=True)
+    range5_icon = models.ForeignKey(IconSettings, related_name='range5_icon', null=True)
+
+
+    range6_start = models.CharField('Range6 Start', max_length=20, null=True, blank=True)
+    range6_end = models.CharField('Range6 End', max_length=20, null=True, blank=True)
+    range6_icon = models.ForeignKey(IconSettings, related_name='range6_icon', null=True)
+
+
+    range7_start = models.CharField('Range7 Start', max_length=20, null=True, blank=True)
+    range7_end = models.CharField('Range7 End', max_length=20, null=True, blank=True)
+    range7_icon = models.ForeignKey(IconSettings, related_name='range7_icon', null=True)
+
+    range8_start = models.CharField('Range8 Start', max_length=20, null=True, blank=True)
+    range8_end = models.CharField('Range8 End', max_length=20, null=True, blank=True)
+    range8_icon = models.ForeignKey(IconSettings, related_name='range8_icon', null=True)
+
+    range9_start = models.CharField('Range9 Start', max_length=20, null=True, blank=True)
+    range9_end = models.CharField('Range9 End', max_length=20, null=True, blank=True)
+    range9_icon = models.ForeignKey(IconSettings, related_name='range9_icon', null=True)
+
+    range10_start = models.CharField('Range10 Start', max_length=20, null=True, blank=True)
+    range10_end = models.CharField('Range10 End', max_length=20, null=True, blank=True)
+    range10_icon = models.ForeignKey(IconSettings, related_name='range10_icon', null=True)
 
     def __unicode__(self):
         return self.alias
@@ -265,9 +306,6 @@ class ThematicSettings(models.Model):
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     threshold_template = models.ForeignKey(ThresholdConfiguration)
-    gt_warning = models.ForeignKey(IconSettings, null=True, blank=True, related_name='gt_warning')
-    bt_w_c = models.ForeignKey(IconSettings, null=True, blank=True, related_name='bt_w_c')
-    gt_critical = models.ForeignKey(IconSettings, null=True, blank=True, related_name='gt_critical')
 
     def __unicode__(self):
         return self.alias

@@ -10,11 +10,10 @@ $(document).ready(function (e) {
         inputContainers = $(".formContainer .col-sm-9 .col-md-8"),
         labelContainer = $(".formContainer label.col-sm-3");
         errorMessage = '<ul class="list-unstyled">';
-    console.log(inputContainers);
+
     for (var i = 0; i < inputContainers.length; i++) {    	
         /*Total no. of childrens in col-sm-7 class*/
         var childrenCount = inputContainers[i].children.length;
-        console.log(childrenCount);
         if (childrenCount == 2) {
 
             /*Error class from server side validation check*/

@@ -8,5 +8,4 @@ urlpatterns = patterns('',
     url(r'^inventorylist/',views.InventoryListing.as_view(), name='InventoryList'),
     url(r'^inventorylistingtable/',views.InventoryListingTable.as_view(), name='InventoryListingTable'),
     url(r'^inventory_details_wrt_organization/', views.inventory_details_wrt_organization, name='InventoryDetailWRTOrganization'),
-
 )
