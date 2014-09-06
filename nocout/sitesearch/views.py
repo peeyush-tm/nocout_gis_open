@@ -576,19 +576,6 @@ def prepare_result(base_station_id):
                                                 'value': substation.name if substation.name else 'N/A'
                                             },
                                             {
-                                                'name': 'alias',
-                                                'title': 'Alias',
-                                                'show': 1,
-                                                'value': substation_device.device_alias if substation_device.device_alias else 'N/A'
-                                            },
-                                            {
-                                                'name': 'ss_ip',
-                                                'title': 'SS IP',
-                                                'show': 1,
-                                                'value': substation_device.ip_address if substation_device.ip_address else 'N/A'
-
-                                            },
-                                            {
                                                 'name': 'cktid',
                                                 'title': 'Circuit ID',
                                                 'show': 1,
@@ -601,16 +588,35 @@ def prepare_result(base_station_id):
                                                 'value': circuit.qos_bandwidth if circuit.qos_bandwidth else 'N/A'
                                             },
                                             {
-                                                'name': 'ss_technology',
-                                                'title': 'Technology',
+                                                'name': 'latitude',
+                                                'title': 'Latitude',
                                                 'show': 1,
-                                                'value': sector.bs_technology.name if sector.bs_technology else 'N/A'
+                                                'value': substation.latitude if substation.latitude else substation_device.latitude
+                                            },
+                                            {
+                                                'name': 'longitude',
+                                                'title': 'Longitude',
+                                                'show': 1,
+                                                'value': substation.longitude if substation.longitude else substation_device.longitude
                                             },
                                             {
                                                 'name': 'antenna_height',
                                                 'title': 'Antenna Height',
                                                 'show': 1,
-                                                'value': sector.antenna.height if sector.antenna else 0
+                                                'value': substation.antenna.height if substation.antenna else randint(40,70)
+                                            },
+                                            {
+                                                'name': 'polarisation',
+                                                'title': 'Polarisation',
+                                                'show': 1,
+                                                'value': sector.antenna.polarization \
+                                                    if sector.antenna else 'N/A'
+                                            },
+                                            {
+                                                'name': 'ss_technology',
+                                                'title': 'Technology',
+                                                'show': 1,
+                                                'value': sector.bs_technology.name if sector.bs_technology else 'N/A'
                                             },
                                             {
                                                 'name': 'building_height',
@@ -627,21 +633,25 @@ def prepare_result(base_station_id):
                                                     if substation.tower_height else 0
                                             },
                                             {
-                                                'name': 'polarisation',
-                                                'title': 'Polarisation',
-                                                'show': 1,
-                                                'value': sector.antenna.polarization \
-                                                    if sector.antenna else 'N/A'
-                                            },
-                                            {
                                                 'name': 'mount_type',
                                                 'title': 'SS MountType',
                                                 'show': 1,
                                                 'value': sector.antenna.mount_type if sector.antenna else 'N/A'
                                             },
                                             {
+                                                'name': 'alias',
+                                                'title': 'Alias',
+                                                'show': 1,
+                                                'value': substation_device.device_alias if substation_device.device_alias else 'N/A'
+                                            },
+                                            {
+                                                'name': 'ss_ip',
+                                                'title': 'SS IP',
+                                                'show': 1,
+                                                'value': substation_device.ip_address if substation_device.ip_address else 'N/A'
 
-
+                                            },
+                                            {
                                                 'name': 'antenna_type',
                                                 'title': 'Antenna Type',
                                                 'show': 1,

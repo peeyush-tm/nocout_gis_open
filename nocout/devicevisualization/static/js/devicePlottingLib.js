@@ -12,6 +12,10 @@ var mapInstance = "",
 	plottedSS = [],
 	metaData = {},
 	isCallCompleted = 0,
+	bsLatArray = [],
+	bsLonArray = [],
+	ssLatArray = [],
+	ssLonArray = [],
 	hitCounter = 1,
 	showLimit = 0,
 	devicesCount = 0,
@@ -210,7 +214,7 @@ function prepare_oms_object(oms_instance) {
     });
 
     /*Event when the markers cluster expands or spiderify*/
-    oms_instance.addListener('spiderfy', function(e,markers) {
+    oms_instance.addListener('spiderfy', function(e,markers) {    	
         /*Change the markers icon from cluster icon to thrie own icon*/
         for(var i=0;i<e.length;i++) {
             /*Change the icon of marker*/
@@ -245,7 +249,7 @@ function prepare_oms_object(oms_instance) {
         isFreeze = 0;
         var latArray = [],
             lonArray = [];
-
+            
         $.grep(e, function (elem) {
             latArray.push(elem.ptLat);
             lonArray.push(elem.ptLon);
@@ -265,8 +269,10 @@ function prepare_oms_object(oms_instance) {
                                     null,
                                     null
                                    )});
-                } else {
+                } else if(e[i].pointType === "base_station") {
                     e[i].setOptions({"icon":clusterIcon});
+                } else {
+                	e[i].setOptions({"icon":''});
                 }
             }
 
@@ -525,6 +531,12 @@ function devicePlottingClass_gmap() {
 									counter = Math.floor(devicesCount / showLimit);
 								}
 
+								if(result.data.objects.data.unspiderfy_icon != "" && result.data.objects.data.unspiderfy_icon != undefined) {
+									clusterIcon = window.location.origin+"/"+result.data.objects.data.unspiderfy_icon;
+								} else {
+									clusterIcon = window.location.origin+"/static/img/icons/bs.png";
+								}
+
 								/*Check that any advance filter is applied or not*/
 								if(appliedAdvFilter.length <= 0) {
 
@@ -648,8 +660,6 @@ function devicePlottingClass_gmap() {
      * @param stationType {String}, It contains that the points are for BS or SS.
 	 */
 	this.plotDevices_gmap = function(bs_ss_devices,stationType) {
-		var bsLatArray = [],
-			bsLonArray = [];
 
 		for(var i=0;i<bs_ss_devices.length;i++) {
 
@@ -827,8 +837,8 @@ function devicePlottingClass_gmap() {
 				    oms_ss.addMarker(ss_marker);
 
 				    /*Push All SS Lat & Lon*/
-		    	    bsLatArray.push(ss_marker_obj.data.lat);
-					bsLonArray.push(ss_marker_obj.data.lon);
+		    	    ssLatArray.push(ss_marker_obj.data.lat);
+					ssLonArray.push(ss_marker_obj.data.lon);
 
 					var ss_info = {},
 			    		base_info = {};
@@ -867,23 +877,7 @@ function devicePlottingClass_gmap() {
 
 		    /*Push All BS Lat & Lon*/
 			bsLatArray.push(bs_ss_devices[i].data.lat);
-			bsLonArray.push(bs_ss_devices[i].data.lon);
-		}
-		/*Loop to change the icon for same location markers(to cluster icon)*/
-		for(var k=0;k<masterMarkersObj.length;k++) {
-			
-			if(masterMarkersObj[k] != undefined) {
-
-				/*if two BS on same position*/
-				var bsLatOccurence = $.grep(bsLatArray, function (elem) {return elem === masterMarkersObj[k].ptLat;}).length;
-				var bsLonOccurence = $.grep(bsLonArray, function (elem) {return elem === masterMarkersObj[k].ptLon;}).length;
-
-				if(bsLatOccurence > 1 && bsLonOccurence > 1) {
-					masterMarkersObj[k].setOptions({"icon" : clusterIcon});
-				}
-			} else {
-				masterMarkersObj.splice(k, 1);
-			}
+			bsLonArray.push(bs_ss_devices[i].data.lon);			
 		}
 
 		if(isCallCompleted == 1) {
@@ -893,7 +887,42 @@ function devicePlottingClass_gmap() {
 
 			/*Enable the refresh button*/
 			$("#resetFilters").button("complete");
-gmap_self.updateAllMarkersWithNewIcon(defaultIconSize);
+
+
+			var oms_bs_markers = oms.getMarkers(),
+				oms_ss_markers = oms_ss.getMarkers();			
+
+			/*Loop to change the icon for same location BS markers(to cluster icon)*/
+			for(var k=0;k<oms_bs_markers.length;k++) {
+				
+				if(oms_bs_markers[k] != undefined) {
+	
+					/*if two BS or SS on same position*/
+					var bsLatOccurence = $.grep(bsLatArray, function (elem) {return elem === oms_bs_markers[k].ptLat;}).length;
+					var bsLonOccurence = $.grep(bsLonArray, function (elem) {return elem === oms_bs_markers[k].ptLon;}).length;
+
+					if(bsLatOccurence > 1 && bsLonOccurence > 1) {
+						oms_bs_markers[k].setOptions({"icon" : clusterIcon});
+					}
+				}
+			}
+
+			/*Loop to change the icon for same location SS markers(to cluster icon)*/
+			for(var k=0;k<oms_ss_markers.length;k++) {
+				
+				if(oms_ss_markers[k] != undefined) {
+	
+					/*if two BS or SS on same position*/
+					var bsLatOccurence = $.grep(ssLatArray, function (elem) {return elem === oms_ss_markers[k].ptLat;}).length;
+					var bsLonOccurence = $.grep(ssLonArray, function (elem) {return elem === oms_ss_markers[k].ptLon;}).length;
+
+					if(bsLatOccurence > 1 && bsLonOccurence > 1) {
+						oms_ss_markers[k].setOptions({"icon" : ''});
+					}
+				}
+			}
+
+			gmap_self.updateAllMarkersWithNewIcon(defaultIconSize);
 
 			/*Cluster options object*/
             var clusterOptions = {gridSize: 70, maxZoom: 8};
@@ -1385,7 +1414,6 @@ gmap_self.updateAllMarkersWithNewIcon(defaultIconSize);
 			} else {
 				startPtInfo = contentObject.dataset;	
 			}
-			console.log(JSON.stringify(startPtInfo));
 			for(var i=0;i<startPtInfo.length;i++) {
 
 				if(startPtInfo[i].show == 1) {
@@ -1426,7 +1454,7 @@ gmap_self.updateAllMarkersWithNewIcon(defaultIconSize);
 
 		if(tables.length == 1) {
 			/*Show only 5 rows, hide others*/
-			for(var i=5;i<$(".windowContainer table tbody tr").length;i++) {
+			for(var i=7;i<$(".windowContainer table tbody tr").length;i++) {
 				if($(".windowContainer table tbody tr")[i].className.indexOf("hide") == -1) {
 					$("#more_less_btn").html("More");
 					$(".windowContainer table tbody tr")[i].className = "hide";
