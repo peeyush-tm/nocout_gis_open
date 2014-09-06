@@ -64,9 +64,16 @@ class DeviceType(models.Model):
     alias = models.CharField('Alias', max_length=200)
     device_port = models.ManyToManyField(DevicePort, null=True, blank=True)
     service = models.ManyToManyField(Service, blank=True, null=True)
+    packets = models.IntegerField('Packets', blank=True, null=True)
+    timeout = models.IntegerField('Timeout', blank=True, null=True)
+    normal_check_interval = models.IntegerField('Normal Check Interval', blank=True, null=True)
+    rta_warning = models.IntegerField('RTA Warning', blank=True, null=True)
+    rta_critical = models.IntegerField('RTA Critical', blank=True, null=True)
+    pl_warning = models.IntegerField('PL Warning', blank=True, null=True)
+    pl_critical = models.IntegerField('PL Critical', blank=True, null=True)
+    agent_tag = models.CharField('Agent Tag', max_length=200, null=True, blank=True)
     device_icon = models.ImageField(upload_to='uploaded/icons/%Y/%m/%d')
     device_gmap_icon = models.ImageField(upload_to='uploaded/icons/%Y/%m/%d')
-    agent_tag = models.CharField('Agent Tag', max_length=200, null=True, blank=True)
 
     def __unicode__(self):
         return self.name
