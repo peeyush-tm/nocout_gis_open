@@ -988,6 +988,7 @@ class ThematicSettingsForm(forms.ModelForm):
         Meta Information
         """
         model = ThematicSettings
+        exclude =['icon_settings']
 
     def clean_name(self):
         """

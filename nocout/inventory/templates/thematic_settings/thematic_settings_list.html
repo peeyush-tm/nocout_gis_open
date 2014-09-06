@@ -38,6 +38,40 @@
             /*Call createDataTable function of ourDataTableWidget class*/
             var destroy = false;
             dataTableInstance.createDataTable("ThematicSettingsListingTable", gridHeadersObj, ajax_url, destroy);
-        });
-    </script>
+
+    });
+
+    $(document).on('change', '.check_class', function() {
+        $('input.check_class').not(this).prop('checked', false);
+
+        $.ajax({
+            url:'{% url "update_user_thematic_setting" %}',
+            data:{ 'threshold_template_id': this.value },
+            dataType:"json",
+            success:function(result){
+                if(result.success){
+                    dialog_box_message= "Thematic Setting (0) is assigned to User: (1)".replace('(0)', result.data.objects.thematic_setting_name)
+                    dialog_box_message= dialog_box_message.replace('(1)', result.data.objects.username);
+
+                    bootbox.dialog({
+
+                            message:dialog_box_message,
+                            title: "<span class='text-sucess'><i class='fa fa-times'></i>Confirmation</span>",
+                            buttons: {
+                                success: {
+                                        label: "OK",
+                                        className: "btn-success",
+                                        callback: function () {
+                                        $(".bootbox").modal("hide");
+
+                                        }
+                                    }
+                            }
+
+                    })
+            }
+        }
+        })
+    });
+</script>
 {% endblock %}
