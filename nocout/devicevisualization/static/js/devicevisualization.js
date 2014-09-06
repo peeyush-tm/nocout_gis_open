@@ -114,6 +114,10 @@ $("#resetFilters").click(function(e) {
             appliedFilterObj_gmaps = {};
 
             /*Reset markers, polyline & filters*/
+
+            // tempFilteredData= [];
+            
+
             networkMapInstance.clearGmapElements();
 
             /*Reset Global Variables & Filters*/
@@ -122,6 +126,7 @@ $("#resetFilters").click(function(e) {
             /*Call the make network to create the BS-SS network on the google map*/
             // networkMapInstance.getDevicesData_gmap();
             networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
+            // showSelectedSubSectorMarkers(sector_MarkersArray);
         }
 
         /***************GOOGLE EARTH CODE*******************/
@@ -144,11 +149,15 @@ $("#resetFilters").click(function(e) {
             /*Reset markers, polyline & filters*/
             networkMapInstance.clearGmapElements();
 
+            // tempFilteredData= [];
+            
+
             /*Reset Global Variables & Filters*/
             networkMapInstance.resetVariables_gmap();            
             /*Call the make network to create the BS-SS network on the google map*/
             // networkMapInstance.getDevicesData_gmap();
             networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
+            // showSelectedSubSectorMarkers(sector_MarkersArray);
         }
     }
 });
@@ -478,5 +487,6 @@ function get_page_status() {
 //On change of Icon Size, call updateAllMarkers function in DevicePlottingLib with the value.
 $("select#icon_Size_Select_In_Tools").change(function() {
     var val= $(this).val();
+    defaultIconSize= val;
     networkMapInstance.updateAllMarkersWithNewIcon(val);
 });

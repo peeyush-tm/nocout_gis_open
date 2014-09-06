@@ -26,6 +26,7 @@ from site_instance.models import SiteInstance
 from inventory.models import Backhaul, SubStation, Sector
 from django.contrib.staticfiles.templatetags.staticfiles import static
 
+from django.views.decorators.csrf import csrf_exempt
 
 import logging
 

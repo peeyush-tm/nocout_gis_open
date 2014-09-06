@@ -16,13 +16,17 @@ Inventory services include: Services that should run once in a day.
 from nocout_site_name import *
 import mysql.connector
 from datetime import datetime, timedelta
-import socket
 import imp
+from pprint import pformat
 import time
 
 mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+logging_module = imp.load_source('get_site_logger', '/opt/omd/sites/%s/nocout/utils/nocout_site_logs.py' % nocout_site_name)
+
+# Get logger
+logger = logging_module.get_site_logger('inventory_status_migrations.log')
 
 def main(**configs):
     """

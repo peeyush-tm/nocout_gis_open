@@ -11,7 +11,9 @@ from inventory.models import BaseStation, Sector, SubStation, Circuit, Backhaul
 from performance.models import PerformanceNetwork, EventNetwork, EventService, NetworkStatus
 from django.utils.dateformat import format
 from django.db.models import Q
-from nocout.settings import P2P
+
+from django.conf import settings
+
 # going deep with sql cursor to fetch the db results. as the RAW query executes everythong it is recursively used
 from django.db import connections
 
@@ -71,9 +73,9 @@ def getCustomerAlertDetail(request):
          'bSortable': True},
         {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'device__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
+        {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'device__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
+        {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
@@ -128,23 +130,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
 
         logged_in_user = self.request.user.userprofile
 
-        if logged_in_user.role.values_list('role_name', flat=True)[0] == 'admin':
-            organizations = list(logged_in_user.organization.get_descendants(include_self=True))
-        else:
-            organizations = [logged_in_user.organization]
-
-        organization_devices = list()
-        device_tab_technology = self.request.GET.get('data_tab')
-        device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
-        # sector_configured_on_devices_ids=[]
-        for organization in organizations:
-            organization_devices += Device.objects.filter(is_added_to_nms=1, organization__id=organization.id,
-                                                          device_technology=device_technology_id)
-
-        # get the devices in an organisation which are added for monitoring
-        organization_devices = [ {'device_name': device.device_name, 'machine_name': device.machine.name} \
-                                 for device in organization_devices if device.substation_set.exists() or \
-                                 device.sector_configured_on.exists() ]
+        organization_devices = filter_customer_devices(logged_in_user, self.request.GET.get('data_tab'))
 
         required_data_columns = ["id",
                                  "ip_address",
@@ -153,6 +139,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
                                  "data_source",
                                  "severity",
                                  "current_value",
+                                 "max_value",
                                  "sys_timestamp",
                                  "description"
                                 ]
@@ -170,12 +157,11 @@ class GetCustomerAlertDetail(BaseDatatableView):
         for machine, machine_device_list in machine_dict.items():
             data_sources_list = []
             device_data += self.collective_query_result(
-                machine = machine,
-                table_name = "performance_eventservice",
-                devices = machine_device_list,
-                data_sources = data_sources_list,
-                columns = required_data_columns
-            )
+                machine=machine,
+                table_name="performance_eventservice",
+                devices=machine_device_list,
+                data_sources=data_sources_list,
+                columns=required_data_columns)
 
         if device_data:
             sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
@@ -192,68 +178,19 @@ class GetCustomerAlertDetail(BaseDatatableView):
                                               table_name=table_name,
                                               devices=devices,
                                               data_sources=data_sources,
-                                              columns=columns
-        )
+                                              columns=columns)
 
 
         device_list = []
-        for data in performance_data:
-            device_object = Device.objects.get(device_name=data['device_name'])
 
-            if device_object.substation_set.exists():
-                
-                device_circuit = ""
-                device_basestation = ""
-                has_circuit = False
-                device_substation= SubStation.objects.get(id= device_object.substation_set.values_list('id', flat=True)[0])
-                circuit_obj = Circuit.objects.filter(id= device_substation.circuit_set.values_list('id', flat=True))
-                if len(circuit_obj):
-                    device_circuit= circuit_obj[0]
-                    device_basestation = device_circuit.sector.base_station.name
-                    has_circuit = True
+        # now considering all the cases. we should also consider this that there is a normal case
+        # when all the devices are substations
+        # and another case where we are getting the sector devices as well
+        # and those sector devices are as said PTP !!!
+        # we should start with getting the
+        # device and substation
 
-                if severity_level_check(list_to_check=[data['severity'], data['description']]):
-                    device_events = {
-                        'device_name': data["device_name"],
-                        'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
-                        'severity': data['severity'],
-                        # 'ip_address': data["ip_address"],
-                        'base_station': device_basestation,
-                        'circuit_id': device_circuit.circuit_id if has_circuit else "",
-                        'sector_id': device_circuit.sector.sector_id if has_circuit else "",
-                        'device__city': City.objects.get(id=device_object.city).city_name if device_object.city else 'N/A',
-                        'device__state': State.objects.get(id=device_object.state).state_name if device_object.state else 'N/A',
-                        'data_source_name': data["data_source"],
-                        'current_value': data["current_value"],
-                        # 'sys_time': datetime.datetime.fromtimestamp(float(data["sys_timestamp"])).strftime("%I:%M:%S %p"),
-                        # 'sys_date': datetime.datetime.fromtimestamp(float(data["sys_timestamp"])).strftime("%d/%B/%Y"),
-                        'sys_timestamp': datetime.datetime.fromtimestamp(float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                        'description': data['description']
-                    }
-                    device_list.append(device_events)
-
-            elif device_object.sector_configured_on.exists():
-
-                device_sector= Sector.objects.get(id= device_object.sector_configured_on.values_list('id', flat=True)[0])
-                if severity_level_check(list_to_check=[data['severity'], data['description']]):
-                    device_events = {
-                        'device_name': data["device_name"],
-                        'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
-                        'severity': data['severity'],
-                        # 'ip_address': data["ip_address"],
-                        'base_station': device_sector.base_station.name,
-                        'circuit_id': device_sector.circuit_set.values_list('circuit_id', flat=True)[0],
-                        'sector_id': device_sector.sector_id,
-                        'device__city': City.objects.get(id=device_object.city).city_name if device_object.city else 'N/A',
-                        'device__state': State.objects.get(id=device_object.state).state_name if device_object.state else 'N/A',
-                        'data_source_name': data["data_source"],
-                        'current_value': data["current_value"],
-                        # 'sys_time': datetime.datetime.fromtimestamp(float(data["sys_timestamp"])).strftime("%I:%M:%S %p"),
-                        # 'sys_date': datetime.datetime.fromtimestamp(float(data["sys_timestamp"])).strftime("%d/%B/%Y"),
-                        'sys_timestamp': datetime.datetime.fromtimestamp(float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                        'description': data['description']
-                    }
-                    device_list.append(device_events)
+        device_list = prepare_customer_results(device_list, performance_data)
 
         return device_list
 
@@ -427,24 +364,35 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         if tab_id:
             if tab_id == "ptp_backhaul":
-                #we need to search for devices with PTP backhaul type
                 try:
-                    #need to add device with Circuit Type as : Backhaul (@TODO: make this a dropdown menu item and must for the user)
-                    #for technology = PTP and Circuit Type as Backhaul get the Device BH Configured On
+                    #need to add device with Circuit Type as : Backhaul
+                    # (@TODO: make this a dropdown menu item and must for the user)
+                    #INVALID :::: for technology = PTP and Circuit Type as Backhaul get the Device BH Configured On ::: INVALID
+                    #VALID :::: confusion HERE. What we want is that CIRCUIT TYPE BACKHAUL's both SS and BS elements should
+                    #be visible on network alert center ::: VALID
 
-                    circuit_ptp_bh = Circuit.objects.filter(circuit_type="Backhaul")
+                    circuit_ptp_bh = Circuit.objects.prefetch_related("sector", "sub_station").filter(circuit_type="Backhaul")
+
                     for cc in circuit_ptp_bh:
-                        if cc.sector.base_station.backhaul.bh_configured_on.organization_id in organizations:
+                        ##get the sector element
+                        sector_ptp_bh = cc.sector
+                        ##get the sub station element
+                        ss_ptp_bh = cc.sub_station
+                        if sector_ptp_bh:
                             ptp_backhaul_devices.append({
-                                "machine__name" : cc.sector.base_station.backhaul.bh_configured_on.machine.name,
-                                "device_name" : cc.sector.base_station.backhaul.bh_configured_on.device_name
+                                "machine__name" : sector_ptp_bh.sector_configured_on.machine.name,
+                                "device_name" : sector_ptp_bh.sector_configured_on.device_name
                             })
-                        sector_configured_on_devices += ptp_backhaul_devices
+                        if ss_ptp_bh:
+                            ptp_backhaul_devices.append({
+                                "machine__name" : ss_ptp_bh.device.machine.name,
+                                "device_name" : ss_ptp_bh.device.device_name
+                            })
 
-                except:
-                        pass
-                        ##dont waste time on values if there are none
-
+                    sector_configured_on_devices += ptp_backhaul_devices
+                except Exception as e:
+                    pass
+                    ##dont waste time on values if there are none
 
         else:
             return []
@@ -526,43 +474,114 @@ class GetNetworkAlertDetail(BaseDatatableView):
 
         for data in performance_data:
 
-            city_name = ""
-            state_name = ""
-            base_station_name = ""
-
             device_object = Device.objects.get(device_name=data['device_name'])
+            device_type = DeviceType.objects.get(id=device_object.device_type).alias
+            #first assume that device is
+            #substation
+            city_objects = None
+            state_object = None
+            circuit_objects = None
+            basestation_objects = None
+            sector_objects = None
 
             if tab_source == "ptp_backhaul":
                 #ok now we have PTP backhaul device
 
-                circuit_ptp_bh = Circuit.objects.filter(circuit_type="Backhaul")
-                for cc in circuit_ptp_bh:
-                    if cc.sector.base_station.backhaul.bh_configured_on.device_name == data["device_name"]:
-                        base_station_obj = cc.sector.base_station
-                        if base_station_obj:
-                            base_station_name = base_station_obj.name
-                            city_name = City.objects.get(id=base_station_obj.city).city_name if base_station_obj.city else 'N/A'
-                            state_name = State.objects.get(id=base_station_obj.state).state_name if base_station_obj.state else "N/A"
+                try:
+                    city_objects = City.objects.prefetch_related('state').get(id=device_object.city)
+                    state_object = city_objects.state
+                except Exception as e:
+                    logger.exception(e)
+                    pass
+
+                if device_object.substation_set.exists():
+                    device_substation_objects = device_object.substation_set.filter()
+
+                    if len(device_substation_objects):
+                        device_substation_object = device_substation_objects[0]
+
+                        try:
+                            circuit_objects = device_substation_object.circuit_set.filter()
+                            if len(circuit_objects):
+                                circuit_object = circuit_objects[0]
+                                sector_objects = circuit_object.sector
+                                basestation_objects = sector_objects.base_station
+                        except Exception as e:
+                            #database is in correct
+                            # we either have multiple circuits present on the same device. that is same
+                            #substation is serving more than one circuit
+                            #which is not right. CIRCUIT strictly means (BS) -*- (sector) -1- CIRCUIT -1- (ss)
+                            logger.exception(e)
+                            pass
 
                         if severity_level_check(list_to_check=[data['severity'], data['description']]):
-                            ddata = {
-                                'device_name': data['device_name'],
-                                'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
+                            ##check the severity levels
+                            device_events = {
+                                'device_name': data["device_name"],
+                                'device_type': device_type,
                                 'severity': data['severity'],
-                                'ip_address': data['ip_address'],
-                                'base_station': base_station_name,
-                                'base_station__city': city_name,
-                                'base_station__state': state_name,
-                                'data_source_name': data['data_source'],
-                                'current_value': data['current_value'],
-                                'sys_time': datetime.datetime.fromtimestamp(float(data['sys_timestamp'])).strftime("%I:%M:%S %p"),
-                                'sys_date': datetime.datetime.fromtimestamp(float(data['sys_timestamp'])).strftime("%d/%B/%Y"),
-                                'sys_timestamp': datetime.datetime.fromtimestamp(float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                                #'ip_address': data["ip_address"],
+                                'base_station': basestation_objects.name if basestation_objects else "N/A",
+                                'circuit_id': circuit_object.circuit_id if circuit_object else "N/A",
+                                'sector_id': sector_objects.sector_id if sector_objects else "N/A",
+                                'base_station__city': city_objects.city_name if city_objects else "N/A",
+                                'base_station__state': state_object.state_name if state_object else "N/A",
+                                'data_source_name': data["data_source"],
+                                'current_value': data["current_value"],
+                                'sys_timestamp': datetime.datetime.fromtimestamp(
+                                    float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
                                 'description': data['description']
-                            }
-                            result_data.append(ddata)
+                                }
+                            result_data.append(device_events)
+                else:
+                    #now that we are sure the device is not in sector
+                    #so this must be the PTP Near End Device
+                    if device_object.sector_configured_on.exists():
+                        #alright near end device. surrender now
+                        device_sector_objects = device_object.sector_configured_on.filter()
+                        if len(device_sector_objects):
+                            device_sector_object = device_sector_objects[0] #yay!
+                            try:
+                                circuit_objects = device_sector_object.circuit_set.filter()
+                                if len(circuit_objects):
+                                    circuit_object = circuit_objects[0]
+                                    try:
+                                        sector_objects = circuit_object.sector
+                                        basestation_objects = sector_objects.base_station
+                                    except Exception as e:
+                                        #database is in correct
+                                        # we either have multiple circuits present on the same device. that is same
+                                        #substation is serving more than one circuit
+                                        #which is not right. CIRCUIT strictly means (BS) -*- (sector) -1- CIRCUIT -1- (ss)
+                                        logger.exception(e)
+                                        pass
+                                if severity_level_check(list_to_check=[data['severity'], data['description']]):
+                                    ##check the severity levels
+                                    device_events = {
+                                        'device_name': data["device_name"],
+                                        'device_type': device_type,
+                                        'severity': data['severity'],
+                                        #'ip_address': data["ip_address"],
+                                        'base_station': basestation_objects.name if basestation_objects else "N/A",
+                                        'circuit_id': circuit_object.circuit_id if circuit_object else "N/A",
+                                        'sector_id': sector_objects.sector_id if sector_objects else "N/A",
+                                        'base_station__city': city_objects.city_name if city_objects else "N/A",
+                                        'base_station__state': state_object.state_name if state_object else "N/A",
+                                        'data_source_name': data["data_source"],
+                                        'current_value': data["current_value"],
+                                        'sys_timestamp': datetime.datetime.fromtimestamp(
+                                            float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                                        'description': data['description']
+                                        }
+                                    result_data.append(device_events)
+                            except Exception as e:
+                                logger.exception(e)
+                                pass
+                        else:
+                            pass
+                    else:
+                        pass
             else:
-                #we just have a case for PTP backhaul for now
                 pass
 
         return result_data
@@ -795,7 +814,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         else:
             organizations_ids = [logged_in_user.organization.id]
 
-        sector_configured_on_devices = Device.objects.filter(~Q(device_technology = int(P2P.ID)), is_added_to_nms=1,
+        sector_configured_on_devices = Device.objects.filter(~Q(device_technology = int(settings.P2P.ID)), is_added_to_nms=1,
                                                              is_deleted=0, sector_configured_on__isnull=False,
                                                              organization__in= organizations_ids)\
                                                              .values('device_name', 'machine__name')
@@ -832,7 +851,6 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
             sector_configured_on_devices += ptp_backhaul_devices
         except Exception as e:
-            print (e)
             pass
             ##dont waste time on values if there are none
 
@@ -1096,9 +1114,9 @@ class CustomerAlertList(ListView):
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
             ]
 
-        if data_source.lower() =='latency' : datatable_headers.insert(len(datatable_headers)-2,
-        {'mData': 'max_value', 'sTitle': 'Max Latency(ms)', 'sWidth': 'null', 'sClass': 'hidden-xs',
-        'bSortable': True })
+        # if data_source.lower() =='latency' : datatable_headers.insert(len(datatable_headers)-2,
+        # {'mData': 'max_value', 'sTitle': 'Max Latency(ms)', 'sWidth': 'null', 'sClass': 'hidden-xs',
+        # 'bSortable': True })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         context['data_source'] = " ".join(self.kwargs['data_source'].split('_')).title()
@@ -1145,27 +1163,9 @@ class CustomerAlertListingTable(BaseDatatableView):
 
         logged_in_user = self.request.user.userprofile
 
-        if logged_in_user.role.values_list('role_name', flat=True)[0] == 'admin':
-            organizations_ids = list(logged_in_user.organization.get_descendants(include_self=True).values_list('id', flat=True))
-        else:
-            organizations_ids = [logged_in_user.organization]
+        organization_devices = filter_customer_devices(logged_in_user, self.request.GET.get('data_tab'))
 
-        device_tab_name = self.request.GET.get('data_tab')
-        device_technology_id = DeviceTechnology.objects.get(name= device_tab_name).id
-        #IF Device Technology is P2P then fetch sector_configured_on as well as substation foreign keys relation present device
-        if device_technology_id ==int(P2P.ID):
-            devices = Device.objects.filter(Q(sector_configured_on__isnull=False) | Q(substation__isnull=False),
-                                            is_added_to_nms=1, organization__in= organizations_ids,
-                                                          device_technology= device_technology_id,
-                                                         )
-        #else Fecth all the devices which has substation as a foreign key relation present with the device.
-        else:
-            devices = Device.objects.filter(substation__isnull=False,
-                                            is_added_to_nms=1, organization__in= organizations_ids,
-                                            device_technology= device_technology_id)
-
-        organization_substations_devices = [ {'device_name': device.device_name, 'machine_name': device.machine.name} \
-                                             for device in devices ]
+        machine_dict = filter_machines(organization_devices)
 
         data_sources_list = list()
 
@@ -1189,18 +1189,11 @@ class CustomerAlertListingTable(BaseDatatableView):
                                  "sys_timestamp",
                                  "description"]
 
-        # Unique machine from the sector_configured_on_devices
-        unique_device_machine_list = {device['machine_name']: True for device in
-                                      organization_substations_devices}.keys()
-        machine_dict = dict()
-        # Creating the machine as a key and device_name as a list for that machine.
-        for machine in unique_device_machine_list:
-            machine_dict[machine] = [device['device_name'] for device in organization_substations_devices if
-                                     device['machine_name'] == machine]
-        #Fetching the data for the device w.r.t to their machine.
-        device_list, performance_data = list(), list()
+        sorted_device_list = list()
 
         for machine, machine_device_list in machine_dict.items():
+
+            device_list, performance_data = list(), list()
 
             performance_data = raw_prepare_result(performance_data=performance_data,
                                                   machine=machine,
@@ -1210,101 +1203,11 @@ class CustomerAlertListingTable(BaseDatatableView):
                                                   columns=required_data_columns,
                                                   condition= extra_query_condition )
 
-            for data in performance_data:
-                # for device in machine_device_list:
-                device = data['device_name']
-                device_object = Device.objects.get(device_name=device)
+            device_list = prepare_customer_results(device_list,performance_data)
 
+            sorted_device_list += sorted(device_list, key=itemgetter('sys_timestamp'), reverse=True)
 
-                if device_object.substation_set.exists():
-                    device_substation = SubStation.objects.get(id= device_object.substation_set.values_list('id', flat=True)[0])
-
-                    if device_substation.circuit_set.exists():
-                        circuit_object = Circuit.objects.get(sub_station__id= device_substation.id)
-                        circuit_id = circuit_object.circuit_id
-                        sector_id = circuit_object.sector.sector_id
-                        device_substation_base_station = circuit_object.sector.base_station
-                        device_substation_base_station_name = device_substation_base_station.name
-                        city = City.objects.get(id=device_substation_base_station.city).city_name
-                        state= State.objects.get(id=device_substation_base_station.state).state_name
-                    else:
-                        device_substation_base_station_name = 'N/A'
-                        city = "N/A"
-                        state = "N/A"
-                        sector_id = "N/A"
-                        circuit_id = "N/A"
-
-                    #only display warning or critical devices
-                    if data['severity'] in ['DOWN', 'CRITICAL', 'WARNING', 'UNKNOWN'] or \
-                                    'WARN' in data['description'] or \
-                                    'CRIT' in data['description']:
-                        device_object = Device.objects.get(device_name=device)
-                        device_events = {
-                            'device_name': device,
-                            'severity': data['severity'],
-                            # 'device_technology': DeviceTechnology.objects.get(id=device_object.device_technology).alias,
-                            'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
-                            # 'ip_address': device_object.ip_address,
-                            # 'sub_station': device_substation.name,
-                            'city': city,
-                            'state': state,
-                            'base_station': device_substation_base_station_name,
-                            'circuit_id': circuit_id,
-                            'sector_id': sector_id,
-                            'current_value': data['current_value'],
-                            'max_value':data['max_value'],
-                            'sys_time': datetime.datetime.fromtimestamp(
-                                float(data['sys_timestamp'])).strftime("%I:%M:%S %p"),
-                            'sys_date': datetime.datetime.fromtimestamp(
-                                float(data['sys_timestamp'])).strftime("%d/%B/%Y"),
-                            'sys_timestamp': datetime.datetime.fromtimestamp(
-                                float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                            'description': data['description']
-                        }
-                        device_list.append(device_events)
-
-                if device_object.sector_configured_on.exists():
-
-                    circuit_id = "N/A"
-                    sector_id = 'N/A'
-
-                    sectors = Sector.objects.filter(sector_configured_on=device_object.id).values("id", "sector_id", "base_station")
-                    sector_id_list = [x["id"] for x in sectors]
-                    sector_id = ", ".join(map( str, [ x["sector_id"] for x in sectors ] ))
-
-                    circuits = Circuit.objects.filter(sector__in= sector_id_list).values("circuit_id")
-                    if len(circuits):
-                        circuits_id_list = [x["circuit_id"] for x in circuits]
-                        circuit_id = ",".join(map(lambda x: str(x), circuits_id_list ))
-
-                    device_base_station = BaseStation.objects.get(id= sectors[0]["base_station"] )
-                    #only display warning or critical devices
-                    if severity_level_check(list_to_check=[data['severity'], data['description']]):
-                        ddata = {
-                            'device_name': data['device_name'],
-                            # 'device_technology': DeviceTechnology.objects.get(id=device_object.device_technology).alias,
-                            'device_type': DeviceType.objects.get(id= device_object.device_type).alias,
-                            'severity': data['severity'],
-                            'circuit_id': circuit_id,
-                            'sector_id': sector_id,
-                            'base_station': device_base_station.name,
-                            'city': City.objects.get(id=device_base_station.city).city_name if device_base_station.city else 'N/A',
-                            'state': State.objects.get(id=device_base_station.state).state_name if device_base_station.state else "N/A",
-                            'current_value': data['current_value'],
-                            'max_value':data['max_value'],
-                            'sys_timestamp': datetime.datetime.fromtimestamp(
-                                float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                            'description': data['description']
-                        }
-                        #If service tab is requested then add an another key:data_source_name to render in the data table.
-                        # if 'service' in self.request.path_info:
-                        #     ddata.update({'data_source_name': data['data_source']})
-                        device_list.append(ddata)
-
-            sorted_device_list = sorted(device_list, key=itemgetter('sys_timestamp'), reverse=True)
-            return sorted_device_list
-
-        return device_list
+        return sorted_device_list
 
     def prepare_results(self, qs):
         """
@@ -1592,7 +1495,7 @@ class SingleDeviceAlertDetails(View):
         :return list of network devices
         """
         organization_customer_devices= Device.objects.filter(
-                                       ~Q(device_technology = int(P2P.ID)),
+                                       ~Q(device_technology = int(settings.P2P.ID)),
                                        is_added_to_nms=1,
                                        is_deleted=0,
                                        organization__in= organizations_ids)
@@ -1750,7 +1653,7 @@ def severity_level_check(list_to_check):
 
     :return:
     """
-    severity_check = ['DOWN', 'CRITICAL', 'WARNING', 'UNKNOWN', "WARN", "CRIT"]
+    severity_check = ['DOWN', 'CRITICAL', 'WARNING', "WARN", "CRIT"]
     for item in list_to_check:
         for severity in severity_check:
             if severity in item:
@@ -1834,3 +1737,230 @@ def dict_fetchall(cursor):
         dict(zip([col[0] for col in desc], row))
         for row in cursor.fetchall()
     ]
+
+
+def filter_customer_devices(logged_in_user, data_tab = None):
+
+    """
+
+    :param logged_in_user: authenticated user
+    :param data_tab: the technology user wants to retrive
+    :return: the list of devices that user has been assigned via organization
+    """
+    if logged_in_user.role.values_list('role_name', flat=True)[0] == 'admin':
+        organizations = list(logged_in_user.organization.get_descendants(include_self=True))
+    else:
+        organizations = [logged_in_user.organization]
+
+    organization_devices = list()
+    device_tab_technology = data_tab ##
+    device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
+
+    #there are two cases
+    #1. point to point as POP TCLPTPPOP : 9
+    #2. point to point : P2P : ID: 2
+
+    #if these points get covered. then show all the elements here.
+
+    #special case is : Circuit - circuit_type = Backhaul
+    #the elements PTP of this circuit type must be present only in NETWORK
+
+    is_p2p = False
+
+    device_technology_ids_ptp = [device_technology_id]
+
+    if device_technology_id in [settings.P2P.ID, settings.TCLPTPPOP.ID]:
+        #this means that device is PTP or TCL PTP POP
+        is_p2p = True
+        device_technology_ids_ptp.append(settings.TCLPTPPOP.ID)
+
+    # sector_configured_on_devices_ids=[]
+    if is_p2p:
+        #now since PTP devices are in place. Lets check for CIRCUITS which are of type backhaul
+        #and get the device ids collected from there as well
+        circuit_objects = Circuit.objects.filter(circuit_type__icontains="Backhaul")
+        collection_ptp_as_bh = []
+        try:
+            if len(circuit_objects):
+                for circuit_object in circuit_objects:
+                    try:
+                        #add sector object
+                        collection_ptp_as_bh.append(circuit_object.sector.sector_configured_on_id)
+                    except Exception as e:
+                        #database incorrect
+                        logger.exception(e)
+                        pass
+                    try:
+                        #add sub station
+                        collection_ptp_as_bh.append(circuit_object.sub_station.device_id)
+                    except Exception as e:
+                        #database incorrect
+                        logger.exception(e)
+                        pass
+
+        except Exception as e:
+            #well this is database problem.
+            #how can there be multiple devices on same substation ?
+            #how can there be multiple device on same sector !!!
+            logger.exception(e)
+            pass
+
+        for organization in organizations:
+            organization_devices += Device.objects.exclude(id__in=collection_ptp_as_bh).\
+                filter(is_added_to_nms=1,
+                       is_deleted = 0,
+                       organization__id=organization.id,
+                       device_technology__in=device_technology_ids_ptp
+            )
+
+            # get the devices in an organisation which are added for monitoring
+            organization_devices = [ {'device_name': device.device_name, 'machine_name': device.machine.name}
+                                     for device in organization_devices
+                                     if device.substation_set.exists()
+                                     or device.sector_configured_on.exists()
+            ]
+    else:
+        #technology WiMax and PMP should behave normally
+        for organization in organizations:
+            organization_devices += Device.objects.filter(is_added_to_nms=1,
+                                                          is_deleted=0,
+                                                          organization__id=organization.id,
+                                                          device_technology=device_technology_id)
+
+            # get the devices in an organisation which are added for monitoring
+            organization_devices = [ {'device_name': device.device_name, 'machine_name': device.machine.name}
+                                     for device in organization_devices if device.substation_set.exists()
+            ]
+
+
+    return organization_devices
+
+def filter_machines(organization_devices):
+    # Unique machine from the sector_configured_on_devices
+    """
+
+    :param organization_devices: get the organisation devices
+    :return: machine wise unique list of devices
+    """
+    unique_machine_list = { device['machine_name']: True for device in organization_devices }.keys()
+
+    machine_dict = dict()
+    # Creating the machine as a key and device_name as a list for that machine.
+    for machine in unique_machine_list:
+        machine_dict[machine] = [ device['device_name'] for device in organization_devices if
+                                  device['machine_name'] == machine ]
+
+    return machine_dict
+
+
+def prepare_customer_results(device_list, performance_data):
+
+    for data in performance_data:
+        device_object = Device.objects.get(device_name=data['device_name'])
+        device_type = DeviceType.objects.get(id=device_object.device_type).alias
+        #first assume that device is
+        #substation
+        city_objects = None
+        state_object = None
+        circuit_objects = None
+        basestation_objects = None
+        sector_objects = None
+
+        try:
+            city_objects = City.objects.prefetch_related('state').get(id=device_object.city)
+            state_object = city_objects.state
+        except Exception as e:
+            logger.exception(e)
+            pass
+
+        if device_object.substation_set.exists():
+            device_substation_objects = device_object.substation_set.filter()
+
+            if len(device_substation_objects):
+                device_substation_object = device_substation_objects[0]
+
+                try:
+                    circuit_objects = device_substation_object.circuit_set.filter()
+                    if len(circuit_objects):
+                        circuit_object = circuit_objects[0]
+                        sector_objects = circuit_object.sector
+                        basestation_objects = sector_objects.base_station
+                except Exception as e:
+                    #database is in correct
+                    # we either have multiple circuits present on the same device. that is same
+                    #substation is serving more than one circuit
+                    #which is not right. CIRCUIT strictly means (BS) -*- (sector) -1- CIRCUIT -1- (ss)
+                    logger.exception(e)
+                    pass
+
+                if severity_level_check(list_to_check=[data['severity'], data['description']]):
+                    ##check the severity levels
+                    device_events = {
+                        'device_name': data["device_name"],
+                        'device_type': device_type,
+                        'severity': data['severity'],
+                        #'ip_address': data["ip_address"],
+                        'base_station': basestation_objects.name if basestation_objects else "N/A",
+                        'circuit_id': circuit_object.circuit_id if circuit_objects else "N/A",
+                        'sector_id': sector_objects.sector_id if sector_objects else "N/A",
+                        'city': city_objects.city_name if city_objects else "N/A",
+                        'state': state_object.state_name if state_object else "N/A",
+                        'data_source_name': data["data_source"],
+                        'current_value': data["current_value"],
+                        'max_value': data["max_value"],
+                        'sys_timestamp': datetime.datetime.fromtimestamp(
+                            float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                        'description': data['description']
+                        }
+                    device_list.append(device_events)
+        else:
+            #now that we are sure the device is not in sector
+            #so this must be the PTP Near End Device
+            if device_object.sector_configured_on.exists():
+                #alright near end device. surrender now
+                device_sector_objects = device_object.sector_configured_on.filter()
+                if len(device_sector_objects):
+                    device_sector_object = device_sector_objects[0] #yay!
+                    try:
+                        circuit_objects = device_sector_object.circuit_set.filter()
+                        if len(circuit_objects):
+                            circuit_object = circuit_objects[0]
+                            try:
+                                sector_objects = circuit_object.sector
+                                basestation_objects = sector_objects.base_station
+                            except Exception as e:
+                                #database is in correct
+                                # we either have multiple circuits present on the same device. that is same
+                                #substation is serving more than one circuit
+                                #which is not right. CIRCUIT strictly means (BS) -*- (sector) -1- CIRCUIT -1- (ss)
+                                logger.exception(e)
+                                pass
+                        if severity_level_check(list_to_check=[data['severity'], data['description']]):
+                            ##check the severity levels
+                            device_events = {
+                                'device_name': data["device_name"],
+                                'device_type': device_type,
+                                'severity': data['severity'],
+                                #'ip_address': data["ip_address"],
+                                'base_station': basestation_objects.name if basestation_objects else "N/A",
+                                'circuit_id': circuit_object.circuit_id if circuit_objects else "N/A",
+                                'sector_id': sector_objects.sector_id if sector_objects else "N/A",
+                                'city': city_objects.city_name if city_objects else "N/A",
+                                'state': state_object.state_name if state_object else "N/A",
+                                'data_source_name': data["data_source"],
+                                'current_value': data["current_value"],
+                                'max_value': data["max_value"],
+                                'sys_timestamp': datetime.datetime.fromtimestamp(
+                                    float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+                                'description': data['description']
+                                }
+                            device_list.append(device_events)
+                    except Exception as e:
+                        logger.exception(e)
+                        pass
+                else:
+                    pass
+            else:
+                pass
+
+    return device_list
