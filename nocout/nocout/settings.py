@@ -215,7 +215,7 @@ LOGGING = {
         'logfile': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join( BASE_DIR,'nocout_main.log' ),
+            'filename': os.path.join( '/tmp/nocout_main.log' ),
             'maxBytes': 1000000000,
             'backupCount':10,
             'formatter': 'verbose',
