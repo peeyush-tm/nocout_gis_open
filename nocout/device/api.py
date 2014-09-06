@@ -57,7 +57,7 @@ class DeviceStatsApi(View):
                         self.result['data']['meta']['total_count']= total_count
                         self.result['data']['meta']['limit']= GIS_MAP_MAX_DEVICE_LIMIT
                         self.result['data']['objects']= {"id" : "mainNode", "name" : "mainNodeName", "data" :
-                                                                { "unspiderfy_icon" : "static/img/marker/slave01.png" }
+                                                                { "unspiderfy_icon" : "static/img/icons/bs.png" }
                                                         }
                         self.result['data']['objects']['children']=list()
                         for base_station_id, dcount in base_stations_and_sector_configured_on_devices:
