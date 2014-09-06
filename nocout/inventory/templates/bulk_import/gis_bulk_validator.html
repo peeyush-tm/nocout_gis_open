@@ -16,6 +16,9 @@
 {% block content %}
     <h5><b>File Name:</b> {{ filename }}</h5>
     <h5><b>Sheet Name:</b> {{ sheet_name }}</h5>
+    {% if error_message %}
+        <h5>{{ error_message }}</h5>
+    {% endif %}
     <br />
     <div class="box border lite" style="overflow-x: auto; background: #fff;">
         <div id="tableContainer_div1" class="box-title">

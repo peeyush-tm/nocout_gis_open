@@ -2,6 +2,7 @@ import ast
 import copy
 from operator import itemgetter
 from django.contrib.auth.models import User
+from os.path import basename
 from django.views.generic.base import View
 import re
 from django.contrib.auth.decorators import permission_required
@@ -2394,7 +2395,7 @@ class ThematicSettingsListingTable(BaseDatatableView):
             user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=dct['id']).user.values_list('id', flat=True)
             checkbox_checked_true='checked' if user_current_thematic_setting else ''
             dct.update(
-                icon_settings= full_stNtrring,
+                icon_settings= full_string,
                 user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(dct['id']),
                 actions='<a href="/thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
@@ -2604,9 +2605,10 @@ class GISInventoryBulkImport(FormView):
     form_class = GISInventoryBulkImportForm
 
     def form_valid(self, form):
-        # print "************************ form_valid **********************", form
+        # get uploaded file
         uploaded_file = self.request.FILES['file_upload']
 
+        # used in checking headers of excel sheet
         # dictionary containing all 'pts bs' fields
         ptp_bs_fields = ['City', 'State', 'Ckt ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
                          'Qos(BW)', 'Latitude', 'Longititude', 'Antenna height', 'Polarisation', 'Antenna Type',
@@ -2662,6 +2664,7 @@ class GISInventoryBulkImport(FormView):
         ss_sheet = ""
         ptp_sheet = ""
 
+        # fetching values form POST
         try:
             bs_sheet = self.request.POST['bs_sheet'] if self.request.POST['bs_sheet'] else ""
             ss_sheet = self.request.POST['ss_sheet'] if self.request.POST['ss_sheet'] else ""
@@ -2669,12 +2672,18 @@ class GISInventoryBulkImport(FormView):
         except Exception as e:
             logger.info(e.message)
 
-        # print "***************** bs_sheet - ", bs_sheet
-        # print "***************** ss_sheet - ", ss_sheet
-        # print "***************** ptp_sheet - ", ptp_sheet
-
         # reading workbook using 'xlrd' module
-        book = xlrd.open_workbook(uploaded_file.name, file_contents=uploaded_file.read())
+        try:
+            book = xlrd.open_workbook(uploaded_file.name, file_contents=uploaded_file.read())
+        except Exception as e:
+            print "********************************* On opening xlrd- ", e.message
+            return render_to_response('bulk_import/gis_bulk_validator.html', {'headers': "",
+                                                                              'filename': uploaded_file.name,
+                                                                              'sheet_name': "",
+                                                                              'valid_rows': "",
+                                                                              'invalid_rows': "",
+                                                                              'error_message': "There is some internel error in sheet."},
+                                      context_instance=RequestContext(self.request))
 
         # execute only if a valid sheet is selected from form
         if bs_sheet or ss_sheet or ptp_sheet:
@@ -2691,25 +2700,18 @@ class GISInventoryBulkImport(FormView):
                 sheet = ""
                 sheet_name = ""
 
-            # print "***************** sheet - ", sheet
-            # print "***************** no. of rows - ", sheet.nrows
-            # print "***************** 1st row - ", sheet.row(0)
             keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols)]
-            # print "&&&&&&&&&&&&&&&&&"
-            # print len(keys)
-            # print "&&&&&&&&&&&&&&&&&"
+
             keys_list = [x.encode('utf-8').strip() for x in keys]
-            print "******************** keys_list - ", keys_list
+
             valid_rows_dicts = []
             invalid_rows_dicts = []
             valid_rows_lists = []
             invalid_rows_lists = []
+
             for row_index in xrange(1, sheet.nrows):
                 d = {keys[col_index].encode('utf-8').strip(): sheet.cell(row_index, col_index).value
                      for col_index in xrange(sheet.ncols)}
-                # print "***************************************************"
-                # print str(d['Make of Antenna'])
-                # print "***************************************************"
 
                 # wimax bs fields but common with pmp bs
                 if 'City' in d.keys():
@@ -3101,7 +3103,6 @@ class GISInventoryBulkImport(FormView):
                     logger.info(e.message)
 
                 # 'antenna height' validation (must be upto 2 decimal places)
-                # print "******************************* antenna height ********************************", ss_antenna_height, type(ss_antenna_height)
                 try:
                     if antenna_height:
                         if not re.match(regex_upto_two_dec_places, str(antenna_height).strip()):
@@ -3123,8 +3124,6 @@ class GISInventoryBulkImport(FormView):
 
                 # 'azimuth' validation (must be in range 0-360)
                 try:
-                    print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& azimuth - ", int(azimuth)
-                    print "************************************************ type(azimuth)", type(azimuth)
                     if int(azimuth) not in azimuth_angles_list:
                         errors += 'Azimuth must be in range 0-360.\n'
                     elif int(azimuth) in azimuth_angles_list:
@@ -3373,7 +3372,6 @@ class GISInventoryBulkImport(FormView):
                 except Exception as e:
                     logger.info(e.message)
 
-                # print "************************************** qos(bw) ****************************", qos_bw, type(qos_bw)
                 # 'qos_bw' validation (must be numeric)
                 try:
                     if qos_bw:
@@ -3459,6 +3457,14 @@ class GISInventoryBulkImport(FormView):
                 except Exception as e:
                     logger.info(e.message)
 
+                # 'lens or reflector' validation (must be from provided list)
+                try:
+                    if lens_or_reflector:
+                        if lens_or_reflector.strip().lower() not in [x.lower() for x in yes_or_no]:
+                            errors += '{} is not a valid option for lens/reflector.\n'.format(lens_or_reflector)
+                except Exception as e:
+                    logger.info(e.message)
+
                 # # 'ttsl circuit id' validation
                 # # (can only contains alphanumeric, underscore, space, comma)
                 # if ttsl_circuit_id:
@@ -3478,40 +3484,19 @@ class GISInventoryBulkImport(FormView):
                 except Exception as e:
                     logger.info(e.message)
 
-                # print "&&&&&&&&&&&&&&&&&"
-                # print len(d)
-                # print "&&&&&&&&&&&&&&&&&"
-                # print d
-                # print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
-            # print "Valid - "
-            for row in valid_rows_dicts:
-                #print "It's valid."
-                #print "**********************************"
-                #print row
-                pass
-            # print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"
-            # print "\n\n\n\n\n\n\n\n\n"
-            # print "InValid - "
-            for row in invalid_rows_dicts:
-                #print "**********************************"
-                #print row
-                pass
-            hello = "Hello"
             keys_list.append('errors')
             for val in valid_rows_dicts:
-                # print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ val - ", val
                 temp_list = list()
                 for key in keys_list:
                     temp_list.append(val[key])
                 valid_rows_lists.append(temp_list)
+
             for val in invalid_rows_dicts:
-                # print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ val - ", val
                 temp_list = list()
                 for key in keys_list:
                     temp_list.append(val[key])
                 invalid_rows_lists.append(temp_list)
-            # print "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ invalid_rows_lists - ", invalid_rows_lists
-            # print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ keys_list- ", keys_list
+
             self.request.session['headers'] = keys_list
             self.request.session['valid_rows_lists'] = valid_rows_lists
             self.request.session['invalid_rows_lists'] = invalid_rows_lists
@@ -3528,71 +3513,45 @@ class GISInventoryBulkImport(FormView):
 
 class ExcelWriterRowByRow(View):
     def get(self, request):
-        filename = request.GET['filename']
+        filename = request.GET['filename'].split(".")[0]
         sheetname = request.GET['sheetname']
         sheettype = request.GET['sheettype']
 
-        print "*********************************** sheettype - ", sheettype
-        print "*********************************** sheetname - ", sheetname
-        print "*********************************** filename - ", filename
-        # print "*********************************** content  - ", request.session['valid_rows_lists']
-
         if sheettype == repr('valid'):
             content = request.session['valid_rows_lists']
-            filename = "valid_{}_{}".format(sheetname.lower().replace(" ", "_"), filename.lower().replace(" ", "_"))
+            filename = "valid_{}_{}.xls".format(sheetname.lower().replace(" ", "_"), filename.lower().replace(" ", "_"))
         elif sheettype == repr('invalid'):
             content = request.session['invalid_rows_lists']
-            filename = "invalid_{}_{}".format(sheetname.lower().replace(" ", "_"), filename.lower().replace(" ", "_"))
+            filename = "invalid_{}_{}.xls".format(sheetname.lower().replace(" ", "_"), filename.lower().replace(" ", "_"))
         else:
             content = ""
-
-        print "*********************************** content - ", content
-
-        # print "************************************ content - ", content
-        # print "******************************* valid request.session - ", request.session['valid_rows_lists']
-        # print "******************************* invalid request.session - ", request.session['invalid_rows_lists']
-        # print "***************************** request.session['headers'] - ", request.session['headers']
-
-        # strs = content.replace('[', '').split('],')
-        # lists = [map(str, s.replace(']', '').split(',')) for s in strs]
-
-        # print "************************************** request.session['headers'] - ", request.session['headers']
 
         wb = xlwt.Workbook()
         ws = wb.add_sheet(sheetname)
 
         style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
         style_errors = xlwt.easyxf('pattern: pattern solid, fore_colour red;' 'font: colour white, bold True;')
-        # style.alignment.wrap = 1
-
-        # print "*********************************** colors - ", xlwt.XFStyle
 
         try:
             for i, col in enumerate(request.session['headers']):
-                # print "******************* 0, j - col : 0, {} - {}".format(i, col, style)
                 if col != 'errors':
                     ws.write(0, i, col, style)
                 else:
                     ws.write(0, i, col, style_errors)
-
         except Exception as e:
-            # print "########################################"
-            print e.message
+            logger.info(e.message)
 
         try:
             for i, l in enumerate(content):
                 i += 1
                 for j, col in enumerate(l):
-                    # print "******************* i, j - col : {}, {} - {}".format(i, j, col)
                     ws.write(i, j, col)
         except Exception as e:
-            # print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
-            print e.message
+            logger.info(e.message)
+
         response = HttpResponse(mimetype='application/vnd.ms-excel')
-        print "************************************** filename_in_end - ", filename
         response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
 
-        # wb.save('/home/priyesh/Downloads/test2.xlsx')
         wb.save(response)
 
         return response
