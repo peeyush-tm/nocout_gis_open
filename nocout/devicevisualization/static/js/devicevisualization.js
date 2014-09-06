@@ -438,7 +438,7 @@ $("#point_remove").click(function(e) {
         $("#freeze_remove").removeClass("hide");
     }
 
-    networkMapInstance.freezeDevices_gmap();
+    // networkMapInstance.freezeDevices_gmap();
  });
 
  /**
@@ -452,7 +452,7 @@ $("#freeze_remove").click(function(e) {
         $("#freeze_remove").addClass("hide");
     }
 
-    networkMapInstance.unfreezeDevices_gmap();
+    // networkMapInstance.unfreezeDevices_gmap();
 });
 
 /**

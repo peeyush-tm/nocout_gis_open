@@ -1,6 +1,7 @@
 import ast
 import copy
 from operator import itemgetter
+from django.contrib.auth.models import User
 from os.path import basename
 from django.views.generic.base import View
 import re
@@ -11,7 +12,7 @@ from actstream import action
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect, HttpResponse
 from django.utils.decorators import method_decorator
-from django.views.generic import ListView, DetailView, TemplateView
+from django.views.generic import ListView, DetailView, TemplateView, View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -2128,8 +2129,8 @@ class ThresholdConfigurationList(ListView):
             {'mData': 'name',                           'sTitle': 'Name',                   'sWidth': 'null'},
             {'mData': 'alias',                          'sTitle': 'Alias',                  'sWidth': 'null'},
             {'mData': 'live_polling_template__alias',   'sTitle': 'Live Polling Template',  'sWidth': 'null'},
-            {'mData': 'warning',                        'sTitle': 'Warning',                'sWidth': 'null'},
-            {'mData': 'critical',                       'sTitle': 'Critical',               'sWidth': 'null'},
+            # {'mData': 'warning',                        'sTitle': 'Warning',                'sWidth': 'null'},
+            # {'mData': 'critical',                       'sTitle': 'Critical',               'sWidth': 'null'},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
@@ -2145,8 +2146,8 @@ class ThresholdConfigurationListingTable(BaseDatatableView):
     Class based View to render ThresholdConfiguration Data table.
     """
     model = ThresholdConfiguration
-    columns = ['name', 'alias', 'live_polling_template__alias', 'warning', 'critical']
-    order_columns = ['name', 'alias', 'live_polling_template__alias', 'warning', 'critical']
+    columns = ['name', 'alias', 'live_polling_template__alias']
+    order_columns = ['name', 'alias', 'live_polling_template__alias']
 
     def filter_queryset(self, qs):
         """
@@ -2325,10 +2326,9 @@ class ThematicSettingsList(ListView):
             {'mData': 'name',                    'sTitle': 'Name',                      'sWidth': 'null'},
             {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'null'},
             {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'null'},
-            {'mData': 'gt_warning__name',        'sTitle': '> Warning',                 'sWidth': 'null'},
-            {'mData': 'bt_w_c__name',            'sTitle': 'Warning > > Critical',      'sWidth': 'null'},
-            {'mData': 'gt_critical__name',       'sTitle': '> Critical',                'sWidth': 'null'},
-            ]
+            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'null'},
+            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'null'},]
+
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
         if 'admin' in user_role or 'operator' in user_role:
@@ -2343,8 +2343,8 @@ class ThematicSettingsListingTable(BaseDatatableView):
     Class based View to render Thematic Settings Data table.
     """
     model = ThematicSettings
-    columns = ['name', 'alias', 'threshold_template', 'gt_warning__name', 'bt_w_c__name', 'gt_critical__name']
-    order_columns = ['name', 'alias', 'threshold_template', 'gt_warning__name', 'bt_w_c__name', 'gt_critical__name']
+    columns = ['name', 'alias', 'threshold_template', 'icon_settings']
+    order_columns = ['name', 'alias', 'threshold_template']
     def filter_queryset(self, qs):
         """
         The filtering of the queryset with respect to the search keyword entered.
@@ -2384,7 +2384,20 @@ class ThematicSettingsListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+            image_string, range_text, full_string='','',''
+            if dct['icon_settings'] and dct['icon_settings'] !='NULL':
+                for d in eval(dct['icon_settings']):
+                    image_string= '<img src=/static/img/{0} style="height:25px; width:25px">'.format(d.values()[0])
+                    range_text= ' Range '+ d.keys()[0][-1] +', '
+                    full_string+= image_string + range_text
+            else:
+                full_string='N/A'
+            user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=dct['id']).user.values_list('id', flat=True)
+            checkbox_checked_true='checked' if user_current_thematic_setting else ''
+            dct.update(
+                icon_settings= full_string,
+                user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(dct['id']),
+                actions='<a href="/thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
@@ -2449,7 +2462,11 @@ class ThematicSettingsCreate(CreateView):
         """
         Submit the form and to log the user activity.
         """
+        icon_settings_keys= list(set(form.data.keys())-set(form.cleaned_data.keys()+['csrfmiddlewaretoken']))
+        icon_settings_values_list=[ { key: form.data[key] }  for key in icon_settings_keys if form.data[key]]
         self.object = form.save()
+        self.object.icon_settings=icon_settings_values_list
+        self.object.save()
         action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(ThematicSettingsCreate.success_url)
 
@@ -2506,7 +2523,82 @@ class ThematicSettingsDelete(DeleteView):
         return super(ThematicSettingsDelete, self).dispatch(*args, **kwargs)
 
 
-#************************************ GIS Inventory Bulk Import ******************************************
+class Get_Threshold_Ranges_And_Icon_For_Thematic_Settings(View):
+    """
+    The Class Based View to Response the Ajax call on click to return the respective
+    ranges for the  threshold_template_id selected in the template.
+    """
+
+    def get(self, request):
+
+        self.result = {
+            "success": 0,
+            "message": "Threshold range not fetched.",
+            "data": {
+                "meta": None,
+                "objects": {}
+            }
+        }
+
+        threshold_template_id= self.request.GET.get('threshold_template_id','')
+        if threshold_template_id:
+           threshold_configuration_selected=ThresholdConfiguration.objects.get(id=int(threshold_template_id))
+           self.get_all_ranges(threshold_configuration_selected)
+           if self.result['data']['objects']['range_list']:
+              self.get_icon_details()
+              self.result['success']=1
+           return HttpResponse(json.dumps(self.result))
+        else:
+           return HttpResponse(json.dumps(self.result))
+
+    def get_all_ranges(self, threshold_configuration_object):
+        range_list=list()
+        for ran in range(1, 11):
+
+            range_start= None
+
+            query= "range_start= threshold_configuration_object.range{0}_{1}".format(ran, 'start')
+            exec query
+            if range_start:
+               range_list.append('range {0}'.format(ran))
+
+        self.result['data']['objects']['range_list'] = range_list
+
+    def get_icon_details(self):
+        icon_details= IconSettings.objects.all().values('id','name', 'upload_image')
+        self.result['data']['objects']['icon_details'] =list(icon_details)
+
+
+class Update_User_Thematic_Setting(View):
+    """
+    The Class Based View to Response the Ajax call on click to bind the user with the thematic setting.
+    """
+    def get(self, request):
+        self.result = {
+            "success": 0,
+            "message": "Thematic Setting Not Bind to User",
+            "data": {
+                "meta": None,
+                "objects": {}
+            }
+        }
+
+        thematic_setting_id= self.request.GET.get('threshold_template_id',None)
+        if thematic_setting_id:
+
+            old_entries=ThematicSettings.objects.filter(user__in= [self.request.user])
+            for entries in old_entries:
+                entries.user.remove(self.request.user)
+
+            ThematicSettings.objects.get(id= int(thematic_setting_id)).user.add(self.request.user)
+            self.result['success']=1
+            self.result['message']='Thematic Setting Bind to User Successfully'
+            self.result['data']['objects']['username']=self.request.user.userprofile.username
+            self.result['data']['objects']['thematic_setting_name']= ThematicSettings.objects.get(id=int(thematic_setting_id)).name
+
+        return HttpResponse(json.dumps(self.result))
+
+#************************************ GIS Inventory Bulk Upload ******************************************
 class GISInventoryBulkImport(FormView):
     template_name = 'bulk_import/gis_bulk_import.html'
     success_url = '/bulk_import/gis_inventory/'
