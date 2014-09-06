@@ -13,6 +13,10 @@ from django.contrib import admin
 
 admin.autodiscover()
 
+handler404 = 'nocout.views.handler404'
+handler500 = 'nocout.views.handler500'
+handler403 = 'nocout.views.handler403'
+
 urlpatterns = patterns('',
                        url(r'^$', RedirectView.as_view(url='login/')),
                        url(r'^home/', 'home.views.home'),

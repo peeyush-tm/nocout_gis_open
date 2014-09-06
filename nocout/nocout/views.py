@@ -8,10 +8,37 @@ from django.contrib.auth.models import User
 from nocout import settings
 from session_management.models import Visitor
 
+##error pages
+from django.shortcuts import render_to_response
+from django.template import RequestContext
+##error pages
 
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+
+##error pages
+def handler404(request):
+    response = render_to_response('nocout/404.html', {},
+                                  context_instance=RequestContext(request))
+    response.status_code = 404
+    return response
+
+##error pages
+def handler500(request):
+    response = render_to_response('nocout/500.html', {},
+                                  context_instance=RequestContext(request))
+    response.status_code = 500
+    return response
+
+##error pages
+def handler403(request):
+    response = render_to_response('nocout/403.html', {},
+                                  context_instance=RequestContext(request))
+    response.status_code = 403
+    return response
 
 
 @csrf_protect
