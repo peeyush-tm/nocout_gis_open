@@ -82,7 +82,7 @@ var mapInstance = "",
 	isFreeze = 0;
     map_points_array = [];
     map_point_count = 0, sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 6, zoomAfterRightClickComes= 10, fresnelData= {}, sectorMarkersMasterObj= {},
-    tempFilteredData=[], markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}};
+    tempFilteredData=[], markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}};
 var defaultIconSize= 'medium';
 
 var place_markers = [];
@@ -672,25 +672,27 @@ function devicePlottingClass_gmap() {
 		    	icon 	  	     : '',
 		    	oldIcon 	     : '/static/img/icons/bs.png',
 		    	pointType	     : stationType,
-				child_ss   	     : bs_ss_devices[i].data.param.sector,
-				original_sectors : bs_ss_devices[i].data.param.sector,
-				dataset 	     : bs_ss_devices[i].data.param.base_station,
-				device_name 	 : bs_ss_devices[i].data.device_name,
-				bsInfo 			 : bs_ss_devices[i].data.param.base_station,
-				bhInfo 			 : bs_ss_devices[i].data.param.backhual,
-				bs_name 		 : bs_ss_devices[i].name,
-				name 		 	 : bs_ss_devices[i].name,
-				antenna_height    : bs_ss_devices[i].data.antenna_height,
-				zIndex 			 : 200,
-                optimized 		 : false,
-                markerType: 'BS'
-			};
+		    	child_ss   	     : bs_ss_devices[i].data.param.sector,
+		    	original_sectors : bs_ss_devices[i].data.param.sector,
+		    	dataset 	     : bs_ss_devices[i].data.param.base_station,
+		    	device_name 	 : bs_ss_devices[i].data.device_name,
+		    	bsInfo 			 : bs_ss_devices[i].data.param.base_station,
+		    	bhInfo 			 : bs_ss_devices[i].data.param.backhual,
+		    	bs_name 		 : bs_ss_devices[i].name,
+		    	name 		 	 : bs_ss_devices[i].name,
+		    	antenna_height    : bs_ss_devices[i].data.antenna_height,
+		    	zIndex 			 : 200,
+		    	optimized 		 : false,
+		    	markerType: 'BS'
+		    };
 
 			/*Create BS Marker*/
 		    var bs_marker = new google.maps.Marker(bs_marker_object);
 
 		    //Add markers to markersMasterObj with LatLong at key so it can be fetched later.
 		    markersMasterObj['BS'][String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= bs_marker;
+		    markersMasterObj['BSNamae'][String(bs_ss_devices[i].name)]= bs_marker;
+
 		    /*
 		    Add Context menu event to the marker
 		     */
@@ -751,8 +753,8 @@ function devicePlottingClass_gmap() {
 						ptLat 		     : bs_ss_devices[i].data.lat,
 						ptLon 		     : bs_ss_devices[i].data.lon,
 						icon: 'http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
-						oldIcon 	  	     : window.location.origin+"/"+sector_array[j].markerUrl,
-						pointType	     : 'sector_Marker',
+						oldIcon: window.location.origin+"/"+sector_array[j].markerUrl,
+						pointType: 'sector_Marker',
 						technology: sector_array[j].technology,
 						vendor: sector_array[j].vendor,
 						deviceExtraInfo: sector_array[j].info,
@@ -3488,22 +3490,22 @@ function devicePlottingClass_gmap() {
 					//Create a new marker Image for BS Marker according to the value selected.
 					markerImage= new google.maps.MarkerImage(
 						iconUrl,
-						new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
+						new google.maps.Size(Math.ceil(largeur/divideBy)-5, Math.ceil(hauteur/divideBy)+5),
 						new google.maps.Point(0, 0), 
 						new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
-						new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)));
+						new google.maps.Size(Math.ceil(largeur/divideBy)-5, Math.ceil(hauteur/divideBy)+5));
 					//Set oldIcon for BS Marker to the new image
 					markerIcon.oldIcon= markerImage;
 					//Else icon is for SSpointType	     : "sub_station",
 				} else if (markerIcon.pointType === "sub_station") {
 					//Create a new marker Image for SS Marker according to the value selected.
-					markerImage= new google.maps.MarkerImage(
-						icon.url,
-						new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
-						new google.maps.Point(0, 0), 
-						new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
-						new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)));
-					//Create a new marker Imge for SS marker according to the value selected for OLD ICON.
+					// markerImage= new google.maps.MarkerImage(
+					// 	icon.url,
+					// 	new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
+					// 	new google.maps.Point(0, 0), 
+					// 	new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
+					// 	new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)));
+					// //Create a new marker Imge for SS marker according to the value selected for OLD ICON.
 					markerImage2= new google.maps.MarkerImage(
 						markerIcon.oldIcon.url,
 						new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
@@ -3511,8 +3513,8 @@ function devicePlottingClass_gmap() {
 						new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
 						new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)));
 					//Set icon to Marker Image
-					markerIcon.setIcon(markerImage);
-					//Set oldIcon to Marker Image
+					markerIcon.setIcon(markerImage2);
+					// //Set oldIcon to Marker Image
 					markerIcon.oldIcon= markerImage2;	
 				}
 			})(masterMarkersObj[i]);

@@ -60,9 +60,78 @@
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
     {% endblock %}
     <script>
+
+        function validateInputRanges() {
+            var rangeObj= {};
+            var validationBit= true;
+            function loopThroughSpecificRange(i) {
+                var startingValue= parseInt($("input#id_range"+i+"_start").val(), 10);
+                var endValue= parseInt($("input#id_range"+i+"_end").val(), 10);
+                if(startingValue && !endValue) {
+                    $("input#id_range"+i+"_end").parent().next().html('Value not filled');
+                    return false;
+                } else {
+                    $("input#id_range"+i+"_end").parent().next().html('');
+                }
+                if(!startingValue && endValue) {
+                    $("input#id_range"+i+"_start").parent().next().html('Value not filled');
+                    return false;
+                } else {
+                    $("input#id_range"+i+"_start").parent().next().html('');
+                }
+                if(startingValue && endValue) {
+                    if(startingValue> endValue) {
+                        $("input#id_range"+i+"_start").parent().next().html('This value is greated than end Value');
+                        $("input#id_range"+i+"_end").parent().next().html('This value is smaller than start Value');
+                        return false;
+                    } else {
+                        $("input#id_range"+i+"_start").parent().next().html('');
+                        $("input#id_range"+i+"_end").parent().next().html('');
+                    }
+                    if(Object.keys(rangeObj).length=== 0) {
+                        rangeObj['range'+i]= [startingValue, endValue];
+                    } else {
+                        console.log(rangeObj);
+                        for(var key in rangeObj) {
+                            if(rangeObj.hasOwnProperty(key)) {
+                                var range= rangeObj[key];
+                                if(startingValue>= range[0] && startingValue <= range[1]) {
+                                    $("input#id_range"+i+"_start").parent().next().html('This value is already repeated in'+ JSON.stringify(range));
+                                    return false; //Starting value lies between range
+                                } else {
+                                    $("input#id_range"+i+"_start").parent().next().html('');
+                                }
+                                if(endValue>= range[0] && endValue <= range[1]) {
+                                    $("input#id_range"+i+"_end").parent().next().html('This value is already repeated in'+ JSON.stringify(range));
+                                    return false; //Starting value lies between range
+                                } else {
+                                    $("input#id_range"+i+"_end").parent().next().html('');
+                                }
+                                rangeObj['range'+i]= [startingValue, endValue];
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+
+            for(var i=1; i<= 10; i++) {
+                if(loopThroughSpecificRange(i)) {
+                    var form_group_div= $("input#id_range"+i+"_start").parent().parent().parent();
+                    $(form_group_div).removeClass('has-error').addClass('has-success');
+                    $(form_group_div).next().removeClass('has-error').addClass('has-success');
+                } else {
+                    var form_group_div= $("input#id_range"+i+"_start").parent().parent().parent();
+                    $(form_group_div).addClass('has-error').removeClass('has-success');
+                    $(form_group_div).next().addClass('has-error').removeClass('has-success');
+                }
+            }
+        }
         $(document).ready(function(){
             // Initialize the select2 selectbox.
             $(".select2select").select2();
+
+
         })
     </script>
 {% endblock %}
