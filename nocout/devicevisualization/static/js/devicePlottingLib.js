@@ -262,7 +262,7 @@ function prepare_oms_object(oms_instance) {
             var lonCount = $.grep(lonArray, function (elem) {return elem === e[i].ptLon;}).length;
 
             if(lonCount > 1 && latCount > 1) {
-                if(e[i].pointType=== "sector_Marker") {
+                if(e[i].pointType === "sector_Marker") {
                     e[i].setOptions({"icon":new google.maps.MarkerImage(
                                     'http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
                                     null,
@@ -2138,6 +2138,7 @@ function devicePlottingClass_gmap() {
             // showRequiredSectorMarker(filteredData);
 
             tempFilteredData= filteredData;
+            isCallCompleted = 1;
             /*Populate the map with the filtered markers*/
             gmap_self.plotDevices_gmap(filteredData,"base_station");
             /*Resetting filter data to Empty.*/
@@ -2195,7 +2196,7 @@ function devicePlottingClass_gmap() {
         		gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps);
         	} else {
         		// earth_instance.applyFilter_earth(appliedFilterObj_gmaps);
-        		earth_instance.applyFilter_earth(appliedFilterObj_gmaps);
+        		gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps);
         	}
         }
         /*If no filter is applied the load all the devices*/
