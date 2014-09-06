@@ -1454,7 +1454,7 @@ function devicePlottingClass_gmap() {
 
 		if(tables.length == 1) {
 			/*Show only 5 rows, hide others*/
-			for(var i=5;i<$(".windowContainer table tbody tr").length;i++) {
+			for(var i=7;i<$(".windowContainer table tbody tr").length;i++) {
 				if($(".windowContainer table tbody tr")[i].className.indexOf("hide") == -1) {
 					$("#more_less_btn").html("More");
 					$(".windowContainer table tbody tr")[i].className = "hide";
