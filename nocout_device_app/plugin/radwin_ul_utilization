@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import re
+import time
 """
 Uplink utilizationPoller script
 
@@ -48,6 +49,7 @@ def check_radwin_ul_utilization(item, _no_params, info):
     state = 3
     infotext = "unknown_value"
     status_list = ['']
+    wrapped =False
     try:
         if info:
             status_list = []
@@ -58,14 +60,21 @@ def check_radwin_ul_utilization(item, _no_params, info):
                 if if_name == None:
                     if_name = "unknown interface name"
 		if_name = re.sub('[^0-9a-zA-Z-_]+', '_', if_name)
-                status_list.append((if_name, saveint(link_in_octets)))
-            for name, in_octets in status_list:
-                infotext += "[%s] ul_utilization:%s" % (name, in_octets)
+		this_time = int(time.time())
+		try:
+                	timedif, rate = get_counter("radwin_ul_utilization.%s" % (if_name), this_time, saveint(link_in_octets))
+		except MKCounterWrapped:
+			wrapped=True
+                status_list.append((if_name, int(rate)))
+            for name, rate in status_list:
+                infotext += "[%s] ul_utilization:%s" % (name, rate)
             state = 0
     except ValueError:
         infotext = "type_mismatch_error"
     except:
-        infotext = "unkown_value"
+        infotext = "unknown_value"
+    if wrapped:
+        infotext = "Counter_wrapped"
     return (state, infotext, status_list)
 
 

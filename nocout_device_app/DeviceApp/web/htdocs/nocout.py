@@ -262,7 +262,7 @@ def addservice():
             snmp_community_list = ast.literal_eval(payload.get('snmp_community'))
             if snmp_community_list.get('version') == 'v1':
                 snmp_community = (snmp_community_list.get('read_community'), [], [payload.get('host')])
-            elif snmp_community_list.get('version') == 'v2c':
+            elif snmp_community_list.get('version') == 'v2':
                 snmp_community = (snmp_community_list.get('read_community'), [], [payload.get('host')])
             elif snmp_community_list.get('version') == 'v3':
                 snmp_community = ((snmp_community_list.get('security_level'),snmp_community_list.get('auth_protocol'),
