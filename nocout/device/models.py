@@ -64,12 +64,20 @@ class DeviceType(models.Model):
     alias = models.CharField('Alias', max_length=200)
     device_port = models.ManyToManyField(DevicePort, null=True, blank=True)
     service = models.ManyToManyField(Service, blank=True, null=True)
-    device_icon = models.CharField('Device Icon', max_length=200, null=True, blank=True)
-    device_gmap_icon = models.CharField('Device GMap Icon', max_length=200, null=True, blank=True)
+    device_icon = models.ImageField(upload_to='uploaded/icons/%Y/%m/%d')
+    device_gmap_icon = models.ImageField(upload_to='uploaded/icons/%Y/%m/%d')
     agent_tag = models.CharField('Agent Tag', max_length=200, null=True, blank=True)
 
     def __unicode__(self):
         return self.name
+
+    def delete(self, *args, **kwargs):
+        """
+        Delete method: deletes the device_icon and device_gmap_icon.
+        """
+        self.device_icon.delete()
+        self.device_gmap_icon.delete()
+        super(DeviceType, self).delete(*args, **kwargs)
 
 
 # device model info table

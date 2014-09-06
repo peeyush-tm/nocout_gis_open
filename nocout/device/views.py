@@ -2956,7 +2956,6 @@ class DeviceTypeUpdate(UpdateView):
         """
         return super(DeviceTypeUpdate, self).dispatch(*args, **kwargs)
 
-
     def form_valid(self, form):
         """
         If the form is valid, redirect to the supplied URL.
