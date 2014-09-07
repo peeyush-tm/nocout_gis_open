@@ -126,7 +126,7 @@ $("#resetFilters").click(function(e) {
             /*Call the make network to create the BS-SS network on the google map*/
             // networkMapInstance.getDevicesData_gmap();
             networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
-            addSubSectorMarkersToOms(main_devices_data_gmaps);
+            // addSubSectorMarkersToOms(main_devices_data_gmaps);
             // showSelectedSubSectorMarkers(sector_MarkersArray);
         }
 
@@ -158,7 +158,7 @@ $("#resetFilters").click(function(e) {
             /*Call the make network to create the BS-SS network on the google map*/
             // networkMapInstance.getDevicesData_gmap();
             networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
-            addSubSectorMarkersToOms(main_devices_data_gmaps);
+            // addSubSectorMarkersToOms(main_devices_data_gmaps);
             // showSelectedSubSectorMarkers(sector_MarkersArray);
         }
     }
@@ -185,6 +185,10 @@ $("#cancelAdvSearchBtn").click(function(e) {
     }
     // advJustSearch.resetVariables();
 });
+
+function resetAdvanceSearch() {
+    $("#resetSearchForm").trigger('click');    
+}
 
 $("#resetSearchForm").click(function(e) {
     $("form#searchInfoModal_form").find('select').each(function(i, el) {
