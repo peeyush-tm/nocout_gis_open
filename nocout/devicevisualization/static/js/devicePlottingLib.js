@@ -224,19 +224,45 @@ function prepare_oms_object(oms_instance) {
         });
 
         /*Reset the marker icon to cluster icon*/
-        for(var i=0;i<e.length;i++) {
-        	var latCount = $.grep(latArray, function (elem) {return elem === e[i].ptLat;}).length;
+        for(var i=0; i< e.length; i++) {
+        	var latCount= $.grep(latArray, function(elem) {return elem=== e[i].ptLat;}).length;
         	var lonCount = $.grep(lonArray, function (elem) {return elem === e[i].ptLon;}).length;
-        	if(lonCount > 1 && latCount > 1) {
-        		if(e[i].pointType=== "sector_Marker") {
-        			e[i].setOptions({"icon":new google.maps.MarkerImage('http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',null,null,null)});
-        		} 
-        		else if(e[i].pointType=== "base_station"){
-        			e[i].setOptions({"icon": e[i].oldIcon});
-        		}else {
-                	e[i].setOptions({"icon":''});
-                }
-            }
+        	if(lonCount> 1 && latCount> 1) {
+        		//change all to cluster icon
+        		e[i].setOptions({"icon": e[i].clusterIcon});
+        	}
+        }
+//         for(var i=0;i<e.length;i++) {
+// <<<<<<< HEAD
+//         	var latCount = $.grep(latArray, function (elem) {return elem === e[i].ptLat;}).length;
+//         	var lonCount = $.grep(lonArray, function (elem) {return elem === e[i].ptLon;}).length;
+//         	if(lonCount > 1 && latCount > 1) {
+//         		if(e[i].pointType=== "sector_Marker") {
+//         			e[i].setOptions({"icon":new google.maps.MarkerImage('http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',null,null,null)});
+//         		} 
+//         		else if(e[i].pointType=== "base_station"){
+//         			e[i].setOptions({"icon": e[i].oldIcon});
+//         		}else {
+// =======
+
+//             var latCount = $.grep(latArray, function (elem) {return elem === e[i].ptLat;}).length;
+//             var lonCount = $.grep(lonArray, function (elem) {return elem === e[i].ptLon;}).length;
+
+//             if(lonCount > 1 && latCount > 1) {
+//                 if(e[i].pointType === "sector_Marker") {
+//                     e[i].setOptions({"icon":new google.maps.MarkerImage(
+//                                     'http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
+//                                     null,
+//                                     null,
+//                                     null
+//                                    )});
+//                 } else if(e[i].pointType === "base_station") {
+//                     e[i].setOptions({"icon":clusterIcon});
+//                 } else {
+// >>>>>>> 600754fd233290a1846083d672cbdda943be05bf
+//                 	e[i].setOptions({"icon":''});
+//                 }
+//             }
 
             for(var j=0;j<ssLinkArray.length;j++) {
                 var pt_type = $.trim(e[i].pointType);
@@ -2085,6 +2111,11 @@ function devicePlottingClass_gmap() {
 
             // showRequiredSectorMarker(filteredData);
 
+<<<<<<< HEAD
+=======
+            tempFilteredData= filteredData;
+            isCallCompleted = 1;
+>>>>>>> 600754fd233290a1846083d672cbdda943be05bf
             /*Populate the map with the filtered markers*/
             gmap_self.plotDevices_gmap(filteredData,"base_station");
             addSubSectorMarkersToOms(filteredData);
@@ -2142,7 +2173,7 @@ function devicePlottingClass_gmap() {
         		gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps);
         	} else {
         		// earth_instance.applyFilter_earth(appliedFilterObj_gmaps);
-        		earth_instance.applyFilter_earth(appliedFilterObj_gmaps);
+        		gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps);
         	}
         }
         /*If no filter is applied the load all the devices*/

@@ -18,7 +18,7 @@
                         </div>
                         <div class="box-body">
                             <div class="col-md-8"><br />
-                                <form action="/type/new/" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                                <form action="/type/new/" method="post" class="form-horizontal" role="form" enctype="multipart/form-data">{% csrf_token %}
                                     <div class="form-group">
                                             {% for field in form %}
                                                 <div class="form-group">
@@ -54,9 +54,24 @@
     </div>
     {% block content_js %}
         <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+        <script type="text/javascript" src={% static "js/bootstrap-file-input/bootstrap-file-input.js" %}></script>
     {% endblock %}
     <script>
         $(document).ready(function(){
+            // Changing labels of form fields
+            $("label[for=id_rta_warning]").text('RTA Warning');
+            $("label[for=id_rta_critical]").text('RTA Critical');
+            $("label[for=id_pl_warning]").text('PL Warning');
+            $("label[for=id_pl_critical]").text('PL Critical');
+
+            // modify image upload field
+            var device_icon = "#id_device_icon";
+            var device_gmap_icon = "#id_device_gmap_icon";
+            $(device_icon).bootstrapFileInput();
+            $(device_icon).prev().text("Search for a file to add");
+            $(device_gmap_icon).bootstrapFileInput();
+            $(device_gmap_icon).prev().text("Search for a file to add");
+
             // Initialize the select2 selectbox.
             $(".select2select").select2();
         })

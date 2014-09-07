@@ -13,6 +13,10 @@ from django.contrib import admin
 
 admin.autodiscover()
 
+handler404 = 'nocout.views.handler404'
+handler500 = 'nocout.views.handler500'
+handler403 = 'nocout.views.handler403'
+
 urlpatterns = patterns('',
                        url(r'^$', RedirectView.as_view(url='login/')),
                        url(r'^home/', 'home.views.home'),
@@ -71,11 +75,11 @@ urlpatterns = patterns('',
 #         url(r'^__debug__/', include(debug_toolbar.urls)),
 #     )
 
-# # url for uploaded files is like
-# # http://localhost:8000/files/icons/mobilephonetower1.png
-# if settings.DEBUG:
-#     urlpatterns += patterns('',
-#         url(r'^files/(?P<path>.*)$', 'django.views.static.serve', {
-#             'document_root': settings.MEDIA_ROOT,
-#         }),
-# )
+# url for uploaded files is like
+# http://localhost:8000/files/icons/mobilephonetower1.png
+if settings.DEBUG:
+    urlpatterns += patterns('',
+                            url(r'^media/(?P<path>.*)$', 'django.views.static.serve', {
+                                'document_root': settings.MEDIA_ROOT,
+                            }),
+    )

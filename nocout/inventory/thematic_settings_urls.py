@@ -10,4 +10,6 @@ urlpatterns = patterns('',
   url(r'^ThematicSettingslistingtable/', views.ThematicSettingsListingTable.as_view(), name='ThematicSettingsListingTable'),
   url(r'^get_range_and_icon_for_thematic_setting/', views.Get_Threshold_Ranges_And_Icon_For_Thematic_Settings.as_view(),
       name='get_range_and_icon_for_thematic_setting'),
+  url(r'^update_user_thematic_setting/', views.Update_User_Thematic_Setting.as_view(),
+      name='update_user_thematic_setting'),
 )

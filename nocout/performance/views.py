@@ -391,7 +391,7 @@ class Performance_Dashboard(View):
         :param request:
         :return Http response object:
         """
-        return render_to_response('performance/perf_dashboard.html')
+        return render_to_response('home/home.html')
 
 
 class Sector_Dashboard(View):
@@ -408,7 +408,7 @@ class Sector_Dashboard(View):
         :return Http response object:
         """
 
-        return render(request, 'performance/sector_dashboard.html')
+        return render(request, 'home/home.html')
 
 
 class Fetch_Inventory_Devices(View):

@@ -62,6 +62,12 @@
     <script>
         $(document).ready(function(){
 
+        function toTitleCase(str) {
+            return str.replace(/(?:^|\s)\w/g, function(match) {
+            return match.toUpperCase();
+        });
+}
+
         var response=0;
         $('#id_threshold_template').on('click', function(){
         var threshold_template_id= $('#id_threshold_template').val();
@@ -78,7 +84,7 @@
                         //select box
                         var select_box='<div class="col-sm-9">' +
                                    '<div class="col-md-8">' +
-                                   '<select class="col-md-12 form-control (1)" id="id_icon_settings_(0)" name="icon_settings">'+
+                                   '<select class="col-md-12 form-control (1)" id="id_icon_settings_(0)" name="icon_settings(0)">'+
                                    '<option value="" selected="selected">Select</option>'
 
                         for(var j=0;j<result.data.objects.icon_details.length;j++){
@@ -90,12 +96,12 @@
                         //range label
                         for(var i=0;i<result.data.objects.range_list.length;i++){
                             html=''
-                            var select=select_box;
+                            var select= select_box;
                             select= select.replace('(1)', 'update'+ result.data.objects.range_list[i].split(' ')[1].toString());
-                            select= select.replace('(0)', result.data.objects.range_list[i].split(' ')[1].toString());
+                            select= select.split('(0)').join(result.data.objects.range_list[i].split(' ')[1].toString());
                             html+='<div class="form-group"><label for="id_range"' +
                                   'class="col-sm-3 control-label">' +
-                                  '<span class="mandatory">*</span>'+ result.data.objects.range_list[i].toString() +
+                                  '<span class="mandatory">*</span>'+ toTitleCase(result.data.objects.range_list[i].toString()) +
                                   '</label>'+ select + '</div>'
 
                         $('#id_threshold_template').parent().parent().parent().after(html)
@@ -139,72 +145,26 @@
         }); //ajax ends
     });
 
-    $('.btn-success').on('click', function(){
-        var total_ids=[]
-        select_option= $('#id_threshold_template').parent().parent().parent().nextAll('div').find('div').find('div').find('select');
-        for (var i=0;i<select_option.length;i++){
-          total_ids.push({ 'i': select_option[i].id , 'value':select_option[i].value,  })
-
-
-
-        }
-    });
-
-
-{#    $('.submit').on('click', '.update',#}
-
-
-
-
-{#$('.form-horizontal').on('click', '.update',#}
-{#        function(){#}
-{#        select_value= $('.update3').val();#}
-{#        select_value= ''#}
+{#    $('.btn-success').on('click', function(){#}
+{#        var total_ids_and_values=[];#}
+{#        if (response.data.objects.range_list.length !=0){#}
+{#            select_option= $('#id_threshold_template').parent().parent().parent().nextAll('div').find('div').find('div').find('select');#}
+{#            element= $('#id_threshold_template').parent().parent().parent().nextAll('div');#}
+{##}
+{#             $(element).each(function(i, el) {#}
+{#                     var selectEl = $(el).find('select');#}
+{#                     var optionwEl= $(el).find('option:selected');#}
+{#                     total_ids_and_values.push({'i': selectEl.attr('id').split('_')[selectEl.attr('id').split('_').length-1] ,#}
+{#                                     'value':optionwEl.val() })#}
+{#            });#}
+{##}
+{#            #}
 {##}
 {##}
 {##}
-{#        });#}
-
-
-
-
-
+{#        }#}
+{#    });#}
 });
-{#    $('[id^="id_icon_settings_"]').click(function(){ alert('hellllll') });#}
-{#    $('#id_icon_settings_3').click(function(){ alert('hellllll') });#}
-{#    $('#id_icon_settings_3').click(function()#}
-{#    {#}
-{#        alert('hellllll')#}
-{#    });#}
-
-
-
-{#var threshold_template_id= $('#id_threshold_template').val();#}
-{#var #}
-{##}
-{##}
-{#$.ajax({#}
-{#    url:'/sm/',#}
-{#    data:{ 'threshold_template_id': threshold_template_id , ''},#}
-{#    dataType:"json",#}
-{#    success : function(){#}
-{#        #}
-{#        #}
-{#        #}
-{#    }#}
-{##}
-{##}
-
-{#    $('#id_icon_settings_3').click(function(){ alert('hello') });#}
-{#    $('[id^="id_icon_settings_"]').click(function(){#}
-{#        alert('hllo')#}
-{#        });#}
-{#    $('[id^="id_icon_settings_"]').click(function(){ alert('hellllll') });#}
-{#    $('#id_icon_settings_3').click(function(){ alert('hellllll') });#}
-{#    $('#id_icon_settings_3').click(function()#}
-{#    {#}
-{#        alert('hellllll')#}
-{#    });#}
 </script>
 {% endblock %}
 
