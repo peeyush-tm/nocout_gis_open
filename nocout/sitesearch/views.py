@@ -15,7 +15,7 @@ from device.models import Device, DeviceType, DeviceVendor, \
 from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 from nocout.utils import logged_in_user_organizations
 logger = logging.getLogger(__name__)
-
+from django.contrib.staticfiles.templatetags.staticfiles import static
 from random import randint
 
 # removing duplicate entries in the dictionaries in a list
@@ -218,20 +218,43 @@ def filter_gis_map(request_query, limit):
 
     return result_list
 
-def tech_marker_url_master(techno):
+def tech_marker_url(device_type, techno, ms=True):
     """
 
     :param techno: technology P2P,
     :return: technology markers
     """
-    if techno == "P2P":
-        return "static/img/icons/mobilephonetower1.png"
-    elif techno == "PMP":
-        return "static/img/icons/mobilephonetower2.png"
-    elif techno == "WiMAX":
-        return "static/img/icons/mobilephonetower3.png"
+    try:
+        dt = DeviceType.objects.get(id = device_type)
+        if len(str(dt.device_gmap_icon)) > 5:
+            img_url = str("media/"+ str(dt.device_gmap_icon)) \
+                if "uploaded" in str(dt.device_gmap_icon) \
+                else "static/img/" + str(dt.device_gmap_icon)
+            return img_url
+        else:
+            return "static/img/icons/mobilephonetower10.png"
+
+    except:
+        return tech_marker_url_master(techno, ms)
+
+
+def tech_marker_url_master(techno, master=True):
+    """
+
+    :param techno: technology P2P,
+    :return: technology markers
+    """
+    if master:
+        if techno == "P2P":
+            return "static/img/icons/mobilephonetower1.png"
+        elif techno == "PMP":
+            return "static/img/icons/mobilephonetower2.png"
+        elif techno == "WiMAX":
+            return "static/img/icons/mobilephonetower3.png"
+        else:
+            return "static/img/marker/icon2_small.png"
     else:
-        return "static/img/marker/icon2_small.png"
+        return tech_marker_url_slave(techno)
 
 def tech_marker_url_slave(techno):
     """
@@ -415,13 +438,14 @@ def prepare_result(base_station_id):
                                                              'radius': sector.cell_radius if sector.cell_radius else 0,
                                                              'azimuth_angle': sector.antenna.azimuth_angle if sector.antenna else 0,
                                                              'beam_width': sector.antenna.beam_width if sector.antenna else 0,
-                                                             "markerUrl": tech_marker_url_master(sector.bs_technology.name) if sector.bs_technology else "static/img/marker/icon2_small.png",
+                                                             # "markerUrl": tech_marker_url_master(sector.bs_technology.name) if sector.bs_technology else "static/img/marker/icon2_small.png",
                                                              'orientation': sector.antenna.polarization if sector.antenna else "vertical",
                                                              'technology':sector.bs_technology.name if sector.bs_technology else 'N/A',
                                                              'vendor': DeviceVendor.objects.get(id=sector.sector_configured_on.device_vendor).name,
                                                              'sector_configured_on':sector.sector_configured_on.device_name,
                                                              'circuit_id':None,
                                                              'antenna_height': sector.antenna.height if sector.antenna else randint(40,70),
+                                                             "markerUrl": tech_marker_url(sector.sector_configured_on.device_type, sector.bs_technology.name, ms=True),
                                                              'device_info':[
 
                                                                  {
@@ -562,7 +586,7 @@ def prepare_result(base_station_id):
                                     "lon": substation.longitude if substation.longitude else substation_device.longitude,
                                     "antenna_height": substation.antenna.height if substation.antenna else randint(40,70),
                                     "technology":sector.bs_technology.name,
-                                    "markerUrl": tech_marker_url_slave(sector.bs_technology.name),
+                                    "markerUrl": tech_marker_url(substation_device.device_type, sector.bs_technology.name, ms=False), #tech_marker_url_slave(sector.bs_technology.name),
                                     "show_link": 1,
                                     "link_color": sector.frequency.color_hex_value if hasattr(
                                         sector,
