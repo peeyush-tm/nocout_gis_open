@@ -81,9 +81,29 @@ var mapInstance = "",
 	distance_label = {},
 	isFreeze = 0;
     map_points_array = [];
-    map_point_count = 0, sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 6, zoomAfterRightClickComes= 10, fresnelData= {}, sectorMarkersMasterObj= {},
-    tempFilteredData=[], markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}};
+    map_point_count = 0, zoomAfterRightClickComes= 10, fresnelData= {}, markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}};
+
+var sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 9, sectorMarkersMasterObj= {}, isSectorMarkerLoaded=0, tempFilterSectordata= [];
 var defaultIconSize= 'medium';
+
+function addSubSectorMarkersToOms(arr) {
+	if(arr) {
+		for(var i=0; i< arr.length; i++) {
+			var sectorMarkersAtThePoint= sectorMarkersMasterObj[arr[i].name];
+			if(sectorMarkersAtThePoint && sectorMarkersAtThePoint.length) {
+				for(var j=0; j< sectorMarkersAtThePoint.length; j++) {
+					sectorMarkersAtThePoint[i].setMap(mapInstance);
+					// oms.addMarker(sectorMarkersAtThePoint[j]);
+				}	
+			}
+		}
+		return ;
+	}
+	for(var i=0; i< sector_MarkersArray.length; i++) {
+		sector_MarkersArray[i].setMap(mapInstance);
+		// oms.addMarker(sector_MarkersArray[i]);
+	}
+}
 
 var place_markers = [];
 
@@ -96,39 +116,11 @@ function displayCoordinates(pnt) {
       coordsLabel.html("Latitude: " + lat + "  Longitude: " + lng);
 }
 
-/*
-Function is used to Disable Advance Search, Advance Filter Button when Call for data is going on.
-When call is completed, we use the same function to enable Button by passing 'no' in parameter.
- */
-function disableAdvanceButton(status) {
-	var buttonEls= ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn'];
-	var selectBoxes= ['technology', 'vendor', 'state', 'city'];
-	var textBoxes= ['searchTxt'];
-	var disablingBit= false;
-	if(status=== undefined) {
-		disablingBit= true;
-	}
-
-	for(var i=0; i< buttonEls.length; i++) {
-		$('#'+buttonEls[i]).prop('disabled', disablingBit);
-	}
-
-	for(var i=0; i< selectBoxes.length; i++) {
-		document.getElementById(selectBoxes[i]).disabled = disablingBit;	
-	}
-
-	for(var i=0; i< textBoxes.length; i++) {
-		document.getElementById(textBoxes[i]).disabled = disablingBit;
-	}
-}
-
-
 var markerContextInfoWindow;
 function openBSRightClickMenu(event, marker) {
 	if(mapInstance.getZoom() > zoomAfterRightClickComes) {
 		
 		var latlng= marker.getPosition();
-		// markerContextInfoWindow= new google.maps.InfoWindow({pixelOffset: });
 		var contentString= '<div class="box border" style="width:90%;float:left;"><div class="box-title">Base Station Maintenance Settings</div><div class="box-body"><form action="#" class="form-horizontal "><div class="form-group"><label class="col-md-4 control-label">Maintainance:</label><div class="col-md-8"><input type="checkbox" name="maintenance-checkbox"></div></div></form></div></div>';
 
 		if(markerContextInfoWindow) {
@@ -172,77 +164,53 @@ function openBSRightClickMenu(event, marker) {
 	}
 }
 
-function showSelectedSubSectorMarkers(array) {
-	for(var i=0;i<array.length; i++) {
-		(function showSectorMarker(marker) {
-			sectorMarkersMasterObj[String(marker.data.lat)+ marker.data.lon].setMap(mapInstance);
-		})(array[i]);
-	}
-}
-
-function showSubSectorMarkers() {
-	for(var i=0;i<sector_MarkersArray.length; i++) {
-		(function showSectorMarker(marker) {
-			marker.setMap(null);
-			marker.setMap(mapInstance);
-		})(sector_MarkersArray[i]);
-	}
-}
-
-function hideSubSectorMarkers() {
-	for(var i=0;i<sector_MarkersArray.length; i++) {
-		(function showSectorMarker(marker) {
-			marker.setMap(null)
-		})(sector_MarkersArray[i]);
-	}
-}
-
 function prepare_oms_object(oms_instance) {
-    oms_instance.addListener('click', function(marker,e) {
-        var windowPosition = new google.maps.LatLng(marker.ptLat,marker.ptLon);
-        /*Call the function to create info window content*/
-        var content = gmap_self.makeWindowContent(marker);
-        /*Set the content for infowindow*/
-        infowindow.setContent(content);
-        /*Set The Position for InfoWindow*/
-        infowindow.setPosition(windowPosition);
-        /*Open the info window*/
-        infowindow.open(mapInstance);
+	oms_instance.addListener('click', function(marker,e) {
+		var windowPosition = new google.maps.LatLng(marker.ptLat,marker.ptLon);
+		/*Call the function to create info window content*/
+		var content = gmap_self.makeWindowContent(marker);
+		/*Set the content for infowindow*/
+		infowindow.setContent(content);
+		/*Set The Position for InfoWindow*/
+		infowindow.setPosition(windowPosition);
+		/*Open the info window*/
+		infowindow.open(mapInstance);
 
-        /*Show only 5 rows, hide others*/
-        gmap_self.show_hide_info();
-    });
+		/*Show only 5 rows, hide others*/
+		gmap_self.show_hide_info();
+	});
 
-    /*Event when the markers cluster expands or spiderify*/
-    oms_instance.addListener('spiderfy', function(e,markers) {    	
-        /*Change the markers icon from cluster icon to thrie own icon*/
-        for(var i=0;i<e.length;i++) {
-            /*Change the icon of marker*/
-            e[i].setOptions({"icon":e[i].oldIcon});
-            for(var j=0;j<ssLinkArray.length;j++) {
-                var pt_type = $.trim(e[i].pointType);
+	/*Event when the markers cluster expands or spiderify*/
+	oms_instance.addListener('spiderfy', function(e,markers) {
+		/*Change the markers icon from cluster icon to thrie own icon*/
+		for(var i=0;i<e.length;i++) {
+			/*Change the icon of marker*/
+			e[i].setOptions({"icon":e[i].oldIcon});
+			for(var j=0;j<ssLinkArray.length;j++) {
+				var pt_type = $.trim(e[i].pointType);
 
-                if(pt_type == "sub_station") {
-                    if($.trim(ssLinkArray[j].ssName) == $.trim(e[i].name)) {
-                        var pathArray = [];
-                        pathArray.push(new google.maps.LatLng(e[i].position.k,e[i].position.B));
-                        pathArray.push(new google.maps.LatLng(ssLinkArray[j].bs_lat,ssLinkArray[j].bs_lon));
-                        ssLinkArray[j].setPath(pathArray);
-                    }
-                } else if(pt_type == "base_station") {
-                    if($.trim(ssLinkArray[j].bsName) == $.trim(e[i].name)) {
-                        var pathArray = [];
-                        pathArray.push(new google.maps.LatLng(e[i].position.k,e[i].position.B));
-                        pathArray.push(new google.maps.LatLng(ssLinkArray[j].ss_lat,ssLinkArray[j].ss_lon));
-                        ssLinkArray[j].setPath(pathArray);
-                    }
-                }
-            }
-        }
+				if(pt_type == "sub_station") {
+					if($.trim(ssLinkArray[j].ssName) == $.trim(e[i].name)) {
+						var pathArray = [];
+						pathArray.push(new google.maps.LatLng(e[i].position.k,e[i].position.B));
+						pathArray.push(new google.maps.LatLng(ssLinkArray[j].bs_lat,ssLinkArray[j].bs_lon));
+						ssLinkArray[j].setPath(pathArray);
+					}
+				} else if(pt_type == "base_station") {
+					if($.trim(ssLinkArray[j].bsName) == $.trim(e[i].name)) {
+						var pathArray = [];
+						pathArray.push(new google.maps.LatLng(e[i].position.k,e[i].position.B));
+						pathArray.push(new google.maps.LatLng(ssLinkArray[j].ss_lat,ssLinkArray[j].ss_lon));
+						ssLinkArray[j].setPath(pathArray);
+					}
+				}
+			}
+		}
         //freeze the map when spiderified
         isFreeze = 1;
         infowindow.close();
     });
+
     /*Event when markers cluster is collapsed or unspiderify*/
     oms_instance.addListener('unspiderfy', function(e,markers) {
         //un freeze the map when in normal state
@@ -257,21 +225,15 @@ function prepare_oms_object(oms_instance) {
 
         /*Reset the marker icon to cluster icon*/
         for(var i=0;i<e.length;i++) {
-
-            var latCount = $.grep(latArray, function (elem) {return elem === e[i].ptLat;}).length;
-            var lonCount = $.grep(lonArray, function (elem) {return elem === e[i].ptLon;}).length;
-
-            if(lonCount > 1 && latCount > 1) {
-                if(e[i].pointType=== "sector_Marker") {
-                    e[i].setOptions({"icon":new google.maps.MarkerImage(
-                                    'http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
-                                    null,
-                                    null,
-                                    null
-                                   )});
-                } else if(e[i].pointType === "base_station") {
-                    e[i].setOptions({"icon":clusterIcon});
-                } else {
+        	var latCount = $.grep(latArray, function (elem) {return elem === e[i].ptLat;}).length;
+        	var lonCount = $.grep(lonArray, function (elem) {return elem === e[i].ptLon;}).length;
+        	if(lonCount > 1 && latCount > 1) {
+        		if(e[i].pointType=== "sector_Marker") {
+        			e[i].setOptions({"icon":new google.maps.MarkerImage('http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',null,null,null)});
+        		} 
+        		else if(e[i].pointType=== "base_station"){
+        			e[i].setOptions({"icon": e[i].oldIcon});
+        		}else {
                 	e[i].setOptions({"icon":''});
                 }
             }
@@ -357,15 +319,24 @@ function devicePlottingClass_gmap() {
                 displayCoordinates(event.latLng);
             });
 
+            //On Zoom_Change, IF zoomLevel is greater than zoomAtWhichSectorMarkerAppears, show Sector Markers, else Hide them.
             google.maps.event.addListener(mapInstance, 'zoom_changed', function() {
             	var zoom = mapInstance.getZoom();
             	if( zoom > zoomAtWhichSectorMarkerAppears) {
-            		showSubSectorMarkers();}
-            	// else {
-            	// 	for (var i = 0; i < sector_MarkersArray.length; i++) {    
-            	// 		sector_MarkersArray[i].setMap(null);
-            	// 	}
-            	// }
+            		if(!isSectorMarkerLoaded) {
+		        		for(var i=0; i< sector_MarkersArray.length; i++) {
+		        			sector_MarkersArray[i].setMap(mapInstance);
+		        		}
+            		}
+            		isSectorMarkerLoaded=1;
+            	} else {
+            		if(isSectorMarkerLoaded) {
+            			for (var i = 0; i < sector_MarkersArray.length; i++) {
+            				sector_MarkersArray[i].setMap(null);
+            			}
+            		}
+            		isSectorMarkerLoaded= 0;
+            	}
             });
 
 			/*Event listener for search text box*/
@@ -423,9 +394,6 @@ function devicePlottingClass_gmap() {
 			/*Add Full Screen Control*/
 			mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(new FullScreenControl(mapInstance));
 
-			//Add Map Type Screen Control
-			// mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].
-
 			/*Create a instance of OverlappingMarkerSpiderfier*/
 			oms = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
             oms_ss = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
@@ -434,9 +402,7 @@ function devicePlottingClass_gmap() {
             prepare_oms_object(oms_ss);
 
 			/*Create a instance of google map info window*/
-			infowindow = new google.maps.InfoWindow();		
-
-
+			infowindow = new google.maps.InfoWindow();
 		} else {
 			$.gritter.add({
 	            // (string | mandatory) the heading of the notification
@@ -454,7 +420,7 @@ function devicePlottingClass_gmap() {
 	 * @method getDevicesData_gmap
 	 */
 	this.getDevicesData_gmap = function() {
-		
+
 		var get_param_filter = "";
 		/*If any advance filters are applied then pass the advance filer with API call else pass blank array*/
 		if(appliedAdvFilter.length > 0) {
@@ -532,7 +498,7 @@ function devicePlottingClass_gmap() {
 								}
 
 								if(result.data.objects.data.unspiderfy_icon != "" && result.data.objects.data.unspiderfy_icon != undefined) {
-									clusterIcon = window.location.origin+"/"+result.data.objects.data.unspiderfy_icon;
+									clusterIcon = window.location.origin+"/static/img/icons/bs.png";
 								} else {
 									clusterIcon = window.location.origin+"/static/img/icons/bs.png";
 								}
@@ -551,6 +517,7 @@ function devicePlottingClass_gmap() {
 									
 										/*Call the plotDevices_gmap to show the markers on the map*/
 										gmap_self.plotDevices_gmap(result.data.objects.children,"base_station");
+										
 									}
 
 								} else {
@@ -605,7 +572,7 @@ function devicePlottingClass_gmap() {
 						isCallCompleted = 1;
 						gmap_self.plotDevices_gmap([],"base_station");
 
-						disableAdvanceButton('no');
+						disableAdvanceButton('no, enable it.');
 
 						/*Recall the server after particular timeout if system is not freezed*/
 						setTimeout(function(e) {
@@ -644,7 +611,7 @@ function devicePlottingClass_gmap() {
 			isCallCompleted = 1;
 			gmap_self.plotDevices_gmap([],"base_station");
 
-			disableAdvanceButton('no');
+			disableAdvanceButton('no, enable it.');
 			
 			/*Recall the server after particular timeout if system is not freezed*/
 			setTimeout(function(e){
@@ -665,64 +632,63 @@ function devicePlottingClass_gmap() {
 
 			/*Create BS Marker Object*/
 			var bs_marker_object = {
-		    	position  	     : new google.maps.LatLng(bs_ss_devices[i].data.lat,bs_ss_devices[i].data.lon),
-		    	ptLat 		     : bs_ss_devices[i].data.lat,
-		    	ptLon 		     : bs_ss_devices[i].data.lon,
-		    	map       	     : mapInstance,
-		    	icon 	  	     : '',
-		    	oldIcon 	     : '/static/img/icons/bs.png',
-		    	pointType	     : stationType,
-		    	child_ss   	     : bs_ss_devices[i].data.param.sector,
-		    	original_sectors : bs_ss_devices[i].data.param.sector,
-		    	dataset 	     : bs_ss_devices[i].data.param.base_station,
-		    	device_name 	 : bs_ss_devices[i].data.device_name,
-		    	bsInfo 			 : bs_ss_devices[i].data.param.base_station,
-		    	bhInfo 			 : bs_ss_devices[i].data.param.backhual,
-		    	bs_name 		 : bs_ss_devices[i].name,
-		    	name 		 	 : bs_ss_devices[i].name,
-		    	antenna_height    : bs_ss_devices[i].data.antenna_height,
-		    	zIndex 			 : 200,
-		    	optimized 		 : false,
-		    	markerType: 'BS'
-		    };
+				position  	     : new google.maps.LatLng(bs_ss_devices[i].data.lat,bs_ss_devices[i].data.lon),
+				ptLat 		     : bs_ss_devices[i].data.lat,
+				ptLon 		     : bs_ss_devices[i].data.lon,
+				map       	     : mapInstance,
+				icon 	  	     : '/static/img/icons/bs.png',
+				oldIcon 	     : '/static/img/icons/bs.png',
+				pointType	     : stationType,
+				child_ss   	     : bs_ss_devices[i].data.param.sector,
+				original_sectors : bs_ss_devices[i].data.param.sector,
+				dataset 	     : bs_ss_devices[i].data.param.base_station,
+				device_name 	 : bs_ss_devices[i].data.device_name,
+				bsInfo 			 : bs_ss_devices[i].data.param.base_station,
+				bhInfo 			 : bs_ss_devices[i].data.param.backhual,
+				bs_name 		 : bs_ss_devices[i].name,
+				name 		 	 : bs_ss_devices[i].name,
+				antenna_height    : bs_ss_devices[i].data.antenna_height,
+				zIndex 			 : 200,
+				optimized 		 : false,
+				markerType: 'BS'
+			};
 
 			/*Create BS Marker*/
-		    var bs_marker = new google.maps.Marker(bs_marker_object);
+			var bs_marker = new google.maps.Marker(bs_marker_object);
 
-		    //Add markers to markersMasterObj with LatLong at key so it can be fetched later.
-		    markersMasterObj['BS'][String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= bs_marker;
-		    markersMasterObj['BSNamae'][String(bs_ss_devices[i].name)]= bs_marker;
+			//Add markers to markersMasterObj with LatLong at key so it can be fetched later.
+			markersMasterObj['BS'][String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= bs_marker;
+			markersMasterObj['BSNamae'][String(bs_ss_devices[i].name)]= bs_marker;
 
-		    /*
-		    Add Context menu event to the marker
-		     */
-		    (function bindRightMenuToMarker(marker) {
-		    	var markerRightClick= google.maps.event.addListener(marker, 'rightclick', function(event) {
-		    		openBSRightClickMenu(event, marker);
-		    	});
-		    	
-		    	return markerRightClick;
-		    })(bs_marker);
+			/*
+			Add Context menu event to the marker
+			*/
+			(function bindRightMenuToMarker(marker) {
+				var markerRightClick= google.maps.event.addListener(marker, 'rightclick', function(event) {
+					openBSRightClickMenu(event, marker);
+				});
 
-		    /*Sectors Array*/
+				return markerRightClick;
+			})(bs_marker);
+
+			/*Sectors Array*/
 			var sector_array = bs_ss_devices[i].data.param.sector;
-            var deviceIDArray= [];
+			var deviceIDArray= [];
 			/*Plot Sector*/
 			for(var j=0;j<sector_array.length;j++) {
-    			var lat = bs_ss_devices[i].data.lat,
-    				lon = bs_ss_devices[i].data.lon,
-    				azimuth = sector_array[j].azimuth_angle,
-    				beam_width = sector_array[j].beam_width,
-    				sector_color = sector_array[j].color,
-    				sectorInfo = sector_array[j].info,
-    				orientation = $.trim(sector_array[j].orientation),
-    				sector_child = sector_array[j].sub_station,
-    				rad = 4,
-    				sectorRadius = (+sector_array[j].radius),
-    				startLon = "",
-    				startLat = "";
 
-    				
+				var lat = bs_ss_devices[i].data.lat,
+					lon = bs_ss_devices[i].data.lon,
+					azimuth = sector_array[j].azimuth_angle,
+					beam_width = sector_array[j].beam_width,
+					sector_color = sector_array[j].color,
+					sectorInfo = sector_array[j].info,
+					orientation = $.trim(sector_array[j].orientation),
+					sector_child = sector_array[j].sub_station,
+					rad = 4,
+					sectorRadius = (+sector_array[j].radius),
+					startLon = "",
+					startLat = "";
 
 				/*If radius is greater than 4 Kms then set it to 4.*/
 				if((sectorRadius <= 4) && (sectorRadius != null) && (sectorRadius > 0)) {
@@ -746,12 +712,13 @@ function devicePlottingClass_gmap() {
 		    			startEndObj["startLon"] = bs_ss_devices[i].data.lon;
 					}
 				});
+
 				if(deviceIDArray.indexOf(sector_array[j]['device_info'][1]['value']) === -1) {
 
 					var sectors_Markers_Obj= {
 						position: new google.maps.LatLng(lat, lon),
-						ptLat 		     : bs_ss_devices[i].data.lat,
-						ptLon 		     : bs_ss_devices[i].data.lon,
+						ptLat: bs_ss_devices[i].data.lat,
+						ptLon: bs_ss_devices[i].data.lon,
 						icon: 'http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
 						oldIcon: window.location.origin+"/"+sector_array[j].markerUrl,
 						pointType: 'sector_Marker',
@@ -759,10 +726,11 @@ function devicePlottingClass_gmap() {
 						vendor: sector_array[j].vendor,
 						deviceExtraInfo: sector_array[j].info,
 						deviceInfo: sector_array[j].device_info,
-						zIndex 			 : 200,
-						optimized 		 : false,
-                        antenna_height    : sector_array[j].antenna_height
-					}
+						zIndex: 200,
+						optimized: false,
+				    	title: "Sector Marker",
+                        antenna_height: sector_array[j].antenna_height
+                    }
 
                     var sect_height = sector_array[j].antenna_height;
 
@@ -771,13 +739,12 @@ function devicePlottingClass_gmap() {
 
 					sector_MarkersArray.push(sector_Marker);
 
-					sectorMarkersMasterObj[String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= sector_Marker;
-
-					// sector_Marker.setMap(mapInstance);
-
-					// sector_Marker.setVisible(false);
-
-					// masterMarkersObj.push(sector_Marker);
+					if(sectorMarkersMasterObj[bs_ss_devices[i].name]) {
+						sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
+					} else {
+						sectorMarkersMasterObj[bs_ss_devices[i].name]= [];
+						sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
+					}
 
 					oms.addMarker(sector_Marker);
 /*End of Create Sector Marker*/
@@ -792,43 +759,28 @@ function devicePlottingClass_gmap() {
 
 					/*Create SS Marker Object*/
 					var ss_marker_object = {
-				    	position  	     : new google.maps.LatLng(ss_marker_obj.data.lat,ss_marker_obj.data.lon),
-				    	ptLat 		     : ss_marker_obj.data.lat,
-				    	ptLon 		     : ss_marker_obj.data.lon,
-				    	technology 	     : ss_marker_obj.data.technology,
-				    	map       	     : mapInstance,
-				    	icon 			 : new google.maps.MarkerImage(
-									        window.location.origin+"/"+ss_marker_obj.data.markerUrl,
-									        null,
-									        null,
-									        null,
-									       	new google.maps.Size(32,37)
-									       ),
-				    	oldIcon 		 : new google.maps.MarkerImage(
-									        window.location.origin+"/"+ss_marker_obj.data.markerUrl,
-									        null,
-									        null,
-									        null,
-									       	new google.maps.Size(32,37)
-									       ),
-				    	// icon 	  	     : window.location.origin+"/"+ss_marker_obj.data.markerUrl,
-				    	// oldIcon 	     : window.location.origin+"/"+ss_marker_obj.data.markerUrl,
+						position: new google.maps.LatLng(ss_marker_obj.data.lat,ss_marker_obj.data.lon),
+				    	ptLat: ss_marker_obj.data.lat,
+				    	ptLon: ss_marker_obj.data.lon,
+				    	technology: ss_marker_obj.data.technology,
+				    	map: mapInstance,
+				    	icon: new google.maps.MarkerImage(window.location.origin+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
+				    	oldIcon: new google.maps.MarkerImage(window.location.origin+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
 				    	pointType	     : "sub_station",
-						dataset 	     : ss_marker_obj.data.param.sub_station,
-						bhInfo 			 : [],
-						antenna_height    : ss_marker_obj.data.antenna_height,
-						name 		 	 : ss_marker_obj.name,
-						device_name 	 : ss_marker_obj.device_name,
-						zIndex 			 : 200,
-                        optimized 		 : false
-					};
+				    	dataset 	     : ss_marker_obj.data.param.sub_station,
+				    	bhInfo 			 : [],
+				    	antenna_height    : ss_marker_obj.data.antenna_height,
+				    	name 		 	 : ss_marker_obj.name,
+				    	device_name 	 : ss_marker_obj.device_name,
+				    	zIndex 			 : 200,
+				    	optimized 		 : false
+				    };
 
-
-
-					/*Create SS Marker*/
+				    /*Create SS Marker*/
 				    var ss_marker = new google.maps.Marker(ss_marker_object);
 
 				    markersMasterObj['SS'][String(ss_marker_obj.data.lat)+ ss_marker_obj.data.lon]= ss_marker;
+				    markersMasterObj['SSNamae'][String(ss_marker_obj.device_name)]= ss_marker;
 
 				    total_bs.push(ss_marker);
 
@@ -842,8 +794,7 @@ function devicePlottingClass_gmap() {
 		    	    ssLatArray.push(ss_marker_obj.data.lat);
 					ssLonArray.push(ss_marker_obj.data.lon);
 
-					var ss_info = {},
-			    		base_info = {};
+					var ss_info = {}, base_info = {};
 
 				    startEndObj["endLat"] = ss_marker_obj.data.lat;
 		    		startEndObj["endLon"] = ss_marker_obj.data.lon;
@@ -891,8 +842,7 @@ function devicePlottingClass_gmap() {
 			$("#resetFilters").button("complete");
 
 
-			var oms_bs_markers = oms.getMarkers(),
-				oms_ss_markers = oms_ss.getMarkers();			
+			var oms_bs_markers = oms.getMarkers(), oms_ss_markers = oms_ss.getMarkers();			
 
 			/*Loop to change the icon for same location BS markers(to cluster icon)*/
 			for(var k=0;k<oms_bs_markers.length;k++) {
@@ -2121,8 +2071,6 @@ function devicePlottingClass_gmap() {
                 sticky: false
             });
 
-            tempFilteredData= main_devices_data_gmaps;
-
 
             /*Populate the map with the All markers*/
             // gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
@@ -2137,12 +2085,11 @@ function devicePlottingClass_gmap() {
 
             // showRequiredSectorMarker(filteredData);
 
-            tempFilteredData= filteredData;
             /*Populate the map with the filtered markers*/
             gmap_self.plotDevices_gmap(filteredData,"base_station");
+            addSubSectorMarkersToOms(filteredData);
             /*Resetting filter data to Empty.*/
             filteredData=[]
-            // showSelectedSubSectorMarkers(tempFilteredData);
         }
 
 	};
@@ -2212,6 +2159,8 @@ function devicePlottingClass_gmap() {
 				/*create the BS-SS network on the google map*/
 	            gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
 
+	            addSubSectorMarkersToOms(main_devices_data_gmaps);
+
         	} else {
 
         		/*Clear all the elements from google earth*/
@@ -2222,6 +2171,8 @@ function devicePlottingClass_gmap() {
 
 		        /*create the BS-SS network on the google earth*/
 		        earth_instance.plotDevices_earth(main_devices_data_earth,"base_station");
+
+		        addSubSectorMarkersToOms();
         	}
         }
     };
@@ -3398,9 +3349,10 @@ function devicePlottingClass_gmap() {
 
 			masterMarkersObj[i].setMap(null);
 		}
-		// for(var i=0;i<sector_MarkersArray.length; i++) {
-		// 	sector_MarkersArray[i].setMap(null)
-		// }
+
+		for(var i=0;i<sector_MarkersArray.length; i++) {
+			sector_MarkersArray[i].setMap(null)
+		}
 
 		/*Clear the existing SS for same point*/
 		for(var i=0;i<plottedSS.length;i++) {
@@ -3498,14 +3450,8 @@ function devicePlottingClass_gmap() {
 					markerIcon.oldIcon= markerImage;
 					//Else icon is for SSpointType	     : "sub_station",
 				} else if (markerIcon.pointType === "sub_station") {
-					//Create a new marker Image for SS Marker according to the value selected.
-					// markerImage= new google.maps.MarkerImage(
-					// 	icon.url,
-					// 	new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
-					// 	new google.maps.Point(0, 0), 
-					// 	new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
-					// 	new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)));
-					// //Create a new marker Imge for SS marker according to the value selected for OLD ICON.
+
+					//Create a new marker Imge for SS marker according to the value selected for OLD ICON.
 					markerImage2= new google.maps.MarkerImage(
 						markerIcon.oldIcon.url,
 						new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
@@ -3515,7 +3461,7 @@ function devicePlottingClass_gmap() {
 					//Set icon to Marker Image
 					markerIcon.setIcon(markerImage2);
 					// //Set oldIcon to Marker Image
-					markerIcon.oldIcon= markerImage2;	
+					markerIcon.oldIcon= markerImage2;
 				}
 			})(masterMarkersObj[i]);
 		}
@@ -3544,6 +3490,7 @@ function devicePlottingClass_gmap() {
 		circleArray = [];
 		plottedSS = [];
 		ssLinkArray = [];
+		sectorMarkersMasterObj= {};
 	};
 }
 

@@ -872,6 +872,7 @@ function googleEarthClass() {
 
 				/*Populate the map with the filtered markers*/
 	 			earth_self.plotDevices_earth(filteredData,"base_station");
+	 			addSubSectorMarkersToOms(filteredData);
 	 		}	 		
 	 	}	
 	};
