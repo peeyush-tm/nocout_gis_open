@@ -12,6 +12,4 @@ urlpatterns = patterns('',
       name='get_range_and_icon_for_thematic_setting'),
   url(r'^update_user_thematic_setting/', views.Update_User_Thematic_Setting.as_view(),
       name='update_user_thematic_setting'),
-
-
 )
