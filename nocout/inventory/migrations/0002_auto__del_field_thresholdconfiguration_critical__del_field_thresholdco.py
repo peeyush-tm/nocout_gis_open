@@ -8,262 +8,183 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Adding model 'Inventory'
-        db.create_table(u'inventory_inventory', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=200)),
-            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
-            ('organization', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['organization.Organization'])),
-            ('user_group', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['user_group.UserGroup'])),
-            ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-        ))
-        db.send_create_signal(u'inventory', ['Inventory'])
+        # Deleting field 'ThresholdConfiguration.critical'
+        db.delete_column(u'inventory_thresholdconfiguration', 'critical')
 
-        # Adding M2M table for field device_groups on 'Inventory'
-        m2m_table_name = db.shorten_name(u'inventory_inventory_device_groups')
-        db.create_table(m2m_table_name, (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('inventory', models.ForeignKey(orm[u'inventory.inventory'], null=False)),
-            ('devicegroup', models.ForeignKey(orm[u'device_group.devicegroup'], null=False))
-        ))
-        db.create_unique(m2m_table_name, ['inventory_id', 'devicegroup_id'])
+        # Deleting field 'ThresholdConfiguration.warning'
+        db.delete_column(u'inventory_thresholdconfiguration', 'warning')
 
-        # Adding model 'Antenna'
-        db.create_table(u'inventory_antenna', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
-            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
-            ('antenna_type', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('height', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('polarization', self.gf('django.db.models.fields.CharField')(max_length=50, null=True, blank=True)),
-            ('tilt', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('gain', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('mount_type', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('beam_width', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('azimuth_angle', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('reflector', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('splitter_installed', self.gf('django.db.models.fields.CharField')(max_length=4, null=True, blank=True)),
-            ('sync_splitter_used', self.gf('django.db.models.fields.CharField')(max_length=4, null=True, blank=True)),
-            ('make_of_antenna', self.gf('django.db.models.fields.CharField')(max_length=40, null=True, blank=True)),
-            ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-        ))
-        db.send_create_signal(u'inventory', ['Antenna'])
+        # Adding field 'ThresholdConfiguration.range1_start'
+        db.add_column(u'inventory_thresholdconfiguration', 'range1_start',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
 
-        # Adding model 'Backhaul'
-        db.create_table(u'inventory_backhaul', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
-            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
-            ('bh_configured_on', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='backhaul', null=True, to=orm['device.Device'])),
-            ('bh_port_name', self.gf('django.db.models.fields.CharField')(max_length=40, null=True, blank=True)),
-            ('bh_port', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('bh_type', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('bh_switch', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='backhaul_switch', null=True, to=orm['device.Device'])),
-            ('switch_port_name', self.gf('django.db.models.fields.CharField')(max_length=40, null=True, blank=True)),
-            ('switch_port', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('pop', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='backhaul_pop', null=True, to=orm['device.Device'])),
-            ('pop_port_name', self.gf('django.db.models.fields.CharField')(max_length=40, null=True, blank=True)),
-            ('pop_port', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('aggregator', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='backhaul_aggregator', null=True, to=orm['device.Device'])),
-            ('aggregator_port_name', self.gf('django.db.models.fields.CharField')(max_length=40, null=True, blank=True)),
-            ('aggregator_port', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('pe_hostname', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('pe_ip', self.gf('django.db.models.fields.IPAddressField')(max_length=15, null=True, blank=True)),
-            ('bh_connectivity', self.gf('django.db.models.fields.CharField')(max_length=40, null=True, blank=True)),
-            ('bh_circuit_id', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('bh_capacity', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('ttsl_circuit_id', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('dr_site', self.gf('django.db.models.fields.CharField')(max_length=150, null=True, blank=True)),
-            ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-        ))
-        db.send_create_signal(u'inventory', ['Backhaul'])
+        # Adding field 'ThresholdConfiguration.range1_end'
+        db.add_column(u'inventory_thresholdconfiguration', 'range1_end',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
 
-        # Adding model 'BaseStation'
-        db.create_table(u'inventory_basestation', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
-            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
-            ('bs_site_id', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('bs_site_type', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('bs_switch', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='bs_switch', null=True, to=orm['device.Device'])),
-            ('backhaul', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.Backhaul'])),
-            ('bs_type', self.gf('django.db.models.fields.CharField')(max_length=40, null=True, blank=True)),
-            ('bh_bso', self.gf('django.db.models.fields.CharField')(max_length=40, null=True, blank=True)),
-            ('hssu_used', self.gf('django.db.models.fields.CharField')(max_length=40, null=True, blank=True)),
-            ('latitude', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('longitude', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('infra_provider', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('gps_type', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('building_height', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('tower_height', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('country', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('state', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('city', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('address', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-            ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-        ))
-        db.send_create_signal(u'inventory', ['BaseStation'])
+        # Adding field 'ThresholdConfiguration.range2_start'
+        db.add_column(u'inventory_thresholdconfiguration', 'range2_start',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
 
-        # Adding model 'Sector'
-        db.create_table(u'inventory_sector', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
-            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
-            ('sector_id', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('base_station', self.gf('django.db.models.fields.related.ForeignKey')(related_name='sector', to=orm['inventory.BaseStation'])),
-            ('bs_technology', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device.DeviceTechnology'], null=True, blank=True)),
-            ('sector_configured_on', self.gf('django.db.models.fields.related.ForeignKey')(max_length=250, related_name='sector_configured_on', null=True, to=orm['device.Device'])),
-            ('sector_configured_on_port', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device.DevicePort'], null=True, blank=True)),
-            ('antenna', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='sector', null=True, to=orm['inventory.Antenna'])),
-            ('mrc', self.gf('django.db.models.fields.CharField')(max_length=4, null=True, blank=True)),
-            ('tx_power', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('rx_power', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('rf_bandwidth', self.gf('django.db.models.fields.FloatField')(max_length=250, null=True, blank=True)),
-            ('frame_length', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('cell_radius', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('frequency', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device.DeviceFrequency'], null=True, blank=True)),
-            ('modulation', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-        ))
-        db.send_create_signal(u'inventory', ['Sector'])
+        # Adding field 'ThresholdConfiguration.range2_end'
+        db.add_column(u'inventory_thresholdconfiguration', 'range2_end',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
 
-        # Adding model 'Customer'
-        db.create_table(u'inventory_customer', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
-            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
-            ('address', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-        ))
-        db.send_create_signal(u'inventory', ['Customer'])
+        # Adding field 'ThresholdConfiguration.range3_start'
+        db.add_column(u'inventory_thresholdconfiguration', 'range3_start',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
 
-        # Adding model 'SubStation'
-        db.create_table(u'inventory_substation', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
-            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
-            ('device', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device.Device'])),
-            ('antenna', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.Antenna'], null=True, blank=True)),
-            ('version', self.gf('django.db.models.fields.CharField')(max_length=40, null=True, blank=True)),
-            ('serial_no', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('building_height', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('tower_height', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('ethernet_extender', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('cable_length', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('latitude', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('longitude', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('mac_address', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('country', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('state', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('city', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('address', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-        ))
-        db.send_create_signal(u'inventory', ['SubStation'])
+        # Adding field 'ThresholdConfiguration.range3_end'
+        db.add_column(u'inventory_thresholdconfiguration', 'range3_end',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
 
-        # Adding model 'Circuit'
-        db.create_table(u'inventory_circuit', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
-            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
-            ('circuit_type', self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True)),
-            ('circuit_id', self.gf('django.db.models.fields.CharField')(max_length=250)),
-            ('sector', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.Sector'])),
-            ('customer', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.Customer'])),
-            ('sub_station', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.SubStation'])),
-            ('qos_bandwidth', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('dl_rssi_during_acceptance', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('dl_cinr_during_acceptance', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('jitter_value_during_acceptance', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('throughput_during_acceptance', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
-            ('date_of_acceptance', self.gf('django.db.models.fields.DateField')(null=True, blank=True)),
-            ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-        ))
-        db.send_create_signal(u'inventory', ['Circuit'])
+        # Adding field 'ThresholdConfiguration.range4_start'
+        db.add_column(u'inventory_thresholdconfiguration', 'range4_start',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
 
-        # Adding model 'IconSettings'
-        db.create_table(u'inventory_iconsettings', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
-            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
-            ('upload_image', self.gf('django.db.models.fields.files.ImageField')(max_length=100)),
-        ))
-        db.send_create_signal(u'inventory', ['IconSettings'])
+        # Adding field 'ThresholdConfiguration.range4_end'
+        db.add_column(u'inventory_thresholdconfiguration', 'range4_end',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
 
-        # Adding model 'LivePollingSettings'
-        db.create_table(u'inventory_livepollingsettings', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
-            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
-            ('technology', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device.DeviceTechnology'])),
-            ('service', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['service.Service'])),
-            ('data_source', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['service.ServiceDataSource'])),
-        ))
-        db.send_create_signal(u'inventory', ['LivePollingSettings'])
+        # Adding field 'ThresholdConfiguration.range5_start'
+        db.add_column(u'inventory_thresholdconfiguration', 'range5_start',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
 
-        # Adding model 'ThresholdConfiguration'
-        db.create_table(u'inventory_thresholdconfiguration', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
-            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
-            ('live_polling_template', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.LivePollingSettings'])),
-            ('warning', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-            ('critical', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
-        ))
-        db.send_create_signal(u'inventory', ['ThresholdConfiguration'])
+        # Adding field 'ThresholdConfiguration.range5_end'
+        db.add_column(u'inventory_thresholdconfiguration', 'range5_end',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
 
-        # Adding model 'ThematicSettings'
-        db.create_table(u'inventory_thematicsettings', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=250)),
-            ('alias', self.gf('django.db.models.fields.CharField')(max_length=250)),
-            ('threshold_template', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.ThresholdConfiguration'])),
-            ('gt_warning', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='gt_warning', null=True, to=orm['inventory.IconSettings'])),
-            ('bt_w_c', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='bt_w_c', null=True, to=orm['inventory.IconSettings'])),
-            ('gt_critical', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='gt_critical', null=True, to=orm['inventory.IconSettings'])),
-        ))
-        db.send_create_signal(u'inventory', ['ThematicSettings'])
+        # Adding field 'ThresholdConfiguration.range6_start'
+        db.add_column(u'inventory_thresholdconfiguration', 'range6_start',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
+
+        # Adding field 'ThresholdConfiguration.range6_end'
+        db.add_column(u'inventory_thresholdconfiguration', 'range6_end',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
+
+        # Adding field 'ThresholdConfiguration.range7_start'
+        db.add_column(u'inventory_thresholdconfiguration', 'range7_start',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
+
+        # Adding field 'ThresholdConfiguration.range7_end'
+        db.add_column(u'inventory_thresholdconfiguration', 'range7_end',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
+
+        # Adding field 'ThresholdConfiguration.range8_start'
+        db.add_column(u'inventory_thresholdconfiguration', 'range8_start',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
+
+        # Adding field 'ThresholdConfiguration.range8_end'
+        db.add_column(u'inventory_thresholdconfiguration', 'range8_end',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
+
+        # Adding field 'ThresholdConfiguration.range9_start'
+        db.add_column(u'inventory_thresholdconfiguration', 'range9_start',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
+
+        # Adding field 'ThresholdConfiguration.range9_end'
+        db.add_column(u'inventory_thresholdconfiguration', 'range9_end',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
+
+        # Adding field 'ThresholdConfiguration.range10_start'
+        db.add_column(u'inventory_thresholdconfiguration', 'range10_start',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
+
+        # Adding field 'ThresholdConfiguration.range10_end'
+        db.add_column(u'inventory_thresholdconfiguration', 'range10_end',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
 
 
     def backwards(self, orm):
-        # Deleting model 'Inventory'
-        db.delete_table(u'inventory_inventory')
+        # Adding field 'ThresholdConfiguration.critical'
+        db.add_column(u'inventory_thresholdconfiguration', 'critical',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
 
-        # Removing M2M table for field device_groups on 'Inventory'
-        db.delete_table(db.shorten_name(u'inventory_inventory_device_groups'))
+        # Adding field 'ThresholdConfiguration.warning'
+        db.add_column(u'inventory_thresholdconfiguration', 'warning',
+                      self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True),
+                      keep_default=False)
 
-        # Deleting model 'Antenna'
-        db.delete_table(u'inventory_antenna')
+        # Deleting field 'ThresholdConfiguration.range1_start'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range1_start')
 
-        # Deleting model 'Backhaul'
-        db.delete_table(u'inventory_backhaul')
+        # Deleting field 'ThresholdConfiguration.range1_end'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range1_end')
 
-        # Deleting model 'BaseStation'
-        db.delete_table(u'inventory_basestation')
+        # Deleting field 'ThresholdConfiguration.range2_start'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range2_start')
 
-        # Deleting model 'Sector'
-        db.delete_table(u'inventory_sector')
+        # Deleting field 'ThresholdConfiguration.range2_end'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range2_end')
 
-        # Deleting model 'Customer'
-        db.delete_table(u'inventory_customer')
+        # Deleting field 'ThresholdConfiguration.range3_start'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range3_start')
 
-        # Deleting model 'SubStation'
-        db.delete_table(u'inventory_substation')
+        # Deleting field 'ThresholdConfiguration.range3_end'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range3_end')
 
-        # Deleting model 'Circuit'
-        db.delete_table(u'inventory_circuit')
+        # Deleting field 'ThresholdConfiguration.range4_start'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range4_start')
 
-        # Deleting model 'IconSettings'
-        db.delete_table(u'inventory_iconsettings')
+        # Deleting field 'ThresholdConfiguration.range4_end'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range4_end')
 
-        # Deleting model 'LivePollingSettings'
-        db.delete_table(u'inventory_livepollingsettings')
+        # Deleting field 'ThresholdConfiguration.range5_start'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range5_start')
 
-        # Deleting model 'ThresholdConfiguration'
-        db.delete_table(u'inventory_thresholdconfiguration')
+        # Deleting field 'ThresholdConfiguration.range5_end'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range5_end')
 
-        # Deleting model 'ThematicSettings'
-        db.delete_table(u'inventory_thematicsettings')
+        # Deleting field 'ThresholdConfiguration.range6_start'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range6_start')
+
+        # Deleting field 'ThresholdConfiguration.range6_end'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range6_end')
+
+        # Deleting field 'ThresholdConfiguration.range7_start'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range7_start')
+
+        # Deleting field 'ThresholdConfiguration.range7_end'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range7_end')
+
+        # Deleting field 'ThresholdConfiguration.range8_start'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range8_start')
+
+        # Deleting field 'ThresholdConfiguration.range8_end'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range8_end')
+
+        # Deleting field 'ThresholdConfiguration.range9_start'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range9_start')
+
+        # Deleting field 'ThresholdConfiguration.range9_end'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range9_end')
+
+        # Deleting field 'ThresholdConfiguration.range10_start'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range10_start')
+
+        # Deleting field 'ThresholdConfiguration.range10_end'
+        db.delete_column(u'inventory_thresholdconfiguration', 'range10_end')
 
 
     models = {
@@ -602,11 +523,29 @@ class Migration(SchemaMigration):
         u'inventory.thresholdconfiguration': {
             'Meta': {'object_name': 'ThresholdConfiguration'},
             'alias': ('django.db.models.fields.CharField', [], {'max_length': '250'}),
-            'critical': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'live_polling_template': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['inventory.LivePollingSettings']"}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '250'}),
-            'warning': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'})
+            'range10_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range10_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range1_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range1_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range2_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range2_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range3_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range3_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range4_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range4_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range5_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range5_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range6_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range6_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range7_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range7_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range8_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range8_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range9_end': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'range9_start': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'})
         },
         u'machine.machine': {
             'Meta': {'object_name': 'Machine'},

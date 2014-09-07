@@ -915,7 +915,8 @@ class ThresholdConfigurationForm(forms.ModelForm):
         Meta Information
         """
         model = ThresholdConfiguration
-
+        exclude =['range1_icon', 'range2_icon', 'range3_icon', 'range4_icon', 'range5_icon', 'range6_icon', 'range7_icon',\
+                  'range8_icon','range9_icon','range10_icon']
     def clean_name(self):
         """
         Name unique validation
@@ -954,22 +955,14 @@ class ThematicSettingsForm(forms.ModelForm):
     Class Based View Thematic Settings Model form to update and create.
     """
     def __init__(self, *args, **kwargs):
-        self.base_fields['gt_warning'].label = '> Warning'
-        self.base_fields['bt_w_c'].label = 'Warning > > Critical'
-        self.base_fields['gt_critical'].label = '> Critical'
-
         try:
             if 'instance' in kwargs:
                 self.id = kwargs['instance'].id
         except Exception as e:
             logger.info(e.message)
 
-
         super(ThematicSettingsForm, self).__init__(*args, **kwargs)
         self.fields['threshold_template'].empty_label = 'Select'
-        self.fields['gt_warning'].empty_label = 'Select'
-        self.fields['bt_w_c'].empty_label = 'Select'
-        self.fields['gt_critical'].empty_label = 'Select'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):
@@ -987,6 +980,7 @@ class ThematicSettingsForm(forms.ModelForm):
         Meta Information
         """
         model = ThematicSettings
+        exclude =['icon_settings', 'user']
 
     def clean_name(self):
         """

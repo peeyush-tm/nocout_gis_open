@@ -1,6 +1,8 @@
 import ast
 import copy
 from operator import itemgetter
+from django.contrib.auth.models import User
+from os.path import basename
 from django.views.generic.base import View
 import re
 from django.contrib.auth.decorators import permission_required
@@ -10,7 +12,7 @@ from actstream import action
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect, HttpResponse
 from django.utils.decorators import method_decorator
-from django.views.generic import ListView, DetailView, TemplateView
+from django.views.generic import ListView, DetailView, TemplateView, View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
 from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -1932,9 +1934,9 @@ class LivePollingSettingsList(ListView):
             {'mData': 'service__alias',          'sTitle': 'Service',           'sWidth': 'null'},
             {'mData': 'data_source__alias',      'sTitle': 'Data Source',       'sWidth': 'null'},
             ]
-        #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        user_id = self.request.user.id
+        #if user is superadmin
+        if user_id==1:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -2127,12 +2129,10 @@ class ThresholdConfigurationList(ListView):
             {'mData': 'name',                           'sTitle': 'Name',                   'sWidth': 'null'},
             {'mData': 'alias',                          'sTitle': 'Alias',                  'sWidth': 'null'},
             {'mData': 'live_polling_template__alias',   'sTitle': 'Live Polling Template',  'sWidth': 'null'},
-            {'mData': 'warning',                        'sTitle': 'Warning',                'sWidth': 'null'},
-            {'mData': 'critical',                       'sTitle': 'Critical',               'sWidth': 'null'},
             ]
-        #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        user_id = self.request.user.id
+        #if user is superadmin
+        if user_id==1:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -2144,8 +2144,8 @@ class ThresholdConfigurationListingTable(BaseDatatableView):
     Class based View to render ThresholdConfiguration Data table.
     """
     model = ThresholdConfiguration
-    columns = ['name', 'alias', 'live_polling_template__alias', 'warning', 'critical']
-    order_columns = ['name', 'alias', 'live_polling_template__alias', 'warning', 'critical']
+    columns = ['name', 'alias', 'live_polling_template__alias']
+    order_columns = ['name', 'alias', 'live_polling_template__alias']
 
     def filter_queryset(self, qs):
         """
@@ -2324,13 +2324,12 @@ class ThematicSettingsList(ListView):
             {'mData': 'name',                    'sTitle': 'Name',                      'sWidth': 'null'},
             {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'null'},
             {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'null'},
-            {'mData': 'gt_warning__name',        'sTitle': '> Warning',                 'sWidth': 'null'},
-            {'mData': 'bt_w_c__name',            'sTitle': 'Warning > > Critical',      'sWidth': 'null'},
-            {'mData': 'gt_critical__name',       'sTitle': '> Critical',                'sWidth': 'null'},
-            ]
-        #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'null'},
+            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'null'},]
+
+        user_id = self.request.user.id
+        #if user is superadmin
+        if user_id==1:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -2342,8 +2341,8 @@ class ThematicSettingsListingTable(BaseDatatableView):
     Class based View to render Thematic Settings Data table.
     """
     model = ThematicSettings
-    columns = ['name', 'alias', 'threshold_template', 'gt_warning__name', 'bt_w_c__name', 'gt_critical__name']
-    order_columns = ['name', 'alias', 'threshold_template', 'gt_warning__name', 'bt_w_c__name', 'gt_critical__name']
+    columns = ['name', 'alias', 'threshold_template', 'icon_settings']
+    order_columns = ['name', 'alias', 'threshold_template']
     def filter_queryset(self, qs):
         """
         The filtering of the queryset with respect to the search keyword entered.
@@ -2383,7 +2382,21 @@ class ThematicSettingsListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+            image_string, range_text, full_string='','',''
+            if dct['icon_settings'] and dct['icon_settings'] !='NULL':
+                for d in eval(dct['icon_settings']):
+                    image_string= '<img src=/static/img/{0} style="height:25px; width:25px">'.format(d.values()[0])
+                    range_text= ' Range '+ d.keys()[0][-1] +', '
+                    full_string+= image_string + range_text
+            else:
+                full_string='N/A'
+            user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=dct['id']).user.values_list('id', flat=True)
+            checkbox_checked_true='checked' if user_current_thematic_setting else ''
+            dct.update(
+                threshold_template=ThresholdConfiguration.objects.get(id=int(dct['threshold_template'])).name,
+                icon_settings= full_string,
+                user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(dct['id']),
+                actions='<a href="/thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
@@ -2448,7 +2461,11 @@ class ThematicSettingsCreate(CreateView):
         """
         Submit the form and to log the user activity.
         """
+        icon_settings_keys= list(set(form.data.keys())-set(form.cleaned_data.keys()+['csrfmiddlewaretoken']))
+        icon_settings_values_list=[ { key: form.data[key] }  for key in icon_settings_keys if form.data[key]]
         self.object = form.save()
+        self.object.icon_settings=icon_settings_values_list
+        self.object.save()
         action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(ThematicSettingsCreate.success_url)
 
@@ -2476,6 +2493,12 @@ class ThematicSettingsUpdate(UpdateView):
         initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        icon_settings_keys= list(set(form.data.keys())-set(form.cleaned_data.keys()+['csrfmiddlewaretoken']))
+        icon_settings_values_list=[ { key: form.data[key] }  for key in icon_settings_keys if form.data[key]]
+        self.object = form.save()
+        self.object.icon_settings=icon_settings_values_list
+        self.object.save()
+        # self.object = form.save()
         if changed_fields_dict:
             verb_string = 'Changed values of ThematicSettings : %s from initial values ' % (self.object.name) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
@@ -2484,7 +2507,6 @@ class ThematicSettingsUpdate(UpdateView):
                           ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
-            self.object = form.save()
             action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(ThematicSettingsUpdate.success_url)
 
@@ -2505,6 +2527,99 @@ class ThematicSettingsDelete(DeleteView):
         return super(ThematicSettingsDelete, self).dispatch(*args, **kwargs)
 
 
+class Get_Threshold_Ranges_And_Icon_For_Thematic_Settings(View):
+    """
+    The Class Based View to Response the Ajax call on click to return the respective
+    ranges for the  threshold_template_id selected in the template.
+    """
+
+    def get(self, request):
+
+        self.result = {
+            "success": 0,
+            "message": "Threshold range not fetched.",
+            "data": {
+                "meta": None,
+                "objects": {}
+            }
+        }
+
+        threshold_template_id= self.request.GET.get('threshold_template_id','')
+        thematic_setting_name= self.request.GET.get('thematic_setting_name','')
+        if threshold_template_id:
+           threshold_configuration_selected=ThresholdConfiguration.objects.get(id=int(threshold_template_id))
+           self.get_all_ranges(threshold_configuration_selected)
+           if self.result['data']['objects']['range_list']:
+              self.get_icon_details()
+              self.result['success']=1
+
+
+        if thematic_setting_name:
+            thematic_setting_object= ThematicSettings.objects.get(name=thematic_setting_name)
+            thematic_icon_setting= thematic_setting_object.icon_settings
+            thematic_icon_setting= '[]' if thematic_icon_setting =='NULL' or thematic_icon_setting =='' else thematic_icon_setting
+            thematic_icon_setting= eval(thematic_icon_setting)
+            if thematic_icon_setting:
+               icon_details, icon_details_selected=list(), dict()
+
+               for icon_setting in thematic_icon_setting:
+                   # range_list.append('Range ' + icon_setting.keys()[0][-1])
+                   icon_details_selected['Range ' + icon_setting.keys()[0][-1]] = icon_setting.values()[0]
+
+               # self.result['data']['objects']['range_list'] = range_list
+               self.result['data']['objects']['icon_details_selected'] = icon_details_selected
+               # self.get_icon_details()
+               # self.result['success']=1
+
+        return HttpResponse(json.dumps(self.result))
+
+    def get_all_ranges(self, threshold_configuration_object):
+        range_list=list()
+        for ran in range(1, 11):
+
+            range_start= None
+
+            query= "range_start= threshold_configuration_object.range{0}_{1}".format(ran, 'start')
+            exec query
+            if range_start:
+               range_list.append('Range {0}'.format(ran))
+
+        self.result['data']['objects']['range_list'] = range_list
+
+    def get_icon_details(self):
+        icon_details= IconSettings.objects.all().values('id','name', 'upload_image')
+        self.result['data']['objects']['icon_details'] =list(icon_details)
+
+
+class Update_User_Thematic_Setting(View):
+    """
+    The Class Based View to Response the Ajax call on click to bind the user with the thematic setting.
+    """
+    def get(self, request):
+        self.result = {
+            "success": 0,
+            "message": "Thematic Setting Not Bind to User",
+            "data": {
+                "meta": None,
+                "objects": {}
+            }
+        }
+
+        thematic_setting_id= self.request.GET.get('threshold_template_id',None)
+        if thematic_setting_id:
+
+            old_entries=ThematicSettings.objects.filter(user__in= [self.request.user])
+            for entries in old_entries:
+                entries.user.remove(self.request.user)
+
+            ThematicSettings.objects.get(id= int(thematic_setting_id)).user.add(self.request.user)
+            self.result['success']=1
+            self.result['message']='Thematic Setting Bind to User Successfully'
+            self.result['data']['objects']['username']=self.request.user.userprofile.username
+            self.result['data']['objects']['thematic_setting_name']= ThematicSettings.objects.get(id=int(thematic_setting_id)).name
+
+        return HttpResponse(json.dumps(self.result))
+
 #************************************ GIS Inventory Bulk Upload ******************************************
 class GISInventoryBulkImport(FormView):
     template_name = 'bulk_import/gis_bulk_import.html'
@@ -2512,9 +2627,10 @@ class GISInventoryBulkImport(FormView):
     form_class = GISInventoryBulkImportForm
 
     def form_valid(self, form):
-        # print "************************ form_valid **********************", form
+        # get uploaded file
         uploaded_file = self.request.FILES['file_upload']
 
+        # used in checking headers of excel sheet
         # dictionary containing all 'pts bs' fields
         ptp_bs_fields = ['City', 'State', 'Ckt ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
                          'Qos(BW)', 'Latitude', 'Longititude', 'Antenna height', 'Polarisation', 'Antenna Type',
@@ -2570,6 +2686,7 @@ class GISInventoryBulkImport(FormView):
         ss_sheet = ""
         ptp_sheet = ""
 
+        # fetching values form POST
         try:
             bs_sheet = self.request.POST['bs_sheet'] if self.request.POST['bs_sheet'] else ""
             ss_sheet = self.request.POST['ss_sheet'] if self.request.POST['ss_sheet'] else ""
@@ -2577,12 +2694,18 @@ class GISInventoryBulkImport(FormView):
         except Exception as e:
             logger.info(e.message)
 
-        # print "***************** bs_sheet - ", bs_sheet
-        # print "***************** ss_sheet - ", ss_sheet
-        # print "***************** ptp_sheet - ", ptp_sheet
-
         # reading workbook using 'xlrd' module
-        book = xlrd.open_workbook(uploaded_file.name, file_contents=uploaded_file.read())
+        try:
+            book = xlrd.open_workbook(uploaded_file.name, file_contents=uploaded_file.read())
+        except Exception as e:
+            print "********************************* On opening xlrd- ", e.message
+            return render_to_response('bulk_import/gis_bulk_validator.html', {'headers': "",
+                                                                              'filename': uploaded_file.name,
+                                                                              'sheet_name': "",
+                                                                              'valid_rows': "",
+                                                                              'invalid_rows': "",
+                                                                              'error_message': "There is some internel error in sheet."},
+                                      context_instance=RequestContext(self.request))
 
         # execute only if a valid sheet is selected from form
         if bs_sheet or ss_sheet or ptp_sheet:
@@ -2599,25 +2722,18 @@ class GISInventoryBulkImport(FormView):
                 sheet = ""
                 sheet_name = ""
 
-            # print "***************** sheet - ", sheet
-            # print "***************** no. of rows - ", sheet.nrows
-            # print "***************** 1st row - ", sheet.row(0)
             keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols)]
-            # print "&&&&&&&&&&&&&&&&&"
-            # print len(keys)
-            # print "&&&&&&&&&&&&&&&&&"
+
             keys_list = [x.encode('utf-8').strip() for x in keys]
-            print "******************** keys_list - ", keys_list
+
             valid_rows_dicts = []
             invalid_rows_dicts = []
             valid_rows_lists = []
             invalid_rows_lists = []
+
             for row_index in xrange(1, sheet.nrows):
                 d = {keys[col_index].encode('utf-8').strip(): sheet.cell(row_index, col_index).value
                      for col_index in xrange(sheet.ncols)}
-                # print "***************************************************"
-                # print str(d['Make of Antenna'])
-                # print "***************************************************"
 
                 # wimax bs fields but common with pmp bs
                 if 'City' in d.keys():
@@ -3009,7 +3125,6 @@ class GISInventoryBulkImport(FormView):
                     logger.info(e.message)
 
                 # 'antenna height' validation (must be upto 2 decimal places)
-                # print "******************************* antenna height ********************************", ss_antenna_height, type(ss_antenna_height)
                 try:
                     if antenna_height:
                         if not re.match(regex_upto_two_dec_places, str(antenna_height).strip()):
@@ -3031,8 +3146,6 @@ class GISInventoryBulkImport(FormView):
 
                 # 'azimuth' validation (must be in range 0-360)
                 try:
-                    print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& azimuth - ", int(azimuth)
-                    print "************************************************ type(azimuth)", type(azimuth)
                     if int(azimuth) not in azimuth_angles_list:
                         errors += 'Azimuth must be in range 0-360.\n'
                     elif int(azimuth) in azimuth_angles_list:
@@ -3281,7 +3394,6 @@ class GISInventoryBulkImport(FormView):
                 except Exception as e:
                     logger.info(e.message)
 
-                # print "************************************** qos(bw) ****************************", qos_bw, type(qos_bw)
                 # 'qos_bw' validation (must be numeric)
                 try:
                     if qos_bw:
@@ -3367,6 +3479,14 @@ class GISInventoryBulkImport(FormView):
                 except Exception as e:
                     logger.info(e.message)
 
+                # 'lens or reflector' validation (must be from provided list)
+                try:
+                    if lens_or_reflector:
+                        if lens_or_reflector.strip().lower() not in [x.lower() for x in yes_or_no]:
+                            errors += '{} is not a valid option for lens/reflector.\n'.format(lens_or_reflector)
+                except Exception as e:
+                    logger.info(e.message)
+
                 # # 'ttsl circuit id' validation
                 # # (can only contains alphanumeric, underscore, space, comma)
                 # if ttsl_circuit_id:
@@ -3386,40 +3506,19 @@ class GISInventoryBulkImport(FormView):
                 except Exception as e:
                     logger.info(e.message)
 
-                # print "&&&&&&&&&&&&&&&&&"
-                # print len(d)
-                # print "&&&&&&&&&&&&&&&&&"
-                # print d
-                # print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
-            # print "Valid - "
-            for row in valid_rows_dicts:
-                #print "It's valid."
-                #print "**********************************"
-                #print row
-                pass
-            # print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"
-            # print "\n\n\n\n\n\n\n\n\n"
-            # print "InValid - "
-            for row in invalid_rows_dicts:
-                #print "**********************************"
-                #print row
-                pass
-            hello = "Hello"
             keys_list.append('errors')
             for val in valid_rows_dicts:
-                # print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ val - ", val
                 temp_list = list()
                 for key in keys_list:
                     temp_list.append(val[key])
                 valid_rows_lists.append(temp_list)
+
             for val in invalid_rows_dicts:
-                # print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ val - ", val
                 temp_list = list()
                 for key in keys_list:
                     temp_list.append(val[key])
                 invalid_rows_lists.append(temp_list)
-            # print "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ invalid_rows_lists - ", invalid_rows_lists
-            # print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ keys_list- ", keys_list
+
             self.request.session['headers'] = keys_list
             self.request.session['valid_rows_lists'] = valid_rows_lists
             self.request.session['invalid_rows_lists'] = invalid_rows_lists
@@ -3436,71 +3535,45 @@ class GISInventoryBulkImport(FormView):
 
 class ExcelWriterRowByRow(View):
     def get(self, request):
-        filename = request.GET['filename']
+        filename = request.GET['filename'].split(".")[0]
         sheetname = request.GET['sheetname']
         sheettype = request.GET['sheettype']
 
-        print "*********************************** sheettype - ", sheettype
-        print "*********************************** sheetname - ", sheetname
-        print "*********************************** filename - ", filename
-        # print "*********************************** content  - ", request.session['valid_rows_lists']
-
         if sheettype == repr('valid'):
             content = request.session['valid_rows_lists']
-            filename = "valid_{}_{}".format(sheetname.lower().replace(" ", "_"), filename.lower().replace(" ", "_"))
+            filename = "valid_{}_{}.xls".format(sheetname.lower().replace(" ", "_"), filename.lower().replace(" ", "_"))
         elif sheettype == repr('invalid'):
             content = request.session['invalid_rows_lists']
-            filename = "invalid_{}_{}".format(sheetname.lower().replace(" ", "_"), filename.lower().replace(" ", "_"))
+            filename = "invalid_{}_{}.xls".format(sheetname.lower().replace(" ", "_"), filename.lower().replace(" ", "_"))
         else:
             content = ""
-
-        print "*********************************** content - ", content
-
-        # print "************************************ content - ", content
-        # print "******************************* valid request.session - ", request.session['valid_rows_lists']
-        # print "******************************* invalid request.session - ", request.session['invalid_rows_lists']
-        # print "***************************** request.session['headers'] - ", request.session['headers']
-
-        # strs = content.replace('[', '').split('],')
-        # lists = [map(str, s.replace(']', '').split(',')) for s in strs]
-
-        # print "************************************** request.session['headers'] - ", request.session['headers']
 
         wb = xlwt.Workbook()
         ws = wb.add_sheet(sheetname)
 
         style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
         style_errors = xlwt.easyxf('pattern: pattern solid, fore_colour red;' 'font: colour white, bold True;')
-        # style.alignment.wrap = 1
-
-        # print "*********************************** colors - ", xlwt.XFStyle
 
         try:
             for i, col in enumerate(request.session['headers']):
-                # print "******************* 0, j - col : 0, {} - {}".format(i, col, style)
                 if col != 'errors':
                     ws.write(0, i, col, style)
                 else:
                     ws.write(0, i, col, style_errors)
-
         except Exception as e:
-            # print "########################################"
-            print e.message
+            logger.info(e.message)
 
         try:
             for i, l in enumerate(content):
                 i += 1
                 for j, col in enumerate(l):
-                    # print "******************* i, j - col : {}, {} - {}".format(i, j, col)
                     ws.write(i, j, col)
         except Exception as e:
-            # print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
-            print e.message
+            logger.info(e.message)
+
         response = HttpResponse(mimetype='application/vnd.ms-excel')
-        print "************************************** filename_in_end - ", filename
         response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
 
-        # wb.save('/home/priyesh/Downloads/test2.xlsx')
         wb.save(response)
 
         return response

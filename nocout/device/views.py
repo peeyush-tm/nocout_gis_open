@@ -1683,7 +1683,7 @@ class DeviceTypeFieldsList(ListView):
             {'mData': 'device_type__name', 'sTitle': 'Device Type', 'sWidth': 'null'},
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -2785,10 +2785,19 @@ class DeviceTypeList(ListView):
         datatable_headers = [
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'agent_tag', 'sTitle': 'Agent tag', 'sWidth': 'null', }
+            {'mData': 'agent_tag', 'sTitle': 'Agent tag', 'sWidth': 'null', },
+            {'mData': 'packets', 'sTitle': 'Packets', 'sWidth': 'null'},
+            {'mData': 'timeout', 'sTitle': 'Timeout', 'sWidth': 'null'},
+            {'mData': 'normal_check_interval', 'sTitle': 'Normal Check Interval', 'sWidth': 'null'},
+            {'mData': 'rta_warning', 'sTitle': 'RTA Warining', 'sWidth': 'null'},
+            {'mData': 'rta_critical', 'sTitle': 'RTA Critical', 'sWidth': 'null'},
+            {'mData': 'pl_warning', 'sTitle': 'PL Warning', 'sWidth': 'null'},
+            {'mData': 'pl_critical', 'sTitle': 'PL Critical', 'sWidth': 'null'},
+            {'mData': 'device_icon', 'sTitle': 'Device Icon', 'sWidth': 'null'},
+            {'mData': 'device_gmap_icon', 'sTitle': 'Device GMap Icon', 'sWidth': 'null'},
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
-            datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -2799,8 +2808,10 @@ class DeviceTypeListingTable(BaseDatatableView):
     Render JQuery datatables for listing of device types
     """
     model = DeviceType
-    columns = ['name', 'alias', 'agent_tag']
-    order_columns = ['name', 'alias', 'agent_tag']
+    columns = ['name', 'alias', 'agent_tag', 'packets', 'timeout', 'normal_check_interval',
+               'rta_warning', 'rta_critical', 'pl_warning', 'pl_critical', 'device_icon', 'device_gmap_icon']
+    order_columns = ['name', 'alias', 'agent_tag', 'packets', 'timeout', 'normal_check_interval',
+               'rta_warning', 'rta_critical', 'pl_warning', 'pl_critical', 'device_icon', 'device_gmap_icon']
 
     def filter_queryset(self, qs):
         """
@@ -2832,6 +2843,22 @@ class DeviceTypeListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            try:
+                device_icon_img_url = "/media/"+ (dct['device_icon']) if \
+                    "uploaded" in dct['device_icon'] \
+                    else static("img/" + dct['device_icon'])
+                dct.update(device_icon='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(device_icon_img_url))
+            except Exception as e:
+                logger.info(e)
+
+            try:
+                device_gmap_icon_img_url = "/media/"+ (dct['device_gmap_icon']) if \
+                    "uploaded" in dct['device_gmap_icon'] \
+                    else static("img/" + dct['device_gmap_icon'])
+                dct.update(device_gmap_icon='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(device_gmap_icon_img_url))
+            except Exception as e:
+                logger.info(e)
+
             dct.update(actions='<a href="/type/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                         <a href="/type/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
@@ -2955,7 +2982,6 @@ class DeviceTypeUpdate(UpdateView):
         The request dispatch function restricted with the permissions.
         """
         return super(DeviceTypeUpdate, self).dispatch(*args, **kwargs)
-
 
     def form_valid(self, form):
         """
