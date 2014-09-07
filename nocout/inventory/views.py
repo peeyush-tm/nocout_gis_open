@@ -2395,6 +2395,7 @@ class ThematicSettingsListingTable(BaseDatatableView):
             user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=dct['id']).user.values_list('id', flat=True)
             checkbox_checked_true='checked' if user_current_thematic_setting else ''
             dct.update(
+                threshold_template=ThresholdConfiguration.objects.get(id=int(dct['threshold_template'])).name,
                 icon_settings= full_string,
                 user_selection='<input type="checkbox" class="check_class" '+ checkbox_checked_true +' name="setting_selection" value={0}><br>'.format(dct['id']),
                 actions='<a href="/thematic_settings/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
@@ -2494,6 +2495,12 @@ class ThematicSettingsUpdate(UpdateView):
         initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
+        icon_settings_keys= list(set(form.data.keys())-set(form.cleaned_data.keys()+['csrfmiddlewaretoken']))
+        icon_settings_values_list=[ { key: form.data[key] }  for key in icon_settings_keys if form.data[key]]
+        self.object = form.save()
+        self.object.icon_settings=icon_settings_values_list
+        self.object.save()
+        # self.object = form.save()
         if changed_fields_dict:
             verb_string = 'Changed values of ThematicSettings : %s from initial values ' % (self.object.name) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
@@ -2502,7 +2509,6 @@ class ThematicSettingsUpdate(UpdateView):
                           ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
-            self.object = form.save()
             action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(ThematicSettingsUpdate.success_url)
 
@@ -2541,15 +2547,33 @@ class Get_Threshold_Ranges_And_Icon_For_Thematic_Settings(View):
         }
 
         threshold_template_id= self.request.GET.get('threshold_template_id','')
+        thematic_setting_name= self.request.GET.get('thematic_setting_name','')
         if threshold_template_id:
            threshold_configuration_selected=ThresholdConfiguration.objects.get(id=int(threshold_template_id))
            self.get_all_ranges(threshold_configuration_selected)
            if self.result['data']['objects']['range_list']:
               self.get_icon_details()
               self.result['success']=1
-           return HttpResponse(json.dumps(self.result))
-        else:
-           return HttpResponse(json.dumps(self.result))
+
+
+        if thematic_setting_name:
+            thematic_setting_object= ThematicSettings.objects.get(name=thematic_setting_name)
+            thematic_icon_setting= thematic_setting_object.icon_settings
+            thematic_icon_setting= '[]' if thematic_icon_setting =='NULL' or thematic_icon_setting =='' else thematic_icon_setting
+            thematic_icon_setting= eval(thematic_icon_setting)
+            if thematic_icon_setting:
+               icon_details, icon_details_selected=list(), dict()
+
+               for icon_setting in thematic_icon_setting:
+                   # range_list.append('Range ' + icon_setting.keys()[0][-1])
+                   icon_details_selected['Range ' + icon_setting.keys()[0][-1]] = icon_setting.values()[0]
+
+               # self.result['data']['objects']['range_list'] = range_list
+               self.result['data']['objects']['icon_details_selected'] = icon_details_selected
+               # self.get_icon_details()
+               # self.result['success']=1
+
+        return HttpResponse(json.dumps(self.result))
 
     def get_all_ranges(self, threshold_configuration_object):
         range_list=list()
@@ -2560,7 +2584,7 @@ class Get_Threshold_Ranges_And_Icon_For_Thematic_Settings(View):
             query= "range_start= threshold_configuration_object.range{0}_{1}".format(ran, 'start')
             exec query
             if range_start:
-               range_list.append('range {0}'.format(ran))
+               range_list.append('Range {0}'.format(ran))
 
         self.result['data']['objects']['range_list'] = range_list
 
