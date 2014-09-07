@@ -7,7 +7,7 @@ from collections import namedtuple
 from nocout.settings import GISADMIN, ISOLATED_NODE
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def user_soft_delete_form(request, value, datatable_headers):
     """
     Generate User soft delete form.
@@ -71,7 +71,7 @@ def user_soft_delete_form(request, value, datatable_headers):
     result['message'] = "Successfully render form."
     return json.dumps({'result': result })
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def user_soft_delete(request, user_id, new_parent_id, datatable_headers, userlistingtable, userarchivelisting):
     """
     soft delete user i.e. not deleting user from database, it just set
@@ -113,7 +113,7 @@ def user_soft_delete(request, user_id, new_parent_id, datatable_headers, userlis
     result['message'] = "Successfully deleted."
     return json.dumps({ 'result': result })
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def user_add( request, user_id):
     """
     To re add the user from the archive listing
@@ -128,7 +128,7 @@ def user_add( request, user_id):
     return json.dumps({ 'result': result })
 
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def user_hard_delete(request, user_id):
     """
     To Hard delete the user from the database.

@@ -4,7 +4,7 @@ from models import DeviceGroup
 # from device.models import Inventory
 from user_group.models import Organization
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def device_group_soft_delete_form(request, value):
     """
     generate content for soft delete popup form
@@ -89,7 +89,7 @@ def device_group_soft_delete_form(request, value):
     result['message'] = "Successfully render form."
     return json.dumps({'result': result})
 
-@dajaxice_register
+@dajaxice_register(method='GET')
 def device_group_soft_delete(request, device_group_id, new_parent_id):
     """
     soft delete device group i.e. not deleting device group from database, it just set
