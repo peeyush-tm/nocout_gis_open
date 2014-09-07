@@ -294,11 +294,12 @@ class ThematicSettings(models.Model):
     """
     ThematicSettings Model Columns Declaration.
     """
+    from user_profile.models import UserProfile
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     threshold_template = models.ForeignKey(ThresholdConfiguration)
     icon_settings =models.TextField(default='NULL')
-    user = models.ManyToManyField(User, default=User.objects.get(id=1)  )
+    user_profile = models.ManyToManyField(UserProfile)
 
     def __unicode__(self):
         return self.name

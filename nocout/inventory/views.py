@@ -2390,7 +2390,7 @@ class ThematicSettingsListingTable(BaseDatatableView):
                     full_string+= image_string + range_text
             else:
                 full_string='N/A'
-            user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=dct['id']).user.values_list('id', flat=True)
+            user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=dct['id']).user_profile.values_list('id', flat=True)
             checkbox_checked_true='checked' if user_current_thematic_setting else ''
             dct.update(
                 threshold_template=ThresholdConfiguration.objects.get(id=int(dct['threshold_template'])).name,
@@ -2606,13 +2606,14 @@ class Update_User_Thematic_Setting(View):
         }
 
         thematic_setting_id= self.request.GET.get('threshold_template_id',None)
+        user_profile_id = self.request.user.id
         if thematic_setting_id:
 
-            old_entries=ThematicSettings.objects.filter(user__in= [self.request.user])
+            old_entries=ThematicSettings.objects.filter(user_profile__in= [user_profile_id])
             for entries in old_entries:
-                entries.user.remove(self.request.user)
+                entries.user_profile.remove(self.request.user)
 
-            ThematicSettings.objects.get(id= int(thematic_setting_id)).user.add(self.request.user)
+            ThematicSettings.objects.get(id= int(thematic_setting_id)).user_profile.add(user_profile_id)
             self.result['success']=1
             self.result['message']='Thematic Setting Bind to User Successfully'
             self.result['data']['objects']['username']=self.request.user.userprofile.username
