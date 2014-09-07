@@ -69,7 +69,7 @@
 }
 
         var response=0;
-        $('#id_threshold_template').on('click', function(){
+        $('#id_threshold_template').on('change', function(){
         var threshold_template_id= $('#id_threshold_template').val();
         $.ajax({
             url:'{% url "get_range_and_icon_for_thematic_setting" %}',
