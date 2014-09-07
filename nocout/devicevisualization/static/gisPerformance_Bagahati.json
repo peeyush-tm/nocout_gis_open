@@ -1,0 +1,34 @@
+{
+    "basestation_name": "Bagahati",
+    "basestation_id": 133,
+    "param": {
+        "sector": [
+            {
+                "device_name": "10.1.83.123",
+                "device_id": 17,
+                "performance_data": {
+                    "frequency": "100MHZ",
+                    "pl": "99%",
+                    "color": "rgba(141,30, 40, 0.9)",
+                    "performance_parameter": "some x parameter",
+                    "performance_value": "some x value",
+                    "performance_icon": "caution.png"
+                },
+                "sub_station": [
+                    {
+                        "device_name": "10.172.205.42",
+                        "device_id": 352,
+                        "performance_data": {
+                            "frequency": "1000MHZ",
+                            "pl": "100%",
+                            "color": "rgba(141,30, 40, 0.9)",
+                            "performance_parameter": "some y parameter",
+                            "performance_value": "some y value",
+                            "performance_icon": "mobilephonetower8.png"
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+}

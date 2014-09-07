@@ -126,6 +126,7 @@ $("#resetFilters").click(function(e) {
             /*Call the make network to create the BS-SS network on the google map*/
             // networkMapInstance.getDevicesData_gmap();
             networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
+            // addSubSectorMarkersToOms(main_devices_data_gmaps);
             // showSelectedSubSectorMarkers(sector_MarkersArray);
         }
 
@@ -157,6 +158,7 @@ $("#resetFilters").click(function(e) {
             /*Call the make network to create the BS-SS network on the google map*/
             // networkMapInstance.getDevicesData_gmap();
             networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
+            // addSubSectorMarkersToOms(main_devices_data_gmaps);
             // showSelectedSubSectorMarkers(sector_MarkersArray);
         }
     }
@@ -183,6 +185,10 @@ $("#cancelAdvSearchBtn").click(function(e) {
     }
     // advJustSearch.resetVariables();
 });
+
+function resetAdvanceSearch() {
+    $("#resetSearchForm").trigger('click');    
+}
 
 $("#resetSearchForm").click(function(e) {
     $("form#searchInfoModal_form").find('select').each(function(i, el) {
@@ -251,7 +257,7 @@ function removeAdvFilters() {
     hasAdvFilter = 0;
 
     advSearch.removeFilters();
-
+// addSubSectorMarkersToOms();
     /*Call get_page_status function to show the current status*/
     get_page_status();
 }
@@ -490,3 +496,30 @@ $("select#icon_Size_Select_In_Tools").change(function() {
     defaultIconSize= val;
     networkMapInstance.updateAllMarkersWithNewIcon(val);
 });
+
+
+/*
+Function is used to Disable Advance Search, Advance Filter Button when Call for data is going on.
+When call is completed, we use the same function to enable Button by passing 'no' in parameter.
+ */
+function disableAdvanceButton(status) {
+    var buttonEls= ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn'];
+    var selectBoxes= ['technology', 'vendor', 'state', 'city'];
+    var textBoxes= ['searchTxt'];
+    var disablingBit= false;
+    if(status=== undefined) {
+        disablingBit= true;
+    }
+
+    for(var i=0; i< buttonEls.length; i++) {
+        $('#'+buttonEls[i]).prop('disabled', disablingBit);
+    }
+
+    for(var i=0; i< selectBoxes.length; i++) {
+        document.getElementById(selectBoxes[i]).disabled = disablingBit;    
+    }
+
+    for(var i=0; i< textBoxes.length; i++) {
+        document.getElementById(textBoxes[i]).disabled = disablingBit;
+    }
+}

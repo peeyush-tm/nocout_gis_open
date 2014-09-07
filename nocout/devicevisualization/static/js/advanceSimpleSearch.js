@@ -175,13 +175,14 @@ function advanceJustSearchClass() {
 
     this.showNotification= function() {
     	if(!$("span#gis_search_status_txt").length) {
-    		$("<br /><span id='gis_search_status_txt'>Advance Search Applied</span>").insertAfter("#gis_status_txt");
+    		$("<br /><span id='gis_search_status_txt'>Advance Search Applied</span><button class='btn btn-sm pull-right' onclick='resetAdvanceSearch();'>Reset</button>").insertAfter("#gis_status_txt");
     	}
     }
 
     this.hideNotification= function() {
     	if($("span#gis_search_status_txt").length) {
     		$("span#gis_search_status_txt").prev().remove();
+            $("span#gis_search_status_txt").next().remove();
     		$("span#gis_search_status_txt").remove();
     	}
     }

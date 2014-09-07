@@ -1,0 +1,86 @@
+{
+    "basestation_name": "Rakesh_Bulb_Pataudia",
+    "basestation_id": 55,
+    "param": {
+        "sector": [
+            {
+                "device_name": "10.171.66.2",
+                "device_id": 145,
+                "performance_data": {
+                    "frequency": "100MHZ",
+                    "pl": "99%",
+                    "color": "rgba(11,30, 140, 0.9)",
+                    "performance_parameter": "some x parameter",
+                    "performance_value": "some x value",
+                    "performance_icon": "caution.png"
+                },
+                "sub_station": [
+                    {
+                        "device_name": "10.171.135.13",
+                        "device_id": 111,
+                        "performance_data": {
+                            "frequency": "1000MHZ",
+                            "pl": "100%",
+                            "color": "rgba(11,30, 140, 0.9)",
+                            "performance_parameter": "some y parameter",
+                            "performance_value": "some y value",
+                            "performance_icon": "mobilephonetower8.png"
+                        }
+                    }
+                ]
+            },
+            {
+                "device_name": "10.171.66.3",
+                "device_id": 300,
+                "performance_data": {
+                    "frequency": "100MHZ",
+                    "pl": "99%",
+                    "color": "rgba(32,88, 67, 0.9)",
+                    "performance_parameter": "some x parameter",
+                    "performance_value": "some x value",
+                    "performance_icon": "caution.png"
+                },
+                "sub_station": [
+                    {
+                        "device_name": "10.171.133.11",
+                        "device_id": 237,
+                        "performance_data": {
+                            "frequency": "1000MHZ",
+                            "pl": "100%",
+                            "color": "rgba(255,255, 255, 0.9)",
+                            "performance_parameter": "some y parameter",
+                            "performance_value": "some y value",
+                            "performance_icon": "mobilephonetower8.png"
+                        }
+                    }
+                ]
+            },
+            {
+                "device_name": "14.141.151.99",
+                "device_id": 777,
+                "performance_data": {
+                    "frequency": "100MHZ",
+                    "pl": "99%",
+                    "color": "rgba(211,130, 40, 0.9)",
+                    "performance_parameter": "some x parameter",
+                    "performance_value": "some x value",
+                    "performance_icon": "caution.png"
+                },
+                "sub_station": [
+                    {
+                        "device_name": "14.141.151.100",
+                        "device_id": 336,
+                        "performance_data": {
+                            "frequency": "1000MHZ",
+                            "pl": "100%",
+                            "color": "rgba(255,255, 255, 0.9)",
+                            "performance_parameter": "some y parameter",
+                            "performance_value": "some y value",
+                            "performance_icon": "mobilephonetower8.png"
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+}

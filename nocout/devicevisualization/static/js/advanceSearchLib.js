@@ -948,6 +948,7 @@ function advanceSearchClass() {
 //            for( var a=0; a<result_plot_devices.length; a++){
 
             gmapInstance.plotDevices_gmap(result_plot_devices,"base_station");
+            // addSubSectorMarkersToOms(result_plot_devices);
             //Intilaizing value to Null
             result_plot_devices=[];
 
