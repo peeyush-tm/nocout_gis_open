@@ -81,7 +81,7 @@ var mapInstance = "",
 	distance_label = {},
 	isFreeze = 0;
     map_points_array = [];
-    map_point_count = 0, zoomAfterRightClickComes= 10, fresnelData= {}, markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}};
+    map_point_count = 0, zoomAfterRightClickComes= 10, fresnelData= {}, markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}};
 
 var sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 9, sectorMarkersMasterObj= {}, isSectorMarkerLoaded=0, tempFilterSectordata= [];
 
@@ -492,7 +492,6 @@ function devicePlottingClass_gmap() {
 							}
 
 							main_devices_data_gmaps = devices_gmaps;
-							console.log(devices_gmaps[0]);
 
 							if(devicesObject.data.objects.children.length > 0) {
 
@@ -749,7 +748,6 @@ function devicePlottingClass_gmap() {
 						deviceInfo: sector_array[j].device_info,
 						zIndex: 200,
 						optimized: false,
-				    	title: "Sector Marker",
                         antenna_height: sector_array[j].antenna_height
                     }
 
@@ -895,6 +893,11 @@ function devicePlottingClass_gmap() {
 					}
 				}
 			}
+
+		
+
+			var gisPerformanceClass= new GisPerformance();
+			gisPerformanceClass.start();
 
 			gmap_self.updateAllMarkersWithNewIcon(defaultIconSize);
 
@@ -1073,6 +1076,8 @@ function devicePlottingClass_gmap() {
 		});
 
 		markersMasterObj['Lines'][String(startEndObj.startLat)+ startEndObj.startLon+ startEndObj.endLat+ startEndObj.endLon]= pathConnector;
+		markersMasterObj['LinesName'][String(bs_name)+ ss_name]= pathConnector;
+		
 
 		/*returns gmap polyline object */
 		return pathConnector;
@@ -1214,7 +1219,6 @@ function devicePlottingClass_gmap() {
 	 * @param sector_child [JSON object Array], It contains the connected SS data.
 	 */
 	this.plotSector_gmap = function(lat,lon,pointsArray,sectorInfo,bgColor,sector_child) {
-
 		var polyPathArray = [];
 		
 		var halfPt = Math.floor(pointsArray.length / (+2));
@@ -1247,11 +1251,13 @@ function devicePlottingClass_gmap() {
 			zIndex 			 : 180,
 			geodesic		 : true
         });
-
         /*Push polygon to an array*/
 		sectorArray.push(poly);
-
         poly.setMap(mapInstance);
+if(sector_child.length) {
+		markersMasterObj['Poly'][sector_child[0]["device_name"]]= poly;
+}
+        
 
         /*listener for click event of sector*/
 		google.maps.event.addListener(poly,'click',function(e) {
