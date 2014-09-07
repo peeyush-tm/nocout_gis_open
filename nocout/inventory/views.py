@@ -2384,7 +2384,7 @@ class ThematicSettingsListingTable(BaseDatatableView):
         for dct in qs:
             image_string, range_text, full_string='','',''
             if dct['icon_settings'] and dct['icon_settings'] !='NULL':
-
+                ###@nishant-teatrix. PLEASE SHOW THE RANGE MIN < ICON < RANGE MAX
                 for d in eval(dct['icon_settings']):
                     img_url = str("/media/"+ (d.values()[0]) if "uploaded" in d.values()[0] else static("img/" + d.values()[0]))
                     image_string= '<img src="{0}" style="height:25px; width:25px">'.format(img_url.strip())
