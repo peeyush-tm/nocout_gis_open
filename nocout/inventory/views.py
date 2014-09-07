@@ -2329,7 +2329,7 @@ class ThematicSettingsList(ListView):
 
         user_id = self.request.user.id
         #if user is superadmin
-        if user_id==1:
+        if user_id in [1,2]: ##needs to be changed to user.is_superadmin
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -2384,10 +2384,12 @@ class ThematicSettingsListingTable(BaseDatatableView):
         for dct in qs:
             image_string, range_text, full_string='','',''
             if dct['icon_settings'] and dct['icon_settings'] !='NULL':
+
                 for d in eval(dct['icon_settings']):
-                    image_string= '<img src=/static/img/{0} style="height:25px; width:25px">'.format(d.values()[0])
+                    img_url = "/media/"+ (dct['icon_settings']) if "uploaded" in dct['icon_settings'] else static("img/" + dct['icon_settings'])
+                    image_string= '<img src={0} style="height:25px; width:25px">'.format(img_url)
                     range_text= ' Range '+ d.keys()[0][-1] +', '
-                    full_string+= image_string + range_text
+                    full_string+= image_string + range_text + "</br>"
             else:
                 full_string='N/A'
             user_current_thematic_setting= self.request.user.id in ThematicSettings.objects.get(id=dct['id']).user_profile.values_list('id', flat=True)
