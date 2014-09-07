@@ -1934,9 +1934,9 @@ class LivePollingSettingsList(ListView):
             {'mData': 'service__alias',          'sTitle': 'Service',           'sWidth': 'null'},
             {'mData': 'data_source__alias',      'sTitle': 'Data Source',       'sWidth': 'null'},
             ]
-        #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        user_id = self.request.user.id
+        #if user is superadmin
+        if user_id==1:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -2129,12 +2129,10 @@ class ThresholdConfigurationList(ListView):
             {'mData': 'name',                           'sTitle': 'Name',                   'sWidth': 'null'},
             {'mData': 'alias',                          'sTitle': 'Alias',                  'sWidth': 'null'},
             {'mData': 'live_polling_template__alias',   'sTitle': 'Live Polling Template',  'sWidth': 'null'},
-            # {'mData': 'warning',                        'sTitle': 'Warning',                'sWidth': 'null'},
-            # {'mData': 'critical',                       'sTitle': 'Critical',               'sWidth': 'null'},
             ]
-        #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        user_id = self.request.user.id
+        #if user is superadmin
+        if user_id==1:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -2329,9 +2327,9 @@ class ThematicSettingsList(ListView):
             {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'null'},
             {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'null'},]
 
-        #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        user_id = self.request.user.id
+        #if user is superadmin
+        if user_id==1:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
