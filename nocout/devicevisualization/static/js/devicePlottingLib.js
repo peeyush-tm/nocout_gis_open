@@ -164,6 +164,7 @@ function openBSRightClickMenu(event, marker) {
 		},100);
 	}
 }
+
 var sectorMarkersInMap= [];
 var sectorOmsMarkers= [];
 function clearPreviousSectorMarkers() {
@@ -2194,14 +2195,25 @@ if(sector_child.length) {
 
         	} else {
 
+        		/************************Google Earth Code***********************/
+
+        		/*Reset markers & polyline*/
+				gmap_self.clearGmapElements();
+
+				/*Reset Global Variables & Filters*/
+				gmap_self.resetVariables_gmap();
+
+				/*create the BS-SS network on the google map*/
+	            gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
+
         		/*Clear all the elements from google earth*/
-		        earth_instance.clearEarthElements();
+		        // earth_instance.clearEarthElements();
 
 		        /*Reset Global Variables & Filters*/
-		        earth_instance.resetVariables_earth();
+		        // earth_instance.resetVariables_earth();
 
 		        /*create the BS-SS network on the google earth*/
-		        earth_instance.plotDevices_earth(main_devices_data_earth,"base_station");
+		        // earth_instance.plotDevices_earth(main_devices_data_earth,"base_station");
 
 		        // addSubSectorMarkersToOms();
         	}
