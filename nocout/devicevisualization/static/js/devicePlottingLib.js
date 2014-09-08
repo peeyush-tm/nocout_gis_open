@@ -3712,9 +3712,15 @@ function getDataForAdvanceSearch() {
 	filter_data_bs_lon_collection=[],
 	filter_data_sector_configured_on_collection=[];
 	filter_data_sector_circuit_ids_collection=[];
+	var filter_data_bs_city_collection=[];
 
     if(main_devices_data_gmaps.length >0) {
     	for (i=0; i< main_devices_data_gmaps.length; i++) {
+    		if (main_devices_data_gmaps[i].data.city != 'N/A'){
+    			filter_data_bs_city_collection.push({ 'id': main_devices_data_gmaps[i].id,
+    				'value': main_devices_data_gmaps[i].data.city });
+    		}
+
 
     		filter_data_bs_name_collection.push({ 'id':[main_devices_data_gmaps[i].id], 'value':main_devices_data_gmaps[i].name });
 
@@ -3734,6 +3740,7 @@ function getDataForAdvanceSearch() {
     			filter_data_sector_circuit_ids_collection.push({ 'id':[main_devices_data_gmaps[i].id], 'value':filter_data_sector_circuit_ids_values[k] });
     		}
     	}
+    	filter_data_bs_city_collection= unique_values_field_and_with_base_station_ids(filter_data_bs_city_collection);
 
     	var advanceSearchFilterData= []; //prepare_data_for_filter();
 
@@ -3745,21 +3752,21 @@ function getDataForAdvanceSearch() {
     			'values':filter_data_bs_name_collection
     		});
 
-//    	advanceSearchFilterData.push({
-//    			'element_type':'multiselect',
-//    			'field_type':'string',
-//    			'key':'latitude',
-//    			'title':'BS Latitude',
-//    			'values':filter_data_bs_lat_collection
-//    		});
+   	advanceSearchFilterData.push({
+   			'element_type':'multiselect',
+   			'field_type':'string',
+   			'key':'latitude',
+   			'title':'BS Latitude',
+   			'values':filter_data_bs_lat_collection
+   		});
 
-//    	advanceSearchFilterData.push({
-//    			'element_type':'multiselect',
-//    			'field_type':'string',
-//    			'key':'longitude',
-//    			'title':'BS Longitude',
-//    			'values':filter_data_bs_lon_collection
-//    		});
+   	advanceSearchFilterData.push({
+   			'element_type':'multiselect',
+   			'field_type':'string',
+   			'key':'longitude',
+   			'title':'BS Longitude',
+   			'values':filter_data_bs_lon_collection
+   		});
 
     	advanceSearchFilterData.push({
     			'element_type':'multiselect',
@@ -3777,6 +3784,15 @@ function getDataForAdvanceSearch() {
     			'values':filter_data_sector_circuit_ids_collection
     		});
     	
+    	advanceSearchFilterData.push({
+                'element_type':'multiselect',
+                'field_type':'string',
+                'key':'city',
+                'title':'BS City',
+                'values':filter_data_bs_city_collection
+                });
+
+
     }//if condition closed
     return advanceSearchFilterData;
 }

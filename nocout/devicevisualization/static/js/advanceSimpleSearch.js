@@ -82,12 +82,21 @@ function advanceJustSearchClass() {
                                 }
                             }
                         } else {
+console.log(currentKey);
+console.log(filterValues[j]);
 
                             for(var j=0;j<filterValues.length;j++) {
 
                                 if(($.trim(filterValues[j].id) != null && $.trim(filterValues[j].value) != null) && ($.trim(filterValues[j].id) != "" && $.trim(filterValues[j].value) != "")) {
+                                    if(currentKey=== "sector_configured_on") {
+                                        var s= filterValues[j].value;
+                                        s = s.substring(0, s.indexOf('('));
+                                        formElements += '<option value="'+filterValues[j].value+'">'+s+'</option>';    
+                                    } else {
+                                        formElements += '<option value="'+filterValues[j].value+'">'+filterValues[j].value+'</option>';    
+                                    }
 
-                                    formElements += '<option value="'+filterValues[j].value+'">'+filterValues[j].value+'</option>';
+                                    
                                 }
                             }
                         }
@@ -310,7 +319,7 @@ function advanceJustSearchClass() {
 							}
 						}
 
-						//Check BS Technology
+						// // Check BS Technology
 						// if(key==='Technology') {
 						// 	var deviceTechnology= deviceJson.sector_ss_technology;
 						// 	var deviceTechnologyArray= deviceTechnology.split(" ");
@@ -326,7 +335,7 @@ function advanceJustSearchClass() {
 						// 	}
 						// }
 
-						//Check BS Vendor
+						// Check BS Vendor
 						// if(key==='Vendor') {
 						// 	var deviceVendor= deviceJson.sector_ss_vendor;
 						// 	var deviceVendorArray= deviceVendor.split(" ");
@@ -342,7 +351,7 @@ function advanceJustSearchClass() {
 						// 	}
 						// }
 
-						//Check BS State
+						// Check BS State
 						// if(key === 'BS State') {
 						// 	if(((String(deviceJson.data.state)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.state)).toLowerCase()) != -1) {
 						// 	} else {
@@ -350,29 +359,29 @@ function advanceJustSearchClass() {
 						// 	}							
 						// }
 
-						//Check BS City
-						// if(key === 'BS City') {
-						// 	if(((String(deviceJson.data.city)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.city)).toLowerCase()) != -1) {
-						// 	} else {
-						// 		return false;
-						// 	}	
-						// }
+						// Check BS City
+						if(key === 'BS City') {
+							if(((String(deviceJson.data.city)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.city)).toLowerCase()) != -1) {
+							} else {
+								return false;
+							}	
+						}
 
-						//Check BS Latitude
-						// if(key === 'BS Latitude') {
-						// 	if(((String(deviceJson.data.lat)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lat)).toLowerCase()) != -1) {
-						// 	} else {
-						// 		return false;
-						// 	}	
-						// }
+						// Check BS Latitude
+						if(key === 'BS Latitude') {
+							if(((String(deviceJson.data.lat)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lat)).toLowerCase()) != -1) {
+							} else {
+								return false;
+							}	
+						}
 
-						//Check BS Longitude
-						// if(key === 'BS Longitude') {
-						// 	if(((String(deviceJson.data.lon)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lon)).toLowerCase()) != -1) {
-						// 	} else {
-						// 		return false;
-						// 	}	
-						// }
+						// Check BS Longitude
+						if(key === 'BS Longitude') {
+							if(((String(deviceJson.data.lon)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lon)).toLowerCase()) != -1) {
+							} else {
+								return false;
+							}	
+						}
 						//Check BS Sector Configured On
 						if(key === 'IP') {
 							var deivceConfiguredOn= deviceJson.sector_configured_on_devices;
@@ -394,7 +403,6 @@ function advanceJustSearchClass() {
 							var deviceCircuitIDs= deviceJson.circuit_ids;
                             var deviceCircuitIDSArray= deviceCircuitIDs.split(" ");
                             var isCircuitPresent= false;
-console.log(selectedInputs['Circuit Id']);
 							for(var z=0; z< deviceCircuitIDSArray.length; z++) {
 								if(deviceCircuitIDSArray[z] && ((String(deviceCircuitIDSArray[z])).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceCircuitIDSArray[z])).toLowerCase()) != -1) {
 									advJustSearch_self.findTheLineToUpdate(deviceJson, selectedInputs[key]);
