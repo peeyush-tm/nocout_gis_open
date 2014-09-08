@@ -3713,7 +3713,7 @@ function getDataForAdvanceSearch() {
     		}
     	}
 
-    	var advanceSearchFilterData= prepare_data_for_filter();
+    	var advanceSearchFilterData= []; //prepare_data_for_filter();
 
     	advanceSearchFilterData.push({
     			'element_type':'multiselect',
@@ -3723,21 +3723,21 @@ function getDataForAdvanceSearch() {
     			'values':filter_data_bs_name_collection
     		});
 
-    	advanceSearchFilterData.push({
-    			'element_type':'multiselect',
-    			'field_type':'string',
-    			'key':'latitude',
-    			'title':'BS Latitude',
-    			'values':filter_data_bs_lat_collection
-    		});
+//    	advanceSearchFilterData.push({
+//    			'element_type':'multiselect',
+//    			'field_type':'string',
+//    			'key':'latitude',
+//    			'title':'BS Latitude',
+//    			'values':filter_data_bs_lat_collection
+//    		});
 
-    	advanceSearchFilterData.push({
-    			'element_type':'multiselect',
-    			'field_type':'string',
-    			'key':'longitude',
-    			'title':'BS Longitude',
-    			'values':filter_data_bs_lon_collection
-    		});
+//    	advanceSearchFilterData.push({
+//    			'element_type':'multiselect',
+//    			'field_type':'string',
+//    			'key':'longitude',
+//    			'title':'BS Longitude',
+//    			'values':filter_data_bs_lon_collection
+//    		});
 
     	advanceSearchFilterData.push({
     			'element_type':'multiselect',
