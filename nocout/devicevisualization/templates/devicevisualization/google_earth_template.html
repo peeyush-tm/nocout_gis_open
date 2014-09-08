@@ -8,9 +8,10 @@
 {% load staticfiles %}
 {% block css %}
     <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
+    <!--Bootstrap Switch CSS-->
+    <link rel="stylesheet" type="text/css" href={% static "js/bootstrap-switch/bootstrap-switch.min.css" %}>
     <!-- JQUERY UI-->
-    <link rel="stylesheet" type="text/css"
-          href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
     <style>
         select option[disabled] {
             display: none;
@@ -264,6 +265,9 @@
     <script type="text/javascript" src={% static "js/fullScreenControl.js" %}></script>
     <!--Flot Chart Library for Fresnel zone-->
     <script src={% static "js/flot/jquery.flot.min.js" %}></script>
+    <!--Bootstrap Switch Library-->
+    <script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %}></script>
+
     <script type="text/javascript">
 
         var networkMapInstance = "",
