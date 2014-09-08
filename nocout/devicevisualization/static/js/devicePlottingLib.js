@@ -3713,7 +3713,7 @@ function getDataForAdvanceSearch() {
     		}
     	}
 
-    	var advanceSearchFilterData= [] //prepare_data_for_filter();
+    	var advanceSearchFilterData= []; //prepare_data_for_filter();
 
     	advanceSearchFilterData.push({
     			'element_type':'multiselect',
