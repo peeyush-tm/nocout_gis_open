@@ -710,7 +710,7 @@ def add_device_to_nms_core_form(request, device_id):
         device_id (int): device id
 
     Returns:
-        result (dict): dict of device info
+        result (dict): dict of ping parameters associated with device type
                     i.e. {
                             "result": {
                                 "message": "Successfully fetched ping parameters from database.",
@@ -736,8 +736,6 @@ def add_device_to_nms_core_form(request, device_id):
     result['message'] = "Failed to get device ping data."
     result['data']['meta'] = ''
     device = Device.objects.get(pk=device_id)
-    print "****************************** device_id - ", device.id
-    print "****************************** request - ", request
 
     try:
         # get device type
@@ -782,8 +780,6 @@ def add_device_to_nms_core_form(request, device_id):
     result['data']['rta_critical'] = ping_rta_critical
     result['data']['pl_warning'] = ping_pl_warning
     result['data']['pl_critical'] = ping_pl_critical
-
-    print "****************************** result - ", result
 
     return json.dumps({'result': result})
 
