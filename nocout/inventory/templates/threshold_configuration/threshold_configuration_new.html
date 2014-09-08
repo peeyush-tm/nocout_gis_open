@@ -22,14 +22,14 @@
                         </div>
                             <div class="box-body">
                                 <div class="col-md-8"><br />
-                                    <form action="/threshold_configuration/new/" method="post" class="form-horizontal" role="form" enctype="multipart/form-data">{% csrf_token %}
+                                    <form action="/threshold_configuration/new/" method="post" class="form-horizontal" role="form" enctype="multipart/form-data" onsubmit="return validateRangeForm();">{% csrf_token %}
                                         <div class="form-group">
                                             {% for field in form %}
                                                 <div class="form-group">
                                                     <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">{% if field.field.required %}<span class="mandatory">* </span>{% endif %}{{ field.label|title }}</label>
                                                     <div class="col-sm-9">
                                                         <div class="col-md-8">
-                                                            {{ field }} {{ field.errors }}
+                                                            {{  field }} {{ field.errors }}
                                                         </div>
                                                         <div class="col-md-4 help_text">
                                                             {{ field.help_text }}
@@ -40,8 +40,7 @@
                                         </div>
                                         <div class="form-group">
                                             <div class="col-sm-offset-3 col-sm-9">
-                                                <button type="submit" class="btn btn-success"  onclick="return validateInputRanges();">
-                                                <i class="fa fa-pencil"></i>Create</button>
+                                                <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>Create</button>
                                                 &nbsp;
                                                 <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i>Reset</button>
                                                 &nbsp;
@@ -62,77 +61,152 @@
     {% endblock %}
     <script>
 
-        function validateInputRanges() {
-            var rangeObj= {};
-            var validationBit= true;
-            function loopThroughSpecificRange(i) {
-                var startingValue= parseInt($("input#id_range"+i+"_start").val(), 10);
-                var endValue= parseInt($("input#id_range"+i+"_end").val(), 10);
-                if(startingValue && !endValue) {
-                    $("input#id_range"+i+"_end").parent().next().html('Value not filled');
-                    return false;
-                } else {
-                    $("input#id_range"+i+"_end").parent().next().html('');
-                }
-                if(!startingValue && endValue) {
-                    $("input#id_range"+i+"_start").parent().next().html('Value not filled');
-                    return false;
-                } else {
-                    $("input#id_range"+i+"_start").parent().next().html('');
-                }
-                if(startingValue && endValue) {
-                    if(startingValue> endValue) {
-                        $("input#id_range"+i+"_start").parent().next().html('This value is greated than end Value');
-                        $("input#id_range"+i+"_end").parent().next().html('This value is smaller than start Value');
-                        return false;
-                    } else {
-                        $("input#id_range"+i+"_start").parent().next().html('');
-                        $("input#id_range"+i+"_end").parent().next().html('');
-                    }
-                    if(Object.keys(rangeObj).length=== 0) {
-                        rangeObj['range'+i]= [startingValue, endValue];
-                    } else {
-                        console.log(rangeObj);
-                        for(var key in rangeObj) {
-                            if(rangeObj.hasOwnProperty(key)) {
-                                var range= rangeObj[key];
-                                if(startingValue>= range[0] && startingValue <= range[1]) {
-                                    $("input#id_range"+i+"_start").parent().next().html('This value is already repeated in'+ JSON.stringify(range));
-                                    return false; //Starting value lies between range
-                                } else {
-                                    $("input#id_range"+i+"_start").parent().next().html('');
-                                }
-                                if(endValue>= range[0] && endValue <= range[1]) {
-                                    $("input#id_range"+i+"_end").parent().next().html('This value is already repeated in'+ JSON.stringify(range));
-                                    return false; //Starting value lies between range
-                                } else {
-                                    $("input#id_range"+i+"_end").parent().next().html('');
-                                }
-                                rangeObj['range'+i]= [startingValue, endValue];
-                            }
-                        }
-                    }
-                }
-                return true;
-            }
-
-            for(var i=1; i<= 10; i++) {
-                if(loopThroughSpecificRange(i)) {
-                    var form_group_div= $("input#id_range"+i+"_start").parent().parent().parent();
-                    $(form_group_div).removeClass('has-error').addClass('has-success');
-                    $(form_group_div).next().removeClass('has-error').addClass('has-success');
-                } else {
-                    var form_group_div= $("input#id_range"+i+"_start").parent().parent().parent();
-                    $(form_group_div).addClass('has-error').removeClass('has-success');
-                    $(form_group_div).next().addClass('has-error').removeClass('has-success');
-                }
-            }
-        }
         $(document).ready(function(){
             // Initialize the select2 selectbox.
             $(".select2select").select2();
+        });
 
+        /*Number of range inputs*/
+        var total_label = $("label").length,
+            range_count = 0,
+            error_obj = {},
+            range_bug_array = [],
+            overlapping_bug_array = [],
+            empty_start_array = [],
+            empty_end_array = [],
+            bugs_array = [];
 
-        })
+        for(var i=0;i<total_label;i++) {
+            if($("label")[i].innerText.indexOf("Start") > -1 || $("label")[i].innerText.indexOf("End") > -1) {
+                range_count++;
+            }
+        }
+
+        /**
+         * This function validates the "Range" fields as per the validation rules
+         * @method validateRangeForm
+         */
+
+        function validateRangeForm() {
+
+            for(var i=1;i<=range_count/2;i++) {
+
+                var startingValue = parseInt($("input#id_range"+i+"_start").val(), 10);
+                var endValue = parseInt($("input#id_range"+i+"_end").val(), 10);
+
+                if(startingValue && endValue) {
+                    if(startingValue > endValue) {
+                        range_bug_array.push(i);
+                        
+                        if(bugs_array.indexOf("range_bug_array") == -1) {
+                            bugs_array.push("range_bug_array");
+                        }
+
+                    } else {
+                        for(var j=i;j<=range_count/2;j++) {
+                            if(j != i) {
+                                var startingValue2 = parseInt($("input#id_range"+j+"_start").val(), 10);
+                                var endValue2 = parseInt($("input#id_range"+j+"_end").val(), 10);
+                                
+                                if((startingValue2 >= startingValue && startingValue2 < endValue) || (endValue2 >= startingValue && endValue2 < endValue)) {
+                                    if(overlapping_bug_array.indexOf(j) == -1 && range_bug_array.indexOf(j) == -1) {
+                                        overlapping_bug_array.push(j);
+
+                                        if(bugs_array.indexOf("overlapping_bug_array") == -1) {
+                                            bugs_array.push("overlapping_bug_array");
+                                        }
+                                    }                                
+                                }
+                            }
+                        }
+                    }
+
+                } else if(startingValue && !endValue) {
+                    
+                    empty_end_array.push(i);
+                    if(bugs_array.indexOf("empty_end_array") == -1) {
+                        bugs_array.push("empty_end_array");
+                    }
+
+                } else if(!startingValue && endValue) {
+                    
+                    empty_start_array.push(i);
+                    if(bugs_array.indexOf("empty_start_array") == -1) {
+                        bugs_array.push("empty_start_array");
+                    }
+
+                }
+            }
+
+            error_obj = {
+                "range_bug_array" : {
+                    "data" : range_bug_array,
+                    message : "Start range can't be greater than end range."
+                },
+                "overlapping_bug_array" : {
+                    data : overlapping_bug_array,
+                    message : "Value can't be overlapped by preceding range values."
+                },
+                "empty_start_array" : {
+                    data : empty_start_array,
+                    message : "Please fill the start value."
+                },
+                "empty_end_array" : {
+                    data : empty_end_array,
+                    message : "Please fill the end value."
+                }
+            };
+
+            if(bugs_array.length > 0) {
+
+                for(var i=0;i<bugs_array.length;i++) {
+                    var error_array = bugs_array[i];
+                    show_error_msg(error_obj[error_array].data,error_obj[error_array].message);
+                }
+                return false;
+            } else {
+                return true;
+            }
+        }
+
+        /**
+         * This function shows the error message passed as param in front of respective text box present in array
+         * @prama id_array [Array], It contain the input id counter which has error
+         * @prama msg [String], It contain the error message
+         */
+        function show_error_msg(id_array,msg) {
+
+            for(var k=0;k<id_array.length;k++) {
+                $("input#id_range"+id_array[k]+"_end").closest(".col-sm-9").children()[1].innerText = msg;
+            }
+        }
+
+        /***********Update Range HTML Code Start***********/
+
+        /*Seperator html*/
+        var to_seperator_html = "<span class='col-sm-1' style='padding: 0px;padding-top: 5px;text-align: center;'>To</span>";
+
+        /*Update Range html*/
+        for(var j=1;j<=range_count/2;j++) {            
+
+            $("#id_range"+j+"_start").parent().html($("#id_range"+j+"_start").parent().html()+""+to_seperator_html+""+$("#id_range"+j+"_end").parent().html());
+            
+            $("#id_range"+j+"_start").attr("style","width:45%;");
+            $("#id_range"+j+"_start").addClass("col-md-4");
+            $("#id_range"+j+"_start").attr("placeholder","Start");
+
+            $("#id_range"+j+"_end").attr("style","width:45%;");
+            $("#id_range"+j+"_end").addClass("col-md-4");
+            $("#id_range"+j+"_end").addClass("pull-right");
+            $("#id_range"+j+"_end").attr("placeholder","End");
+            
+            // $("#id_range"+j+"_start").parent().parent().parent().next().children().parent().remove();
+            $("#id_range"+j+"_start").closest(".form-group").next().remove();
+
+            $("#id_range"+j+"_end").parent().parent().parent().children()[0].innerText = "Range"+j;
+        }
+
+        /***********Update Range HTML Code End***********/
+
     </script>
 {% endblock %}
