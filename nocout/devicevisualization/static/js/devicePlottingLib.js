@@ -83,7 +83,7 @@ var mapInstance = "",
     map_points_array = [];
     map_point_count = 0, zoomAfterRightClickComes= 10, fresnelData= {}, markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}};
 
-var sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 9, sectorMarkersMasterObj= {}, isSectorMarkerLoaded=0, tempFilterSectordata= [];
+var sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 9, sectorMarkersMasterObj= {}, isSectorMarkerLoaded=0, tempFilterSectordata= [], isFinishedSectorMarkers= false;
 
 var defaultIconSize= 'medium';
 
@@ -167,12 +167,15 @@ function openBSRightClickMenu(event, marker) {
 var sectorMarkersInMap= [];
 var sectorOmsMarkers= [];
 function clearPreviousSectorMarkers() {
+
 	for(var i=0; i< sectorMarkersInMap.length; i++) {
 		sectorMarkersInMap[i].setMap(null);
 	}
 	for(var i=0; i< sectorOmsMarkers.length; i++) {
 		oms.removeMarker(sectorOmsMarkers[i]);
 	}
+	sectorMarkersInMap= [];
+	sectorOmsMarkers= [];
 }
 
 function prepare_oms_object(oms_instance) {
@@ -181,6 +184,7 @@ function prepare_oms_object(oms_instance) {
 		if(marker.pointType=== "base_station") {
 			//if marker is not spiderfied, stop event and add sector markers here and in oms
 			if(!marker.isMarkerSpiderfied) {
+				// clearPreviousSectorMarkers();
 				var sectorMarkersAtThePoint= sectorMarkersMasterObj[marker.name];
 				if(sectorMarkersAtThePoint && sectorMarkersAtThePoint.length) {
 					for(var j=0; j< sectorMarkersAtThePoint.length; j++) {
@@ -754,16 +758,21 @@ function devicePlottingClass_gmap() {
                     var sect_height = sector_array[j].antenna_height;
 
 /*Create Sector Marker*/
-					var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
+					
+					if(!isFinishedSectorMarkers) {
+						var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
 
-					sector_MarkersArray.push(sector_Marker);
+						sector_MarkersArray.push(sector_Marker);
 
-					if(sectorMarkersMasterObj[bs_ss_devices[i].name]) {
-						sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
-					} else {
-						sectorMarkersMasterObj[bs_ss_devices[i].name]= [];
-						sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
+						if(sectorMarkersMasterObj[bs_ss_devices[i].name]) {
+							sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
+						} else {
+							sectorMarkersMasterObj[bs_ss_devices[i].name]= [];
+							sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
+						}
+						
 					}
+					
 
 					// oms.addMarker(sector_Marker);
 /*End of Create Sector Marker*/
@@ -854,6 +863,8 @@ function devicePlottingClass_gmap() {
 		}
 
 		if(isCallCompleted == 1) {
+
+			isFinishedSectorMarkers= true;
 
 			/*Hide The loading Icon*/
 			$("#loadingIcon").hide();
@@ -3542,7 +3553,6 @@ if(sector_child.length) {
 		circleArray = [];
 		plottedSS = [];
 		ssLinkArray = [];
-		sectorMarkersMasterObj= {};
 	};
 }
 

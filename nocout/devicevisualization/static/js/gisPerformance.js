@@ -21,17 +21,20 @@ function GisPerformance() {
 		// for(var k in markersMasterObj['BSNamae']) this.BSNamesArray.push(k);
 		this.BSNamesArray.push("Bagahati");
 		this.BSNamesArray.push("Rakesh_Bulb_Pataudia");
-		setInterval(function() {
-			that.sendRequest();
-		}, 10000);
+		// that.sendRequest();
+		// setInterval(function() {
+		// 	that.sendRequest();
+		// }, 20000);
 	}
 
 	this.sendRequest= function() {
 		var counter= 0, that= this;
 		while(counter<this.BSNamesArray.length) {
+			var getBsRequestData= this.createRequestData(this.BSNamesArray[counter]);
 			$.ajax({
 				type : 'GET',
 				dataType : 'json',
+				data: getBsRequestData,
 				url:  window.location.origin + '/static/gisPerformance_'+this.BSNamesArray[counter]+'.json',
 				async: false}).done(function(data) {
 					that.gisData= data;
@@ -39,6 +42,39 @@ function GisPerformance() {
 			});
 			counter++;
 		}
+	}
+
+	this.createRequestData= function(bsname) {
+		var initialdata= {
+			"basestation_name": "",
+			"basestation_id": null,
+			"param": {
+				"sector": []
+			}
+		}
+		var bsGmapMarker= markersMasterObj['BSNamae'][bsname];
+		if(bsGmapMarker) {
+			initialdata["basestation_name"]= bsGmapMarker["bs_name"];
+			initialdata["basestation_id"]= bsGmapMarker["bsInfo"][2]["value"];
+			for(var i=0; i< bsGmapMarker["child_ss"].length; i++) {
+				var deviceSectorJSon= {
+					"device_name": bsGmapMarker["child_ss"][i]["device_info"][0]["value"], 
+					"device_id": bsGmapMarker["child_ss"][i]["device_info"][1]["value"], 
+					"performance_data": {"frequency": "","pl": "","color": "","performance_parameter": "","performance_value": "","performance_icon": ""}, 
+					"sub_station": []
+				};
+				for(var j=0; j< bsGmapMarker["child_ss"][i]["sub_station"].length; j++) {
+					var deviceSsJson= {
+						"device_name": bsGmapMarker["child_ss"][i]["sub_station"][j]["device_name"],
+						"device_id": bsGmapMarker["child_ss"][i]["sub_station"][j]["id"],
+						"performance_data": {"frequency": "","pl": "","color": "","performance_parameter": "","performance_value": "","performance_icon": ""}
+					}
+					deviceSectorJSon["sub_station"].push(deviceSsJson);
+				}
+				initialdata["param"]["sector"].push(deviceSectorJSon);
+			}
+		}
+		return initialdata;
 	}
 
 	/*
@@ -86,7 +122,7 @@ function GisPerformance() {
 				}
 			}
 		}catch(exception) {
-			console.log(exception);
+			// console.log(exception);
 		}
 	}
 
