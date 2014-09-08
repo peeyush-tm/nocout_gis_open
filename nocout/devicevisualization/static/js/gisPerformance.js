@@ -18,13 +18,13 @@ function GisPerformance() {
 	 */
 	this.start= function() {
 		var that= this;
-		// for(var k in markersMasterObj['BSNamae']) this.BSNamesArray.push(k);
-		this.BSNamesArray.push("Bagahati");
-		this.BSNamesArray.push("Rakesh_Bulb_Pataudia");
-		// that.sendRequest();
-		// setInterval(function() {
-		// 	that.sendRequest();
-		// }, 20000);
+		for(var k in markersMasterObj['BSNamae']) this.BSNamesArray.push(k);
+//		this.BSNamesArray.push("Bagahati");
+//		this.BSNamesArray.push("Rakesh_Bulb_Pataudia");
+		that.sendRequest();
+		setInterval(function() {
+			that.sendRequest();
+		}, 20000);
 	}
 
 	this.sendRequest= function() {
@@ -32,10 +32,10 @@ function GisPerformance() {
 		while(counter<this.BSNamesArray.length) {
 			var getBsRequestData= this.createRequestData(this.BSNamesArray[counter]);
 			$.ajax({
-				type : 'GET',
+				type : 'POST',
 				dataType : 'json',
-				data: getBsRequestData,
-				url:  window.location.origin + '/static/gisPerformance_'+this.BSNamesArray[counter]+'.json',
+				data: JSON.stringify(getBsRequestData),
+				url:  '/network_maps/performance_data/',
 				async: false}).done(function(data) {
 					that.gisData= data;
 					that.updateMap();
