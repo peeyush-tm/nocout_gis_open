@@ -17,9 +17,9 @@ var advJustSearch_self = "",
 
 var advanceSearchMasterObj= {};
 advanceSearchMasterObj.previouslySearchedMarkersList= [];
-advanceSearchMasterObj.searchedIconUrl= 'https://maps.gstatic.com/mapfiles/ms2/micons/marina.png';
+advanceSearchMasterObj.searchedIconUrl= 'http://www.iconsdb.com/icons/preview/color/E32A0D/arrow-231-xl.png';
 advanceSearchMasterObj.searchedLinesByCircuitIDs= [];
-advanceSearchMasterObj.searchedLinesIconUrl= 'http://maps.google.com/mapfiles/kml/pal5/icon6.png';
+advanceSearchMasterObj.searchedLinesIconUrl= 'http://www.iconsdb.com/icons/preview/color/E32A0D/arrow-231-xl.png';
 advanceSearchMasterObj.maxSearchLevelNumber= 20;
 advanceSearchMasterObj.searchNumberLimitMessage= 'Too many Searched Results. Please filter again. No Markers drawn'
 
@@ -199,7 +199,7 @@ function advanceJustSearchClass() {
     //Here we create a new Marker based on the lat, long and show it on the map. Also push the marker to the previouslySeachedMarkersList array
     this.applyIconToSearchedResult= function(lat, long, iconUrl) {
         //create a new lat long
-        var searchedMarkerLatLong= new google.maps.LatLng(lat, long)
+        var searchedMarkerLatLong= new google.maps.LatLng(lat, long);
         //create a new marker
         var showSearchedResultMarker= new google.maps.Marker({position: searchedMarkerLatLong, zIndex: 99999})
         //push marker in the previouslySearchedMarkersList array
@@ -221,6 +221,7 @@ function advanceJustSearchClass() {
                 showSearchedResultMarker.setIcon(advanceSearchMasterObj.searchedIconUrl);
             }
             //set animation to bounce
+            showSearchedResultMarker.setAnimation(null);
             showSearchedResultMarker.setAnimation(google.maps.Animation.BOUNCE);
             //show the marker on map.
             showSearchedResultMarker.setMap(mapInstance);
@@ -235,8 +236,6 @@ function advanceJustSearchClass() {
             }
             
         });
-
-        
     	return ;
     }
 
@@ -493,31 +492,3 @@ function advanceJustSearchClass() {
         result_Just_plot_devices=[]
 	};
 }
-
-
-/*Deprecated Area*/
-
-/*This code finds the actual marker, and change it. This functionality was changed. */
-        // var latLongOfBS= String(lat)+ long;
-        // THIS CODE WILL REPLACE THE BS MARKER AND REPLEASE IT WITH SEARCH ICON
-        // if(markersMasterObj['BS'] && markersMasterObj['BS'][latLongOfBS]) {
-        //  var markerIs= markersMasterObj['BS'][latLongOfBS];
-        //  markerIs.setIcon(advanceSearchMasterObj.searchedIconUrl);
-        //  advanceSearchMasterObj.previouslySearchedMarkersList.push(markerIs);
-
-        //  markerIs.setAnimation(google.maps.Animation.BOUNCE);
-        // }
-        // 
-        // 
-        // Here we will create a new Marker and show it at the place.
-        // if(markersMasterObj['BS'] && markersMasterObj['BS'][latLongOfBS]) {
-     //        var searchedMarkerLatLong= new google.maps.LatLng(lat, long)
-
-     //        var showSearchedResultMarker= new google.maps.Marker({position: })
-
-        //  var markerIs= markersMasterObj['BS'][latLongOfBS];
-        //  markerIs.setIcon(advanceSearchMasterObj.searchedIconUrl);
-        //  advanceSearchMasterObj.previouslySearchedMarkersList.push(markerIs);
-
-        //  markerIs.setAnimation(google.maps.Animation.BOUNCE);
-        // }

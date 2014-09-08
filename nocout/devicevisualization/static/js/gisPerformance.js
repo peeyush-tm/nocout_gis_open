@@ -109,7 +109,7 @@ function GisPerformance() {
 		//Loop through GIS Sector Data
 		for(var i=0; i< gisData["param"]["sector"].length; i++) {
 			//If Gis Sector Name=== device
-			if(gisData["param"]["sector"][i]["device_name"]=== device) {
+			if(gisData["param"]["sector"][i] && gisData["param"]["sector"][i]["device_name"]=== device) {
 				//Loop inside device Sub Stations
 				for(var j=0; j< gisData["param"]["sector"][i]["sub_station"].length; i++) {
 					//If SubStation name=== devinceName passed
