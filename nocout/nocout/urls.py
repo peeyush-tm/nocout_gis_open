@@ -77,9 +77,11 @@ urlpatterns = patterns('',
 
 # url for uploaded files is like
 # http://localhost:8000/files/icons/mobilephonetower1.png
-if settings.DEBUG:
-    urlpatterns += patterns('',
-                            url(r'^media/(?P<path>.*)$', 'django.views.static.serve', {
-                                'document_root': settings.MEDIA_ROOT,
-                            }),
-    )
+# if settings.DEBUG:
+# urlpatterns += patterns('',
+#                         url(r'^media/(?P<path>.*)$', 'django.views.static.serve', {
+#                             'document_root': settings.MEDIA_ROOT,
+#                         }),
+# )
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

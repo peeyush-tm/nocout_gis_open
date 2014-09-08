@@ -32,7 +32,7 @@ function GisPerformance() {
 			$.ajax({
 				type : 'GET',
 				dataType : 'json',
-				url: 'http://localhost:8000/static/gisPerformance_'+this.BSNamesArray[counter]+'.json',
+				url:  window.location.origin + '/static/gisPerformance_'+this.BSNamesArray[counter]+'.json',
 				async: false}).done(function(data) {
 					that.gisData= data;
 					that.updateMap();
@@ -74,15 +74,15 @@ function GisPerformance() {
 					if(subStationIcon) {
 						var subStationName= bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"];
 						var subStationMarker= markersMasterObj['SSNamae'][subStationName];
-						subStationMarker.setIcon('/static/img/icons/'+subStationIcon);
-						subStationMarker.oldIcon= '/static/img/icons/'+subStationIcon;
-						subStationMarker.clusterIcon= '/static/img/icons/'+subStationIcon;
+						subStationMarker.setIcon(window.location.origin + '/static/img/icons/'+subStationIcon);
+						subStationMarker.oldIcon= window.location.origin + '/static/img/icons/'+subStationIcon;
+						subStationMarker.clusterIcon= window.location.origin + '/static/img/icons/'+subStationIcon;
 					}
 				}
 				var deviceMarkers = sectorMarkersMasterObj[String(gisData.basestation_name)];
 				for(var k=0; k< deviceMarkers.length; k++) {
 					var deviceObject= this.findObjectbyDeviceName(deviceMarkers[i]["deviceInfo"][0]["value"]);
-					deviceMarkers[i].oldIcon= '/static/img/icons/'+deviceObject["performance_data"]["performance_icon"];
+					deviceMarkers[i].oldIcon= window.location.origin + '/static/img/icons/'+deviceObject["performance_data"]["performance_icon"];
 				}
 			}
 		}catch(exception) {
