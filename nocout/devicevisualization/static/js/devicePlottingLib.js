@@ -87,6 +87,7 @@ var mapInstance = "",
     fresnelData= {},
     markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}};
 
+var pointAdd= 0;
 var sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 9, sectorMarkersMasterObj= {}, isSectorMarkerLoaded=0, tempFilterSectordata= [], isFinishedSectorMarkers= false;
 
 var defaultIconSize= 'medium';
@@ -109,7 +110,7 @@ var defaultIconSize= 'medium';
 // 		// oms.addMarker(sector_MarkersArray[i]);
 // 	}
 // }
-
+var gisPerformanceClass = {};
 var place_markers = [];
 
 function displayCoordinates(pnt) {
@@ -185,6 +186,14 @@ function clearPreviousSectorMarkers() {
 
 function prepare_oms_object(oms_instance) {
 	oms_instance.addListener('click', function(marker,e) {
+		var image = '/static/img/icons/caution.png';
+		if(pointAdd=== 1) {
+			map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image});
+			map_points_array.push(map_point);
+			map_point_count ++;
+			return ;
+		}		
+
 		var sectorMarker, sectorMarkerOms;
 		if(marker.pointType=== "base_station") {
 			//if marker is not spiderfied, stop event and add sector markers here and in oms
@@ -439,6 +448,9 @@ function devicePlottingClass_gmap() {
 			oms = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
             oms_ss = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
 
+            /*Create performance lib instance*/
+            gisPerformanceClass= new GisPerformance();
+
             prepare_oms_object(oms);
             prepare_oms_object(oms_ss);
 
@@ -578,6 +590,7 @@ function devicePlottingClass_gmap() {
 								isCallCompleted = 1;
 								gmap_self.plotDevices_gmap([],"base_station");
 
+
 								disableAdvanceButton('no');
 
 								/*Recall the server after particular timeout if system is not freezed*/
@@ -612,6 +625,16 @@ function devicePlottingClass_gmap() {
 
 						isCallCompleted = 1;
 						gmap_self.plotDevices_gmap([],"base_station");
+
+						setTimeout(function() {
+							
+														
+							gisPerformanceClass.start();
+							
+
+
+						}, 30000);
+								
 
 						disableAdvanceButton('no, enable it.');
 
@@ -653,7 +676,11 @@ function devicePlottingClass_gmap() {
 			gmap_self.plotDevices_gmap([],"base_station");
 
 			disableAdvanceButton('no, enable it.');
-			
+
+			setTimeout(function() {
+
+				gisPerformanceClass.start();
+			}, 30000);
 			/*Recall the server after particular timeout if system is not freezed*/
 			setTimeout(function(e){
 				gmap_self.recallServer_gmap();
@@ -935,11 +962,14 @@ function devicePlottingClass_gmap() {
 				}
 			}
 
+<<<<<<< HEAD
 		
 
 			var gisPerformanceClass= new GisPerformance();
 			// gisPerformanceClass.start();
 
+=======
+>>>>>>> 6d635e2aeb6d61854f249871cde45b4c7db39b6f
 			gmap_self.updateAllMarkersWithNewIcon(defaultIconSize);
 
 			/*Cluster options object*/
@@ -3162,14 +3192,14 @@ if(sector_child.length) {
 
 					    /*Create distance infobox(label)*/
 						distance_label = new InfoBox({
-							content: distance+" Km",
+							content: distance+" Km<br />Starting Point: ("+latLonObj['startLat'].toFixed(4)+","+latLonObj['startLon'].toFixed(4)+")<br />End Point: ("+latLonObj['endLat'].toFixed(4)+","+latLonObj['endLon'].toFixed(4)+")",
 							boxStyle: {
 								border: "2px solid black",
 								background: "white",
 							    textAlign: "center",
 							    fontSize: "10pt",
 							    color: "black",
-							    width: '80px'
+							    width: '210px'
 							},
 							disableAutoPan: true,
 							pixelOffset: new google.maps.Size(-25, 0),
@@ -3268,7 +3298,7 @@ if(sector_child.length) {
 		if(isFreeze == 1) {
 
 			isFreeze = 0;
-			gmap_self.recallServer_gmap();
+			// gmap_self.recallServer_gmap();
 		}
 
         if (map_point_count == 0){
@@ -3323,6 +3353,8 @@ if(sector_child.length) {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 1;
+	 	$.cookie("isFreezeSelected", 1);
+	 	gisPerformanceClass.stop();
 	 };
 
 	 /**
@@ -3333,6 +3365,8 @@ if(sector_child.length) {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 0;
+	 	$.cookie("isFreezeSelected", 0);
+	 	gisPerformanceClass.restart();
 
 	 	/*Recall the server*/
 	 	// gmap_self.recallServer_gmap();
@@ -3779,9 +3813,15 @@ function getDataForAdvanceSearch() {
 	filter_data_bs_lon_collection=[],
 	filter_data_sector_configured_on_collection=[];
 	filter_data_sector_circuit_ids_collection=[];
+	var filter_data_bs_city_collection=[];
 
     if(main_devices_data_gmaps.length >0) {
     	for (i=0; i< main_devices_data_gmaps.length; i++) {
+    		if (main_devices_data_gmaps[i].data.city != 'N/A'){
+    			filter_data_bs_city_collection.push({ 'id': main_devices_data_gmaps[i].id,
+    				'value': main_devices_data_gmaps[i].data.city });
+    		}
+
 
     		filter_data_bs_name_collection.push({ 'id':[main_devices_data_gmaps[i].id], 'value':main_devices_data_gmaps[i].name });
 
@@ -3801,6 +3841,7 @@ function getDataForAdvanceSearch() {
     			filter_data_sector_circuit_ids_collection.push({ 'id':[main_devices_data_gmaps[i].id], 'value':filter_data_sector_circuit_ids_values[k] });
     		}
     	}
+    	filter_data_bs_city_collection= unique_values_field_and_with_base_station_ids(filter_data_bs_city_collection);
 
     	var advanceSearchFilterData= []; //prepare_data_for_filter();
 
@@ -3812,38 +3853,47 @@ function getDataForAdvanceSearch() {
     			'values':filter_data_bs_name_collection
     		});
 
-//    	advanceSearchFilterData.push({
-//    			'element_type':'multiselect',
-//    			'field_type':'string',
-//    			'key':'latitude',
-//    			'title':'BS Latitude',
-//    			'values':filter_data_bs_lat_collection
-//    		});
+   	advanceSearchFilterData.push({
+   			'element_type':'multiselect',
+   			'field_type':'string',
+   			'key':'latitude',
+   			'title':'BS Latitude',
+   			'values':filter_data_bs_lat_collection
+   		});
 
-//    	advanceSearchFilterData.push({
-//    			'element_type':'multiselect',
-//    			'field_type':'string',
-//    			'key':'longitude',
-//    			'title':'BS Longitude',
-//    			'values':filter_data_bs_lon_collection
-//    		});
+   	advanceSearchFilterData.push({
+   			'element_type':'multiselect',
+   			'field_type':'string',
+   			'key':'longitude',
+   			'title':'BS Longitude',
+   			'values':filter_data_bs_lon_collection
+   		});
 
-    	advanceSearchFilterData.push({
-    			'element_type':'multiselect',
-    			'field_type':'string',
-    			'key':'sector_configured_on',
-    			'title':'IP',
-    			'values':filter_data_sector_configured_on_collection
-    		});
+	advanceSearchFilterData.push({
+			'element_type':'multiselect',
+			'field_type':'string',
+			'key':'sector_configured_on',
+			'title':'IP',
+			'values':filter_data_sector_configured_on_collection
+		});
 
-    	advanceSearchFilterData.push({
-    			'element_type':'multiselect',
-    			'field_type':'string',
-    			'key':'circuit_ids',
-    			'title':'Circuit Id',
-    			'values':filter_data_sector_circuit_ids_collection
-    		});
-    	
+	advanceSearchFilterData.push({
+			'element_type':'multiselect',
+			'field_type':'string',
+			'key':'circuit_ids',
+			'title':'Circuit Id',
+			'values':filter_data_sector_circuit_ids_collection
+		});
+	
+	advanceSearchFilterData.push({
+            'element_type':'multiselect',
+            'field_type':'string',
+            'key':'city',
+            'title':'BS City',
+            'values':filter_data_bs_city_collection
+            });
+
+
     }//if condition closed
     return advanceSearchFilterData;
 }
