@@ -63,9 +63,10 @@ def check_radwin_ul_utilization(item, _no_params, info):
 		this_time = int(time.time())
 		try:
                 	timedif, rate = get_counter("radwin_ul_utilization.%s" % (if_name), this_time, saveint(link_in_octets))
+			rate = (rate *8)/(1024.0 * 1024)
 		except MKCounterWrapped:
 			wrapped=True
-                status_list.append((if_name, int(rate)))
+                status_list.append((if_name, "%.4f" % rate))
             for name, rate in status_list:
                 infotext += "[%s] ul_utilization:%s" % (name, rate)
             state = 0

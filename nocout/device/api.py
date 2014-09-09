@@ -772,6 +772,6 @@ def nocout_live_polling(q, site):
     except Exception as e:
         logger.info(e.message)
 
-    
+
 
 

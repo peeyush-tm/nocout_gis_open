@@ -62,9 +62,10 @@ def check_radwin_dl_utilization(item, _no_params, info):
 		this_time = int(time.time())
 		try:
 			timedif, rate = get_counter("radwin_dl_utilization.%s" % (if_name), this_time, saveint(link_out_octets))
+			rate = (rate * 8)/(1024.0 * 1024)
 		except MKCounterWrapped:
 			wrapped=True
-                status_list.append((if_name,int(rate)))
+                status_list.append((if_name,"%.4f" % rate))
             for name, out_octets, in status_list:
                 infotext += "[%s] dl_utilization:%s" % (name, out_octets)
             state = 0

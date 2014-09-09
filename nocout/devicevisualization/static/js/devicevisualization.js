@@ -194,9 +194,9 @@ $("#resetSearchForm").click(function(e) {
     $("form#searchInfoModal_form").find('select').each(function(i, el) {
         $(el).select2("val", [])
         if(i== $("form#searchInfoModal_form").find('select').length-1) {
-               if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
-                $("#advSearchContainerBlock").addClass("hide");
-            } 
+            //    if(!($("#advFilterSearchContainerBlock").hasClass("hide"))) {
+            //     $("#advSearchContainerBlock").addClass("hide");
+            // } 
         }
     });
     advJustSearch.resetPreviousSearchedMarkers();
