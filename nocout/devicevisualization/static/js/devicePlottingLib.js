@@ -226,13 +226,15 @@ function prepare_oms_object(oms_instance) {
 				if(pt_type == "sub_station") {
 					if($.trim(ssLinkArray[j].ssName) == $.trim(e[i].name)) {
 						var pathArray = [];
+
+						pathArray.push(new google.maps.LatLng(ssLinkArray[j].bs_lat,ssLinkArray[j].bs_lon));						
 						pathArray.push(new google.maps.LatLng(e[i].position.lat(),e[i].position.lng()));
-						pathArray.push(new google.maps.LatLng(ssLinkArray[j].bs_lat,ssLinkArray[j].bs_lon));
 						ssLinkArray[j].setPath(pathArray);
 					}
 				} else if(pt_type == "base_station") {
 					if($.trim(ssLinkArray[j].bsName) == $.trim(e[i].name)) {
 						var pathArray = [];
+
 						pathArray.push(new google.maps.LatLng(e[i].position.lat(),e[i].position.lng()));
 						pathArray.push(new google.maps.LatLng(ssLinkArray[j].ss_lat,ssLinkArray[j].ss_lon));
 						ssLinkArray[j].setPath(pathArray);
@@ -279,8 +281,8 @@ function prepare_oms_object(oms_instance) {
         		if(pt_type == "sub_station") {
         			if($.trim(ssLinkArray[j].ssName) == $.trim(e[i].name)) {
         				var pathArray = [];
-        				pathArray.push(new google.maps.LatLng(e[i].ptLat,e[i].ptLon));
         				pathArray.push(new google.maps.LatLng(ssLinkArray[j].bs_lat,ssLinkArray[j].bs_lon));
+        				pathArray.push(new google.maps.LatLng(e[i].ptLat,e[i].ptLon));        				
         				ssLinkArray[j].setPath(pathArray);
         			}
         		} else if(pt_type == "base_station") {
@@ -711,6 +713,7 @@ function devicePlottingClass_gmap() {
 			/*Sectors Array*/
 			var sector_array = bs_ss_devices[i].data.param.sector;
 			var deviceIDArray= [];
+
 			/*Plot Sector*/
 			for(var j=0;j<sector_array.length;j++) {
 
@@ -758,56 +761,52 @@ function devicePlottingClass_gmap() {
 						startEndObj["sectorLon"] = bs_ss_devices[i].data.lon;
 					}
 				});
-
-				if($.trim(sector_array[j].technology) != "PTP" && $.trim(sector_array[j].technology) != "P2P") {
 					
-					if(deviceIDArray.indexOf(sector_array[j]['device_info'][1]['value']) === -1) {
+				if(deviceIDArray.indexOf(sector_array[j]['device_info'][1]['value']) === -1) {
 
-						var sectors_Markers_Obj= {
-							position: new google.maps.LatLng(lat, lon),
-							ptLat: bs_ss_devices[i].data.lat,
-							ptLon: bs_ss_devices[i].data.lon,
-							icon: 'http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
-							oldIcon: new google.maps.MarkerImage(window.location.origin+"/"+sector_array[j].markerUrl,null,null,null,new google.maps.Size(32,37)),
-							clusterIcon: 'http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
-							pointType: 'sector_Marker',
-							technology: sector_array[j].technology,
-							vendor: sector_array[j].vendor,
-							deviceExtraInfo: sector_array[j].info,
-							deviceInfo: sector_array[j].device_info,
-							sectorName : sector_array[j].sector_configured_on,
-							sector_lat : startEndObj["startLat"],
-							sector_lon : startEndObj["startLon"],
-							zIndex: 200,
-							optimized: false,
-	                        antenna_height: sector_array[j].antenna_height
-	                    }
+					var sectors_Markers_Obj= {
+						position: new google.maps.LatLng(lat, lon),
+						ptLat: bs_ss_devices[i].data.lat,
+						ptLon: bs_ss_devices[i].data.lon,
+						icon: 'http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
+						oldIcon: new google.maps.MarkerImage(window.location.origin+"/"+sector_array[j].markerUrl,null,null,null,new google.maps.Size(32,37)),
+						clusterIcon: 'http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
+						pointType: 'sector_Marker',
+						technology: sector_array[j].technology,
+						vendor: sector_array[j].vendor,
+						deviceExtraInfo: sector_array[j].info,
+						deviceInfo: sector_array[j].device_info,
+						sectorName : sector_array[j].sector_configured_on,
+						sector_lat : startEndObj["startLat"],
+						sector_lon : startEndObj["startLon"],
+						zIndex: 200,
+						optimized: false,
+                        antenna_height: sector_array[j].antenna_height
                     }
+                }
 
-                    var sect_height = sector_array[j].antenna_height;
+                var sect_height = sector_array[j].antenna_height;
 
-					/*Create Sector Marker*/
-					
-					if(!isFinishedSectorMarkers) {
-						var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
+				/*Create Sector Marker*/
+				
+				if(!isFinishedSectorMarkers) {
+					var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
 
-						sector_MarkersArray.push(sector_Marker);
+					sector_MarkersArray.push(sector_Marker);
 
-						if(sectorMarkersMasterObj[bs_ss_devices[i].name]) {
-							sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
-						} else {
-							sectorMarkersMasterObj[bs_ss_devices[i].name]= [];
-							sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
-						}
-						
+					if(sectorMarkersMasterObj[bs_ss_devices[i].name]) {
+						sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
+					} else {
+						sectorMarkersMasterObj[bs_ss_devices[i].name]= [];
+						sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
 					}
 					
-
-					// oms.addMarker(sector_Marker);
-/*End of Create Sector Marker*/
-
-					deviceIDArray.push(sector_array[j]['device_info'][1]['value']);
 				}
+
+				// oms.addMarker(sector_Marker);
+				/*End of Create Sector Marker*/
+				
+				deviceIDArray.push(sector_array[j]['device_info'][1]['value']);
 
 				/*Plot Sub-Station*/
 				for(var k=0;k<sector_child.length;k++) {
