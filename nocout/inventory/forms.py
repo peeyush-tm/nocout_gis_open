@@ -963,8 +963,8 @@ class ThematicSettingsForm(forms.ModelForm):
 
         super(ThematicSettingsForm, self).__init__(*args, **kwargs)
         self.fields['threshold_template'].empty_label = 'Select'
-        if self.instance.pk:
-            self.fields['threshold_template'].widget.attrs['disabled'] = 'disabled'
+        # if self.instance.pk:
+        #     self.fields['threshold_template'].widget.attrs['disabled'] = 'disabled'
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
                 if isinstance(field.widget, forms.widgets.Select):

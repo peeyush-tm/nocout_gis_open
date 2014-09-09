@@ -551,7 +551,7 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             # checking whether device is 'backhaul configured on' or not
             try:
                 if Backhaul.objects.get(bh_configured_on=current_device):
-                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-info" title="Add Device"></i></a>'.format(
+                    dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form(add_device_form, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-info" title="Add Device"></i></a>'.format(
                         dct['id']))
             except:
                 logger.info("Device is not a backhaul.")
@@ -559,7 +559,7 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             # checking whether device is 'sector configured on' or not
             try:
                 if Sector.objects.get(sector_configured_on=current_device):
-                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-success" title="Add Device"></i></a>'.format(
+                    dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form(add_device_form, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-success" title="Add Device"></i></a>'.format(
                         dct['id']))
             except:
                 logger.info("Device is not sector configured on.")
@@ -567,7 +567,7 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             # checking whether device is 'sub station' or not
             try:
                 if SubStation.objects.get(device=current_device):
-                    dct.update(nms_actions='<a href="javascript:;" onclick="add_device({0});"><i class="fa fa-plus-square text-danger"></i></a>'.format(
+                    dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form(add_device_form, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-danger"></i></a>'.format(
                         dct['id']))
             except:
                 logger.info("Device is not a substation.")
@@ -624,7 +624,6 @@ class DisabledDeviceListingTable(BaseDatatableView):
         keys_list = ['device_type__name', 'device_technology__name', 'state__name']
         for k in keys_list:
             dct.pop(k)
-
 
     def filter_queryset(self, qs):
         """
