@@ -123,6 +123,9 @@ $("#resetFilters").click(function(e) {
         $("#vendor").val($("#vendor option:first").val());
         $("#state").val($("#state option:first").val());
         $("#city").val($("#city option:first").val());
+        /*Reset search txt box*/
+        $("#searchTxt").val("");
+        $("#lat_lon_search").val("");
         isCallCompleted = 1;
     }
 
