@@ -85,15 +85,11 @@
                         var select_box='<div class="col-sm-9">' +
                                    '<div class="col-md-8">' +
                                    '<select class="col-md-12 (1)" id="id_icon_settings_(0)" name="icon_settings(0)">'+
-                                   '<option value="" selected="selected">Select</option>'
+                                   '<option value="" selected="selected">Select</option>';
 
                         for(var j=0;j<result.data.objects.icon_details.length;j++){
-                                    image_path= result.data.objects.icon_details[j].upload_image
-{#                                     if (image_path.indexOf('uploaded') !=-1){#}
-{#                                            image_path="/media/"+ image_path#}
-{#                                        }else{#}
-{#                                            image_path="/static/img/"+ image_path#}
-{#                                        }#}
+                                    image_path= result.data.objects.icon_details[j].upload_image;
+
                                 select_box+='<option value='+ image_path +'>'+
                                       result.data.objects.icon_details[j].name + '</option>'
                             }
@@ -118,7 +114,14 @@
                         $(divForm.nextAll()).each(function(i, el) {
                             var selectEl= $(el).find('select');
 
+                            if (item.id.indexOf('uploaded') !=-1){
+                                item.id="/media/"+ item.id
+                            }else{
+                                item.id="/static/img/"+ item.id
+                            }
+
                             function formatResult(item) {
+
                                 if(item.id) {
                                         return '<img style="width:20px; margin-right:10px;" src='+item.id+' />'+item.text;
                                     } else {
