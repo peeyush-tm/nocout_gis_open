@@ -134,8 +134,10 @@ class Gis_Map_Performance_Data(View):
 
 
                 if device_frequency:
-                    device_frequency_color= DeviceFrequency.objects.get(value=device_frequency).values_list('color_hex_value', flat=True)
-                    device_link_color= device_frequency_color
+                    device_frequency_color= DeviceFrequency.objects.filter(value__icontains=device_frequency).\
+                        values_list('color_hex_value', flat=True)
+                    if len(device_frequency_color):
+                        device_link_color= device_frequency_color[0]
 
                 elif len(device_pl) and int(ast.literal_eval(device_pl))==100:
                     device_link_color='rgb(0,0,0)'
