@@ -80,7 +80,7 @@ def main(**configs):
     	insert_data(configs.get('table_name'), data_values, configs=configs)
    	logger.debug("Data inserted into my mysql db")
     else:
-    	logger.debug("No data in mongodb in this time frame for table %s" % (configs.get('table_name'))
+    	logger.debug("No data in mongodb in this time frame for table %s" % (configs.get('table_name')))
 
 def read_data(start_time, end_time, **kwargs):
     """
