@@ -114,18 +114,28 @@
 
                             function formatResult(item) {
                                 if(item.id) {
-                                    return '<img style="width:20px; margin-right:10px;" src=/static/img/'+item.id+' />'+item.text;
-                                } else {
-                                    return item.text;
-                                }
+                                        if (item.id.indexOf('uploaded') !=-1){
+                                            image_path="/media/"+item.id
+                                        }else{
+                                            image_path="/static/img/"+item.id
+                                        }
+                                        return '<img style="width:20px; margin-right:10px;" src='+image_path+' />'+item.text;
+                                    } else {
+                                        return item.text;
+                                    }
                             }
 
                             function formatSelection(item) {
                                 if(item.id) {
-                                    return '<img style="width:20px; margin-right:10px;" src=/static/img/'+item.id+' />'+item.text;
-                                } else {
-                                    return item.text;
-                                }
+                                        if (item.id.indexOf('uploaded') !=-1){
+                                            image_path="/media/"+item.id
+                                        }else{
+                                            image_path="/static/img/"+item.id
+                                        }
+                                        return '<img style="width:20px; margin-right:10px;" src='+image_path+' />'+item.text;
+                                    } else {
+                                        return item.text;
+                                    }
                             }
 
                             // $(selectEl).select2("destroy");
