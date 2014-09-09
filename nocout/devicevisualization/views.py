@@ -156,7 +156,7 @@ class Gis_Map_Performance_Data(View):
                             range_number=''.join(re.findall("[0-9]", data.keys()[0]))
                             exec 'range_start=threshold_template.range'+str(range_number)+ '_start'
                             exec 'range_end=threshold_template.range'+str(range_number)+ '_end'
-                            if int(range_start) <= abs(corrected_device_performance_value) <= int(range_end):
+                            if abs(int(range_start)) <= abs(corrected_device_performance_value) <= abs(int(range_end)):
                                performance_icon= data.values()[0]
 
 
