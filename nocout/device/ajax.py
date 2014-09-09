@@ -11,6 +11,7 @@ from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, D
     DeviceTypeFieldsValue, Country, State
 from service.models import Service, ServiceParameters, DeviceServiceConfiguration
 from site_instance.models import SiteInstance
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -742,13 +743,13 @@ def add_device_to_nms_core_form(request, device_id):
         device_type = DeviceType.objects.get(pk=device.device_type)
 
         # get device ping information which is a ssociated which device type (if exist)
-        ping_packets = device_type.packets if device_type.packets else 60
-        ping_timeout = device_type.timeout if device_type.timeout else 20
-        ping_normal_check_interval = device_type.normal_check_interval if device_type.normal_check_interval else 5
-        ping_rta_warning = device_type.rta_warning if device_type.rta_warning else 1500
-        ping_rta_critical = device_type.rta_critical if device_type.rta_critical else 3000
-        ping_pl_warning = device_type.pl_warning if device_type.pl_warning else 80
-        ping_pl_critical = device_type.pl_critical if device_type.pl_critical else 100
+        ping_packets = device_type.packets if device_type.packets else settings.PING_PACKETS
+        ping_timeout = device_type.timeout if device_type.timeout else settings.PING_TIMEOUT
+        ping_normal_check_interval = device_type.normal_check_interval if device_type.normal_check_interval else settings.PING_NORMAL_CHECK_INTERVAL
+        ping_rta_warning = device_type.rta_warning if device_type.rta_warning else settings.PING_RTA_WARNING
+        ping_rta_critical = device_type.rta_critical if device_type.rta_critical else settings.PING_RTA_CRITICAL
+        ping_pl_warning = device_type.pl_warning if device_type.pl_warning else settings.PING_PL_WARNING
+        ping_pl_critical = device_type.pl_critical if device_type.pl_critical else settings.PING_PL_CRITICAL
 
         # adding success/failure message to result dict
         result['message'] = "Successfully fetched ping parameters from database."
@@ -756,13 +757,13 @@ def add_device_to_nms_core_form(request, device_id):
 
     except Exception as e:
         # if device type doesn't have ping parameters associated than use default ones
-        ping_packets = 60
-        ping_timeout = 20
-        ping_normal_check_interval = 5
-        ping_rta_warning = 1500
-        ping_rta_critical = 3000
-        ping_pl_warning = 80
-        ping_pl_critical = 100
+        settings.PING_PACKETS = 60
+        settings.PING_TIMEOUT = 20
+        settings.PING_NORMAL_CHECK_INTERVAL = 5
+        settings.PING_RTA_WARNING = 1500
+        settings.PING_RTA_CRITICAL = 3000
+        settings.PING_PL_WARNING = 80
+        settings.PING_PL_CRITICAL = 100
 
         # adding success/failure message to result dict
         result['message'] = "Successfully get default ping parameters."
