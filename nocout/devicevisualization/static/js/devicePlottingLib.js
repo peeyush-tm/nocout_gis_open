@@ -671,9 +671,9 @@ function devicePlottingClass_gmap() {
 				ptLat 		     : bs_ss_devices[i].data.lat,
 				ptLon 		     : bs_ss_devices[i].data.lon,
 				map       	     : mapInstance,
-				icon 	  	     : '/static/img/icons/bs.png',
-				oldIcon 	     : '/static/img/icons/bs.png',
-				clusterIcon: '/static/img/icons/bs.png',
+				icon 	  	     : new google.maps.MarkerImage(window.location.origin+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
+				oldIcon 	     : new google.maps.MarkerImage(window.location.origin+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
+				clusterIcon 	 : new google.maps.MarkerImage(window.location.origin+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
 				pointType	     : stationType,
 				child_ss   	     : bs_ss_devices[i].data.param.sector,
 				original_sectors : bs_ss_devices[i].data.param.sector,
@@ -742,38 +742,46 @@ function devicePlottingClass_gmap() {
 					if($.trim(sector_array[j].technology) != "PTP" && $.trim(sector_array[j].technology) != "P2P") {
 						/*Plot sector on map with the retrived points*/
 						gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child);
+
 						startEndObj["startLat"] = pointsArray[halfPt].lat;
 						startEndObj["startLon"] = pointsArray[halfPt].lon;
+
 						startEndObj["sectorLat"] = pointsArray[halfPt].lat;
 						startEndObj["sectorLon"] = pointsArray[halfPt].lon;
+
 					} else {
+
 						startEndObj["startLat"] = bs_ss_devices[i].data.lat;
 		    			startEndObj["startLon"] = bs_ss_devices[i].data.lon;
-		    			startEndObj["sectorLat"] = "";
-						startEndObj["sectorLon"] = "";
+		    			
+		    			startEndObj["sectorLat"] = bs_ss_devices[i].data.lat;
+						startEndObj["sectorLon"] = bs_ss_devices[i].data.lon;
 					}
 				});
 
-				if(deviceIDArray.indexOf(sector_array[j]['device_info'][1]['value']) === -1) {
+				if($.trim(sector_array[j].technology) != "PTP" && $.trim(sector_array[j].technology) != "P2P") {
+					
+					if(deviceIDArray.indexOf(sector_array[j]['device_info'][1]['value']) === -1) {
 
-					var sectors_Markers_Obj= {
-						position: new google.maps.LatLng(lat, lon),
-						ptLat: bs_ss_devices[i].data.lat,
-						ptLon: bs_ss_devices[i].data.lon,
-						icon: 'http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
-						oldIcon: window.location.origin+"/"+sector_array[j].markerUrl,
-						clusterIcon: 'http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
-						pointType: 'sector_Marker',
-						technology: sector_array[j].technology,
-						vendor: sector_array[j].vendor,
-						deviceExtraInfo: sector_array[j].info,
-						deviceInfo: sector_array[j].device_info,
-						sectorName : sector_array[j].sector_configured_on,
-						sector_lat : startEndObj["startLat"],
-						sector_lon : startEndObj["startLon"],
-						zIndex: 200,
-						optimized: false,
-                        antenna_height: sector_array[j].antenna_height
+						var sectors_Markers_Obj= {
+							position: new google.maps.LatLng(lat, lon),
+							ptLat: bs_ss_devices[i].data.lat,
+							ptLon: bs_ss_devices[i].data.lon,
+							icon: 'http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
+							oldIcon: new google.maps.MarkerImage(window.location.origin+"/"+sector_array[j].markerUrl,null,null,null,new google.maps.Size(32,37)),
+							clusterIcon: 'http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
+							pointType: 'sector_Marker',
+							technology: sector_array[j].technology,
+							vendor: sector_array[j].vendor,
+							deviceExtraInfo: sector_array[j].info,
+							deviceInfo: sector_array[j].device_info,
+							sectorName : sector_array[j].sector_configured_on,
+							sector_lat : startEndObj["startLat"],
+							sector_lon : startEndObj["startLon"],
+							zIndex: 200,
+							optimized: false,
+	                        antenna_height: sector_array[j].antenna_height
+	                    }
                     }
 
                     var sect_height = sector_array[j].antenna_height;
@@ -808,22 +816,22 @@ function devicePlottingClass_gmap() {
 
 					/*Create SS Marker Object*/
 					var ss_marker_object = {
-						position: new google.maps.LatLng(ss_marker_obj.data.lat,ss_marker_obj.data.lon),
-				    	ptLat: ss_marker_obj.data.lat,
-				    	ptLon: ss_marker_obj.data.lon,
-				    	technology: ss_marker_obj.data.technology,
-				    	map: mapInstance,
-				    	icon: new google.maps.MarkerImage(window.location.origin+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
-				    	oldIcon: new google.maps.MarkerImage(window.location.origin+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
-				    	clusterIcon: new google.maps.MarkerImage(window.location.origin+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
-				    	pointType	     : "sub_station",
-				    	dataset 	     : ss_marker_obj.data.param.sub_station,
-				    	bhInfo 			 : [],
-				    	antenna_height    : ss_marker_obj.data.antenna_height,
-				    	name 		 	 : ss_marker_obj.name,
-				    	device_name 	 : ss_marker_obj.device_name,
-				    	zIndex 			 : 200,
-				    	optimized 		 : false
+						position 		 : 	new google.maps.LatLng(ss_marker_obj.data.lat,ss_marker_obj.data.lon),
+				    	ptLat 			 : 	ss_marker_obj.data.lat,
+				    	ptLon 			 : 	ss_marker_obj.data.lon,
+				    	technology 		 : 	ss_marker_obj.data.technology,
+				    	map 			 : 	mapInstance,
+				    	icon 			 : 	new google.maps.MarkerImage(window.location.origin+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
+				    	oldIcon 		 : 	new google.maps.MarkerImage(window.location.origin+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
+				    	clusterIcon 	 : 	new google.maps.MarkerImage(window.location.origin+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
+				    	pointType	     : 	"sub_station",
+				    	dataset 	     : 	ss_marker_obj.data.param.sub_station,
+				    	bhInfo 			 : 	[],
+				    	antenna_height   : 	ss_marker_obj.data.antenna_height,
+				    	name 		 	 : 	ss_marker_obj.name,
+				    	device_name 	 : 	ss_marker_obj.device_name,
+				    	zIndex 			 : 	200,
+				    	optimized 		 : 	false
 				    };
 
 				    /*Create SS Marker*/
@@ -1775,10 +1783,10 @@ if(sector_child.length) {
 
 		if(isDialogOpen) {
 			/*Fresnel template String*/
-			var leftSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal1" class="form-control" value="'+antenaHight1+'"></div><div class="clearfix"></div><div id="antina_height1" style="height:300px;" class="slider slider-blue"></div><div class="col-md-12">'+fresnelData.bts1_alias+"<br />"+bts1_name+'<br /> (Height)</div></div>';
+			var leftSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal1" class="form-control" value="'+antenaHight1+'"></div><div class="clearfix"></div><div id="antina_height1" style="height:300px;" class="slider slider-blue"></div><div class="col-md-12"><b>BS</b><br/>'+fresnelData.bts1_alias+"<br />"+bts1_name+'<br /> (Height)</div></div>';
 			var chart_detail = '<div id="chart-details"><div><span id="longitude-lbl" class="chart-detail-lbl">Longitude </span> <span id="longitude"></span></div><div><span id="latitude-lbl" class="chart-detail-lbl">Latitude </span> <span id="latitude"></span></div><div><span id="distance-lbl" class="chart-detail-lbl">Distance </span> <span id="distance"></span></div><div><span id="altitude-lbl" class="chart-detail-lbl">Altitude </span> <span id="altitude"></span></div><div><span id="obstacle-lbl" class="chart-detail-lbl">Obstacle </span> <span id="obstacle"></span></div><div><span id="los-lbl" class="chart-detail-lbl">LOS </span> <span id="los"></span></div><div><span id="fresnel1-lbl" class="chart-detail-lbl">Fresnel-1 </span> <span id="fresnel1"></span></div><div><span id="fresnel2-lbl" class="chart-detail-lbl">Fresnel-2 </span> <span id="fresnel2"></span></div><div><span id="fresnel2-altitude-lbl" class="chart-detail-lbl">Clearance </span> <span id="fresnel-altitude"></span></div></div>';
 			var middleBlock = '<div class="col-md-8 mid_fresnel_container"><div align="center"><div class="col-md-12">Clearance Factor</div><div class="col-md-4 col-md-offset-3"><div id="clear-factor" class="slider slider-red"></div></div><div class="col-md-2"><input type="text" id="clear-factor_val" class="form-control" value="'+clear_factor+'"></div><div class="clearfix"></div></div><div id="chart_div" style="width:600px;max-width:100%;height:300px;"></div><div class="clearfix divide-10"></div><div id="pin-points-container" class="col-md-12" align="center"></div></div>';
-			var rightSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal2" class="form-control" value="'+antenaHight2+'"></div><div class="clearfix"></div><div id="antina_height2" class="slider slider-blue" style="height:300px;"></div><div class="col-md-12">'+fresnelData.bts2_customerName+"<br />"+fresnelData.bts2_circuitId+ "<br />"+ bts2_name+' (Height)</div></div>';
+			var rightSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal2" class="form-control" value="'+antenaHight2+'"></div><div class="clearfix"></div><div id="antina_height2" class="slider slider-blue" style="height:300px;"></div><div class="col-md-12"><b>SS</b><br/>'+fresnelData.bts2_customerName+"<br />"+fresnelData.bts2_circuitId+ "<br />"+ bts2_name+' (Height)</div></div>';
 
 			var fresnelTemplate = "<div class='fresnelContainer row' style='height:400px;overflow-y:auto;'>"+leftSlider+" "+middleBlock+" "+rightSlider+"</div>"+chart_detail;
 
@@ -2146,7 +2154,6 @@ if(sector_child.length) {
 
             // showRequiredSectorMarker(filteredData);
 
-
             tempFilteredData= filteredData;
             isCallCompleted = 1;
             /*Populate the map with the filtered markers*/
@@ -2258,6 +2265,9 @@ if(sector_child.length) {
      */
     this.initLivePolling = function() {
 
+    	/*Freeze the system i.e. stop server calls*/
+    	isFreeze = 1;
+
     	$("#sideInfo > .panel-body > .col-md-12 > .devices_container").html("");
 
     	$("#tech_send").button("complete");
@@ -2266,7 +2276,6 @@ if(sector_child.length) {
 		if(!($("#fetch_polling").hasClass("hide"))) {
 			$("#fetch_polling").addClass("hide");
 		}
-		$("#polling_tech").val($("#polling_tech option:first").val());
 
     	if($("#sideInfoContainer").hasClass("hide")) {
 			$("#sideInfoContainer").removeClass("hide");
@@ -2476,6 +2485,9 @@ if(sector_child.length) {
     this.getDevicesPollingData = function() {
 
     	if(polygonSelectedDevices.length > 0 && $("#lp_template_select").val() != "") {
+
+    		/*Disable service templates dropdown*/
+    		$("#lp_template_select").attr("disabled","disabled");
 
 			var selected_lp_template = $("#lp_template_select").val();
 
@@ -2801,7 +2813,7 @@ if(sector_child.length) {
 
 										servicesOption += "<option value='"+allServices[j].value+"'>"+allServices[j].name+"</option>";
 									}
-									servicesOption += "</select></li><li class='divide-10'></li><li><select class='form-control' id='datasource_"+replace_device_name+"'><option value=''>Select Service Datasource</option></select></li><li class='divide-10'></li><li><button class='btn btn-primary' data-complete-text='Fetch' data-loading-text='Please Wait...' id='fetchBtn_"+replace_device_name+"' onClick='gmap_self.pollDevice_gmap("+deviceNameParam+")'>Fetch</button> <i class='fa fa-spinner fa fa-spin hide' id='fetch_spinner'>&nbsp;</i> </li></ul><div class='clearfix'><ul class='list-unstyled' id='pollVal_"+replace_device_name+"'></ul></div>";
+									servicesOption += "</select></li><li class='divide-10'></li><li><select class='form-control' id='datasource_"+replace_device_name+"'><option value=''>Select Service Datasource</option></select></li><li class='divide-10'></li><li><button class='btn btn-primary' data-complete-text='Poll Now' data-loading-text='Please Wait...' id='fetchBtn_"+replace_device_name+"' onClick='gmap_self.pollDevice_gmap("+deviceNameParam+")'>Poll Now</button> <i class='fa fa-spinner fa fa-spin hide' id='fetch_spinner'>&nbsp;</i> </li></ul><div class='clearfix'><ul class='list-unstyled' id='pollVal_"+replace_device_name+"'></ul></div>";
 
 									$("#livePolling_"+replace_device_name).append(servicesOption);
 								}
@@ -3320,7 +3332,7 @@ if(sector_child.length) {
 	 	isFreeze = 0;
 
 	 	/*Recall the server*/
-	 	gmap_self.recallServer_gmap();
+	 	// gmap_self.recallServer_gmap();
 	 };
 
 	/**
@@ -3328,6 +3340,8 @@ if(sector_child.length) {
 	 * @method clearPolygon
 	 */
 	this.clearPolygon = function() {
+
+		drawingManager.setDrawingMode(null);
 
 		// oms.unspiderfy();
 
@@ -3347,6 +3361,9 @@ if(sector_child.length) {
 		if(!$("#clearPolygonBtn").hasClass("hide")) {
 			$("#clearPolygonBtn").addClass("hide");
 		}
+
+		/*Unfreeze the system i.e. Restart server calls*/
+    	isFreeze = 0;
 
 		/*Enable other buttons*/
     	disableAdvanceButton("no");
@@ -3465,7 +3482,7 @@ if(sector_child.length) {
 	//This function updates the Marker Icon with the new Size.
 	this.updateAllMarkersWithNewIcon= function(iconSize) {
 
-		var largeur= 32, hauteur= 37, divideBy;
+		var largeur= 32, hauteur= 37,largeur_bs = 32, hauteur_bs= 37, divideBy;
 		var anchorX, i, markerImage, markerImage2, icon;
 		if(iconSize=== 'small') {
 			divideBy= 1.4;
@@ -3535,10 +3552,10 @@ if(sector_child.length) {
 					//Create a new marker Image for BS Marker according to the value selected.
 					markerImage= new google.maps.MarkerImage(
 						iconUrl,
-						new google.maps.Size(Math.ceil(largeur/divideBy)-5, Math.ceil(hauteur/divideBy)+5),
+						new google.maps.Size(Math.ceil(largeur_bs/divideBy)-5, Math.ceil(hauteur_bs/divideBy)+5),
 						new google.maps.Point(0, 0), 
-						new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
-						new google.maps.Size(Math.ceil(largeur/divideBy)-5, Math.ceil(hauteur/divideBy)+5));
+						new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur_bs/divideBy)),
+						new google.maps.Size(Math.ceil(largeur_bs/divideBy)-5, Math.ceil(hauteur_bs/divideBy)+5));
 					//Set oldIcon for BS Marker to the new image
 					markerIcon.oldIcon= markerImage;
 					markerIcon.setIcon(markerImage);
