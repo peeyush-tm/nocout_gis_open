@@ -115,33 +115,34 @@
                             var selectEl= $(el).find('select');
 
                             function formatResult(item) {
-
-                                if(item.id) {
-                                        if (item.id.indexOf('uploaded') !=-1){
-                                            item.id="/media/"+ item.id
+                                    if(item.id) {
+                                        var id_is = item.id;
+                                        if (id_is.indexOf('uploaded') !=-1){
+                                            id_is="/media/"+ id_is;
                                         }else{
-                                            item.id="/static/img/"+ item.id
+                                            id_is="/static/img/"+ id_is;
                                         }
 
-                                        return '<img style="width:20px; margin-right:10px;" src='+item.id+' />'+item.text;
+                                        return '<img style="width:20px; margin-right:10px;" src='+id_is+' />'+item.text;
                                     } else {
                                         return item.text;
                                     }
-                            }
+                                }
 
-                            function formatSelection(item) {
-
-                                if(item.id) {
-
-                                        if (item.id.indexOf('uploaded') !=-1){
-                                            item.id="/media/"+ item.id
+                                function formatSelection(item) {
+                                    if(item.id) {
+                                        var id_is = item.id;
+                                        if (id_is.indexOf('uploaded') !=-1){
+                                            id_is="/media/"+ id_is
+                                        }else{
+                                            id_is="/static/img/"+ id_is;
                                         }
 
-                                        return '<img style="width:20px; margin-right:10px;" src='+item.id+' />'+item.text;
+                                        return '<img style="width:20px; margin-right:10px;" src='+id_is+' />'+item.text;
                                     } else {
                                         return item.text;
                                     }
-                            }
+                                }
 
                             // $(selectEl).select2("destroy");
                             $(selectEl).select2({
@@ -159,26 +160,6 @@
             }//Success ends
         }); //ajax ends
     });
-
-{#    $('.btn-success').on('click', function(){#}
-{#        var total_ids_and_values=[];#}
-{#        if (response.data.objects.range_list.length !=0){#}
-{#            select_option= $('#id_threshold_template').parent().parent().parent().nextAll('div').find('div').find('div').find('select');#}
-{#            element= $('#id_threshold_template').parent().parent().parent().nextAll('div');#}
-{##}
-{#             $(element).each(function(i, el) {#}
-{#                     var selectEl = $(el).find('select');#}
-{#                     var optionwEl= $(el).find('option:selected');#}
-{#                     total_ids_and_values.push({'i': selectEl.attr('id').split('_')[selectEl.attr('id').split('_').length-1] ,#}
-{#                                     'value':optionwEl.val() })#}
-{#            });#}
-{##}
-{#            #}
-{##}
-{##}
-{##}
-{#        }#}
-{#    });#}
 });
 </script>
 {% endblock %}
