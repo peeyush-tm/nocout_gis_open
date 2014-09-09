@@ -4,6 +4,10 @@ var mapPageType = "",
     hasTools = 0;
 
 /*Set isFreeze from cookies*/
+    if($.cookie('isFreezeSelected')) {
+    } else {
+        $.cookie("isFreezeSelected", 0);
+    }
     isFreeze = $.cookie("isFreezeSelected");
     if(isFreeze == 1) {
         if($("#freeze_remove").hasClass("hide")) {
