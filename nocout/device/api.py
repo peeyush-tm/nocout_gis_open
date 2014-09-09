@@ -657,17 +657,15 @@ class BulkFetchLPDataApi(View):
 
                         # threshold configuration for getting warning, critical comparison values
                         tc = ThresholdConfiguration.objects.get(live_polling_template=lp_template)
-                        print "**************************** threshold_template - ", tc.name
 
                         # thematic settings for getting icon url
                         ts = ThematicSettings.objects.get(threshold_template=tc)
-                        print "**************************** thematic_settings - ", ts.name
 
                         # comparing threshold values to get icon
                         try:
                             value = device_value
                             print "*************************** value - ", value
-                            image_partial = "img/icons/wifi7.png"
+                            image_partial = "static/img/icons/caution.png"
                             if abs(int(tc.range1_start)) <= abs(int(value)) <= abs(int(tc.range1_end)):
                                 icon_settings = eval(ts.icon_settings)
                                 print "************************** icon_settings - ", icon_settings
@@ -721,13 +719,10 @@ class BulkFetchLPDataApi(View):
                                         image_partial = str(icon_setting['icon_settings10'])
                             else:
                                 icon = static('img/icons/wifi7.png')
-                            img_url = "/media/" + str(image_partial) if "uploaded" in str(image_partial) else static(
-                                "img/" + str(image_partial))
+                            img_url = "media/" + str(image_partial) if "uploaded" in str(image_partial) else str(image_partial)
                             icon = str(img_url)
-                            print "****************************************** image_partial - ", image_partial
                         except Exception as e:
-                            print "******************************** Enter in exception *******************************"
-                            icon = static('img/icons/wifi7.png')
+                            icon = str(image_partial)
                             logger.info(e.message)
 
                         result['data']['devices'][device_name]['icon'] = icon
