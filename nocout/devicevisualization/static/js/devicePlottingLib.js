@@ -962,14 +962,6 @@ function devicePlottingClass_gmap() {
 				}
 			}
 
-<<<<<<< HEAD
-		
-
-			var gisPerformanceClass= new GisPerformance();
-			// gisPerformanceClass.start();
-
-=======
->>>>>>> 6d635e2aeb6d61854f249871cde45b4c7db39b6f
 			gmap_self.updateAllMarkersWithNewIcon(defaultIconSize);
 
 			/*Cluster options object*/
