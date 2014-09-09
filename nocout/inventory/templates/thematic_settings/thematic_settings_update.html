@@ -95,7 +95,6 @@
                             //range label
                             for(var i=0;i<result.data.objects.range_list.length;i++){
                                 html=''
-                                debugger;
                                 var select= select_box;
                                 select= select.replace('(1)', 'update'+ result.data.objects.range_list[i].split(' ')[1].toString());
                                 select= select.split('(0)').join(result.data.objects.range_list[i].split(' ')[1].toString());
