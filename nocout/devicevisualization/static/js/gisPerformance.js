@@ -171,17 +171,16 @@ function GisPerformance() {
 					if(subStationIcon) {
 						var subStationName= bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"];
 						var subStationMarker= markersMasterObj['SSNamae'][subStationName];
-						// console.log(subStationMarker);
-						subStationMarker.setIcon(window.location.origin + '/'+ subStationIcon);
-						subStationMarker.oldIcon= (window.location.origin + '/'+ +subStationIcon);
-						subStationMarker.clusterIcon= window.location.origin + '/'+ subStationIcon;
+						subStationMarker.setIcon(createGoogleMarker(window.location.origin + '/'+ subStationIcon, subStationMarker));l
+						subStationMarker.oldIcon= (createGoogleMarker(window.location.origin + '/'+ subStationIcon, subStationMarker));
+						subStationMarker.clusterIcon= (createGoogleMarker(window.location.origin + '/'+ subStationIcon, subStationMarker));
 					}
 				}
 				var deviceMarkers = sectorMarkersMasterObj[String(gisData.basestation_name)];
 				for(var k=0; k< deviceMarkers.length; k++) {
 					var deviceObject= this.findObjectbyDeviceName(deviceMarkers[i]["deviceInfo"][0]["value"]);
 					if(deviceObject["performance_data"]["performance_icon"]) {
-						deviceMarkers[i].oldIcon= window.location.origin + '/'+ deviceObject["performance_data"]["performance_icon"];
+						deviceMarkers[i].oldIcon= (createGoogleMarker(window.location.origin + '/'+ deviceObject["performance_data"]["performance_icon"], deviceMarkers[i]));
 						
 					}
 				}
@@ -228,4 +227,20 @@ function GisPerformance() {
 			}
 		}
 	}
+}
+
+function createGoogleMarker(url, oldMarkerIcon) {
+	var oldMarObj= {}, newMarkerImage= "";
+	oldMarObj['anchor']= oldMarkerIcon['icon']['anchor'] ? oldMarkerIcon['icon']['anchor'] : null;
+	oldMarObj['origin']= oldMarkerIcon['icon']['origin'] ? oldMarkerIcon['icon']['origin'] : null;
+	oldMarObj['scaledSize']= oldMarkerIcon['icon']['scaledSize'] ? oldMarkerIcon['icon']['scaledSize'] : null;
+	oldMarObj['size']= oldMarkerIcon['icon']['size'] ? oldMarkerIcon['icon']['size'] : null;
+	newMarkerImage= new google.maps.MarkerImage(
+        url,
+        oldMarObj['size'],
+        oldMarObj['origin'],
+        oldMarObj['anchor'],
+        oldMarObj['scaledSize']);
+
+	return newMarkerImage;
 }

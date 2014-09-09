@@ -1,3 +1,5 @@
+import time
+import datetime
 from django.contrib.auth.models import User
 from django.db import models
 from service.models import Service, ServiceDataSource
@@ -212,10 +214,25 @@ class IconSettings(models.Model):
     """
     IconSettings Model Columns Declaration.
     """
+
+    # function to modify name and path of uploaded file
+    def uploaded_file_name(instance, filename):
+        timestamp = time.time()
+        full_time = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
+        year_month_date = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
+
+        # modified filename
+        filename = "{}_{}".format(full_time, filename)
+
+        # modified path where file is uploaded
+        path = "uploaded/icons"
+
+        return '{}/{}/{}'.format(path, year_month_date, filename)
+
     # fs = FileSystemStorage(location=settings.MEDIA_ROOT)
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
-    upload_image = models.ImageField(upload_to='uploaded/icons/%Y/%m/%d')
+    upload_image = models.ImageField(upload_to=uploaded_file_name)
 
     def __unicode__(self):
         return self.alias
