@@ -58,12 +58,6 @@
     {% endblock %}
     <script>
         $(document).ready(function(){
-            // Changing labels of form fields
-            $("label[for=id_rta_warning]").text('RTA Warning');
-            $("label[for=id_rta_critical]").text('RTA Critical');
-            $("label[for=id_pl_warning]").text('PL Warning');
-            $("label[for=id_pl_critical]").text('PL Critical');
-
             // modify image upload field
             var device_icon = "#id_device_icon";
             var device_gmap_icon = "#id_device_gmap_icon";
@@ -74,6 +68,14 @@
 
             // Initialize the select2 selectbox.
             $(".select2select").select2();
+
+            // Changing labels of form fields
+            $("label[for=id_rta_warning]").text('Latency Warning');
+            $("label[for=id_rta_critical]").text('Latency Critical');
+            $("label[for=id_pl_warning]").text('PD % Warning');
+            $("label[for=id_pl_critical]").text('PD % Critical');
+            $("label[for=id_packets]").text('Packet Count');
+            $("label[for=id_timeout]").text('Timeout (ms)');
         })
     </script>
 {% endblock %}
