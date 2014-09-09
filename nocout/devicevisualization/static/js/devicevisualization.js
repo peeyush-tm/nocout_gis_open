@@ -152,7 +152,6 @@ $("#resetFilters").click(function(e) {
 
             // tempFilteredData= [];
             
-
             /*Reset Global Variables & Filters*/
             networkMapInstance.resetVariables_gmap();            
             /*Call the make network to create the BS-SS network on the google map*/
@@ -277,6 +276,8 @@ $("#createPolygonBtn").click(function(e) {
     $("#resetFilters").button("loading");
     $("#showToolsBtn").removeAttr("disabled");
 
+    $("#polling_tech").val($("#polling_tech option:first").val());
+
     networkMapInstance.initLivePolling();
 
     hasSelectDevice = 1;
@@ -293,6 +294,12 @@ $("#tech_send").click(function(e) {
 $("#fetch_polling").click(function(e) {
 
     networkMapInstance.getDevicesPollingData();
+});
+
+/*Change event on polling technology dropdown*/
+$("#polling_tech").change(function(e) {
+
+    networkMapInstance.initLivePolling();
 });
 
 /*triggers when clear selection button is clicked*/
@@ -444,7 +451,7 @@ $("#point_remove").click(function(e) {
         $("#freeze_remove").removeClass("hide");
     }
 
-    // networkMapInstance.freezeDevices_gmap();
+    networkMapInstance.freezeDevices_gmap();
  });
 
  /**
@@ -458,7 +465,7 @@ $("#freeze_remove").click(function(e) {
         $("#freeze_remove").addClass("hide");
     }
 
-    // networkMapInstance.unfreezeDevices_gmap();
+    networkMapInstance.unfreezeDevices_gmap();
 });
 
 /**
