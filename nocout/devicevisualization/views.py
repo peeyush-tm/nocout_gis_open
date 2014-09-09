@@ -133,8 +133,16 @@ class Gis_Map_Performance_Data(View):
                 device_link_color=None
 
 
-                if device_frequency:
-                    device_frequency_color= DeviceFrequency.objects.filter(value__icontains=device_frequency).\
+                if len(device_frequency):
+                    corrected_dev_freq = device_frequency
+                    try:
+                        chek_dev_freq = ast.literal_eval(device_frequency)
+                        if int(chek_dev_freq) > 10:
+                            corrected_dev_freq = chek_dev_freq/1000.00
+                    except Exception as e:
+                        logger.exception("Frequency is Empty : %s" %(e.message))
+
+                    device_frequency_color= DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq)).\
                         values_list('color_hex_value', flat=True)
                     if len(device_frequency_color):
                         device_link_color= device_frequency_color[0]
