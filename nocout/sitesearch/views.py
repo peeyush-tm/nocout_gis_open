@@ -585,6 +585,7 @@ def prepare_result(base_station_id):
                                     "lat": substation.latitude if substation.latitude else substation_device.latitude,
                                     "lon": substation.longitude if substation.longitude else substation_device.longitude,
                                     "antenna_height": substation.antenna.height if substation.antenna else randint(40,70),
+                                    "substation_device_ip_address": substation_device.ip_address if substation_device.ip_address else 'N/A',
                                     "technology":sector.bs_technology.name,
                                     "markerUrl": tech_marker_url(substation_device.device_type, sector.bs_technology.name, ms=False), #tech_marker_url_slave(sector.bs_technology.name),
                                     "show_link": 1,
