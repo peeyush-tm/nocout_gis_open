@@ -10,12 +10,14 @@ File contains four functions.
 from nocout_site_name import *
 import os
 from datetime import datetime, timedelta
+from pprint import pformat
 import imp
 import time
 
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
+
 
 def get_latest_event_entry(db_type=None, db=None, site=None,table_name=None):
 	"""
@@ -76,6 +78,7 @@ def service_perf_data_live_query(db,site,log_split):
         """
 
 	# Adding check for not storing data for check_mk service
+	print log_split
 	if log_split[5] == 'Check_MK':
 		return
 	if log_split[0] == "CURRENT SERVICE STATE":
@@ -216,7 +219,6 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
 		port=mongo_port,
 		db_name=mongo_db
 	)
-	utc_time = datetime(1970, 1,1,5,30)
 
 	# time for which nagios events are extracted
 	#start_epoch = get_latest_event_entry(db_type = 'mongodb',db=db)
@@ -238,12 +240,15 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
 	output= utility_module.get_from_socket(site, query)
 	for log_attr in output.split('\n'):
 		log_split = [log_split for log_split in log_attr.split(';')]
-		if log_split[0] == "CURRENT SERVICE STATE":
-			service_perf_data_live_query(db,site,log_split)
-		elif log_split[0] == "SERVICE ALERT" or log_split[0] == "INITIAL SERVICE STATE":
-			service_perf_data_live_query(db,site,log_split)
-		elif log_split[0] == "SERVICE FLAPPING ALERT":
-			service_perf_data_live_query(db,site,log_split)
+		try:
+			if log_split[0] == "CURRENT SERVICE STATE":
+				service_perf_data_live_query(db,site,log_split)
+			elif log_split[0] == "SERVICE ALERT" or log_split[0] == "INITIAL SERVICE STATE":
+				service_perf_data_live_query(db,site,log_split)
+			elif log_split[0] == "SERVICE FLAPPING ALERT":
+			        service_perf_data_live_query(db,site,log_split)
+		except Exception, e:
+			print 'Error with log split'
 
 	# query for the extracting the log from nagios .This query is ping serviecs
 	query = "GET log\nColumns: log_type log_time log_state_type log_state  host_name service_description "\
@@ -253,12 +258,15 @@ def extract_nagios_events_live(mongo_host, mongo_db, mongo_port):
 
 	for log_attr in output.split('\n'):
 		log_split = [log_split for log_split in log_attr.split(';')]
-		if log_split[0] == "CURRENT HOST STATE":
-			network_perf_data_live_query(db,site,log_split)	
-		elif log_split[0] == "HOST ALERT" or log_split[0] == "INITIAL HOST STATE":
-			network_perf_data_live_query(db,site,log_split)	
-		elif log_split[0] == "HOST FLAPPING ALERT":
-			network_perf_data_live_query(db,site,log_split)	
+		try:
+			if log_split[0] == "CURRENT HOST STATE":
+				network_perf_data_live_query(db,site,log_split)	
+			elif log_split[0] == "HOST ALERT" or log_split[0] == "INITIAL HOST STATE":
+				network_perf_data_live_query(db,site,log_split)	
+			elif log_split[0] == "HOST FLAPPING ALERT":
+				network_perf_data_live_query(db,site,log_split)	
+		except Exception, e:
+			print 'Error with log split'
 		
 if __name__ == '__main__':
     """
