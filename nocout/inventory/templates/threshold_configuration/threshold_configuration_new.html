@@ -68,13 +68,7 @@
 
         /*Number of range inputs*/
         var total_label = $("label").length,
-            range_count = 0,
-            error_obj = {},
-            range_bug_array = [],
-            overlapping_bug_array = [],
-            empty_start_array = [],
-            empty_end_array = [],
-            bugs_array = [];
+            range_count = 0;
 
         for(var i=0;i<total_label;i++) {
             if($("label")[i].innerText.indexOf("Start") > -1 || $("label")[i].innerText.indexOf("End") > -1) {
@@ -88,6 +82,13 @@
          */
 
         function validateRangeForm() {
+
+            var error_obj = {},
+                range_bug_array = [],
+                overlapping_bug_array = [],
+                empty_start_array = [],
+                empty_end_array = [],
+                bugs_array = [];
 
             for(var i=1;i<=range_count/2;i++) {
 
@@ -165,6 +166,7 @@
                 }
                 return false;
             } else {
+                console.log("hii");
                 return true;
             }
         }
