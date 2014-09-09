@@ -127,14 +127,14 @@
                             $(divForm.nextAll()).each(function(i, el) {
                                 var selectEl= $(el).find('select');
 
-                                if (item.id.indexOf('uploaded') !=-1){
-                                    item.id="/media/"+ item.id
-                                }else{
-                                    item.id="/static/img/"+ item.id
-                                }
-
                                 function formatResult(item) {
                                     if(item.id) {
+                                        if (item.id.indexOf('uploaded') !=-1){
+                                            item.id="/media/"+ item.id
+                                        }else{
+                                            item.id="/static/img/"+ item.id
+                                        }
+
                                         return '<img style="width:20px; margin-right:10px;" src='+item.id+' />'+item.text;
                                     } else {
                                         return item.text;
@@ -143,6 +143,12 @@
 
                                 function formatSelection(item) {
                                     if(item.id) {
+                                        if (item.id.indexOf('uploaded') !=-1){
+                                            item.id="/media/"+ item.id
+                                        }else{
+                                            item.id="/static/img/"+ item.id
+                                        }
+
                                         return '<img style="width:20px; margin-right:10px;" src='+item.id+' />'+item.text;
                                     } else {
                                         return item.text;
