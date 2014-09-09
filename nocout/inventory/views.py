@@ -1935,8 +1935,8 @@ class LivePollingSettingsList(ListView):
             {'mData': 'data_source__alias',      'sTitle': 'Data Source',       'sWidth': 'null'},
             ]
         user_id = self.request.user.id
-        #if user is superadmin
-        if user_id==1:
+        #if user is superadmin or gisadmin
+        if user_id in [1,2]:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -2131,8 +2131,8 @@ class ThresholdConfigurationList(ListView):
             {'mData': 'live_polling_template__alias',   'sTitle': 'Live Polling Template',  'sWidth': 'null'},
             ]
         user_id = self.request.user.id
-        #if user is superadmin
-        if user_id==1:
+        #if user is superadmin or gisadmin
+        if user_id in [1,2]:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -2328,8 +2328,9 @@ class ThematicSettingsList(ListView):
             {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'null'},]
 
         user_id = self.request.user.id
-        #if user is superadmin
-        if user_id in [1,2]: ##needs to be changed to user.is_superadmin
+
+        #if user is superadmin or gisadmin
+        if user_id in [1,2]:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)

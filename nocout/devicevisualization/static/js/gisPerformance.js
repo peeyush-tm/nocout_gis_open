@@ -18,30 +18,53 @@ function GisPerformance() {
 	 */
 	this.start= function() {
 		var that= this;
-		// for(var k in markersMasterObj['BSNamae']) this.BSNamesArray.push(k);
-		this.BSNamesArray.push("Bagahati");
-		this.BSNamesArray.push("Rakesh_Bulb_Pataudia");
-		// that.sendRequest();
-		// setInterval(function() {
-		// 	that.sendRequest();
-		// }, 20000);
+		for(var k in markersMasterObj['BSNamae']) this.BSNamesArray.push(k);
+//		this.BSNamesArray.push("Bagahati");
+//		this.BSNamesArray.push("Rakesh_Bulb_Pataudia");
+		that.sendRequest(0);
+		setInterval(function() {
+			console.log("====================START==========================");
+			that.sendRequest(0);
+			console.log("====================END==========================");
+		}, 60000);
 	}
 
-	this.sendRequest= function() {
-		var counter= 0, that= this;
-		while(counter<this.BSNamesArray.length) {
-			var getBsRequestData= this.createRequestData(this.BSNamesArray[counter]);
-			$.ajax({
-				type : 'GET',
+	this.waitAndSend = function(getBsRequestData, counter) {
+		
+		that = this;
+		counter++;
+
+		$.ajax({
+				type : 'POST',
 				dataType : 'json',
-				data: getBsRequestData,
-				url:  window.location.origin + '/static/gisPerformance_'+this.BSNamesArray[counter]+'.json',
-				async: false}).done(function(data) {
+				data: JSON.stringify(getBsRequestData),
+				url:  '/network_maps/performance_data/',//,
+				//async: false
+				success : function (data) {
 					that.gisData= data;
 					that.updateMap();
-			});
-			counter++;
-		}
+					setTimeout(function() {
+						console.log("====================GET NEXT START========================");
+						that.sendRequest(counter);
+						console.log("====================GET NEXT END========================");
+					}, 2000);
+				},
+				error : function(err){
+					console.log(err);
+				}
+			})
+	}
+
+	this.sendRequest= function(counter) {
+		// var counter= 0, that= this;
+		// while(counter<this.BSNamesArray.length) {
+			// var getBsRequestData= this.createRequestData(this.BSNamesArray[counter]);
+			// counter++;
+		// }
+		that = this;
+		console.log("====================PROCESSING START========================");
+		that.waitAndSend(this.createRequestData(this.BSNamesArray[counter]), counter);
+		console.log("====================PROCESSING END========================");
 	}
 
 	this.createRequestData= function(bsname) {
