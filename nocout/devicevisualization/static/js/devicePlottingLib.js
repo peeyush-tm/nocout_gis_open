@@ -80,8 +80,13 @@ var mapInstance = "",
 	ruler_pt_count = 0,
 	distance_label = {},
 	isFreeze = 0;
-    map_points_array = [];
-    map_point_count = 0, zoomAfterRightClickComes= 10, fresnelData= {}, markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}};
+    map_points_array = [],
+    lastSearchedPt = {},
+    map_point_count = 0,
+    zoomAfterRightClickComes= 10,
+    fresnelData= {},
+    markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}};
+
 var pointAdd= 0;
 var sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 9, sectorMarkersMasterObj= {}, isSectorMarkerLoaded=0, tempFilterSectordata= [], isFinishedSectorMarkers= false;
 
@@ -886,7 +891,6 @@ function devicePlottingClass_gmap() {
 		    		ss_info["info"] = ss_marker_obj.data.param.sub_station;
 		    		ss_info["antenna_height"] = ss_marker_obj.data.antenna_height;
 
-		    		
 		    		/*Link color object*/
 		    		linkColor = ss_marker_obj.data.link_color;
 		    			
@@ -2125,6 +2129,7 @@ if(sector_child.length) {
 
             /*Deep Copy of the main_devices_data_gmaps*/
             var bs_data= $.extend( true, {}, main_devices_data_gmaps[i]);
+            console.log(bs_data);
             bs_data.data.param.sector=[];
             /*Sectors Array*/
             for(var j=0;j< main_devices_data_gmaps[i].data.param.sector.length;j++) {
@@ -2176,6 +2181,7 @@ if(sector_child.length) {
 
             tempFilteredData= filteredData;
             isCallCompleted = 1;
+
             /*Populate the map with the filtered markers*/
             gmap_self.plotDevices_gmap(filteredData,"base_station");
             // addSubSectorMarkersToOms(filteredData);
@@ -3360,6 +3366,32 @@ if(sector_child.length) {
 	 };
 
 	/**
+	 * This function zoom in to the entered location & add a marker to that position.
+	 * @method pointToLatLon
+	 * @param lat_lon_str [String], It contains the comma seperated lat,lon value
+	 */
+	this.pointToLatLon = function(lat_lon_str) {
+		
+		if(lastSearchedPt.position != undefined) {
+			lastSearchedPt.setMap(null);
+		}
+
+		var lat = +lat_lon_str.split(",")[0],
+			lng = +lat_lon_str.split(",")[1];
+
+		var marker = new google.maps.Marker({
+			position : new google.maps.LatLng(lat,lng),
+			map 	 : mapInstance
+		});
+
+		var bounds = new google.maps.LatLngBounds(new google.maps.LatLng(lat,lng));
+		mapInstance.fitBounds(bounds);
+		mapInstance.setZoom(15);
+
+		lastSearchedPt = marker;
+	}
+
+	/**
 	 * This function clear the polygon selection from the map
 	 * @method clearPolygon
 	 */
@@ -3496,6 +3528,11 @@ if(sector_child.length) {
 		/*Clear the marker array of OverlappingMarkerSpiderfier*/
 		oms.clearMarkers();
         oms_ss.clearMarkers();
+
+        /*Clear lat-lon searched marker if exist*/
+        if(lastSearchedPt.position != undefined) {
+			lastSearchedPt.setMap(null);
+		}
 
 		/*Clear master marker cluster objects*/
 		if(masterClusterInstance != "") {
