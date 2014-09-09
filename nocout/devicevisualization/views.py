@@ -141,7 +141,7 @@ class Gis_Map_Performance_Data(View):
                     device_link_color='rgb(0,0,0)'
 
                 else:
-                    device_link_color='rgb(255,0,0)'
+                    device_link_color='rgb(180,180,180)'
 
                 performance_icon=''
                 if device_performance_value:
@@ -165,7 +165,7 @@ class Gis_Map_Performance_Data(View):
                     'performance_value':device_performance_value,
                     'performance_icon':performance_icon,
                 }
-                print device_name, performance_data
+                logger.info("%s : %s" %(device_name, performance_data))
             except Exception as e:
                 logger.info(e.message, exc_info=True)
                 pass
