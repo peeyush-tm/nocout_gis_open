@@ -5,10 +5,11 @@ from django.template import RequestContext
 import logging
 from django.utils.decorators import method_decorator
 from django.views.generic import View
-from device.models import Device
+from device.models import Device, DeviceFrequency
 from inventory.models import ThematicSettings
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus
 from django.views.decorators.csrf import csrf_exempt
+import re, ast
 logger=logging.getLogger(__name__)
 
 
@@ -100,34 +101,61 @@ class Gis_Map_Performance_Data(View):
                 live_polling_template= threshold_template.live_polling_template
 
                 device_service_name= live_polling_template.service.name
-                device_service_data_source= live_polling_template.data_source
+                device_service_data_source= live_polling_template.data_source.name
                 device_machine_name= device.machine.name
+                try:
+                    device_frequency= InventoryStatus.objects.filter(device_name= device_name, data_source= 'frequency').\
+                        using(alias=device_machine_name).get().current_value
+                    device_frequency= device_frequency
+                except Exception as e:
+                    logger.info(e.message)
+                    device_frequency=''
+                    pass
 
-                device_frequency= InventoryStatus.objects.get(device_name= device_name, service_name= device_service_name,
-                data_source= device_service_data_source, machine_name= device_machine_name ).current_value
+                try:
+                    device_pl= NetworkStatus.objects.filter( device_name= device_name, service_name= 'ping',
+                    data_source= 'pl').using(alias=device_machine_name).get().current_value
+                except Exception as e:
+                    logger.info(e.message)
+                    device_pl=''
+                    pass
 
-                device_frequency= int(device_frequency)/1000
+                try:
 
-                device_pl= NetworkStatus.objects.get( device_name= device_name, service_name= 'ping',
-                data_source= 'pl', machine_name= device_machine_name).current_value
+                    device_performance_value= ServiceStatus.objects.filter( device_name= device_name, service_name= device_service_name,
+                    data_source= device_service_data_source).using(alias=device_machine_name).get().current_value
 
-                device_performance_value= ServiceStatus.objects.get( device_name= device_name, service_name= device_service_name,
-                data_source= device_service_data_source, machine_name= device_machine_name).current_value
+                except Exception as e:
+                    device_performance_value=''
+                    logger.info(e.message)
+                    pass
 
-                device_link_color='rgb(0,0,0)' if device_pl=='100' else 'rgb(128,128,128)'
+                device_link_color=None
 
-                performance_icon=None
 
-                icon_settings_json_string= thematic_settings.icon_settings if thematic_settings.icon_settings!='NULL' else None
-                if icon_settings_json_string:
-                    icon_settings_json= eval(icon_settings_json_string)
-                    range_start, range_end=None, None
-                    for data in icon_settings_json:
-                        range_number= data.keys()[0][-1]
-                        exec 'range_start=threshold_template.range'+str(range_number)+ '_start'
-                        exec 'range_end=threshold_template.range'+str(range_number)+ '_end'
-                        if int(range_start) <= int(device_performance_value) <= int(range_end):
-                           performance_icon= data.values()[0]
+                if device_frequency:
+                    device_frequency_color= DeviceFrequency.objects.get(value=device_frequency).values_list('color_hex_value', flat=True)
+                    device_link_color= device_frequency_color
+
+                elif len(device_pl) and int(ast.literal_eval(device_pl))==100:
+                    device_link_color='rgb(0,0,0)'
+
+                else:
+                    device_link_color='rgb(255,0,0)'
+
+                performance_icon=''
+                if device_performance_value:
+                    icon_settings_json_string= thematic_settings.icon_settings if thematic_settings.icon_settings!='NULL' else None
+                    if icon_settings_json_string:
+                        icon_settings_json= eval(icon_settings_json_string)
+                        range_start, range_end= None, None
+                        for data in icon_settings_json:
+                            range_number=''.join(re.findall("[0-9]", data.keys()[0]))
+                            exec 'range_start=threshold_template.range'+str(range_number)+ '_start'
+                            exec 'range_end=threshold_template.range'+str(range_number)+ '_end'
+                            if int(range_start) <= int(device_performance_value) <= int(range_end):
+                               performance_icon= data.values()[0]
+
 
                 performance_data= {
                     'frequency':device_frequency,
@@ -137,9 +165,9 @@ class Gis_Map_Performance_Data(View):
                     'performance_value':device_performance_value,
                     'performance_icon':performance_icon,
                 }
+                print device_name, performance_data
             except Exception as e:
-                logger.info(e.message)
+                logger.info(e.message, exc_info=True)
                 pass
-
             return performance_data
 

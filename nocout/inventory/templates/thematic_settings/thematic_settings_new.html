@@ -88,7 +88,13 @@
                                    '<option value="" selected="selected">Select</option>'
 
                         for(var j=0;j<result.data.objects.icon_details.length;j++){
-                                select_box+='<option value='+ result.data.objects.icon_details[j].upload_image +'>'+
+                                    image_path= result.data.objects.icon_details[j].upload_image
+                                     if (image_path.indexOf('uploaded') !=-1){
+                                            image_path="/media/"+ image_path
+                                        }else{
+                                            image_path="/static/img/"+ image_path
+                                        }
+                                select_box+='<option value='+ image_path +'>'+
                                       result.data.objects.icon_details[j].name + '</option>'
                             }
                         select_box+='</select></div></div>'
@@ -114,12 +120,7 @@
 
                             function formatResult(item) {
                                 if(item.id) {
-                                        if (item.id.indexOf('uploaded') !=-1){
-                                            image_path="/media/"+item.id
-                                        }else{
-                                            image_path="/static/img/"+item.id
-                                        }
-                                        return '<img style="width:20px; margin-right:10px;" src='+image_path+' />'+item.text;
+                                        return '<img style="width:20px; margin-right:10px;" src='+item.id+' />'+item.text;
                                     } else {
                                         return item.text;
                                     }
@@ -127,12 +128,7 @@
 
                             function formatSelection(item) {
                                 if(item.id) {
-                                        if (item.id.indexOf('uploaded') !=-1){
-                                            image_path="/media/"+item.id
-                                        }else{
-                                            image_path="/static/img/"+item.id
-                                        }
-                                        return '<img style="width:20px; margin-right:10px;" src='+image_path+' />'+item.text;
+                                        return '<img style="width:20px; margin-right:10px;" src='+item.id+' />'+item.text;
                                     } else {
                                         return item.text;
                                     }
