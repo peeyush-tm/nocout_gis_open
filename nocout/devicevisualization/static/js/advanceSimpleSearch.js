@@ -17,9 +17,9 @@ var advJustSearch_self = "",
 
 var advanceSearchMasterObj= {};
 advanceSearchMasterObj.previouslySearchedMarkersList= [];
-advanceSearchMasterObj.searchedIconUrl= 'http://www.iconsdb.com/icons/preview/soylent-red/arrow-241-xl.png';
+advanceSearchMasterObj.searchedIconUrl= 'http://www.iconsdb.com/icons/preview/color/FF1C33/arrow-211-xl.png';
 advanceSearchMasterObj.searchedLinesByCircuitIDs= [];
-advanceSearchMasterObj.searchedLinesIconUrl= 'http://www.iconsdb.com/icons/preview/soylent-red/arrow-241-xl.png';
+advanceSearchMasterObj.searchedLinesIconUrl= 'http://www.iconsdb.com/icons/preview/color/FF1C33/arrow-211-xl.png';
 advanceSearchMasterObj.maxSearchLevelNumber= 20;
 advanceSearchMasterObj.searchNumberLimitMessage= 'Too many Searched Results. Please filter again. No Markers drawn'
 
@@ -86,8 +86,15 @@ function advanceJustSearchClass() {
                             for(var j=0;j<filterValues.length;j++) {
 
                                 if(($.trim(filterValues[j].id) != null && $.trim(filterValues[j].value) != null) && ($.trim(filterValues[j].id) != "" && $.trim(filterValues[j].value) != "")) {
+                                    if(currentKey=== "sector_configured_on") {
+                                        var s= filterValues[j].value;
+                                        s= s.substring(s.lastIndexOf("(")+1,s.lastIndexOf(")"));
+                                        formElements += '<option value="'+filterValues[j].value+'">'+s+'</option>';
+                                    } else {
+                                        formElements += '<option value="'+filterValues[j].value+'">'+filterValues[j].value+'</option>';    
+                                    }
 
-                                    formElements += '<option value="'+filterValues[j].value+'">'+filterValues[j].value+'</option>';
+                                    
                                 }
                             }
                         }
@@ -231,7 +238,7 @@ function advanceJustSearchClass() {
             if(showSearchedResultMarker.getAnimation() != null) {
                 showSearchedResultMarker.setAnimation(null);
             } else {
-                showSearchedResultMarker.setAnimation(google.maps.Animation.BOUNCE);
+                showSearchedResultMarker.setAnimation(google.maps.Animation.DROP);
             }
             //show the marker on map.
             showSearchedResultMarker.setMap(mapInstance);
@@ -310,7 +317,7 @@ function advanceJustSearchClass() {
 							}
 						}
 
-						//Check BS Technology
+						// // Check BS Technology
 						// if(key==='Technology') {
 						// 	var deviceTechnology= deviceJson.sector_ss_technology;
 						// 	var deviceTechnologyArray= deviceTechnology.split(" ");
@@ -326,7 +333,7 @@ function advanceJustSearchClass() {
 						// 	}
 						// }
 
-						//Check BS Vendor
+						// Check BS Vendor
 						// if(key==='Vendor') {
 						// 	var deviceVendor= deviceJson.sector_ss_vendor;
 						// 	var deviceVendorArray= deviceVendor.split(" ");
@@ -342,7 +349,7 @@ function advanceJustSearchClass() {
 						// 	}
 						// }
 
-						//Check BS State
+						// Check BS State
 						// if(key === 'BS State') {
 						// 	if(((String(deviceJson.data.state)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.state)).toLowerCase()) != -1) {
 						// 	} else {
@@ -350,51 +357,56 @@ function advanceJustSearchClass() {
 						// 	}							
 						// }
 
-						//Check BS City
-						// if(key === 'BS City') {
-						// 	if(((String(deviceJson.data.city)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.city)).toLowerCase()) != -1) {
-						// 	} else {
-						// 		return false;
-						// 	}	
-						// }
+						// Check BS City
+						if(key === 'BS City') {
+							if(((String(deviceJson.data.city)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.city)).toLowerCase()) != -1) {
+							} else {
+								return false;
+							}	
+						}
 
-						//Check BS Latitude
-						// if(key === 'BS Latitude') {
-						// 	if(((String(deviceJson.data.lat)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lat)).toLowerCase()) != -1) {
-						// 	} else {
-						// 		return false;
-						// 	}	
-						// }
+						// Check BS Latitude
+						if(key === 'BS Latitude') {
+							if(((String(deviceJson.data.lat)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lat)).toLowerCase()) != -1) {
+							} else {
+								return false;
+							}	
+						}
 
-						//Check BS Longitude
-						// if(key === 'BS Longitude') {
-						// 	if(((String(deviceJson.data.lon)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lon)).toLowerCase()) != -1) {
-						// 	} else {
-						// 		return false;
-						// 	}	
-						// }
+						// Check BS Longitude
+						if(key === 'BS Longitude') {
+							if(((String(deviceJson.data.lon)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lon)).toLowerCase()) != -1) {
+							} else {
+								return false;
+							}	
+						}
 						//Check BS Sector Configured On
 						if(key === 'IP') {
-							var deivceConfiguredOn= deviceJson.sector_configured_on_devices;
-							var deivceConfiguredOnArray= deivceConfiguredOn.split(" ");
 							var isSectorIsConfigured= false;
-							for(var z=0; z< deivceConfiguredOnArray.length; z++) {
-								if(deivceConfiguredOnArray[z] && ((String(deivceConfiguredOnArray[z])).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deivceConfiguredOnArray[z])).toLowerCase()) != -1) {
-									isSectorIsConfigured= true;
-								}	
-							}
+                            var deivceConfiguredOn= deviceJson["sector_configured_on_devices"];
+                            var deivceConfiguredOnArray= deivceConfiguredOn.split(" ");
 
-							if(!isSectorIsConfigured) {
+                            for(var z=0; z< deivceConfiguredOnArray.length; z++) {
+                                if(deivceConfiguredOnArray[z] && ((String(deivceConfiguredOnArray[z])).toLowerCase() !== "")) {
+
+                                    // && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deivceConfiguredOnArray[z])).toLowerCase()) != -1
+                                    var s= (String(deivceConfiguredOnArray[z])).toLowerCase();
+                                    s= s.substring(s.lastIndexOf("(")+1,s.lastIndexOf(")"));
+                                    if((String(selectedInputs[key]).toLowerCase()).indexOf(s) != -1) {
+                                        isSectorIsConfigured= true;
+                                    }
+                                }
+                            }
+
+                            if(!isSectorIsConfigured) {
 								return false;
 							}
 						}
 
 						if(key === 'Circuit Id') {
-//BS JSON CIRCUITS ID: console.log(deviceJson.circuit_ids);
 							var deviceCircuitIDs= deviceJson.circuit_ids;
                             var deviceCircuitIDSArray= deviceCircuitIDs.split(" ");
                             var isCircuitPresent= false;
-console.log(selectedInputs['Circuit Id']);
 							for(var z=0; z< deviceCircuitIDSArray.length; z++) {
 								if(deviceCircuitIDSArray[z] && ((String(deviceCircuitIDSArray[z])).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceCircuitIDSArray[z])).toLowerCase()) != -1) {
 									advJustSearch_self.findTheLineToUpdate(deviceJson, selectedInputs[key]);

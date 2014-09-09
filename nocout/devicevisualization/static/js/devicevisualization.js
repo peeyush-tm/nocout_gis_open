@@ -3,6 +3,26 @@ var mapPageType = "",
     hasSelectDevice = 0,
     hasTools = 0;
 
+/*Set isFreeze from cookies*/
+    if($.cookie('isFreezeSelected')) {
+    } else {
+        $.cookie("isFreezeSelected", 0);
+    }
+    isFreeze = $.cookie("isFreezeSelected");
+    if(isFreeze == 1) {
+        if($("#freeze_remove").hasClass("hide")) {
+            $("#freeze_select").addClass("hide");
+            $("#freeze_remove").removeClass("hide");
+        }
+    } else {
+        if($("#freeze_select").hasClass("hide")) {
+            $("#freeze_remove").addClass("hide");
+            $("#freeze_select").removeClass("hide");
+        }
+    }
+
+
+
 /*Call get_page_status function to show the current status*/
 get_page_status();
 
@@ -152,7 +172,6 @@ $("#resetFilters").click(function(e) {
 
             // tempFilteredData= [];
             
-
             /*Reset Global Variables & Filters*/
             networkMapInstance.resetVariables_gmap();            
             /*Call the make network to create the BS-SS network on the google map*/
@@ -201,8 +220,8 @@ $("#resetSearchForm").click(function(e) {
     });
     advJustSearch.resetPreviousSearchedMarkers();
     advJustSearch.resetVariables();
-    mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
-    mapInstance.setZoom(5);
+    // mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
+    // mapInstance.setZoom(5);
     advJustSearch.hideNotification();
 
 });
@@ -277,6 +296,8 @@ $("#createPolygonBtn").click(function(e) {
     $("#resetFilters").button("loading");
     $("#showToolsBtn").removeAttr("disabled");
 
+    $("#polling_tech").val($("#polling_tech option:first").val());
+
     networkMapInstance.initLivePolling();
 
     hasSelectDevice = 1;
@@ -293,6 +314,12 @@ $("#tech_send").click(function(e) {
 $("#fetch_polling").click(function(e) {
 
     networkMapInstance.getDevicesPollingData();
+});
+
+/*Change event on polling technology dropdown*/
+$("#polling_tech").change(function(e) {
+
+    networkMapInstance.initLivePolling();
 });
 
 /*triggers when clear selection button is clicked*/
@@ -409,7 +436,7 @@ $("#ruler_remove").click(function(e) {
  * @event click
  */
  $("#point_select").click(function(e) {
-
+pointAdd= 1;
     if($("#point_remove").hasClass("hide")) {
         $("#point_select").addClass("hide");
         $("#point_remove").removeClass("hide");
@@ -423,7 +450,7 @@ $("#ruler_remove").click(function(e) {
   * @event click
   */
 $("#point_remove").click(function(e) {
-
+pointAdd= -1;
     if(!($("#point_remove").hasClass("hide"))) {
         $("#point_select").removeClass("hide");
         $("#point_remove").addClass("hide");
@@ -442,9 +469,14 @@ $("#point_remove").click(function(e) {
 
         $("#freeze_select").addClass("hide");
         $("#freeze_remove").removeClass("hide");
-    }
+        $("#freeze_remove").show();
 
-    // networkMapInstance.freezeDevices_gmap();
+    }
+    $("#freeze_remove").removeClass("hide");
+
+    // $.cookie('isFreezeSelected', true);
+
+    networkMapInstance.freezeDevices_gmap();
  });
 
  /**
@@ -457,8 +489,11 @@ $("#freeze_remove").click(function(e) {
         $("#freeze_select").removeClass("hide");
         $("#freeze_remove").addClass("hide");
     }
+    $("#freeze_select").removeClass("hide");
 
-    // networkMapInstance.unfreezeDevices_gmap();
+    // $.cookie('isFreezeSelected', false);
+
+    networkMapInstance.unfreezeDevices_gmap();
 });
 
 /**

@@ -159,29 +159,8 @@
                                 <option value="medium" selected="1">Medium</option>
                                 <option value="large">Large</option>
                             </select>
-                                <!-- <label class="radio-inline">
-                                    <div class="radio">
-                                        <span><input type="radio" value="option1" name="optionsRadios2" class="uniform"></span>
-                                    </div>
-                                 Small </label>
-                                 <label class="radio-inline">
-                                    <div class="radio">
-                                        <span><input type="radio" checked="" value="option2" name="optionsRadios2" class="uniform"></span>
-                                    </div>
-                                 Medium </label>
-                                 <label class="radio-inline">
-                                    <div class="radio">
-                                        <span><input type="radio" value="option3" name="optionsRadios2" class="uniform"></span>
-                                    </div>
-                                 Large </label> -->
                         </div>
                     </form>
-<!--                     <div class="btn btn-default">
-                        <label>Icon Size: </label>
-                        <input type="radio" name="icon_size" value="small">Small
-                        <input type="radio" name="icon_size" value="medium" checked>Medium
-                        <input type="radio" name="icon_size" value="medium">Large
-                    </div> -->
                 </li>
             </ul>
             <div class="divide-10"></div>
@@ -263,7 +242,7 @@
                             <div class="divide-20 clearfix"></div>
                             <div class="template_container"></div>
                             <div class="divide-10"></div>
-                            <button class="btn btn-primary hide" data-complete-text="Fetch" data-loading-text="Please Wait..." id="fetch_polling">Fetch <i class='fa fa-spinner fa fa-spin hide' id='fetch_spinner'>&nbsp;</i></button>
+                            <button class="btn btn-primary hide" data-complete-text="Poll Now" data-loading-text="Please Wait..." id="fetch_polling">Poll Now <i class='fa fa-spinner fa fa-spin hide' id='fetch_spinner'>&nbsp;</i></button>
                             <div class="divide-20 clearfix"></div>
                             <div class="devices_container"></div>
 
@@ -280,10 +259,13 @@
             src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
     <!--This library is used to draw label on google maps-->
     <script type="text/javascript" src={% static "js/infobox.js" %}></script>
+    <!-- Script Library for COokies -->
+    <script type="text/javascript" src={% static "js/jQuery-Cookie/src/jquery.cookie.js" %}></script>
     <!--This library is used for marker clustering-->
     <script type="text/javascript" src={% static "js/markerclusterer.js" %}></script>
     <!--OverlappingMarkerSpiderfier Library for marker spiderify effect-->
     <script type="text/javascript" src={% static "js/oms.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/gisPerformance.js" %}></script>  
     <!-- Our Library to plot the devices on map & performs functionality accordingly-->
     <script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
     <!-- Our Library to plot the devices on map or earth & performs functionality accordingly-->
@@ -297,7 +279,7 @@
     <!-- Script for full screen google maps-->
     <script type="text/javascript" src={% static "js/fullScreenControl.js" %}></script>
 
-    <script type="text/javascript" src={% static "js/gisPerformance.js" %}></script>    
+      
     <!--Flot Chart Library for Fresnel zone-->
     <script src={% static "js/flot/jquery.flot.min.js" %}></script>
     <script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %}></script>
@@ -371,6 +353,7 @@
 
     <script>
         jQuery(document).ready(function () {
+
             App.setPage("");  //Set current page
             App.init(); //Initialise plugins and elements
         });
