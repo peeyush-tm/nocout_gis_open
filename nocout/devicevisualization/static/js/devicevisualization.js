@@ -151,7 +151,7 @@ $("#resetFilters").click(function(e) {
             networkMapInstance.clearGmapElements();
 
             // tempFilteredData= [];
-            
+
             /*Reset Global Variables & Filters*/
             networkMapInstance.resetVariables_gmap();            
             /*Call the make network to create the BS-SS network on the google map*/
@@ -512,7 +512,7 @@ When call is completed, we use the same function to enable Button by passing 'no
 function disableAdvanceButton(status) {
     var buttonEls= ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn'];
     var selectBoxes= ['technology', 'vendor', 'state', 'city'];
-    var textBoxes= ['searchTxt'];
+    var textBoxes= ['searchTxt','lat_lon_search'];
     var disablingBit= false;
     if(status=== undefined) {
         disablingBit= true;
@@ -528,5 +528,32 @@ function disableAdvanceButton(status) {
 
     for(var i=0; i< textBoxes.length; i++) {
         document.getElementById(textBoxes[i]).disabled = disablingBit;
+    }
+}
+
+/**
+ * This event triggers keypress event on lat,lon search text box
+ */
+function isLatLon(e) {
+
+    var entered_key_code = (e.keyCode ? e.keyCode : e.which),
+        entered_txt = $("#lat_lon_search").val();
+
+    if(((entered_key_code >47 && entered_key_code <=57) || ( entered_key_code ==8)||(entered_key_code==44)|| ( entered_key_code ==46)||( entered_key_code == 0)||(entered_key_code==127))) {
+                
+        return true;
+
+    } else if(entered_key_code == 13) {
+        if(entered_txt.length > 0) {
+            if(entered_txt.split(",").length != 2) {
+                alert("Please Enter Proper Lattitude,Longitude.");
+            } else {
+                networkMapInstance.pointToLatLon(entered_txt);
+            }                
+        } else {
+            alert("Please Enter Lattitude,Longitude.");
+        }
+    } else {
+        return false;
     }
 }
