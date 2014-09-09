@@ -155,22 +155,23 @@ function show_response_message(responseResult) {
 
 
 // add device to monitoring core
-function add_device(device_id) {
+function add_device_form(content) {
     add_device_html = '<h5 class="">Configure ping service for device:</h5><br />';
+    add_device_html = '<input type="hidden" id="device_id" value="' + content.result.data.device_id + '" />';
     add_device_html += '<div class=""><div class="box border red"><div class="box-title"><h4><i class="fa fa-table"></i>Ping Parameters:</h4></div>';
     add_device_html += '<div class="box-body"><table class="table">';
     add_device_html += '<thead><tr><th>Packets</th><th>Timeout</th><th>Normal Check Interval</th></tr></thead>';
     add_device_html += '<tbody>';
     add_device_html += '<tr>';
-    add_device_html += '<td contenteditable="true" id="packets">6</td>';
-    add_device_html += '<td contenteditable="true" id="timeout">20</td>';
-    add_device_html += '<td contenteditable="true" id="normal_check_interval">5</td>';
+    add_device_html += '<td contenteditable="true" id="packets">'+content.result.data.packets+'</td>';
+    add_device_html += '<td contenteditable="true" id="timeout">'+content.result.data.timeout+'</td>';
+    add_device_html += '<td contenteditable="true" id="normal_check_interval">'+content.result.data.normal_check_interval+'</td>';
     add_device_html += '</tr>';
     add_device_html += '</tbody>';
     add_device_html += '<thead><tr><th>Data Source</th><th>Warning</th><th>Critical</th></tr></thead>';
     add_device_html += '<tbody>';
-    add_device_html += '<tr><td>RTA</td><td contenteditable="true" id="rta_warning">1500</td><td contenteditable="true" id="rta_critical">3000</td></tr>';
-    add_device_html += '<tr><td>PL</td><td contenteditable="true" id="pl_warning">80</td><td contenteditable="true" id="pl_critical">100</td></tr>';
+    add_device_html += '<tr><td>RTA</td><td contenteditable="true" id="rta_warning">'+content.result.data.rta_warning+'</td><td contenteditable="true" id="rta_critical">'+content.result.data.rta_critical+'</td></tr>';
+    add_device_html += '<tr><td>PL</td><td contenteditable="true" id="pl_warning">'+content.result.data.pl_warning+'</td><td contenteditable="true" id="pl_critical">'+content.result.data.pl_critical+'</td></tr>';
     add_device_html += '</tbody>';
     add_device_html += '</table>';
     add_device_html += '</div></div></div>';
@@ -192,7 +193,7 @@ function add_device(device_id) {
                         "timeout": parseInt($("#timeout").text())
                     };
                     //alert(JSON.stringify(ping_data));
-                    Dajaxice.device.add_device_to_nms_core(device_add_message, {'device_id': device_id, 'ping_data': ping_data});
+                    Dajaxice.device.add_device_to_nms_core(device_add_message, {'device_id': $("#device_id").val(), 'ping_data': ping_data});
                 }
             },
             danger: {
