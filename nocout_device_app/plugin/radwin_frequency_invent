@@ -52,8 +52,7 @@ def check_radwin_frequency_invent(item, _no_params, info):
                     infotext = "invalid_value_%d" % frequency
                 else:
                     state = 0
-		    frequency = frequency/1000.0
-                    infotext = "%.2f" % frequency
+                    infotext = "%d" % frequency
     except ValueError:
         infotext = "type_mismatch_value"
     except:
