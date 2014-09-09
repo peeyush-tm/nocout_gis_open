@@ -409,7 +409,7 @@ $("#ruler_remove").click(function(e) {
  * @event click
  */
  $("#point_select").click(function(e) {
-
+pointAdd= 1;
     if($("#point_remove").hasClass("hide")) {
         $("#point_select").addClass("hide");
         $("#point_remove").removeClass("hide");
@@ -423,7 +423,7 @@ $("#ruler_remove").click(function(e) {
   * @event click
   */
 $("#point_remove").click(function(e) {
-
+pointAdd= -1;
     if(!($("#point_remove").hasClass("hide"))) {
         $("#point_select").removeClass("hide");
         $("#point_remove").addClass("hide");

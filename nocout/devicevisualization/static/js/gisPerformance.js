@@ -110,6 +110,7 @@ function GisPerformance() {
 					if(subStationIcon) {
 						var subStationName= bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"];
 						var subStationMarker= markersMasterObj['SSNamae'][subStationName];
+						console.log(subStationMarker);
 						subStationMarker.setIcon(window.location.origin + '/static/img/icons/'+subStationIcon);
 						subStationMarker.oldIcon= window.location.origin + '/static/img/icons/'+subStationIcon;
 						subStationMarker.clusterIcon= window.location.origin + '/static/img/icons/'+subStationIcon;

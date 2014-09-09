@@ -82,7 +82,7 @@ var mapInstance = "",
 	isFreeze = 0;
     map_points_array = [];
     map_point_count = 0, zoomAfterRightClickComes= 10, fresnelData= {}, markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}};
-
+var pointAdd= 0;
 var sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 9, sectorMarkersMasterObj= {}, isSectorMarkerLoaded=0, tempFilterSectordata= [], isFinishedSectorMarkers= false;
 
 var defaultIconSize= 'medium';
@@ -181,6 +181,17 @@ function clearPreviousSectorMarkers() {
 
 function prepare_oms_object(oms_instance) {
 	oms_instance.addListener('click', function(marker,e) {
+		console.log(marker);
+		// var image = '/static/img/icons/caution.png';
+		// if(pointAdd=== 1) {
+		// 	map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image});
+		// 	map_points_array.push(map_point);
+		// 	map_point_count ++;
+		// 	return ;
+		// } else if (pointAdd === -1) {
+		// 	return ;
+		// }
+
 		var sectorMarker, sectorMarkerOms;
 		if(marker.pointType=== "base_station") {
 			//if marker is not spiderfied, stop event and add sector markers here and in oms
@@ -3126,14 +3137,14 @@ if(sector_child.length) {
 
 					    /*Create distance infobox(label)*/
 						distance_label = new InfoBox({
-							content: distance+" Km",
+							content: distance+" Km<br />Starting Point: ("+latLonObj['startLat'].toFixed(4)+","+latLonObj['startLon'].toFixed(4)+")<br />End Point: ("+latLonObj['endLat'].toFixed(4)+","+latLonObj['endLon'].toFixed(4)+")",
 							boxStyle: {
 								border: "2px solid black",
 								background: "white",
 							    textAlign: "center",
 							    fontSize: "10pt",
 							    color: "black",
-							    width: '80px'
+							    width: '210px'
 							},
 							disableAutoPan: true,
 							pixelOffset: new google.maps.Size(-25, 0),
@@ -3768,29 +3779,29 @@ function getDataForAdvanceSearch() {
    			'values':filter_data_bs_lon_collection
    		});
 
-    	advanceSearchFilterData.push({
-    			'element_type':'multiselect',
-    			'field_type':'string',
-    			'key':'sector_configured_on',
-    			'title':'IP',
-    			'values':filter_data_sector_configured_on_collection
-    		});
+	advanceSearchFilterData.push({
+			'element_type':'multiselect',
+			'field_type':'string',
+			'key':'sector_configured_on',
+			'title':'IP',
+			'values':filter_data_sector_configured_on_collection
+		});
 
-    	advanceSearchFilterData.push({
-    			'element_type':'multiselect',
-    			'field_type':'string',
-    			'key':'circuit_ids',
-    			'title':'Circuit Id',
-    			'values':filter_data_sector_circuit_ids_collection
-    		});
-    	
-    	advanceSearchFilterData.push({
-                'element_type':'multiselect',
-                'field_type':'string',
-                'key':'city',
-                'title':'BS City',
-                'values':filter_data_bs_city_collection
-                });
+	advanceSearchFilterData.push({
+			'element_type':'multiselect',
+			'field_type':'string',
+			'key':'circuit_ids',
+			'title':'Circuit Id',
+			'values':filter_data_sector_circuit_ids_collection
+		});
+	
+	advanceSearchFilterData.push({
+            'element_type':'multiselect',
+            'field_type':'string',
+            'key':'city',
+            'title':'BS City',
+            'values':filter_data_bs_city_collection
+            });
 
 
     }//if condition closed

@@ -82,15 +82,13 @@ function advanceJustSearchClass() {
                                 }
                             }
                         } else {
-console.log(currentKey);
-console.log(filterValues[j]);
 
                             for(var j=0;j<filterValues.length;j++) {
 
                                 if(($.trim(filterValues[j].id) != null && $.trim(filterValues[j].value) != null) && ($.trim(filterValues[j].id) != "" && $.trim(filterValues[j].value) != "")) {
                                     if(currentKey=== "sector_configured_on") {
                                         var s= filterValues[j].value;
-                                        s = s.substring(0, s.indexOf('('));
+                                        s= s.substring(s.lastIndexOf("(")+1,s.lastIndexOf(")"));
                                         formElements += '<option value="'+filterValues[j].value+'">'+s+'</option>';    
                                     } else {
                                         formElements += '<option value="'+filterValues[j].value+'">'+filterValues[j].value+'</option>';    
