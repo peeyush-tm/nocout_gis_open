@@ -88,7 +88,7 @@ var mapInstance = "",
     markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}};
 
 var pointAdd= 0;
-var sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 9, sectorMarkersMasterObj= {}, isSectorMarkerLoaded=0, tempFilterSectordata= [], isFinishedSectorMarkers= false;
+var sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 9, sectorMarkersMasterObj= {}, isSectorMarkerLoaded=0, tempFilterSectordata= [], isFinishedSectorMarkers= false, sectorMarkerConfiguredOn= [];
 
 var defaultIconSize= 'medium';
 
@@ -188,7 +188,7 @@ function prepare_oms_object(oms_instance) {
 	oms_instance.addListener('click', function(marker,e) {
 		var image = '/static/img/icons/caution.png';
 		if(pointAdd=== 1) {
-			map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image});
+			map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image, zIndex: 990});
 			map_points_array.push(map_point);
 			map_point_count ++;
 			return ;
@@ -357,7 +357,7 @@ function devicePlottingClass_gmap() {
 				mapObject = {
 					center    : new google.maps.LatLng(21.1500,79.0900),
 					zoom      : 5,
-					mapTypeId : google.maps.MapTypeId.SATELLITE,
+					mapTypeId : google.maps.MapTypeId.HYBRID/*google.maps.MapTypeId.SATELLITE*/,
 					mapTypeControl : false
 				};
 			} else {
@@ -822,15 +822,18 @@ function devicePlottingClass_gmap() {
 				
 				if(!isFinishedSectorMarkers) {
 					var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
-
-					sector_MarkersArray.push(sector_Marker);
-
-					if(sectorMarkersMasterObj[bs_ss_devices[i].name]) {
-						sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
-					} else {
-						sectorMarkersMasterObj[bs_ss_devices[i].name]= [];
-						sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
+					if(sectorMarkerConfiguredOn.indexOf(sector_array[j].sector_configured_on) == -1) {
+						sector_MarkersArray.push(sector_Marker);
+						sectorMarkerConfiguredOn.push(sector_array[j].sector_configured_on);
+						if(sectorMarkersMasterObj[bs_ss_devices[i].name]) {
+							sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
+						} else {
+							sectorMarkersMasterObj[bs_ss_devices[i].name]= [];
+							sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
+						}	
 					}
+
+					
 					
 				}
 
