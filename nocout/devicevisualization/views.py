@@ -174,9 +174,9 @@ class Gis_Map_Performance_Data(View):
                     'color':device_link_color,
                     'performance_paramter':device_service_name,
                     'performance_value':device_performance_value,
-                    'performance_icon':"/media"+str(performance_icon)
+                    'performance_icon':"media"+str(performance_icon)
                                         if "uploaded" in str(performance_icon)
-                                        else "/static" + str(performance_icon),
+                                        else ("static" + str(performance_icon) if len(str(performance_icon)) else ""),
                 }
                 logger.info("%s : %s" %(device_name, performance_data))
             except Exception as e:
