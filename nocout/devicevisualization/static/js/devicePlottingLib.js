@@ -2129,6 +2129,7 @@ if(sector_child.length) {
 
             /*Deep Copy of the main_devices_data_gmaps*/
             var bs_data= $.extend( true, {}, main_devices_data_gmaps[i]);
+            console.log(bs_data);
             bs_data.data.param.sector=[];
             /*Sectors Array*/
             for(var j=0;j< main_devices_data_gmaps[i].data.param.sector.length;j++) {
@@ -3527,6 +3528,11 @@ if(sector_child.length) {
 		/*Clear the marker array of OverlappingMarkerSpiderfier*/
 		oms.clearMarkers();
         oms_ss.clearMarkers();
+
+        /*Clear lat-lon searched marker if exist*/
+        if(lastSearchedPt.position != undefined) {
+			lastSearchedPt.setMap(null);
+		}
 
 		/*Clear master marker cluster objects*/
 		if(masterClusterInstance != "") {
