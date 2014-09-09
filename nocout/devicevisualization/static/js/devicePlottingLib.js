@@ -105,7 +105,7 @@ var defaultIconSize= 'medium';
 // 		// oms.addMarker(sector_MarkersArray[i]);
 // 	}
 // }
-
+var gisPerformanceClass = {};
 var place_markers = [];
 
 function displayCoordinates(pnt) {
@@ -181,7 +181,7 @@ function clearPreviousSectorMarkers() {
 
 function prepare_oms_object(oms_instance) {
 	oms_instance.addListener('click', function(marker,e) {
-		console.log(marker);
+		// console.log(marker);
 		// var image = '/static/img/icons/caution.png';
 		// if(pointAdd=== 1) {
 		// 	map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image});
@@ -444,6 +444,9 @@ function devicePlottingClass_gmap() {
 			oms = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
             oms_ss = new OverlappingMarkerSpiderfier(mapInstance,{markersWontMove: true, markersWontHide: true, keepSpiderfied: true});
 
+            /*Create performance lib instance*/
+            gisPerformanceClass= new GisPerformance();
+
             prepare_oms_object(oms);
             prepare_oms_object(oms_ss);
 
@@ -583,6 +586,7 @@ function devicePlottingClass_gmap() {
 								isCallCompleted = 1;
 								gmap_self.plotDevices_gmap([],"base_station");
 
+
 								disableAdvanceButton('no');
 
 								/*Recall the server after particular timeout if system is not freezed*/
@@ -617,6 +621,19 @@ function devicePlottingClass_gmap() {
 
 						isCallCompleted = 1;
 						gmap_self.plotDevices_gmap([],"base_station");
+
+						setTimeout(function() {
+							if($.cookie('isFreezeSelected')) {
+							} else {
+								$.cookie("isFreezeSelected", 0);
+							}
+														
+							gisPerformanceClass.start();
+							
+
+
+						}, 30000);
+								
 
 						disableAdvanceButton('no, enable it.');
 
@@ -658,7 +675,15 @@ function devicePlottingClass_gmap() {
 			gmap_self.plotDevices_gmap([],"base_station");
 
 			disableAdvanceButton('no, enable it.');
-			
+
+			setTimeout(function() {
+				if($.cookie('isFreezeSelected')) {
+				} else {
+					$.cookie("isFreezeSelected", 0);
+				}
+
+				gisPerformanceClass.start();
+			}, 30000);
 			/*Recall the server after particular timeout if system is not freezed*/
 			setTimeout(function(e){
 				gmap_self.recallServer_gmap();
@@ -935,11 +960,6 @@ function devicePlottingClass_gmap() {
 					}
 				}
 			}
-
-		
-
-			var gisPerformanceClass= new GisPerformance();
-			gisPerformanceClass.start();
 
 			gmap_self.updateAllMarkersWithNewIcon(defaultIconSize);
 
@@ -3264,7 +3284,7 @@ if(sector_child.length) {
 		if(isFreeze == 1) {
 
 			isFreeze = 0;
-			gmap_self.recallServer_gmap();
+			// gmap_self.recallServer_gmap();
 		}
 
         if (map_point_count == 0){
@@ -3319,6 +3339,8 @@ if(sector_child.length) {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 1;
+	 	$.cookie("isFreezeSelected", 1);
+	 	gisPerformanceClass.stop();
 	 };
 
 	 /**
@@ -3329,9 +3351,11 @@ if(sector_child.length) {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 0;
+	 	$.cookie("isFreezeSelected", 0);
+	 	gisPerformanceClass.restart();
 
 	 	/*Recall the server*/
-	 	gmap_self.recallServer_gmap();
+	 	// gmap_self.recallServer_gmap();
 	 };
 
 	/**

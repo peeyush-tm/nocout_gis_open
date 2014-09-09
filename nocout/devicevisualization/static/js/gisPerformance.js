@@ -3,12 +3,14 @@
  */
 function GisPerformance() {
 	//Is Frozen variable
-	this.isFrozen_ = 1;
+	this.isFrozen_ = 0;
 	//Variable to hold GisData
 	this.gisData;
 
 	//Variable to hold Base Stations Name
 	this.BSNamesArray= [];
+	//Base Station Length
+	this.bsLength= 0;
 
 	/*
 	Here we start GisPerformance.
@@ -17,54 +19,90 @@ function GisPerformance() {
 	And start the setInterval function to updateMap every 10 secs.
 	 */
 	this.start= function() {
-		var that= this;
-		for(var k in markersMasterObj['BSNamae']) this.BSNamesArray.push(k);
+		var perf_that= this;
+		for(var k in markersMasterObj['BSNamae']) { this.BSNamesArray.push(k)};
+		this.bsLength= this.BSNamesArray.length;
+
+	// Global Variable
+		this._isFrozen= isFreeze;
 //		this.BSNamesArray.push("Bagahati");
 //		this.BSNamesArray.push("Rakesh_Bulb_Pataudia");
-		that.sendRequest(0);
-		setInterval(function() {
-			console.log("====================START==========================");
-			that.sendRequest(0);
-			console.log("====================END==========================");
-		}, 60000);
+		perf_that.sendRequest(0);
+		// setInterval(function() {
+		// 	console.log("====================START==========================");
+		// 	perf_that.sendRequest(0);
+		// 	console.log("====================END==========================");
+		// }, 60000);
 	}
 
-	this.waitAndSend = function(getBsRequestData, counter) {
-		
-		that = this;
-		counter++;
+	this.stop= function() {
+		this._isFrozen= 1;
+	}
 
-		$.ajax({
-				type : 'POST',
-				dataType : 'json',
-				data: JSON.stringify(getBsRequestData),
-				url:  '/network_maps/performance_data/',//,
-				//async: false
-				success : function (data) {
-					that.gisData= data;
-					that.updateMap();
-					setTimeout(function() {
-						console.log("====================GET NEXT START========================");
-						that.sendRequest(counter);
-						console.log("====================GET NEXT END========================");
-					}, 2000);
-				},
-				error : function(err){
-					console.log(err);
-				}
-			})
+	this.restart= function() {
+		this._isFrozen= 0;
+		this.sendRequest(0);
+	}
+
+	this.resetVariable= function() {
+		this.gisData= null;
+		this.BSNamesArray= [];
+		this.bsLength= 0;
+		this._isFrozen= isFreeze;
 	}
 
 	this.sendRequest= function(counter) {
-		// var counter= 0, that= this;
+		// var counter= 0, perf_that= this;
 		// while(counter<this.BSNamesArray.length) {
 			// var getBsRequestData= this.createRequestData(this.BSNamesArray[counter]);
 			// counter++;
 		// }
-		that = this;
-		console.log("====================PROCESSING START========================");
-		that.waitAndSend(this.createRequestData(this.BSNamesArray[counter]), counter);
-		console.log("====================PROCESSING END========================");
+		if(this._isFrozen== 0 && $.cookie('isFreezeSelected')== 0) {
+			var perf_that = this;
+			// console.log("====================PROCESSING START========================");
+			perf_that.waitAndSend(this.createRequestData(this.BSNamesArray[counter]), counter);
+			// console.log("====================PROCESSING END========================");	
+		}
+	}
+
+	this.waitAndSend = function(getBsRequestData, counter) {
+		
+		var perf_that = this;
+		counter++;
+		//If all calls has been done, 
+		if(counter> this.bsLength) {
+			setTimeout(function() {
+				perf_that.resetVariable();
+				perf_that.start();
+
+			}, 300000);
+				
+			return;
+		}
+		if(this._isFrozen== 0 && $.cookie('isFreezeSelected')== 0) {
+			$.ajax({
+					type : 'POST',
+					dataType : 'json',
+					data: JSON.stringify(getBsRequestData),
+					url:  '/network_maps/performance_data/',//,
+					//async: false
+					success : function (data) {
+						// console.log(JSON.stringify(data));
+						perf_that.gisData= data;
+						if(data) {
+							perf_that.updateMap();
+						}
+						setTimeout(function() {
+							// console.log("====================GET NEXT START========================");
+							perf_that.sendRequest(counter);
+							// console.log("====================GET NEXT END========================");
+						}, 2000);
+					},
+					error : function(err){
+						console.log(err);
+					}
+				});
+		}
 	}
 
 	this.createRequestData= function(bsname) {
@@ -119,12 +157,12 @@ function GisPerformance() {
 					//Fetch googlePolyline from markersMasterObj;
 					var googlePolyLine= markersMasterObj['LinesName'][String(bsMarkerObject["name"])+ bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]];
 					// //Update Polyline content.
-					if(googlePolyLine) {
+					if(googlePolyLine && lineColor) {
 						googlePolyLine.setOptions({strokeColor:lineColor});
 					}
 					if(bsMarkerObject['child_ss'][i]["technology"]=== "WiMAX" || bsMarkerObject['child_ss'][i]["technology"]=== "PMP") {
 						var sectorPoly= markersMasterObj['Poly'][bsMarkerObject['child_ss'][i]['sub_station'][j]['device_name']];
-						if(sectorPoly) {
+						if(sectorPoly && lineColor) {
 							sectorPoly.setOptions({fillColor: lineColor});
 						}
 					}
@@ -133,16 +171,19 @@ function GisPerformance() {
 					if(subStationIcon) {
 						var subStationName= bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"];
 						var subStationMarker= markersMasterObj['SSNamae'][subStationName];
-						console.log(subStationMarker);
-						subStationMarker.setIcon(window.location.origin + '/static/img/icons/'+subStationIcon);
-						subStationMarker.oldIcon= window.location.origin + '/static/img/icons/'+subStationIcon;
-						subStationMarker.clusterIcon= window.location.origin + '/static/img/icons/'+subStationIcon;
+						// console.log(subStationMarker);
+						subStationMarker.setIcon(window.location.origin + '/'+ subStationIcon);
+						subStationMarker.oldIcon= (window.location.origin + '/'+ +subStationIcon);
+						subStationMarker.clusterIcon= window.location.origin + '/'+ subStationIcon;
 					}
 				}
 				var deviceMarkers = sectorMarkersMasterObj[String(gisData.basestation_name)];
 				for(var k=0; k< deviceMarkers.length; k++) {
 					var deviceObject= this.findObjectbyDeviceName(deviceMarkers[i]["deviceInfo"][0]["value"]);
-					deviceMarkers[i].oldIcon= window.location.origin + '/static/img/icons/'+deviceObject["performance_data"]["performance_icon"];
+					if(deviceObject["performance_data"]["performance_icon"]) {
+						deviceMarkers[i].oldIcon= window.location.origin + '/'+ deviceObject["performance_data"]["performance_icon"];
+						
+					}
 				}
 			}
 		}catch(exception) {

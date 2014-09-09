@@ -17,9 +17,9 @@ var advJustSearch_self = "",
 
 var advanceSearchMasterObj= {};
 advanceSearchMasterObj.previouslySearchedMarkersList= [];
-advanceSearchMasterObj.searchedIconUrl= 'http://www.iconsdb.com/icons/preview/soylent-red/arrow-241-xl.png';
+advanceSearchMasterObj.searchedIconUrl= 'http://www.iconsdb.com/icons/preview/color/FF1C33/arrow-211-xl.png';
 advanceSearchMasterObj.searchedLinesByCircuitIDs= [];
-advanceSearchMasterObj.searchedLinesIconUrl= 'http://www.iconsdb.com/icons/preview/soylent-red/arrow-241-xl.png';
+advanceSearchMasterObj.searchedLinesIconUrl= 'http://www.iconsdb.com/icons/preview/color/FF1C33/arrow-211-xl.png';
 advanceSearchMasterObj.maxSearchLevelNumber= 20;
 advanceSearchMasterObj.searchNumberLimitMessage= 'Too many Searched Results. Please filter again. No Markers drawn'
 
@@ -89,7 +89,7 @@ function advanceJustSearchClass() {
                                     if(currentKey=== "sector_configured_on") {
                                         var s= filterValues[j].value;
                                         s= s.substring(s.lastIndexOf("(")+1,s.lastIndexOf(")"));
-                                        formElements += '<option value="'+filterValues[j].value+'">'+s+'</option>';    
+                                        formElements += '<option value="'+filterValues[j].value+'">'+s+'</option>';
                                     } else {
                                         formElements += '<option value="'+filterValues[j].value+'">'+filterValues[j].value+'</option>';    
                                     }
@@ -238,7 +238,7 @@ function advanceJustSearchClass() {
             if(showSearchedResultMarker.getAnimation() != null) {
                 showSearchedResultMarker.setAnimation(null);
             } else {
-                showSearchedResultMarker.setAnimation(google.maps.Animation.BOUNCE);
+                showSearchedResultMarker.setAnimation(google.maps.Animation.DROP);
             }
             //show the marker on map.
             showSearchedResultMarker.setMap(mapInstance);
@@ -382,22 +382,28 @@ function advanceJustSearchClass() {
 						}
 						//Check BS Sector Configured On
 						if(key === 'IP') {
-							var deivceConfiguredOn= deviceJson.sector_configured_on_devices;
-							var deivceConfiguredOnArray= deivceConfiguredOn.split(" ");
 							var isSectorIsConfigured= false;
-							for(var z=0; z< deivceConfiguredOnArray.length; z++) {
-								if(deivceConfiguredOnArray[z] && ((String(deivceConfiguredOnArray[z])).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deivceConfiguredOnArray[z])).toLowerCase()) != -1) {
-									isSectorIsConfigured= true;
-								}	
-							}
+                            var deivceConfiguredOn= deviceJson["sector_configured_on_devices"];
+                            var deivceConfiguredOnArray= deivceConfiguredOn.split(" ");
 
-							if(!isSectorIsConfigured) {
+                            for(var z=0; z< deivceConfiguredOnArray.length; z++) {
+                                if(deivceConfiguredOnArray[z] && ((String(deivceConfiguredOnArray[z])).toLowerCase() !== "")) {
+
+                                    // && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deivceConfiguredOnArray[z])).toLowerCase()) != -1
+                                    var s= (String(deivceConfiguredOnArray[z])).toLowerCase();
+                                    s= s.substring(s.lastIndexOf("(")+1,s.lastIndexOf(")"));
+                                    if((String(selectedInputs[key]).toLowerCase()).indexOf(s) != -1) {
+                                        isSectorIsConfigured= true;
+                                    }
+                                }
+                            }
+
+                            if(!isSectorIsConfigured) {
 								return false;
 							}
 						}
 
 						if(key === 'Circuit Id') {
-//BS JSON CIRCUITS ID: console.log(deviceJson.circuit_ids);
 							var deviceCircuitIDs= deviceJson.circuit_ids;
                             var deviceCircuitIDSArray= deviceCircuitIDs.split(" ");
                             var isCircuitPresent= false;

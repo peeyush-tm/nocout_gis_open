@@ -3,6 +3,22 @@ var mapPageType = "",
     hasSelectDevice = 0,
     hasTools = 0;
 
+/*Set isFreeze from cookies*/
+    isFreeze = $.cookie("isFreezeSelected");
+    if(isFreeze == 1) {
+        if($("#freeze_remove").hasClass("hide")) {
+            $("#freeze_select").addClass("hide");
+            $("#freeze_remove").removeClass("hide");
+        }
+    } else {
+        if($("#freeze_select").hasClass("hide")) {
+            $("#freeze_remove").addClass("hide");
+            $("#freeze_select").removeClass("hide");
+        }
+    }
+
+
+
 /*Call get_page_status function to show the current status*/
 get_page_status();
 
@@ -201,8 +217,8 @@ $("#resetSearchForm").click(function(e) {
     });
     advJustSearch.resetPreviousSearchedMarkers();
     advJustSearch.resetVariables();
-    mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
-    mapInstance.setZoom(5);
+    // mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
+    // mapInstance.setZoom(5);
     advJustSearch.hideNotification();
 
 });
@@ -442,9 +458,14 @@ pointAdd= -1;
 
         $("#freeze_select").addClass("hide");
         $("#freeze_remove").removeClass("hide");
-    }
+        $("#freeze_remove").show();
 
-    // networkMapInstance.freezeDevices_gmap();
+    }
+    $("#freeze_remove").removeClass("hide");
+
+    // $.cookie('isFreezeSelected', true);
+
+    networkMapInstance.freezeDevices_gmap();
  });
 
  /**
@@ -457,8 +478,11 @@ $("#freeze_remove").click(function(e) {
         $("#freeze_select").removeClass("hide");
         $("#freeze_remove").addClass("hide");
     }
+    $("#freeze_select").removeClass("hide");
 
-    // networkMapInstance.unfreezeDevices_gmap();
+    // $.cookie('isFreezeSelected', false);
+
+    networkMapInstance.unfreezeDevices_gmap();
 });
 
 /**
