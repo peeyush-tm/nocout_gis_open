@@ -181,16 +181,13 @@ function clearPreviousSectorMarkers() {
 
 function prepare_oms_object(oms_instance) {
 	oms_instance.addListener('click', function(marker,e) {
-		// console.log(marker);
-		// var image = '/static/img/icons/caution.png';
-		// if(pointAdd=== 1) {
-		// 	map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image});
-		// 	map_points_array.push(map_point);
-		// 	map_point_count ++;
-		// 	return ;
-		// } else if (pointAdd === -1) {
-		// 	return ;
-		// }
+		var image = '/static/img/icons/caution.png';
+		if(pointAdd=== 1) {
+			map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image});
+			map_points_array.push(map_point);
+			map_point_count ++;
+			return ;
+		}		
 
 		var sectorMarker, sectorMarkerOms;
 		if(marker.pointType=== "base_station") {
@@ -625,10 +622,7 @@ function devicePlottingClass_gmap() {
 						gmap_self.plotDevices_gmap([],"base_station");
 
 						setTimeout(function() {
-							if($.cookie('isFreezeSelected')) {
-							} else {
-								$.cookie("isFreezeSelected", 0);
-							}
+							
 														
 							gisPerformanceClass.start();
 							
@@ -679,10 +673,6 @@ function devicePlottingClass_gmap() {
 			disableAdvanceButton('no, enable it.');
 
 			setTimeout(function() {
-				if($.cookie('isFreezeSelected')) {
-				} else {
-					$.cookie("isFreezeSelected", 0);
-				}
 
 				gisPerformanceClass.start();
 			}, 30000);
