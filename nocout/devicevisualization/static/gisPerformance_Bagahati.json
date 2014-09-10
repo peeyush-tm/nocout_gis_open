@@ -24,7 +24,7 @@
                             "color": "rgba(141,30, 40, 0.9)",
                             "performance_parameter": "some y parameter",
                             "performance_value": "some y value",
-                            "performance_icon": "mobilephonetower8.png"
+                            "performance_icon": "static/img/icons/mobilephonetower5.png"
                         }
                     }
                 ]
