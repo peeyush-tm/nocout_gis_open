@@ -230,7 +230,7 @@
                 var service_name = window.location.href.split('#')[1];
                 var service_data_source= window.location.href.split('#')[2];
                 window.location.replace('/performance/service/'+ service_name +'/service_data_source/'+ service_data_source +
-                '/{{ page_type }}/device/{{ device.id }}' +
+                '/device/{{ device.id }}' +
                 '?download_excel=true' +'&start_date=' + encodeURIComponent($("#start_date").val()) +
                 '&end_date=' + encodeURIComponent($("#end_date").val()))
             });
@@ -240,7 +240,7 @@
                 var service_data_source= window.location.href.split('#')[2];
 
                 window.location.replace('/performance/service/'+ service_name +'/service_data_source/'+ service_data_source +
-                '/{{ page_type }}/device/{{ device.id }}' +
+                '/device/{{ device.id }}' +
                 '?download_csv=true' +'&start_date=' + encodeURIComponent($("#start_date").val()) +
                 '&end_date=' + encodeURIComponent($("#end_date").val()))
             });
