@@ -3810,8 +3810,8 @@ function prepare_data_for_filter(){
 function getDataForAdvanceSearch() {
 	//extra form elements that will be showing in Advance Search. We will get other Elements like City, Vendor, Technology from prepare_data_for_filter();
 	var filter_data_bs_name_collection=[],
-	filter_data_bs_lat_collection =[],
-	filter_data_bs_lon_collection=[],
+	// filter_data_bs_lat_collection =[],
+	// filter_data_bs_lon_collection=[],
 	filter_data_sector_configured_on_collection=[];
 	filter_data_sector_circuit_ids_collection=[];
 	var filter_data_bs_city_collection=[];
@@ -3826,9 +3826,9 @@ function getDataForAdvanceSearch() {
 
     		filter_data_bs_name_collection.push({ 'id':[main_devices_data_gmaps[i].id], 'value':main_devices_data_gmaps[i].name });
 
-    		filter_data_bs_lat_collection.push({ 'id':[main_devices_data_gmaps[i].id] , 'value':main_devices_data_gmaps[i].data.lat });
+    		// filter_data_bs_lat_collection.push({ 'id':[main_devices_data_gmaps[i].id] , 'value':main_devices_data_gmaps[i].data.lat });
 
-    		filter_data_bs_lon_collection.push({ 'id':[main_devices_data_gmaps[i].id], 'value':main_devices_data_gmaps[i].data.lon });
+    		// filter_data_bs_lon_collection.push({ 'id':[main_devices_data_gmaps[i].id], 'value':main_devices_data_gmaps[i].data.lon });
 
     		filter_data_sector_configured_on_value= main_devices_data_gmaps[i].sector_configured_on_devices.split(' ').filter(function (n) { return n != ""});
 
@@ -3854,21 +3854,21 @@ function getDataForAdvanceSearch() {
     			'values':filter_data_bs_name_collection
     		});
 
-   	advanceSearchFilterData.push({
-   			'element_type':'multiselect',
-   			'field_type':'string',
-   			'key':'latitude',
-   			'title':'BS Latitude',
-   			'values':filter_data_bs_lat_collection
-   		});
+   	// advanceSearchFilterData.push({
+   	// 		'element_type':'multiselect',
+   	// 		'field_type':'string',
+   	// 		'key':'latitude',
+   	// 		'title':'BS Latitude',
+   	// 		// 'values':filter_data_bs_lat_collection
+   	// 	});
 
-   	advanceSearchFilterData.push({
-   			'element_type':'multiselect',
-   			'field_type':'string',
-   			'key':'longitude',
-   			'title':'BS Longitude',
-   			'values':filter_data_bs_lon_collection
-   		});
+   	// advanceSearchFilterData.push({
+   	// 		'element_type':'multiselect',
+   	// 		'field_type':'string',
+   	// 		'key':'longitude',
+   	// 		'title':'BS Longitude',
+   	// 		// 'values':filter_data_bs_lon_collection
+   	// 	});
 
 	advanceSearchFilterData.push({
 			'element_type':'multiselect',
