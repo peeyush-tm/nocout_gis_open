@@ -839,7 +839,7 @@ class BulkFetchLPDataApi(View):
                             image_partial = "static/img/icons/mobilephonetower10.png"
 
                             try:
-                                if abs(int(tc.range1_start)) <= abs(int(value)) <= abs(int(tc.range1_end)):
+                                if (float(tc.range1_start)) <= (float(value)) <= (float(tc.range1_end)):
                                     icon_settings = eval(ts.icon_settings)
                                     print "************************** icon_settings - ", icon_settings
                                     for icon_setting in icon_settings:
@@ -849,7 +849,7 @@ class BulkFetchLPDataApi(View):
                                 logger.info(e.message)
 
                             try:
-                                if abs(int(tc.range2_start)) <= abs(int(value)) <= abs(int(tc.range2_end)):
+                                if (float(tc.range2_start)) <= (float(value)) <= (float(tc.range2_end)):
                                     icon_settings = eval(ts.icon_settings)
                                     for icon_setting in icon_settings:
                                         if 'icon_settings2' in icon_setting.keys():
@@ -858,7 +858,7 @@ class BulkFetchLPDataApi(View):
                                 logger.info(e.message)
 
                             try:
-                                if abs(int(tc.range3_start)) <= abs(int(value)) <= abs(int(tc.range3_end)):
+                                if (float(tc.range3_start)) <= (float(value)) <= (float(tc.range3_end)):
                                     icon_settings = eval(ts.icon_settings)
                                     for icon_setting in icon_settings:
                                         if 'icon_settings3' in icon_setting.keys():
@@ -867,7 +867,7 @@ class BulkFetchLPDataApi(View):
                                 logger.info(e.message)
 
                             try:
-                                if abs(int(tc.range4_start)) <= abs(int(value)) <= abs(int(tc.range4_end)):
+                                if (float(tc.range4_start)) <= (float(value)) <= (float(tc.range4_end)):
                                     icon_settings = eval(ts.icon_settings)
                                     for icon_setting in icon_settings:
                                         if 'icon_settings4' in icon_setting.keys():
@@ -876,7 +876,7 @@ class BulkFetchLPDataApi(View):
                                 logger.info(e.message)
 
                             try:
-                                if abs(int(tc.range5_start)) <= abs(int(value)) <= abs(int(tc.range5_end)):
+                                if (float(tc.range5_start)) <= (float(value)) <= (float(tc.range5_end)):
                                     icon_settings = eval(ts.icon_settings)
                                     for icon_setting in icon_settings:
                                         if 'icon_settings5' in icon_setting.keys():
@@ -885,7 +885,7 @@ class BulkFetchLPDataApi(View):
                                 logger.info(e.message)
 
                             try:
-                                if abs(int(tc.range6_start)) <= abs(int(value)) <= abs(int(tc.range6_end)):
+                                if (float(tc.range6_start)) <= (float(value)) <= (float(tc.range6_end)):
                                     icon_settings = eval(ts.icon_settings)
                                     for icon_setting in icon_settings:
                                         if 'icon_settings6' in icon_setting.keys():
@@ -894,7 +894,7 @@ class BulkFetchLPDataApi(View):
                                 logger.info(e.message)
 
                             try:
-                                if abs(int(tc.range7_start)) <= abs(int(value)) <= abs(int(tc.range7_end)):
+                                if (float(tc.range7_start)) <= (float(value)) <= (float(tc.range7_end)):
                                     icon_settings = eval(ts.icon_settings)
                                     for icon_setting in icon_settings:
                                         if 'icon_settings7' in icon_setting.keys():
@@ -903,7 +903,7 @@ class BulkFetchLPDataApi(View):
                                 logger.info(e.message)
 
                             try:
-                                if abs(int(tc.range8_start)) <= abs(int(value)) <= abs(int(tc.range8_end)):
+                                if (float(tc.range8_start)) <= (float(value)) <= (float(tc.range8_end)):
                                     icon_settings = eval(ts.icon_settings)
                                     for icon_setting in icon_settings:
                                         if 'icon_settings8' in icon_setting.keys():
@@ -912,7 +912,7 @@ class BulkFetchLPDataApi(View):
                                 logger.info(e.message)
 
                             try:
-                                if abs(int(tc.range9_start)) <= abs(int(value)) <= abs(int(tc.range9_end)):
+                                if (float(tc.range9_start)) <= (float(value)) <= (float(tc.range9_end)):
                                     icon_settings = eval(ts.icon_settings)
                                     for icon_setting in icon_settings:
                                         if 'icon_settings9' in icon_setting.keys():
@@ -921,7 +921,7 @@ class BulkFetchLPDataApi(View):
                                 logger.info(e.message)
 
                             try:
-                                if abs(int(tc.range10_start)) <= abs(int(value)) <= abs(int(tc.range10_end)):
+                                if (float(tc.range10_start)) <= (float(value)) <= (float(tc.range10_end)):
                                     icon_settings = eval(ts.icon_settings)
                                     for icon_setting in icon_settings:
                                         if 'icon_settings10' in icon_setting.keys():
