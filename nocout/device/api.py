@@ -605,14 +605,15 @@ class BulkFetchLPDataApi(View):
 
         # converting 'json' into python object
         devices = eval(str(self.request.GET.get('devices', None)))
-
         tc_template_id = int(self.request.GET.get('tc_template', None))
+
         service = ""
         data_source = ""
         # Responsed form multiprocessing
 
         # getting live polling template
         lp_template_id = ThresholdConfiguration.objects.get(pk=tc_template_id).live_polling_template.id
+        print "********************************** lp_template_id - ", lp_template_id
 
         # getting service and data source form live polling settings
         try:
@@ -649,6 +650,7 @@ class BulkFetchLPDataApi(View):
                 responses = []
                 # live polling setting
                 lp_template = LivePollingSettings.objects.get(pk=lp_template_id)
+
 
                 # current machine devices
                 current_devices_list = []
@@ -740,69 +742,110 @@ class BulkFetchLPDataApi(View):
                         result['data']['devices'][device_name]['value'] = device_value
 
                         # threshold configuration for getting warning, critical comparison values
-                        tc = ThresholdConfiguration.objects.get(live_polling_template=lp_template)
+                        tc = ThresholdConfiguration.objects.get(pk=tc_template_id)
 
                         # thematic settings for getting icon url
                         ts = ThematicSettings.objects.get(threshold_template=tc)
 
                         # comparing threshold values to get icon
                         try:
+                            # live polled value of device service
                             value = device_value
-                            print "*************************** value - ", value
+
+                            # icon as per thematic setting
                             image_partial = "static/img/icons/caution.png"
-                            if abs(int(tc.range1_start)) <= abs(int(value)) <= abs(int(tc.range1_end)):
-                                icon_settings = eval(ts.icon_settings)
-                                print "************************** icon_settings - ", icon_settings
-                                for icon_setting in icon_settings:
-                                    if 'icon_settings1' in icon_setting.keys():
-                                        image_partial = str(icon_setting['icon_settings1'])
-                            elif abs(int(tc.range2_start)) <= abs(int(value)) <= abs(int(tc.range2_end)):
-                                icon_settings = eval(ts.icon_settings)
-                                for icon_setting in icon_settings:
-                                    if 'icon_settings2' in icon_setting.keys():
-                                        image_partial = str(icon_setting['icon_settings2'])
-                            elif abs(int(tc.range3_start)) <= abs(int(value)) <= abs(int(tc.range3_end)):
-                                icon_settings = eval(ts.icon_settings)
-                                for icon_setting in icon_settings:
-                                    if 'icon_settings3' in icon_setting.keys():
-                                        image_partial = str(icon_setting['icon_settings3'])
-                            elif abs(int(tc.range4_start)) <= abs(int(value)) <= abs(int(tc.range4_end)):
-                                icon_settings = eval(ts.icon_settings)
-                                for icon_setting in icon_settings:
-                                    if 'icon_settings4' in icon_setting.keys():
-                                        image_partial = str(icon_setting['icon_settings4'])
-                            elif abs(int(tc.range5_start)) <= abs(int(value)) <= abs(int(tc.range5_end)):
-                                icon_settings = eval(ts.icon_settings)
-                                for icon_setting in icon_settings:
-                                    if 'icon_settings5' in icon_setting.keys():
-                                        image_partial = str(icon_setting['icon_settings5'])
-                            elif abs(int(tc.range6_start)) <= abs(int(value)) <= abs(int(tc.range6_end)):
-                                icon_settings = eval(ts.icon_settings)
-                                for icon_setting in icon_settings:
-                                    if 'icon_settings6' in icon_setting.keys():
-                                        image_partial = str(icon_setting['icon_settings6'])
-                            elif abs(int(tc.range7_start)) <= abs(int(value)) <= abs(int(tc.range7_end)):
-                                icon_settings = eval(ts.icon_settings)
-                                for icon_setting in icon_settings:
-                                    if 'icon_settings7' in icon_setting.keys():
-                                        image_partial = str(icon_setting['icon_settings7'])
-                            elif abs(int(tc.range8_start)) <= abs(int(value)) <= abs(int(tc.range8_end)):
-                                icon_settings = eval(ts.icon_settings)
-                                for icon_setting in icon_settings:
-                                    if 'icon_settings8' in icon_setting.keys():
-                                        image_partial = str(icon_setting['icon_settings8'])
-                            elif abs(int(tc.range9_start)) <= abs(int(value)) <= abs(int(tc.range9_end)):
-                                icon_settings = eval(ts.icon_settings)
-                                for icon_setting in icon_settings:
-                                    if 'icon_settings9' in icon_setting.keys():
-                                        image_partial = str(icon_setting['icon_settings9'])
-                            elif abs(int(tc.range10_start)) <= abs(int(value)) <= abs(int(tc.range10_end)):
-                                icon_settings = eval(ts.icon_settings)
-                                for icon_setting in icon_settings:
-                                    if 'icon_settings10' in icon_setting.keys():
-                                        image_partial = str(icon_setting['icon_settings10'])
-                            else:
-                                icon = static('img/icons/wifi7.png')
+
+                            try:
+                                if abs(int(tc.range1_start)) <= abs(int(value)) <= abs(int(tc.range1_end)):
+                                    icon_settings = eval(ts.icon_settings)
+                                    print "************************** icon_settings - ", icon_settings
+                                    for icon_setting in icon_settings:
+                                        if 'icon_settings1' in icon_setting.keys():
+                                            image_partial = str(icon_setting['icon_settings1'])
+                            except Exception as e:
+                                logger.info(e.message)
+
+                            try:
+                                if abs(int(tc.range2_start)) <= abs(int(value)) <= abs(int(tc.range2_end)):
+                                    icon_settings = eval(ts.icon_settings)
+                                    for icon_setting in icon_settings:
+                                        if 'icon_settings2' in icon_setting.keys():
+                                            image_partial = str(icon_setting['icon_settings2'])
+                            except Exception as e:
+                                logger.info(e.message)
+
+                            try:
+                                if abs(int(tc.range3_start)) <= abs(int(value)) <= abs(int(tc.range3_end)):
+                                    icon_settings = eval(ts.icon_settings)
+                                    for icon_setting in icon_settings:
+                                        if 'icon_settings3' in icon_setting.keys():
+                                            image_partial = str(icon_setting['icon_settings3'])
+                            except Exception as e:
+                                logger.info(e.message)
+
+                            try:
+                                if abs(int(tc.range4_start)) <= abs(int(value)) <= abs(int(tc.range4_end)):
+                                    icon_settings = eval(ts.icon_settings)
+                                    for icon_setting in icon_settings:
+                                        if 'icon_settings4' in icon_setting.keys():
+                                            image_partial = str(icon_setting['icon_settings4'])
+                            except Exception as e:
+                                logger.info(e.message)
+
+                            try:
+                                if abs(int(tc.range5_start)) <= abs(int(value)) <= abs(int(tc.range5_end)):
+                                    icon_settings = eval(ts.icon_settings)
+                                    for icon_setting in icon_settings:
+                                        if 'icon_settings5' in icon_setting.keys():
+                                            image_partial = str(icon_setting['icon_settings5'])
+                            except Exception as e:
+                                logger.info(e.message)
+
+                            try:
+                                if abs(int(tc.range6_start)) <= abs(int(value)) <= abs(int(tc.range6_end)):
+                                    icon_settings = eval(ts.icon_settings)
+                                    for icon_setting in icon_settings:
+                                        if 'icon_settings6' in icon_setting.keys():
+                                            image_partial = str(icon_setting['icon_settings6'])
+                            except Exception as e:
+                                logger.info(e.message)
+
+                            try:
+                                if abs(int(tc.range7_start)) <= abs(int(value)) <= abs(int(tc.range7_end)):
+                                    icon_settings = eval(ts.icon_settings)
+                                    for icon_setting in icon_settings:
+                                        if 'icon_settings7' in icon_setting.keys():
+                                            image_partial = str(icon_setting['icon_settings7'])
+                            except Exception as e:
+                                logger.info(e.message)
+
+                            try:
+                                if abs(int(tc.range8_start)) <= abs(int(value)) <= abs(int(tc.range8_end)):
+                                    icon_settings = eval(ts.icon_settings)
+                                    for icon_setting in icon_settings:
+                                        if 'icon_settings8' in icon_setting.keys():
+                                            image_partial = str(icon_setting['icon_settings8'])
+                            except Exception as e:
+                                logger.info(e.message)
+
+                            try:
+                                if abs(int(tc.range9_start)) <= abs(int(value)) <= abs(int(tc.range9_end)):
+                                    icon_settings = eval(ts.icon_settings)
+                                    for icon_setting in icon_settings:
+                                        if 'icon_settings9' in icon_setting.keys():
+                                            image_partial = str(icon_setting['icon_settings9'])
+                            except Exception as e:
+                                logger.info(e.message)
+
+                            try:
+                                if abs(int(tc.range10_start)) <= abs(int(value)) <= abs(int(tc.range10_end)):
+                                    icon_settings = eval(ts.icon_settings)
+                                    for icon_setting in icon_settings:
+                                        if 'icon_settings10' in icon_setting.keys():
+                                            image_partial = str(icon_setting['icon_settings10'])
+                            except Exception as e:
+                                logger.info(e.message)
+
                             img_url = "media/" + str(image_partial) if "uploaded" in str(image_partial) else str(image_partial)
                             icon = str(img_url)
                         except Exception as e:
