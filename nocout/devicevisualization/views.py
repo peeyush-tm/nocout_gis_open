@@ -94,8 +94,12 @@ class Gis_Map_Performance_Data(View):
 
         def get_device_performance(self, device_name):
             performance_data={}
+            device_performance_value = ''
+            device_frequency = ''
+            device_pl = ''
+            device_link_color=None
             try:
-                device= Device.objects.get(device_name= device_name)
+                device= Device.objects.get(device_name= device_name, is_added_to_nms=1, is_deleted=0)
                 thematic_settings= ThematicSettings.objects.get(user_profile= self.request.user)
                 threshold_template=thematic_settings.threshold_template
                 live_polling_template= threshold_template.live_polling_template
@@ -121,18 +125,6 @@ class Gis_Map_Performance_Data(View):
                     pass
 
                 try:
-
-                    device_performance_value= ServiceStatus.objects.filter( device_name= device_name, service_name= device_service_name,
-                    data_source= device_service_data_source).using(alias=device_machine_name).get().current_value
-
-                except Exception as e:
-                    device_performance_value=''
-                    logger.info(e.message)
-                    pass
-
-                device_link_color=None
-
-                try:
                     if len(device_frequency):
                         corrected_dev_freq = device_frequency
                         try:
@@ -156,6 +148,16 @@ class Gis_Map_Performance_Data(View):
                     else:
                         device_link_color=''
 
+                    logger.info(e.message)
+                    pass
+
+                try:
+
+                    device_performance_value= ServiceStatus.objects.filter( device_name= device_name, service_name= device_service_name,
+                    data_source= device_service_data_source).using(alias=device_machine_name).get().current_value
+
+                except Exception as e:
+                    device_performance_value=''
                     logger.info(e.message)
                     pass
 
