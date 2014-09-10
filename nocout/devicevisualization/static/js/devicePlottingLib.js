@@ -794,6 +794,12 @@ function devicePlottingClass_gmap() {
 				});
 					
 				if(deviceIDArray.indexOf(sector_array[j]['device_info'][1]['value']) === -1) {
+					var perf_obj = {
+						"performance_paramter" : "N/A",
+						"performance_value" : "N/A",
+						"frequency" : "N/A",
+						"pl" : "N/A"
+					};
 
 					var sectors_Markers_Obj= {
 						position: new google.maps.LatLng(lat, lon),
@@ -812,6 +818,8 @@ function devicePlottingClass_gmap() {
 						sector_lon : startEndObj["startLon"],
 						zIndex: 200,
 						optimized: false,
+						hasPerf : 0,
+						perf_data_obj : perf_obj,
                         antenna_height: sector_array[j].antenna_height
                     }
                 }
@@ -822,6 +830,24 @@ function devicePlottingClass_gmap() {
 				
 				if(!isFinishedSectorMarkers) {
 					var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
+
+					google.maps.event.addListener(sector_Marker, 'mouseover', function() {
+					    if(sector_Marker.hasPerf == 1) {
+					    	var info_html = '<table class="table table-hover"><tr><td>Frequency</td><td>'+sector_Marker.perf_data_obj.frequency+'</td></tr><tr><td>Packet Loss</td><td>'+sector_Marker.perf_data_obj.pl+'</td></tr><tr><td>'+sector_Marker.perf_data_obj.performance_paramter+'</td><td>'+sector_Marker.perf_data_obj.performance_value+'</td></tr></table>';
+					    	/*Set the content for infowindow*/
+							infowindow.setContent(info_html);
+							/*Set The Position for InfoWindow*/
+							infowindow.setPosition(new google.maps.LatLng(sector_Marker.ptLat,sector_Marker.ptLon));
+							/*Open the info window*/
+							infowindow.open(mapInstance);
+					    }
+					});
+					google.maps.event.addListener(sector_Marker, 'mouseout', function() {
+						if(sector_Marker.hasPerf == 1) {
+					    	infowindow.close();
+					    }
+					});
+
 					if(sectorMarkerConfiguredOn.indexOf(sector_array[j].sector_configured_on) == -1) {
 						sector_MarkersArray.push(sector_Marker);
 						sectorMarkerConfiguredOn.push(sector_array[j].sector_configured_on);
@@ -832,9 +858,6 @@ function devicePlottingClass_gmap() {
 							sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
 						}	
 					}
-
-					
-					
 				}
 
 				// oms.addMarker(sector_Marker);
@@ -846,6 +869,13 @@ function devicePlottingClass_gmap() {
 				for(var k=0;k<sector_child.length;k++) {
 
 					var ss_marker_obj = sector_child[k];
+
+					var perf_obj = {
+						"performance_paramter" : "N/A",
+						"performance_value" : "N/A",
+						"frequency" : "N/A",
+						"pl" : "N/A"
+					};
 
 					/*Create SS Marker Object*/
 					var ss_marker_object = {
@@ -864,11 +894,32 @@ function devicePlottingClass_gmap() {
 				    	name 		 	 : 	ss_marker_obj.name,
 				    	device_name 	 : 	ss_marker_obj.device_name,
 				    	zIndex 			 : 	200,
+				    	hasPerf 		 :  0,
+				    	perf_data_obj 	 : perf_obj,
 				    	optimized 		 : 	false
 				    };
 
 				    /*Create SS Marker*/
 				    var ss_marker = new google.maps.Marker(ss_marker_object);
+
+				    google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
+
+					    if(ss_marker.hasPerf == 1) {
+					    	var info_html = '<table class="table table-hover"><tr><td>Frequency</td><td>'+ss_marker.perf_data_obj.frequency+'</td></tr><tr><td>Packet Loss</td><td>'+ss_marker.perf_data_obj.pl+'</td></tr><tr><td>'+ss_marker.perf_data_obj.performance_paramter+'</td><td>'+ss_marker.perf_data_obj.performance_value+'</td></tr></table>';
+					    	/*Set the content for infowindow*/
+							infowindow.setContent(info_html);
+							/*Set The Position for InfoWindow*/
+							infowindow.setPosition(new google.maps.LatLng(ss_marker.ptLat,ss_marker.ptLon));
+							/*Open the info window*/
+							infowindow.open(mapInstance);
+					    }
+					});
+					google.maps.event.addListener(ss_marker, 'mouseout', function() {
+						
+						if(ss_marker.hasPerf == 1) {
+					    	infowindow.close();
+					    }
+					});
 
 				    markersMasterObj['SS'][String(ss_marker_obj.data.lat)+ ss_marker_obj.data.lon]= ss_marker;
 				    markersMasterObj['SSNamae'][String(ss_marker_obj.device_name)]= ss_marker;

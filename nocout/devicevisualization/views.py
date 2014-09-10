@@ -132,26 +132,30 @@ class Gis_Map_Performance_Data(View):
 
                 device_link_color=None
 
+                try:
+                    if len(device_frequency):
+                        corrected_dev_freq = device_frequency
+                        try:
+                            chek_dev_freq = ast.literal_eval(device_frequency)
+                            if int(chek_dev_freq) > 10:
+                                corrected_dev_freq = chek_dev_freq
+                        except Exception as e:
+                            logger.exception("Frequency is Empty : %s" %(e.message))
 
-                if len(device_frequency):
-                    corrected_dev_freq = device_frequency
-                    try:
-                        chek_dev_freq = ast.literal_eval(device_frequency)
-                        if int(chek_dev_freq) > 10:
-                            corrected_dev_freq = chek_dev_freq
-                    except Exception as e:
-                        logger.exception("Frequency is Empty : %s" %(e.message))
+                        device_frequency_color= DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq)).\
+                            values_list('color_hex_value', flat=True)
+                        if len(device_frequency_color):
+                            device_link_color= device_frequency_color[0]
 
-                    device_frequency_color= DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq)).\
-                        values_list('color_hex_value', flat=True)
-                    if len(device_frequency_color):
-                        device_link_color= device_frequency_color[0]
 
-                elif len(device_pl) and int(ast.literal_eval(device_pl))==100:
-                    device_link_color='rgb(0,0,0)'
+                    elif len(device_pl) and int(ast.literal_eval(device_pl))==100:
+                        device_link_color='rgb(0,0,0)'
 
-                else:
-                    device_link_color='rgb(180,180,180)'
+                    else:
+                        device_link_color='rgb(180,180,180)'
+                except:
+                    device_link_color=''
+                    pass
 
                 performance_icon=''
                 if device_performance_value:

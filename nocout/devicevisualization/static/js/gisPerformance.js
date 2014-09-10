@@ -199,12 +199,14 @@ function GisPerformance() {
 	this.updateMap= function() {
 		//Step no. 1 => Find BS Station First
 		var gisData= this.gisData;
+		console.log(gisData);
 		//Get BS Gmap Marker
 		var bsMarkerObject= markersMasterObj['BSNamae'][gisData.basestation_name];
 		//Step no. 2 ==> Loop through all the SS in the BS
 		try {
 			//Loop through devices
 			for(var i=0; i< bsMarkerObject['child_ss'].length; i++) {
+				var perf_obj = {};
 				//Loop through sub_station of devices
 				for(var j=0; j< bsMarkerObject['child_ss'][i]['sub_station'].length; j++) {
 					//Step no. 3 ===> Fetch PerformanceValue for various key from GisData JSon
@@ -222,13 +224,18 @@ function GisPerformance() {
 						var sectorPoly= markersMasterObj['Poly'][bsMarkerObject['child_ss'][i]['sub_station'][j]['device_name']];
 						//If both sector Poly and line Color is defined
 						if(sectorPoly && lineColor) {
+							perf_obj["performance_paramter"] = this.calculatePerformanceValue("performance_paramter", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+							perf_obj["performance_value"] = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+							perf_obj["frequency"] = this.calculatePerformanceValue("frequency", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+							perf_obj["pl"] = this.calculatePerformanceValue("pl", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
 							//Update color for Sector POly.
-							sectorPoly.setOptions({fillColor: lineColor});
+							sectorPoly.setOptions({fillColor: lineColor,hasPerf : 1,perf_data_obj :perf_obj});
 						}
 					}
 
 					//Get substation icon from Performance
 					var subStationIcon= this.calculatePerformanceValue("performance_icon", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+
 					//If substation icon is present
 					if(subStationIcon) {
 						//Get subStation Name
@@ -239,6 +246,13 @@ function GisPerformance() {
 						subStationMarker.setIcon(createGoogleMarker(window.location.origin + '/'+ subStationIcon, subStationMarker));
 						subStationMarker.oldIcon= (createGoogleMarker(window.location.origin + '/'+ subStationIcon, subStationMarker));
 						subStationMarker.clusterIcon= (createGoogleMarker(window.location.origin + '/'+ subStationIcon, subStationMarker));
+
+						perf_obj["performance_paramter"] = this.calculatePerformanceValue("performance_paramter", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+						perf_obj["performance_value"] = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+						perf_obj["frequency"] = this.calculatePerformanceValue("frequency", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+						perf_obj["pl"] = this.calculatePerformanceValue("pl", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+						//Update color for Sector POly.
+						sectorPoly.setOptions({hasPerf : 1,perf_data_obj :perf_obj});
 					}
 				}
 
