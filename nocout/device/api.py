@@ -531,11 +531,94 @@ class FetchThresholdConfigurationApi(View):
         return HttpResponse(json.dumps(result))
 
 
+class FetchThematicSettingsApi(View):
+    """
+        API for fetching the service live polled value
+        :Parameters:
+            - 'technology' (unicode) - id of technology
+
+        :Returns:
+           - 'result' (dict) - dictionary containing list of threshold configurations
+            {
+                "message": "Successfully fetched threshold configurations.",
+                "data": {
+                    "threshold_templates": [
+                        {
+                            "id": 6,
+                            "value": "Radwin UAS"
+                        },
+                        {
+                            "id": 7,
+                            "value": "Radwin RSSI Critical"
+                        },
+                        {
+                            "id": 11,
+                            "value": "Radwin RSSI Warning"
+                        },
+                        {
+                            "id": 8,
+                            "value": "Estimated Throughput"
+                        },
+                        {
+                            "id": 9,
+                            "value": "Radwin Uptime"
+                        }
+                    ]
+                },
+                "success": 1
+            }
+    """
+
+    def get(self, request):
+        """Returns json containing live polling values and icon urls for bulk devices"""
+        # result dictionary to be returned as output of api
+        result = {
+            "success": 0,
+            "message": "Failed to fetch live polling settings.",
+            "data": {
+            }
+        }
+
+        # initializing 'lp_templates' list containing live setting templates
+        result['data']['thematic_settings'] = list()
+
+        # converting 'json' into python object
+        technology_id = int(self.request.GET.get('technology', None))
+
+        # technology object
+        technology = DeviceTechnology.objects.get(pk=technology_id)
+
+        # get live polling settings corresponding to the technology
+        lps = ""
+        try:
+            lps = LivePollingSettings.objects.filter(technology=technology)
+        except Exception as e:
+            logger.info(e.message)
+
+        if lps:
+            tc_temp = dict()
+            for lp in lps:
+                threshold_configurations = ThresholdConfiguration.objects.filter(live_polling_template=lp)
+                if threshold_configurations:
+                    for tc in threshold_configurations:
+                        thematic_settings = ThematicSettings.objects.filter(threshold_template=tc)
+                        if thematic_settings:
+                            for ts in thematic_settings:
+                                ts_temp = dict()
+                                ts_temp['id'] = ts.id
+                                ts_temp['value'] = ts.alias
+                                result['data']['thematic_settings'].append(ts_temp)
+                                print "********************************* ts_temp - ", ts_temp
+            result['message'] = "Successfully fetched thematic settings."
+            result['success'] = 1
+        return HttpResponse(json.dumps(result))
+
+
 class BulkFetchLPDataApi(View):
     """
         API for fetching the service live polled value
         :Parameters:
-            - 'tc_template' (unicode) - threshold configuration template id
+            - 'ts_template' (unicode) - threshold configuration template id
             - 'devices' (list) - list of devices
 
         :Returns:
@@ -605,14 +688,18 @@ class BulkFetchLPDataApi(View):
 
         # converting 'json' into python object
         devices = eval(str(self.request.GET.get('devices', None)))
-        tc_template_id = int(self.request.GET.get('tc_template', None))
+        ts_template_id = int(self.request.GET.get('ts_template', None))
 
         service = ""
         data_source = ""
         # Responsed form multiprocessing
 
+        # selected thematic setting
+        ts = ThematicSettings.objects.get(pk=ts_template_id)
+        print "***************************** ts.threshold_template.id - ", ts.threshold_template.id
+
         # getting live polling template
-        lp_template_id = ThresholdConfiguration.objects.get(pk=tc_template_id).live_polling_template.id
+        lp_template_id = ThresholdConfiguration.objects.get(pk=ts.threshold_template.id).live_polling_template.id
         print "********************************** lp_template_id - ", lp_template_id
 
         # getting service and data source form live polling settings
@@ -650,7 +737,6 @@ class BulkFetchLPDataApi(View):
                 responses = []
                 # live polling setting
                 lp_template = LivePollingSettings.objects.get(pk=lp_template_id)
-
 
                 # current machine devices
                 current_devices_list = []
@@ -742,10 +828,7 @@ class BulkFetchLPDataApi(View):
                         result['data']['devices'][device_name]['value'] = device_value
 
                         # threshold configuration for getting warning, critical comparison values
-                        tc = ThresholdConfiguration.objects.get(pk=tc_template_id)
-
-                        # thematic settings for getting icon url
-                        ts = ThematicSettings.objects.get(threshold_template=tc)
+                        tc = ThresholdConfiguration.objects.get(pk=ts.threshold_template.id)
 
                         # comparing threshold values to get icon
                         try:
