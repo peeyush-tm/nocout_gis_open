@@ -135,16 +135,30 @@ class LivePerformanceListing(BaseDatatableView):
             device_tab_technology = self.request.GET.get('data_tab')
             device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
             # get only devices added to NMS and none other
-            devices = Device.objects.filter(is_added_to_nms= 1,  is_deleted= 0,
-                                            organization__in= kwargs['organization_ids'],\
-                                            device_technology= device_technology_id).values(*self.columns +\
-                                            ['id', 'device_name', 'machine__name','sector_configured_on', 'substation'])
+            if device_technology_id == int(P2P.ID):
+                devices = Device.objects.filter(~Q(id__in=SubStation.objects.filter(id__in = Circuit.objects.filter(circuit_type__icontains="Backhaul").values_list('sub_station',flat=True)).values_list('device', flat=True)),
+                                                ~Q(id__in=Sector.objects.filter(id__in = Circuit.objects.filter(circuit_type__icontains="Backhaul").values_list('sector',flat=True)).values_list('sector_configured_on', flat=True)),
+                                                is_added_to_nms= 1,
+                                                is_deleted= 0,
+                                                organization__in= kwargs['organization_ids'],
+                                                device_technology= device_technology_id).\
+                    values(*self.columns + ['id', 'device_name', 'machine__name','sector_configured_on', 'substation'])
+            else:
+                devices = Device.objects.filter(is_added_to_nms= 1,  is_deleted= 0,
+                                                organization__in= kwargs['organization_ids'],
+                                                device_technology= device_technology_id).\
+                    values(*self.columns + ['id', 'device_name', 'machine__name', device_association])
+
         else:
             # get only devices added to NMS and devices which are not P2P, and must be either PMP or WiMAX.
-            devices = Device.objects.filter(~Q(device_technology = int(P2P.ID)),
-                                             Q(device_technology = int(WiMAX.ID)) | Q(device_technology = int(PMP.ID)),
-                                             is_added_to_nms=1, is_deleted=0, organization__in= kwargs['organization_ids']). \
-                                             values(*self.columns + ['id', 'device_name', 'machine__name', device_association])
+
+            devices = Device.objects.filter( Q(id__in=SubStation.objects.filter(id__in = Circuit.objects.filter(circuit_type__icontains="Backhaul").values_list('sub_station',flat=True)).values_list('device', flat=True))
+                                            |Q(id__in=Sector.objects.filter(id__in = Circuit.objects.filter(circuit_type__icontains="Backhaul").values_list('sector',flat=True)).values_list('sector_configured_on', flat=True))
+                                            |Q(device_technology = int(WiMAX.ID))
+                                            |Q(device_technology = int(PMP.ID)),
+                                             is_added_to_nms=1,
+                                             is_deleted=0, organization__in= kwargs['organization_ids']). \
+                                             values(*self.columns + ['id', 'device_name', 'machine__name', 'sector_configured_on', 'substation'])
 
         for device in devices:
             if device['sector_configured_on'] or device['substation']:
