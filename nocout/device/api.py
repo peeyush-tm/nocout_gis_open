@@ -833,101 +833,102 @@ class BulkFetchLPDataApi(View):
                         # comparing threshold values to get icon
                         try:
                             # live polled value of device service
-                            value = device_value
+                            if len(device_value):
+                                value = ast.literal_eval(str(device_value))
 
-                            # icon as per thematic setting
-                            image_partial = "icons/mobilephonetower10.png"
+                                # icon as per thematic setting
+                                image_partial = "icons/mobilephonetower10.png"
 
-                            try:
-                                if (float(tc.range1_start)) <= (float(value)) <= (float(tc.range1_end)):
-                                    icon_settings = eval(ts.icon_settings)
-                                    print "************************** icon_settings - ", icon_settings
-                                    for icon_setting in icon_settings:
-                                        if 'icon_settings1' in icon_setting.keys():
-                                            image_partial = str(icon_setting['icon_settings1'])
-                            except Exception as e:
-                                logger.info(e.message)
+                                try:
+                                    if (float(tc.range1_start)) <= (float(value)) <= (float(tc.range1_end)):
+                                        icon_settings = eval(ts.icon_settings)
+                                        print "************************** icon_settings - ", icon_settings
+                                        for icon_setting in icon_settings:
+                                            if 'icon_settings1' in icon_setting.keys():
+                                                image_partial = str(icon_setting['icon_settings1'])
+                                except Exception as e:
+                                    logger.info(e.message)
 
-                            try:
-                                if (float(tc.range2_start)) <= (float(value)) <= (float(tc.range2_end)):
-                                    icon_settings = eval(ts.icon_settings)
-                                    for icon_setting in icon_settings:
-                                        if 'icon_settings2' in icon_setting.keys():
-                                            image_partial = str(icon_setting['icon_settings2'])
-                            except Exception as e:
-                                logger.info(e.message)
+                                try:
+                                    if (float(tc.range2_start)) <= (float(value)) <= (float(tc.range2_end)):
+                                        icon_settings = eval(ts.icon_settings)
+                                        for icon_setting in icon_settings:
+                                            if 'icon_settings2' in icon_setting.keys():
+                                                image_partial = str(icon_setting['icon_settings2'])
+                                except Exception as e:
+                                    logger.info(e.message)
 
-                            try:
-                                if (float(tc.range3_start)) <= (float(value)) <= (float(tc.range3_end)):
-                                    icon_settings = eval(ts.icon_settings)
-                                    for icon_setting in icon_settings:
-                                        if 'icon_settings3' in icon_setting.keys():
-                                            image_partial = str(icon_setting['icon_settings3'])
-                            except Exception as e:
-                                logger.info(e.message)
+                                try:
+                                    if (float(tc.range3_start)) <= (float(value)) <= (float(tc.range3_end)):
+                                        icon_settings = eval(ts.icon_settings)
+                                        for icon_setting in icon_settings:
+                                            if 'icon_settings3' in icon_setting.keys():
+                                                image_partial = str(icon_setting['icon_settings3'])
+                                except Exception as e:
+                                    logger.info(e.message)
 
-                            try:
-                                if (float(tc.range4_start)) <= (float(value)) <= (float(tc.range4_end)):
-                                    icon_settings = eval(ts.icon_settings)
-                                    for icon_setting in icon_settings:
-                                        if 'icon_settings4' in icon_setting.keys():
-                                            image_partial = str(icon_setting['icon_settings4'])
-                            except Exception as e:
-                                logger.info(e.message)
+                                try:
+                                    if (float(tc.range4_start)) <= (float(value)) <= (float(tc.range4_end)):
+                                        icon_settings = eval(ts.icon_settings)
+                                        for icon_setting in icon_settings:
+                                            if 'icon_settings4' in icon_setting.keys():
+                                                image_partial = str(icon_setting['icon_settings4'])
+                                except Exception as e:
+                                    logger.info(e.message)
 
-                            try:
-                                if (float(tc.range5_start)) <= (float(value)) <= (float(tc.range5_end)):
-                                    icon_settings = eval(ts.icon_settings)
-                                    for icon_setting in icon_settings:
-                                        if 'icon_settings5' in icon_setting.keys():
-                                            image_partial = str(icon_setting['icon_settings5'])
-                            except Exception as e:
-                                logger.info(e.message)
+                                try:
+                                    if (float(tc.range5_start)) <= (float(value)) <= (float(tc.range5_end)):
+                                        icon_settings = eval(ts.icon_settings)
+                                        for icon_setting in icon_settings:
+                                            if 'icon_settings5' in icon_setting.keys():
+                                                image_partial = str(icon_setting['icon_settings5'])
+                                except Exception as e:
+                                    logger.info(e.message)
 
-                            try:
-                                if (float(tc.range6_start)) <= (float(value)) <= (float(tc.range6_end)):
-                                    icon_settings = eval(ts.icon_settings)
-                                    for icon_setting in icon_settings:
-                                        if 'icon_settings6' in icon_setting.keys():
-                                            image_partial = str(icon_setting['icon_settings6'])
-                            except Exception as e:
-                                logger.info(e.message)
+                                try:
+                                    if (float(tc.range6_start)) <= (float(value)) <= (float(tc.range6_end)):
+                                        icon_settings = eval(ts.icon_settings)
+                                        for icon_setting in icon_settings:
+                                            if 'icon_settings6' in icon_setting.keys():
+                                                image_partial = str(icon_setting['icon_settings6'])
+                                except Exception as e:
+                                    logger.info(e.message)
 
-                            try:
-                                if (float(tc.range7_start)) <= (float(value)) <= (float(tc.range7_end)):
-                                    icon_settings = eval(ts.icon_settings)
-                                    for icon_setting in icon_settings:
-                                        if 'icon_settings7' in icon_setting.keys():
-                                            image_partial = str(icon_setting['icon_settings7'])
-                            except Exception as e:
-                                logger.info(e.message)
+                                try:
+                                    if (float(tc.range7_start)) <= (float(value)) <= (float(tc.range7_end)):
+                                        icon_settings = eval(ts.icon_settings)
+                                        for icon_setting in icon_settings:
+                                            if 'icon_settings7' in icon_setting.keys():
+                                                image_partial = str(icon_setting['icon_settings7'])
+                                except Exception as e:
+                                    logger.info(e.message)
 
-                            try:
-                                if (float(tc.range8_start)) <= (float(value)) <= (float(tc.range8_end)):
-                                    icon_settings = eval(ts.icon_settings)
-                                    for icon_setting in icon_settings:
-                                        if 'icon_settings8' in icon_setting.keys():
-                                            image_partial = str(icon_setting['icon_settings8'])
-                            except Exception as e:
-                                logger.info(e.message)
+                                try:
+                                    if (float(tc.range8_start)) <= (float(value)) <= (float(tc.range8_end)):
+                                        icon_settings = eval(ts.icon_settings)
+                                        for icon_setting in icon_settings:
+                                            if 'icon_settings8' in icon_setting.keys():
+                                                image_partial = str(icon_setting['icon_settings8'])
+                                except Exception as e:
+                                    logger.info(e.message)
 
-                            try:
-                                if (float(tc.range9_start)) <= (float(value)) <= (float(tc.range9_end)):
-                                    icon_settings = eval(ts.icon_settings)
-                                    for icon_setting in icon_settings:
-                                        if 'icon_settings9' in icon_setting.keys():
-                                            image_partial = str(icon_setting['icon_settings9'])
-                            except Exception as e:
-                                logger.info(e.message)
+                                try:
+                                    if (float(tc.range9_start)) <= (float(value)) <= (float(tc.range9_end)):
+                                        icon_settings = eval(ts.icon_settings)
+                                        for icon_setting in icon_settings:
+                                            if 'icon_settings9' in icon_setting.keys():
+                                                image_partial = str(icon_setting['icon_settings9'])
+                                except Exception as e:
+                                    logger.info(e.message)
 
-                            try:
-                                if (float(tc.range10_start)) <= (float(value)) <= (float(tc.range10_end)):
-                                    icon_settings = eval(ts.icon_settings)
-                                    for icon_setting in icon_settings:
-                                        if 'icon_settings10' in icon_setting.keys():
-                                            image_partial = str(icon_setting['icon_settings10'])
-                            except Exception as e:
-                                logger.info(e.message)
+                                try:
+                                    if (float(tc.range10_start)) <= (float(value)) <= (float(tc.range10_end)):
+                                        icon_settings = eval(ts.icon_settings)
+                                        for icon_setting in icon_settings:
+                                            if 'icon_settings10' in icon_setting.keys():
+                                                image_partial = str(icon_setting['icon_settings10'])
+                                except Exception as e:
+                                    logger.info(e.message)
 
                             img_url = "media/" + str(image_partial) if "uploaded" in str(image_partial) else "static/img/" + str(image_partial)
                             icon = str(img_url)
