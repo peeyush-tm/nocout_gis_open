@@ -165,11 +165,14 @@ class Gis_Map_Performance_Data(View):
                         icon_settings_json= eval(icon_settings_json_string)
                         range_start, range_end= None, None
                         for data in icon_settings_json:
-                            range_number=''.join(re.findall("[0-9]", data.keys()[0]))
-                            exec 'range_start=threshold_template.range'+str(range_number)+ '_start'
-                            exec 'range_end=threshold_template.range'+str(range_number)+ '_end'
-                            if abs(int(range_start)) <= abs(corrected_device_performance_value) <= abs(int(range_end)):
-                               performance_icon= data.values()[0]
+                            try:
+                                range_number=''.join(re.findall("[0-9]", data.keys()[0]))
+                                exec 'range_start=threshold_template.range'+str(range_number)+ '_start'
+                                exec 'range_end=threshold_template.range'+str(range_number)+ '_end'
+                                if abs(int(range_start)) <= abs(corrected_device_performance_value) <= abs(int(range_end)):
+                                    performance_icon= data.values()[0]
+                            except Exception as e:
+                                logger.exception(e.message)
 
 
                 performance_data= {
@@ -182,7 +185,6 @@ class Gis_Map_Performance_Data(View):
                                         if "uploaded" in str(performance_icon)
                                         else ("static/img/" + str(performance_icon) if len(str(performance_icon)) else ""),
                 }
-                logger.info("%s : %s" %(device_name, performance_data))
             except Exception as e:
                 logger.info(e.message, exc_info=True)
                 pass
