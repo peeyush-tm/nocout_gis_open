@@ -836,7 +836,7 @@ class BulkFetchLPDataApi(View):
                             value = device_value
 
                             # icon as per thematic setting
-                            image_partial = "static/img/icons/mobilephonetower10.png"
+                            image_partial = "icons/mobilephonetower10.png"
 
                             try:
                                 if (float(tc.range1_start)) <= (float(value)) <= (float(tc.range1_end)):
@@ -929,7 +929,7 @@ class BulkFetchLPDataApi(View):
                             except Exception as e:
                                 logger.info(e.message)
 
-                            img_url = "media/" + str(image_partial) if "uploaded" in str(image_partial) else str(image_partial)
+                            img_url = "media/" + str(image_partial) if "uploaded" in str(image_partial) else "static/img/" + str(image_partial)
                             icon = str(img_url)
                         except Exception as e:
                             icon = str(image_partial)
