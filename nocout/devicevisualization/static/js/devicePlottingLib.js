@@ -85,7 +85,8 @@ var mapInstance = "",
     map_point_count = 0,
     zoomAfterRightClickComes= 10,
     fresnelData= {},
-    markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}};
+    markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}},
+    data_for_filters = [];
 
 var pointAdd= 0;
 var sector_MarkersArray= [], zoomAtWhichSectorMarkerAppears= 9, sectorMarkersMasterObj= {}, isSectorMarkerLoaded=0, tempFilterSectordata= [], isFinishedSectorMarkers= false, sectorMarkerConfiguredOn= [];
@@ -528,6 +529,7 @@ function devicePlottingClass_gmap() {
 							}
 
 							main_devices_data_gmaps = devices_gmaps;
+							data_for_filters = devices_gmaps;
 
 							if(devicesObject.data.objects.children.length > 0) {
 
@@ -733,13 +735,13 @@ function devicePlottingClass_gmap() {
 			/*
 			Add Context menu event to the marker
 			*/
-			(function bindRightMenuToMarker(marker) {
-				var markerRightClick= google.maps.event.addListener(marker, 'rightclick', function(event) {
-					openBSRightClickMenu(event, marker);
-				});
+			// (function bindRightMenuToMarker(marker) {
+			// 	var markerRightClick= google.maps.event.addListener(marker, 'rightclick', function(event) {
+			// 		openBSRightClickMenu(event, marker);
+			// 	});
 
-				return markerRightClick;
-			})(bs_marker);
+			// 	return markerRightClick;
+			// })(bs_marker);
 
 			/*Sectors Array*/
 			var sector_array = bs_ss_devices[i].data.param.sector;
@@ -828,25 +830,8 @@ function devicePlottingClass_gmap() {
 
 				/*Create Sector Marker*/
 				
-				if(!isFinishedSectorMarkers) {
+				// if(!isFinishedSectorMarkers) {
 					var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
-
-					google.maps.event.addListener(sector_Marker, 'mouseover', function() {
-					    if(sector_Marker.hasPerf == 1) {
-					    	var info_html = '<table class="table table-hover"><tr><td>Frequency</td><td>'+sector_Marker.perf_data_obj.frequency+'</td></tr><tr><td>Packet Loss</td><td>'+sector_Marker.perf_data_obj.pl+'</td></tr><tr><td>'+sector_Marker.perf_data_obj.performance_paramter+'</td><td>'+sector_Marker.perf_data_obj.performance_value+'</td></tr></table>';
-					    	/*Set the content for infowindow*/
-							infowindow.setContent(info_html);
-							/*Set The Position for InfoWindow*/
-							infowindow.setPosition(new google.maps.LatLng(sector_Marker.ptLat,sector_Marker.ptLon));
-							/*Open the info window*/
-							infowindow.open(mapInstance);
-					    }
-					});
-					google.maps.event.addListener(sector_Marker, 'mouseout', function() {
-						if(sector_Marker.hasPerf == 1) {
-					    	infowindow.close();
-					    }
-					});
 
 					if(sectorMarkerConfiguredOn.indexOf(sector_array[j].sector_configured_on) == -1) {
 						sector_MarkersArray.push(sector_Marker);
@@ -858,7 +843,7 @@ function devicePlottingClass_gmap() {
 							sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
 						}	
 					}
-				}
+				// }
 
 				// oms.addMarker(sector_Marker);
 				/*End of Create Sector Marker*/
@@ -903,17 +888,19 @@ function devicePlottingClass_gmap() {
 				    var ss_marker = new google.maps.Marker(ss_marker_object);
 
 				    google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
-
 					    if(ss_marker.hasPerf == 1) {
 					    	var info_html = '<table class="table table-hover"><tr><td>Frequency</td><td>'+ss_marker.perf_data_obj.frequency+'</td></tr><tr><td>Packet Loss</td><td>'+ss_marker.perf_data_obj.pl+'</td></tr><tr><td>'+ss_marker.perf_data_obj.performance_paramter+'</td><td>'+ss_marker.perf_data_obj.performance_value+'</td></tr></table>';
 					    	/*Set the content for infowindow*/
 							infowindow.setContent(info_html);
+							/*Shift the window little up*/
+							infowindow.setOptions({pixelOffset: new google.maps.Size(0, -20)});
 							/*Set The Position for InfoWindow*/
-							infowindow.setPosition(new google.maps.LatLng(ss_marker.ptLat,ss_marker.ptLon));
+							infowindow.setPosition(new google.maps.LatLng(e.latLng.lat(),e.latLng.lng()));
 							/*Open the info window*/
 							infowindow.open(mapInstance);
 					    }
 					});
+
 					google.maps.event.addListener(ss_marker, 'mouseout', function() {
 						
 						if(ss_marker.hasPerf == 1) {
@@ -923,8 +910,6 @@ function devicePlottingClass_gmap() {
 
 				    markersMasterObj['SS'][String(ss_marker_obj.data.lat)+ ss_marker_obj.data.lon]= ss_marker;
 				    markersMasterObj['SSNamae'][String(ss_marker_obj.device_name)]= ss_marker;
-
-				    total_bs.push(ss_marker);
 
 				    /*Add the master marker to the global master markers array*/
 			    	masterMarkersObj.push(ss_marker);
@@ -2183,7 +2168,6 @@ if(sector_child.length) {
 
             /*Deep Copy of the main_devices_data_gmaps*/
             var bs_data= $.extend( true, {}, main_devices_data_gmaps[i]);
-            console.log(bs_data);
             bs_data.data.param.sector=[];
             /*Sectors Array*/
             for(var j=0;j< main_devices_data_gmaps[i].data.param.sector.length;j++) {
@@ -2235,6 +2219,8 @@ if(sector_child.length) {
 
             tempFilteredData= filteredData;
             isCallCompleted = 1;
+
+            data_for_filters = filteredData;
 
             /*Populate the map with the filtered markers*/
             gmap_self.plotDevices_gmap(filteredData,"base_station");
@@ -2384,16 +2370,16 @@ if(sector_child.length) {
 
     		/*ajax call for services & datasource*/
     		$.ajax({
-    			url : window.location.origin+"/"+"device/tc_templates/?technology="+selected_technology,
+    			url : window.location.origin+"/"+"device/lp_settings/?technology="+selected_technology,
     			// url : window.location.origin+"/"+"static/livePolling.json",
     			success : function(results) {
-
+					
 					result = JSON.parse(results);
     				
     				if(result.success == 1) {
 
     					/*Make live polling template select box*/
-    					var polling_templates = result.data.threshold_templates;
+    					var polling_templates = result.data.lp_templates;
     					var polling_select = "<select class='form-control' name='lp_template_select' id='lp_template_select'><option value=''>Select Template</option>";
     					
     					for(var i=0;i<polling_templates.length;i++) {
@@ -2577,7 +2563,7 @@ if(sector_child.length) {
 			}
 
 	    	$.ajax({
-				url : window.location.origin+"/"+"device/lp_bulk_data/?tc_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
+				url : window.location.origin+"/"+"device/lp_bulk_data/?lp_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
 				// url : window.location.origin+"/"+"static/services.json",
 				success : function(results) {
 
@@ -3718,6 +3704,9 @@ if(sector_child.length) {
 		circleArray = [];
 		plottedSS = [];
 		ssLinkArray = [];
+		sector_MarkersArray = [];
+		sectorMarkersMasterObj = {};
+		sectorMarkerConfiguredOn = [];
 	};
 }
 
