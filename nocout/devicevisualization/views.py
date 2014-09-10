@@ -146,6 +146,8 @@ class Gis_Map_Performance_Data(View):
                             values_list('color_hex_value', flat=True)
                         if len(device_frequency_color):
                             device_link_color= device_frequency_color[0]
+                    if len(device_pl) and int(ast.literal_eval(device_pl))==100:
+                        device_link_color='rgb(0,0,0)'
                 except Exception as e:
 
                     if len(device_pl) and int(ast.literal_eval(device_pl))==100:
