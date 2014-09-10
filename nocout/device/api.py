@@ -450,11 +450,92 @@ class FetchLPSettingsApi(View):
         return HttpResponse(json.dumps(result))
 
 
+class FetchThresholdConfigurationApi(View):
+    """
+        API for fetching the service live polled value
+        :Parameters:
+            - 'technology' (unicode) - id of technology
+
+        :Returns:
+           - 'result' (dict) - dictionary containing list of threshold configurations
+            {
+                "message": "Successfully fetched threshold configurations.",
+                "data": {
+                    "threshold_templates": [
+                        {
+                            "id": 6,
+                            "value": "Radwin UAS"
+                        },
+                        {
+                            "id": 7,
+                            "value": "Radwin RSSI Critical"
+                        },
+                        {
+                            "id": 11,
+                            "value": "Radwin RSSI Warning"
+                        },
+                        {
+                            "id": 8,
+                            "value": "Estimated Throughput"
+                        },
+                        {
+                            "id": 9,
+                            "value": "Radwin Uptime"
+                        }
+                    ]
+                },
+                "success": 1
+            }
+    """
+
+    def get(self, request):
+        """Returns json containing live polling values and icon urls for bulk devices"""
+        # result dictionary to be returned as output of api
+        result = {
+            "success": 0,
+            "message": "Failed to fetch live polling settings.",
+            "data": {
+            }
+        }
+
+        # initializing 'lp_templates' list containing live setting templates
+        result['data']['threshold_templates'] = list()
+
+        # converting 'json' into python object
+        technology_id = int(self.request.GET.get('technology', None))
+
+        # technology object
+        technology = DeviceTechnology.objects.get(pk=technology_id)
+
+        # get live polling settings corresponding to the technology
+        lps = ""
+        try:
+            lps = LivePollingSettings.objects.filter(technology=technology)
+        except Exception as e:
+            logger.info(e.message)
+
+        if lps:
+            tc_temp = dict()
+            for lp in lps:
+                threshold_configurations = ThresholdConfiguration.objects.filter(live_polling_template=lp)
+                print "******************************* threshold_configurations - ", threshold_configurations
+                if threshold_configurations:
+                    for tc in threshold_configurations:
+                        tc_temp = dict()
+                        tc_temp['id'] = tc.id
+                        tc_temp['value'] = tc.alias
+                        print "********************************* tc_temp - ", tc_temp
+                        result['data']['threshold_templates'].append(tc_temp)
+            result['message'] = "Successfully fetched threshold configurations."
+            result['success'] = 1
+        return HttpResponse(json.dumps(result))
+
+
 class BulkFetchLPDataApi(View):
     """
         API for fetching the service live polled value
         :Parameters:
-            - 'lp_template' (unicode) - live polling settings template id
+            - 'tc_template' (unicode) - threshold configuration template id
             - 'devices' (list) - list of devices
 
         :Returns:
@@ -525,10 +606,13 @@ class BulkFetchLPDataApi(View):
         # converting 'json' into python object
         devices = eval(str(self.request.GET.get('devices', None)))
 
-        lp_template_id = int(self.request.GET.get('lp_template', None))
+        tc_template_id = int(self.request.GET.get('tc_template', None))
         service = ""
         data_source = ""
         # Responsed form multiprocessing
+
+        # getting live polling template
+        lp_template_id = ThresholdConfiguration.objects.get(pk=tc_template_id).live_polling_template.id
 
         # getting service and data source form live polling settings
         try:
