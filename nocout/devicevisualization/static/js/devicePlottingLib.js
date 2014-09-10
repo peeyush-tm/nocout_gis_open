@@ -200,7 +200,7 @@ function prepare_oms_object(oms_instance) {
 			//if marker is not spiderfied, stop event and add sector markers here and in oms
 			if(!marker.isMarkerSpiderfied) {
 				// clearPreviousSectorMarkers();
-				var sectorMarkersAtThePoint= sectorMarkersMasterObj[marker.name];
+				var sectorMarkersAtThePoint = sectorMarkersMasterObj[marker.name];
 				if(sectorMarkersAtThePoint && sectorMarkersAtThePoint.length) {
 					for(var j=0; j< sectorMarkersAtThePoint.length; j++) {
 						sectorMarker= sectorMarkersAtThePoint[j].setMap(mapInstance);
@@ -2212,6 +2212,10 @@ if(sector_child.length) {
             /*Reset the markers, polyline & filters*/
             gmap_self.clearGmapElements();
 
+            sector_MarkersArray = [];
+			sectorMarkersMasterObj = {};
+			sectorMarkerConfiguredOn = [];
+
             masterMarkersObj = [];
             slaveMarkersObj = [];
 
@@ -2221,7 +2225,6 @@ if(sector_child.length) {
             isCallCompleted = 1;
 
             data_for_filters = filteredData;
-
             /*Populate the map with the filtered markers*/
             gmap_self.plotDevices_gmap(filteredData,"base_station");
             // addSubSectorMarkersToOms(filteredData);
