@@ -138,7 +138,7 @@ class Gis_Map_Performance_Data(View):
                     try:
                         chek_dev_freq = ast.literal_eval(device_frequency)
                         if int(chek_dev_freq) > 10:
-                            corrected_dev_freq = chek_dev_freq/1000.00
+                            corrected_dev_freq = chek_dev_freq
                     except Exception as e:
                         logger.exception("Frequency is Empty : %s" %(e.message))
 
