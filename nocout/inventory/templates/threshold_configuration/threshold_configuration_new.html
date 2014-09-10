@@ -71,7 +71,7 @@
             range_count = 0;
 
         for(var i=0;i<total_label;i++) {
-            if($("label")[i].innerText.indexOf("Start") > -1 || $("label")[i].innerText.indexOf("End") > -1) {
+            if($("label")[i].innerHTML.indexOf("Start") > -1 || $("label")[i].innerHTML.indexOf("End") > -1) {
                 range_count++;
             }
         }
@@ -82,6 +82,7 @@
          */
 
         function validateRangeForm() {
+	hide_error_messages()
 
             var error_obj = {},
                 range_bug_array = [],
@@ -95,7 +96,7 @@
                 var startingValue = parseInt($("input#id_range"+i+"_start").val(), 10);
                 var endValue = parseInt($("input#id_range"+i+"_end").val(), 10);
 
-                if(startingValue && endValue) {
+                if((startingValue=== 0 || startingValue) && (endValue===0 || endValue)) {
                     if(startingValue > endValue) {
                         range_bug_array.push(i);
                         
@@ -108,8 +109,7 @@
                             if(j != i) {
                                 var startingValue2 = parseInt($("input#id_range"+j+"_start").val(), 10);
                                 var endValue2 = parseInt($("input#id_range"+j+"_end").val(), 10);
-                                
-                                if((startingValue2 >= startingValue && startingValue2 < endValue) || (endValue2 >= startingValue && endValue2 < endValue)) {
+                                if((startingValue2 >= startingValue && startingValue2 <= endValue) || (endValue2 >= startingValue && endValue2 <= endValue)) {
                                     if(overlapping_bug_array.indexOf(j) == -1 && range_bug_array.indexOf(j) == -1) {
                                         overlapping_bug_array.push(j);
 
@@ -122,14 +122,14 @@
                         }
                     }
 
-                } else if(startingValue && !endValue) {
+                } else if((startingValue===0 || startingValue) && !endValue) {
                     
                     empty_end_array.push(i);
                     if(bugs_array.indexOf("empty_end_array") == -1) {
                         bugs_array.push("empty_end_array");
                     }
 
-                } else if(!startingValue && endValue) {
+                } else if(!startingValue && (endValue===0 || endValue)) {
                     
                     empty_start_array.push(i);
                     if(bugs_array.indexOf("empty_start_array") == -1) {
@@ -166,7 +166,6 @@
                 }
                 return false;
             } else {
-                console.log("hii");
                 return true;
             }
         }
@@ -179,8 +178,15 @@
         function show_error_msg(id_array,msg) {
 
             for(var k=0;k<id_array.length;k++) {
-                $("input#id_range"+id_array[k]+"_end").closest(".col-sm-9").children()[1].innerText = msg;
+                $("input#id_range"+id_array[k]+"_end").closest(".col-sm-9").children()[1].innerHTML = msg;
             }
+        }
+
+        function hide_error_messages() {
+            alert();
+            $('.col-md-4.help_text').each(function(i, el) {
+                $(el).html('');
+            })
         }
 
         /***********Update Range HTML Code Start***********/
@@ -205,10 +211,11 @@
             // $("#id_range"+j+"_start").parent().parent().parent().next().children().parent().remove();
             $("#id_range"+j+"_start").closest(".form-group").next().remove();
 
-            $("#id_range"+j+"_end").parent().parent().parent().children()[0].innerText = "Range"+j;
+            $("#id_range"+j+"_end").parent().parent().parent().children()[0].innerHTML = "Range"+j;
         }
 
         /***********Update Range HTML Code End***********/
 
     </script>
 {% endblock %}
+`
