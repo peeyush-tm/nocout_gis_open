@@ -757,13 +757,13 @@ def add_device_to_nms_core_form(request, device_id):
 
     except Exception as e:
         # if device type doesn't have ping parameters associated than use default ones
-        settings.PING_PACKETS = 60
-        settings.PING_TIMEOUT = 20
-        settings.PING_NORMAL_CHECK_INTERVAL = 5
-        settings.PING_RTA_WARNING = 1500
-        settings.PING_RTA_CRITICAL = 3000
-        settings.PING_PL_WARNING = 80
-        settings.PING_PL_CRITICAL = 100
+        ping_packets = 60
+        ping_timeout = 20
+        ping_normal_check_interval = 5
+        ping_rta_warning = 1500
+        ping_rta_critical = 3000
+        ping_pl_warning = 80
+        ping_pl_critical = 100
 
         # adding success/failure message to result dict
         result['message'] = "Successfully get default ping parameters."
