@@ -753,7 +753,7 @@ class BulkFetchLPDataApi(View):
                             value = device_value
 
                             # icon as per thematic setting
-                            image_partial = "static/img/icons/caution.png"
+                            image_partial = "static/img/icons/mobilephonetower10.png"
 
                             try:
                                 if abs(int(tc.range1_start)) <= abs(int(value)) <= abs(int(tc.range1_end)):
