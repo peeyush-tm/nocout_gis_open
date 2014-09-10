@@ -121,9 +121,6 @@ function GisPerformance() {
 				url:  '/network_maps/performance_data/',
 				//In success
 				success : function (data) {
-					if(data['basestation_name']== "bs_14.141.55.115") {
-						console.log(data);
-					}
 					//If data is there
 					if(data) {
 						//Store data in gisData
