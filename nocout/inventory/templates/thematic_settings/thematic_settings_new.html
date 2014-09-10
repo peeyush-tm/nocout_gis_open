@@ -85,10 +85,12 @@
                         var select_box='<div class="col-sm-9">' +
                                    '<div class="col-md-8">' +
                                    '<select class="col-md-12 (1)" id="id_icon_settings_(0)" name="icon_settings(0)">'+
-                                   '<option value="" selected="selected">Select</option>'
+                                   '<option value="" selected="selected">Select</option>';
 
                         for(var j=0;j<result.data.objects.icon_details.length;j++){
-                                select_box+='<option value='+ result.data.objects.icon_details[j].upload_image +'>'+
+                                    image_path= result.data.objects.icon_details[j].upload_image;
+
+                                select_box+='<option value='+ image_path +'>'+
                                       result.data.objects.icon_details[j].name + '</option>'
                             }
                         select_box+='</select></div></div>'
@@ -113,20 +115,34 @@
                             var selectEl= $(el).find('select');
 
                             function formatResult(item) {
-                                if(item.id) {
-                                    return '<img style="width:20px; margin-right:10px;" src=/media/'+item.id+' />'+item.text;
-                                } else {
-                                    return item.text;
-                                }
-                            }
+                                    if(item.id) {
+                                        var id_is = item.id;
+                                        if (id_is.indexOf('uploaded') !=-1){
+                                            id_is="/media/"+ id_is;
+                                        }else{
+                                            id_is="/static/img/"+ id_is;
+                                        }
 
-                            function formatSelection(item) {
-                                if(item.id) {
-                                    return '<img style="width:20px; margin-right:10px;" src=/media/'+item.id+' />'+item.text;
-                                } else {
-                                    return item.text;
+                                        return '<img style="width:20px; margin-right:10px;" src='+id_is+' />'+item.text;
+                                    } else {
+                                        return item.text;
+                                    }
                                 }
-                            }
+
+                                function formatSelection(item) {
+                                    if(item.id) {
+                                        var id_is = item.id;
+                                        if (id_is.indexOf('uploaded') !=-1){
+                                            id_is="/media/"+ id_is
+                                        }else{
+                                            id_is="/static/img/"+ id_is;
+                                        }
+
+                                        return '<img style="width:20px; margin-right:10px;" src='+id_is+' />'+item.text;
+                                    } else {
+                                        return item.text;
+                                    }
+                                }
 
                             // $(selectEl).select2("destroy");
                             $(selectEl).select2({
@@ -144,26 +160,6 @@
             }//Success ends
         }); //ajax ends
     });
-
-{#    $('.btn-success').on('click', function(){#}
-{#        var total_ids_and_values=[];#}
-{#        if (response.data.objects.range_list.length !=0){#}
-{#            select_option= $('#id_threshold_template').parent().parent().parent().nextAll('div').find('div').find('div').find('select');#}
-{#            element= $('#id_threshold_template').parent().parent().parent().nextAll('div');#}
-{##}
-{#             $(element).each(function(i, el) {#}
-{#                     var selectEl = $(el).find('select');#}
-{#                     var optionwEl= $(el).find('option:selected');#}
-{#                     total_ids_and_values.push({'i': selectEl.attr('id').split('_')[selectEl.attr('id').split('_').length-1] ,#}
-{#                                     'value':optionwEl.val() })#}
-{#            });#}
-{##}
-{#            #}
-{##}
-{##}
-{##}
-{#        }#}
-{#    });#}
 });
 </script>
 {% endblock %}

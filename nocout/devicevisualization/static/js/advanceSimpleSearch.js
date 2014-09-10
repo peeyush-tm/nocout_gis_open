@@ -23,7 +23,8 @@ advanceSearchMasterObj.searchedLinesIconUrl= 'http://www.iconsdb.com/icons/previ
 advanceSearchMasterObj.maxSearchLevelNumber= 20;
 advanceSearchMasterObj.searchNumberLimitMessage= 'Too many Searched Results. Please filter again. No Markers drawn'
 
-
+var ipStationFound= 0;
+var ipStation= [];
 /**
  * This class is used to Advance Search.
  * @class advanceSearchLibrary
@@ -96,6 +97,14 @@ function advanceJustSearchClass() {
 
                                     
                                 }
+                            }
+                        }
+//Add Sub Station IPs too
+                        if(currentKey== "sector_configured_on") {
+                            var a= markersMasterObj['SS'];
+                            var tempArray= [];
+                            for(var key in a) {
+                                formElements += '<option value="'+a[key]['dataset'][12]['value']+'">'+a[key]['dataset'][12]['value']+'</option>';
                             }
                         }
 
@@ -208,11 +217,19 @@ function advanceJustSearchClass() {
     this.applyIconToSearchedResult= function(lat, long, iconUrl) {
         //create a new lat long
         var searchedMarkerLatLong= new google.maps.LatLng(lat, long);
-
-        //check is bs station is here
-        if(!iconUrl && !markersMasterObj['BS'][String(lat)+long]) {
-            return;
+//sub station visibility check
+        if(iconUrl) {
+            var ssMarker= markersMasterObj['SS'][String(lat)+long];
+            if(ssMarker && !ssMarker.getVisible()) {
+                return;
+            }
+        } else {
+            var bsMarker= markersMasterObj['BS'][String(lat)+long];
+            if(bsMarker && !bsMarker.getVisible()) {
+                return ;
+            }
         }
+
         //create a new marker
         var showSearchedResultMarker= new google.maps.Marker({position: searchedMarkerLatLong, zIndex: 100})
         //push marker in the previouslySearchedMarkersList array
@@ -222,26 +239,26 @@ function advanceJustSearchClass() {
     
         var selectedInputs= advJustSearch_self.getInputArray();
         var isOnlyStateorCityIsApplied= false;
-        // if(selectedInputs['BS Name'].length || selectedInputs['BS Latitude'].length || selectedInputs['BS Longitude'].length || selectedInputs['Circuit Id'].length || selectedInputs['IP'].length || selectedInputs['Vendor'].length || selectedInputs['Technology'].length) {
-        //     isOnlyStateorCityIsApplied= false;
-        // }
+        if(selectedInputs['BS Name'].length || /*selectedInputs['BS Latitude'].length || selectedInputs['BS Longitude'].length || */selectedInputs['Circuit Id'].length || selectedInputs['IP'].length || selectedInputs['Technology'].length) {
+            isOnlyStateorCityIsApplied= false;
+        }
         if(!isOnlyStateorCityIsApplied) {
-            if(iconUrl) {
-                //set icon from global object
-                showSearchedResultMarker.setIcon(iconUrl);  
-            } else {
-                //set icon from global object
-                showSearchedResultMarker.setIcon(advanceSearchMasterObj.searchedIconUrl);
-            }
-            //set animation to bounce
-            // showSearchedResultMarker.setAnimation(null);
-            if(showSearchedResultMarker.getAnimation() != null) {
-                showSearchedResultMarker.setAnimation(null);
-            } else {
-                showSearchedResultMarker.setAnimation(google.maps.Animation.DROP);
-            }
-            //show the marker on map.
-            showSearchedResultMarker.setMap(mapInstance);
+                if(iconUrl) {
+                    //set icon from global object
+                    showSearchedResultMarker.setIcon(iconUrl);  
+                } else {
+                    //set icon from global object
+                    showSearchedResultMarker.setIcon(advanceSearchMasterObj.searchedIconUrl);
+                }
+                //set animation to bounce
+                // showSearchedResultMarker.setAnimation(null);
+                if(showSearchedResultMarker.getAnimation() != null) {
+                    showSearchedResultMarker.setAnimation(null);
+                } else {
+                    showSearchedResultMarker.setAnimation(google.maps.Animation.DROP);
+                }
+                //show the marker on map.
+                showSearchedResultMarker.setMap(mapInstance);
         }
 
         google.maps.event.addListener(showSearchedResultMarker, 'click', function() {
@@ -300,6 +317,8 @@ function advanceJustSearchClass() {
 	 * @method callSetFilter
 	 */
 	this.searchAndCenterData = function(main_devices_data_gmaps) {
+        ipStationFound= 0;
+        ipStation= [];
 
 		var selectedInputs= advJustSearch_self.getInputArray();
 
@@ -359,27 +378,29 @@ function advanceJustSearchClass() {
 
 						// Check BS City
 						if(key === 'BS City') {
+                            console.log(selectedInputs[key]);
 							if(((String(deviceJson.data.city)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.city)).toLowerCase()) != -1) {
 							} else {
 								return false;
 							}	
 						}
 
-						// Check BS Latitude
-						if(key === 'BS Latitude') {
-							if(((String(deviceJson.data.lat)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lat)).toLowerCase()) != -1) {
-							} else {
-								return false;
-							}	
-						}
+						// // Check BS Latitude
+						// if(key === 'BS Latitude') {
+						// 	if(((String(deviceJson.data.lat)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lat)).toLowerCase()) != -1) {
+						// 	} else {
+						// 		return false;
+						// 	}	
+						// }
 
-						// Check BS Longitude
-						if(key === 'BS Longitude') {
-							if(((String(deviceJson.data.lon)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lon)).toLowerCase()) != -1) {
-							} else {
-								return false;
-							}	
-						}
+						// // Check BS Longitude
+						// if(key === 'BS Longitude') {
+						// 	if(((String(deviceJson.data.lon)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lon)).toLowerCase()) != -1) {
+						// 	} else {
+						// 		return false;
+						// 	}	
+						// }
+
 						//Check BS Sector Configured On
 						if(key === 'IP') {
 							var isSectorIsConfigured= false;
@@ -388,11 +409,22 @@ function advanceJustSearchClass() {
 
                             for(var z=0; z< deivceConfiguredOnArray.length; z++) {
                                 if(deivceConfiguredOnArray[z] && ((String(deivceConfiguredOnArray[z])).toLowerCase() !== "")) {
-
-                                    // && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deivceConfiguredOnArray[z])).toLowerCase()) != -1
                                     var s= (String(deivceConfiguredOnArray[z])).toLowerCase();
                                     s= s.substring(s.lastIndexOf("(")+1,s.lastIndexOf(")"));
                                     if((String(selectedInputs[key]).toLowerCase()).indexOf(s) != -1) {
+                                        isSectorIsConfigured= true;
+                                    }
+                                }
+                            }
+
+//Check for SUbStations
+                            for(var i=0; i< deviceJson['data']['param']['sector'].length; i++) {
+                                for(var j=0; j< deviceJson['data']['param']['sector'][i]['sub_station'].length; j++) {
+                                    var ip= deviceJson['data']['param']['sector'][i]['sub_station'][j]['data']['param']['sub_station'][12]['value'];
+                                    if((String(selectedInputs[key]).toLowerCase()).indexOf(ip) != -1) {
+                                        ipStationFound= 1;
+                                        ipStation.push(deviceJson['data']['param']['sector'][i]['sub_station'][j]['data']['lat'], deviceJson['data']['param']['sector'][i]['sub_station'][j]['data']['lon']);
+                                        advJustSearch_self.applyIconToSearchedResult(deviceJson['data']['param']['sector'][i]['sub_station'][j]['data']['lat'], deviceJson['data']['param']['sector'][i]['sub_station'][j]['data']['lon']);
                                         isSectorIsConfigured= true;
                                     }
                                 }
@@ -438,6 +470,10 @@ function advanceJustSearchClass() {
 				bounds.extend(new google.maps.LatLng(main_devices_data_gmaps[i]['data']['lat'], main_devices_data_gmaps[i]['data']['lon']));
 				advJustSearch_self.applyIconToSearchedResult(main_devices_data_gmaps[i]['data']['lat'], main_devices_data_gmaps[i]['data']['lon']);
 			}
+
+            if(ipStationFound) {
+                bounds.extend(new google.maps.LatLng(ipStation[0], ipStation[1]));
+            }
 		}
 
 
