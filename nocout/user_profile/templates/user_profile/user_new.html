@@ -18,7 +18,7 @@
                         </div>
                             <div class="box-body">
                                 <div class="col-md-8"><br />
-                                    <form action="/user/new/" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                                    <form action="/user/new/" method="post" class="form-horizontal" role="form" autocomplete="off">{% csrf_token %}
                                         <div class="form-group">
                                             {% for field in form %}
                                                 <div class="form-group">
