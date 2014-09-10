@@ -175,10 +175,7 @@ class Gis_Map_Performance_Data(View):
                                     performance_icon= data.values()[0]
                             except Exception as e:
                                 logger.exception(e.message)
-<<<<<<< HEAD
                                 continue
-=======
->>>>>>> 719f2570ec502d95fde95b5fbd1b72ac808ea824
 
 
                 performance_data= {
