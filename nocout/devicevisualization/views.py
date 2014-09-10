@@ -175,6 +175,7 @@ class Gis_Map_Performance_Data(View):
                                     performance_icon= data.values()[0]
                             except Exception as e:
                                 logger.exception(e.message)
+                                continue
 
 
                 performance_data= {

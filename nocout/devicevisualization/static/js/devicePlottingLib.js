@@ -2370,7 +2370,8 @@ if(sector_child.length) {
 
     		/*ajax call for services & datasource*/
     		$.ajax({
-    			url : window.location.origin+"/"+"device/lp_settings/?technology="+selected_technology,
+    			url : window.location.origin+"/"+"device/ts_templates/?technology="+selected_technology,
+//    			url : window.location.origin+"/"+"device/lp_settings/?technology="+selected_technology,
     			// url : window.location.origin+"/"+"static/livePolling.json",
     			success : function(results) {
 					
@@ -2379,7 +2380,7 @@ if(sector_child.length) {
     				if(result.success == 1) {
 
     					/*Make live polling template select box*/
-    					var polling_templates = result.data.lp_templates;
+    					var polling_templates = result.data.thematic_settings;
     					var polling_select = "<select class='form-control' name='lp_template_select' id='lp_template_select'><option value=''>Select Template</option>";
     					
     					for(var i=0;i<polling_templates.length;i++) {
@@ -2563,7 +2564,7 @@ if(sector_child.length) {
 			}
 
 	    	$.ajax({
-				url : window.location.origin+"/"+"device/lp_bulk_data/?lp_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
+				url : window.location.origin+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
 				// url : window.location.origin+"/"+"static/services.json",
 				success : function(results) {
 
