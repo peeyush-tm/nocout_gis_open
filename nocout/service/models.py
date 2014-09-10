@@ -147,3 +147,37 @@ class DeviceServiceConfiguration(models.Model):
         Device Service Configuration object presentation
         """
         return "{} - {} - {}".format(self.device_name, self.service_name, self.added_on)
+
+
+# device service configuration --> it contains services those are already running
+class DevicePingConfiguration(models.Model):
+    """
+    Device Ping Configuration Model Declaration.
+    """
+    device_name = models.CharField('Device Name', max_length=200, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=200, null=True, blank=True)
+    packets = models.IntegerField('Packets', null=True, blank=True)
+    timeout = models.IntegerField('Timeout', null=True, blank=True)
+    normal_check_interval = models.IntegerField('Normal Check Interval', null=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=200, null=True, blank=True)
+    warning = models.CharField('Warning', max_length=20, null=True, blank=True)
+    critical = models.CharField('Critical', max_length=20, null=True, blank=True)
+    added_on = models.DateTimeField('Added On', null=True, blank=True)
+    modified_on = models.DateTimeField('Modified On', null=True, blank=True)
+    is_added = models.IntegerField('Is Added', default=0)
+
+    class Meta:
+        ordering = ["added_on"]
+
+    def save(self, *args, **kwargs):
+        """ On save, update timestamps """
+        if not self.id:
+            self.added_on = datetime.now()
+        self.modified_on = datetime.now()
+        return super(DevicePingConfiguration, self).save(*args, **kwargs)
+
+    def __unicode__(self):
+        """
+        Device Ping Configuration object presentation
+        """
+        return "{} - {} - {}".format(self.device_name, self.service_name, self.added_on)
