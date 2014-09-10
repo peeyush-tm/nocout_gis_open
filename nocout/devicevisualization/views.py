@@ -187,6 +187,7 @@ class Gis_Map_Performance_Data(View):
                                         if "uploaded" in str(performance_icon)
                                         else ("static/img/" + str(performance_icon) if len(str(performance_icon)) else ""),
                 }
+                logger.debug(performance_data)
             except Exception as e:
                 logger.info(e.message, exc_info=True)
                 pass
