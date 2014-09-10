@@ -199,7 +199,6 @@ function GisPerformance() {
 	this.updateMap= function() {
 		//Step no. 1 => Find BS Station First
 		var gisData= this.gisData;
-		console.log(gisData);
 		//Get BS Gmap Marker
 		var bsMarkerObject= markersMasterObj['BSNamae'][gisData.basestation_name];
 		//Step no. 2 ==> Loop through all the SS in the BS
@@ -229,30 +228,34 @@ function GisPerformance() {
 							perf_obj["frequency"] = this.calculatePerformanceValue("frequency", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
 							perf_obj["pl"] = this.calculatePerformanceValue("pl", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
 							//Update color for Sector POly.
-							sectorPoly.setOptions({fillColor: lineColor,hasPerf : 1,perf_data_obj :perf_obj});
+							sectorPoly.hasPerf = 1;
+							sectorPoly.perf_data_obj = perf_obj;
+							sectorPoly.setOptions({fillColor: lineColor});
 						}
 					}
 
 					//Get substation icon from Performance
 					var subStationIcon= this.calculatePerformanceValue("performance_icon", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
 
+					//Get subStation Name
+					var subStationName = bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"];
+					//Get subStation Marker
+					var subStationMarker= markersMasterObj['SSNamae'][subStationName];
+
+					perf_obj["performance_paramter"] = this.calculatePerformanceValue("performance_paramter", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+					perf_obj["performance_value"] = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+					perf_obj["frequency"] = this.calculatePerformanceValue("frequency", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+					perf_obj["pl"] = this.calculatePerformanceValue("pl", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+
+					subStationMarker.hasPerf = 1;
+					subStationMarker.perf_data_obj = perf_obj;
+
 					//If substation icon is present
 					if(subStationIcon) {
-						//Get subStation Name
-						var subStationName= bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"];
-						//Get subStation Marker
-						var subStationMarker= markersMasterObj['SSNamae'][subStationName];
 						//Update icon, oldIcon and clusterIcon for the SubStation Marker
 						subStationMarker.setIcon(createGoogleMarker(window.location.origin + '/'+ subStationIcon, subStationMarker));
 						subStationMarker.oldIcon= (createGoogleMarker(window.location.origin + '/'+ subStationIcon, subStationMarker));
 						subStationMarker.clusterIcon= (createGoogleMarker(window.location.origin + '/'+ subStationIcon, subStationMarker));
-
-						perf_obj["performance_paramter"] = this.calculatePerformanceValue("performance_paramter", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-						perf_obj["performance_value"] = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-						perf_obj["frequency"] = this.calculatePerformanceValue("frequency", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-						perf_obj["pl"] = this.calculatePerformanceValue("pl", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-						//Update color for Sector POly.
-						sectorPoly.setOptions({hasPerf : 1,perf_data_obj :perf_obj});
 					}
 				}
 
@@ -271,7 +274,7 @@ function GisPerformance() {
 				}
 			}
 		}catch(exception) {
-			console.log(exception);
+			// console.log(exception);
 		}
 	}
 

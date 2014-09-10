@@ -946,7 +946,7 @@ function advanceSearchClass() {
 
             /*Call the make network to create the BS-SS network on the google map*/
 //            for( var a=0; a<result_plot_devices.length; a++){
-
+			data_for_filters = result_plot_devices;
             gmapInstance.plotDevices_gmap(result_plot_devices,"base_station");
             // addSubSectorMarkersToOms(result_plot_devices);
             //Intilaizing value to Null
