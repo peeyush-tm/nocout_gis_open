@@ -1,14 +1,34 @@
+/*
+This function creates a google marker with a new URL and take all other values from previous defined marker setting else set to null
+ */
+function createGoogleMarker(url, oldMarkerIcon) {
+	var oldMarObj= {}, newMarkerImage= "";
+	//Get anchor setting from oldMarkerIcon
+	oldMarObj['anchor']= oldMarkerIcon['icon']['anchor'] ? oldMarkerIcon['icon']['anchor'] : null;
+	//Get origin setting from oldMarkerIcon
+	oldMarObj['origin']= oldMarkerIcon['icon']['origin'] ? oldMarkerIcon['icon']['origin'] : null;
+	//Get scaledSize setting from oldMarkerIcon
+	oldMarObj['scaledSize']= oldMarkerIcon['icon']['scaledSize'] ? oldMarkerIcon['icon']['scaledSize'] : null;
+	//Get size setting from oldMarkerIcon
+	oldMarObj['size']= oldMarkerIcon['icon']['size'] ? oldMarkerIcon['icon']['size'] : null;
+	//Create a new MarkerImage with new url, and all others value from previous defined settings
+	newMarkerImage= new google.maps.MarkerImage(url,oldMarObj['size'],oldMarObj['origin'],oldMarObj['anchor'],oldMarObj['scaledSize']);
+	//Return newMarker
+	return newMarkerImage;
+}
+
+
 /**
  * [GisPerformance description]
  */
 function GisPerformance() {
-	//Is Frozen variable
+	//Is Frozen variable.. Get value from isFreeze Global Variable defined.
 	this.isFrozen_ = 0;
 	//Variable to hold GisData
 	this.gisData;
 
 	//Variable to hold Base Stations Name
-	this.BSNamesArray= [];
+	this.bsNamesList= [];
 	//Base Station Length
 	this.bsLength= 0;
 
@@ -19,93 +39,114 @@ function GisPerformance() {
 	And start the setInterval function to updateMap every 10 secs.
 	 */
 	this.start= function() {
-		var perf_that= this;
-		for(var k in markersMasterObj['BSNamae']) { this.BSNamesArray.push(k)};
-		this.bsLength= this.BSNamesArray.length;
+		var gisPerformance_this= this;
+		//Loop through all BS Names
+		for(var k in markersMasterObj['BSNamae']) { 
+			//Push the name into BS Name List
+			this.bsNamesList.push(k)
+		};
+		//Store Length of Total BS
+		this.bsLength= this.bsNamesList.length;
 
-	// Global Variable
+		// Global Variable
 		this._isFrozen= isFreeze;
-//		this.BSNamesArray.push("Bagahati");
-//		this.BSNamesArray.push("Rakesh_Bulb_Pataudia");
-		perf_that.sendRequest(0);
-		// setInterval(function() {
-		// 	console.log("====================START==========================");
-		// 	perf_that.sendRequest(0);
-		// 	console.log("====================END==========================");
-		// }, 60000);
+
+		//Start Request for First BS
+		gisPerformance_this.sendRequest(0);
 	}
 
+	/*
+	This will stop Sending Request by Setting isFrozen variable to 1
+	 */
 	this.stop= function() {
 		this._isFrozen= 1;
 	}
 
+	/*
+	This will restart the Request by Setting isFrozen variable to 0 and sending Request for First BS
+	 */
 	this.restart= function() {
 		this._isFrozen= 0;
 		this.sendRequest(0);
 	}
 
+	/*
+	Here we reset all variables defined.
+	 */
 	this.resetVariable= function() {
 		this.gisData= null;
-		this.BSNamesArray= [];
+		this.bsNamesList= [];
 		this.bsLength= 0;
 		this._isFrozen= isFreeze;
 	}
 
+	/*
+	This function sends Request based on the counter value.
+	 */
 	this.sendRequest= function(counter) {
-		// var counter= 0, perf_that= this;
-		// while(counter<this.BSNamesArray.length) {
-			// var getBsRequestData= this.createRequestData(this.BSNamesArray[counter]);
-			// counter++;
-		// }
+		//If isFrozen is false and Cookie value for freezeSelected is also false
 		if(this._isFrozen== 0 && $.cookie('isFreezeSelected')== 0) {
-			var perf_that = this;
-			// console.log("====================PROCESSING START========================");
-			perf_that.waitAndSend(this.createRequestData(this.BSNamesArray[counter]), counter);
-			// console.log("====================PROCESSING END========================");	
+			var gisPerformance_this = this;
+			//Call waitAndSend function with BS Json Data and counter value
+			gisPerformance_this.waitAndSend(this.createRequestData(this.bsNamesList[counter]), counter);
 		}
 	}
 
+	/*
+	This function sends a Ajax request based on param and counter provided. If All the calls for BS is completed, then we resetVariables and start Performance again in 5 mins.
+	 */
 	this.waitAndSend = function(getBsRequestData, counter) {
 		
-		var perf_that = this;
+		var gisPerformance_this = this;
 		counter++;
 		//If all calls has been done, 
 		if(counter> this.bsLength) {
+			//5 Minutes Timeout
 			setTimeout(function() {
-				perf_that.resetVariable();
-				perf_that.start();
-
+				//Reset Variable
+				gisPerformance_this.resetVariable();
+				//Start Performance Again
+				gisPerformance_this.start();
 			}, 300000);
-				
 			return;
 		}
+
+		//If isFrozen is false and Cookie value for freezeSelected is also false
 		if(this._isFrozen== 0 && $.cookie('isFreezeSelected')== 0) {
+			//Ajax Request
 			$.ajax({
-					type : 'POST',
-					dataType : 'json',
-					data: JSON.stringify(getBsRequestData),
-					url:  '/network_maps/performance_data/',//,
-					//async: false
-					success : function (data) {
-						// console.log(JSON.stringify(data));
-						perf_that.gisData= data;
-						if(data) {
-							perf_that.updateMap();
-						}
-						setTimeout(function() {
-							// console.log("====================GET NEXT START========================");
-							perf_that.sendRequest(counter);
-							// console.log("====================GET NEXT END========================");
-						}, 2000);
-					},
-					error : function(err){
-						console.log(err);
+				type : 'POST',
+				dataType : 'json',
+				data: JSON.stringify(getBsRequestData),
+				url:  '/network_maps/performance_data/',
+				//In success
+				success : function (data) {
+					//If data is there
+					if(data) {
+						//Store data in gisData
+						gisPerformance_this.gisData= data;
+						//Update Map with the data
+						gisPerformance_this.updateMap();
 					}
-				});
+					//After 2 seconds timeout
+					setTimeout(function() {
+						//Send Request for the next counter
+						gisPerformance_this.sendRequest(counter);
+					}, 2000);
+				},
+				//On Error, do nothing
+				error : function(err){
+					// console.log(err);
+				}
+			});
 		}
 	}
 
+	/*
+	This function creates Data to be sended with the Ajax Request for the Specific given BS name in parameter.
+	 */
 	this.createRequestData= function(bsname) {
+		//Initial data for DATA
 		var initialdata= {
 			"basestation_name": "",
 			"basestation_id": null,
@@ -113,28 +154,39 @@ function GisPerformance() {
 				"sector": []
 			}
 		}
+		//Fetch BS Gmap marker from markersMasterObj
 		var bsGmapMarker= markersMasterObj['BSNamae'][bsname];
+		//If Marker is found
 		if(bsGmapMarker) {
+			//Update BS name in DATA
 			initialdata["basestation_name"]= bsGmapMarker["bs_name"];
+			//Update BS id in DATA
 			initialdata["basestation_id"]= bsGmapMarker["bsInfo"][2]["value"];
+			//Loop through all the child_ss in BS
 			for(var i=0; i< bsGmapMarker["child_ss"].length; i++) {
+				//Create deviceSectorJson with device_name, device_id, empty performance_data and sub_station array
 				var deviceSectorJSon= {
 					"device_name": bsGmapMarker["child_ss"][i]["device_info"][0]["value"], 
 					"device_id": bsGmapMarker["child_ss"][i]["device_info"][1]["value"], 
 					"performance_data": {"frequency": "","pl": "","color": "","performance_parameter": "","performance_value": "","performance_icon": ""}, 
 					"sub_station": []
 				};
+				//Loop through all the SubStations in Device
 				for(var j=0; j< bsGmapMarker["child_ss"][i]["sub_station"].length; j++) {
+					//Store sub_station_name, sub_station_id, and empty performance data for the substation
 					var deviceSsJson= {
 						"device_name": bsGmapMarker["child_ss"][i]["sub_station"][j]["device_name"],
 						"device_id": bsGmapMarker["child_ss"][i]["sub_station"][j]["id"],
 						"performance_data": {"frequency": "","pl": "","color": "","performance_parameter": "","performance_value": "","performance_icon": ""}
 					}
+					//Push it in sub_station array of deviceSectorJSon
 					deviceSectorJSon["sub_station"].push(deviceSsJson);
 				}
+				//Push DATA sector to the deviceSectorJSon created.
 				initialdata["param"]["sector"].push(deviceSectorJSon);
 			}
 		}
+		//Return initialData
 		return initialdata;
 	}
 
@@ -147,10 +199,13 @@ function GisPerformance() {
 	this.updateMap= function() {
 		//Step no. 1 => Find BS Station First
 		var gisData= this.gisData;
+		//Get BS Gmap Marker
 		var bsMarkerObject= markersMasterObj['BSNamae'][gisData.basestation_name];
 		//Step no. 2 ==> Loop through all the SS in the BS
 		try {
+			//Loop through devices
 			for(var i=0; i< bsMarkerObject['child_ss'].length; i++) {
+				//Loop through sub_station of devices
 				for(var j=0; j< bsMarkerObject['child_ss'][i]['sub_station'].length; j++) {
 					//Step no. 3 ===> Fetch PerformanceValue for various key from GisData JSon
 					var lineColor= this.calculatePerformanceValue("color", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
@@ -160,40 +215,62 @@ function GisPerformance() {
 					if(googlePolyLine && lineColor) {
 						googlePolyLine.setOptions({strokeColor:lineColor});
 					}
+
+					//If technology is WiMAX and PMP
 					if(bsMarkerObject['child_ss'][i]["technology"]=== "WiMAX" || bsMarkerObject['child_ss'][i]["technology"]=== "PMP") {
+						//Get sector Polyline 
 						var sectorPoly= markersMasterObj['Poly'][bsMarkerObject['child_ss'][i]['sub_station'][j]['device_name']];
+						//If both sector Poly and line Color is defined
 						if(sectorPoly && lineColor) {
+							//Update color for Sector POly.
 							sectorPoly.setOptions({fillColor: lineColor});
 						}
 					}
 
+					//Get substation icon from Performance
 					var subStationIcon= this.calculatePerformanceValue("performance_icon", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+					//If substation icon is present
 					if(subStationIcon) {
+						//Get subStation Name
 						var subStationName= bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"];
+						//Get subStation Marker
 						var subStationMarker= markersMasterObj['SSNamae'][subStationName];
-						subStationMarker.setIcon(createGoogleMarker(window.location.origin + '/'+ subStationIcon, subStationMarker));l
+						//Update icon, oldIcon and clusterIcon for the SubStation Marker
+						subStationMarker.setIcon(createGoogleMarker(window.location.origin + '/'+ subStationIcon, subStationMarker));
 						subStationMarker.oldIcon= (createGoogleMarker(window.location.origin + '/'+ subStationIcon, subStationMarker));
 						subStationMarker.clusterIcon= (createGoogleMarker(window.location.origin + '/'+ subStationIcon, subStationMarker));
 					}
 				}
+
+				//Get Device Markers for the BS.
 				var deviceMarkers = sectorMarkersMasterObj[String(gisData.basestation_name)];
+				//Loop through all the devices
 				for(var k=0; k< deviceMarkers.length; k++) {
+					//Get the Device Name from the Performance Data
 					var deviceObject= this.findObjectbyDeviceName(deviceMarkers[i]["deviceInfo"][0]["value"]);
+					//If Icon for the device is provided in performance data
 					if(deviceObject["performance_data"]["performance_icon"]) {
+						//Update oldIcon for the device to the Given Icon
 						deviceMarkers[i].oldIcon= (createGoogleMarker(window.location.origin + '/'+ deviceObject["performance_data"]["performance_icon"], deviceMarkers[i]));
 						
 					}
 				}
 			}
 		}catch(exception) {
-			// console.log(exception);
+			console.log(exception);
 		}
 	}
 
+	/*
+	Utility function to find a specific device with name from the Ajax response data
+	 */
 	this.findObjectbyDeviceName= function(deviceName) {
 		var gisData= this.gisData;
+		//Loop through the sector in performance data
 		for(var i=0; i< gisData["param"]["sector"].length; i++) {
+			//If we find device_name to the given deviceName in param
 			if(gisData["param"]["sector"][i]["device_name"]=== deviceName) {
+				//Return the sector
 				return gisData["param"]["sector"][i];
 			}
 		}
@@ -226,21 +303,7 @@ function GisPerformance() {
 				}
 			}
 		}
+		return ;
 	}
 }
 
-function createGoogleMarker(url, oldMarkerIcon) {
-	var oldMarObj= {}, newMarkerImage= "";
-	oldMarObj['anchor']= oldMarkerIcon['icon']['anchor'] ? oldMarkerIcon['icon']['anchor'] : null;
-	oldMarObj['origin']= oldMarkerIcon['icon']['origin'] ? oldMarkerIcon['icon']['origin'] : null;
-	oldMarObj['scaledSize']= oldMarkerIcon['icon']['scaledSize'] ? oldMarkerIcon['icon']['scaledSize'] : null;
-	oldMarObj['size']= oldMarkerIcon['icon']['size'] ? oldMarkerIcon['icon']['size'] : null;
-	newMarkerImage= new google.maps.MarkerImage(
-        url,
-        oldMarObj['size'],
-        oldMarObj['origin'],
-        oldMarObj['anchor'],
-        oldMarObj['scaledSize']);
-
-	return newMarkerImage;
-}

@@ -23,7 +23,8 @@ advanceSearchMasterObj.searchedLinesIconUrl= 'http://www.iconsdb.com/icons/previ
 advanceSearchMasterObj.maxSearchLevelNumber= 20;
 advanceSearchMasterObj.searchNumberLimitMessage= 'Too many Searched Results. Please filter again. No Markers drawn'
 
-
+var ipStationFound= 0;
+var ipStation= [];
 /**
  * This class is used to Advance Search.
  * @class advanceSearchLibrary
@@ -238,7 +239,7 @@ function advanceJustSearchClass() {
     
         var selectedInputs= advJustSearch_self.getInputArray();
         var isOnlyStateorCityIsApplied= false;
-        if(selectedInputs['BS Name'].length || selectedInputs['BS Latitude'].length || selectedInputs['BS Longitude'].length || selectedInputs['Circuit Id'].length || selectedInputs['IP'].length || selectedInputs['Technology'].length) {
+        if(selectedInputs['BS Name'].length || /*selectedInputs['BS Latitude'].length || selectedInputs['BS Longitude'].length || */selectedInputs['Circuit Id'].length || selectedInputs['IP'].length || selectedInputs['Technology'].length) {
             isOnlyStateorCityIsApplied= false;
         }
         if(!isOnlyStateorCityIsApplied) {
@@ -316,6 +317,8 @@ function advanceJustSearchClass() {
 	 * @method callSetFilter
 	 */
 	this.searchAndCenterData = function(main_devices_data_gmaps) {
+        ipStationFound= 0;
+        ipStation= [];
 
 		var selectedInputs= advJustSearch_self.getInputArray();
 
@@ -382,21 +385,21 @@ function advanceJustSearchClass() {
 							}	
 						}
 
-						// Check BS Latitude
-						if(key === 'BS Latitude') {
-							if(((String(deviceJson.data.lat)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lat)).toLowerCase()) != -1) {
-							} else {
-								return false;
-							}	
-						}
+						// // Check BS Latitude
+						// if(key === 'BS Latitude') {
+						// 	if(((String(deviceJson.data.lat)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lat)).toLowerCase()) != -1) {
+						// 	} else {
+						// 		return false;
+						// 	}	
+						// }
 
-						// Check BS Longitude
-						if(key === 'BS Longitude') {
-							if(((String(deviceJson.data.lon)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lon)).toLowerCase()) != -1) {
-							} else {
-								return false;
-							}	
-						}
+						// // Check BS Longitude
+						// if(key === 'BS Longitude') {
+						// 	if(((String(deviceJson.data.lon)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lon)).toLowerCase()) != -1) {
+						// 	} else {
+						// 		return false;
+						// 	}	
+						// }
 
 						//Check BS Sector Configured On
 						if(key === 'IP') {
@@ -419,6 +422,8 @@ function advanceJustSearchClass() {
                                 for(var j=0; j< deviceJson['data']['param']['sector'][i]['sub_station'].length; j++) {
                                     var ip= deviceJson['data']['param']['sector'][i]['sub_station'][j]['data']['param']['sub_station'][12]['value'];
                                     if((String(selectedInputs[key]).toLowerCase()).indexOf(ip) != -1) {
+                                        ipStationFound= 1;
+                                        ipStation.push(deviceJson['data']['param']['sector'][i]['sub_station'][j]['data']['lat'], deviceJson['data']['param']['sector'][i]['sub_station'][j]['data']['lon']);
                                         advJustSearch_self.applyIconToSearchedResult(deviceJson['data']['param']['sector'][i]['sub_station'][j]['data']['lat'], deviceJson['data']['param']['sector'][i]['sub_station'][j]['data']['lon']);
                                         isSectorIsConfigured= true;
                                     }
@@ -465,6 +470,10 @@ function advanceJustSearchClass() {
 				bounds.extend(new google.maps.LatLng(main_devices_data_gmaps[i]['data']['lat'], main_devices_data_gmaps[i]['data']['lon']));
 				advJustSearch_self.applyIconToSearchedResult(main_devices_data_gmaps[i]['data']['lat'], main_devices_data_gmaps[i]['data']['lon']);
 			}
+
+            if(ipStationFound) {
+                bounds.extend(new google.maps.LatLng(ipStation[0], ipStation[1]));
+            }
 		}
 
 
