@@ -173,7 +173,10 @@ class Gis_Map_Performance_Data(View):
                                     performance_icon= data.values()[0]
                             except Exception as e:
                                 logger.exception(e.message)
+<<<<<<< HEAD
                                 continue
+=======
+>>>>>>> 719f2570ec502d95fde95b5fbd1b72ac808ea824
 
 
                 performance_data= {
@@ -186,7 +189,6 @@ class Gis_Map_Performance_Data(View):
                                         if "uploaded" in str(performance_icon)
                                         else ("static/img/" + str(performance_icon) if len(str(performance_icon)) else ""),
                 }
-                logger.info("%s : %s" %(device_name, performance_data))
             except Exception as e:
                 logger.info(e.message, exc_info=True)
                 pass

@@ -239,7 +239,7 @@ function advanceJustSearchClass() {
     
         var selectedInputs= advJustSearch_self.getInputArray();
         var isOnlyStateorCityIsApplied= false;
-        if(selectedInputs['BS Name'].length || /*selectedInputs['BS Latitude'].length || selectedInputs['BS Longitude'].length || */selectedInputs['Circuit Id'].length || selectedInputs['IP'].length || selectedInputs['Technology'].length) {
+        if(selectedInputs['BS Name'].length || /*selectedInputs['BS Latitude'].length || selectedInputs['BS Longitude'].length || */selectedInputs['Circuit Id'].length || selectedInputs['IP'].length/* || selectedInputs['Technology'].length*/) {
             isOnlyStateorCityIsApplied= false;
         }
         if(!isOnlyStateorCityIsApplied) {
@@ -378,7 +378,7 @@ function advanceJustSearchClass() {
 
 						// Check BS City
 						if(key === 'BS City') {
-                            console.log(selectedInputs[key]);
+                            // console.log(selectedInputs[key]);
 							if(((String(deviceJson.data.city)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.city)).toLowerCase()) != -1) {
 							} else {
 								return false;

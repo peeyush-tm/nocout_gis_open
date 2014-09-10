@@ -6,7 +6,7 @@ var mapPageType = "",
 /*Set isFreeze from cookies*/
     if($.cookie('isFreezeSelected')) {
     } else {
-        $.cookie("isFreezeSelected", 0);
+        $.cookie("isFreezeSelected", 0, {'secure':true});
     }
     isFreeze = $.cookie("isFreezeSelected");
     if(isFreeze == 1) {
@@ -190,13 +190,15 @@ function showAdvSearch() {
     showSpinner();
     $("#advFilterContainerBlock").hide();
     $("#advSearchContainerBlock").show();
+    console.log(data_for_filters);
     advJustSearch.getFilterInfofrompagedata("searchInfoModal", "Advance Search", "advSearchBtn");
 }
 
 $("#setAdvSearchBtn").click(function(e) {
     showSpinner();
     advJustSearch.showNotification();
-    advJustSearch.searchAndCenterData(main_devices_data_gmaps);
+    console.log(data_for_filters);
+    advJustSearch.searchAndCenterData(data_for_filters);
 });
 
 $("#cancelAdvSearchBtn").click(function(e) {
@@ -238,6 +240,7 @@ function showAdvFilters() {
     showSpinner();
     $("#advSearchContainerBlock").hide();
     $("#advFilterContainerBlock").show();
+    console.log(data_for_filters);
 //  advSearch.getFilterInfo("filterInfoModal","Advance Filters","advFilterBtn",getFilterApi,setFilterApi);
     advSearch.getFilterInfofrompagedata("filterInfoModal", "Advance Filters", "advFilterBtn");
 }
