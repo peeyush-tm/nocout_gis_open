@@ -2297,6 +2297,8 @@ if(sector_child.length) {
 				/*Reset Global Variables & Filters*/
 				gmap_self.resetVariables_gmap();
 
+				data_for_filters = main_devices_data_gmaps;
+
 				/*create the BS-SS network on the google map*/
 	            gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
 
@@ -3390,7 +3392,7 @@ if(sector_child.length) {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 1;
-	 	$.cookie("isFreezeSelected", {secure:true});
+	 	$.cookie("isFreezeSelected", isFreeze);
 	 	gisPerformanceClass.stop();
 	 };
 
@@ -3402,7 +3404,7 @@ if(sector_child.length) {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 0;
-	 	$.cookie("isFreezeSelected", 0, {secure:true});
+	 	$.cookie("isFreezeSelected", isFreeze);
 	 	gisPerformanceClass.restart();
 
 	 	/*Recall the server*/
