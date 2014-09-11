@@ -66,7 +66,7 @@ function GisPerformance() {
 	This will restart the Request by Setting isFrozen variable to 0 and sending Request for First BS
 	 */
 	this.restart= function() {
-		this._isFrozen= 0;
+		this._isFrozen = isFreeze;
 		this.sendRequest(0);
 	}
 
@@ -85,7 +85,7 @@ function GisPerformance() {
 	 */
 	this.sendRequest= function(counter) {
 		//If isFrozen is false and Cookie value for freezeSelected is also false
-		if(this._isFrozen== 0 && $.cookie('isFreezeSelected')== 0) {
+		if(this._isFrozen == 0 && $.cookie('isFreezeSelected') == 0) {
 			var gisPerformance_this = this;
 			//Call waitAndSend function with BS Json Data and counter value
 			gisPerformance_this.waitAndSend(this.createRequestData(this.bsNamesList[counter]), counter);
@@ -100,7 +100,7 @@ function GisPerformance() {
 		var gisPerformance_this = this;
 		counter++;
 		//If all calls has been done, 
-		if(counter> this.bsLength) {
+		if(counter > this.bsLength) {
 			//5 Minutes Timeout
 			setTimeout(function() {
 				//Reset Variable
