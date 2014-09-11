@@ -273,7 +273,7 @@ $.urlParam = function(name){
                     else{
                         $('#'+service_id+'_chart').highcharts({
                             chart: {
-                                zoomType: 'xy',
+                                zoomType: 'x',
                                 type: single_service_data.type
     //                            events:{
     //                                load: Highcharts.drawTable //@TODO: here in we need to draw canvas table with data table data
