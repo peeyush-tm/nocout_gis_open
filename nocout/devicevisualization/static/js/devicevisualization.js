@@ -4,24 +4,9 @@ var mapPageType = "",
     hasTools = 0;
 
 /*Set isFreeze from cookies*/
-    if($.cookie('isFreezeSelected')) {
-    } else {
-        $.cookie("isFreezeSelected", 0, {'secure':true});
-    }
-    isFreeze = $.cookie("isFreezeSelected");
-    if(isFreeze == 1) {
-        if($("#freeze_remove").hasClass("hide")) {
-            $("#freeze_select").addClass("hide");
-            $("#freeze_remove").removeClass("hide");
-        }
-    } else {
-        if($("#freeze_select").hasClass("hide")) {
-            $("#freeze_remove").addClass("hide");
-            $("#freeze_select").removeClass("hide");
-        }
-    }
-
-
+if(!($.cookie('isFreezeSelected'))) {
+    $.cookie("isFreezeSelected", 0, {secure:true});
+}
 
 /*Call get_page_status function to show the current status*/
 get_page_status();
@@ -191,14 +176,12 @@ function showAdvSearch() {
     showSpinner();
     $("#advFilterContainerBlock").hide();
     $("#advSearchContainerBlock").show();
-    // console.log(data_for_filters);
     advJustSearch.getFilterInfofrompagedata("searchInfoModal", "Advance Search", "advSearchBtn");
 }
 
 $("#setAdvSearchBtn").click(function(e) {
     showSpinner();
     advJustSearch.showNotification();
-
     advJustSearch.searchAndCenterData(data_for_filters);
 });
 
@@ -241,7 +224,6 @@ function showAdvFilters() {
     showSpinner();
     $("#advSearchContainerBlock").hide();
     $("#advFilterContainerBlock").show();
-    console.log(data_for_filters);
 //  advSearch.getFilterInfo("filterInfoModal","Advance Filters","advFilterBtn",getFilterApi,setFilterApi);
     advSearch.getFilterInfofrompagedata("filterInfoModal", "Advance Filters", "advFilterBtn");
 }
@@ -351,6 +333,17 @@ $("#clearPolygonBtn").click(function(e) {
 function showToolsPanel() {
 
     hasTools = 1;
+    if(isFreeze == 1) {
+        if($("#freeze_remove").hasClass("hide")) {
+            $("#freeze_select").addClass("hide");
+            $("#freeze_remove").removeClass("hide");
+        }
+    } else {
+        if($("#freeze_select").hasClass("hide")) {
+            $("#freeze_remove").addClass("hide");
+            $("#freeze_select").removeClass("hide");
+        }
+    }
 
     /*Hide Tools Button*/
     $("#showToolsBtn").addClass("hide");
@@ -393,9 +386,16 @@ function removetoolsPanel() {
         $("#line_select").removeClass("hide");
     }
 
-    if($("#freeze_select").hasClass("hide")) {
-        $("#freeze_remove").addClass("hide");
-        $("#freeze_select").removeClass("hide");
+    if(isFreeze == 1) {
+        if($("#freeze_remove").hasClass("hide")) {
+            $("#freeze_select").addClass("hide");
+            $("#freeze_remove").removeClass("hide");
+        }
+    } else {
+        if($("#freeze_select").hasClass("hide")) {
+            $("#freeze_remove").addClass("hide");
+            $("#freeze_select").removeClass("hide");
+        }
     }
 
     networkMapInstance.clearToolsParams_gmap();
@@ -457,7 +457,7 @@ pointAdd= 1;
   * @event click
   */
 $("#point_remove").click(function(e) {
-pointAdd= -1;
+    pointAdd= -1;
     if(!($("#point_remove").hasClass("hide"))) {
         $("#point_select").removeClass("hide");
         $("#point_remove").addClass("hide");

@@ -264,14 +264,14 @@ function prepare_oms_object(oms_instance) {
 			}
 		}
         //freeze the map when spiderified
-        isFreeze = 1;
+        // isFreeze = 1;
         infowindow.close();
     });
 
     /*Event when markers cluster is collapsed or unspiderify*/
     oms_instance.addListener('unspiderfy', function(e,markers) {
         //un freeze the map when in normal state
-        isFreeze = 0;
+        // isFreeze = 0;
         var latArray = [],
             lonArray = [];
             
@@ -888,7 +888,8 @@ function devicePlottingClass_gmap() {
 				    var ss_marker = new google.maps.Marker(ss_marker_object);
 
 				    google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
-					    if(ss_marker.hasPerf == 1) {
+
+					    if(ss_marker.hasPerf == 1 && isFreeze == 0) {
 					    	var info_html = '<table class="table table-hover"><tr><td>Frequency</td><td>'+ss_marker.perf_data_obj.frequency+'</td></tr><tr><td>Packet Loss</td><td>'+ss_marker.perf_data_obj.pl+'</td></tr><tr><td>'+ss_marker.perf_data_obj.performance_paramter+'</td><td>'+ss_marker.perf_data_obj.performance_value+'</td></tr></table>';
 					    	/*Set the content for infowindow*/
 							infowindow.setContent(info_html);
@@ -903,7 +904,7 @@ function devicePlottingClass_gmap() {
 
 					google.maps.event.addListener(ss_marker, 'mouseout', function() {
 						
-						if(ss_marker.hasPerf == 1) {
+						if(ss_marker.hasPerf == 1 && isFreeze == 0) {
 					    	infowindow.close();
 					    }
 					});
@@ -3333,17 +3334,16 @@ if(sector_child.length) {
 			distance_label.setMap(null);
 		}
 
-		/*If system freezed then unfreeze the system & recall the server*/
-		if(isFreeze == 1) {
-
-			isFreeze = 0;
-			// gmap_self.recallServer_gmap();
-		}
-
         if (map_point_count == 0){
             /*Remove click listener from google maps*/
 		    google.maps.event.clearListeners(mapInstance,'click');
         }
+
+        /*If system freezed then unfreeze the system & recall the server*/
+		// if(isFreeze == 1) {
+
+		// 	isFreeze = 0;
+		// }
 	};
 
     /**
@@ -3392,7 +3392,7 @@ if(sector_child.length) {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 1;
-	 	$.cookie("isFreezeSelected", 1, {'secure':true});
+	 	$.cookie("isFreezeSelected", {secure:true});
 	 	gisPerformanceClass.stop();
 	 };
 
@@ -3404,7 +3404,7 @@ if(sector_child.length) {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 0;
-	 	$.cookie("isFreezeSelected", 0, {'secure':true})
+	 	$.cookie("isFreezeSelected", 0, {secure:true});
 	 	gisPerformanceClass.restart();
 
 	 	/*Recall the server*/
@@ -3442,9 +3442,9 @@ if(sector_child.length) {
 	 * @method clearPolygon
 	 */
 	this.clearPolygon = function() {
-
-		drawingManager.setDrawingMode(null);
-
+		if(drawingManager) {
+			drawingManager.setDrawingMode(null);
+		}
 		// oms.unspiderfy();
 
 		/*Update the html of accordian body*/
