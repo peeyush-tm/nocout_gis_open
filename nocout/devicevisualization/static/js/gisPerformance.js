@@ -85,7 +85,7 @@ function GisPerformance() {
 	 */
 	this.sendRequest= function(counter) {
 		//If isFrozen is false and Cookie value for freezeSelected is also false
-		if(this._isFrozen == 0 && $.cookie('isFreezeSelected') == 0) {
+		if($.cookie('isFreezeSelected') == 0) {
 			var gisPerformance_this = this;
 			//Call waitAndSend function with BS Json Data and counter value
 			gisPerformance_this.waitAndSend(this.createRequestData(this.bsNamesList[counter]), counter);
@@ -107,12 +107,12 @@ function GisPerformance() {
 				gisPerformance_this.resetVariable();
 				//Start Performance Again
 				gisPerformance_this.start();
-			}, 300000);
+			}, 60000);
 			return;
 		}
 
 		//If isFrozen is false and Cookie value for freezeSelected is also false
-		if(this._isFrozen== 0 && $.cookie('isFreezeSelected')== 0) {
+		if($.cookie('isFreezeSelected')== 0) {
 			//Ajax Request
 			$.ajax({
 				type : 'POST',
@@ -132,7 +132,7 @@ function GisPerformance() {
 					setTimeout(function() {
 						//Send Request for the next counter
 						gisPerformance_this.sendRequest(counter);
-					}, 2000);
+					}, 200);
 				},
 				//On Error, do nothing
 				error : function(err){
