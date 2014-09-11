@@ -9,7 +9,7 @@ from dajax.core import Dajax
 from dajaxice.decorators import dajaxice_register
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
     DeviceTypeFieldsValue, Country, State
-from service.models import Service, ServiceParameters, DeviceServiceConfiguration
+from service.models import Service, ServiceParameters, DeviceServiceConfiguration, DevicePingConfiguration
 from site_instance.models import SiteInstance
 from django.conf import settings
 
@@ -858,12 +858,26 @@ def add_device_to_nms_core(request, device_id, ping_data):
 
         # converting string in 'r' to dictionary
         response_dict = ast.literal_eval(r.text)
+
         if r:
             result['data'] = device_data
             result['success'] = 1
-            if response_dict['error_code'] is not None:
+            if response_dict.get('success') != 1:
                 result['message'] = response_dict['error_message'].capitalize()
             else:
+                # device ping configuration
+                dpc = DevicePingConfiguration()
+                dpc.device_name = device.device_name
+                dpc.device_alias = device.device_alias
+                dpc.packets = ping_data['packets']
+                dpc.timeout = ping_data['timeout']
+                dpc.normal_check_interval = ping_data['normal_check_interval']
+                dpc.rta_warning = ping_data['rta_warning']
+                dpc.rta_critical = ping_data['rta_critical']
+                dpc.pl_warning = ping_data['pl_warning']
+                dpc.pl_critical = ping_data['pl_critical']
+                dpc.save()
+
                 result['message'] = "<i class=\"fa fa-check green-dot\"></i>Device added successfully."
                 # set 'is_added_to_nms' to 1 after device successfully added to nocout nms core
                 device.is_added_to_nms = 1
