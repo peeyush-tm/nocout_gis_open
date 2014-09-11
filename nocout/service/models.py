@@ -155,16 +155,16 @@ class DevicePingConfiguration(models.Model):
     Device Ping Configuration Model Declaration.
     """
     device_name = models.CharField('Device Name', max_length=200, null=True, blank=True)
-    service_name = models.CharField('Service Name', max_length=200, null=True, blank=True)
+    device_alias = models.CharField('Device Alias', max_length=200, null=True, blank=True)
     packets = models.IntegerField('Packets', null=True, blank=True)
     timeout = models.IntegerField('Timeout', null=True, blank=True)
     normal_check_interval = models.IntegerField('Normal Check Interval', null=True, blank=True)
-    data_source = models.CharField('Data Source', max_length=200, null=True, blank=True)
-    warning = models.CharField('Warning', max_length=20, null=True, blank=True)
-    critical = models.CharField('Critical', max_length=20, null=True, blank=True)
+    rta_warning = models.IntegerField('RTA Warning', null=True, blank=True)
+    rta_critical = models.IntegerField('RTA Critical', null=True, blank=True)
+    pl_warning = models.IntegerField('PL Warning', null=True, blank=True)
+    pl_critical = models.IntegerField('PL Critical', null=True, blank=True)
     added_on = models.DateTimeField('Added On', null=True, blank=True)
     modified_on = models.DateTimeField('Modified On', null=True, blank=True)
-    is_added = models.IntegerField('Is Added', default=0)
 
     class Meta:
         ordering = ["added_on"]
