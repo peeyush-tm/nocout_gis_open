@@ -190,7 +190,8 @@ function add_device_form(content) {
                         "pl_warning": parseInt($("#pl_warning").text()),
                         "pl_critical": parseInt($("#pl_critical").text()),
                         "packets": parseInt($("#packets").text()),
-                        "timeout": parseInt($("#timeout").text())
+                        "timeout": parseInt($("#timeout").text()),
+                        "normal_check_interval": parseInt($("#normal_check_interval").text())
                     };
                     //alert(JSON.stringify(ping_data));
                     Dajaxice.device.add_device_to_nms_core(device_add_message, {'device_id': $("#device_id").val(), 'ping_data': ping_data});
