@@ -889,7 +889,7 @@ function devicePlottingClass_gmap() {
 
 				    google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
 
-					    if(ss_marker.hasPerf == 1 && isFreeze == 0) {
+					    if(ss_marker.hasPerf == 1) {
 					    	var info_html = '<table class="table table-hover"><tr><td>Frequency</td><td>'+ss_marker.perf_data_obj.frequency+'</td></tr><tr><td>Packet Loss</td><td>'+ss_marker.perf_data_obj.pl+'</td></tr><tr><td>'+ss_marker.perf_data_obj.performance_paramter+'</td><td>'+ss_marker.perf_data_obj.performance_value+'</td></tr></table>';
 					    	/*Set the content for infowindow*/
 							infowindow.setContent(info_html);
@@ -904,7 +904,7 @@ function devicePlottingClass_gmap() {
 
 					google.maps.event.addListener(ss_marker, 'mouseout', function() {
 						
-						if(ss_marker.hasPerf == 1 && isFreeze == 0) {
+						if(ss_marker.hasPerf == 1) {
 					    	infowindow.close();
 					    }
 					});

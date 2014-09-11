@@ -273,7 +273,7 @@ $.urlParam = function(name){
                     else{
                         $('#'+service_id+'_chart').highcharts({
                             chart: {
-                                zoomType: 'x',
+                                zoomType: 'xy',
                                 type: single_service_data.type
     //                            events:{
     //                                load: Highcharts.drawTable //@TODO: here in we need to draw canvas table with data table data
@@ -295,6 +295,8 @@ $.urlParam = function(name){
                                 pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
                                 shared: true,
                                 crosshairs: true,
+                                useHTML : true,
+                                // shadow : false,
                                 valueSuffix: single_service_data.valuesuffix
                             },
                             xAxis: {
