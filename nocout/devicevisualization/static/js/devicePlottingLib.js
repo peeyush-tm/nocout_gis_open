@@ -3392,7 +3392,7 @@ if(sector_child.length) {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 1;
-	 	$.cookie("isFreezeSelected", isFreeze);
+	 	$.cookie("isFreezeSelected", isFreeze, {secure: true});
 	 	gisPerformanceClass.stop();
 	 };
 
@@ -3404,7 +3404,7 @@ if(sector_child.length) {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 0;
-	 	$.cookie("isFreezeSelected", isFreeze);
+	 	$.cookie("isFreezeSelected", isFreeze, {secure: true});
 	 	gisPerformanceClass.restart();
 
 	 	/*Recall the server*/

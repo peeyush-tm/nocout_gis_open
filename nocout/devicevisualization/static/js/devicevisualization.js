@@ -5,7 +5,7 @@ var mapPageType = "",
 
 /*Set isFreeze from cookies*/
 if(!($.cookie('isFreezeSelected'))) {
-    $.cookie("isFreezeSelected", 0);
+    $.cookie("isFreezeSelected", 0, {secure: true});
 }
 
 /*Call get_page_status function to show the current status*/
