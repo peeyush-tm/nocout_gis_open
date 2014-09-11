@@ -2296,6 +2296,8 @@ if(sector_child.length) {
 				/*Reset Global Variables & Filters*/
 				gmap_self.resetVariables_gmap();
 
+				data_for_filters = main_devices_data_gmaps;
+
 				/*create the BS-SS network on the google map*/
 	            gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
 

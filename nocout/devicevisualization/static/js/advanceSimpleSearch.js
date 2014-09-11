@@ -217,18 +217,6 @@ function advanceJustSearchClass() {
     this.applyIconToSearchedResult= function(lat, long, iconUrl) {
         //create a new lat long
         var searchedMarkerLatLong= new google.maps.LatLng(lat, long);
-//sub station visibility check
-        if(iconUrl) {
-            var ssMarker= markersMasterObj['SS'][String(lat)+long];
-            if(ssMarker && !ssMarker.getVisible()) {
-                return;
-            }
-        } else {
-            var bsMarker= markersMasterObj['BS'][String(lat)+long];
-            if(bsMarker && !bsMarker.getVisible()) {
-                return ;
-            }
-        }
 
         //create a new marker
         var showSearchedResultMarker= new google.maps.Marker({position: searchedMarkerLatLong, zIndex: 100})
@@ -273,10 +261,6 @@ function advanceJustSearchClass() {
     	return ;
     }
 
-    this.resetPreviousSearchedLines= function() {
-    	advanceSearchMasterObj.searchedLinesByCircuitIDs= [];
-    }
-
     this.findTheLineToUpdate= function(device,searchedText) {
         for(var i=0; i< device['data']['param']['sector'].length; i++) {
             for(var j=0; j< searchedText.length; j++) {
@@ -316,159 +300,107 @@ function advanceJustSearchClass() {
 	 * This method generates get parameter for setfilter API & call setFilter function
 	 * @method callSetFilter
 	 */
-	this.searchAndCenterData = function(main_devices_data_gmaps) {
+	this.searchAndCenterData = function(devicesInMap) {
         ipStationFound= 0;
         ipStation= [];
 
 		var selectedInputs= advJustSearch_self.getInputArray();
 
-
 		function checkIfValid(deviceJson) {
-			for(var key in selectedInputs) {
-				if(selectedInputs.hasOwnProperty(key)) {
-					if(selectedInputs[key].length) {
+            var isValid= true;
 
-						//Check BS NAME
-						if(key==='BS Name') {
-							if(((String(deviceJson.name)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.name)).toLowerCase()) != -1) {
-							} else {
-								return false;
-							}
-						}
+            //check for name first
+            var searchedNames= selectedInputs["BS Name"];
+            if(searchedNames.length && searchedNames.indexOf(deviceJson["name"]) === -1) {
+                return false;
+            }
 
-						// // Check BS Technology
-						// if(key==='Technology') {
-						// 	var deviceTechnology= deviceJson.sector_ss_technology;
-						// 	var deviceTechnologyArray= deviceTechnology.split(" ");
-						// 	var isTechnologyPresent= false;
-						// 	for(var z=0; z< deviceTechnologyArray.length; z++) {
-						// 		if(((String(deviceTechnologyArray[z])).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceTechnologyArray[z])).toLowerCase()) != -1) {
-						// 			isTechnologyPresent= true;
-						// 		}	
-						// 	}
+            //check for Ip next
+            var searchedIps= selectedInputs["IP"];
+            var isSearchedIpPresent= false;
+            var isSubStationIpPresent= false;
+            if(searchedIps.length) {
+                var deviceSectorConfiguredOn= deviceJson["sector_configured_on_devices"].split(" ");
+                var deviceIps = deviceSectorConfiguredOn.map(function(sectorConfigured) {
+                    if(sectorConfigured) {
+                        return sectorConfigured.substring(sectorConfigured.lastIndexOf("(")+1,sectorConfigured.lastIndexOf(")"));
+                    }
+                });
 
-						// 	if(!isTechnologyPresent) {
-						// 		return false;
-						// 	}
-						// }
+                var common = $.grep(deviceIps, function(element) {
+                    return $.inArray(element, searchedIps ) !== -1;
+                });
+                if(common.length) {
+                    isSearchedIpPresent= true;
+                }
 
-						// Check BS Vendor
-						// if(key==='Vendor') {
-						// 	var deviceVendor= deviceJson.sector_ss_vendor;
-						// 	var deviceVendorArray= deviceVendor.split(" ");
-						// 	var isVendorPresent= false;
-						// 	for(var z=0; z< deviceVendorArray.length; z++) {
-						// 		if(((String(deviceVendorArray[z])).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceVendorArray[z])).toLowerCase()) != -1) {
-						// 			isVendorPresent= true;
-						// 		}	
-						// 	}
+                for(var count0= 0; count0< searchedIps.length; count0++) {
+                    for(var count= 0; count< deviceJson["data"]["param"]["sector"].length; count++) {
+                        if(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]) {
+                            if(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["substation_device_ip_address"]== searchedIps[count0]) {
+                                extendBound(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lat"], deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lon"]);
+                                advJustSearch_self.applyIconToSearchedResult(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lat"], deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lon"]);
+                                isSearchedIpPresent= true;
+                            }    
+                        }
+                        
+                    }
+                }
+                if(!isSearchedIpPresent) {
+                    return false;
+                }
+            }
 
-						// 	if(!isVendorPresent) {
-						// 		return false;
-						// 	}
-						// }
 
-						// Check BS State
-						// if(key === 'BS State') {
-						// 	if(((String(deviceJson.data.state)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.state)).toLowerCase()) != -1) {
-						// 	} else {
-						// 		return false;
-						// 	}							
-						// }
+            //check for circuit id
+            var searchedCircuitIds= selectedInputs["Circuit Id"];
+            var isCircuitIdPresent= false;
+            if(searchedCircuitIds.length) {
+                var deviceCircuidIds= deviceJson["circuit_ids"].split(" ");
 
-						// Check BS City
-						if(key === 'BS City') {
-                            // console.log(selectedInputs[key]);
-							if(((String(deviceJson.data.city)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.city)).toLowerCase()) != -1) {
-							} else {
-								return false;
-							}	
-						}
-
-						// // Check BS Latitude
-						// if(key === 'BS Latitude') {
-						// 	if(((String(deviceJson.data.lat)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lat)).toLowerCase()) != -1) {
-						// 	} else {
-						// 		return false;
-						// 	}	
-						// }
-
-						// // Check BS Longitude
-						// if(key === 'BS Longitude') {
-						// 	if(((String(deviceJson.data.lon)).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceJson.data.lon)).toLowerCase()) != -1) {
-						// 	} else {
-						// 		return false;
-						// 	}	
-						// }
-
-						//Check BS Sector Configured On
-						if(key === 'IP') {
-							var isSectorIsConfigured= false;
-                            var deivceConfiguredOn= deviceJson["sector_configured_on_devices"];
-                            var deivceConfiguredOnArray= deivceConfiguredOn.split(" ");
-
-                            for(var z=0; z< deivceConfiguredOnArray.length; z++) {
-                                if(deivceConfiguredOnArray[z] && ((String(deivceConfiguredOnArray[z])).toLowerCase() !== "")) {
-                                    var s= (String(deivceConfiguredOnArray[z])).toLowerCase();
-                                    s= s.substring(s.lastIndexOf("(")+1,s.lastIndexOf(")"));
-                                    if((String(selectedInputs[key]).toLowerCase()).indexOf(s) != -1) {
-                                        isSectorIsConfigured= true;
-                                    }
-                                }
+                var common = $.grep(deviceCircuidIds, function(element) {
+                    return $.inArray(element, searchedCircuitIds ) !== -1;
+                });
+                if(common.length) {
+                    for(var count0= 0; count0< common.length; count0++) {
+                        for(var count=0; count< deviceJson["data"]["param"]["sector"].length; count++) {
+                            if(deviceJson["data"]["param"]["sector"][count]["circuit_id"]== common[count0]) {
+                                extendBound(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lat"], deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lon"]);
+                                advJustSearch_self.applyIconToSearchedResult(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lat"], deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lon"]);
+                                isCircuitIdPresent= true;
                             }
+                        }        
+                    }
+                }
+                if(!isCircuitIdPresent) {
+                    return false;
+                }
+            }
 
-//Check for SUbStations
-                            for(var i=0; i< deviceJson['data']['param']['sector'].length; i++) {
-                                for(var j=0; j< deviceJson['data']['param']['sector'][i]['sub_station'].length; j++) {
-                                    var ip= deviceJson['data']['param']['sector'][i]['sub_station'][j]['data']['param']['sub_station'][12]['value'];
-                                    if((String(selectedInputs[key]).toLowerCase()).indexOf(ip) != -1) {
-                                        ipStationFound= 1;
-                                        ipStation.push(deviceJson['data']['param']['sector'][i]['sub_station'][j]['data']['lat'], deviceJson['data']['param']['sector'][i]['sub_station'][j]['data']['lon']);
-                                        advJustSearch_self.applyIconToSearchedResult(deviceJson['data']['param']['sector'][i]['sub_station'][j]['data']['lat'], deviceJson['data']['param']['sector'][i]['sub_station'][j]['data']['lon']);
-                                        isSectorIsConfigured= true;
-                                    }
-                                }
-                            }
+            //check for city
+            var searchedCity= selectedInputs["BS City"];
+            if(searchedCity.length && searchedCity.indexOf(deviceJson["data"]["city"]) === -1) {
+                return false;
+            }
 
-                            if(!isSectorIsConfigured) {
-								return false;
-							}
-						}
-
-						if(key === 'Circuit Id') {
-							var deviceCircuitIDs= deviceJson.circuit_ids;
-                            var deviceCircuitIDSArray= deviceCircuitIDs.split(" ");
-                            var isCircuitPresent= false;
-							for(var z=0; z< deviceCircuitIDSArray.length; z++) {
-								if(deviceCircuitIDSArray[z] && ((String(deviceCircuitIDSArray[z])).toLowerCase() !== "") && (String(selectedInputs[key]).toLowerCase()).indexOf((String(deviceCircuitIDSArray[z])).toLowerCase()) != -1) {
-									advJustSearch_self.findTheLineToUpdate(deviceJson, selectedInputs[key]);
-									isCircuitPresent= true;
-								}	
-							}
-
-							if(!isCircuitPresent) {
-								return false;
-							}
-						}
-					}
-				}
-			}
-			return true;
+            return isValid;
 		}
+
+        function extendBound(lat, lon) {
+            bounds.extend(new google.maps.LatLng(lat, lon));
+        }
 
 		var searchedStations= [];
 
 		//reset previous markers
 		advJustSearch_self.resetPreviousSearchedMarkers();
 
-		//Reset Lines
-		advJustSearch_self.resetPreviousSearchedLines();
 		var bounds= new google.maps.LatLngBounds();
-		for(var i=0; i< main_devices_data_gmaps.length; i++) {
-			if(checkIfValid(main_devices_data_gmaps[i])) {
-				searchedStations.push(main_devices_data_gmaps[i]);
-				bounds.extend(new google.maps.LatLng(main_devices_data_gmaps[i]['data']['lat'], main_devices_data_gmaps[i]['data']['lon']));
-				advJustSearch_self.applyIconToSearchedResult(main_devices_data_gmaps[i]['data']['lat'], main_devices_data_gmaps[i]['data']['lon']);
+		for(var i=0; i< devicesInMap.length; i++) {
+			if(checkIfValid(devicesInMap[i])) {
+				searchedStations.push(devicesInMap[i]);
+				bounds.extend(new google.maps.LatLng(devicesInMap[i]['data']['lat'], devicesInMap[i]['data']['lon']));
+				advJustSearch_self.applyIconToSearchedResult(devicesInMap[i]['data']['lat'], devicesInMap[i]['data']['lon']);
 			}
 
             if(ipStationFound) {

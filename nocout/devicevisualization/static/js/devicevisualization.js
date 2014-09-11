@@ -115,7 +115,7 @@ $("#technology").change(function(e) {
 /*This event triggers when Reset Filter button clicked*/
 $("#resetFilters").click(function(e) {
 
-    if(isFreeze == 0) {
+    // if(isFreeze == 0) {
         
         $("#resetFilters").button("loading");
         /*Reset The basic filters dropdown*/
@@ -125,13 +125,14 @@ $("#resetFilters").click(function(e) {
         $("#city").val($("#city option:first").val());
         /*Reset search txt box*/
         $("#searchTxt").val("");
+        data_for_filters= main_devices_data_gmaps;
         $("#lat_lon_search").val("");
         isCallCompleted = 1;
-    }
+    // }
 
     if(window.location.pathname.indexOf("google_earth") > -1) {
         
-        if(isFreeze == 0) {            
+        // if(isFreeze == 0) {            
 
             /*Reset filter object variable*/
             appliedFilterObj_gmaps = {};
@@ -151,7 +152,7 @@ $("#resetFilters").click(function(e) {
             networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
             // addSubSectorMarkersToOms(main_devices_data_gmaps);
             // showSelectedSubSectorMarkers(sector_MarkersArray);
-        }
+        // }
 
         /***************GOOGLE EARTH CODE*******************/
         /*Clear all the elements from google earth*/
@@ -165,7 +166,7 @@ $("#resetFilters").click(function(e) {
 
     } else {
         
-        if(isFreeze == 0) {            
+        // if(isFreeze == 0) {            
 
             /*Reset filter object variable*/
             appliedFilterObj_gmaps = {};
@@ -182,7 +183,7 @@ $("#resetFilters").click(function(e) {
             networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
             // addSubSectorMarkersToOms(main_devices_data_gmaps);
             // showSelectedSubSectorMarkers(sector_MarkersArray);
-        }
+        // }
     }
 });
 
@@ -190,14 +191,14 @@ function showAdvSearch() {
     showSpinner();
     $("#advFilterContainerBlock").hide();
     $("#advSearchContainerBlock").show();
-    console.log(data_for_filters);
+    // console.log(data_for_filters);
     advJustSearch.getFilterInfofrompagedata("searchInfoModal", "Advance Search", "advSearchBtn");
 }
 
 $("#setAdvSearchBtn").click(function(e) {
     showSpinner();
     advJustSearch.showNotification();
-    console.log(data_for_filters);
+
     advJustSearch.searchAndCenterData(data_for_filters);
 });
 
