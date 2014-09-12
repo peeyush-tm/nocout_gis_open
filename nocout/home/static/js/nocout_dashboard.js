@@ -191,7 +191,8 @@ function createAreaChart(domElement,chartData) {
         },
         tooltip: {
             shared: true,
-            valueSuffix: ' units'
+            valueSuffix: ' units',
+            useHTML : true            
         },
         credits: {
             enabled: false

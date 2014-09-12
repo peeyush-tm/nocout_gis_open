@@ -830,10 +830,12 @@ class BulkFetchLPDataApi(View):
                         # threshold configuration for getting warning, critical comparison values
                         tc = ThresholdConfiguration.objects.get(pk=ts.threshold_template.id)
 
+                        #default image to be loaded
+                        image_partial = "icons/mobilephonetower10.png"
+
                         # comparing threshold values to get icon
                         try:
                             # icon as per thematic setting
-                            image_partial = "icons/mobilephonetower10.png"
 
                             if len(device_value):
                                 # live polled value of device service

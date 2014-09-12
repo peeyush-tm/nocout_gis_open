@@ -295,6 +295,8 @@ $.urlParam = function(name){
                                 pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
                                 shared: true,
                                 crosshairs: true,
+                                useHTML : true,
+                                // shadow : false,
                                 valueSuffix: single_service_data.valuesuffix
                             },
                             xAxis: {
