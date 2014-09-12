@@ -1727,6 +1727,20 @@ def get_new_configuration_for_svc_edit(request, service_id="", template_id=""):
 
 @dajaxice_register(method='GET')
 def get_ping_configuration_for_svc_edit(request, device_id):
+    """Get ping configuration for service
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        device_id (int): device id
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
     dajax = Dajax()
     params = []
 
@@ -1735,7 +1749,6 @@ def get_ping_configuration_for_svc_edit(request, device_id):
     try:
         # get device ping configuration object
         dpc = DevicePingConfiguration.objects.get(device_name=device.device_name)
-        print "****************************** device_type - ", device.device_type
         packets = dpc.packets
         timeout = dpc.timeout
         normal_check_interval = dpc.normal_check_interval
@@ -1744,6 +1757,8 @@ def get_ping_configuration_for_svc_edit(request, device_id):
         pl_warning = dpc.pl_warning
         pl_critical = dpc.pl_critical
     except Exception as e:
+        # if there are no ping parmeters for this device in 'service_devicepingconfiguration'
+        # than get default ping parameters from 'settings.py"
         packets = settings.PING_PACKETS
         timeout = settings.PING_TIMEOUT
         normal_check_interval = settings.PING_NORMAL_CHECK_INTERVAL
@@ -1751,17 +1766,9 @@ def get_ping_configuration_for_svc_edit(request, device_id):
         rta_critical = settings.PING_RTA_CRITICAL
         pl_warning = settings.PING_PL_WARNING
         pl_critical = settings.PING_PL_CRITICAL
-        print "********************* Exception in get_ping_method"
         logger.info(e.message)
-    print "******************************** device_id - ", device_id
-    print "******************************** packets - ", packets
-    print "******************************** timeout - ", timeout
-    print "******************************** normal_check_interval - ", normal_check_interval
-    print "******************************** rta_warning - ", rta_warning
-    print "******************************** rta_critical - ", rta_critical
-    print "******************************** pl_warning - ", pl_warning
-    print "******************************** pl_critical - ", pl_critical
 
+    # generating html content for ping parameters table
     params.append('<br />')
     params.append('<h5 class="text-danger"><b>Ping configuration:</b></h5>')
     params.append('<div class=""><div class="box border red"><div class="box-title"><h4><i class="fa fa-table"></i>Ping Parameters:</h4></div>')
