@@ -9,7 +9,7 @@ from dajax.core import Dajax
 from dajaxice.decorators import dajaxice_register
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
     DeviceTypeFieldsValue, Country, State
-from service.models import Service, ServiceParameters, DeviceServiceConfiguration
+from service.models import Service, ServiceParameters, DeviceServiceConfiguration, DevicePingConfiguration
 from site_instance.models import SiteInstance
 from django.conf import settings
 
@@ -858,12 +858,26 @@ def add_device_to_nms_core(request, device_id, ping_data):
 
         # converting string in 'r' to dictionary
         response_dict = ast.literal_eval(r.text)
+
         if r:
             result['data'] = device_data
             result['success'] = 1
-            if response_dict['error_code'] is not None:
+            if response_dict.get('success') != 1:
                 result['message'] = response_dict['error_message'].capitalize()
             else:
+                # device ping configuration
+                dpc = DevicePingConfiguration()
+                dpc.device_name = device.device_name
+                dpc.device_alias = device.device_alias
+                dpc.packets = ping_data['packets']
+                dpc.timeout = ping_data['timeout']
+                dpc.normal_check_interval = ping_data['normal_check_interval']
+                dpc.rta_warning = ping_data['rta_warning']
+                dpc.rta_critical = ping_data['rta_critical']
+                dpc.pl_warning = ping_data['pl_warning']
+                dpc.pl_critical = ping_data['pl_critical']
+                dpc.save()
+
                 result['message'] = "<i class=\"fa fa-check green-dot\"></i>Device added successfully."
                 # set 'is_added_to_nms' to 1 after device successfully added to nocout nms core
                 device.is_added_to_nms = 1
@@ -1712,6 +1726,73 @@ def get_new_configuration_for_svc_edit(request, service_id="", template_id=""):
 
 
 @dajaxice_register(method='GET')
+def get_ping_configuration_for_svc_edit(request, device_id):
+    """Get ping configuration for service
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        device_id (int): device id
+
+    Returns:
+        dajax (str): string containing list of dictionaries
+                    i.e. [{"cmd": "as",
+                           "id": "#name_id",
+                           "val": "<option value='' selected>Select</option><option value='2'>Name</option>",
+                           "prop": "innerHTML"}]
+
+    """
+    dajax = Dajax()
+    params = []
+
+    # get device
+    device = Device.objects.get(pk=device_id)
+    try:
+        # get device ping configuration object
+        dpc = DevicePingConfiguration.objects.get(device_name=device.device_name)
+        packets = dpc.packets
+        timeout = dpc.timeout
+        normal_check_interval = dpc.normal_check_interval
+        rta_warning = dpc.rta_warning
+        rta_critical = dpc.rta_critical
+        pl_warning = dpc.pl_warning
+        pl_critical = dpc.pl_critical
+    except Exception as e:
+        # if there are no ping parmeters for this device in 'service_devicepingconfiguration'
+        # than get default ping parameters from 'settings.py"
+        packets = settings.PING_PACKETS
+        timeout = settings.PING_TIMEOUT
+        normal_check_interval = settings.PING_NORMAL_CHECK_INTERVAL
+        rta_warning = settings.PING_RTA_WARNING
+        rta_critical = settings.PING_RTA_CRITICAL
+        pl_warning = settings.PING_PL_WARNING
+        pl_critical = settings.PING_PL_CRITICAL
+        logger.info(e.message)
+
+    # generating html content for ping parameters table
+    params.append('<br />')
+    params.append('<h5 class="text-danger"><b>Ping configuration:</b></h5>')
+    params.append('<div class=""><div class="box border red"><div class="box-title"><h4><i class="fa fa-table"></i>Ping Parameters:</h4></div>')
+    params.append('<div class="box-body"><table class="table">')
+    params.append('<thead><tr><th>Packets</th><th>Timeout</th><th>Normal Check Interval</th></tr></thead>')
+    params.append('<tbody>')
+    params.append('<tr>')
+    params.append('<td contenteditable="true" id="packets">{}</td>'.format(packets))
+    params.append('<td contenteditable="true" id="timeout">{}</td>'.format(timeout))
+    params.append('<td contenteditable="true" id="normal_check_interval">{}</td>'.format(normal_check_interval))
+    params.append('</tr>')
+    params.append('</tbody>')
+    params.append('<thead><tr><th>Data Source</th><th>Warning</th><th>Critical</th></tr></thead>')
+    params.append('<tbody>')
+    params.append('<tr><td>RTA</td><td contenteditable="true" id="rta_warning">{}</td><td contenteditable="true" id="rta_critical">{}</td></tr>'.format(rta_warning, rta_critical))
+    params.append('<tr><td>PL</td><td contenteditable="true" id="pl_warning">{}</td><td contenteditable="true" id="pl_critical">{}</td></tr>'.format(pl_warning, pl_critical))
+    params.append('</tbody>')
+    params.append('</table>')
+    params.append('</div></div></div>')
+    dajax.assign("#ping_svc", 'innerHTML', ''.join(params))
+    return dajax.json()
+
+
+@dajaxice_register(method='GET')
 def edit_services(request, svc_data, svc_ping=""):
     """Edit device services
 
@@ -1833,6 +1914,40 @@ def edit_services(request, svc_data, svc_ping=""):
                     result['message'] += "<i class=\"fa fa-times red-dot\"></i>Failed to edit service ping. <br />"
                     messages += result['message']
                 else:
+                    # get device ping configuration object
+                    dpc = ""
+                    try:
+                        dpc = DevicePingConfiguration.objects.get(device_name=device_name)
+                    except Exception as e:
+                        logger.info(e.message)
+                    if dpc:
+                        # device ping configuration
+                        device = Device.objects.get(device_name=device_name)
+                        dpc.device_name = device_name
+                        dpc.device_alias = device.device_alias
+                        dpc.packets = svc_ping['packets']
+                        dpc.timeout = svc_ping['timeout']
+                        dpc.normal_check_interval = svc_ping['normal_check_interval']
+                        dpc.rta_warning = svc_ping['rta_warning']
+                        dpc.rta_critical = svc_ping['rta_critical']
+                        dpc.pl_warning = svc_ping['pl_warning']
+                        dpc.pl_critical = svc_ping['pl_critical']
+                        dpc.save()
+                    else:
+                        # device ping configuration
+                        device = Device.objects.get(device_name=device_name)
+                        dpc = DevicePingConfiguration()
+                        dpc.device_name = device_name
+                        dpc.device_alias = device.device_alias
+                        dpc.packets = svc_ping['packets']
+                        dpc.timeout = svc_ping['timeout']
+                        dpc.normal_check_interval = svc_ping['normal_check_interval']
+                        dpc.rta_warning = svc_ping['rta_warning']
+                        dpc.rta_critical = svc_ping['rta_critical']
+                        dpc.pl_warning = svc_ping['pl_warning']
+                        dpc.pl_critical = svc_ping['pl_critical']
+                        dpc.save()
+
                     result['message'] += "<i class=\"fa fa-check green-dot\"></i>Successfully edited service 'ping'. <br />"
                     messages += result['message']
 
