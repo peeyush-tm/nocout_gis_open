@@ -192,7 +192,7 @@ function advanceJustSearchClass() {
 
     this.showNotification= function() {
     	if(!$("span#gis_search_status_txt").length) {
-    		$("<br /><span id='gis_search_status_txt'>Advance Search Applied</span><button class='btn btn-sm pull-right' onclick='resetAdvanceSearch();'>Reset</button>").insertAfter("#gis_status_txt");
+    		$("<br /><span id='gis_search_status_txt'>Advance Search Applied</span><button class='btn btn-sm btn-danger pull-right' style='padding:2px 5px;margin:-3px;' onclick='resetAdvanceSearch();'>Reset</button>").insertAfter("#gis_status_txt");
     	}
     }
 
