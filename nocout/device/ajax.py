@@ -1726,6 +1726,66 @@ def get_new_configuration_for_svc_edit(request, service_id="", template_id=""):
 
 
 @dajaxice_register(method='GET')
+def get_ping_configuration_for_svc_edit(request, device_id):
+    dajax = Dajax()
+    params = []
+
+    # get device
+    device = Device.objects.get(pk=device_id)
+    try:
+        # get device ping configuration object
+        dpc = DevicePingConfiguration.objects.get(device_name=device.device_name)
+        print "****************************** device_type - ", device.device_type
+        packets = dpc.packets
+        timeout = dpc.timeout
+        normal_check_interval = dpc.normal_check_interval
+        rta_warning = dpc.rta_warning
+        rta_critical = dpc.rta_critical
+        pl_warning = dpc.pl_warning
+        pl_critical = dpc.pl_critical
+    except Exception as e:
+        packets = settings.PING_PACKETS
+        timeout = settings.PING_TIMEOUT
+        normal_check_interval = settings.PING_NORMAL_CHECK_INTERVAL
+        rta_warning = settings.PING_RTA_WARNING
+        rta_critical = settings.PING_RTA_CRITICAL
+        pl_warning = settings.PING_PL_WARNING
+        pl_critical = settings.PING_PL_CRITICAL
+        print "********************* Exception in get_ping_method"
+        logger.info(e.message)
+    print "******************************** device_id - ", device_id
+    print "******************************** packets - ", packets
+    print "******************************** timeout - ", timeout
+    print "******************************** normal_check_interval - ", normal_check_interval
+    print "******************************** rta_warning - ", rta_warning
+    print "******************************** rta_critical - ", rta_critical
+    print "******************************** pl_warning - ", pl_warning
+    print "******************************** pl_critical - ", pl_critical
+
+    params.append('<br />')
+    params.append('<h5 class="text-danger"><b>Ping configuration:</b></h5>')
+    params.append('<div class=""><div class="box border red"><div class="box-title"><h4><i class="fa fa-table"></i>Ping Parameters:</h4></div>')
+    params.append('<div class="box-body"><table class="table">')
+    params.append('<thead><tr><th>Packets</th><th>Timeout</th><th>Normal Check Interval</th></tr></thead>')
+    params.append('<tbody>')
+    params.append('<tr>')
+    params.append('<td contenteditable="true" id="packets">{}</td>'.format(packets))
+    params.append('<td contenteditable="true" id="timeout">{}</td>'.format(timeout))
+    params.append('<td contenteditable="true" id="normal_check_interval">{}</td>'.format(normal_check_interval))
+    params.append('</tr>')
+    params.append('</tbody>')
+    params.append('<thead><tr><th>Data Source</th><th>Warning</th><th>Critical</th></tr></thead>')
+    params.append('<tbody>')
+    params.append('<tr><td>RTA</td><td contenteditable="true" id="rta_warning">{}</td><td contenteditable="true" id="rta_critical">{}</td></tr>'.format(rta_warning, rta_critical))
+    params.append('<tr><td>PL</td><td contenteditable="true" id="pl_warning">{}</td><td contenteditable="true" id="pl_critical">{}</td></tr>'.format(pl_warning, pl_critical))
+    params.append('</tbody>')
+    params.append('</table>')
+    params.append('</div></div></div>')
+    dajax.assign("#ping_svc", 'innerHTML', ''.join(params))
+    return dajax.json()
+
+
+@dajaxice_register(method='GET')
 def edit_services(request, svc_data, svc_ping=""):
     """Edit device services
 
@@ -1847,6 +1907,40 @@ def edit_services(request, svc_data, svc_ping=""):
                     result['message'] += "<i class=\"fa fa-times red-dot\"></i>Failed to edit service ping. <br />"
                     messages += result['message']
                 else:
+                    # get device ping configuration object
+                    dpc = ""
+                    try:
+                        dpc = DevicePingConfiguration.objects.get(device_name=device_name)
+                    except Exception as e:
+                        logger.info(e.message)
+                    if dpc:
+                        # device ping configuration
+                        device = Device.objects.get(device_name=device_name)
+                        dpc.device_name = device_name
+                        dpc.device_alias = device.device_alias
+                        dpc.packets = svc_ping['packets']
+                        dpc.timeout = svc_ping['timeout']
+                        dpc.normal_check_interval = svc_ping['normal_check_interval']
+                        dpc.rta_warning = svc_ping['rta_warning']
+                        dpc.rta_critical = svc_ping['rta_critical']
+                        dpc.pl_warning = svc_ping['pl_warning']
+                        dpc.pl_critical = svc_ping['pl_critical']
+                        dpc.save()
+                    else:
+                        # device ping configuration
+                        device = Device.objects.get(device_name=device_name)
+                        dpc = DevicePingConfiguration()
+                        dpc.device_name = device_name
+                        dpc.device_alias = device.device_alias
+                        dpc.packets = svc_ping['packets']
+                        dpc.timeout = svc_ping['timeout']
+                        dpc.normal_check_interval = svc_ping['normal_check_interval']
+                        dpc.rta_warning = svc_ping['rta_warning']
+                        dpc.rta_critical = svc_ping['rta_critical']
+                        dpc.pl_warning = svc_ping['pl_warning']
+                        dpc.pl_critical = svc_ping['pl_critical']
+                        dpc.save()
+
                     result['message'] += "<i class=\"fa fa-check green-dot\"></i>Successfully edited service 'ping'. <br />"
                     messages += result['message']
 
