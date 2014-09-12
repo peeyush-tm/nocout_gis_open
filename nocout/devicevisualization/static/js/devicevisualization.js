@@ -8,6 +8,19 @@ if(!($.cookie('isFreezeSelected'))) {
     $.cookie("isFreezeSelected", 0);
 }
 
+/*Save cookie value to isFreeze variable*/
+isFreeze = $.cookie("isFreezeSelected");
+
+if(isFreeze == 1) {
+    $("#showToolsBtn").removeClass("btn-info");
+    $("#showToolsBtn").addClass("btn-warning");
+} else {
+    $("#showToolsBtn").addClass("btn-info");
+    $("#showToolsBtn").removeClass("btn-warning");
+}
+
+
+
 /*Call get_page_status function to show the current status*/
 get_page_status();
 
@@ -41,8 +54,7 @@ $("#state").change(function(e) {
             $("#city").append(city_options[j]);
         }
         var city_obj = $("#city").children('option:not([state_id='+state_id+'])');
-//        city_obj.hide();
-//        city_obj.attr('disabled', true);
+
         $("#city").prepend('<option value="">Select City</option>');
         city_obj.each(function(){
             city_options.push($(this));
@@ -54,7 +66,6 @@ $("#state").change(function(e) {
         for (var j =0 ; j < city_options.length; j++){
             $("#city").append(city_options[j]);
         }
-//        $("#city").children('option:not([state_id='+state_id+'])').attr('disabled', false);
     }
     networkMapInstance.makeFiltersArray(mapPageType);
 });
@@ -84,13 +95,6 @@ $("#technology").change(function(e) {
     var tech_id = $(this).val();
 
     if (tech_id != ""){
-        // $("select#vendor > option").each(function() {
-        //     if($(this).attr('tech_id')=== tech_id) {
-        //         $(this).show();
-        //     } else {
-        //         $(this).hide();
-        //     }
-        // });
         $("#vendor").val(tech_id);
     }
     networkMapInstance.makeFiltersArray(mapPageType);
@@ -100,20 +104,18 @@ $("#technology").change(function(e) {
 /*This event triggers when Reset Filter button clicked*/
 $("#resetFilters").click(function(e) {
 
-    // if(isFreeze == 0) {
-        
-        $("#resetFilters").button("loading");
-        /*Reset The basic filters dropdown*/
-        $("#technology").val($("#technology option:first").val());
-        $("#vendor").val($("#vendor option:first").val());
-        $("#state").val($("#state option:first").val());
-        $("#city").val($("#city option:first").val());
-        /*Reset search txt box*/
-        $("#searchTxt").val("");
-        data_for_filters= main_devices_data_gmaps;
-        $("#lat_lon_search").val("");
-        isCallCompleted = 1;
-    // }
+    $("#resetFilters").button("loading");
+    /*Reset The basic filters dropdown*/
+    $("#technology").val($("#technology option:first").val());
+    $("#vendor").val($("#vendor option:first").val());
+    $("#state").val($("#state option:first").val());
+    $("#city").val($("#city option:first").val());
+    /*Reset search txt box*/
+    $("#searchTxt").val("");
+    $("#lat_lon_search").val("");
+
+    data_for_filters = main_devices_data_gmaps;    
+    isCallCompleted = 1;/*Remove this call if server call is started on click of reset button*/
 
     if(window.location.pathname.indexOf("google_earth") > -1) {
         
@@ -121,11 +123,6 @@ $("#resetFilters").click(function(e) {
 
             /*Reset filter object variable*/
             appliedFilterObj_gmaps = {};
-
-            /*Reset markers, polyline & filters*/
-
-            // tempFilteredData= [];
-            
 
             networkMapInstance.clearGmapElements();
 
@@ -135,8 +132,6 @@ $("#resetFilters").click(function(e) {
             /*Call the make network to create the BS-SS network on the google map*/
             // networkMapInstance.getDevicesData_gmap();
             networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
-            // addSubSectorMarkersToOms(main_devices_data_gmaps);
-            // showSelectedSubSectorMarkers(sector_MarkersArray);
         // }
 
         /***************GOOGLE EARTH CODE*******************/
@@ -159,15 +154,11 @@ $("#resetFilters").click(function(e) {
             /*Reset markers, polyline & filters*/
             networkMapInstance.clearGmapElements();
 
-            // tempFilteredData= [];
-
             /*Reset Global Variables & Filters*/
             networkMapInstance.resetVariables_gmap();            
             /*Call the make network to create the BS-SS network on the google map*/
             // networkMapInstance.getDevicesData_gmap();
             networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
-            // addSubSectorMarkersToOms(main_devices_data_gmaps);
-            // showSelectedSubSectorMarkers(sector_MarkersArray);
         // }
     }
 });
@@ -365,6 +356,14 @@ function removetoolsPanel() {
     /*Hide Tools Button*/
     $("#showToolsBtn").removeClass("hide");
 
+    if(isFreeze == 1) {
+        $("#showToolsBtn").removeClass("btn-info");
+        $("#showToolsBtn").addClass("btn-warning");
+    } else {
+        $("#showToolsBtn").addClass("btn-info");
+        $("#showToolsBtn").removeClass("btn-warning");
+    }
+
     /*Show Remove Button*/
     $("#removeToolsBtn").addClass("hide");
 
@@ -548,21 +547,35 @@ function disableAdvanceButton(status) {
     var buttonEls= ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn'];
     var selectBoxes= ['technology', 'vendor', 'state', 'city'];
     var textBoxes= ['searchTxt','lat_lon_search'];
-    var disablingBit= false;
+    var disablingBit = false;
     if(status=== undefined) {
         disablingBit= true;
-    }
+        for(var i=0; i< buttonEls.length; i++) {
+            // $('#'+buttonEls[i]).prop('disabled', disablingBit);
+            $('#'+buttonEls[i]).button('loading');
+        }
 
-    for(var i=0; i< buttonEls.length; i++) {
-        $('#'+buttonEls[i]).prop('disabled', disablingBit);
-    }
+        for(var i=0; i< selectBoxes.length; i++) {
+            document.getElementById(selectBoxes[i]).disabled = disablingBit;    
+        }
 
-    for(var i=0; i< selectBoxes.length; i++) {
-        document.getElementById(selectBoxes[i]).disabled = disablingBit;    
-    }
+        for(var i=0; i< textBoxes.length; i++) {
+            document.getElementById(textBoxes[i]).disabled = disablingBit;
+        }
+    } else {
+        disablingBit= false;
+        for(var i=0; i< buttonEls.length; i++) {
+            // $('#'+buttonEls[i]).prop('disabled', disablingBit);
+            $('#'+buttonEls[i]).button('complete');
+        }
 
-    for(var i=0; i< textBoxes.length; i++) {
-        document.getElementById(textBoxes[i]).disabled = disablingBit;
+        for(var i=0; i< selectBoxes.length; i++) {
+            document.getElementById(selectBoxes[i]).disabled = disablingBit;    
+        }
+
+        for(var i=0; i< textBoxes.length; i++) {
+            document.getElementById(textBoxes[i]).disabled = disablingBit;
+        }
     }
 }
 
