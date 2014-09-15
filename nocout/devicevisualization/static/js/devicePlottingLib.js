@@ -435,7 +435,7 @@ function devicePlottingClass_gmap() {
 			/*Ajax call to the API*/
 			$.ajax({
 				crossDomain: true,
-				url : window.location.origin+"/"+"device/stats/?filters="+get_param_filter+"&page_number="+hitCounter,
+				url : window.location.origin+"/"+"device/stats/?total_count="+devicesCount+"&page_number="+hitCounter,
 				// url : window.location.origin+"/"+"static/new_format.json",
 				type : "GET",
 				dataType : "json",
@@ -466,10 +466,8 @@ function devicePlottingClass_gmap() {
 							if(devicesObject.data.objects.children.length > 0) {
 
 								/*Update the device count with the received data*/
-								if(devicesObject.data.meta.total_count != undefined) {
+								if(devicesCount == 0) {
 									devicesCount = devicesObject.data.meta.total_count;
-								} else {
-									devicesCount = 1;
 								}
 
 								/*Update the device count with the received data*/
