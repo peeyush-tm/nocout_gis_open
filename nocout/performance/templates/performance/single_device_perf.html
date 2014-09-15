@@ -184,7 +184,9 @@
                     else{
                        return results[1] || 0;
                     }};
+
             start_date= $.urlParam('start_date');
+            
             if (start_date){
                  $("#start_date").val(decodeURIComponent(start_date));
             }
@@ -244,14 +246,21 @@
                 '?download_csv=true' +'&start_date=' + encodeURIComponent($("#start_date").val()) +
                 '&end_date=' + encodeURIComponent($("#end_date").val()))
             });
+            var base_url = "";
+            /*Set the base url of application for ajax calls*/
+            if(window.location.origin) {
+                base_url = window.location.origin;
+            } else {
+                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+            }
 
 
 			/*Hide Status Container*/
 			//$("#status_container").hide();
 
-			var devicesUrl = window.location.origin + "/" + "{{ get_devices_url }}";
-			var statusUrl = window.location.origin + "/" + "{{ get_status_url }}" + "/";
-			var serviceUrl = window.location.origin + "/" + "{{ get_services_url }}" + "/";
+			var devicesUrl = base_url + "/" + "{{ get_devices_url }}";
+			var statusUrl = base_url + "/" + "{{ get_status_url }}" + "/";
+			var serviceUrl = base_url + "/" + "{{ get_services_url }}" + "/";
 
 			current_device = "{{ device.id }}";
 			perfInstance = new nocoutPerfLib();
