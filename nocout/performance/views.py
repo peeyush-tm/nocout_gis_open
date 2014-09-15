@@ -114,7 +114,7 @@ class LivePerformanceListing(BaseDatatableView):
                 organization_ids = [self.request.user.userprofile.organization.id]
 
             if self.request.GET['page_type'] == 'customer':
-                return self.get_initial_query_set_data(organization_ids=organization_ids)
+                return self.get_initial_query_set_data(organization_ids=organization_ids, device_association='substation')
 
             elif self.request.GET['page_type'] == 'network':
                 return self.get_initial_query_set_data(organization_ids=organization_ids,
@@ -135,7 +135,7 @@ class LivePerformanceListing(BaseDatatableView):
             device_tab_technology = self.request.GET.get('data_tab')
             device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
             # get only devices added to NMS and none other
-            if device_technology_id == int(P2P.ID):
+            if int(device_technology_id) == int(P2P.ID):
                 devices = Device.objects.filter(~Q(id__in=SubStation.objects.filter(id__in = Circuit.objects.filter(circuit_type__icontains="Backhaul").values_list('sub_station',flat=True)).values_list('device', flat=True)),
                                                 ~Q(id__in=Sector.objects.filter(id__in = Circuit.objects.filter(circuit_type__icontains="Backhaul").values_list('sector',flat=True)).values_list('sector_configured_on', flat=True)),
                                                 is_added_to_nms= 1,
