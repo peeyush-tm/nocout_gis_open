@@ -15,11 +15,20 @@ var advJustSearch_self = "",
     searchJustquery_data=[];
     result_Just_plot_devices=[], maxZoomLevel= 15, statusText= "Advance Search Applied";
 
+/*Get The Root URL*/
+if(window.location.origin) {
+    base_url = window.location.origin;
+} else {
+    base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+}
+
 var advanceSearchMasterObj= {};
 advanceSearchMasterObj.previouslySearchedMarkersList= [];
-advanceSearchMasterObj.searchedIconUrl= 'http://www.iconsdb.com/icons/preview/color/FF1C33/arrow-211-xl.png';
+// advanceSearchMasterObj.searchedIconUrl= 'http://www.iconsdb.com/icons/preview/color/FF1C33/arrow-211-xl.png';
+advanceSearchMasterObj.searchedIconUrl = base_url+'/static/img/icons/bs_bounce.png';
 advanceSearchMasterObj.searchedLinesByCircuitIDs= [];
-advanceSearchMasterObj.searchedLinesIconUrl= 'http://www.iconsdb.com/icons/preview/color/FF1C33/arrow-211-xl.png';
+// advanceSearchMasterObj.searchedLinesIconUrl= 'http://www.iconsdb.com/icons/preview/color/FF1C33/arrow-211-xl.png';
+advanceSearchMasterObj.searchedLinesIconUrl = base_url+'/static/img/icons/ss_bounce.png';
 advanceSearchMasterObj.maxSearchLevelNumber= 20;
 advanceSearchMasterObj.searchNumberLimitMessage= 'Too many Searched Results. Please filter again. No Markers drawn'
 
@@ -219,11 +228,11 @@ function advanceJustSearchClass() {
         var searchedMarkerLatLong= new google.maps.LatLng(lat, long);
 
         //create a new marker
-        var showSearchedResultMarker= new google.maps.Marker({position: searchedMarkerLatLong, zIndex: 100})
+        var showSearchedResultMarker= new google.maps.Marker({position: searchedMarkerLatLong, zIndex: 500})
         //push marker in the previouslySearchedMarkersList array
         advanceSearchMasterObj.previouslySearchedMarkersList.push(showSearchedResultMarker);
 
-//IF NOT FILTER APPLIED IS IN CITY OR STATE, THEN WE WILL NOT CHANGE ANY ICONS
+        //IF NOT FILTER APPLIED IS IN CITY OR STATE, THEN WE WILL NOT CHANGE ANY ICONS
     
         var selectedInputs= advJustSearch_self.getInputArray();
         var isOnlyStateorCityIsApplied= false;
@@ -238,12 +247,11 @@ function advanceJustSearchClass() {
                     //set icon from global object
                     showSearchedResultMarker.setIcon(advanceSearchMasterObj.searchedIconUrl);
                 }
-                //set animation to bounce
-                // showSearchedResultMarker.setAnimation(null);
+                //set animation to marker bounce
                 if(showSearchedResultMarker.getAnimation() != null) {
                     showSearchedResultMarker.setAnimation(null);
                 } else {
-                    showSearchedResultMarker.setAnimation(google.maps.Animation.DROP);
+                    showSearchedResultMarker.setAnimation(google.maps.Animation.BOUNCE);
                 }
                 //show the marker on map.
                 showSearchedResultMarker.setMap(mapInstance);
@@ -264,7 +272,7 @@ function advanceJustSearchClass() {
     this.findTheLineToUpdate= function(device,searchedText) {
         for(var i=0; i< device['data']['param']['sector'].length; i++) {
             for(var j=0; j< searchedText.length; j++) {
-                if((String(searchedText[j]).toLowerCase())== (String(device['data']['param']['sector'][i]['circuit_id']).toLowerCase())) {
+                if((String(searchedText[j]).toLowerCase())== (String(device['data']['param']['sector'][i]['circuit_id']).toLowerCase())) {                   
                     advJustSearch_self.applyIconToSearchedResult(device['data']['param']['sector'][i]['sub_station'][0]['data']['lat'], device['data']['param']['sector'][i]['sub_station'][0]['data']['lon'], advanceSearchMasterObj.searchedLinesIconUrl);
                     advanceSearchMasterObj.searchedLinesByCircuitIDs.push(new google.maps.LatLng(device['data']['param']['sector'][i]['sub_station'][0]['data']['lat'], device['data']['param']['sector'][i]['sub_station'][0]['data']['lon']));
                 }    
@@ -316,7 +324,7 @@ function advanceJustSearchClass() {
             }
 
             //check for Ip next
-            var searchedIps= selectedInputs["IP"];
+            var searchedIps = selectedInputs["IP"];
             var isSearchedIpPresent= false;
             var isSubStationIpPresent= false;
             if(searchedIps.length) {
@@ -333,7 +341,6 @@ function advanceJustSearchClass() {
                 if(common.length) {
                     isSearchedIpPresent= true;
                 }
-
                 for(var count0= 0; count0< searchedIps.length; count0++) {
                     for(var count= 0; count< deviceJson["data"]["param"]["sector"].length; count++) {
                         if(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]) {
@@ -361,12 +368,13 @@ function advanceJustSearchClass() {
                 var common = $.grep(deviceCircuidIds, function(element) {
                     return $.inArray(element, searchedCircuitIds ) !== -1;
                 });
+
                 if(common.length) {
                     for(var count0= 0; count0< common.length; count0++) {
                         for(var count=0; count< deviceJson["data"]["param"]["sector"].length; count++) {
                             if(deviceJson["data"]["param"]["sector"][count]["circuit_id"]== common[count0]) {
                                 extendBound(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lat"], deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lon"]);
-                                advJustSearch_self.applyIconToSearchedResult(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lat"], deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lon"]);
+                                advJustSearch_self.applyIconToSearchedResult(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lat"], deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lon"],advanceSearchMasterObj.searchedLinesIconUrl);
                                 isCircuitIdPresent= true;
                             }
                         }        
@@ -417,14 +425,6 @@ function advanceJustSearchClass() {
 
 		if(searchedStations.length) {
 			if(searchedStations.length > advanceSearchMasterObj.maxSearchLevelNumber) {
-   //              // $.gritter.add({
-   //              //     // (string | mandatory) the heading of the notification
-   //              //     title: 'GIS : Search',
-   //              //     // (string | mandatory) the text inside the notification
-   //              //     text: advanceSearchMasterObj.searchNumberLimitMessage,
-   //              //     // (bool | optional) if you want it to fade out on its own or just sit there
-   //              //     sticky: false
-   //              // });
                 advanceSearchMasterObj.searchedLinesByCircuitIDs= [];
                 advJustSearch_self.resetPreviousSearchedMarkers();
             }

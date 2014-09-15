@@ -137,7 +137,8 @@ var App = function () {
 	/*-----------------------------------------------------------------------------------*/
 	var responsiveSidebar = function () {
 		//Handle sidebar collapse on screen width
-		var width = $(window).width();
+		// var width = $(window).width();
+        var width = document.body.offsetWidth;
 		if ( width < 768 ) {
 			is_mobile = true;
 			//Hide the sidebar completely
@@ -692,7 +693,7 @@ var App = function () {
 			  successMessage: 'Data saved.',
 			  errorMessage: 'Error saving data',
 			  progressMessage: 'Saving data',
-			  showCloseButton: true,
+			  showCloseButton: true
 			}, {
 			  url: 'http://www.example.com/data'
 			});
@@ -2252,54 +2253,54 @@ var App = function () {
 				{
 					title: 'All Day Event',
 					start: new Date(y, m, 1),
-					backgroundColor: Theme.colors.blue,
+					backgroundColor: Theme.colors.blue
 				},
 				{
 					title: 'Long Event',
 					start: new Date(y, m, d-5),
 					end: new Date(y, m, d-2),
-					backgroundColor: Theme.colors.red,
+					backgroundColor: Theme.colors.red
 				},
 				{
 					id: 999,
 					title: 'Repeating Event',
 					start: new Date(y, m, d-3, 16, 0),
 					allDay: false,
-					backgroundColor: Theme.colors.yellow,
+					backgroundColor: Theme.colors.yellow
 				},
 				{
 					id: 999,
 					title: 'Repeating Event',
 					start: new Date(y, m, d+4, 16, 0),
 					allDay: false,
-					backgroundColor: Theme.colors.primary,
+					backgroundColor: Theme.colors.primary
 				},
 				{
 					title: 'Meeting',
 					start: new Date(y, m, d, 10, 30),
 					allDay: false,
-					backgroundColor: Theme.colors.green,
+					backgroundColor: Theme.colors.green
 				},
 				{
 					title: 'Lunch',
 					start: new Date(y, m, d, 12, 0),
 					end: new Date(y, m, d, 14, 0),
 					allDay: false,
-					backgroundColor: Theme.colors.red,
+					backgroundColor: Theme.colors.red
 				},
 				{
 					title: 'Birthday Party',
 					start: new Date(y, m, d+1, 19, 0),
 					end: new Date(y, m, d+1, 22, 30),
 					allDay: false,
-					backgroundColor: Theme.colors.gray,
+					backgroundColor: Theme.colors.gray
 				},
 				{
 					title: 'Click for Google',
 					start: new Date(y, m, 28),
 					end: new Date(y, m, 29),
 					url: 'http://google.com/',
-					backgroundColor: Theme.colors.green,
+					backgroundColor: Theme.colors.green
 				}
 			]
 		});
@@ -2390,7 +2391,8 @@ var App = function () {
 		});
 		
 		function handleIsotopeStretch() {
-			var width = $(window).width();
+			// var width = $(window).width();
+            var width = document.body.offsetWidth;
 			if ( width < 768 ) {
 				$('#filter-items .item').addClass('width-100');
 			}
@@ -2430,7 +2432,7 @@ var App = function () {
 			resizeTimer = setTimeout(function() {
 					var myWidth = 442, percentageWidth = .95;
 					if (jQuery('#cboxOverlay').is(':visible')) {
-						$.colorbox.resize({ width: ( $(window).width() > ( myWidth+20) )? myWidth : Math.round( $(window).width()*percentageWidth ) });
+						$.colorbox.resize({ width: ( document.body.offsetWidth > ( myWidth+20) )? myWidth : Math.round( document.body.offsetWidth*percentageWidth ) });
 						$('.cboxPhoto').css( {
 							width: $('#cboxLoadedContent').innerWidth(),
 							height: 'auto'
@@ -2671,7 +2673,7 @@ var App = function () {
 				yaxis: {
 					ticks: 3,
 					tickDecimals: 0
-				},
+				}
 			});
 			function showTooltip(x, y, contents) {
                     $('<div id="tooltip">' + contents + '</div>').css({
@@ -2787,7 +2789,7 @@ var App = function () {
 					colors: ["#D9534F"],
 					grid: {
 						color: "#999",
-						borderWidth: 0,
+						borderWidth: 0
 					},
 					selection: {
 						mode: "xy",
@@ -2868,7 +2870,7 @@ var App = function () {
 							},
 							ticks:6, 
 							tickDecimals: 0, 
-							tickColor: chartColor,
+							tickColor: chartColor
 					   },
 					   yaxis: {
 							font: {
@@ -3361,7 +3363,7 @@ var App = function () {
                     jQuery(el).removeAttr("style");
                 }
             });
-        },
+        }
     };
 }();
 (function (a, b) {

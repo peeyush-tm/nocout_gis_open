@@ -1,5 +1,6 @@
 /*Global Variables*/
-var mapInstance = "",
+var base_url = "",
+	mapInstance = "",
 	gmap_self = "",
 	currentDomElement = "",
 	main_devices_data_gmaps = [],
@@ -373,9 +374,12 @@ function devicePlottingClass_gmap() {
                     google.maps.event.removeListener(listener);
                 });
 			});
-
-			/*Add Full Screen Control*/
-			mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(new FullScreenControl(mapInstance));
+			
+			/*Don't show full screen control in IE*/
+			if(window.navigator.appName.indexOf('internet explorer') == -1 && window.navigator.appName.indexOf('Microsoft Internet Explorer') == -1) {
+				/*Add Full Screen Control*/
+				mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(new FullScreenControl(mapInstance));
+			}
 
 			/*Create performance lib instance*/
             gisPerformanceClass= new GisPerformance();
@@ -406,7 +410,6 @@ function devicePlottingClass_gmap() {
 	 * @method getDevicesData_gmap
 	 */
 	this.getDevicesData_gmap = function() {
-
 		var get_param_filter = "";
 		/*If any advance filters are applied then pass the advance filer with API call else pass blank array*/
 		if(appliedAdvFilter.length > 0) {
@@ -434,9 +437,8 @@ function devicePlottingClass_gmap() {
 
 			/*Ajax call to the API*/
 			$.ajax({
-				crossDomain: true,
-				url : window.location.origin+"/"+"device/stats/?total_count="+devicesCount+"&page_number="+hitCounter,
-				// url : window.location.origin+"/"+"static/new_format.json",
+				url : base_url+"/"+"device/stats/?total_count="+devicesCount+"&page_number="+hitCounter,
+				// url : base_url+"/"+"static/new_format.json",
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
@@ -446,7 +448,7 @@ function devicePlottingClass_gmap() {
 
 						if(result.data.objects != null) {
 
-							hitCounter = hitCounter + 1;							
+							hitCounter = hitCounter + 1;
 							/*First call case*/
 							if(devicesObject.data == undefined) {
 
@@ -483,9 +485,9 @@ function devicePlottingClass_gmap() {
 								}
 
 								if(result.data.objects.data.unspiderfy_icon != "" && result.data.objects.data.unspiderfy_icon != undefined) {
-									clusterIcon = window.location.origin+"/static/img/icons/bs.png";
+									clusterIcon = base_url+"/static/img/icons/bs.png";
 								} else {
-									clusterIcon = window.location.origin+"/static/img/icons/bs.png";
+									clusterIcon = base_url+"/static/img/icons/bs.png";
 								}
 
 								/*Check that any advance filter is applied or not*/
@@ -522,7 +524,6 @@ function devicePlottingClass_gmap() {
 								isCallCompleted = 1;
 								gmap_self.plotDevices_gmap([],"base_station");
 
-
 								disableAdvanceButton('no');
 
 								/*Recall the server after particular timeout if system is not freezed*/
@@ -540,6 +541,7 @@ function devicePlottingClass_gmap() {
 						} else {
 							
 							isCallCompleted = 1;
+							disableAdvanceButton('no');
 							gmap_self.plotDevices_gmap([],"base_station");
 
 							/*Hide The loading Icon*/
@@ -556,6 +558,7 @@ function devicePlottingClass_gmap() {
 					} else {
 
 						isCallCompleted = 1;
+						disableAdvanceButton('no');
 						gmap_self.plotDevices_gmap([],"base_station");
 
 						setTimeout(function() {
@@ -583,13 +586,14 @@ function devicePlottingClass_gmap() {
 			            // (bool | optional) if you want it to fade out on its own or just sit there
 			            sticky: false
 			        });
-					/*Recall the server after particular timeout if system is not freezed*/
+
+			        disableAdvanceButton('no');
 					/*Hide The loading Icon*/
 					$("#loadingIcon").hide();
 
 					/*Enable the refresh button*/
 					$("#resetFilters").button("complete");
-
+					/*Recall the server after particular timeout if system is not freezed*/
 					setTimeout(function(e){
 						gmap_self.recallServer_gmap();
 					},21600000);
@@ -599,6 +603,7 @@ function devicePlottingClass_gmap() {
 
 			/*Ajax call not completed yet*/
 			isCallCompleted = 1;
+			disableAdvanceButton('no');
 			gmap_self.plotDevices_gmap([],"base_station");
 
 			disableAdvanceButton('no, enable it.');
@@ -630,9 +635,9 @@ function devicePlottingClass_gmap() {
 				ptLat 		       : 	bs_ss_devices[i].data.lat,
 				ptLon 		       : 	bs_ss_devices[i].data.lon,
 				map       	       : 	mapInstance,
-				icon 	  	       : 	new google.maps.MarkerImage(window.location.origin+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
-				oldIcon 	       : 	new google.maps.MarkerImage(window.location.origin+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
-				clusterIcon 	   : 	new google.maps.MarkerImage(window.location.origin+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
+				icon 	  	       : 	new google.maps.MarkerImage(base_url+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
+				oldIcon 	       : 	new google.maps.MarkerImage(base_url+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
+				clusterIcon 	   : 	new google.maps.MarkerImage(base_url+"/static/img/icons/bs.png",null,null,null,new google.maps.Size(20, 40)),
 				pointType	       : 	stationType,
 				child_ss   	       : 	bs_ss_devices[i].data.param.sector,
 				original_sectors   : 	bs_ss_devices[i].data.param.sector,
@@ -722,7 +727,7 @@ function devicePlottingClass_gmap() {
 						ptLat 			 	: bs_ss_devices[i].data.lat,
 						ptLon 			 	: bs_ss_devices[i].data.lon,
 						icon 			 	: 'http 	://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
-						oldIcon 		 	: new google.maps.MarkerImage(window.location.origin+"/"+sector_array[j].markerUrl,null,null,null,new google.maps.Size(32,37)),
+						oldIcon 		 	: new google.maps.MarkerImage(base_url+"/"+sector_array[j].markerUrl,null,null,null,new google.maps.Size(32,37)),
 						clusterIcon 	 	: 'http 	://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
 						pointType 		 	: 'sector_Marker',
 						technology 		 	: sector_array[j].technology,
@@ -780,9 +785,9 @@ function devicePlottingClass_gmap() {
 				    	ptLon 			 : 	ss_marker_obj.data.lon,
 				    	technology 		 : 	ss_marker_obj.data.technology,
 				    	map 			 : 	mapInstance,
-				    	icon 			 : 	new google.maps.MarkerImage(window.location.origin+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
-				    	oldIcon 		 : 	new google.maps.MarkerImage(window.location.origin+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
-				    	clusterIcon 	 : 	new google.maps.MarkerImage(window.location.origin+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
+				    	icon 			 : 	new google.maps.MarkerImage(base_url+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
+				    	oldIcon 		 : 	new google.maps.MarkerImage(base_url+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
+				    	clusterIcon 	 : 	new google.maps.MarkerImage(base_url+"/"+ss_marker_obj.data.markerUrl,null,null,null,new google.maps.Size(32,37)),
 				    	pointType	     : 	"sub_station",
 				    	dataset 	     : 	ss_marker_obj.data.param.sub_station,
 				    	bhInfo 			 : 	[],
@@ -1906,10 +1911,9 @@ function devicePlottingClass_gmap() {
 	this.getBasicFilters = function() {
 
 		var filtersData = {};
-
 		/*Ajax call for filters data*/
 		$.ajax({
-			url : window.location.origin+"/"+"device/filter/",
+			url : base_url+"/"+"device/filter/",
 			// url : "../../static/filter_data.json",
 			success : function(result) {				
 				filtersData = JSON.parse(result);
@@ -2198,8 +2202,8 @@ function devicePlottingClass_gmap() {
 
     		/*ajax call for services & datasource*/
     		$.ajax({
-    			url : window.location.origin+"/"+"device/ts_templates/?technology="+selected_technology,
-    			// url : window.location.origin+"/"+"static/livePolling.json",
+    			url : base_url+"/"+"device/ts_templates/?technology="+selected_technology,
+    			// url : base_url+"/"+"static/livePolling.json",
     			success : function(results) {
 					
 					result = JSON.parse(results);
@@ -2393,8 +2397,8 @@ function devicePlottingClass_gmap() {
 			}
 
 	    	$.ajax({
-				url : window.location.origin+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
-				// url : window.location.origin+"/"+"static/services.json",
+				url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
+				// url : base_url+"/"+"static/services.json",
 				success : function(results) {
 
 					var result = JSON.parse(results);
@@ -2467,7 +2471,7 @@ function devicePlottingClass_gmap() {
 							    });
 
 								var isPlotted = 0;
-								var newIcon = window.location.origin+"/"+result.data.devices[allSSIds[i]].icon;
+								var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon;
 
 								$.grep(masterMarkersObj,function(markers) {
 									var plottedMarkerName = $.trim(markers.device_name);
@@ -2490,7 +2494,7 @@ function devicePlottingClass_gmap() {
 
 											markers.icon = newIcon;
 											markers.setOptions({
-												icon : newIcon,
+												icon : newIcon
 											});
 										}
 									});
@@ -2710,7 +2714,7 @@ function devicePlottingClass_gmap() {
         //first clear the listners. as ruler tool might be in place
         google.maps.event.clearListeners(mapInstance,'click');
 
-        var image = new google.maps.MarkerImage(window.location.origin+"/static/img/icons/caution.png",null,null,null,new google.maps.Size(32, 37));
+        var image = new google.maps.MarkerImage(base_url+"/static/img/icons/caution.png",null,null,null,new google.maps.Size(32, 37));
 
 		google.maps.event.addListener(mapInstance,'click',function(e) {
 

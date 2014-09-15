@@ -253,9 +253,9 @@ function GisPerformance() {
 					//If substation icon is present
 					if(subStationIcon) {
 						//Update icon, oldIcon and clusterIcon for the SubStation Marker
-						subStationMarker.setIcon(createGoogleMarker(window.location.origin + '/'+ subStationIcon, subStationMarker));
-						subStationMarker.oldIcon= (createGoogleMarker(window.location.origin + '/'+ subStationIcon, subStationMarker));
-						subStationMarker.clusterIcon= (createGoogleMarker(window.location.origin + '/'+ subStationIcon, subStationMarker));
+						subStationMarker.setIcon(createGoogleMarker(base_url + '/'+ subStationIcon, subStationMarker));
+						subStationMarker.oldIcon= (createGoogleMarker(base_url + '/'+ subStationIcon, subStationMarker));
+						subStationMarker.clusterIcon= (createGoogleMarker(base_url + '/'+ subStationIcon, subStationMarker));
 					}
 				}
 
@@ -269,7 +269,7 @@ function GisPerformance() {
 						//If Icon for the device is provided in performance data
 						if(deviceObject["performance_data"]["performance_icon"]) {
 							//Update oldIcon for the device to the Given Icon
-							deviceMarkers[i].oldIcon= (createGoogleMarker(window.location.origin + '/'+ deviceObject["performance_data"]["performance_icon"], deviceMarkers[i]));
+							deviceMarkers[i].oldIcon= (createGoogleMarker(base_url + '/'+ deviceObject["performance_data"]["performance_icon"], deviceMarkers[i]));
 						}
 					}
 					
