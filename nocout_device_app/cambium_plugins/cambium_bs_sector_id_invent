@@ -1,16 +1,16 @@
 #!/usr/bin/python
 
 """
-Cell radius for BS type cambium devices Poller script.
+Color code of BS Poller script.
 
 This is part of device application. 
-Poller script determines the operating frequency of device. 
-poller script takes the snmp value of OID .1.3.6.1.4.1.161.19.3.1.1.17.0 from snmp agent of device at specific interval.
-Cell radius information is sent to device application 
+Poller script determines the sector id of BS. 
+poller script takes the snmp value of OID .1.3.6.1.4.1.161.19.3.3.2.2.0 from snmp agent of device at specific interval.
+Sector ID of BS is sent to device application 
 
 """
 # ######################################################################
-# Function: check_cambium_cell_radius_invent
+# Function: check_cambium_bs_sector_id_invent
 #
 # Parameters: info (SNMP Ouput) _no_params (No Parameters)
 #
@@ -18,9 +18,9 @@ Cell radius information is sent to device application
 # ######################################################################
 
 
-def check_cambium_cell_radius_invent(item, _no_params, info):
+def check_cambium_bs_sector_id_invent(item, _no_params, info):
     """
-            check_cambium_cell_radius_invent function calculates the operating frequency
+            check_cambium_bs_sector_id_invent function calculates the sector id of BS
 
             Args:
                     item (str) Specific item on SNMP output on which we want to filter results
@@ -36,7 +36,7 @@ def check_cambium_cell_radius_invent(item, _no_params, info):
                 3: unknown
                     infotext(string):
                                     plugin output
-                                    Example : OK - 5835
+                                    Example : OK - 1222
 
                     Raises:
                             ValueError ,Exception
@@ -46,9 +46,10 @@ def check_cambium_cell_radius_invent(item, _no_params, info):
     try:
         if info:
             if info[0][0]:
-                cell_radius = int(info[0][0])
+                color_code = int(info[0][1])
+		bs_ip = info[0][0]
                 state = 0
-                infotext = "%d" % cell_radius
+                infotext = "%s:%s" % (bs_ip,color_code)
     except ValueError:
         infotext = "type_mismatch_value"
     except:
@@ -56,12 +57,12 @@ def check_cambium_cell_radius_invent(item, _no_params, info):
     return (state, infotext)
 
 
-check_info["cambium_cell_radius_invent"] = {
-    'check_function': check_cambium_cell_radius_invent,
-    'service_description': 'cambium_cell_radius_invent',
+check_info["cambium_bs_sector_id_invent"] = {
+    'check_function': check_cambium_bs_sector_id_invent,
+    'service_description': 'cambium_bs_sector_id_invent',
 }
 
 #########################################################################
 #	SNMP OID for the operating frequency
 #########################################################################
-snmp_info["cambium_cell_radius_invent"] = ( ".1.3.6.1.4.1.161.19.3.1.1", ["17.0"] )
+snmp_info["cambium_bs_sector_id_invent"] = ( ".1.3.6.1.4.1.161.19.3.3", ["1.13.0","2.2.0"] )
