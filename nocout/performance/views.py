@@ -114,15 +114,14 @@ class LivePerformanceListing(BaseDatatableView):
                 organization_ids = [self.request.user.userprofile.organization.id]
 
             if self.request.GET['page_type'] == 'customer':
-                return self.get_initial_query_set_data(organization_ids=organization_ids, device_association='substation')
+                return self.get_initial_query_set_data(organization_ids=organization_ids)
 
             elif self.request.GET['page_type'] == 'network':
-                return self.get_initial_query_set_data(organization_ids=organization_ids,
-                                                       device_association='sector_configured_on')
+                return self.get_initial_query_set_data(organization_ids=organization_ids)
             else:
                 return []
 
-    def get_initial_query_set_data(self, device_association='', **kwargs):
+    def get_initial_query_set_data(self, **kwargs):
         """
         Generic function required to fetch the initial data with respect to the page_type parameter in the get request requested.
 
@@ -131,82 +130,93 @@ class LivePerformanceListing(BaseDatatableView):
         :return: list of devices
         """
         device_list = list()
+
+        substation_list_with_circuit_type_backhaul = list(SubStation.objects.filter(id__in =
+                                                    Circuit.objects.filter(circuit_type__icontains="Backhaul")\
+                                                .values_list('sub_station',flat=True)).values_list('device', flat=True))
+
+        sco_list_with_circuit_type_backhaul = list(Sector.objects.filter(id__in = \
+                                      Circuit.objects.filter(circuit_type__icontains="Backhaul") \
+                                      .values_list('sector', flat=True )).values_list('sector_configured_on', flat=True))
+
+        device_list_with_circuit_type_backhaul= substation_list_with_circuit_type_backhaul + \
+                                                sco_list_with_circuit_type_backhaul
+
         if self.request.GET['page_type'] == 'customer':
             device_tab_technology = self.request.GET.get('data_tab')
             device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
-            # get only devices added to NMS and none other
+            #If the technology is P2P then fetch all the device without circuit_type backhaul and
+            #include all the devices whether they are sector_configured_on or substation
             if int(device_technology_id) == int(P2P.ID):
-                devices = Device.objects.filter(~Q(id__in=SubStation.objects.filter(id__in = Circuit.objects.filter(circuit_type__icontains="Backhaul").values_list('sub_station',flat=True)).values_list('device', flat=True)),
-                                                ~Q(id__in=Sector.objects.filter(id__in = Circuit.objects.filter(circuit_type__icontains="Backhaul").values_list('sector',flat=True)).values_list('sector_configured_on', flat=True)),
+                devices = Device.objects.filter(~Q(id__in=device_list_with_circuit_type_backhaul),
                                                 is_added_to_nms= 1,
                                                 is_deleted= 0,
                                                 organization__in= kwargs['organization_ids'],
                                                 device_technology= device_technology_id).\
                     values(*self.columns + ['id', 'device_name', 'machine__name','sector_configured_on', 'substation'])
             else:
+                #If the technology is not P2P then include devices which are substation.
                 devices = Device.objects.filter(is_added_to_nms= 1,  is_deleted= 0,
                                                 organization__in= kwargs['organization_ids'],
                                                 device_technology= device_technology_id).\
-                    values(*self.columns + ['id', 'device_name', 'machine__name', device_association])
+                    values(*self.columns + ['id', 'device_name', 'machine__name', 'substation'])
 
         else:
-            # get only devices added to NMS and devices which are not P2P, and must be either PMP or WiMAX.
-
-            devices = Device.objects.filter( Q(id__in=SubStation.objects.filter(id__in = Circuit.objects.filter(circuit_type__icontains="Backhaul").values_list('sub_station',flat=True)).values_list('device', flat=True))
-                                            |Q(id__in=Sector.objects.filter(id__in = Circuit.objects.filter(circuit_type__icontains="Backhaul").values_list('sector',flat=True)).values_list('sector_configured_on', flat=True))
-                                            |Q(device_technology = int(WiMAX.ID))
-                                            |Q(device_technology = int(PMP.ID)),
-                                             is_added_to_nms=1,
-                                             is_deleted=0, organization__in= kwargs['organization_ids']). \
-                                             values(*self.columns + ['id', 'device_name', 'machine__name', 'sector_configured_on', 'substation'])
+            # If the page_type is network then include only devices which are added to NMS and devices which are not P2P,
+            # and must be either PMP or WiMAX.
+            devices = Device.objects.filter(Q(id__in= device_list_with_circuit_type_backhaul),
+                                            Q(device_technology = int(WiMAX.ID)) |Q(device_technology = int(PMP.ID)),
+                                            is_added_to_nms=1, is_deleted=0,
+                                            organization__in= kwargs['organization_ids']).values(*self.columns +
+                                            ['id', 'device_name', 'machine__name', 'sector_configured_on'])
 
         for device in devices:
-            if device['sector_configured_on'] or device['substation']:
-                sector_id = "N/A"
-                circuit_id = "N/A"
-                bs_name = "N/A"
-                if device['sector_configured_on']:
-                    sectors = Sector.objects.filter(sector_configured_on=device["id"]).values("id", "sector_id", "base_station")
-                    if len(sectors):
-                        sector_id_list = [x["id"] for x in sectors]
-                        sector_id = ", ".join(map(lambda x: str(x), [x["sector_id"] for x in sectors]))
-                        try:
-                            basestation = BaseStation.objects.get(id=sectors[0]["base_station"])
-                            bs_name = basestation.alias
-                        except:
-                            pass
-                        circuits = Circuit.objects.filter(sector__in=sector_id_list).values("circuit_id")
-                        if len(circuits):
-                            circuits_id_list = [x["circuit_id"] for x in circuits]
-                            circuit_id = ",".join(map(lambda x: str(x), circuits_id_list ))
 
-                elif device['substation']:
-                    substation = SubStation.objects.filter(device=device["id"])
-                    if len(substation):
-                        ss_object = substation[0]
-                        circuit = Circuit.objects.filter(sub_station=ss_object.id)
-                        if len(circuit):
-                            circuit_obj = circuit[0]
-                            circuit_id = circuit_obj.circuit_id
-                            sector_id = circuit_obj.sector.sector_id
-                            bs_name = circuit_obj.sector.base_station.alias
-                else:
-                    continue
-                device.update({
-                    "packet_loss": "",
-                    "latency": "",
-                    "last_updated": "",
-                    "last_updated_date": "",
-                    "last_updated_time": "",
-                    "sector_id": sector_id,
-                    "circuit_id": circuit_id,
-                    "bs_name": bs_name,
-                    "city": City.objects.get(id=device['city']).city_name,
-                    "state": State.objects.get(id=device['state']).state_name,
-                    "device_type": DeviceType.objects.get(pk=int(device['device_type'])).name,
-                    "device_technology": DeviceTechnology.objects.get(pk=int(device['device_technology'])).name
-                })
-                device_list.append(device)
+            sector_id = "N/A"
+            circuit_id = "N/A"
+            bs_name = "N/A"
+            if device['sector_configured_on']:
+                sectors = Sector.objects.filter(sector_configured_on=device["id"]).values("id", "sector_id", "base_station")
+                if len(sectors):
+                    sector_id_list = [x["id"] for x in sectors]
+                    sector_id = ", ".join(map(lambda x: str(x), [x["sector_id"] for x in sectors]))
+                    try:
+                        basestation = BaseStation.objects.get(id=sectors[0]["base_station"])
+                        bs_name = basestation.alias
+                    except:
+                        pass
+                    circuits = Circuit.objects.filter(sector__in=sector_id_list).values("circuit_id")
+                    if len(circuits):
+                        circuits_id_list = [x["circuit_id"] for x in circuits]
+                        circuit_id = ",".join(map(lambda x: str(x), circuits_id_list ))
+
+            elif device['substation']:
+                substation = SubStation.objects.filter(device=device["id"])
+                if len(substation):
+                    ss_object = substation[0]
+                    circuit = Circuit.objects.filter(sub_station=ss_object.id)
+                    if len(circuit):
+                        circuit_obj = circuit[0]
+                        circuit_id = circuit_obj.circuit_id
+                        sector_id = circuit_obj.sector.sector_id
+                        bs_name = circuit_obj.sector.base_station.alias
+            else:
+                continue
+            device.update({
+                "packet_loss": "",
+                "latency": "",
+                "last_updated": "",
+                "last_updated_date": "",
+                "last_updated_time": "",
+                "sector_id": sector_id,
+                "circuit_id": circuit_id,
+                "bs_name": bs_name,
+                "city": City.objects.get(id=device['city']).city_name,
+                "state": State.objects.get(id=device['state']).state_name,
+                "device_type": DeviceType.objects.get(pk=int(device['device_type'])).name,
+                "device_technology": DeviceTechnology.objects.get(pk=int(device['device_technology'])).name
+            })
+            device_list.append(device)
 
         return device_list
 
