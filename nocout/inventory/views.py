@@ -2636,54 +2636,54 @@ class GISInventoryBulkImport(FormView):
 
         # used in checking headers of excel sheet
         # dictionary containing all 'pts bs' fields
-        ptp_bs_fields = ['City', 'State', 'Ckt ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
-                         'Qos(BW)', 'Latitude', 'Longititude', 'Antenna height', 'Polarisation', 'Antenna Type',
-                         'Antenna Gain', 'Antenna mount type', 'Ethernet Extender', 'Building height',
-                         'Tower/Pole height', 'Cable Length', 'RSSI during acceptance',
-                         'Throughput during acceptance', 'Date of acceptance', 'BH BSO', 'IP', 'MAC', 'HSSU used',
+        ptp_bs_fields = ['City', 'State', 'Circuit ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
+                         'QOS (BW)', 'Latitude', 'Longititude', 'Antenna Height', 'Polarisation', 'Antenna Type',
+                         'Antenna Gain', 'Antenna Mount Type', 'Ethernet Extender', 'Building Height',
+                         'Tower/Pole Height', 'Cable Length', 'RSSI During Acceptance',
+                         'Throughput During Acceptance', 'Date Of Acceptance', 'BH BSO', 'IP', 'MAC', 'HSSU used',
                          'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP',
                          'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
                          'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type',
-                         'BH Circuit ID', 'PE Hostname', 'PE IP', 'TTSL CIRCUIT ID']
+                         'BH Circuit ID', 'PE Hostname', 'PE IP', 'TTSL Circuit ID']
 
         # dictionary containing all 'pmp bs' fields
-        pmp_bs_fields = ['City', 'State', 'Address', 'BS Name', 'Type_Of_BS(Technology)', 'Site_Type',
-                         'Infra Provider', 'Site ID', 'Building_Height', 'Tower_Height', 'Latitude', 'Longitude',
-                         'ODU IP', 'Sector_name', 'Make of Antenna', 'Antenna Polarisation', 'Antenna_Tilt',
-                         'Antenna_Height', 'Antenna_BeamWidth', 'Azimuth', 'Sync Splitter Used(Y/N)',
-                         'Type of GPS', 'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port',
+        pmp_bs_fields = ['City', 'State', 'Address', 'BS Name', 'Type Of BS (Technology)', 'Site Type',
+                         'Infra Provider', 'Site ID', 'Building Height', 'Tower Height', 'Latitude', 'Longitude',
+                         'ODU IP', 'Sector Name', 'Make Of Antenna', 'Antenna Polarisation', 'Antenna Tilt',
+                         'Antenna Height', 'Antenna Beamwidth', 'Azimuth', 'Sync Splitter Used(Y/N)',
+                         'Type Of GPS', 'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port',
                          'BS Converter IP', 'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
                          'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID',
-                         'PE Hostname', 'PE IP', 'DR site', 'TTSL CIRCUIT ID']
+                         'PE Hostname', 'PE IP', 'DR site', 'TTSL Circuit ID']
 
         # dictionary containing all 'wimax bs' fields
-        wimax_bs_fields = ['City', 'State', 'Address', 'BS Name', 'Type_Of_BS(Technology)', 'Site_Type',
-                           'Infra Provider', 'Site ID', 'Building_Height', 'Tower_Height', 'Latitude', 'Longitude',
-                           'IDU IP', 'Sector_name', 'PMP', 'Make of Antenna', 'Antenna Polarisation', 'Antenna_Tilt',
-                           'Antenna_Height', 'Antenna_BeamWidth', 'Azimuth', 'Installation of Splitter',
-                           'Type of GPS', 'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port',
+        wimax_bs_fields = ['City', 'State', 'Address', 'BS Name', 'Type Of BS (Technology)', 'Site Type',
+                           'Infra Provider', 'Site ID', 'Building Height', 'Tower Height', 'Latitude', 'Longitude',
+                           'IDU IP', 'Sector Name', 'PMP', 'Make Of Antenna', 'Antenna Polarisation', 'Antenna Tilt',
+                           'Antenna Height', 'Antenna Beamwidth', 'Azimuth', 'Installation of Splitter',
+                           'Type Of GPS', 'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port',
                            'BS Converter IP', 'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
                            'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID',
-                           'PE Hostname', 'PE IP', 'DR site', 'TTSL CIRCUIT ID']
+                           'PE Hostname', 'PE IP', 'DR site', 'TTSL Circuit ID']
 
         # dictionary containing all 'ptp ss' fields
-        ptp_ss_fields = ['City', 'State', 'Ckt ID', 'Customer Name', 'Customer Address', 'BS NAME', 'Qos(BW)',
-                         'Latitide', 'Longitude', 'MIMO/Diversity', 'Antenna height', 'Polarisation', 'Antenna Type',
-                         'Antenna Gain', 'Antenna mount type', 'Ethernet Extender', 'Building height',
-                         'Tower/Pole height', 'Cable Length', 'RSSI during acceptance', 'Throughput during acceptance',
-                         'Date of acceptance', 'BH BSO', 'IP', 'MAC']
+        ptp_ss_fields = ['City', 'State', 'Circuit ID', 'Customer Name', 'Customer Address', 'BS Name', 'QOS (BW)',
+                         'Latitude', 'Longitude', 'MIMO/Diversity', 'Antenna Height', 'Polarisation', 'Antenna Type',
+                         'Antenna Gain', 'Antenna Mount Type', 'Ethernet Extender', 'Building Height',
+                         'Tower/Pole Height', 'Cable Length', 'RSSI During Acceptance', 'Throughput During Acceptance',
+                         'Date Of Acceptance', 'BH BSO', 'IP', 'MAC']
 
         # dictionary containing all 'pmp ss' fields
-        pmp_ss_fields = ['Customer Name', 'Ckt ID', 'Qos(BW)', 'Latitude', 'Longitude', 'Building height',
-                         'Tower/Pole height', 'Antenna height', 'Polarisation', 'Antenna Type', 'SS mount type',
-                         'Ethernet Extender', 'Cable Length', 'DL RSSI during acceptance', 'DL CINR during acceptance',
-                         'Customer Address', 'Date of acceptance', 'SS IP', 'Lens/Reflector', 'Antenna Beamwidth']
+        pmp_ss_fields = ['Customer Name', 'Circuit ID', 'QOS (BW)', 'Latitude', 'Longitude', 'Building Height',
+                         'Tower/Pole Height', 'Antenna Height', 'Polarisation', 'Antenna Type', 'SS mount type',
+                         'Ethernet Extender', 'Cable Length', 'DL RSSI During Acceptance', 'CINR During Acceptance',
+                         'Customer Address', 'Date Of Acceptance', 'SS IP', 'Lens/Reflector', 'Antenna Beamwidth']
 
         # dictionary containing all 'wimax ss' fields
-        wimax_ss_fields = ['Customer Name', 'Ckt ID', 'Qos(BW)', 'Latitude', 'Longitude', 'Building height',
-                           'Tower/Pole height', 'Antenna height', 'Polarisation', 'Antenna Type', 'SS mount type',
-                           'Ethernet Extender', 'Cable Length', 'DL RSSI during acceptance',
-                           'DL CINR during acceptance', 'Customer Address', 'Date of acceptance', 'SS IP']
+        wimax_ss_fields = ['Customer Name', 'Circuit ID', 'QOS (BW)', 'Latitude', 'Longitude', 'Building Height',
+                           'Tower/Pole Height', 'Antenna Height', 'Polarisation', 'Antenna Type', 'SS mount type',
+                           'Ethernet Extender', 'Cable Length', 'DL RSSI During Acceptance',
+                           'CINR During Acceptance', 'Customer Address', 'Date Of Acceptance', 'SS IP']
 
         # initialize variables for bs sheet name, ss sheet name, ptp sheet name
         bs_sheet = ""
@@ -2741,205 +2741,202 @@ class GISInventoryBulkImport(FormView):
 
                 # wimax bs fields but common with pmp bs
                 if 'City' in d.keys():
-                    city = d['City'] if d['City'] else ""
+                    city = d['City']
 
                 if 'State' in d.keys():
-                    state = d['State'] if d['State'] else ""
+                    state = d['State']
 
                 if 'Address' in d.keys():
-                    address = d['Address'] if d['Address'] else ""
+                    address = d['Address']
 
                 if 'BS Name' in d.keys():
-                    bs_name = d['BS Name'] if d['BS Name'] else ""
+                    bs_name = d['BS Name']
 
-                if 'Type_Of_BS(Technology)' in d.keys():
-                    type_of_bs = d['Type_Of_BS(Technology)'] if d['Type_Of_BS(Technology)'] else ""
+                if 'Type Of BS (Technology)' in d.keys():
+                    type_of_bs = d['Type Of BS (Technology)']
 
-                if 'Site_Type' in d.keys():
-                    site_type = d['Site_Type'] if d['Site_Type'] else ""
+                if 'Site Type' in d.keys():
+                    site_type = d['Site Type']
 
                 if 'Infra Provider' in d.keys():
-                    infra_provider = d['Infra Provider'] if d['Infra Provider'] else ""
+                    infra_provider = d['Infra Provider']
 
                 if 'Site ID' in d.keys():
                     site_id = str(int(d['Site ID'])) if isinstance(d['Site ID'], float) else str(d['Site ID'])
 
-                if 'Building_Height' in d.keys():
-                    building_height = d['Building_Height'] if d['Building_Height'] else ""
+                if 'Building Height' in d.keys():
+                    building_height = d['Building Height']
 
-                if 'Tower_Height' in d.keys():
-                    tower_height = d['Tower_Height'] if d['Tower_Height'] else ""
+                if 'Tower Height' in d.keys():
+                    tower_height = d['Tower Height']
 
                 if 'Latitude' in d.keys():
-                    latitude = d['Latitude'] if d['Latitude'] else ""
+                    latitude = d['Latitude']
 
                 if 'Longitude' in d.keys():
-                    longitude = d['Longitude'] if d['Longitude'] else ""
+                    longitude = d['Longitude']
 
-                if 'Sector_name' in d.keys():
-                    sector_name = d['Sector_name'] if d['Sector_name'] else ""
+                if 'Sector Name' in d.keys():
+                    sector_name = d['Sector Name']
 
-                if 'Make of Antenna' in d.keys():
-                    if isinstance(d['Make of Antenna'], int):
-                        d['Make of Antenna'] = "NA"
+                if 'Make Of Antenna' in d.keys():
+                    if isinstance(d['Make Of Antenna'], int):
+                        d['Make Of Antenna'] = "NA"
                         make_of_antenna = "NA"
                     else:
-                        make_of_antenna = d['Make of Antenna']
+                        make_of_antenna = d['Make Of Antenna']
 
                 if 'Antenna Polarisation' in d.keys():
-                    antenna_polarization = d['Antenna Polarisation'] if d['Antenna Polarisation'] else ""
+                    antenna_polarization = d['Antenna Polarisation']
 
-                if 'Antenna_Tilt' in d.keys():
-                    antenna_tilt = int(d['Antenna_Tilt']) if isinstance(d['Antenna_Tilt'], float) else d['Antenna_Tilt']
+                if 'Antenna Tilt' in d.keys():
+                    antenna_tilt = int(d['Antenna Tilt']) if isinstance(d['Antenna Tilt'], float) else d['Antenna Tilt']
 
-                if 'Antenna_Height' in d.keys():
-                    antenna_height = d['Antenna_Height'] if d['Antenna_Height'] else ""
+                if 'Antenna Height' in d.keys():
+                    antenna_height = d['Antenna Height']
 
-                if 'Antenna_BeamWidth' in d.keys():
-                    antenna_beamwidth = int(d['Antenna_BeamWidth']) if isinstance(d['Antenna_BeamWidth'], float) else d['Antenna_BeamWidth']
+                if 'Antenna Beamwidth' in d.keys():
+                    antenna_beamwidth = int(d['Antenna Beamwidth']) if isinstance(d['Antenna Beamwidth'], float) else d['Antenna Beamwidth']
 
                 if 'Azimuth' in d.keys():
-                    azimuth = d['Azimuth'] if d['Azimuth'] else ""
+                    azimuth = d['Azimuth']
 
-                if 'Type of GPS' in d.keys():
-                    type_of_gps = d['Type of GPS'] if d['Type of GPS'] else ""
+                if 'Type Of GPS' in d.keys():
+                    type_of_gps = d['Type Of GPS']
 
                 if 'BS Switch IP' in d.keys():
-                    bs_switch_ip = d['BS Switch IP'] if d['BS Switch IP'] else ""
+                    bs_switch_ip = d['BS Switch IP']
 
                 if 'Aggregation Switch' in d.keys():
-                    aggregation_switch = d['Aggregation Switch'] if d['Aggregation Switch'] else ""
+                    aggregation_switch = d['Aggregation Switch']
 
                 if 'Aggregation Switch Port' in d.keys():
-                    aggregation_switch_port = d['Aggregation Switch Port'] if d['Aggregation Switch Port'] else ""
+                    aggregation_switch_port = d['Aggregation Switch Port']
 
                 if 'BS Converter IP' in d.keys():
-                    bs_converter_ip = d['BS Converter IP'] if d['BS Converter IP'] else ""
+                    bs_converter_ip = d['BS Converter IP']
 
                 if 'POP Converter IP' in d.keys():
-                    pop_converter_ip = d['POP Converter IP'] if d['POP Converter IP'] else ""
+                    pop_converter_ip = d['POP Converter IP']
 
                 if 'Converter Type' in d.keys():
-                    converter_type = d['Converter Type'] if d['Converter Type'] else ""
+                    converter_type = d['Converter Type']
 
                 if 'BH Configured On Switch/Converter' in d.keys():
-                    bh_configured_on = d['BH Configured On Switch/Converter'] if d['BH Configured On Switch/Converter'] else ""
+                    bh_configured_on = d['BH Configured On Switch/Converter']
 
                 if 'Switch/Converter Port' in d.keys():
-                    switch_or_converter_port = d['Switch/Converter Port'] if d['Switch/Converter Port'] else ""
+                    switch_or_converter_port = d['Switch/Converter Port']
 
                 if 'BH Capacity' in d.keys():
                     bh_capacity = int(d['BH Capacity']) if isinstance(d['BH Capacity'], float) else d['BH Capacity']
 
                 if 'BH Offnet/Onnet' in d.keys():
-                    bh_off_or_onnet = d['BH Offnet/Onnet'] if d['BH Offnet/Onnet'] else ""
+                    bh_off_or_onnet = d['BH Offnet/Onnet']
 
                 if 'Backhaul Type' in d.keys():
-                    backhaul_type = d['Backhaul Type'] if d['Backhaul Type'] else ""
+                    backhaul_type = d['Backhaul Type']
 
                 if 'BH Circuit ID' in d.keys():
-                    bh_circuit_id = d['BH Circuit ID'] if d['BH Circuit ID'] else ""
+                    bh_circuit_id = d['BH Circuit ID']
 
                 if 'PE Hostname' in d.keys():
-                    pe_hostname = d['PE Hostname'] if d['PE Hostname'] else ""
+                    pe_hostname = d['PE Hostname']
 
                 if 'PE IP' in d.keys():
-                    pe_ip = d['PE IP'] if d['PE IP'] else ""
+                    pe_ip = d['PE IP']
 
-                if 'DR site' in d.keys():
-                    dr_site = d['DR site'] if d['DR site'] else ""
+                if 'DR Site' in d.keys():
+                    dr_site = d['DR Site']
 
-                if 'TTSL CIRCUIT ID' in d.keys():
-                    ttsl_circuit_id = d['TTSL CIRCUIT ID'] if d['TTSL CIRCUIT ID'] else ""
+                if 'TTSL Circuit ID' in d.keys():
+                    ttsl_circuit_id = d['TTSL Circuit ID']
 
                 # wimax bs fields
                 if 'PMP' in d.keys():
                     pmp = int(d['PMP']) if isinstance(d['PMP'], float) else d['PMP']
 
-                if 'Installation of Splitter' in d.keys():
-                    installation_of_splitter = d['Installation of Splitter'] if d['Installation of Splitter'] else ""
+                if 'Installation Of Splitter' in d.keys():
+                    installation_of_splitter = d['Installation Of Splitter']
 
                 if 'IDU IP' in d.keys():
-                    idu_ip = d['IDU IP'] if d['IDU IP'] else ""
+                    idu_ip = d['IDU IP']
 
                 # pmp bs fields
-                if 'Sync Splitter Used(Y/N)' in d.keys():
-                    sync_splitter_used = d['Sync Splitter Used(Y/N)'] if d['Sync Splitter Used(Y/N)'] else ""
+                if 'Sync Splitter Used' in d.keys():
+                    sync_splitter_used = d['Sync Splitter Used']
 
                 if 'ODU IP' in d.keys():
-                    odu_ip = d['ODU IP'] if d['ODU IP'] else ""
+                    odu_ip = d['ODU IP']
 
                 # wimax & pmp ss common fields
                 if 'Customer Name' in d.keys():
-                    customer_name = d['Customer Name'] if d['Customer Name'] else ""
+                    customer_name = d['Customer Name']
 
-                if 'Ckt ID' in d.keys():
-                    ckt_id = d['Ckt ID'] if d['Ckt ID'] else ""
+                if 'Circuit ID' in d.keys():
+                    ckt_id = d['Circuit ID']
 
-                if 'Qos(BW)' in d.keys():
-                    qos_bw = d['Qos(BW)'] if d['Qos(BW)'] else ""
+                if 'QOS (BW)' in d.keys():
+                    qos_bw = d['QOS (BW)']
 
-                if 'Building height' in d.keys():
-                    ss_building_height = d['Building height'] if d['Building height'] else ""
+                if 'Tower/Pole Height' in d.keys():
+                    tower_pole_height = d['Tower/Pole Height']
 
-                if 'Tower/Pole height' in d.keys():
-                    ss_tower_height = d['Tower/Pole height'] if d['Tower/Pole height'] else ""
-
-                if 'Antenna height' in d.keys():
-                    ss_antenna_height = d['Antenna height'] if d['Antenna height'] else ""
+                if 'Antenna Height' in d.keys():
+                    ss_antenna_height = d['Antenna Height']
 
                 if 'Polarisation' in d.keys():
-                    polarization = d['Polarisation'] if d['Polarisation'] else ""
+                    polarization = d['Polarisation']
 
                 if 'Antenna Type' in d.keys():
-                    antenna_type = d['Antenna Type'] if d['Antenna Type'] else ""
+                    antenna_type = d['Antenna Type']
 
-                if 'SS mount type' in d.keys():
-                    ss_mount_type = d['SS mount type'] if ['SS mount type'] else ""
+                if 'SS Mount Type' in d.keys():
+                    ss_mount_type = d['SS Mount Type']
 
                 if 'Ethernet Extender' in d.keys():
-                    ethernet_extender = d['Ethernet Extender'] if d['Ethernet Extender'] else ""
+                    ethernet_extender = d['Ethernet Extender']
 
                 if 'Cable Length' in d.keys():
-                    cable_length = d['Cable Length'] if d['Cable Length'] else ""
+                    cable_length = d['Cable Length']
 
-                if 'DL RSSI during acceptance' in d.keys():
-                    dl_rssi_during_acceptance = d['DL RSSI during acceptance'] if d['DL RSSI during acceptance'] else ""
+                if 'DL RSSI During Acceptance' in d.keys():
+                    dl_rssi_during_acceptance = d['DL RSSI During Acceptance']
 
-                if 'DL CINR during acceptance' in d.keys():
-                    dl_cinr_during_acceptance = d['DL CINR during acceptance'] if d['DL CINR during acceptance'] else ""
+                if 'CINR During Acceptance' in d.keys():
+                    dl_cinr_during_acceptance = d['CINR During Acceptance']
 
                 if 'Customer Address' in d.keys():
-                    customer_address = d['Customer Address'] if d['Customer Address'] else ""
+                    customer_address = d['Customer Address']
 
-                if 'Date of acceptance' in d.keys():
-                    date_of_acceptance = d['Date of acceptance'] if d['Date of acceptance'] else ""
+                if 'Date Of Acceptance' in d.keys():
+                    date_of_acceptance = d['Date Of Acceptance']
 
                 if 'SS IP' in d.keys():
-                    ss_ip = d['SS IP'] if d['SS IP'] else ""
+                    ss_ip = d['SS IP']
 
                 # pmp sm fields
                 if 'Lens/Reflector' in d.keys():
-                    lens_or_reflector = d['Lens/Reflector'] if d['Lens/Reflector'] else ""
+                    lens_or_reflector = d['Lens/Reflector']
 
                 # ptp bs fields
                 if 'Circuit Type' in d.keys():
-                    circuit_type = d['Circuit Type'] if d['Circuit Type'] else ""
+                    circuit_type = d['Circuit Type']
 
                 if 'BS Address' in d.keys():
-                    bs_address = d['BS Address'] if d['BS Address'] else ""
+                    bs_address = d['BS Address']
 
                 if 'Antenna Gain' in d.keys():
-                    antenna_gain = d['Antenna Gain'] if d['Antenna Gain'] else ""
+                    antenna_gain = d['Antenna Gain']
 
-                if 'Antenna mount type' in d.keys():
-                    antenna_mount_type = d['Antenna mount type'] if d['Antenna mount type'] else ""
+                if 'Antenna Mount Type' in d.keys():
+                    antenna_mount_type = d['Antenna Mount Type']
 
-                if 'RSSI during acceptance' in d.keys():
-                    rssi_during_acceptance = d['RSSI during acceptance'] if d['RSSI during acceptance'] else ""
+                if 'RSSI During Acceptance' in d.keys():
+                    rssi_during_acceptance = d['RSSI During Acceptance']
 
-                if 'Throughput during acceptance' in d.keys():
-                    throughput_during_acceptance = d['Throughput during acceptance'] if d['Throughput during acceptance'] else ""
+                if 'Throughput During Acceptance' in d.keys():
+                    throughput_during_acceptance = d['Throughput During Acceptance']
 
                 if 'BH BSO' in d.keys():
                     bh_bso = d['BH BSO'] if d['BH BSO'] else ""
@@ -2952,7 +2949,7 @@ class GISInventoryBulkImport(FormView):
 
                 # ptp ss fields
                 if 'MIMO/Diversity' in d.keys():
-                    mimo = d['MIMO/Diversity'] if d['MIMO/Diversity'] else ""
+                    mimo = d['MIMO/Diversity']
 
                 # errors field for excel sheet validation errors
                 errors = ""
@@ -2963,8 +2960,8 @@ class GISInventoryBulkImport(FormView):
                 infra_provider_list = ['TVI', 'VIOM', 'INDUS', 'ATC', 'IDEA', 'QUIPPO', 'SPICE', 'TTML', 'TCL', 'TOWER VISION', 'RIL', 'WTTIL', 'OTHER']
                 make_of_antenna_list = ['MTI H Pol', 'Xhat', 'Andrew', 'MTI', 'Twin', 'Proshape']
                 antenna_polarisation_list = ['Vertical', 'Horizontal', 'Cross', 'Dual']
-                antenna_type_list = ['Narrowbeam', 'Normal']
-                ss_mount_type_list = ['Wall mount', 'Pole mount', 'Mast', 'Window Mount', 'Grill Mount']
+                antenna_type_list = ['Narrowbeam', 'Normal', 'Internal']
+                ss_mount_type_list = ['Wall mount', 'Pole mount', 'Mast', 'Window Mount', 'Grill Mount', 'Pole']
                 bh_off_or_onnet_list = ['OFFNET', 'ONNET', 'OFFNET+ONNET', 'OFFNET+ONNET UBR', 'ONNET+UBR', 'ONNET COLO', 'ONNET COLO+UBR']
                 backhaul_type_list = ['SDH', 'Ethernet', 'E1', 'EoSDH', 'Dark Fibre', 'UBR']
                 pmp_list = [1, 2]
@@ -3011,7 +3008,7 @@ class GISInventoryBulkImport(FormView):
                 # 'type of bs' validation (must be from provided list)
                 try:
                     if type_of_bs:
-                        if type_of_bs.strip().lower() not in [x.lower() for x in types_of_bs_list]:
+                        if str(type_of_bs).strip().lower() not in [x.lower() for x in types_of_bs_list]:
                             errors += '{} is not valid option for bs type.\n'.format(type_of_bs)
                     else:
                         errors += 'Type of BS must not be empty.\n'
@@ -3021,7 +3018,7 @@ class GISInventoryBulkImport(FormView):
                 # 'site type' validation (must be from provided list)
                 try:
                     if site_type:
-                        if site_type.strip().lower() not in [x.lower() for x in site_types_list]:
+                        if str(site_type).strip().lower() not in [x.lower() for x in site_types_list]:
                             errors += '{} is not a valid option for site type.\n'.format(site_type)
                     else:
                         errors += 'Site type must not be empty.\n'
@@ -3031,7 +3028,7 @@ class GISInventoryBulkImport(FormView):
                 # 'infra provider' validation (must be from provided list)
                 try:
                     if infra_provider:
-                        if infra_provider.strip().lower() not in [x.lower() for x in infra_provider_list]:
+                        if str(infra_provider).strip().lower() not in [x.lower() for x in infra_provider_list]:
                             errors += '{} is not a valid option for infra provider.\n'.format(infra_provider)
                     else:
                         errors += 'Infra provider must not be empty.\n'
@@ -3050,24 +3047,25 @@ class GISInventoryBulkImport(FormView):
 
                 # 'building height' validation (must be upto 2 decimal places)
                 try:
-                    if isinstance(int, building_height):
+                    if isinstance(building_height, int) or isinstance(building_height, float):
                         if not re.match(regex_upto_two_dec_places, str(building_height).strip()):
-                            errors += 'Building height must be upto 2 decimal places.\n'
-                    elif building_height:
-                        if not re.match(regex_upto_two_dec_places, str(building_height).strip()):
-                            errors += 'Building height must be upto 2 decimal places.\n'
+                            errors += 'Building Height must be a number.\n'
+                    elif isinstance(building_height, str):
+                        errors += 'Building Height must be a number.\n'
                     else:
-                        errors += 'Building height must not be empty.\n'
+                        errors += 'Building Height must not be empty.\n'
                 except Exception as e:
                     logger.info(e.message)
 
                 # 'tower height' validation (must be upto 2 decimal places)
                 try:
-                    if tower_height:
+                    if isinstance(tower_height, int) or isinstance(tower_height, float):
                         if not re.match(regex_upto_two_dec_places, str(tower_height).strip()):
-                            errors += 'Tower height must be upto 2 decimal places.\n'
+                            errors += 'Tower Height must be a number.\n'
+                    elif isinstance(tower_height, str):
+                        errors += 'Tower Height must be a number.\n'
                     else:
-                        errors += 'Tower height must not be empty.\n'
+                        errors += 'Tower Height must not be empty.\n'
                 except Exception as e:
                     logger.info(e.message)
 
@@ -3105,7 +3103,7 @@ class GISInventoryBulkImport(FormView):
                 try:
                     if make_of_antenna:
                         if make_of_antenna not in ['#N/A', 'na', 'NA']:
-                            if make_of_antenna.strip().lower() not in [x.lower() for x in make_of_antenna_list]:
+                            if str(make_of_antenna).strip().lower() not in [x.lower() for x in make_of_antenna_list]:
                                 errors += '{} is not a valid option for make of antenna.\n'.format(make_of_antenna)
                 except Exception as e:
                     logger.info(e.message)
@@ -3113,38 +3111,46 @@ class GISInventoryBulkImport(FormView):
                 # 'antenna polarisation' validation (must be from provided list)
                 try:
                     if antenna_polarization:
-                        if antenna_polarization.strip().lower() not in [x.lower() for x in antenna_polarisation_list]:
+                        if str(antenna_polarization).strip().lower() not in [x.lower() for x in antenna_polarisation_list]:
                             errors += '{} is not a valid option for antenna polarization.\n'.format(antenna_polarization)
                     else:
                         errors += 'Antenna polarization must not be empty.\n'
                 except Exception as e:
                     logger.info(e.message)
 
-                # 'antenna tilt' validation (must be numeric)
+                # 'antenna tilt' validation (must be upto 2 decimal places)
                 try:
-                    if antenna_tilt:
-                        if not isinstance(antenna_tilt, int):
-                            errors += 'Antenna tilt must be numeric.\n'
+                    if isinstance(antenna_tilt, int) or isinstance(antenna_tilt, float):
+                        if not re.match(regex_upto_two_dec_places, str(antenna_tilt).strip()):
+                            errors += 'Antenna Tilt must be a number.\n'
+                    elif isinstance(antenna_tilt, str):
+                        errors += 'Antenna Tilt must be a number.\n'
+                    else:
+                        errors += 'Antenna Tilt must not be empty.\n'
                 except Exception as e:
                     logger.info(e.message)
 
                 # 'antenna height' validation (must be upto 2 decimal places)
                 try:
-                    if antenna_height:
+                    if isinstance(antenna_height, int) or isinstance(antenna_height, float):
                         if not re.match(regex_upto_two_dec_places, str(antenna_height).strip()):
-                            errors += 'Antenna height must be upto 2 decimal places.\n'
+                            errors += 'Antenna Height must be a number.\n'
+                    elif isinstance(antenna_height, str):
+                        errors += 'Antenna Height must be a number.\n'
                     else:
-                        errors += 'Antenna height must not be empty.\n'
+                        errors += 'Antenna Height must not be empty.\n'
                 except Exception as e:
                     logger.info(e.message)
 
                 # 'antenna beamwidth' validation (must be numeric)
                 try:
-                    if antenna_beamwidth:
-                        if not isinstance(antenna_beamwidth, int):
-                            errors += 'Antenna beamwidth must be numeric.\n'
+                    if isinstance(antenna_beamwidth, int) or isinstance(antenna_beamwidth, float):
+                        if not re.match(regex_upto_two_dec_places, str(antenna_beamwidth).strip()):
+                            errors += 'Antenna Beamwidth must be a number.\n'
+                    elif isinstance(antenna_beamwidth, str):
+                        errors += 'Antenna Beamwidth must be a number.\n'
                     else:
-                        errors += 'Antenna beamwidth must not be empty.\n'
+                        errors += 'Antenna Beamwidth must not be empty.\n'
                 except Exception as e:
                     logger.info(e.message)
 
@@ -3162,7 +3168,7 @@ class GISInventoryBulkImport(FormView):
                 # 'installation of splitter' validation (must be 'Yes' or 'No')
                 try:
                     if installation_of_splitter:
-                        if installation_of_splitter.strip().lower() not in [x.lower() for x in yes_or_no]:
+                        if str(installation_of_splitter).strip().lower() not in [x.lower() for x in yes_or_no]:
                             errors += 'Installation of splitter must be from \'Yes\' or \'No\'.\n'
                     else:
                         errors += 'Installation of splitter must not be empty.\n'
@@ -3173,9 +3179,9 @@ class GISInventoryBulkImport(FormView):
                 try:
                     if type_of_gps:
                         if not (isinstance(type_of_gps, unicode) and type_of_gps.strip().isalnum()):
-                            errors += 'Type of GPS must be alphanumeric.\n'
+                            errors += 'Type Of GPS must be alphanumeric.\n'
                     else:
-                        errors += 'Type of GPS must not be empty.\n'
+                        errors += 'Type Of GPS must not be empty.\n'
                 except Exception as e:
                     logger.info(e.message)
 
@@ -3265,18 +3271,20 @@ class GISInventoryBulkImport(FormView):
 
                 # 'bh capacity' validation (must be numeric)
                 try:
-                    if bh_capacity:
-                        if not isinstance(bh_capacity, int):
-                            errors += 'BH Capacity must be numeric.\n'
+                    if isinstance(bh_capacity, int) or isinstance(bh_capacity, float):
+                        if not re.match(regex_upto_two_dec_places, str(bh_capacity).strip()):
+                            errors += 'BH Capacity must be a number.\n'
+                    elif isinstance(bh_capacity, str):
+                        errors += 'BH Capactiy must be a number.\n'
                     else:
-                        errors += 'BH Capacity must not be empty.\n'
+                        errors += 'BH Capactiy must not be empty.\n'
                 except Exception as e:
                     logger.info(e.message)
 
                 # 'bh off or onnet' validation (must be from provided list)
                 try:
                     if bh_off_or_onnet:
-                        if bh_off_or_onnet.strip().lower() not in [x.lower() for x in bh_off_or_onnet_list]:
+                        if str(bh_off_or_onnet).strip().lower() not in [x.lower() for x in bh_off_or_onnet_list]:
                             errors += '{} is not a valid option for bh off or onnet.\n'.format(bh_off_or_onnet)
                     else:
                         errors += 'BH Offnet/Onnet must not be empty.\n'
@@ -3286,7 +3294,7 @@ class GISInventoryBulkImport(FormView):
                 # 'backhaul type' validation (must be from provided list)
                 try:
                     if backhaul_type:
-                        if backhaul_type.strip().lower() not in [x.lower() for x in backhaul_type_list]:
+                        if str(backhaul_type).strip().lower() not in [x.lower() for x in backhaul_type_list]:
                             errors += '{} is not a valid option for backhaul type.\n'.format(backhaul_type)
                 except Exception as e:
                     logger.info(e.message)
@@ -3321,7 +3329,7 @@ class GISInventoryBulkImport(FormView):
                 # 'dr site' validation (must be 'Yes' or 'No')
                 try:
                     if dr_site:
-                        if dr_site.strip().lower() not in [x.lower() for x in dr_site_list]:
+                        if str(dr_site).strip().lower() not in [x.lower() for x in dr_site_list]:
                             errors += 'DR Site {} must be from \'Yes\' or \'No\'.\n'.format(dr_site)
                 except Exception as e:
                     logger.info(e.message)
@@ -3330,7 +3338,7 @@ class GISInventoryBulkImport(FormView):
                 # 'sync splitter used' validation (must be 'Yes' or 'No')
                 try:
                     if sync_splitter_used:
-                        if sync_splitter_used.strip().lower() not in [x.lower() for x in yes_or_no]:
+                        if str(sync_splitter_used).strip().lower() not in [x.lower() for x in yes_or_no]:
                             errors += 'Sync splitter used must be from \'Yes\' or \'No\'.\n'
                     else:
                         errors += 'Installation of splitter must not be empty.\n'
@@ -3367,13 +3375,13 @@ class GISInventoryBulkImport(FormView):
                 except Exception as e:
                     logger.info(e.message)
 
-                # 'tower height' validation (must be upto 2 decimal places)
+                # 'mac' validation
                 try:
                     if mac:
                         if not re.match(regex_mac, str(mac).strip()):
                             errors += 'MAC must be a mac address.\n'
                     else:
-                        errors += 'Tower height must not be empty.\n'
+                        errors += 'MAC must not be empty.\n'
                 except Exception as e:
                     logger.info(e.message)
 
@@ -3400,48 +3408,47 @@ class GISInventoryBulkImport(FormView):
 
                 # 'qos_bw' validation (must be numeric)
                 try:
-                    if qos_bw:
-                        if not isinstance(qos_bw, float):
-                            errors += 'QOS(BW) must be numeric.\n'
+                    if isinstance(qos_bw, int) or isinstance(qos_bw, float):
+                        if not re.match(regex_upto_two_dec_places, str(qos_bw).strip()):
+                            errors += 'QOS (BW) must be a number.\n'
+                    elif qos_bw:
+                        if not re.match(regex_upto_two_dec_places, str(qos_bw).strip()):
+                            errors += 'QOS (BW) must be a number.\n'
                     else:
-                        errors += 'QOS(BW) must not be empty.\n'
+                        errors += 'QOS (BW) must not be empty.\n'
                 except Exception as e:
                     logger.info(e.message)
 
-                # 'ss_building height' validation (must be upto 2 decimal places)
+                # 'ss antenna height' validation (must be upto 2 decimal places)
                 try:
-                    if ss_building_height:
-                        if not re.match(regex_upto_two_dec_places, str(ss_building_height).strip()):
-                            errors += 'Building height must be upto 2 decimal places.\n'
+                    if isinstance(ss_antenna_height, int) or isinstance(ss_antenna_height, float):
+                        if not re.match(regex_upto_two_dec_places, str(ss_antenna_height).strip()):
+                            errors += 'SS Antenna Height must be a number.\n'
+                    elif ss_antenna_height:
+                        if not re.match(regex_upto_two_dec_places, str(ss_antenna_height).strip()):
+                            errors += 'SS Antenna Height must be a number.\n'
                     else:
-                        pass
-                        #errors += 'Building height must not be empty.\n'
+                        errors += 'SS Antenna Height must not be empty.\n'
                 except Exception as e:
                     logger.info(e.message)
 
                 # 'ss tower height' validation (must be upto 2 decimal places)
                 try:
-                    if ss_tower_height:
-                        if not re.match(regex_upto_two_dec_places, str(ss_tower_height).strip()):
-                            errors += 'Tower height must be upto 2 decimal places.\n'
+                    if isinstance(tower_pole_height, int) or isinstance(tower_pole_height, float):
+                        if not re.match(regex_upto_two_dec_places, str(tower_pole_height).strip()):
+                            errors += 'SS Tower Height must be a number.\n'
+                    elif tower_pole_height:
+                        if not re.match(regex_upto_two_dec_places, str(tower_pole_height).strip()):
+                            errors += 'SS Tower Height must be a number.\n'
                     else:
-                        pass
-                        # errors += 'Tower height must not be empty.\n'
-                except Exception as e:
-                    logger.info(e.message)
-
-                # 'ss_antenna height' validation (must be upto 2 decimal places)
-                try:
-                    if ss_antenna_height:
-                        if not re.match(regex_upto_two_dec_places, str(ss_antenna_height).strip()):
-                            errors += 'Antenna height must be upto 2 decimal places.\n'
+                        errors += 'SS Tower Height must not be empty.\n'
                 except Exception as e:
                     logger.info(e.message)
 
                 # 'antenna polarisation' validation (must be from provided list)
                 try:
                     if polarization:
-                        if polarization.strip().lower() not in [x.lower() for x in antenna_polarisation_list]:
+                        if str(polarization).strip().lower() not in [x.lower() for x in antenna_polarisation_list]:
                             errors += '{} is not a valid option for polarization.\n'.format(polarization)
                     else:
                         errors += 'Polarization must not be empty.\n'
@@ -3451,7 +3458,7 @@ class GISInventoryBulkImport(FormView):
                 # 'antenna type' validation (must be from provided list)
                 try:
                     if antenna_type:
-                        if antenna_type.strip().lower() not in [x.lower() for x in antenna_type_list]:
+                        if str(antenna_type).strip().lower() not in [x.lower() for x in antenna_type_list]:
                             errors += '{} is not a valid option for antenna type.\n'.format(antenna_type)
                 except Exception as e:
                     logger.info(e.message)
@@ -3459,7 +3466,7 @@ class GISInventoryBulkImport(FormView):
                 # 'ss_mount_type' validation (must be from provided list)
                 try:
                     if ss_mount_type:
-                        if ss_mount_type.strip().lower() not in [x.lower() for x in ss_mount_type_list]:
+                        if str(ss_mount_type).strip().lower() not in [x.lower() for x in ss_mount_type_list]:
                             errors += '{} is not a valid option for ss mount type.\n'.format(ss_mount_type)
                 except Exception as e:
                     logger.info(e.message)
@@ -3467,27 +3474,37 @@ class GISInventoryBulkImport(FormView):
                 # 'ethernet extender' validation (must be 'Yes' or 'No')
                 try:
                     if ethernet_extender:
-                        if ethernet_extender.strip().lower() not in [x.lower() for x in yes_or_no]:
+                        if str(ethernet_extender).strip().lower() not in [x.lower() for x in yes_or_no]:
                             errors += 'Ethernet extender must be from \'Yes\' or \'No\'.\n'
                 except Exception as e:
                     logger.info(e.message)
 
                 # 'cable length' validation (must be upto 2 decimal places)
                 try:
-                    if cable_length:
+                    if isinstance(int, cable_length):
                         if not re.match(regex_upto_two_dec_places, str(cable_length).strip()):
-                            errors += 'Cable length must be upto 2 decimal places.\n'
+                            errors += 'Cable Length must be numeric.\n'
+                    elif cable_length:
+                        if not re.match(regex_upto_two_dec_places, str(cable_length).strip()):
+                            errors += 'Cable Length must be numeric.\n'
                     else:
-                        pass
-                        # errors += 'Tower height must not be empty.\n'
+                        errors += 'Cable Length must not be empty.\n'
                 except Exception as e:
                     logger.info(e.message)
 
                 # 'lens or reflector' validation (must be from provided list)
                 try:
                     if lens_or_reflector:
-                        if lens_or_reflector.strip().lower() not in [x.lower() for x in yes_or_no]:
+                        if str(lens_or_reflector).strip().lower() not in [x.lower() for x in yes_or_no]:
                             errors += '{} is not a valid option for lens/reflector.\n'.format(lens_or_reflector)
+                except Exception as e:
+                    logger.info(e.message)
+
+                # 'rssi during acceptance' validation (must be -ve number)
+                try:
+                    if rssi_during_acceptance:
+                        if rssi_during_acceptance > 0:
+                            errors += 'RSSi During Acceptance must be negative number.\n'.format(rssi_during_acceptance)
                 except Exception as e:
                     logger.info(e.message)
 
@@ -3499,7 +3516,7 @@ class GISInventoryBulkImport(FormView):
                 #             errors += 'TTSL Circuit ID can only contains alphanumeric, underscore, space, comma.\n'
 
                 # insert key 'errors' in dict 'd'
-                d['errors'] = errors
+                d['Errors'] = errors
 
                 # check whether there are errors exist or not
                 try:
@@ -3510,7 +3527,7 @@ class GISInventoryBulkImport(FormView):
                 except Exception as e:
                     logger.info(e.message)
 
-            keys_list.append('errors')
+            keys_list.append('Errors')
             for val in valid_rows_dicts:
                 temp_list = list()
                 for key in keys_list:
