@@ -238,12 +238,12 @@ function advanceJustSearchClass() {
                     //set icon from global object
                     showSearchedResultMarker.setIcon(advanceSearchMasterObj.searchedIconUrl);
                 }
-                //set animation to bounce
+                //set animation to marker bounce
                 // showSearchedResultMarker.setAnimation(null);
                 if(showSearchedResultMarker.getAnimation() != null) {
                     showSearchedResultMarker.setAnimation(null);
                 } else {
-                    showSearchedResultMarker.setAnimation(google.maps.Animation.DROP);
+                    showSearchedResultMarker.setAnimation(google.maps.Animation.BOUNCE);
                 }
                 //show the marker on map.
                 showSearchedResultMarker.setMap(mapInstance);

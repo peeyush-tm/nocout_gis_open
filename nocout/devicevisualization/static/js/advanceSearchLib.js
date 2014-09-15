@@ -52,7 +52,6 @@ function advanceSearchClass() {
 		$.support.cors = true;
 
 		$.ajax({
-			crossDomain: true,
 			url : getApiUrl,
 			// url : "http://127.0.0.1:8000/gis/get_filters/",
 			type : "GET",
@@ -245,7 +244,6 @@ function advanceSearchClass() {
 			},
 			/*If there is a problem in calling server*/
 			error : function(err) {
-
 				$("#"+buttonId).button("complete");
 				// console.log(err.statusText);
 				$.gritter.add({
@@ -279,7 +277,7 @@ function advanceSearchClass() {
         /*Reset the appliedAdvFilter*/
         appliedAdvFilter = [];
         appliedAdvFilter_Active = [];
-
+        console.log(filtersInfoArray);
         for(var i=0;i<filtersInfoArray.length;i++) {
 
             if(filtersInfoArray[i] != null) {
@@ -829,7 +827,7 @@ function advanceSearchClass() {
 //            if(result.data.objects.data.unspiderfy_icon == undefined) {
 //                clusterIcon = "";
 //            } else {
-//                clusterIcon = window.location.origin+"/"+result.data.objects.data.unspiderfy_icon;
+//                clusterIcon = base_url+"/"+result.data.objects.data.unspiderfy_icon;
 //            }
 //
 //            /*Call the make network to create the BS-SS network on the google map*/
@@ -850,7 +848,7 @@ function advanceSearchClass() {
 //            if(result.data.objects.data.unspiderfy_icon == undefined) {
 //                clusterIcon = "";
 //            } else {
-//                clusterIcon = window.location.origin+"/"+result.data.objects.data.unspiderfy_icon;
+//                clusterIcon = base_url+"/"+result.data.objects.data.unspiderfy_icon;
 //            }
 
             /*Call the make network to create the BS-SS network on the google map*/
@@ -941,7 +939,7 @@ function advanceSearchClass() {
 //            if(result.data.objects.data.unspiderfy_icon == undefined) {
 //                clusterIcon = "";
 //            } else {
-//                clusterIcon = window.location.origin+"/"+result.data.objects.data.unspiderfy_icon;
+//                clusterIcon = base_url+"/"+result.data.objects.data.unspiderfy_icon;
 //            }
 
             /*Call the make network to create the BS-SS network on the google map*/

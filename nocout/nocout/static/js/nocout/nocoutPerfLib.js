@@ -40,7 +40,6 @@ $.urlParam = function(name){
 		/*Ajax call to Get Devices API*/
         var get_url = get_device_url;
 		$.ajax({
-			crossDomain: true,
 			url : get_url,
 			type : "GET",
 			dataType : "json",
@@ -58,11 +57,25 @@ $.urlParam = function(name){
 					});
 					$("#device_name").html(devices_options);
 				} else {
-					console.log(result.message);
+					$.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: 'Performance',
+                        // (string | mandatory) the text inside the notification
+                        text: result.message,
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: false
+                    });
 				}
 			},
 			error : function(err) {
-				console.log(err);
+				$.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Performance',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false
+                });
 			}
 		});
  	};
@@ -79,7 +92,6 @@ $.urlParam = function(name){
  		/*Ajax call to Get Devices API*/
         var get_url = get_status_url;
 		$.ajax({
-			crossDomain: true,
 			url : get_url,
 			type : "GET",
 			dataType : "json",
@@ -107,12 +119,28 @@ $.urlParam = function(name){
 					/*Populate table data*/
 					$("#status_table tbody").html(status_val);
 				} else {
-					console.log(result.message);
+					$.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: 'Performance',
+                        // (string | mandatory) the text inside the notification
+                        text: result.message,
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: false
+                    });
 				}
 			},
 			error : function(err) {
 
 				$("#status_table tbody").html(err.statusText);
+
+                $.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Performance',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false
+                });
 
 			}
 		});
@@ -133,7 +161,6 @@ $.urlParam = function(name){
  		/*Ajax call to Get Devices API*/
         var get_url = get_service_url;
 		$.ajax({
-			crossDomain: true,
 			url : get_url,
 			type : "GET",
 			dataType : "json",
@@ -194,7 +221,14 @@ $.urlParam = function(name){
 
 				} else {
 					$(".inner_tab_container").html("<p>"+result.message+"</p>");
-					console.log(result.message);
+					$.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: 'Performance',
+                        // (string | mandatory) the text inside the notification
+                        text: result.message,
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: false
+                    });
 				}
 
                 /*Hide the spinner*/
@@ -219,7 +253,15 @@ $.urlParam = function(name){
  	 * @param device_id "INT", It contains the ID of current device.
  	 */
  	this.getServiceData = function(get_service_data_url, service_id, device_id) {
-    
+        
+        var base_url = "";
+        /*Set the base url of application for ajax calls*/
+        if(window.location.origin) {
+            base_url = window.location.origin;
+        } else {
+            base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+        }
+
         /*Show the spinner*/
         showSpinner();
         /* Appending the Hash Tag of service_name with service_data_source */
@@ -227,9 +269,8 @@ $.urlParam = function(name){
  		/*Ajax call to Get Devices API*/
         var start_date=$.urlParam('start_date');
         var end_date=$.urlParam('end_date');
-        var get_url = get_service_data_url;
+        var get_url = base_url+""+get_service_data_url;
 		$.ajax({
-			crossDomain: true,
 			url : get_url,
             data : {'start_date':start_date, 'end_date':end_date },
 			type : "GET",
@@ -334,7 +375,14 @@ $.urlParam = function(name){
                     }
 				} else {
 					$('#'+service_id+'_chart').html(result.message);
-					// console.log(result.message);
+                    $.gritter.add({
+                        // (string | mandatory) the heading of the notification
+                        title: 'Performance',
+                        // (string | mandatory) the text inside the notification
+                        text: result.message,
+                        // (bool | optional) if you want it to fade out on its own or just sit there
+                        sticky: false
+                    });
 				}
 
                 /*Hide the spinner*/
@@ -343,7 +391,14 @@ $.urlParam = function(name){
 			error : function(err) {
 				
 				$('#'+service_id+'_chart').html(err.statusText);
-				// console.log(err);
+				$.gritter.add({
+                    // (string | mandatory) the heading of the notification
+                    title: 'Performance',
+                    // (string | mandatory) the text inside the notification
+                    text: err.statusText,
+                    // (bool | optional) if you want it to fade out on its own or just sit there
+                    sticky: false
+                });
 
                 /*Hide the spinner*/
                 hideSpinner();
