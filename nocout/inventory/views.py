@@ -3577,7 +3577,7 @@ class ExcelWriterRowByRow(View):
 
         try:
             for i, col in enumerate(request.session['headers']):
-                if col != 'errors':
+                if col != 'Errors':
                     ws.write(0, i, col, style)
                 else:
                     ws.write(0, i, col, style_errors)
