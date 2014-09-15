@@ -228,11 +228,11 @@ function advanceJustSearchClass() {
         var searchedMarkerLatLong= new google.maps.LatLng(lat, long);
 
         //create a new marker
-        var showSearchedResultMarker= new google.maps.Marker({position: searchedMarkerLatLong, zIndex: 100})
+        var showSearchedResultMarker= new google.maps.Marker({position: searchedMarkerLatLong, zIndex: 500})
         //push marker in the previouslySearchedMarkersList array
         advanceSearchMasterObj.previouslySearchedMarkersList.push(showSearchedResultMarker);
 
-//IF NOT FILTER APPLIED IS IN CITY OR STATE, THEN WE WILL NOT CHANGE ANY ICONS
+        //IF NOT FILTER APPLIED IS IN CITY OR STATE, THEN WE WILL NOT CHANGE ANY ICONS
     
         var selectedInputs= advJustSearch_self.getInputArray();
         var isOnlyStateorCityIsApplied= false;
