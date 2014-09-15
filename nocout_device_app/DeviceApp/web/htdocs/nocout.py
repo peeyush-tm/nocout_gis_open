@@ -189,9 +189,14 @@ def addservice():
         "error_code": None,
         "error_message": None
     }
+    interfaces = None
+    # Check for interfaces in HTTP request
+    if html.var('interfaces'):
+	    interfaces = ast.literal_eval(html.var('interfaces'))
     payload = {
         "host": html.var("device_name"),
         "service": html.var("service_name"),
+	"interfaces": interfaces,
         "serv_params": html.var('serv_params'),
         "cmd_params": html.var('cmd_params'),
         "agent_tag": html.var('agent_tag'),
@@ -202,7 +207,7 @@ def addservice():
 
     if not new_host:
         # First delete all the existing entries for (host, service) pair
-        delete_host_rules(hostname=payload.get('host'), servicename=payload.get('service'))
+        delete_host_rules(hostname=payload.get('host'), servicename=payload.get('service'), interfaces=payload.get('interfaces'))
         cmd_params = None
         t = ()
         if payload.get('cmd_params'):
@@ -216,8 +221,14 @@ def addservice():
                         t += (int(thresholds.get('critical')),)
                     else:
                         t = None
-                check_tuple = ([payload.get('host')], payload.get('service'), None, t)
-                g_service_vars['checks'].append(check_tuple)
+		# Add device interfaces as check items, if passed in HTTP request
+		if payload.get('interfaces'):
+			for interface in payload.get('interfaces'):
+                                check_tuple = ([payload.get('host')], payload.get('service'), interface, t)
+                                g_service_vars['checks'].append(check_tuple)
+		else:
+                        check_tuple = ([payload.get('host')], payload.get('service'), None, t)
+                        g_service_vars['checks'].append(check_tuple)
             except Exception, e:
 		logger.error('Error in cmd_params : ' + pprint.pformat(e))
                 response.update({
@@ -350,9 +361,14 @@ def editservice():
         "error_code": None,
         "error_message": None
     }
+    interfaces = None
+    # Check for interfaces
+    if html.var('interfaces'):
+	    interfaces = ast.literal_eval(html.var('interfaces'))
     payload = {
         "host": html.var("device_name"),
         "service": html.var("service_name"),
+	"interfaces": interfaces,
         "serv_params": html.var('serv_params'),
         "cmd_params": html.var('cmd_params'),
         "agent_tag": html.var('agent_tag'),
@@ -363,7 +379,7 @@ def editservice():
     
     if not new_host:
         #First delete the existing extries for the service
-        delete_host_rules(hostname=payload.get('host'), servicename=payload.get('service'))
+        delete_host_rules(hostname=payload.get('host'), servicename=payload.get('service'), interfaces=payload.get('interfaces'))
         cmd_params = None
         t = ()
         ping_level = ()
@@ -388,8 +404,14 @@ def editservice():
                         t = ()
                         t += (int(thresholds.get('warning')),)
                         t += (int(thresholds.get('critical')),)
-                    check_tuple = ([payload.get('host')], payload.get('service'), None, t)
-                    g_service_vars['checks'].append(check_tuple)
+		# Add device interfaces as check items, if passed in HTTP request
+		if payload.get('interfaces'):
+			for interface in payload.get('interfaces'):
+                                check_tuple = ([payload.get('host')], payload.get('service'), interface, t)
+                                g_service_vars['checks'].append(check_tuple)
+		else:
+                        check_tuple = ([payload.get('host')], payload.get('service'), None, t)
+                        g_service_vars['checks'].append(check_tuple)
             except Exception, e:
                 response.update({
                     "success": 0,
@@ -513,11 +535,20 @@ def deleteservice():
         "error_code": None,
         "error_message": None
     }
+    interfaces = None
+    if html.var('interfaces'):
+	    interfaces = ast.literal_eval(html.var('interfaces'))
     payload = {
         "host": html.var("device_name"),
-        "service": html.var("service_name")
+        "service": html.var("service_name"),
+	"interfaces": interfaces
     }
-    delete_host_rules(hostname=payload.get('host'), servicename=payload.get('service'))
+    delete_host_rules(
+		    hostname=payload.get('host'),
+		    servicename=payload.get('service'),
+		    interfaces=payload.get('interfaces'),
+		    flag=True
+		    )
     flag = write_new_host_rules()
     if not flag:
         response.update({
@@ -550,9 +581,13 @@ def set_ping_levels(host, ping_levels):
         "snmp_ports": [],
         "snmp_communities": []
     	}
-        os.open(rules_file, os.O_RDWR|os.O_CREAT)
-        execfile(rules_file, g_service_vars, g_service_vars)
-        del g_service_vars['__builtins__']
+	try:
+                os.open(rules_file, os.O_RDWR|os.O_CREAT)
+                execfile(rules_file, g_service_vars, g_service_vars)
+                del g_service_vars['__builtins__']
+	except OSError, e:
+		logger.error('Could not open rules file: ' + pprint.pformat(e))
+
 	# Add tag for SNMP V2c devices in bulkwalk_hosts
 	v2_hosts = g_service_vars['bulkwalk_hosts']
 	if not filter(lambda x: 'snmp-v2' in x[0], v2_hosts):
@@ -575,7 +610,7 @@ def set_ping_levels(host, ping_levels):
 		g_service_vars['ping_levels'].append(ping_rule_set)
 	write_new_host_rules()
 
-def delete_host_rules(hostname=None, servicename=None):
+def delete_host_rules(hostname=None, servicename=None, interfaces=None, flag=False):
     global g_service_vars
     g_service_vars = {
         "only_hosts": None,
@@ -594,9 +629,13 @@ def delete_host_rules(hostname=None, servicename=None):
         "snmp_ports": [],
         "snmp_communities": []
     }
-    os.open(rules_file, os.O_RDWR|os.O_CREAT)
-    execfile(rules_file, g_service_vars, g_service_vars)
-    del g_service_vars['__builtins__']
+
+    try:
+	    os.open(rules_file, os.O_RDWR|os.O_CREAT)
+	    execfile(rules_file, g_service_vars, g_service_vars)
+	    del g_service_vars['__builtins__']
+    except OSError, e:
+	    logger.error('Could not open rules file: ' + pprint.pformat(e))
 
     if hostname is None:
         return
@@ -616,14 +655,21 @@ def delete_host_rules(hostname=None, servicename=None):
         if servicename.strip().lower() == 'ping':
             g_service_vars['ping_levels'] = filter(lambda t: hostname not in t[2], g_service_vars['ping_levels'])
             return
-        iter_func = ifilterfalse(lambda t: hostname in t[0] and servicename in t[1], g_service_vars['checks'])
-        g_service_vars['checks'] = map(lambda x: x, iter_func)
+        if interfaces:
+            for interface in interfaces:
+                iter_func = ifilterfalse(lambda t: hostname in t[0] and servicename in t[1] and interface in t[2], g_service_vars['checks'])
+                g_service_vars['checks'] = map(lambda x: x, iter_func)
+        else:
+                iter_func = ifilterfalse(lambda t: hostname in t[0] and servicename in t[1], g_service_vars['checks'])
+                g_service_vars['checks'] = map(lambda x: x, iter_func)
+	    
 
-        for serv_param, param_vals in g_service_vars['extra_service_conf'].items():
-            iter_func = ifilterfalse(lambda t: hostname in t[2] and servicename in t[3], param_vals)
-            g_service_vars['extra_service_conf'][serv_param] = map(lambda x: x, iter_func)
-        g_service_vars['snmp_ports'] = filter(lambda t: hostname not in t[2], g_service_vars['snmp_ports'])
-        g_service_vars['snmp_communities'] = filter(lambda t: hostname not in t[-1], g_service_vars['snmp_communities'])
+	for serv_param, param_vals in g_service_vars['extra_service_conf'].items():
+                iter_func = ifilterfalse(lambda t: hostname in t[2] and servicename in t[3], param_vals)
+                g_service_vars['extra_service_conf'][serv_param] = map(lambda x: x, iter_func)
+	if not flag:
+                g_service_vars['snmp_ports'] = filter(lambda t: hostname not in t[2], g_service_vars['snmp_ports'])
+                g_service_vars['snmp_communities'] = filter(lambda t: hostname not in t[-1], g_service_vars['snmp_communities'])
 
 
 def write_new_host_rules():
@@ -632,8 +678,8 @@ def write_new_host_rules():
     try:
         f = os.open(rules_file, os.O_RDWR)
     except OSError, e:
-        raise OSError, e
-        #return False
+	    logger.error('Could not open rules files: ' + pprint.pformat(e))
+
     fcntl.flock(f, fcntl.LOCK_EX)
     os.write(f, "bulkwalk_hosts = ")
     os.write(f, pprint.pformat(g_service_vars['bulkwalk_hosts']))
@@ -804,7 +850,8 @@ def save_host(file_path):
     try:
         f = os.open(file_path, os.O_RDWR)
     except OSError, e:
-        raise OSError, e
+	    logger.error('Could not open rules file: ' + pprint.pformat(e))
+
     fcntl.flock(f, fcntl.LOCK_EX)
     os.write(f, "# encoding: utf-8\n\n")
 

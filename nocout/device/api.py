@@ -14,7 +14,7 @@ from nocout.utils import logged_in_user_organizations
 from service.models import DeviceServiceConfiguration, Service, ServiceDataSource
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from site_instance.models import SiteInstance
-from sitesearch.views import DeviceSetFilters, prepare_result
+from sitesearch.views import prepare_result
 from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 logger=logging.getLogger(__name__)
 
@@ -42,33 +42,44 @@ class DeviceStatsApi(View):
                 page_number= self.request.GET.get('page_number', None)
                 start, offset= None, None
                 if page_number:
+                    #Setting the Start and Offset limit for the Query.
                     offset= int(page_number)*GIS_MAP_MAX_DEVICE_LIMIT
                     start= offset - GIS_MAP_MAX_DEVICE_LIMIT
 
                 base_stations_and_sector_configured_on_devices= Sector.objects.filter(sector_configured_on__id__in= \
-                organization.device_set.values_list('id', flat=True))[start:offset].values_list('base_station').annotate(dcount=Count('base_station'))
+                                                  organization.device_set.values_list('id', flat=True))[start:offset]\
+                                                  .values_list('base_station').annotate(dcount=Count('base_station'))
+
                 if base_stations_and_sector_configured_on_devices:
-                    total_count= Sector.objects.filter(sector_configured_on__id__in=organization.device_set.values_list('id', flat=True)).count()
-                    request_query= self.request.GET.get('filters','')
-                    if request_query:
-                        return DeviceSetFilters.as_view()(self.request, total_count)
+                    #if the total count key is not in the meta objects then run the query
+                    total_count=self.request.GET.get('total_count')
+                    if not int(total_count):
+                        total_count= Sector.objects.filter(sector_configured_on__id__in= \
+                                                           organization.device_set.values_list('id', flat=True))\
+                                                           .values_list( 'base_station').annotate(dcount=Count('base_station')).count()
+                        self.result['data']['meta']['total_count']= total_count
 
                     else:
+                        #Otherthan first request the total_count will be echoed back and then can be placed in the result.
+                        total_count= self.request.GET.get('total_count')
                         self.result['data']['meta']['total_count']= total_count
-                        self.result['data']['meta']['limit']= GIS_MAP_MAX_DEVICE_LIMIT
-                        self.result['data']['objects']= {"id" : "mainNode", "name" : "mainNodeName", "data" :
-                                                                { "unspiderfy_icon" : "static/img/icons/bs.png" }
-                                                        }
-                        self.result['data']['objects']['children']=list()
-                        for base_station_id, dcount in base_stations_and_sector_configured_on_devices:
-                            try:
-                                base_station_info= prepare_result(base_station_id)
-                                self.result['data']['objects']['children'].append(base_station_info)
-                            except Exception as e:
-                                logger.error("API Error Message: %s"%(e.message)+'base_station_id:%s'%(base_station_id), exc_info=True)
-                                pass
-                    self.result['message']='Data Fetched Successfully.'
-                    self.result['success']=1
+
+                    self.result['data']['meta']['limit']= GIS_MAP_MAX_DEVICE_LIMIT
+                    self.result['data']['meta']['offset']= offset
+                    self.result['data']['objects']= {"id" : "mainNode", "name" : "mainNodeName", "data" :
+                                                            { "unspiderfy_icon" : "static/img/icons/bs.png" }
+                                                    }
+                    self.result['data']['objects']['children']= list()
+                    for base_station_id, dcount in base_stations_and_sector_configured_on_devices:
+                        try:
+                            base_station_info= prepare_result(base_station_id)
+                            self.result['data']['objects']['children'].append(base_station_info)
+                        except Exception as e:
+                            logger.error("API Error Message: %s"%(e.message)+'base_station_id:%s'%(base_station_id), exc_info=True)
+                            pass
+                    self.result['data']['meta']['device_count']= len(self.result['data']['objects']['children'])
+                self.result['message']='Data Fetched Successfully.'
+                self.result['success']=1
         return HttpResponse(json.dumps(self.result))
 
 class DeviceFilterApi(View):

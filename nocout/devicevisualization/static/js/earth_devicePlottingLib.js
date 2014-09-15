@@ -108,9 +108,8 @@ function googleEarthClass() {
 
 			/*Ajax call to the API*/
 			$.ajax({
-				crossDomain: true,
-				url : window.location.origin+"/"+"device/stats/?filters="+JSON.stringify(get_param_filter),
-				// url : window.location.origin+"/"+"static/new_format.json",
+				url : base_url+"/"+"device/stats/?filters="+JSON.stringify(get_param_filter),
+				// url : base_url+"/"+"static/new_format.json",
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
@@ -326,7 +325,7 @@ function googleEarthClass() {
 			var bs_placemark = ge.createPlacemark('');
 			// Define a custom icon.
 			var bs_icon = ge.createIcon('');
-			bs_icon.setHref(window.location.origin+"/"+resultantMarkers[i].data.markerUrl);
+			bs_icon.setHref(base_url+"/"+resultantMarkers[i].data.markerUrl);
 			var style = ge.createStyle(''); //create a new style
 			style.getIconStyle().setIcon(bs_icon); //apply the icon to the style
 			bs_placemark.setStyleSelector(style); //apply the style to the placemark			
@@ -439,7 +438,7 @@ function googleEarthClass() {
 						var ss_placemark = ge.createPlacemark('');
 						// Define a custom icon.
 						var bs_icon = ge.createIcon('');
-						bs_icon.setHref(window.location.origin+"/"+ssDataObj.data.markerUrl);
+						bs_icon.setHref(base_url+"/"+ssDataObj.data.markerUrl);
 						var style = ge.createStyle(''); //create a new style
 						style.getIconStyle().setIcon(bs_icon); //apply the icon to the style
 						ss_placemark.setStyleSelector(style); //apply the style to the placemark			
