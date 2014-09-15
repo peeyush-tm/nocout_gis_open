@@ -448,7 +448,7 @@ function devicePlottingClass_gmap() {
 
 						if(result.data.objects != null) {
 
-							hitCounter = hitCounter + 1;							
+							hitCounter = hitCounter + 1;
 							/*First call case*/
 							if(devicesObject.data == undefined) {
 
@@ -526,7 +526,6 @@ function devicePlottingClass_gmap() {
 								isCallCompleted = 1;
 								gmap_self.plotDevices_gmap([],"base_station");
 
-
 								disableAdvanceButton('no');
 
 								/*Recall the server after particular timeout if system is not freezed*/
@@ -544,6 +543,7 @@ function devicePlottingClass_gmap() {
 						} else {
 							
 							isCallCompleted = 1;
+							disableAdvanceButton('no');
 							gmap_self.plotDevices_gmap([],"base_station");
 
 							/*Hide The loading Icon*/
@@ -560,6 +560,7 @@ function devicePlottingClass_gmap() {
 					} else {
 
 						isCallCompleted = 1;
+						disableAdvanceButton('no');
 						gmap_self.plotDevices_gmap([],"base_station");
 
 						setTimeout(function() {
@@ -604,6 +605,7 @@ function devicePlottingClass_gmap() {
 
 			/*Ajax call not completed yet*/
 			isCallCompleted = 1;
+			disableAdvanceButton('no');
 			gmap_self.plotDevices_gmap([],"base_station");
 
 			disableAdvanceButton('no, enable it.');
