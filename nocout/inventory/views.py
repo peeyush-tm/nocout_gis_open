@@ -3481,12 +3481,12 @@ class GISInventoryBulkImport(FormView):
 
                 # 'cable length' validation (must be upto 2 decimal places)
                 try:
-                    if isinstance(int, cable_length):
+                    if isinstance(cable_length, int) or isinstance(cable_length, float):
                         if not re.match(regex_upto_two_dec_places, str(cable_length).strip()):
-                            errors += 'Cable Length must be numeric.\n'
+                            errors += 'Cable Length must be a number.\n'
                     elif cable_length:
                         if not re.match(regex_upto_two_dec_places, str(cable_length).strip()):
-                            errors += 'Cable Length must be numeric.\n'
+                            errors += 'Cable Length must be a number.\n'
                     else:
                         errors += 'Cable Length must not be empty.\n'
                 except Exception as e:
