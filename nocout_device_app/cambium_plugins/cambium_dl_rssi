@@ -1,0 +1,80 @@
+#!/usr/bin/python
+
+"""
+RSSI DL Poller script.
+
+Poller script determines the received signal strength indication.
+poller script takes the snmp value of OID 1.3.6.1.4.1.161.19.3.2.2.8.0 from snmp agent of device at specific interval.
+RSSI information is sent to device application 
+
+"""
+# ##################################################################
+# Function : check_cambium_dl_rssi
+#
+#  Parameters: info(SNMP output) ,params(parameters to check the service state) 
+#
+#  Output: service state,plugin output ,performance data
+##################################################################
+
+params = (-77, -80)
+
+
+def check_cambium_dl_rssi(item, params, info):
+    """
+        Check_cambium_dl_rssi function calcaulates the received signal strength indication
+
+        Args:
+            item (str) Specific item on SNMP output on which we want to filter results
+
+        Kwargs:
+            params (tuple) Check parameters for critical and warning state of service
+
+        Returns:
+            state (int) :
+                    0: OK
+                    1: Warning
+                    2: Critical
+                    3: unknown
+            infotext(string):
+                    plugin output
+                    Example : Device received signal strength indication is -76
+
+            performance_data  (list):
+                    performance data
+                    Example: cambium_dl_rssi=-76;-50;-80;;;
+            Raises:
+                ValueError ,Exception
+    """
+    warn, crit = params
+    state = 3
+    infotext = "unknown_value"
+    rssi = None
+
+    try:
+        if info:
+            rssi = (info[0][0])
+	    rssi = int(rssi.split(' ')[0])
+            if rssi < crit:
+                state = 2
+            elif rssi > crit and rssi < warn:
+                state = 1
+            else:
+                state = 0
+            infotext = "Device received signal strength indication is %s " % rssi
+    except ValueError:
+        infotext = "type_mismatch_value"
+    except:
+        infotext = "unknown_value"
+    return (state, infotext, [("dl_rssi", rssi, warn, crit)])
+
+
+check_info["cambium_dl_rssi"] = {
+    'check_function': check_cambium_dl_rssi,
+    'service_description': 'cambium_dl_rssi',
+    'has_perfdata': True,
+}
+
+#######################################################################
+#	SNMP OID
+#######################################################################
+snmp_info["cambium_dl_rssi"] = ( ".1.3.6.1.4.1.161.19.3.2.2", ["8.0"] )

@@ -9,30 +9,25 @@ all ports status are sent to device application
 
 """
 
-
-def if_statename(st):
-    """
-	utility function for mapping the interget OID value to string status.
-    """
-    names = {'1': 'up', '2': 'down',
-             '3': 'testing', '4': 'unknown',
-             '5': 'dormant', '6': 'notPresent',
-             '7': 'lowerLayerDown'}
-    return names.get(st)
-
 # ####################################################################################
-# Function : check_cambium_link_ethernet_status
+# Function : check_cambium_port_status
 #
 #Parameters: info (SNMP output ) _no_params ( No Parameters)
 #
 #Output: plugin output ,service state,performance data
 #####################################################################################
 
+def port_string(st):
+    names = {'1': 'forced10H', '2': 'forced10F',
+             '3': 'auto10F-10H', '4': 'forced100H',
+             '5': 'auto100H-10H', '7': 'auto100H-10F-10H','8':'forced100F','12':'auto100F-100H','13':'auto100F-100H-10H',
+	     '15':'auto100F-100H-10F-10H','32':'forced1000F','63':'auto1000F-100F-100H-10F-10H'}
+    return names.get(st)
 
 
-def check_cambium_link_ethernet_status(item, _no_params, info):
+def check_cambium_port_status(item, _no_params, info):
     """
-                check_cambium_link_ethernet_status function calculates the link ethernet status of the port 
+                check_cambium_port_status function calculates the link ethernet status of the port 
 
                 Args:
                         item (str) Specific item on SNMP output on which we want to filter results
@@ -57,31 +52,28 @@ def check_cambium_link_ethernet_status(item, _no_params, info):
                                 ValueError ,Exception
     """
     state = 3
-    status_list = ['']
+    port_stats = None
     infotext = "unknown_value"
     try:
         if info:
-            status_list = []
-            infotext = ""
-            link_state = info[index][1]
-            state = if_statename(str(link_state))
-            if state == None:
-		state = "unknown"
-            status_list.append(("link_state", state))
+            port_stats = info[0][0]
+            port_stats = port_string(str(port_stats))
+            if port_stats == None:
+                port_stats = "unknown"
             state = 0
-            infotext += "link_state %s " % (status)
+            infotext = "%s" % (port_stats)
 
     except ValueError:
         infotext = "type_mismatch_value"
     except:
         infotext = "unknown_value"
 
-    return (state, infotext, status_list)
+    return (state, infotext, [("port_stats",port_stats)])
 
 
-check_info["cambium_link_ethernet_status"] = {
-    'check_function': check_cambium_link_ethernet_status,
-    'service_description': 'cambium_link_ethernet_status',
+check_info["cambium_port_status"] = {
+    'check_function': check_cambium_port_status,
+    'service_description': 'cambium_port_status',
     'has_perfdata': True,
 }
 
@@ -89,4 +81,4 @@ check_info["cambium_link_ethernet_status"] = {
 #snmp OID corrosponding to ports ethernet status.
 ######################################################################
 
-snmp_info["cambium_link_ethernet_status"] = ( ".1.3.6.1.2.1.2.2.1", ["8.1"] )
+snmp_info["cambium_port_status"] = ( ".1.3.6.1.4.1.161.19.3.3.2", ["80.0"] )

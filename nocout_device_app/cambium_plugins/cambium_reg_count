@@ -1,0 +1,76 @@
+#!/usr/bin/python
+
+"""
+Poller script which runs on ss and calculates the Rereg count for SS.
+
+Poller script determines the rereg count for ss.
+poller script takes the snmp value of OID .1.3.6.1.4.1.161.19.3.1.4.1.21 from snmp agent of device at specific interval.
+RSSI information is sent to device application 
+
+"""
+# ##################################################################
+# Function : check_cambium_reg_count
+#
+#  Parameters: info(SNMP output) ,params(parameters to check the service state) 
+#
+#  Output: service state,plugin output ,performance data
+##################################################################
+
+
+def check_cambium_reg_count(item, _no_params, info):
+    """
+        Check_cambium_reg_count function calcaulates the received signal strength indication
+
+        Args:
+            item (str) Specific item on SNMP output on which we want to filter results
+
+        Kwargs:
+            params (tuple) Check parameters for critical and warning state of service
+
+        Returns:
+            state (int) :
+                    0: OK
+                    1: Warning
+                    2: Critical
+                    3: unknown
+            infotext(string):
+                    plugin output
+                    Example : Device received signal strength indication is -76
+
+            performance_data  (list):
+                    performance data
+                    Example: cambium_reg_count=-76;-50;-80;;;
+            Raises:
+                ValueError ,Exception
+    """
+    state = 3
+    infotext = "unknown_value"
+    status_list = []
+    try:
+        if info:
+	    status_list = []
+	    for entry in info:
+		if item in entry:
+			reg_count = entry[1]
+			rereg_count= entry[2]
+            		infotext = "Reg count and rereg count values are %s %s" % (reg_count,rereg_count)
+			status_list.append(("reg_count",reg_count),("rereg_count",rereg_count))
+			state = 0
+			break
+    except ValueError:
+        infotext = "type_mismatch_value"
+    except:
+        infotext = "unknown_value"
+    return (state, infotext,status_list)
+
+
+check_info["cambium_reg_count"] = {
+    'check_function': check_cambium_reg_count,
+    'service_description': 'cambium_reg_count',
+    'has_perfdata': True,
+}
+
+#######################################################################
+#	SNMP OID
+#######################################################################
+snmp_info["cambium_reg_count"] = ( ".1.3.6.1.4.1.161.19.3.1.4.1", ["3","25","26"] )
