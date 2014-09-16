@@ -2624,6 +2624,7 @@ class Update_User_Thematic_Setting(View):
 
         return HttpResponse(json.dumps(self.result))
 
+
 #************************************ GIS Inventory Bulk Upload ******************************************
 class GISInventoryBulkImport(FormView):
     template_name = 'bulk_import/gis_bulk_import.html'
@@ -2966,12 +2967,13 @@ class GISInventoryBulkImport(FormView):
                 backhaul_type_list = ['SDH', 'Ethernet', 'E1', 'EoSDH', 'Dark Fibre', 'UBR']
                 pmp_list = [1, 2]
                 azimuth_angles_list = range(0, 361)
-                yes_or_no = ['Yes', 'No']
-                dr_site_list = ['Yes', 'No']
+                yes_or_no = ['Yes', 'No', 'Y', 'N']
+                dr_site_list = ['Yes', 'No', 'Y', 'N']
 
                 # regex for checking whether string contains only numbers and .(dot)
                 regex_numbers_and_single_dot = '^[0-9]*\\.?[0-9]*$'
-                regex_upto_two_dec_places = '^\d{1,3}($|\.\d{1,2}$)'
+                # regex_upto_two_dec_places = '^\d{1,9}($|\.\d{1,2}$)'
+                regex_upto_two_dec_places = '^\d+($|\.\d{1,2}$)'
                 regex_ip_address = '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$'
                 regex_alnum_comma_hyphen_fslash_underscore_space = '^[a-zA-Z0-9\s,_/-]+$'
                 regex_alnum_comma_underscore_space = '^[a-zA-Z0-9,\s_]+$'
@@ -2982,7 +2984,8 @@ class GISInventoryBulkImport(FormView):
                 regex_alnum_hyphen = '^[a-zA-Z0-9-]+$'
                 regex_alnum_space = '^[a-zA-Z0-9\s]+$'
                 regex_mac = '^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$'
-                regex_lat_long = '^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}'
+                # regex_lat_long = '^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}'
+                regex_lat_long = '^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$'
 
                 # wimax bs fields validations but common with pmp bs
                 # 'city' validation (must be alphabetical and can contain space)
@@ -3406,12 +3409,16 @@ class GISInventoryBulkImport(FormView):
                 except Exception as e:
                     logger.info(e.message)
 
+
                 # 'qos_bw' validation (must be numeric)
                 try:
                     if isinstance(qos_bw, int) or isinstance(qos_bw, float):
                         if not re.match(regex_upto_two_dec_places, str(qos_bw).strip()):
                             errors += 'QOS (BW) must be a number.\n'
                     elif qos_bw:
+                        print "^^^^^^^^^^^^^^^^^^^^^^^^^ Exception: ******************************"
+                        print "**************************** qos - ", qos_bw
+                        print "**************************** type(qos) - ", type(qos_bw)
                         if not re.match(regex_upto_two_dec_places, str(qos_bw).strip()):
                             errors += 'QOS (BW) must be a number.\n'
                     else:
