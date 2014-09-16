@@ -1,3 +1,4 @@
+
 var mapPageType = "",
     hasAdvFilter = 0,
     hasSelectDevice = 0,
