@@ -326,9 +326,19 @@ function devicePlottingClass_gmap() {
             });
 
             // google.maps.event.addListener(mapInstance, 'zoom_changed', function() {
-            // 	var a= oms.nearbyDistance(event.LatLng, true);
-            // 	console.log(a);
+
             // });
+
+            google.maps.event.addListener(mapInstance, 'idle', function() {
+            	var bs_list = getMarkerInCurrentBound();
+            	if(bs_list.length > 0) {
+            		if(recallPerf != "") {
+            			clearTimeout(recallPerf);
+            			recallPerf = "";
+            		}
+            		gisPerformanceClass.start(bs_list);
+            	}
+            });
 
 			/*Event listener for search text box*/
 			google.maps.event.addListener(new google.maps.places.SearchBox(searchTxt), 'places_changed', function() {
@@ -549,7 +559,7 @@ function devicePlottingClass_gmap() {
 							gmap_self.plotDevices_gmap([],"base_station");
 
 							setTimeout(function() {
-								gisPerformanceClass.start();
+								gisPerformanceClass.start(getMarkerInCurrentBound());
 							}, 30000);
 
 							/*Hide The loading Icon*/
@@ -570,7 +580,7 @@ function devicePlottingClass_gmap() {
 						gmap_self.plotDevices_gmap([],"base_station");
 
 						setTimeout(function() {
-							gisPerformanceClass.start();
+							gisPerformanceClass.start(getMarkerInCurrentBound());
 						}, 30000);
 
 						disableAdvanceButton('no, enable it.');
@@ -617,7 +627,7 @@ function devicePlottingClass_gmap() {
 			disableAdvanceButton('no, enable it.');
 
 			setTimeout(function() {
-				gisPerformanceClass.start();
+				gisPerformanceClass.start(getMarkerInCurrentBound());
 			}, 30000);
 			/*Recall the server after particular timeout if system is not freezed*/
 			setTimeout(function(e){
@@ -2765,7 +2775,7 @@ function devicePlottingClass_gmap() {
 	 	$.cookie("freezedAt", freezedAt, {path: '/'});
 
 	 	/*Set Live Polling flag*/
-	 	isPollingActive = 1;
+	 	// isPollingActive = 1;
 	 	
 	 	gisPerformanceClass.stop();
 	 };
@@ -2784,7 +2794,7 @@ function devicePlottingClass_gmap() {
 	 	$.cookie("freezedAt", freezedAt, {path: '/'});
 
 	 	/*Set Live Polling flag*/
-	 	isPollingActive = 0;
+	 	// isPollingActive = 0;
 
 	 	gisPerformanceClass.restart();
 
