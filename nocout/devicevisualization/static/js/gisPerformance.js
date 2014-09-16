@@ -46,7 +46,7 @@ function GisPerformance() {
 			this.bsNamesList.push(k)
 		};
 		//Store Length of Total BS
-		this.bsLength= this.bsNamesList.length;
+		this.bsLength = this.bsNamesList.length;
 
 		// Global Variable
 		this._isFrozen= isFreeze;
@@ -83,9 +83,10 @@ function GisPerformance() {
 	/*
 	This function sends Request based on the counter value.
 	 */
-	this.sendRequest= function(counter) {
+	this.sendRequest = function(counter) {
+		
 		//If isFrozen is false and Cookie value for freezeSelected is also false
-		if($.cookie('isFreezeSelected') == 0) {
+		if(($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0) {
 			var gisPerformance_this = this;
 			//Call waitAndSend function with BS Json Data and counter value
 			gisPerformance_this.waitAndSend(this.createRequestData(this.bsNamesList[counter]), counter);
@@ -119,35 +120,32 @@ function GisPerformance() {
 			return;
 		}
 
-		//If isFrozen is false and Cookie value for freezeSelected is also false
-		if($.cookie('isFreezeSelected')== 0) {
-			//Ajax Request
-			$.ajax({
-				type : 'POST',
-				dataType : 'json',
-				data: JSON.stringify(getBsRequestData),
-				url:  '/network_maps/performance_data/',
-				//In success
-				success : function (data) {
-					//If data is there
-					if(data) {
-						//Store data in gisData
-						gisPerformance_this.gisData= data;
-						//Update Map with the data
-						gisPerformance_this.updateMap();
-					}
-					//After 2 seconds timeout
-					setTimeout(function() {
-						//Send Request for the next counter
-						gisPerformance_this.sendRequest(counter);
-					}, 200);
-				},
-				//On Error, do nothing
-				error : function(err){
-					// console.log(err);
+		//Ajax Request
+		$.ajax({
+			type : 'POST',
+			dataType : 'json',
+			data: JSON.stringify(getBsRequestData),
+			url:  '/network_maps/performance_data/?freeze_time='+freezedAt,
+			//In success
+			success : function (data) {
+				//If data is there
+				if(data) {
+					//Store data in gisData
+					gisPerformance_this.gisData= data;
+					//Update Map with the data
+					gisPerformance_this.updateMap();
 				}
-			});
-		}
+				//After 2 seconds timeout
+				setTimeout(function() {
+					//Send Request for the next counter
+					gisPerformance_this.sendRequest(counter);
+				}, 500);
+			},
+			//On Error, do nothing
+			error : function(err){
+				// console.log(err);
+			}
+		});
 	}
 
 	/*

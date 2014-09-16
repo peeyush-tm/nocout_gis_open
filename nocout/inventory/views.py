@@ -18,6 +18,7 @@ from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.db.models import Q
 from device_group.models import DeviceGroup
+from nocout.settings import GISADMIN, NOCOUT_USER
 from nocout.utils.util import DictDiffer
 from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings
 from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
@@ -2371,7 +2372,11 @@ class ThematicSettingsListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return ThematicSettings.objects.values(*self.columns + ['id'])
+
+        if self.request.user.id in [NOCOUT_USER.ID, GISADMIN.ID]:
+            return ThematicSettings.objects.values(*self.columns + ['id'])
+        else:
+            return ThematicSettings.objects.filter(is_global=True).values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """

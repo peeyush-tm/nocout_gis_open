@@ -7,7 +7,8 @@ from django.utils.decorators import method_decorator
 from django.views.generic import View
 from device.models import Device, DeviceFrequency
 from inventory.models import ThematicSettings
-from performance.models import InventoryStatus, NetworkStatus, ServiceStatus
+from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, PerformanceStatus, PerformanceInventory, \
+    PerformanceNetwork, PerformanceService
 from django.views.decorators.csrf import csrf_exempt
 import re, ast
 logger=logging.getLogger(__name__)
@@ -98,6 +99,7 @@ class Gis_Map_Performance_Data(View):
             device_frequency = ''
             device_pl = ''
             device_link_color=None
+            freeze_time= self.request.GET.get('freeze_time','0')
             try:
                 device= Device.objects.get(device_name= device_name, is_added_to_nms=1, is_deleted=0)
                 thematic_settings= ThematicSettings.objects.get(user_profile= self.request.user)
@@ -108,17 +110,38 @@ class Gis_Map_Performance_Data(View):
                 device_service_data_source= live_polling_template.data_source.name
                 device_machine_name= device.machine.name
                 try:
-                    device_frequency= InventoryStatus.objects.filter(device_name= device_name, data_source= 'frequency').\
-                        using(alias=device_machine_name).get().current_value
-                    device_frequency= device_frequency
+                    if int(freeze_time):
+                        device_frequency= PerformanceInventory.objects.filter(device_name= device_name,
+                                                                             data_source= 'frequency',
+                                                                             sys_timestamp__lte= int(freeze_time)/1000).\
+                                                                             using(alias= device_machine_name).\
+                                                                             order_by('-sys_timestamp')[:1].\
+                                                                             get().current_value
+                    else:
+                        device_frequency= InventoryStatus.objects.filter(device_name= device_name,
+                                                                         data_source= 'frequency').\
+                                                                         using(alias= device_machine_name)\
+                                                                        .get().current_value
                 except Exception as e:
                     logger.info(e.message)
                     device_frequency=''
                     pass
 
                 try:
-                    device_pl= NetworkStatus.objects.filter( device_name= device_name, service_name= 'ping',
-                    data_source= 'pl').using(alias=device_machine_name).get().current_value
+                    if int(freeze_time):
+                        device_pl= PerformanceNetwork.objects.filter(device_name= device_name,
+                                                                     service_name= 'ping',
+                                                                     data_source= 'pl',
+                                                                     sys_timestamp__lte= int(freeze_time)/1000).\
+                                                                     using(alias= device_machine_name).\
+                                                                     order_by('-sys_timestamp')[:1].\
+                                                                     get().current_value
+                    else:
+                        device_pl= NetworkStatus.objects.filter(device_name= device_name,
+                                                                service_name= 'ping',
+                                                                data_source= 'pl').\
+                                                                using(alias= device_machine_name).\
+                                                                get().current_value
                 except Exception as e:
                     logger.info(e.message)
                     device_pl=''
@@ -127,6 +150,7 @@ class Gis_Map_Performance_Data(View):
                 try:
                     if len(device_frequency):
                         corrected_dev_freq = device_frequency
+
                         try:
                             chek_dev_freq = ast.literal_eval(device_frequency)
                             if int(chek_dev_freq) > 10:
@@ -135,11 +159,14 @@ class Gis_Map_Performance_Data(View):
                             logger.exception("Frequency is Empty : %s" %(e.message))
 
                         device_frequency_color= DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq)).\
-                            values_list('color_hex_value', flat=True)
+                                                                               values_list('color_hex_value', flat=True)
+
                         if len(device_frequency_color):
                             device_link_color= device_frequency_color[0]
+
                     if len(device_pl) and int(ast.literal_eval(device_pl))==100:
                         device_link_color='rgb(0,0,0)'
+
                 except Exception as e:
 
                     if len(device_pl) and int(ast.literal_eval(device_pl))==100:
@@ -152,9 +179,22 @@ class Gis_Map_Performance_Data(View):
                     pass
 
                 try:
+                    if int(freeze_time):
+                        device_performance_value= PerformanceService.objects.filter(device_name= device_name,
+                                                                               service_name= device_service_name,
+                                                                               data_source= device_service_data_source,
+                                                                               sys_timestamp__lte= int(freeze_time)/1000).\
+                                                                               using(alias=device_machine_name).\
+                                                                               order_by('-sys_timestamp')[:1].\
+                                                                               get().current_value
 
-                    device_performance_value= ServiceStatus.objects.filter( device_name= device_name, service_name= device_service_name,
-                    data_source= device_service_data_source).using(alias=device_machine_name).get().current_value
+                    else:
+
+                        device_performance_value= ServiceStatus.objects.filter(device_name= device_name,
+                                                                               service_name= device_service_name,
+                                                                               data_source= device_service_data_source)\
+                                                                               .using(alias=device_machine_name)\
+                                                                               .get().current_value
 
                 except Exception as e:
                     device_performance_value=''
