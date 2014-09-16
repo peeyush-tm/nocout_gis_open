@@ -1,3 +1,4 @@
+var recallPerf = "";
 /*
 This function creates a google marker with a new URL and take all other values from previous defined marker setting else set to null
  */
@@ -38,15 +39,22 @@ function GisPerformance() {
 	Store Data in gisData variable
 	And start the setInterval function to updateMap every 10 secs.
 	 */
-	this.start= function() {
+	this.start= function(bs_list) {
+
 		var gisPerformance_this= this;
+
+		//Reset Variable
+		gisPerformance_this.resetVariable();
+		
 		//Loop through all BS Names
-		for(var k in markersMasterObj['BSNamae']) { 
-			//Push the name into BS Name List
-			this.bsNamesList.push(k)
-		};
+		// for(var k in markersMasterObj['BSNamae']) { 
+		// 	//Push the name into BS Name List
+		// 	this.bsNamesList.push(k)
+		// };
+		this.bsNamesList = bs_list;
 		//Store Length of Total BS
 		this.bsLength = this.bsNamesList.length;
+		// console.log(this.bsLength);
 
 		// Global Variable
 		this._isFrozen= isFreeze;
@@ -67,7 +75,10 @@ function GisPerformance() {
 	 */
 	this.restart= function() {
 		this._isFrozen = isFreeze;
-		this.start();
+		
+		if(this.bsNamesList && this.bsNamesList.length > 0) {
+			this.start(this.bsNamesList);
+		}
 	}
 
 	/*
@@ -84,7 +95,7 @@ function GisPerformance() {
 	This function sends Request based on the counter value.
 	 */
 	this.sendRequest = function(counter) {
-		
+		// console.log(($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0);consl
 		//If isFrozen is false and Cookie value for freezeSelected is also false
 		if(($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0) {
 			var gisPerformance_this = this;
@@ -104,10 +115,10 @@ function GisPerformance() {
 		if(counter > this.bsLength) {
 			//5 Minutes Timeout
 			setTimeout(function() {
-				//Reset Variable
-				gisPerformance_this.resetVariable();
 				//Start Performance Again
-				gisPerformance_this.start();
+				if(this.bsNamesList && this.bsNamesList.length > 0) {
+					gisPerformance_this.start(this.bsNamesList);
+				}				
 			}, 60000);
 			return;
 		}
@@ -128,14 +139,19 @@ function GisPerformance() {
 					gisPerformance_this.updateMap();
 				}
 				//After 2 seconds timeout
-				setTimeout(function() {
+				recallPerf = setTimeout(function() {
 					//Send Request for the next counter
 					gisPerformance_this.sendRequest(counter);
 				}, 500);
 			},
 			//On Error, do nothing
 			error : function(err){
-				// console.log(err);
+				setTimeout(function() {
+					//Start Performance Again
+					if(this.bsNamesList && this.bsNamesList.length > 0) {
+						gisPerformance_this.start(this.bsNamesList);
+					}				
+				}, 60000);
 			}
 		});
 	}

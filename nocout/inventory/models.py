@@ -317,6 +317,7 @@ class ThematicSettings(models.Model):
     threshold_template = models.ForeignKey(ThresholdConfiguration)
     icon_settings =models.TextField(default='NULL')
     user_profile = models.ManyToManyField(UserProfile)
+    is_global = models.BooleanField('Global Setting',default=False)
 
     def __unicode__(self):
         return self.name
