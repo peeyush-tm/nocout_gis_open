@@ -2769,10 +2769,10 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 1;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/'});
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure: true});
 
 	 	freezedAt = (new Date()).getTime();
-	 	$.cookie("freezedAt", freezedAt, {path: '/'});
+	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
 
 	 	/*Set Live Polling flag*/
 	 	// isPollingActive = 1;
@@ -2788,10 +2788,10 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 0;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/'});
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure: true});
 
 	 	freezedAt = 0;
-	 	$.cookie("freezedAt", freezedAt, {path: '/'});
+	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
 
 	 	/*Set Live Polling flag*/
 	 	// isPollingActive = 0;
