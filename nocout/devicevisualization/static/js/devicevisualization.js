@@ -1,7 +1,8 @@
 var mapPageType = "",
     hasAdvFilter = 0,
     hasSelectDevice = 0,
-    hasTools = 0;
+    hasTools = 0,
+    freezedAt = 0;
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -10,13 +11,19 @@ if(window.location.origin) {
     base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
 }
 
-/*Set isFreeze from cookies*/
-if(!($.cookie('isFreezeSelected'))) {
-    $.cookie("isFreezeSelected", 0);
+/*Set cookies if not exist*/
+if(!$.cookie("isFreezeSelected")) {
+    $.cookie("isFreezeSelected", 0, {path: '/'});
 }
 
-/*Save cookie value to isFreeze variable*/
+if(!$.cookie("freezedAt")) {
+    $.cookie("freezedAt", 0, {path: '/'});
+}
+
+/*Save cookie value to variable*/
 isFreeze = $.cookie("isFreezeSelected");
+freezedAt = $.cookie("freezedAt");
+isPollingActive = 0;
 
 if(isFreeze == 1) {
     $("#showToolsBtn").removeClass("btn-info");
@@ -118,7 +125,7 @@ $("#resetFilters").click(function(e) {
     $("#state").val($("#state option:first").val());
     $("#city").val($("#city option:first").val());
     /*Reset search txt box*/
-    $("#searchTxt").val("");
+    $("#google_loc_search").val("");
     $("#lat_lon_search").val("");
 
     data_for_filters = main_devices_data_gmaps;    
@@ -553,7 +560,7 @@ When call is completed, we use the same function to enable Button by passing 'no
 function disableAdvanceButton(status) {
     var buttonEls= ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn'];
     var selectBoxes= ['technology', 'vendor', 'state', 'city'];
-    var textBoxes= ['searchTxt','lat_lon_search'];
+    var textBoxes= ['google_loc_search','lat_lon_search'];
     var disablingBit = false;
     if(status=== undefined) {
         disablingBit= true;
