@@ -177,7 +177,7 @@
                 <div class="col-md-12">
                     <ul class="list-unstyled list-inline">
                         <li>
-                            <input type="text" name="searchTxt" id="searchTxt" class="form-control col-xs-1" style="width:278px;"
+                            <input type="text" name="google_loc_search" id="google_loc_search" class="form-control col-xs-1" style="width:278px;"
                                    placeholder="Location Search">
                         </li>
                         <li>
@@ -319,9 +319,7 @@
 
             } else {
 
-                var searchString = JSON.stringify([
-                                                      {"field": "device_name", "value": [deviceName]}
-                                                  ]);
+                var searchString = JSON.stringify([{"field": "device_name", "value": [deviceName]}]);
                 advSearch.setFilters(searchString, setFilterApi);
 
                 /*Hide Remove Filters button*/
@@ -331,24 +329,6 @@
             }
             /*Call getBasicFilters funtion to fetch & populate basic filters dropdown*/
             networkMapInstance.getBasicFilters();
-            /*
-            $("#state").change(function(){
-                var state_id = $(this).val();
-                if (state_id != ""){
-                    $("#city").children().show();
-                    $("#city").children('option:not([state_id='+state_id+'])').hide();
-                }
-                else{
-                    $("#city").children().show();
-                }
-            });
-            $("#city").change(function(){
-                if ( $(this).val() != ""){
-                    var state_id = $("#city :selected").attr("state_id");
-                    $("#state").val(state_id);
-                }
-            });
-            */
         });
     </script>
 {% endblock %}
