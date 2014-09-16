@@ -78,7 +78,7 @@
                     response= result;
                     if (result.data.objects.range_list != undefined && result.data.objects.range_list.length !=0  ){
                             // Remove any element present before appending any other element to it.
-                            $('#id_threshold_template').parent().parent().parent().nextAll('div').remove();
+                            $('#id_threshold_template').parent().parent().parent().not(':last').nextAll('div').remove();
 
                             //select box
                             var select_box='<div class="col-sm-9">' +
