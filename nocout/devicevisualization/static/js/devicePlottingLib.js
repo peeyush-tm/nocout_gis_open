@@ -49,6 +49,7 @@ var base_url = "",
 	sectorArray = [],
 	circleArray = [],
 	servicesData = {},
+	isPollingActive = 0,
 	/*Variables used in fresnel zone calculation*/
 	isDialogOpen = true,
 	bts1_name = "",
@@ -313,7 +314,7 @@ function devicePlottingClass_gmap() {
 			/*Create Map Type Object*/
 			mapInstance = new google.maps.Map(document.getElementById(domElement),mapObject);		
 			/*Search text box object*/
-			var searchTxt = document.getElementById('searchTxt');
+			var searchTxt = document.getElementById('google_loc_search');
 
 			/*google search object for search text box*/
 			var searchBox = new google.maps.places.SearchBox(searchTxt);
@@ -375,11 +376,8 @@ function devicePlottingClass_gmap() {
                 });
 			});
 			
-			/*Don't show full screen control in IE*/
-			if(window.navigator.appName.indexOf('internet explorer') == -1 && window.navigator.appName.indexOf('Microsoft Internet Explorer') == -1) {
-				/*Add Full Screen Control*/
-				mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(new FullScreenControl(mapInstance));
-			}
+			/*Add Full Screen Control*/
+			mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(new FullScreenControl(mapInstance));
 
 			/*Create performance lib instance*/
             gisPerformanceClass= new GisPerformance();
@@ -544,6 +542,10 @@ function devicePlottingClass_gmap() {
 							disableAdvanceButton('no');
 							gmap_self.plotDevices_gmap([],"base_station");
 
+							setTimeout(function() {
+								gisPerformanceClass.start();
+							}, 30000);
+
 							/*Hide The loading Icon*/
 							$("#loadingIcon").hide();
 
@@ -562,7 +564,7 @@ function devicePlottingClass_gmap() {
 						gmap_self.plotDevices_gmap([],"base_station");
 
 						setTimeout(function() {
-							// gisPerformanceClass.start();
+							gisPerformanceClass.start();
 						}, 30000);
 
 						disableAdvanceButton('no, enable it.');
@@ -609,7 +611,6 @@ function devicePlottingClass_gmap() {
 			disableAdvanceButton('no, enable it.');
 
 			setTimeout(function() {
-
 				gisPerformanceClass.start();
 			}, 30000);
 			/*Recall the server after particular timeout if system is not freezed*/
@@ -2145,8 +2146,8 @@ function devicePlottingClass_gmap() {
      */
     this.initLivePolling = function() {
 
-    	/*Freeze the system i.e. stop server calls*/
-    	isFreeze = 1;
+    	/*Set isPollingActive flag*/
+    	isPollingActive = 1;
 
     	$("#sideInfo > .panel-body > .col-md-12 > .devices_container").html("");
 
@@ -2752,7 +2753,14 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 1;
-	 	$.cookie("isFreezeSelected", isFreeze);
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/'});
+
+	 	freezedAt = (new Date()).getTime();
+	 	$.cookie("freezedAt", freezedAt, {path: '/'});
+
+	 	/*Set Live Polling flag*/
+	 	isPollingActive = 1;
+	 	
 	 	gisPerformanceClass.stop();
 	 };
 
@@ -2764,7 +2772,14 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 0;
-	 	$.cookie("isFreezeSelected", isFreeze);
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/'});
+
+	 	freezedAt = 0;
+	 	$.cookie("freezedAt", freezedAt, {path: '/'});
+
+	 	/*Set Live Polling flag*/
+	 	isPollingActive = 0;
+
 	 	gisPerformanceClass.restart();
 
 	 	/*Recall the server*/
@@ -2821,8 +2836,11 @@ function devicePlottingClass_gmap() {
 			$("#clearPolygonBtn").addClass("hide");
 		}
 
-		/*Unfreeze the system i.e. Restart server calls*/
-    	isFreeze = 0;
+		/*Reset isPollingActive flag*/
+    	isPollingActive = 0;
+    	
+    	/*Restart performance calling*/
+    	gisPerformanceClass.restart();
 
 		/*Enable other buttons*/
     	disableAdvanceButton("no");

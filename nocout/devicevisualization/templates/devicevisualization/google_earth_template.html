@@ -27,7 +27,8 @@
                 <li class="alert alert-block alert-info">
                     <b>Status</b><br/> <span id="gis_status_txt"></span>
                 </li>
-                <li><button id="advSearchBtn" class="btn btn-info" onclick="showAdvSearch();" title="Click to Advance Search">
+                <li><button id="advSearchBtn" class="btn btn-info" data-complete-text="<i class='fa fa-filter'></i> Advance Search"
+                            data-loading-text="Please Wait..." onclick="showAdvSearch();" title="Click to Advance Search">
                     <i class="fa fa-filter"></i>Advance Search
                 </button></li>
                 <li>
@@ -53,7 +54,8 @@
                 {% for group in user.groups.all %}
                     {% if group.name == 'group_admin' or group.name == 'group_operator' %}
                         <li>
-                            <button id="showToolsBtn" class="btn btn-info" onclick="showToolsPanel();">
+                            <button id="showToolsBtn" class="btn btn-info" onclick="showToolsPanel();" data-complete-text="<i class='fa fa-cog'></i> Tools"
+                            data-loading-text="Please Wait...">
                                 <i class='fa fa-cog'></i> Tools
                             </button>
                             <button id="removeToolsBtn" class="btn btn-danger hide" onclick="removetoolsPanel();">
@@ -175,7 +177,7 @@
                 <div class="col-md-12">
                     <ul class="list-unstyled list-inline">
                         <li>
-                            <input type="text" name="searchTxt" id="searchTxt" class="form-control col-xs-1" style="width:278px;"
+                            <input type="text" name="google_loc_search" id="google_loc_search" class="form-control col-xs-1" style="width:278px;"
                                    placeholder="Location Search">
                         </li>
                         <li>

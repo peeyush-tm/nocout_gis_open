@@ -228,7 +228,7 @@ function advanceJustSearchClass() {
         var searchedMarkerLatLong= new google.maps.LatLng(lat, long);
 
         //create a new marker
-        var showSearchedResultMarker= new google.maps.Marker({position: searchedMarkerLatLong, zIndex: 500})
+        var showSearchedResultMarker = new google.maps.Marker({position: searchedMarkerLatLong, zIndex: 500})
         //push marker in the previouslySearchedMarkersList array
         advanceSearchMasterObj.previouslySearchedMarkersList.push(showSearchedResultMarker);
 
