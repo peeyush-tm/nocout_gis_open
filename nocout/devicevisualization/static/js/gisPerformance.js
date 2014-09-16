@@ -54,7 +54,7 @@ function GisPerformance() {
 		this.bsNamesList = bs_list;
 		//Store Length of Total BS
 		this.bsLength = this.bsNamesList.length;
-		console.log(this.bsLength);
+		// console.log(this.bsLength);
 
 		// Global Variable
 		this._isFrozen= isFreeze;
@@ -95,7 +95,7 @@ function GisPerformance() {
 	This function sends Request based on the counter value.
 	 */
 	this.sendRequest = function(counter) {
-		console.log(($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0);
+		// console.log(($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0);consl
 		//If isFrozen is false and Cookie value for freezeSelected is also false
 		if(($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0) {
 			var gisPerformance_this = this;

@@ -331,7 +331,7 @@ function devicePlottingClass_gmap() {
 
             google.maps.event.addListener(mapInstance, 'idle', function() {
             	var bs_list = getMarkerInCurrentBound();
-            	if(bs_list.length > 0) {
+            	if(bs_list.length > 0 && isCallCompleted == 1) {
             		if(recallPerf != "") {
             			clearTimeout(recallPerf);
             			recallPerf = "";
@@ -827,7 +827,7 @@ function devicePlottingClass_gmap() {
 					    	/*Set the content for infowindow*/
 							infowindow.setContent(info_html);
 							/*Shift the window little up*/
-							infowindow.setOptions({pixelOffset: new google.maps.Size(0, -20)});
+							infowindow.setOptions({pixelOffset: new google.maps.Size(0, -20), window_type : "hover"});
 							/*Set The Position for InfoWindow*/
 							infowindow.setPosition(new google.maps.LatLng(e.latLng.lat(),e.latLng.lng()));
 							/*Open the info window*/
@@ -835,12 +835,12 @@ function devicePlottingClass_gmap() {
 					    }
 					});
 
-					google.maps.event.addListener(ss_marker, 'mouseout', function() {
-						
-						if(ss_marker.hasPerf == 1) {
-					    	infowindow.close();
-					    }
-					});
+					// google.maps.event.addListener(ss_marker, 'mouseout', function() {
+
+					// 	if(ss_marker.hasPerf == 1 &&  $.trim(infowindow.window_type) == "hover") {
+					//     	infowindow.close();
+					//     }
+					// });
 
 				    markersMasterObj['SS'][String(ss_marker_obj.data.lat)+ ss_marker_obj.data.lon]= ss_marker;
 				    markersMasterObj['SSNamae'][String(ss_marker_obj.device_name)]= ss_marker;
