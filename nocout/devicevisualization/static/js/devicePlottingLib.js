@@ -97,7 +97,8 @@ var base_url = "",
     sectorMarkerConfiguredOn= [],
     defaultIconSize= 'medium',
     gisPerformanceClass = {},
-    place_markers = [];
+    place_markers = [],
+    bsMarkersInBound= [];
 
 function displayCoordinates(pnt) {
       var coordsLabel = $("#cursor_lat_long");
@@ -322,6 +323,11 @@ function devicePlottingClass_gmap() {
             google.maps.event.addListener(mapInstance, 'mousemove', function (event) {
                 displayCoordinates(event.latLng);
             });
+
+            // google.maps.event.addListener(mapInstance, 'zoom_changed', function() {
+            // 	var a= oms.nearbyDistance(event.LatLng, true);
+            // 	console.log(a);
+            // });
 
 			/*Event listener for search text box*/
 			google.maps.event.addListener(new google.maps.places.SearchBox(searchTxt), 'places_changed', function() {
@@ -3271,4 +3277,17 @@ function unique_values_field_and_with_base_station_ids(filter_data_collection, t
         result_bs_collection.push({'id':unique_device_ids, 'value': unique_names[i] });
         }
     return result_bs_collection
+}
+
+function getMarkerInCurrentBound() {
+    bsMarkersInBound= [];
+    for(var key in markersMasterObj['BS']) {
+        if(markersMasterObj['BS'].hasOwnProperty(key)) {
+            var markerVisible = mapInstance.getBounds().contains(markersMasterObj['BS'][key].getPosition());
+            if(markerVisible) {
+                bsMarkersInBound.push(markersMasterObj['BS'][key]['name']);
+            }
+        }
+    }
+    return bsMarkersInBound;
 }

@@ -67,7 +67,7 @@ function GisPerformance() {
 	 */
 	this.restart= function() {
 		this._isFrozen = isFreeze;
-		this.sendRequest(0);
+		this.start();
 	}
 
 	/*
@@ -89,6 +89,14 @@ function GisPerformance() {
 			var gisPerformance_this = this;
 			//Call waitAndSend function with BS Json Data and counter value
 			gisPerformance_this.waitAndSend(this.createRequestData(this.bsNamesList[counter]), counter);
+		}
+	}
+
+	this.getMarkerInCurrentLatLong= function() {
+		for(var key in markersMasterObj['BS']) {
+			if(markersMasterObj['BS'].hasOwnProperty(key)) {
+				
+			}
 		}
 	}
 
