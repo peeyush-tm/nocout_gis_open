@@ -2838,6 +2838,9 @@ function devicePlottingClass_gmap() {
 
 		/*Reset isPollingActive flag*/
     	isPollingActive = 0;
+    	
+    	/*Restart performance calling*/
+    	gisPerformanceClass.restart();
 
 		/*Enable other buttons*/
     	disableAdvanceButton("no");
