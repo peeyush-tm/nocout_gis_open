@@ -10,7 +10,7 @@ Device on which Frequency operating is sent to device application
 
 """
 # ######################################################################
-# Function: check_cambium_frequency_invent
+# Function: check_cambium_ss_frequency_invent
 #
 # Parameters: info (SNMP Ouput) _no_params (No Parameters)
 #
@@ -18,9 +18,9 @@ Device on which Frequency operating is sent to device application
 # ######################################################################
 
 
-def check_cambium_frequency_invent(item, _no_params, info):
+def check_cambium_ss_frequency_invent(item, _no_params, info):
     """
-            check_cambium_frequency_invent function calculates the operating frequency
+            check_cambium_ss_frequency_invent function calculates the operating frequency
 
             Args:
                     item (str) Specific item on SNMP output on which we want to filter results
@@ -60,12 +60,12 @@ def check_cambium_frequency_invent(item, _no_params, info):
     return (state, infotext)
 
 
-check_info["cambium_frequency_invent"] = {
-    'check_function': check_cambium_frequency_invent,
-    'service_description': 'cambium_frequency_invent',
+check_info["cambium_ss_frequency_invent"] = {
+    'check_function': check_cambium_ss_frequency_invent,
+    'service_description': 'cambium_ss_frequency_invent',
 }
 
 #########################################################################
 #	SNMP OID for the operating frequency
 #########################################################################
-snmp_info["cambium_frequency_invent"] = ( "1.3.6.1.4.1.161.19.3.2.2", ["67.0"] )
+snmp_info["cambium_ss_frequency_invent"] = ( ".1.3.6.1.4.1.161.19.3.2.2", ["67.0"] )

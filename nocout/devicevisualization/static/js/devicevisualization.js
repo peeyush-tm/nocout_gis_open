@@ -3,10 +3,30 @@ var mapPageType = "",
     hasSelectDevice = 0,
     hasTools = 0;
 
+/*Set the base url of application for ajax calls*/
+if(window.location.origin) {
+    base_url = window.location.origin;
+} else {
+    base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+}
+
 /*Set isFreeze from cookies*/
 if(!($.cookie('isFreezeSelected'))) {
     $.cookie("isFreezeSelected", 0);
 }
+
+/*Save cookie value to isFreeze variable*/
+isFreeze = $.cookie("isFreezeSelected");
+
+if(isFreeze == 1) {
+    $("#showToolsBtn").removeClass("btn-info");
+    $("#showToolsBtn").addClass("btn-warning");
+} else {
+    $("#showToolsBtn").addClass("btn-info");
+    $("#showToolsBtn").removeClass("btn-warning");
+}
+
+
 
 /*Call get_page_status function to show the current status*/
 get_page_status();
@@ -41,8 +61,7 @@ $("#state").change(function(e) {
             $("#city").append(city_options[j]);
         }
         var city_obj = $("#city").children('option:not([state_id='+state_id+'])');
-//        city_obj.hide();
-//        city_obj.attr('disabled', true);
+
         $("#city").prepend('<option value="">Select City</option>');
         city_obj.each(function(){
             city_options.push($(this));
@@ -54,7 +73,6 @@ $("#state").change(function(e) {
         for (var j =0 ; j < city_options.length; j++){
             $("#city").append(city_options[j]);
         }
-//        $("#city").children('option:not([state_id='+state_id+'])').attr('disabled', false);
     }
     networkMapInstance.makeFiltersArray(mapPageType);
 });
@@ -84,13 +102,6 @@ $("#technology").change(function(e) {
     var tech_id = $(this).val();
 
     if (tech_id != ""){
-        // $("select#vendor > option").each(function() {
-        //     if($(this).attr('tech_id')=== tech_id) {
-        //         $(this).show();
-        //     } else {
-        //         $(this).hide();
-        //     }
-        // });
         $("#vendor").val(tech_id);
     }
     networkMapInstance.makeFiltersArray(mapPageType);
@@ -100,20 +111,18 @@ $("#technology").change(function(e) {
 /*This event triggers when Reset Filter button clicked*/
 $("#resetFilters").click(function(e) {
 
-    // if(isFreeze == 0) {
-        
-        $("#resetFilters").button("loading");
-        /*Reset The basic filters dropdown*/
-        $("#technology").val($("#technology option:first").val());
-        $("#vendor").val($("#vendor option:first").val());
-        $("#state").val($("#state option:first").val());
-        $("#city").val($("#city option:first").val());
-        /*Reset search txt box*/
-        $("#searchTxt").val("");
-        data_for_filters= main_devices_data_gmaps;
-        $("#lat_lon_search").val("");
-        isCallCompleted = 1;
-    // }
+    $("#resetFilters").button("loading");
+    /*Reset The basic filters dropdown*/
+    $("#technology").val($("#technology option:first").val());
+    $("#vendor").val($("#vendor option:first").val());
+    $("#state").val($("#state option:first").val());
+    $("#city").val($("#city option:first").val());
+    /*Reset search txt box*/
+    $("#searchTxt").val("");
+    $("#lat_lon_search").val("");
+
+    data_for_filters = main_devices_data_gmaps;    
+    isCallCompleted = 1;/*Remove this call if server call is started on click of reset button*/
 
     if(window.location.pathname.indexOf("google_earth") > -1) {
         
@@ -121,11 +130,6 @@ $("#resetFilters").click(function(e) {
 
             /*Reset filter object variable*/
             appliedFilterObj_gmaps = {};
-
-            /*Reset markers, polyline & filters*/
-
-            // tempFilteredData= [];
-            
 
             networkMapInstance.clearGmapElements();
 
@@ -135,8 +139,6 @@ $("#resetFilters").click(function(e) {
             /*Call the make network to create the BS-SS network on the google map*/
             // networkMapInstance.getDevicesData_gmap();
             networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
-            // addSubSectorMarkersToOms(main_devices_data_gmaps);
-            // showSelectedSubSectorMarkers(sector_MarkersArray);
         // }
 
         /***************GOOGLE EARTH CODE*******************/
@@ -159,15 +161,11 @@ $("#resetFilters").click(function(e) {
             /*Reset markers, polyline & filters*/
             networkMapInstance.clearGmapElements();
 
-            // tempFilteredData= [];
-
             /*Reset Global Variables & Filters*/
             networkMapInstance.resetVariables_gmap();            
             /*Call the make network to create the BS-SS network on the google map*/
             // networkMapInstance.getDevicesData_gmap();
             networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
-            // addSubSectorMarkersToOms(main_devices_data_gmaps);
-            // showSelectedSubSectorMarkers(sector_MarkersArray);
         // }
     }
 });
@@ -365,6 +363,14 @@ function removetoolsPanel() {
     /*Hide Tools Button*/
     $("#showToolsBtn").removeClass("hide");
 
+    if(isFreeze == 1) {
+        $("#showToolsBtn").removeClass("btn-info");
+        $("#showToolsBtn").addClass("btn-warning");
+    } else {
+        $("#showToolsBtn").addClass("btn-info");
+        $("#showToolsBtn").removeClass("btn-warning");
+    }
+
     /*Show Remove Button*/
     $("#removeToolsBtn").addClass("hide");
 
@@ -548,21 +554,35 @@ function disableAdvanceButton(status) {
     var buttonEls= ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn'];
     var selectBoxes= ['technology', 'vendor', 'state', 'city'];
     var textBoxes= ['searchTxt','lat_lon_search'];
-    var disablingBit= false;
+    var disablingBit = false;
     if(status=== undefined) {
         disablingBit= true;
-    }
+        for(var i=0; i< buttonEls.length; i++) {
+            // $('#'+buttonEls[i]).prop('disabled', disablingBit);
+            $('#'+buttonEls[i]).button('loading');
+        }
 
-    for(var i=0; i< buttonEls.length; i++) {
-        $('#'+buttonEls[i]).prop('disabled', disablingBit);
-    }
+        for(var i=0; i< selectBoxes.length; i++) {
+            document.getElementById(selectBoxes[i]).disabled = disablingBit;    
+        }
 
-    for(var i=0; i< selectBoxes.length; i++) {
-        document.getElementById(selectBoxes[i]).disabled = disablingBit;    
-    }
+        for(var i=0; i< textBoxes.length; i++) {
+            document.getElementById(textBoxes[i]).disabled = disablingBit;
+        }
+    } else {
+        disablingBit= false;
+        for(var i=0; i< buttonEls.length; i++) {
+            // $('#'+buttonEls[i]).prop('disabled', disablingBit);
+            $('#'+buttonEls[i]).button('complete');
+        }
 
-    for(var i=0; i< textBoxes.length; i++) {
-        document.getElementById(textBoxes[i]).disabled = disablingBit;
+        for(var i=0; i< selectBoxes.length; i++) {
+            document.getElementById(selectBoxes[i]).disabled = disablingBit;    
+        }
+
+        for(var i=0; i< textBoxes.length; i++) {
+            document.getElementById(textBoxes[i]).disabled = disablingBit;
+        }
     }
 }
 
@@ -591,4 +611,113 @@ function isLatLon(e) {
     } else {
         return false;
     }
+}
+
+/*Object.key for IE*/
+if (!Object.keys) {
+  Object.keys = (function () {
+    'use strict';
+    var hasOwnProperty = Object.prototype.hasOwnProperty,
+        hasDontEnumBug = !({toString: null}).propertyIsEnumerable('toString'),
+        dontEnums = [
+          'toString',
+          'toLocaleString',
+          'valueOf',
+          'hasOwnProperty',
+          'isPrototypeOf',
+          'propertyIsEnumerable',
+          'constructor'
+        ],
+        dontEnumsLength = dontEnums.length;
+
+    return function (obj) {
+      if (typeof obj !== 'object' && (typeof obj !== 'function' || obj === null)) {
+        throw new TypeError('Object.keys called on non-object');
+      }
+
+      var result = [], prop, i;
+
+      for (prop in obj) {
+        if (hasOwnProperty.call(obj, prop)) {
+          result.push(prop);
+        }
+      }
+
+      if (hasDontEnumBug) {
+        for (i = 0; i < dontEnumsLength; i++) {
+          if (hasOwnProperty.call(obj, dontEnums[i])) {
+            result.push(dontEnums[i]);
+          }
+        }
+      }
+      return result;
+    };
+  }());
+}
+
+/*indexOf for IE*/
+
+if (!Array.prototype.indexOf) {
+  Array.prototype.indexOf = function(searchElement, fromIndex) {
+
+    var k;
+
+    // 1. Let O be the result of calling ToObject passing
+    //    the this value as the argument.
+    if (this == null) {
+      throw new TypeError('"this" is null or not defined');
+    }
+
+    var O = Object(this);
+
+    // 2. Let lenValue be the result of calling the Get
+    //    internal method of O with the argument "length".
+    // 3. Let len be ToUint32(lenValue).
+    var len = O.length >>> 0;
+
+    // 4. If len is 0, return -1.
+    if (len === 0) {
+      return -1;
+    }
+
+    // 5. If argument fromIndex was passed let n be
+    //    ToInteger(fromIndex); else let n be 0.
+    var n = +fromIndex || 0;
+
+    if (Math.abs(n) === Infinity) {
+      n = 0;
+    }
+
+    // 6. If n >= len, return -1.
+    if (n >= len) {
+      return -1;
+    }
+
+    // 7. If n >= 0, then Let k be n.
+    // 8. Else, n<0, Let k be len - abs(n).
+    //    If k is less than 0, then let k be 0.
+    k = Math.max(n >= 0 ? n : len - Math.abs(n), 0);
+
+    // 9. Repeat, while k < len
+    while (k < len) {
+      var kValue;
+      // a. Let Pk be ToString(k).
+      //   This is implicit for LHS operands of the in operator
+      // b. Let kPresent be the result of calling the
+      //    HasProperty internal method of O with argument Pk.
+      //   This step can be combined with c
+      // c. If kPresent is true, then
+      //    i.  Let elementK be the result of calling the Get
+      //        internal method of O with the argument ToString(k).
+      //   ii.  Let same be the result of applying the
+      //        Strict Equality Comparison Algorithm to
+      //        searchElement and elementK.
+      //  iii.  If same is true, return k.
+      if (k in O && O[k] === searchElement) {
+        return k;
+      }
+      k++;
+    }
+    return -1;
+  };
 }
