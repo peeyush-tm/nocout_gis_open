@@ -603,23 +603,58 @@ function isLatLon(e) {
     var entered_key_code = (e.keyCode ? e.keyCode : e.which),
         entered_txt = $("#lat_lon_search").val();
 
-    if(((entered_key_code >47 && entered_key_code <=57) || ( entered_key_code ==8)||(entered_key_code==44)|| ( entered_key_code ==46)||( entered_key_code == 0)||(entered_key_code==127))) {
-                
-        return true;
-
-    } else if(entered_key_code == 13) {
+    if(entered_key_code == 13) {
         if(entered_txt.length > 0) {
             if(entered_txt.split(",").length != 2) {
                 alert("Please Enter Proper Lattitude,Longitude.");
+                $("#lat_lon_search").val("");
             } else {
-                networkMapInstance.pointToLatLon(entered_txt);
+                
+                var lat = +(entered_txt.split(",")[0]),
+                    lng = +(entered_txt.split(",")[1]),
+                    lat_check = (lat >= -90 && lat < 90),
+                    lon_check = (lat >= -180 && lat < 180),
+                    dms_pattern = /^(-?\d+(?:\.\d+)?)[°:d]?\s?(?:(\d+(?:\.\d+)?)['′:]?\s?(?:(\d+(?:\.\d+)?)["″]?)?)?\s?([NSEW])?/i;
+                    dms_regex = new RegExp(dms_pattern);
+                
+                if((lat_check && lon_check) || (dms_regex.exec(entered_txt.split(",")[0]) && dms_regex.exec(entered_txt.split(",")[1]))) {
+                    if((lat_check && lon_check)) {
+                        networkMapInstance.pointToLatLon(entered_txt);
+                    } else {
+                        var converted_lat = dmsToDegree(dms_regex.exec(entered_txt.split(",")[0]));
+                        var converted_lng = dmsToDegree(dms_regex.exec(entered_txt.split(",")[1]));
+                        networkMapInstance.pointToLatLon(converted_lat+","+converted_lng);
+                    }
+                } else {
+                    alert("Please Enter Proper Lattitude,Longitude.");
+                    $("#lat_lon_search").val("");
+                }                
             }                
         } else {
             alert("Please Enter Lattitude,Longitude.");
         }
-    } else {
-        return false;
     }
+}
+
+/*This function converts dms lat lon to decimal degree lat lon*/
+function dmsToDegree(latLng) {
+
+    var new_pt = NaN,degrees,minutes,seconds,hemisphere;
+
+    degrees = Number(latLng[1]);
+    minutes = typeof (latLng[2]) !== "undefined" ? Number(latLng[2]) / 60 : 0;
+    seconds = typeof (latLng[3]) !== "undefined" ? Number(latLng[3]) / 3600 : 0;
+    hemisphere = latLng[4] || null;
+    if (hemisphere !== null && /[SW]/i.test(hemisphere)) {
+        degrees = Math.abs(degrees) * -1;
+    }
+    if(degrees < 0) {
+        new_pt = degrees - minutes - seconds;
+    } else {
+        new_pt = degrees + minutes + seconds;
+    }
+
+    return new_pt;
 }
 
 /*Object.key for IE*/
