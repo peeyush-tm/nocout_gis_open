@@ -41,36 +41,49 @@
     });
 
     $(document).on('change', '.check_class', function() {
-        $('input.check_class').not(this).prop('checked', false);
-
-        $.ajax({
-            url:'{% url "update_user_thematic_setting" %}',
-            data:{ 'threshold_template_id': this.value },
-            dataType:"json",
-            success:function(result){
-                if(result.success){
-                    dialog_box_message= "Thematic Setting (0) is assigned to User: (1)".replace('(0)', result.data.objects.thematic_setting_name)
-                    dialog_box_message= dialog_box_message.replace('(1)', result.data.objects.username);
-
-                    bootbox.dialog({
-
-                            message:dialog_box_message,
+        if (this.checked){
+            $('input.check_class').not(this).prop('checked', false);
+            $.ajax({
+                url:'{% url "update_user_thematic_setting" %}',
+                data:{ 'threshold_template_id': this.value },
+                dataType:"json",
+                success:function(result){
+                    if(result.success){
+                        dialog_box_message= "Thematic Setting (0) is assigned to User: (1)".replace('(0)', result.data.objects.thematic_setting_name)
+                        dialog_box_message= dialog_box_message.replace('(1)', result.data.objects.username);
+                        bootbox.dialog({
+                                message:dialog_box_message,
+                                title: "<span class='text-sucess'><i class='fa fa-times'></i>Confirmation</span>",
+                                buttons: {
+                                    success: {
+                                            label: "OK",
+                                            className: "btn-success",
+                                            callback: function () {
+                                                $(".bootbox").modal("hide");
+                                            }
+                                        }
+                                }
+                        })
+                }
+            }
+            });//ajax ends
+        }
+        else{
+            bootbox.dialog({
+                            message:"You can not Uncheck the Selected Settings, Please Select the other setting.",
                             title: "<span class='text-sucess'><i class='fa fa-times'></i>Confirmation</span>",
                             buttons: {
                                 success: {
                                         label: "OK",
                                         className: "btn-success",
                                         callback: function () {
-                                        $(".bootbox").modal("hide");
-
+                                            $(".bootbox").modal("hide");
                                         }
                                     }
                             }
-
-                    })
-            }
+                        });
+            $(this).prop('checked', true);
         }
-        })
-    });
+    });//page load ends
 </script>
 {% endblock %}
