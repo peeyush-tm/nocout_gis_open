@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import time
+import binascii
 """
 Poller script which runs on ss and calculates the ul utilization of the ss connected from BS.
 
@@ -53,6 +54,9 @@ def check_cambium_ul_utilization(item, _no_params, info):
         if info:
 	    status_list = []
 	    for entry in info:
+                a=binascii.b2a_hex(entry[0])
+                n = 2
+                entry[0]=(':').join([a[i:i+2] for i in range(0, len(a), n)])
 		if item in entry:
 			ul_utilization = entry[1]
 			this_time = int(time.time())
@@ -61,12 +65,12 @@ def check_cambium_ul_utilization(item, _no_params, info):
 				rate = (rate*8)/(1024*1024)
                 	except MKCounterWrapped:
                         	wrapped=True
-                	status_list.append(("ul_utilization",int(rate)))
+                	status_list.append(("ul_utilization", "%f" % (rate)))
 			infotext = "Uplink utilization for interface %s: %s " % (item,rate)
 			state= 0
 			break
-	   else:
-		infotext = "No interface present"
+	else:
+	    infotext = "No interface present"
 	    
     except ValueError:
         infotext = "type_mismatch_value"

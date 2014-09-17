@@ -98,7 +98,8 @@ var base_url = "",
     sectorMarkerConfiguredOn= [],
     defaultIconSize= 'medium',
     gisPerformanceClass = {},
-    place_markers = [];
+    place_markers = [],
+    bsMarkersInBound= [];
 
 function displayCoordinates(pnt) {
       var coordsLabel = $("#cursor_lat_long");
@@ -324,6 +325,21 @@ function devicePlottingClass_gmap() {
                 displayCoordinates(event.latLng);
             });
 
+            // google.maps.event.addListener(mapInstance, 'zoom_changed', function() {
+
+            // });
+
+            google.maps.event.addListener(mapInstance, 'idle', function() {
+            	var bs_list = getMarkerInCurrentBound();
+            	if(bs_list.length > 0 && isCallCompleted == 1) {
+            		if(recallPerf != "") {
+            			clearTimeout(recallPerf);
+            			recallPerf = "";
+            		}
+            		gisPerformanceClass.start(bs_list);
+            	}
+            });
+
 			/*Event listener for search text box*/
 			google.maps.event.addListener(new google.maps.places.SearchBox(searchTxt), 'places_changed', function() {
 
@@ -543,7 +559,7 @@ function devicePlottingClass_gmap() {
 							gmap_self.plotDevices_gmap([],"base_station");
 
 							setTimeout(function() {
-								gisPerformanceClass.start();
+								gisPerformanceClass.start(getMarkerInCurrentBound());
 							}, 30000);
 
 							/*Hide The loading Icon*/
@@ -564,7 +580,7 @@ function devicePlottingClass_gmap() {
 						gmap_self.plotDevices_gmap([],"base_station");
 
 						setTimeout(function() {
-							gisPerformanceClass.start();
+							gisPerformanceClass.start(getMarkerInCurrentBound());
 						}, 30000);
 
 						disableAdvanceButton('no, enable it.');
@@ -611,7 +627,7 @@ function devicePlottingClass_gmap() {
 			disableAdvanceButton('no, enable it.');
 
 			setTimeout(function() {
-				gisPerformanceClass.start();
+				gisPerformanceClass.start(getMarkerInCurrentBound());
 			}, 30000);
 			/*Recall the server after particular timeout if system is not freezed*/
 			setTimeout(function(e){
@@ -811,7 +827,7 @@ function devicePlottingClass_gmap() {
 					    	/*Set the content for infowindow*/
 							infowindow.setContent(info_html);
 							/*Shift the window little up*/
-							infowindow.setOptions({pixelOffset: new google.maps.Size(0, -20)});
+							infowindow.setOptions({pixelOffset: new google.maps.Size(0, -20), window_type : "hover"});
 							/*Set The Position for InfoWindow*/
 							infowindow.setPosition(new google.maps.LatLng(e.latLng.lat(),e.latLng.lng()));
 							/*Open the info window*/
@@ -819,12 +835,12 @@ function devicePlottingClass_gmap() {
 					    }
 					});
 
-					google.maps.event.addListener(ss_marker, 'mouseout', function() {
-						
-						if(ss_marker.hasPerf == 1) {
-					    	infowindow.close();
-					    }
-					});
+					// google.maps.event.addListener(ss_marker, 'mouseout', function() {
+
+					// 	if(ss_marker.hasPerf == 1 &&  $.trim(infowindow.window_type) == "hover") {
+					//     	infowindow.close();
+					//     }
+					// });
 
 				    markersMasterObj['SS'][String(ss_marker_obj.data.lat)+ ss_marker_obj.data.lon]= ss_marker;
 				    markersMasterObj['SSNamae'][String(ss_marker_obj.device_name)]= ss_marker;
@@ -2753,13 +2769,13 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 1;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/'});
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure: true});
 
 	 	freezedAt = (new Date()).getTime();
-	 	$.cookie("freezedAt", freezedAt, {path: '/'});
+	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
 
 	 	/*Set Live Polling flag*/
-	 	isPollingActive = 1;
+	 	// isPollingActive = 1;
 	 	
 	 	gisPerformanceClass.stop();
 	 };
@@ -2772,13 +2788,13 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 0;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/'});
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure: true});
 
 	 	freezedAt = 0;
-	 	$.cookie("freezedAt", freezedAt, {path: '/'});
+	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
 
 	 	/*Set Live Polling flag*/
-	 	isPollingActive = 0;
+	 	// isPollingActive = 0;
 
 	 	gisPerformanceClass.restart();
 
@@ -3289,4 +3305,17 @@ function unique_values_field_and_with_base_station_ids(filter_data_collection, t
         result_bs_collection.push({'id':unique_device_ids, 'value': unique_names[i] });
         }
     return result_bs_collection
+}
+
+function getMarkerInCurrentBound() {
+    bsMarkersInBound= [];
+    for(var key in markersMasterObj['BS']) {
+        if(markersMasterObj['BS'].hasOwnProperty(key)) {
+            var markerVisible = mapInstance.getBounds().contains(markersMasterObj['BS'][key].getPosition());
+            if(markerVisible) {
+                bsMarkersInBound.push(markersMasterObj['BS'][key]['name']);
+            }
+        }
+    }
+    return bsMarkersInBound;
 }

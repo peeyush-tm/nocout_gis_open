@@ -107,8 +107,8 @@
 
       $(document).ready(function(e) {
         /*Set cookies for devicevisualization app*/
-        $.cookie("isFreezeSelected", 0, {path: '/'});
-        $.cookie("freezedAt", 0, {path: '/'});
+        $.cookie("isFreezeSelected", 0, {path: '/', secure: true});
+        $.cookie("freezedAt", 0, {path: '/', secure: true});
       });
 
       /*Triggers when login form is submitted*/
