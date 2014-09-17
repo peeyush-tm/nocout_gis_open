@@ -1374,8 +1374,8 @@ class SingleDeviceAlertDetails(View):
             data_list = EventNetwork.objects. \
                 filter(device_name=device_name,
                        data_source='pl',
-                       current_value=100,
-                       severity='DOWN',
+                       # current_value=100, #need to show up and down both
+                       # severity='DOWN',
                        sys_timestamp__gte=start_date,
                        sys_timestamp__lte=end_date). \
                 order_by("-sys_timestamp"). \
