@@ -182,7 +182,8 @@ function showAdvSearch() {
     showSpinner();
     $("#advFilterContainerBlock").hide();
     $("#advSearchContainerBlock").show();
-    advJustSearch.getFilterInfofrompagedata("searchInfoModal", "Advance Search", "advSearchBtn");
+    // advJustSearch.getFilterInfofrompagedata("searchInfoModal", "advSearchBtn");
+    advJustSearch.prepareAdvanceSearchHtml("searchInfoModal");
 }
 
 $("#setAdvSearchBtn").click(function(e) {
@@ -213,7 +214,7 @@ $("#resetSearchForm").click(function(e) {
             // } 
         }
     });
-    advJustSearch.resetPreviousSearchedMarkers();
+    advJustSearch.removeSearchMarkers();
     advJustSearch.resetVariables();
     // mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
     // mapInstance.setZoom(5);
