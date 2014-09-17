@@ -16,7 +16,7 @@
 
         {% ifequal page_type 'network' %}
 
-            <div id="tableContainer" class="box-body">
+            <div id="tableContainer" class="box-body" style="overflow-y:auto;">
                 <table cellpadding="0" cellspacing="0" border="0"
                        class="datatable table table-striped table-bordered table-hover" id="PerformanceLiveTable">
                     <thead></thead>
@@ -25,7 +25,7 @@
             </div>
 
         {% else %}
-            <div id="tableContainer" class="box-body">
+            <div id="tableContainer" class="box-body" style="overflow-y:auto;">
                 <div class="tabbable header-tabs">
                     <ul class="nav nav-tabs">
                         <li><a href="#customer_wifi_block" id="customer_wifi_tab" data-toggle="tab"><span class="hidden-inline-mobile">WiMAX</span></a></li>

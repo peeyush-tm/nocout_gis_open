@@ -1,5 +1,6 @@
 #dashboardContainer .col-md-3 .tech_block {
 	min-height: 240px;
+	overflow: hidden;
 }
 .dashboard_pie_chart {
 	height: 198px;
@@ -36,6 +37,8 @@
 }
 #dashboardContainer .col-md-3 .tech_block .col-md-5 .side_info_block .chart_title h6{
     font-weight: 400;
+    font-size: 11px;
+    /*font-size: 10.8px\9;*/
 }
 .chart_title {
 	min-width: 85px;
