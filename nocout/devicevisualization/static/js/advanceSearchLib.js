@@ -277,7 +277,7 @@ function advanceSearchClass() {
         /*Reset the appliedAdvFilter*/
         appliedAdvFilter = [];
         appliedAdvFilter_Active = [];
-        console.log(filtersInfoArray);
+
         for(var i=0;i<filtersInfoArray.length;i++) {
 
             if(filtersInfoArray[i] != null) {
@@ -526,71 +526,13 @@ function advanceSearchClass() {
                 appliedAdvFilter_Active.push({ 'field':selectId, 'value':val });
             }
         }
-//			else if(elementType == "select") {
-//
-//				var selectedVal = $("#filter_"+selectId).select2("val");
-//
-//				if(selectedVal.length > 0) {
-//
-//					resultantObject["field"] = selectId;
-//					resultantObject["value"] = selectedVal;
-//				}
-//			} else if(elementType == "checkbox") {
-//
-//				var checkboxArray = [];
-//
-//				for(var k=0;k<filtersInfoArray[j].values.length;k++) {
-//
-//					if($("#checkbox_"+filtersInfoArray[j].values[k].id)[0].checked == true) {
-//
-//						checkboxArray.push($("#checkbox_"+filtersInfoArray[j].values[k].id)[0].value);
-//					}
-//				}
-//
-//				if(checkboxArray.length > 0) {
-//
-//					resultantObject["field"] = filtersInfoArray[j].key;
-//					resultantObject["value"] = checkboxArray;
-//				}
-//			} else if(elementType == "radio") {
-//
-//				var radioArray = [];
-//
-//				for(var k=0;k<filtersInfoArray[j].values.length;k++) {
-//
-//					if($("#radio_"+filtersInfoArray[j].values[k].id)[0].checked == true) {
-//
-//						radioArray.push($("#radio_"+filtersInfoArray[j].values[k].id)[0].value)
-//					}
-//				}
-//
-//				if(radioArray.length > 0) {
-//
-//					resultantObject["field"] = filtersInfoArray[j].key;
-//					resultantObject["value"] = radioArray;
-//				}
-//			} else {
-//
-//				var typedText = $("#filter_"+selectId).val();
-//
-//				if(typedText.length > 0) {
-//
-//					resultantObject["field"] = selectId;
-//					resultantObject["value"] = typedText;
-//				}
-//			}
 
-//			if(resultantObject.field != undefined) {
-//
-//				appliedAdvFilter.push(resultantObject);
-//			}
         var search_options= ['technology','vendor', 'city', 'state'];
         city_search_bs_ids =[];
         state_search_bs_ids=[];
         technology_search_bs_ids=[];
         vendor_search_bs_ids=[];
-//        var direct_search_bs_ids= [];
-//        var depth_search_bs_ids= [];
+        
         for(var a=0; a<appliedAdvFilter.length; a++)
         {
             if(appliedAdvFilter[a].selectId == search_options[2])
@@ -654,69 +596,47 @@ function advanceSearchClass() {
         var result_ids = containsAll.apply(this, total_ids_list);
 
         if (technology_search_bs_ids.length>0 || vendor_search_bs_ids.length){
-		    result_ids = JSON.stringify(result_ids);
-		    advSearch_self.setFilters(result_ids, 'depth' );
+		    if(result_ids && result_ids.length > 0) {
+		    	result_ids = JSON.stringify(result_ids);
+			    advSearch_self.setFilters(result_ids, 'depth' );
+		    }
         }else{
-            result_ids = JSON.stringify(result_ids);
-		    advSearch_self.setFilters(result_ids, 'direct' );
+
+        	if(result_ids && result_ids.length > 0) {
+        		result_ids = JSON.stringify(result_ids);
+			    advSearch_self.setFilters(result_ids, 'direct' );
+        	}
         }
 
-
-//        /*Unique Direct Search Ids*/
-//        direct_search_bs_ids= advSearch_self.unique_list(direct_search_bs_ids);
-//        /*Unique Depth Search Ids*/
-//        depth_search_bs_ids= advSearch_self.unique_list(depth_search_bs_ids);
-//
-//
-//        /* Intersection of BS ids. The advance filters are in 'AND' condition.
-//        So there by calculating intersection between two arrays */
-//        /*If the direct search id is empty then the intersection between them will bw empty array.*/
-//        if( direct_search_bs_ids.length>0 ){
-//           depth_search_bs_ids= $(direct_search_bs_ids).filter(depth_search_bs_ids);
-//        }
-//
-////        if (depth_search_bs_ids.length>0){
-////            depth_search_bs_ids= (direct_search_bs_ids).concat(depth_search_bs_ids);
-////            depth_search_bs_ids= advSearch_self.unique_list(depth_search_bs_ids);
-////        }
-//
-////        appliedAdvFilter= advSearch_self.unique_list(appliedAdvFilter);
-//		/*Stringify the object array to pass it in the query parameters for in set filter API*/
-//
-//		/*call the setFilters function with the search parameters & setFilters API url*/
-//        if (depth_search_bs_ids.length>0){
-//		    depth_search_bs_ids = JSON.stringify(depth_search_bs_ids);
-//		    advSearch_self.setFilters(depth_search_bs_ids, 'depth' );
-//        }else if(direct_search_bs_ids.length>0){
-//            direct_search_bs_ids = JSON.stringify(direct_search_bs_ids);
-//		    advSearch_self.setFilters(direct_search_bs_ids, 'direct' );
-//        }
-
-
-
-
-        /*Call the tp plot result of the devices to plot*/
-         advSearch_self.result_plotting();
-            /*Call the reset function*/
-
-         advSearch_self.resetVariables();
-
-         /*Hide the spinner*/
+		/*Hide the spinner*/
         hideSpinner();
-		$("#advFilterFormContainer").html("");
 
-		if(!($("#advFilterContainerBlock").hasClass("hide"))) {
-			$("#advFilterContainerBlock").addClass("hide");
+		if(result_ids && result_ids.length > 0) {
+
+	        /*Call the tp plot result of the devices to plot*/
+	        advSearch_self.result_plotting();
+	        
+	        /*Call the reset function*/
+	        advSearch_self.resetVariables();
+
+	        
+			$("#advFilterFormContainer").html("");
+
+			if(!($("#advFilterContainerBlock").hasClass("hide"))) {
+				$("#advFilterContainerBlock").addClass("hide");
+			}
+
+			if($("#removeFilterBtn").hasClass("hide")) {
+				$("#removeFilterBtn").removeClass("hide");
+			}
+			/*show The loading Icon*/
+			$("#loadingIcon").show();
+
+			/*Enable the refresh button*/
+			$("#resetFilters").button("loading");
+		} else {
+			bootbox.alert("Please select any filter");
 		}
-
-		if($("#removeFilterBtn").hasClass("hide")) {
-			$("#removeFilterBtn").removeClass("hide");
-		}
-		/*show The loading Icon*/
-		$("#loadingIcon").show();
-
-		/*Enable the refresh button*/
-		$("#resetFilters").button("loading");
 
 	};
 
