@@ -298,7 +298,11 @@ function devicePlottingClass_gmap() {
 					center    : new google.maps.LatLng(21.1500,79.0900),
 					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.HYBRID/*google.maps.MapTypeId.SATELLITE*/,
-					mapTypeControl : false
+					mapTypeControl : true,
+					mapTypeControlOptions: {
+						mapTypeIds: [google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.HYBRID],
+						style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+					}
 				};
 			} else {
 				mapObject = {
@@ -307,6 +311,7 @@ function devicePlottingClass_gmap() {
 					mapTypeId : google.maps.MapTypeId.ROADMAP,
 					mapTypeControl : true,
 					mapTypeControlOptions: {
+						mapTypeIds: [google.maps.MapTypeId.ROADMAP, google.maps.MapTypeId.TERRAIN],
 						style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
 					}
 				};

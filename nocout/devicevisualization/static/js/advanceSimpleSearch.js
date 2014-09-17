@@ -24,7 +24,8 @@ function advanceSearchMainClass() {
         max_search_items: 20,
         search_limit_message: 'Too many Searched Results. Please filter again. No Markers drawn',
         statusText: "Advance Search Applied",
-        maxZoomLevel: 15
+        maxZoomLevel: 15,
+        errorText: 'No Search Result!'
     }
 
     this.filtersList= [];
@@ -337,13 +338,13 @@ function advanceSearchMainClass() {
                 // (string | mandatory) the heading of the notification
                 title: 'GIS : Search',
                 // (string | mandatory) the text inside the notification
-                text: 'No data found for the given Searchterm.',
+                text: search_self.constants.errorText,
                 // (bool | optional) if you want it to fade out on its own or just sit there
                 sticky: false
             });
 
-            mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
-            mapInstance.setZoom(5);
+            // mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
+            // mapInstance.setZoom(5);
             this.hideNotification();
         }
 
