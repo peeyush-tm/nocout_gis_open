@@ -15,7 +15,7 @@
         </div>
 
         <div class="box-body">
-            <div id="networkAlertContainer" style="overflow-y:auto;">
+            <div id="networkAlertContainer">
                 
                 <div class="tabbable header-tabs">
                     <ul class="nav nav-tabs">
@@ -24,7 +24,7 @@
                         <li><a href="#network_alert_packet" id="network_alert_packet_tab" data-toggle="tab"><span class="hidden-inline-mobile">Packet Drop</span></a></li>
                         <li class="active"><a href="#network_alert_latency" id="network_alert_latency_tab" data-toggle="tab"><span class="hidden-inline-mobile">Latency</span></a></li>
                     </ul>
-                    <div class="tab-content">
+                    <div class="tab-content" style="overflow-y:auto;">
                         <div class="tab-pane in active" id="network_alert_latency">
                             <table id="latencylistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
                                 <thead></thead>
@@ -52,7 +52,7 @@
                     </div>
                 </div>
             </div>
-            <div class="clearfix"></div>
+{#            <div class="clearfix"></div>#}
         </div>
     </div>
 
