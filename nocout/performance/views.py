@@ -25,9 +25,12 @@ log = logging.getLogger(__name__)
 SERVICE_DATA_SOURCE = {
     "uas": {"type": "area", "valuesuffix": "seconds", "valuetext": "Seconds", "formula": None},
     "rssi": {"type": "column", "valuesuffix": "dB", "valuetext": "dB", "formula": None},
-    "uptime": {"type": "area", "valuesuffix": " seconds", "valuetext": "up since (timeticks)", "formula": None},
+    "uptime": {"type": "line", "valuesuffix": " seconds", "valuetext": "up since (timeticks)", "formula": None},
     "rta": {"type": "area", "valuesuffix": "ms", "valuetext": "ms", "formula": None},
     "pl": {"type": "column", "valuesuffix": "%", "valuetext": "Percentage (%)", "formula": None},
+    "service_throughput": {"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
+    "management_port_on_odu": {"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
+    "radio_interface": {"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
     }
 
 SERVICES = {
@@ -900,23 +903,19 @@ class Get_Service_Type_Performance_Data(View):
                     continue
                 else:
                     aggregate_data[temp_time] = data.sys_timestamp
-                    self.result['data']['objects']['type'] = SERVICE_DATA_SOURCE[str(data.data_source).lower()][
-                        "type"] if \
-                        data.data_source in SERVICE_DATA_SOURCE else "area"
-
-                    self.result['data']['objects']['valuesuffix'] = \
-                        SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"] \
-                            if data.data_source in SERVICE_DATA_SOURCE \
+                    self.result['data']['objects']['type'] = \
+                        SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["type"]\
+                            if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
                             else "area"
 
                     self.result['data']['objects']['valuesuffix'] = \
-                        SERVICE_DATA_SOURCE[str(data.data_source).lower()]["valuesuffix"] \
-                            if data.data_source in SERVICE_DATA_SOURCE \
+                        SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["valuesuffix"]\
+                            if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
                             else ""
 
                     self.result['data']['objects']['valuetext'] = \
-                        SERVICE_DATA_SOURCE[str(data.data_source).lower()]["valuetext"] \
-                            if data.data_source in SERVICE_DATA_SOURCE \
+                        SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["valuetext"]\
+                            if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
                             else str(data.data_source).upper()
 
                     self.result['data']['objects']['plot_type'] = 'charts'
