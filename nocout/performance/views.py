@@ -137,17 +137,16 @@ class LivePerformanceListing(BaseDatatableView):
         :return: list of devices
         """
         device_list = list()
-
-        substation_list_with_circuit_type_backhaul = list(SubStation.objects.filter(id__in =
-                                                    Circuit.objects.filter(circuit_type__icontains="Backhaul")\
-                                                .values_list('sub_station',flat=True)).values_list('device', flat=True))
-
-        sco_list_with_circuit_type_backhaul = list(Sector.objects.filter(id__in = \
-                                      Circuit.objects.filter(circuit_type__icontains="Backhaul") \
-                                      .values_list('sector', flat=True )).values_list('sector_configured_on', flat=True))
-
-        device_list_with_circuit_type_backhaul= substation_list_with_circuit_type_backhaul + \
-                                                sco_list_with_circuit_type_backhaul
+        #single query to fetch devices with circuit type as backhaul
+        device_list_with_circuit_type_backhaul = Device.objects.filter(
+            Q(id__in=Sector.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                            values_list('sector', flat=True)).
+                                            values_list('sector_configured_on', flat=True))
+            |
+            Q(id__in=SubStation.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                            values_list('sub_station', flat=True)).
+                                            values_list('device', flat=True))
+        )
 
         if self.request.GET['page_type'] == 'customer':
             device_tab_technology = self.request.GET.get('data_tab')
@@ -160,22 +159,40 @@ class LivePerformanceListing(BaseDatatableView):
                                                 is_deleted= 0,
                                                 organization__in= kwargs['organization_ids'],
                                                 device_technology= device_technology_id).\
-                    values(*self.columns + ['id', 'device_name', 'machine__name','sector_configured_on', 'substation'])
+                    values(*self.columns + ['id',
+                                            'device_technology',
+                                            'device_name',
+                                            'machine__name',
+                                            'sector_configured_on',
+                                            'substation'])
             else:
                 #If the technology is not P2P then include devices which are substation.
-                devices = Device.objects.filter(is_added_to_nms= 1,  is_deleted= 0,
+                devices = Device.objects.filter(is_added_to_nms= 1,
+                                                is_deleted= 0,
                                                 organization__in= kwargs['organization_ids'],
                                                 device_technology= device_technology_id).\
-                    values(*self.columns + ['id', 'device_name', 'machine__name', 'substation'])
+                    values(*self.columns + ['id',
+                                            'device_technology',
+                                            'device_name',
+                                            'machine__name',
+                                            'substation'])
 
         else:
             # If the page_type is network then include only devices which are added to NMS and devices which are not P2P,
             # and must be either PMP or WiMAX.
-            devices = Device.objects.filter(Q(id__in= device_list_with_circuit_type_backhaul),
-                                            Q(device_technology = int(WiMAX.ID)) |Q(device_technology = int(PMP.ID)),
+            devices = Device.objects.filter(Q(id__in= device_list_with_circuit_type_backhaul)
+                                            |
+                                            Q(device_technology = int(WiMAX.ID))
+                                            |
+                                            Q(device_technology = int(PMP.ID)),
                                             is_added_to_nms=1, is_deleted=0,
-                                            organization__in= kwargs['organization_ids']).values(*self.columns +
-                                            ['id', 'device_name', 'machine__name', 'sector_configured_on'])
+                                            organization__in= kwargs['organization_ids']).\
+                values(*self.columns + ['id',
+                                        'device_technology',
+                                        'device_name',
+                                        'machine__name',
+                                        'sector_configured_on',
+                                        'substation'])
 
         for device in devices:
 
@@ -198,15 +215,20 @@ class LivePerformanceListing(BaseDatatableView):
                         circuit_id = ",".join(map(lambda x: str(x), circuits_id_list ))
 
             elif device['substation']:
-                substation = SubStation.objects.filter(device=device["id"])
-                if len(substation):
-                    ss_object = substation[0]
-                    circuit = Circuit.objects.filter(sub_station=ss_object.id)
-                    if len(circuit):
-                        circuit_obj = circuit[0]
-                        circuit_id = circuit_obj.circuit_id
-                        sector_id = circuit_obj.sector.sector_id
-                        bs_name = circuit_obj.sector.base_station.alias
+                if self.request.GET['page_type'] == 'network' \
+                        and ( device['device_technology'] in [int(WiMAX.ID), int(PMP.ID)]):
+                    #dont process the substation for devices of WIMAX and PMP
+                    continue
+                else:
+                    substation = SubStation.objects.filter(device=device["id"])
+                    if len(substation):
+                        ss_object = substation[0]
+                        circuit = Circuit.objects.filter(sub_station=ss_object.id)
+                        if len(circuit):
+                            circuit_obj = circuit[0]
+                            circuit_id = circuit_obj.circuit_id
+                            sector_id = circuit_obj.sector.sector_id
+                            bs_name = circuit_obj.sector.base_station.alias
             else:
                 continue
             device.update({
