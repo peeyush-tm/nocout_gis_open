@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+import binascii
 """
 Poller script which runs on ss and calculates the ul rssi from connected BS type.
 
@@ -18,6 +18,15 @@ RSSI information is sent to device application
 
 params = (-77, -80)
 
+def inventory_cambium_ul_rssi(info):
+        if info:
+	    for entry in info:
+		a=binascii.b2a_hex(entry[0])
+		n = 2
+		entry[0]=(':').join([a[i:i+2] for i in range(0, len(a), n)])
+		print entry
+		break
+	return []
 
 def check_cambium_ul_rssi(item, params, info):
     """
@@ -53,9 +62,12 @@ def check_cambium_ul_rssi(item, params, info):
     try:
         if info:
 	    for entry in info:
+		a=binascii.b2a_hex(entry[0])
+		n = 2
+		entry[0]=(':').join([a[i:i+2] for i in range(0, len(a), n)])
 		if item in entry:
 			rssi = (entry[1])
-			rssi = int(rssi.split(' ')[0])
+			rssi = int(rssi)
 			break
             if rssi < crit:
                 state = 2
@@ -73,6 +85,7 @@ def check_cambium_ul_rssi(item, params, info):
 
 check_info["cambium_ul_rssi"] = {
     'check_function': check_cambium_ul_rssi,
+    'inventory_function': inventory_cambium_ul_rssi,
     'service_description': 'cambium_ul_rssi',
     'has_perfdata': True,
 }
