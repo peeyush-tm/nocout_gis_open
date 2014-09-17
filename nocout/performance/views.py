@@ -540,8 +540,27 @@ class Fetch_Inventory_Devices(View):
         :param organization:
         :return list of network devices
         """
-        organization_network_devices = Device.objects.filter(~Q(device_technology = int(P2P.ID)),
-                                       is_added_to_nms=1, is_deleted=0, organization= organization.id)
+        # organization_network_devices = Device.objects.filter(~Q(device_technology = int(P2P.ID)),
+        #                                is_added_to_nms=1, is_deleted=0, organization= organization.id)
+        device_list_with_circuit_type_backhaul = Device.objects.filter(
+            Q(id__in=Sector.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                            values_list('sector', flat=True)).
+                                            values_list('sector_configured_on', flat=True))
+            |
+            Q(id__in=SubStation.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                            values_list('sub_station', flat=True)).
+                                            values_list('device', flat=True))
+        )
+        organization_network_devices = Device.objects.filter(
+                                        Q(id__in= device_list_with_circuit_type_backhaul)
+                                        |
+                                        Q(device_technology = int(WiMAX.ID))
+                                        |
+                                        Q(device_technology = int(PMP.ID)),
+                                        is_added_to_nms=1,
+                                        is_deleted=0,
+                                        organization__in= organization.id
+        )
         result = list()
         #Validate the condition if the sector_configured_on(master) exists
         for device in organization_network_devices:
