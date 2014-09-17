@@ -23,17 +23,20 @@ import logging
 log = logging.getLogger(__name__)
 
 SERVICE_DATA_SOURCE = {
-    "uas": {"type": "area", "valuesuffix": "seconds", "valuetext": "Seconds"},
-    "rssi": {"type": "column", "valuesuffix": "dB", "valuetext": "dB"},
-    "uptime": {"type": "area", "valuesuffix": "ms", "valuetext": "milliseconds"},
-    "rta": {"type": "area", "valuesuffix": "ms", "valuetext": "ms"},
-    "pl": {"type": "column", "valuesuffix": "%", "valuetext": "Percentage (%)"},
+    "uas": {"type": "area", "valuesuffix": "seconds", "valuetext": "Seconds", "formula": None},
+    "rssi": {"type": "column", "valuesuffix": "dB", "valuetext": "dB", "formula": None},
+    "uptime": {"type": "area", "valuesuffix": "days", "valuetext": "up since", "formula": "uptime_to_days"},
+    "rta": {"type": "area", "valuesuffix": "ms", "valuetext": "ms", "formula": None},
+    "pl": {"type": "column", "valuesuffix": "%", "valuetext": "Percentage (%)", "formula": None},
     }
 
 SERVICES = {
 
 }
 
+def uptime_to_days(uptime=0):
+    if uptime:
+        return int(float(uptime)/(60 * 60 * 24))
 
 class Live_Performance(ListView):
     """
@@ -937,6 +940,10 @@ class Get_Service_Type_Performance_Data(View):
                                     )
                             )
 
+                    formula = SERVICE_DATA_SOURCE[str(data.data_source).lower()]["formula"]\
+                                if data.data_source in SERVICE_DATA_SOURCE \
+                                else None
+
                     if data.avg_value:
                         formatter_data_point = {
                             "name": str(data.data_source).upper(),
@@ -944,7 +951,7 @@ class Get_Service_Type_Performance_Data(View):
                                                    float(data.warning_threshold) if data.warning_threshold else 0,
                                                    float(data.critical_threshold) if data.critical_threshold else 0
                             ),
-                            "y": float(data.avg_value),
+                            "y": eval(formula + "(" +str(data.avg_value) + ")") if formula else float(data.avg_value),
                             "x": data.sys_timestamp * 1000
                         }
                     else:
