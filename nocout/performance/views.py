@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 SERVICE_DATA_SOURCE = {
     "uas": {"type": "area", "valuesuffix": "seconds", "valuetext": "Seconds", "formula": None},
     "rssi": {"type": "column", "valuesuffix": "dB", "valuetext": "dB", "formula": None},
-    "uptime": {"type": "area", "valuesuffix": "days", "valuetext": "up since", "formula": "uptime_to_days"},
+    "uptime": {"type": "area", "valuesuffix": " seconds", "valuetext": "up since (timeticks)", "formula": None},
     "rta": {"type": "area", "valuesuffix": "ms", "valuetext": "ms", "formula": None},
     "pl": {"type": "column", "valuesuffix": "%", "valuetext": "Percentage (%)", "formula": None},
     }
@@ -34,9 +34,10 @@ SERVICES = {
 
 }
 
-def uptime_to_days(uptime=0):
-    if uptime:
-        return int(float(uptime)/(60 * 60 * 24))
+# def uptime_to_days(uptime=0):
+#     if uptime:
+#         ret_val = int(float(uptime)/(60 * 60 * 24))
+#         return ret_val if ret_val > 0 else int(float(uptime)/(60 * 60))
 
 class Live_Performance(ListView):
     """
