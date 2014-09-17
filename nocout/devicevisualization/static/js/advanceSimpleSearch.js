@@ -1,179 +1,143 @@
-/*Global Variables*/
-var advJustSearch_self = "",
-	gmapJustInstance = "",
-	setJustFilterApiUrl = "",
-	earthJustInstance = "",
-    filtersJustInfoArray = [],
-    templateJustData = "",
-    formJustElements = "",
-    elementsJustArray = [],
-    resultantJustObject = {},
-    appliedJustAdvFilter = [],
-    appliedJustAdvSearch_Active = [],
-    searchJustParameters = "",
-    lastJustSelectedValues = [];
-    searchJustquery_data=[];
-    result_Just_plot_devices=[], maxZoomLevel= 15, statusText= "Advance Search Applied";
+var ipStationFound= 0;
+var ipStation= [];
 
 /*Get The Root URL*/
+var base_url;
 if(window.location.origin) {
     base_url = window.location.origin;
 } else {
     base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
 }
 
-var advanceSearchMasterObj= {};
-advanceSearchMasterObj.previouslySearchedMarkersList= [];
-// advanceSearchMasterObj.searchedIconUrl= 'http://www.iconsdb.com/icons/preview/color/FF1C33/arrow-211-xl.png';
-advanceSearchMasterObj.searchedIconUrl = base_url+'/static/img/icons/bs_bounce.png';
-advanceSearchMasterObj.searchedLinesByCircuitIDs= [];
-// advanceSearchMasterObj.searchedLinesIconUrl= 'http://www.iconsdb.com/icons/preview/color/FF1C33/arrow-211-xl.png';
-advanceSearchMasterObj.searchedLinesIconUrl = base_url+'/static/img/icons/ss_bounce.png';
-advanceSearchMasterObj.maxSearchLevelNumber= 20;
-advanceSearchMasterObj.searchNumberLimitMessage= 'Too many Searched Results. Please filter again. No Markers drawn'
-
-var ipStationFound= 0;
-var ipStation= [];
 /**
  * This class is used to Advance Search.
- * @class advanceSearchLibrary
+ * @class advanceSearchMainClass
  * @uses jQuery
  * @uses Select2
  * Coded By :- Rahul Garg
  */
-function advanceJustSearchClass() {
+function advanceSearchMainClass() {
 
-	/*Store the reference of current pointer in a global variable*/
-	advJustSearch_self = this; // Name of current pointer referencing element in all files should be different otherwise conflicts occurs
+    this.constants= {
+        search_bs_icon: base_url+'/static/img/icons/bs_bounce.png',
+        search_ss_icon: base_url+'/static/img/icons/ss_bounce.png',
+        max_search_items: 20,
+        search_limit_message: 'Too many Searched Results. Please filter again. No Markers drawn',
+        statusText: "Advance Search Applied",
+        maxZoomLevel: 15
+    }
 
+    this.filtersList= [];
 
-    this.getFilterInfofrompagedata = function(domElemet, windowTitle, buttonId){
-    	//Get filter Data
-        filtersJustInfoArray= getDataForAdvanceSearch();
+    this.appliedSearch= [];
 
-        if(appliedJustAdvSearch_Active.length != 0) {
-			lastJustSelectedValues = appliedJustAdvSearch_Active;
-		}
+    this.searchMarkers= [];
 
-        var templateData = "", elementsArray = [];
-        templateData += '<div class="iframe-container"><div class="content-container"><div id="'+domElemet+'" class="advanceSearchContainer">';
-        templateData += '<form id="'+domElemet+'_form"><div class="form-group form-horizontal">';
+    this.searchedCircuitLines= [];
 
-        formElements = "";
-        /*Reset the appliedJustAdvFilter*/
-        appliedJustAdvFilter = [];
-        appliedJustAdvSearch_Active = [];
-        for(var i=0;i<filtersJustInfoArray.length;i++) {
+    this.showNotification= function() {
+        if(!$("span#gis_search_status_txt").length) {
+            $("<br /><span id='gis_search_status_txt'>"+this.constants.statusText+"</span><button class='btn btn-sm btn-danger pull-right' style='padding:2px 5px;margin:-3px;' onclick='resetAdvanceSearch();'>Reset</button>").insertAfter("#gis_status_txt");
+        }
+    }
 
-            if(filtersJustInfoArray[i] != null) {
+    this.hideNotification= function() {
+        if($("span#gis_search_status_txt").length) {
+            $("span#gis_search_status_txt").prev().remove();
+            $("span#gis_search_status_txt").next().remove();
+            $("span#gis_search_status_txt").remove();
+        }
+    }
 
-                formElements += '<div class="form-group"><label for="'+filtersJustInfoArray[i].key+'" class="col-sm-4 control-label">';
-                formElements += filtersJustInfoArray[i].title;
-                formElements += '</label><div class="col-sm-8">';
+    //We will remove all Setted Search Markers here in the Array from the map and then clear the Array.
+    this.removeSearchMarkers= function() {
+        var markers= this.searchMarkers;
+        for(var i=0; i< markers.length; i++) {
+            markers[i].setMap(null);
+        }
+        this.searchMarkers= [];
+    }
 
-                var currentKey = $.trim(filtersJustInfoArray[i].key);
-                var elementType = $.trim(filtersJustInfoArray[i].element_type);
-                /*Check Element Type*/
-                if(elementType == "multiselect") {
+    //Here we create a new Marker based on the lat, long and show it on the map.
+    this.applyIconToSearchedResult= function(lat, long, iconUrl) {
+        var searchMarker, searchedInputs, isOnlyStateorCityIsApplied= false;
+        
+        //create a new marker
+        searchMarker = new google.maps.Marker({position: new google.maps.LatLng(lat, long), zIndex: 999});
+        //push marker in the previouslySearchedMarkersList array
+        this.searchMarkers.push(searchMarker);
 
-                    var filterValues = filtersJustInfoArray[i].values;
-                    if(filterValues.length > 0) {
+        //IF NOT FILTER APPLIED IS IN CITY OR STATE, THEN WE WILL NOT CHANGE ANY ICONS
+        searchedInputs= this.getInputArray();
 
-                                                formElements += '<select multiple class="multiSelectBox col-md-12" id="search_'+filtersJustInfoArray[i].key+'">';
+        if(searchedInputs['BS Name'].length || searchedInputs['Circuit Id'].length || searchedInputs['IP'].length) {
+            isOnlyStateorCityIsApplied= false;
+        }
 
-                        /*Condition for mapped tables to pass the ID in the values else pass the value*/
-                        if(currentKey == "device_group" || currentKey == "device_type" || currentKey == "device_technology" || currentKey == "device_vendor") {
-
-                            for(var j=0;j<filterValues.length;j++) {
-
-                                if(($.trim(filterValues[j].id) != null && $.trim(filterValues[j].value) != null) && ($.trim(filterValues[j].id) != "" && $.trim(filterValues[j].value) != "")) {
-
-                                    formElements += '<option value="'+filterValues[j].value+'">'+filterValues[j].value+'</option>';
-                                }
-                            }
-                        } else {
-
-                            for(var j=0;j<filterValues.length;j++) {
-
-                                if(($.trim(filterValues[j].id) != null && $.trim(filterValues[j].value) != null) && ($.trim(filterValues[j].id) != "" && $.trim(filterValues[j].value) != "")) {
-                                    if(currentKey=== "sector_configured_on") {
-                                        var s= filterValues[j].value;
-                                        s= s.substring(s.lastIndexOf("(")+1,s.lastIndexOf(")"));
-                                        formElements += '<option value="'+filterValues[j].value+'">'+s+'</option>';
-                                    } else {
-                                        formElements += '<option value="'+filterValues[j].value+'">'+filterValues[j].value+'</option>';    
-                                    }
-
-                                    
-                                }
-                            }
-                        }
-//Add Sub Station IPs too
-                        if(currentKey== "sector_configured_on") {
-                            var a= markersMasterObj['SS'];
-                            var tempArray= [];
-                            for(var key in a) {
-                                formElements += '<option value="'+a[key]['dataset'][12]['value']+'">'+a[key]['dataset'][12]['value']+'</option>';
-                            }
-                        }
-
-                        formElements += '</select>';
-                    } else {
-
-                        formElements += '<input type="text" id="search_'+filtersJustInfoArray[i].key+'" name="'+filtersJustInfoArray[i].key+'"  class="form-control"/>';
-                    }
-                } else if(elementType == "select") {
-
-                    var filterValues = filtersJustInfoArray[i].values;
-                    if(filterValues.length > 0) {
-
-                        formElements += '<select class="multiSelectBox col-md-12" id="search_'+filtersJustInfoArray[i].key+'">';
-
-                        for(var j=0;j<filterValues.length;j++) {
-
-                            formElements += '<option value="'+filterValues[j].id+'">'+filterValues[j].value+'</option>';
-                        }
-
-                        formElements += '</select>';
-                    } else {
-
-                        formElements += '<input type="text" id="search_'+filtersJustInfoArray[i].key+'" name="'+filtersJustInfoArray[i].key+'"  class="form-control"/>';
-                    }
-                }
-                else if(elementType == "radio") {
-
-                    var filterValues = filtersJustInfoArray[i].values;
-                    if(filterValues.length > 0) {
-
-                        for(var j=0;j<filterValues.length;j++) {
-
-                            formElements += '<label class="radio-inline"><input type="radio" id="radio_'+filterValues[j].id+'" class="radioField" value="'+filterValues[j].id+'" name="'+filtersJustInfoArray[i].key+'"> '+filterValues[j].value+'</label>';
-                        }
-                    } else {
-
-                        formElements += '<input type="text" id="search_'+filtersJustInfoArray[i].key+'" name="'+filtersJustInfoArray[i].key+'"  class="form-control"/>';
-                    }
-                } else if(elementType == "checkbox") {
-
-                    var filterValues = filtersJustInfoArray[i].values;
-                    if(filterValues.length > 0) {
-
-                        for(var j=0;j<filterValues.length;j++) {
-
-                            formElements += '<label class="checkbox-inline"><input type="checkbox" class="checkboxField" id="checkbox_'+filterValues[j].id+'" value="'+filterValues[j].id+'" name="'+filterValues[j].id+'"> '+filterValues[j].value+'</label>';
-                        }
-                    } else {
-
-                        formElements += '<input type="text" id="search_'+filtersJustInfoArray[i].key+'" name="'+filtersJustInfoArray[i].key+'"  class="form-control"/>';
-                    }
+        if(!isOnlyStateorCityIsApplied) {
+                if(iconUrl) {
+                    //set icon from global object
+                    searchMarker.setIcon(iconUrl);  
                 } else {
-
-                    formElements += '<input type="text" id="search_'+filtersJustInfoArray[i].key+'" name="'+filtersJustInfoArray[i].key+'"  class="form-control"/>';
+                    //set icon from global object
+                    searchMarker.setIcon(this.constants.search_bs_icon);
                 }
+                //set animation to marker bounce
+                if(searchMarker.getAnimation() != null) {
+                    searchMarker.setAnimation(null);
+                } else {
+                    searchMarker.setAnimation(google.maps.Animation.BOUNCE);
+                }
+                //show the marker on map.
+                searchMarker.setMap(mapInstance);
+        }
 
-                formElements += '</div></div>';
-                elementsArray.push(formElements);
-                formElements = "";
+        google.maps.event.addListener(searchMarker, 'click', function() {
+            if(iconUrl) {
+                google.maps.event.trigger(markersMasterObj['SS'][String(lat)+long], 'click');
+            } else {
+                google.maps.event.trigger(markersMasterObj['BS'][String(lat)+long], 'click');
+            }
+        });
+        return ;
+    }
+
+    this.prepareAdvanceSearchHtml= function(domElemet) {
+        var templateData= "", i=0, elementsArray= [], formElement= "", j=0;
+        this.filtersList= getDataForAdvanceSearch();
+
+        templateData+= '<div class="iframe-container"><div class="content-container"><div id="'+domElemet+'" class="advanceSearchContainer">';
+        templateData += '<form id="'+domElemet+'_form"><div class="form-horizontal">';
+        for(i=0; i< this.filtersList.length; i++) {
+            var currentItem= this.filtersList[i];
+            formElement= "";
+            if(currentItem) {
+                formElement+= '<div class="form-group">';
+                formElement+= '<label for="'+currentItem.key+'" class="col-sm-4 control-label">'+currentItem.title+'</label>';
+                formElement+= '<div class="col-sm-8">';
+                if($.trim(currentItem["element_type"]== "multiselect")) {
+                    if(currentItem["values"].length) {
+                        formElement+= '<select multiple class="multiSelectBox col-md-12" id="search_'+currentItem.key+'">';
+                        for(j=0; j< currentItem["values"].length; j++) {
+                            if(currentItem["key"]=== "sector_configured_on") {
+                                var s= currentItem["values"][j]["value"];
+                                s= s.substring(s.lastIndexOf("(")+1,s.lastIndexOf(")"));
+                                formElement+= '<option value="'+s+'">'+s+'</option>';
+                            } else {
+                                formElement+= '<option value="'+currentItem["values"][j].value+'">'+currentItem["values"][j].value+'</option>';
+                            }
+                        }
+                        if(currentItem["key"]=== "sector_configured_on") {
+                            var a= markersMasterObj['SS'];
+                            for(var key in a) {
+                                formElement += '<option value="'+a[key]['dataset'][12]['value']+'">'+a[key]['dataset'][12]['value']+'</option>';
+                            }
+                        }
+                        formElement+= "</select>";
+                    }
+                }
+                formElement += '</div></div>';
+                elementsArray.push(formElement);
             }
         }
 
@@ -189,92 +153,25 @@ function advanceJustSearchClass() {
 
         /*Initialize the select2*/
         $(".advanceSearchContainer select").select2();
-        /*loop to show the last selected values*/
-        for(var k=0;k<lastJustSelectedValues.length;k++) {
-        	
-        	$("#search_"+lastJustSelectedValues[k].field).select2("val", lastJustSelectedValues[k].value);
-        }
-	    /*Hide the spinner*/
-	    hideSpinner();
 
-    };
+        hideSpinner();
 
-    this.showNotification= function() {
-    	if(!$("span#gis_search_status_txt").length) {
-    		$("<br /><span id='gis_search_status_txt'>Advance Search Applied</span><button class='btn btn-sm btn-danger pull-right' style='padding:2px 5px;margin:-3px;' onclick='resetAdvanceSearch();'>Reset</button>").insertAfter("#gis_status_txt");
-    	}
-    }
-
-    this.hideNotification= function() {
-    	if($("span#gis_search_status_txt").length) {
-    		$("span#gis_search_status_txt").prev().remove();
-            $("span#gis_search_status_txt").next().remove();
-    		$("span#gis_search_status_txt").remove();
-    	}
-    }
-
-    //We will remove all Setted Search Markers here in the Array from the map and then clear the Array.
-    this.resetPreviousSearchedMarkers= function() {
-    	var previousSearchedMarkers= advanceSearchMasterObj.previouslySearchedMarkersList;
-    	for(var i=0; i< previousSearchedMarkers.length; i++) {
-    		previousSearchedMarkers[i].setMap(null);
-    	}
-    	previousSearchedMarkers= [];
-    }
-
-    //Here we create a new Marker based on the lat, long and show it on the map. Also push the marker to the previouslySeachedMarkersList array
-    this.applyIconToSearchedResult= function(lat, long, iconUrl) {
-        //create a new lat long
-        var searchedMarkerLatLong= new google.maps.LatLng(lat, long);
-
-        //create a new marker
-        var showSearchedResultMarker = new google.maps.Marker({position: searchedMarkerLatLong, zIndex: 500})
-        //push marker in the previouslySearchedMarkersList array
-        advanceSearchMasterObj.previouslySearchedMarkersList.push(showSearchedResultMarker);
-
-        //IF NOT FILTER APPLIED IS IN CITY OR STATE, THEN WE WILL NOT CHANGE ANY ICONS
-    
-        var selectedInputs= advJustSearch_self.getInputArray();
-        var isOnlyStateorCityIsApplied= false;
-        if(selectedInputs['BS Name'].length || /*selectedInputs['BS Latitude'].length || selectedInputs['BS Longitude'].length || */selectedInputs['Circuit Id'].length || selectedInputs['IP'].length/* || selectedInputs['Technology'].length*/) {
-            isOnlyStateorCityIsApplied= false;
-        }
-        if(!isOnlyStateorCityIsApplied) {
-                if(iconUrl) {
-                    //set icon from global object
-                    showSearchedResultMarker.setIcon(iconUrl);  
-                } else {
-                    //set icon from global object
-                    showSearchedResultMarker.setIcon(advanceSearchMasterObj.searchedIconUrl);
+        if(this.appliedSearch.length != 0) {
+            for(var z=0; z< this.appliedSearch.length; z++) {
+                var currentItem= this.appliedSearch[z];
+                if(currentItem["value"].length) {
+                    $("#search_"+currentItem["field"]).select2("val", currentItem["value"]);
                 }
-                //set animation to marker bounce
-                if(showSearchedResultMarker.getAnimation() != null) {
-                    showSearchedResultMarker.setAnimation(null);
-                } else {
-                    showSearchedResultMarker.setAnimation(google.maps.Animation.BOUNCE);
-                }
-                //show the marker on map.
-                showSearchedResultMarker.setMap(mapInstance);
-        }
-
-        google.maps.event.addListener(showSearchedResultMarker, 'click', function() {
-            if(iconUrl) {
-                google.maps.event.trigger(markersMasterObj['SS'][String(lat)+long], 'click');
-            } else {
-                google.maps.event.trigger(markersMasterObj['BS'][String(lat)+long], 'click');
-                
             }
-            
-        });
-    	return ;
+        }
     }
 
     this.findTheLineToUpdate= function(device,searchedText) {
         for(var i=0; i< device['data']['param']['sector'].length; i++) {
             for(var j=0; j< searchedText.length; j++) {
                 if((String(searchedText[j]).toLowerCase())== (String(device['data']['param']['sector'][i]['circuit_id']).toLowerCase())) {                   
-                    advJustSearch_self.applyIconToSearchedResult(device['data']['param']['sector'][i]['sub_station'][0]['data']['lat'], device['data']['param']['sector'][i]['sub_station'][0]['data']['lon'], advanceSearchMasterObj.searchedLinesIconUrl);
-                    advanceSearchMasterObj.searchedLinesByCircuitIDs.push(new google.maps.LatLng(device['data']['param']['sector'][i]['sub_station'][0]['data']['lat'], device['data']['param']['sector'][i]['sub_station'][0]['data']['lon']));
+                    this.applyIconToSearchedResult(device['data']['param']['sector'][i]['sub_station'][0]['data']['lat'], device['data']['param']['sector'][i]['sub_station'][0]['data']['lon'], this.constants.search_ss_icon);
+                    this.searchedCircuitLines.push(new google.maps.LatLng(device['data']['param']['sector'][i]['sub_station'][0]['data']['lat'], device['data']['param']['sector'][i]['sub_station'][0]['data']['lon']));
                 }    
             }
         }
@@ -282,39 +179,38 @@ function advanceJustSearchClass() {
 
 
     this.getInputArray= function() {
-    	var ob= {};
-    	$("form#searchInfoModal_form > div.form-group .form-group").each(function(i , formEl) {
-    		var key= $(formEl).find('label.control-label').html();
+        var ob= {};
+        var search_self= this;
+        $("form#searchInfoModal_form > div .form-group").each(function(i , formEl) {
+            var key= $(formEl).find('label.control-label').html();
 
-    		var selectedValues= [];
+            var selectedValues= [];
 
-    		$(formEl).find('ul.select2-choices li.select2-search-choice').each(function(i, selectedli) {
-    			selectedValues.push($(selectedli).find('div').html());
-    		});
+            $(formEl).find('ul.select2-choices li.select2-search-choice').each(function(i, selectedli) {
+                selectedValues.push($(selectedli).find('div').html());
+            });
 
-    		ob[key]= selectedValues;
+            ob[key]= selectedValues;
 
-    		var selectedSelectId= $(formEl).find('select').select2('val');
+            var selectedSelectId= $(formEl).find('select').select2('val');
 
-    		var forAttr= $(formEl).find('label.control-label').attr('for');
-    		appliedJustAdvSearch_Active.push({field: forAttr, value: selectedSelectId});
-    	});
-
-    	
-    	return ob;
+            var forAttr= $(formEl).find('label.control-label').attr('for');
+            search_self.appliedSearch.push({field: forAttr, value: selectedSelectId});
+        });
+        return ob;
     }
 
     /**
-	 * This method generates get parameter for setfilter API & call setFilter function
-	 * @method callSetFilter
-	 */
-	this.searchAndCenterData = function(devicesInMap) {
+     * This method generates get parameter for setfilter API & call setFilter function
+     * @method callSetFilter
+     */
+    this.searchAndCenterData = function(devicesInMap) {
         ipStationFound= 0;
         ipStation= [];
+        var search_self= this;
+        var selectedInputs= this.getInputArray();
 
-		var selectedInputs= advJustSearch_self.getInputArray();
-
-		function checkIfValid(deviceJson) {
+        function checkIfValid(deviceJson) {
             var isValid= true;
 
             //check for name first
@@ -346,7 +242,7 @@ function advanceJustSearchClass() {
                         if(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]) {
                             if(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["substation_device_ip_address"]== searchedIps[count0]) {
                                 extendBound(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lat"], deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lon"]);
-                                advJustSearch_self.applyIconToSearchedResult(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lat"], deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lon"]);
+                                search_self.applyIconToSearchedResult(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lat"], deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lon"]);
                                 isSearchedIpPresent= true;
                             }    
                         }
@@ -374,7 +270,7 @@ function advanceJustSearchClass() {
                         for(var count=0; count< deviceJson["data"]["param"]["sector"].length; count++) {
                             if(deviceJson["data"]["param"]["sector"][count]["circuit_id"]== common[count0]) {
                                 extendBound(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lat"], deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lon"]);
-                                advJustSearch_self.applyIconToSearchedResult(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lat"], deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lon"],advanceSearchMasterObj.searchedLinesIconUrl);
+                                search_self.applyIconToSearchedResult(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lat"], deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lon"],search_self.constants.search_ss_icon);
                                 isCircuitIdPresent= true;
                             }
                         }        
@@ -392,93 +288,81 @@ function advanceJustSearchClass() {
             }
 
             return isValid;
-		}
+        }
+        //reset previous markers
+        this.removeSearchMarkers();
+        this.resetVariables();
 
+        var bounds= new google.maps.LatLngBounds();
         function extendBound(lat, lon) {
             bounds.extend(new google.maps.LatLng(lat, lon));
         }
 
-		var searchedStations= [];
 
-		//reset previous markers
-		advJustSearch_self.resetPreviousSearchedMarkers();
 
-		var bounds= new google.maps.LatLngBounds();
-		for(var i=0; i< devicesInMap.length; i++) {
-			if(checkIfValid(devicesInMap[i])) {
-				searchedStations.push(devicesInMap[i]);
-				bounds.extend(new google.maps.LatLng(devicesInMap[i]['data']['lat'], devicesInMap[i]['data']['lon']));
-				advJustSearch_self.applyIconToSearchedResult(devicesInMap[i]['data']['lat'], devicesInMap[i]['data']['lon']);
-			}
+        
+        var searchedStations= [];
+        for(var i=0; i< devicesInMap.length; i++) {
+            if(checkIfValid(devicesInMap[i])) {
+                searchedStations.push(devicesInMap[i]);
+                bounds.extend(new google.maps.LatLng(devicesInMap[i]['data']['lat'], devicesInMap[i]['data']['lon']));
+                this.applyIconToSearchedResult(devicesInMap[i]['data']['lat'], devicesInMap[i]['data']['lon']);
+            }
 
             if(ipStationFound) {
                 bounds.extend(new google.maps.LatLng(ipStation[0], ipStation[1]));
             }
-		}
+        }
 
 
-        if(advanceSearchMasterObj.searchedLinesByCircuitIDs.length) {
-            for(var i=0; i< advanceSearchMasterObj.searchedLinesByCircuitIDs.length; i++) {
-                bounds.extend(advanceSearchMasterObj.searchedLinesByCircuitIDs[i]);
+        if(this.searchedCircuitLines.length) {
+            for(var i=0; i< this.searchedCircuitLines.length; i++) {
+                bounds.extend(this.searchedCircuitLines[i]);
             }
         }
 
-		if(searchedStations.length) {
-			if(searchedStations.length > advanceSearchMasterObj.maxSearchLevelNumber) {
-                advanceSearchMasterObj.searchedLinesByCircuitIDs= [];
-                advJustSearch_self.resetPreviousSearchedMarkers();
+        if(searchedStations.length) {
+            if(searchedStations.length > this.constants.max_search_items) {
+                // this.searchedLinesByCircuitIDs= [];
+                this.removeSearchMarkers();
             }
 
             mapInstance.fitBounds(bounds);
-            if(mapInstance.getZoom() >= maxZoomLevel) {
-                mapInstance.setZoom(maxZoomLevel);
+            if(mapInstance.getZoom() >= this.constants.maxZoomLevel) {
+                mapInstance.setZoom(this.constants.maxZoomLevel);
             }
-            advJustSearch_self.showNotification();
+            this.showNotification();
         } else {
-			$.gritter.add({
-				// (string | mandatory) the heading of the notification
-				title: 'GIS : Search',
-				// (string | mandatory) the text inside the notification
-				text: 'No data found for the given Searchterm.',
-				// (bool | optional) if you want it to fade out on its own or just sit there
-				sticky: false
-			});
+            $.gritter.add({
+                // (string | mandatory) the heading of the notification
+                title: 'GIS : Search',
+                // (string | mandatory) the text inside the notification
+                text: 'No data found for the given Searchterm.',
+                // (bool | optional) if you want it to fade out on its own or just sit there
+                sticky: false
+            });
 
-			mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
-			mapInstance.setZoom(5);
-			advJustSearch_self.hideNotification();
-		}
+            mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
+            mapInstance.setZoom(5);
+            this.hideNotification();
+        }
 
-		hideSpinner();
-		$("#advSearchFormContainer").html("");
-		if(!($("#advSearchContainerBlock").hasClass("hide"))) {
-			$("#advSearchContainerBlock").addClass("hide");
-		}
-	}
+        hideSpinner();
+        $("#advSearchFormContainer").html("");
+        if(!($("#advSearchContainerBlock").hasClass("hide"))) {
+            $("#advSearchContainerBlock").addClass("hide");
+        }
+    }
 
-	/**
-	 * This function reset all variable used in the process
-	 * @class advanceSearchLib
-	 * @method resetVariables
-	 */
-	this.resetVariables = function() {
-
-		/*Reset the variable*/
-		filtersJustInfoArray = [];
-		templateJustData = "";
-		formJustElements = "";
-		elementsJustArray = [];
-		resultantJustObject = {};
-		searchJustParameters = "";
-		appliedJustAdvSearch_Active= [];
-        advanceSearchMasterObj.searchedLinesByCircuitIDs= [];
-        filtersJustInfoArray = [],
-        resultantJustObject = {},
-        appliedJustAdvFilter = [],
-        appliedJustAdvSearch_Active = [],
-        searchJustParameters = "",
-        lastJustSelectedValues = [];
-        searchJustquery_data=[];
-        result_Just_plot_devices=[]
-	};
+    /**
+     * This function reset all variable used in the process
+     * @class advanceSearchLib
+     * @method resetVariables
+     */
+    this.resetVariables = function() {
+        this.filtersList= [];
+        this.appliedSearch= [];
+        this.searchMarkers= [];
+        this.searchedCircuitLines= [];
+    };
 }
