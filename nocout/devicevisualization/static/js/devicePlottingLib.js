@@ -129,8 +129,9 @@ function prepare_oms_object(oms_instance) {
 	
 	oms_instance.addListener('click', function(marker,e) {
 		var image = '/static/img/icons/caution.png';
+		
 		if(pointAdd=== 1) {
-			map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image, zIndex: 990});
+			map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image,zIndex: 500});
 			map_points_array.push(map_point);
 			map_point_count ++;
 			return ;
@@ -2603,7 +2604,7 @@ function devicePlottingClass_gmap() {
 							latLon2 = new google.maps.LatLng(ruler_array[1].getPosition().lat(), ruler_array[1].getPosition().lng());
 
 						/*Distance in Km's */
-						var distance = (google.maps.geometry.spherical.computeDistanceBetween(latLon1, latLon2) / 1000).toFixed(2);
+						var distance = (google.maps.geometry.spherical.computeDistanceBetween(latLon1, latLon2) / 1000).toFixed(2) * 1000;
 
 					    //convert degree to radians
 					    var lat1 = ruler_array[0].getPosition().lat() * Math.PI / 180;
@@ -2619,7 +2620,7 @@ function devicePlottingClass_gmap() {
 
 					    /*Create distance infobox(label)*/
 						distance_label = new InfoBox({
-							content: distance+" Km<br />Starting Point: ("+latLonObj['startLat'].toFixed(4)+","+latLonObj['startLon'].toFixed(4)+")<br />End Point: ("+latLonObj['endLat'].toFixed(4)+","+latLonObj['endLon'].toFixed(4)+")",
+							content: distance+" m<br />Starting Point: ("+latLonObj['startLat'].toFixed(4)+","+latLonObj['startLon'].toFixed(4)+")<br />End Point: ("+latLonObj['endLat'].toFixed(4)+","+latLonObj['endLon'].toFixed(4)+")",
 							boxStyle: {
 								border: "2px solid black",
 								background: "white",
@@ -2740,7 +2741,7 @@ function devicePlottingClass_gmap() {
 
 		google.maps.event.addListener(mapInstance,'click',function(e) {
 
-            map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image});
+            map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image,zIndex: 500});
 
             map_points_array.push(map_point);
 
