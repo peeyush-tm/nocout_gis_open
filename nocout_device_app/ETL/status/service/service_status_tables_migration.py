@@ -15,16 +15,14 @@ at any given time.
 from nocout_site_name import *
 import mysql.connector
 from datetime import datetime
+import subprocess
+import socket
 import imp
 import time
 
-mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
-utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
-config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
-logging_module = imp.load_source('get_site_logger', '/opt/omd/sites/%s/nocout/utils/nocout_site_logs.py' % nocout_site_name)
-
-# Get logger
-logger = logging_module.get_site_logger('service_status_migrations.log')
+mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
+utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
+config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -78,9 +76,9 @@ def main(**configs):
         	data_values.extend(values_list)
     if data_values:
     	insert_data(configs.get('table_name'), data_values, configs=configs)
-   	logger.debug("Data inserted into my mysql db")
+   	print "Data inserted into my mysql db"
     else:
-    	logger.debug("No data in mongodb in this time frame for table %s" % (configs.get('table_name')))
+    	print "No data in mongodb in this time frame for table %s" % (configs.get('table_name'))
 
 def read_data(start_time, end_time, **kwargs):
     """
@@ -151,6 +149,7 @@ def build_data(doc):
             check_time_epoch,
 	    doc.get('ip_address'),
 	    doc.get('severity'),
+	    doc.get('interface')
 	)
         values_list.append(t)
         t = ()
@@ -170,7 +169,7 @@ def insert_data(table, data_values, **kwargs):
 	db = utility_module.mysql_conn(configs=kwargs.get('configs'))
 	for i in range(len(data_values)):
 		query = "SELECT * FROM %s " % table +\
-                	"WHERE `device_name`='%s' AND `site_name`='%s' AND `service_name`='%s'" %(str(data_values[i][0]),data_values[i][3],data_values[i][1])
+                	"WHERE `device_name`='%s' AND `site_name`='%s' AND `service_name`='%s' AND `data_source`='%s' AND `interface`='%s'" %(str(data_values[i][0]),data_values[i][3],data_values[i][1], data_values[i][4], data_values[i][-1])
 		cursor = db.cursor()
         	try:
                 	cursor.execute(query)
@@ -189,10 +188,10 @@ def insert_data(table, data_values, **kwargs):
 		`min_value`=%s,`max_value`=%s, `avg_value`=%s, `warning_threshold`=%s,
 		`critical_threshold`=%s, `sys_timestamp`=%s,`check_timestamp`=%s,
 		`ip_address`=%s,`severity`=%s
-		WHERE `device_name`=%s AND `site_name`=%s AND `service_name`=%s
+		WHERE `device_name`=%s AND `site_name`=%s AND `service_name`=%s AND `data_source`=%s AND `interface`=%s
 		"""
 		try:
-			data_values = map(lambda x: x + (x[0], x[3], x[1],), insert_dict.get('1'))
+			data_values = map(lambda x: x + (x[0], x[3], x[1], x[4], x[-1],), insert_dict.get('1'))
                 	cursor.executemany(query, data_values)
 		except mysql.connector.Error as err:
         		raise mysql.connector.Error, err
@@ -204,8 +203,8 @@ def insert_data(table, data_values, **kwargs):
  		query+= """(device_name, service_name, machine_name, 
             	site_name, data_source, current_value, min_value, 
             	max_value, avg_value, warning_threshold, 
-            	critical_threshold, sys_timestamp, check_timestamp,ip_address,severity) 
-           	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s,%s)
+            	critical_threshold, sys_timestamp, check_timestamp,ip_address,severity, interface) 
+           	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s,%s, %s)
 		"""
     		cursor = db.cursor()
     		try:
