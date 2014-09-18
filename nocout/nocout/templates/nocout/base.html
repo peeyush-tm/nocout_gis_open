@@ -12,31 +12,11 @@
         <!-- /SIDEBAR -->
 
         <div id="main-content">
-            <!-- SAMPLE BOX CONFIGURATION MODAL FORM-->
-            <div class="modal fade" id="box-config" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
-                 aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                            <h4 class="modal-title">Box Settings</h4>
-                        </div>
-                        <div class="modal-body">
-                            Here goes box setting content.
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                            <button type="button" class="btn btn-primary">Save changes</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- /SAMPLE BOX CONFIGURATION MODAL FORM-->
             <div class="container">
                 <div class="row">
                     <div id="content" class="col-lg-12">
                         <!-- PAGE HEADER-->
-                        <div class="row">
+                        <div class="row" id="page_header_container" style="display:block;">
                             <div class="col-sm-12">
                                 <div class="page-header">
                                     <!-- BREADCRUMBS -->
@@ -59,9 +39,17 @@
                                     <div class="description">{% block content_description %}Overview, Statistics and more{% endblock %}</div>
 
                                 </div>
-                            </div>
+                            </div>                            
                         </div>
                         <!-- /PAGE HEADER -->
+
+                        <!-- Page Toggle Button-->
+                        <button class="btn btn-danger btn-sm pull-right" type="button" id="headerToggleBtn">
+                            <i class="fa fa-eye-slash"></i> Hide Page Header
+                        </button>
+                        <div class="clearfix"></div>
+                        <!-- /Page Toggle Button-->
+
                         <!-- PAGE CONTENT -->
                         {% block content %}
                             <p>Default Content.</p>
@@ -71,7 +59,7 @@
                     </div>
                     <!-- /CONTENT-->
                 </div>
-            </div>
+            </div>            
         </div>
         <div class="hide" id="ajax_spinner" align="center"></div>
     </section>

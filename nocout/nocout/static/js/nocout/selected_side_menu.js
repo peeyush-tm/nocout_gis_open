@@ -89,3 +89,24 @@ for (var i = 0; i < sideMenu.length; i++) {
         }
     }
 }
+
+
+
+/*This event show/hide page header*/
+$("#headerToggleBtn").click(function(e) {
+    /*Get Current Style*/
+    var current_style = $.trim($("#page_header_container").attr("style"));
+
+    if(current_style.indexOf('block') > -1) {
+        $("#headerToggleBtn").html('<i class="fa fa-eye"></i> Show Page Header');
+        $("#headerToggleBtn").removeClass('btn-danger');
+        $("#headerToggleBtn").addClass('btn-info');
+    } else {
+        $("#headerToggleBtn").html('<i class="fa fa-eye-slash"></i> Hide Page Header');
+        $("#headerToggleBtn").removeClass('btn-info');
+        $("#headerToggleBtn").addClass('btn-danger');
+    }
+
+    /*Toggle Page Header*/
+    $("#page_header_container").slideToggle();
+});
