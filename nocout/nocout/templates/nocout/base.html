@@ -14,48 +14,55 @@
         <div id="main-content">
             <div class="container">
                 <div class="row">
-                    <div id="content" class="col-lg-12">
-                        <!-- PAGE HEADER-->
-                        <div class="row" id="page_header_container" style="display:block;">
-                            <div class="col-sm-12">
-                                <div class="page-header">
-                                    <!-- BREADCRUMBS -->
-                                    <ul class="breadcrumb">
-                                        <li>
-                                            <i class="fa fa-home"></i>
-                                            <a href="/home/">Home</a>
-                                        </li>
-                                        {% block breadcrumb_title %}
-                                            <li>Dashboard</li>
-                                        {% endblock %}
-                                    </ul>
-                                    <!-- /BREADCRUMBS -->
-                                    <div class="clearfix">
-                                        <h3 class="content-title pull-left">
-                                            {% block content_title %}Dashboard{% endblock %}
-                                        </h3>
-                                        {% block page_setting_block %}{% endblock %}
+                    <div id="page_content_div">
+                        <div id="content" class="col-lg-12">
+                            <!-- PAGE HEADER-->
+                            <div class="row" id="page_header_container" style="display:block;">
+                                <div class="col-sm-12">
+                                    <div class="page-header">
+                                        <!-- BREADCRUMBS -->
+                                        <ul class="breadcrumb">
+                                            <li>
+                                                <i class="fa fa-home"></i>
+                                                <a href="/home/">Home</a>
+                                            </li>
+                                            {% block breadcrumb_title %}
+                                                <li>Dashboard</li>
+                                            {% endblock %}
+                                        </ul>
+                                        <!-- /BREADCRUMBS -->
+                                        <div class="clearfix">
+                                            <h3 class="content-title pull-left">
+                                                {% block content_title %}Dashboard{% endblock %}
+                                            </h3>
+                                            {% block page_setting_block %}{% endblock %}
+                                        </div>
+                                        <div class="description">{% block content_description %}Overview, Statistics and more{% endblock %}</div>
+
                                     </div>
-                                    <div class="description">{% block content_description %}Overview, Statistics and more{% endblock %}</div>
-
-                                </div>
-                            </div>                            
-                        </div>
-                        <!-- /PAGE HEADER -->
-
-                        <!-- Page Toggle Button-->
-                        <button class="btn btn-danger btn-sm pull-right" type="button" id="headerToggleBtn">
-                            <i class="fa fa-eye-slash"></i> Hide Page Header
-                        </button>
-                        <div class="clearfix"></div>
-                        <!-- /Page Toggle Button-->
+                                </div>                            
+                            </div>
+                            <!-- /PAGE HEADER -->
 
                         <!-- PAGE CONTENT -->
-                        {% block content %}
-                            <p>Default Content.</p>
-                            {% block content_js %}{% endblock %}
-                        {% endblock %}
+                            <!-- Widget Full Screen Button-->
+                            <button type="button" class="btn btn-sm btn-info pull-right" id="goFullScreen">
+                                <i class="fa fa-arrows-alt"></i> View Full Screen
+                            </button>
+                            <!-- /Widget Full Screen Button-->
+                            <!-- Page Toggle Button-->
+                            <button class="btn btn-danger btn-sm pull-right" type="button" id="headerToggleBtn">
+                                <i class="fa fa-eye-slash"></i> Hide Page Header
+                            </button>
+                            <div class="clearfix"></div>
+                            <!-- /Page Toggle Button-->
+                            {% block content %}
+                                <p>Default Content.</p>
+                                {% block content_js %}{% endblock %}
+                            {% endblock %}
+                            <div class="clearfix"></div>
                         <!-- /PAGE CONTENT -->
+                        </div>
                     </div>
                     <!-- /CONTENT-->
                 </div>
