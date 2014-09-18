@@ -492,23 +492,21 @@ class Fetch_Inventory_Devices(View):
         :param organization:
         return result
         """
+        device_list = []
 
         if page_type == "customer":
-            customer_device_result = organization_customer_devices(organizations)
-            result = list()
-            for device in customer_device_result:
-                result.append({'id': device.id, 'alias': device.device_name })
-            return result
+            device_list = organization_customer_devices(organizations)
 
         elif page_type == "network":
-            network_device_result = organization_network_devices(organizations)
-            result = list()
-            #Validate the condition if the sector_configured_on(master) exists
-            for device in network_device_result:
-                if device.sector_configured_on.exists():
-                    result.append({'id': device.id, 'alias': device.device_name})
-            return result
+            device_list = organization_network_devices(organizations)
 
+        result = list()
+        for device in device_list:
+            result.append({'id': device.id,
+                           'alias': device.device_name,
+                           'technology': DeviceTechnology.objects.get(id=device.device_technology).name }
+        )
+        return result
 
 class Inventory_Device_Status(View):
     """
