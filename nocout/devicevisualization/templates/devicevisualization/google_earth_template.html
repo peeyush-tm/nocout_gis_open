@@ -297,6 +297,9 @@
 
         $(document).ready(function (e) {
 
+            /*Show page controls page*/
+            $("#headerToggleBtn").trigger('click');
+
             getFilterApi = "{{get_filter_api}}";
             setFilterApi = "{{set_filter_api}}";
             deviceName = "{{ device_name }}";
