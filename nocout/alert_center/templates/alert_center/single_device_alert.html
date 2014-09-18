@@ -80,87 +80,144 @@
 	                </li>
 	            </ul>
 	        </div>
-        <div>
 
-        </div>
-
-        <div>{{ start_date_object|date:'l d M, Y' }} TO {{ end_date_object|date:'l d M, Y' }}</div>
-
-            <table id="device_alert" class="table table-bordered table-stripped table-sortable">
-                <thead>
-                    <tr>
-                        <th>&nbsp;</th>
-                        {% for data in table_header %}
-                            <th class="headerSortable" style="background: none;">{{ data | title }}</th>
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                {% if table_data %}
-                    {% for data in table_data %}
+            <div>{{ start_date_object|date:'l d M, Y' }} TO {{ end_date_object|date:'l d M, Y' }}</div>
+            <div class="clearfix"></div>
+            <div style="overflow:auto;">
+                <table id="device_alert" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover hide">
+                    <thead>
                         <tr>
-                            {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
-                                <td><i class="fa fa-circle red-dot"></i></td>
-                                <td>{{ data.device_name }}</td>
-                                <td>{{ data.ip_address }}</td>
-                                <td>{{ data.service_name }}</td>
-                                <td>{{ data.data_source }}</td>
-                                <td><span class="text-danger">{{ data.severity }}</span></td>
-                                <td><span class="text-danger">{{ data.current_value }}</span></td>
-                                <td>{{ data.alert_date }}</td>
-                                <td>{{ data.alert_time }}</td>
-                                <td><span class="text-danger">{{ data.description }}</span></td>
-                            {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
-                                <td><i class="fa fa-circle orange-dot"></i></td>
-                                <td>{{ data.device_name }}</td>
-                                <td>{{ data.ip_address }}</td>
-                                <td>{{ data.service_name }}</td>
-                                <td>{{ data.data_source }}</td>
-                                <td><span class="text-warning">{{ data.severity }}</span></td>
-                                <td><span class="text-warning">{{ data.current_value }}</span></td>
-                                <td>{{ data.alert_date }}</td>
-                                <td>{{ data.alert_time }}</td>
-                                <td><span class="text-warning">{{ data.description }}</span></td>
-                            {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
-                                <td><i class="fa fa-circle green-dot"></i></td>
-                                <td>{{ data.device_name }}</td>
-                                <td>{{ data.ip_address }}</td>
-                                <td>{{ data.service_name }}</td>
-                                <td>{{ data.data_source }}</td>
-                                <td><span class="text-success">{{ data.severity }}</span></td>
-                                <td><span class="text-success">{{ data.current_value }}</span></td>
-                                <td>{{ data.alert_date }}</td>
-                                <td>{{ data.alert_time }}</td>
-                                <td><span class="text-success">{{ data.description }}</span></td>
-                            {% else %}
-                                <td><i class="fa fa-circle grey-dot"></i></td>
-                                <td>{{ data.device_name }}</td>
-                                <td>{{ data.ip_address }}</td>
-                                <td>{{ data.service_name }}</td>
-                                <td>{{ data.data_source }}</td>
-                                <td><span class="text-muted">{{ data.severity }}</span></td>
-                                <td><span class="text-muted">{{ data.current_value }}</span></td>
-                                <td>{{ data.alert_date }}</td>
-                                <td>{{ data.alert_time }}</td>
-                                <td><span class="text-muted">{{ data.description }}</span></td>
-                            {% endif %}
+                            <th>&nbsp;</th>
+                            {% for data in table_header %}
+                                <th class="headerSortable" style="background: none;">{{ data | title }}</th>
+                            {% endfor %}
                         </tr>
-                    {% endfor %}
+                    </thead>
+                    <tbody>
+                    {% if table_data %}
+                        {% for data in table_data %}
+                            <tr>
+                                {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
+                                    <td><i class="fa fa-circle red-dot"></i></td>
+                                    <td>{{ data.device_name }}</td>
+                                    <td>{{ data.ip_address }}</td>
+                                    <td>{{ data.service_name }}</td>
+                                    <td>{{ data.data_source }}</td>
+                                    <td><span class="text-danger">{{ data.severity }}</span></td>
+                                    <td><span class="text-danger">{{ data.current_value }}</span></td>
+                                    <td>{{ data.alert_date }}</td>
+                                    <td>{{ data.alert_time }}</td>
+                                    <td><span class="text-danger">{{ data.description }}</span></td>
+                                {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
+                                    <td><i class="fa fa-circle orange-dot"></i></td>
+                                    <td>{{ data.device_name }}</td>
+                                    <td>{{ data.ip_address }}</td>
+                                    <td>{{ data.service_name }}</td>
+                                    <td>{{ data.data_source }}</td>
+                                    <td><span class="text-warning">{{ data.severity }}</span></td>
+                                    <td><span class="text-warning">{{ data.current_value }}</span></td>
+                                    <td>{{ data.alert_date }}</td>
+                                    <td>{{ data.alert_time }}</td>
+                                    <td><span class="text-warning">{{ data.description }}</span></td>
+                                {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
+                                    <td><i class="fa fa-circle green-dot"></i></td>
+                                    <td>{{ data.device_name }}</td>
+                                    <td>{{ data.ip_address }}</td>
+                                    <td>{{ data.service_name }}</td>
+                                    <td>{{ data.data_source }}</td>
+                                    <td><span class="text-success">{{ data.severity }}</span></td>
+                                    <td><span class="text-success">{{ data.current_value }}</span></td>
+                                    <td>{{ data.alert_date }}</td>
+                                    <td>{{ data.alert_time }}</td>
+                                    <td><span class="text-success">{{ data.description }}</span></td>
+                                {% else %}
+                                    <td><i class="fa fa-circle grey-dot"></i></td>
+                                    <td>{{ data.device_name }}</td>
+                                    <td>{{ data.ip_address }}</td>
+                                    <td>{{ data.service_name }}</td>
+                                    <td>{{ data.data_source }}</td>
+                                    <td><span class="text-muted">{{ data.severity }}</span></td>
+                                    <td><span class="text-muted">{{ data.current_value }}</span></td>
+                                    <td>{{ data.alert_date }}</td>
+                                    <td>{{ data.alert_time }}</td>
+                                    <td><span class="text-muted">{{ data.description }}</span></td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
 
-                {% else %}
+                    {% else %}
 
-                    <div>NO RECORD FOUND.</div>
+                        <div>NO RECORD FOUND.</div>
 
-                {% endif %}
+                    {% endif %}
 
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
 
     <script type="text/javascript">
         $(document).ready(function(e) {
+
+            $("#device_alert").DataTable();
+            $("#device_alert").removeClass("hide");
+
+            // $("#device_alert").tablecloth({
+            //     theme:"stats",
+            //     bordered: true,
+            //     sortable:true,
+            //     striped: true,
+            //     clean:true
+            // });
+
+            $("#network_alert_service_tab").click(function(e) {
+                e.preventDefault();
+                var currentTab= findStringFromUrl();
+
+                var newUrl= replaceString(location.href, currentTab, 'service');
+                location.href= newUrl;
+                // selectTab('#network_alert_service_tab');
+            });
+
+            $("#network_alert_down_tab").click(function(e) {
+                e.preventDefault();
+                var currentTab= findStringFromUrl();
+                var newUrl= replaceString(location.href, currentTab, 'down');
+                location.href= newUrl;
+                // selectTab('#network_alert_down_tab');
+            });
+
+            $("#network_alert_packet_tab").click(function(e) {
+                e.preventDefault();
+                var currentTab= findStringFromUrl();
+                var newUrl= replaceString(location.href, currentTab, 'packet_drop');
+                location.href= newUrl;
+                // selectTab('#network_alert_packet_tab');
+            });
+
+            $("#network_alert_latency_tab").click(function(e) {
+                e.preventDefault();
+                var currentTab= findStringFromUrl();
+                var newUrl= replaceString(location.href, currentTab, 'latency');
+                location.href= newUrl;
+                // selectTab('#network_alert_latency_tab');
+            });
+
+
+            var currentPage= findStringFromUrl();
+            // ['down', 'latency', 'packet_drop', 'service'];
+            if(currentPage=== 'down') {
+                selectTab('#network_alert_down_tab');
+            } else if (currentPage=== 'latency') {
+                selectTab('#network_alert_latency_tab');
+            } else if (currentPage=== 'packet_drop') {
+                selectTab('#network_alert_packet_tab');
+            } else {
+                selectTab('#network_alert_service_tab');
+            }
+
             //setting up a custom jquery function to retrive the get paramters.
             $.urlParam = function(name){
                     var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
@@ -217,15 +274,8 @@
                 window.location.replace('{% url "SingleDeviceDetails"  page_type current_device_id service_name %}'
                         + '?download_csv=true')
             });
+        });
 
-
-        })
-    </script>
-
-{% endblock %}
-
-{% block load_js %}
-    <script>
         function findStringFromUrl() {
             var words= ['down', 'latency', 'packet_drop', 'service'];
             var x= location.href;
@@ -250,67 +300,12 @@
         function selectTab(tabId) {
             $(tabId).parent().addClass('active').siblings().removeClass('active');
         }
+    </script>
 
-        $(document).ready(function () {
-            $("#device_alert").tablecloth({
-                theme:"stats",
-                bordered: true,
-                sortable:true,
-                striped: true,
-                clean:true
-            });
+{% endblock %}
 
-            $("#network_alert_service_tab").click(function(e) {
-                e.preventDefault();
-                var currentTab= findStringFromUrl();
-
-                var newUrl= replaceString(location.href, currentTab, 'service');
-                location.href= newUrl;
-                // selectTab('#network_alert_service_tab');
-            });
-
-            $("#network_alert_down_tab").click(function(e) {
-                e.preventDefault();
-                var currentTab= findStringFromUrl();
-                var newUrl= replaceString(location.href, currentTab, 'down');
-                location.href= newUrl;
-                // selectTab('#network_alert_down_tab');
-            });
-
-            $("#network_alert_packet_tab").click(function(e) {
-                e.preventDefault();
-                var currentTab= findStringFromUrl();
-                var newUrl= replaceString(location.href, currentTab, 'packet_drop');
-                location.href= newUrl;
-                // selectTab('#network_alert_packet_tab');
-            });
-
-            $("#network_alert_latency_tab").click(function(e) {
-                e.preventDefault();
-                var currentTab= findStringFromUrl();
-                var newUrl= replaceString(location.href, currentTab, 'latency');
-                location.href= newUrl;
-                // selectTab('#network_alert_latency_tab');
-            });
-
-
-            var currentPage= findStringFromUrl();
-            // ['down', 'latency', 'packet_drop', 'service'];
-            if(currentPage=== 'down') {
-                selectTab('#network_alert_down_tab');
-            } else if (currentPage=== 'latency') {
-                selectTab('#network_alert_latency_tab');
-            } else if (currentPage=== 'packet_drop') {
-                selectTab('#network_alert_packet_tab');
-            } else {
-                selectTab('#network_alert_service_tab');
-            }
-
-        });
-
+{% block load_js %}
+    <script>
         App.init(); //Initialise plugins and elements
     </script>
 {% endblock %}
-
-
-
