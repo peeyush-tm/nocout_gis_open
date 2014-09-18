@@ -115,16 +115,15 @@ class LivePerformanceListing(BaseDatatableView):
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
             if self.request.user.userprofile.role.values_list('role_name', flat=True)[0] == 'admin':
-                organization_ids = list(self.request.user.userprofile.organization.get_descendants(include_self=True)
-                                        .values_list('id', flat=True))
+                organizations = list(self.request.user.userprofile.organization.get_descendants(include_self=True))
             else:
-                organization_ids = [self.request.user.userprofile.organization.id]
+                organizations = [self.request.user.userprofile.organization]
 
             if self.request.GET['page_type'] == 'customer':
-                return self.get_initial_query_set_data(organization_ids=organization_ids)
+                return self.get_initial_query_set_data(organizations=organizations)
 
             elif self.request.GET['page_type'] == 'network':
-                return self.get_initial_query_set_data(organization_ids=organization_ids)
+                return self.get_initial_query_set_data(organizations=organizations)
             else:
                 return []
 
@@ -137,28 +136,18 @@ class LivePerformanceListing(BaseDatatableView):
         :return: list of devices
         """
         device_list = list()
-        #single query to fetch devices with circuit type as backhaul
-        device_list_with_circuit_type_backhaul = Device.objects.filter(
-            Q(id__in=Sector.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
-                                            values_list('sector', flat=True)).
-                                            values_list('sector_configured_on', flat=True))
-            |
-            Q(id__in=SubStation.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
-                                            values_list('sub_station', flat=True)).
-                                            values_list('device', flat=True))
-        )
 
         if self.request.GET['page_type'] == 'customer':
+
             device_tab_technology = self.request.GET.get('data_tab')
             device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
             #If the technology is P2P then fetch all the device without circuit_type backhaul and
             #include all the devices whether they are sector_configured_on or substation
             if int(device_technology_id) == int(P2P.ID):
-                devices = Device.objects.filter(~Q(id__in=device_list_with_circuit_type_backhaul),
-                                                is_added_to_nms= 1,
-                                                is_deleted= 0,
-                                                organization__in= kwargs['organization_ids'],
-                                                device_technology= device_technology_id).\
+                #single query to fetch devices with circuit type as backhaul
+                device_list_with_circuit_type_backhaul = ptp_device_circuit_backhaul()
+
+                devices = organization_customer_devices(kwargs['organizations'], int(device_technology_id)).\
                     values(*self.columns + ['id',
                                             'device_technology',
                                             'device_name',
@@ -167,10 +156,7 @@ class LivePerformanceListing(BaseDatatableView):
                                             'substation'])
             else:
                 #If the technology is not P2P then include devices which are substation.
-                devices = Device.objects.filter(is_added_to_nms= 1,
-                                                is_deleted= 0,
-                                                organization__in= kwargs['organization_ids'],
-                                                device_technology= device_technology_id).\
+                devices = organization_network_devices(kwargs['organizations'], device_technology_id).\
                     values(*self.columns + ['id',
                                             'device_technology',
                                             'device_name',
@@ -180,13 +166,7 @@ class LivePerformanceListing(BaseDatatableView):
         else:
             # If the page_type is network then include only devices which are added to NMS and devices which are not P2P,
             # and must be either PMP or WiMAX.
-            devices = Device.objects.filter(Q(id__in= device_list_with_circuit_type_backhaul)
-                                            |
-                                            Q(device_technology = int(WiMAX.ID))
-                                            |
-                                            Q(device_technology = int(PMP.ID)),
-                                            is_added_to_nms=1, is_deleted=0,
-                                            organization__in= kwargs['organization_ids']).\
+            devices = organization_network_devices(organizations=kwargs['organizations']).\
                 values(*self.columns + ['id',
                                         'device_technology',
                                         'device_name',
@@ -261,7 +241,6 @@ class LivePerformanceListing(BaseDatatableView):
         perf_result = {"packet_loss": "N/A",
                        "latency": "N/A",
                        "last_updated": "N/A",
-                       "last_updated": "N/A",
                        "last_updated_date": "N/A",
                        "last_updated_time": "N/A"
                       }
@@ -334,15 +313,19 @@ class LivePerformanceListing(BaseDatatableView):
                         actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
                         <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
                         <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
-                        .format('customer', dct['id'], 'latency'  if 'latency' in dct.keys() else 'packet_drop'))
+                        .format('customer',
+                                dct['id'],
+                                'latency' if 'latency' in dct.keys() else 'packet_drop')
+                    )
                 elif device.sector_configured_on.exists():
                     dct.update(
                         actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a> \
                          <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
                          <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'
-                        .format('customer' if dct['device_technology'] == P2P.NAME else 'network',
+                        .format('network',
                                 dct['id'],
-                                'latency'  if 'latency' in dct.keys() else 'packet_drop'))
+                                'latency' if 'latency' in dct.keys() else 'packet_drop')
+                    )
 
                 device_list.append({'device_name': dct["device_name"], 'device_machine': device.machine.name})
 
@@ -491,17 +474,17 @@ class Fetch_Inventory_Devices(View):
         logged_in_user = request.user.userprofile
 
         if 'admin' in logged_in_user.role.values_list('role_name', flat=True):
-            organizations_ids = list(logged_in_user.organization.get_descendants(include_self=True).values_list('id', flat=True))
+            organizations = list(logged_in_user.organization.get_descendants(include_self=True))
         else:
-            organizations_ids = [logged_in_user.organization.id]
+            organizations = [logged_in_user.organization]
 
-        result['data']['objects'] += self.get_result(page_type, organizations_ids)
+        result['data']['objects'] += self.get_result(page_type, organizations)
 
         result['success'] = 1
         result['message'] = 'Substation Devices Fetched Successfully.'
         return HttpResponse(json.dumps(result))
 
-    def get_result(self, page_type, organizations_ids):
+    def get_result(self, page_type, organizations):
         """
         Generic function to return the result w.r.t the page_type and organization of the current logged in user.
 
@@ -511,63 +494,20 @@ class Fetch_Inventory_Devices(View):
         """
 
         if page_type == "customer":
-            customer_device_result = self.organization_customer_devices(organizations_ids)
-            return customer_device_result
+            customer_device_result = organization_customer_devices(organizations)
+            result = list()
+            for device in customer_device_result:
+                result.append({'id': device.id, 'alias': device.device_name })
+            return result
 
         elif page_type == "network":
-            network_device_result = self.organization_network_devices(organizations_ids)
-            return network_device_result
-
-    def organization_customer_devices(self, organizations_ids):
-        """
-        To result back the all the customer devices from the respective organization..
-
-        :param organization:
-        :return list of customer devices
-        """
-        organization_customer_devices= Device.objects.filter(Q(sector_configured_on__isnull=False) | Q(substation__isnull=False),
-            is_added_to_nms=1, is_deleted=0, organization__in= organizations_ids)
-        result = list()
-        for device in organization_customer_devices:
-            result.append({'id': device.id, 'alias': device.device_name })
-
-        return result
-
-    def organization_network_devices(self, organization):
-        """
-        To result back the all the network devices from the respective organization..
-
-        :param organization:
-        :return list of network devices
-        """
-        # organization_network_devices = Device.objects.filter(~Q(device_technology = int(P2P.ID)),
-        #                                is_added_to_nms=1, is_deleted=0, organization= organization.id)
-        device_list_with_circuit_type_backhaul = Device.objects.filter(
-            Q(id__in=Sector.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
-                                            values_list('sector', flat=True)).
-                                            values_list('sector_configured_on', flat=True))
-            |
-            Q(id__in=SubStation.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
-                                            values_list('sub_station', flat=True)).
-                                            values_list('device', flat=True))
-        )
-        organization_network_devices = Device.objects.filter(
-                                        Q(id__in= device_list_with_circuit_type_backhaul)
-                                        |
-                                        Q(device_technology = int(WiMAX.ID))
-                                        |
-                                        Q(device_technology = int(PMP.ID)),
-                                        is_added_to_nms=1,
-                                        is_deleted=0,
-                                        organization__in= organization.id
-        )
-        result = list()
-        #Validate the condition if the sector_configured_on(master) exists
-        for device in organization_network_devices:
-            if device.sector_configured_on.exists():
-                result.append({'id': device.id, 'alias': device.device_name})
-
-        return result
+            network_device_result = organization_network_devices(organizations)
+            result = list()
+            #Validate the condition if the sector_configured_on(master) exists
+            for device in network_device_result:
+                if device.sector_configured_on.exists():
+                    result.append({'id': device.id, 'alias': device.device_name})
+            return result
 
 
 class Inventory_Device_Status(View):
@@ -1074,3 +1014,87 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
         )
 
     return query
+
+
+#common function to get the devices
+
+def ptp_device_circuit_backhaul():
+    """
+    Special case fot PTP technology devices. Wherein Circuit type backhaul is required
+    :return:
+    """
+    device_list_with_circuit_type_backhaul = Device.objects.filter(
+        Q(id__in=Sector.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                        values_list('sector', flat=True)).
+                                        values_list('sector_configured_on', flat=True))
+        |
+        Q(id__in=SubStation.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                        values_list('sub_station', flat=True)).
+                                        values_list('device', flat=True))
+    )
+    return device_list_with_circuit_type_backhaul
+
+def organization_customer_devices(organizations, technology = None):
+    """
+    To result back the all the customer devices from the respective organization..
+
+    :param organization:
+    :return list of customer devices
+    """
+    if not technology:
+        organization_customer_devices= Device.objects.filter(
+                                    Q(sector_configured_on__isnull=False) | Q(substation__isnull=False),
+                                    is_added_to_nms=1,
+                                    is_deleted=0,
+                                    organization__in= organizations
+        )
+    else:
+        if int(technology) == int(P2P.ID):
+            organization_customer_devices = Device.objects.filter(
+                ~Q(id__in=ptp_device_circuit_backhaul()),
+                is_added_to_nms= 1,
+                is_deleted= 0,
+                organization__in= organizations,
+                device_technology= technology
+            )
+        else:
+            organization_customer_devices = Device.objects.filter(
+                is_added_to_nms= 1,
+                is_deleted= 0,
+                organization__in= organizations,
+                device_technology= technology
+            )
+
+    return organization_customer_devices
+
+def organization_network_devices(organizations, technology = None):
+    """
+    To result back the all the network devices from the respective organization..
+
+    :param organizations:
+    :param technology:
+    :param organization:
+    :return list of network devices
+    """
+    if not technology:
+        device_list_with_circuit_type_backhaul = ptp_device_circuit_backhaul()
+
+        organization_network_devices = Device.objects.filter(
+                                        Q(id__in= device_list_with_circuit_type_backhaul)
+                                        |
+                                        Q(device_technology = int(WiMAX.ID))
+                                        |
+                                        Q(device_technology = int(PMP.ID)),
+                                        is_added_to_nms=1,
+                                        is_deleted=0,
+                                        organization__in= organizations
+        )
+    else:
+        organization_network_devices = Device.objects.filter(
+                                        Q(device_technology = int(technology),
+                                        is_added_to_nms=1,
+                                        is_deleted=0,
+                                        organization__in= organizations
+        ))
+
+    return organization_network_devices
