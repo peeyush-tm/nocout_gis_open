@@ -827,61 +827,13 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         logged_in_user = self.request.user.userprofile
 
         if logged_in_user.role.values_list('role_name', flat=True)[0] == 'admin':
-            organizations_ids = list(logged_in_user.organization.get_descendants(include_self=True).values_list('id', flat=True))
+            organizations = list(logged_in_user.organization.get_descendants(include_self=True))
         else:
-            organizations_ids = [logged_in_user.organization.id]
+            organizations = [logged_in_user.organization]
 
-        sector_configured_on_devices = Device.objects.filter(~Q(device_technology = int(P2P.ID)), is_added_to_nms=1,
-                                                             is_deleted=0, sector_configured_on__isnull=False,
-                                                             organization__in= organizations_ids)\
-                                                             .values('device_name', 'machine__name')
-
-
+        sector_configured_on_devices = organization_network_devices(organizations).values('device_name', 'machine__name')
 
         sector_configured_on_devices = list(sector_configured_on_devices)
-        ptp_backhaul_devices = []
-
-
-        #need to add device with Circuit Type as : Backhaul
-        # (@TODO: make this a dropdown menu item and must for the user)
-        #INVALID :::: for technology = PTP and Circuit Type as Backhaul get the Device BH Configured On ::: INVALID
-        #VALID :::: confusion HERE. What we want is that CIRCUIT TYPE BACKHAUL's both SS and BS elements should
-        #be visible on network alert center ::: VALID
-
-        circuit_ptp_bh = Circuit.objects.prefetch_related("sector", "sub_station").filter(circuit_type="Backhaul")
-
-        for cc in circuit_ptp_bh:
-            ##get the sector element
-            try:
-                sector_ptp_bh = cc.sector
-                if sector_ptp_bh:
-                    ptp_backhaul_devices.append({
-                        "machine__name" : sector_ptp_bh.sector_configured_on.machine.name,
-                        "device_name" : sector_ptp_bh.sector_configured_on.device_name
-                    })
-
-            except Exception as e:
-                logger.exception(e.message)
-                pass
-
-            ##get the sub station element
-            try:
-                ss_ptp_bh = cc.sub_station
-
-                if ss_ptp_bh:
-                    ptp_backhaul_devices.append({
-                        "machine__name" : ss_ptp_bh.device.machine.name,
-                        "device_name" : ss_ptp_bh.device.device_name
-                    })
-            except Exception as e:
-                logger.exception(e.message)
-                pass
-
-        sector_configured_on_devices += ptp_backhaul_devices
-
-            ##dont waste time on values if there are none
-
-
 
         device_list, performance_data, data_sources_list = list(), list(), list()
         extra_query_condition = None
@@ -1314,11 +1266,11 @@ class SingleDeviceAlertDetails(View):
         logged_in_user, devices_result = request.user.userprofile, list()
 
         if 'admin' in logged_in_user.role.values_list('role_name', flat=True):
-            organizations_ids = list(logged_in_user.organization.get_descendants(include_self=True).values_list('id', flat=True))
+            organizations = list(logged_in_user.organization.get_descendants(include_self=True))
         else:
-            organizations_ids = [logged_in_user.organization.id]
+            organizations = [logged_in_user.organization]
 
-        devices_result += self.get_result(page_type, organizations_ids)
+        devices_result += self.get_result(page_type, organizations)
 
         start_date= self.request.GET.get('start_date','')
         end_date= self.request.GET.get('end_date','')
@@ -1478,7 +1430,7 @@ class SingleDeviceAlertDetails(View):
 
             return render(request, 'alert_center/single_device_alert.html', context)
 
-    def get_result(self, page_type, organizations_ids):
+    def get_result(self, page_type, organizations):
         """
         Generic function to return the result w.r.t the page_type and organization of the current logged in user.
 
@@ -1490,10 +1442,10 @@ class SingleDeviceAlertDetails(View):
         device_result = []
 
         if page_type == "customer" :
-            device_result = organization_customer_devices(organizations_ids)
+            device_result = organization_customer_devices(organizations=organizations)
 
         elif page_type == "network":
-            device_result = organization_network_devices(organizations_ids)
+            device_result = organization_network_devices(organizations=organizations)
 
         result = list()
         for device in device_result:
@@ -1756,82 +1708,13 @@ def filter_customer_devices(logged_in_user, data_tab = None):
     device_tab_technology = data_tab ##
     device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
 
-    #there are two cases
-    #1. point to point as POP TCLPTPPOP : 9
-    #2. point to point : P2P : ID: 2
+    device_list = organization_customer_devices(organizations, device_technology_id)
 
-    #if these points get covered. then show all the elements here.
-
-    #special case is : Circuit - circuit_type = Backhaul
-    #the elements PTP of this circuit type must be present only in NETWORK
-
-    collection_ptp_as_bh = []
-
-    is_p2p = False
-
-    device_technology_ids_ptp = [device_technology_id]
-
-    if device_technology_id == int(P2P.ID): #[, settings.TCLPTPPOP.ID]:
-        #this means that device is PTP or TCL PTP POP
-        is_p2p = True
-        # device_technology_ids_ptp.append(settings.TCLPTPPOP.ID)
-
-    # sector_configured_on_devices_ids=[]
-    if is_p2p:
-        #now since PTP devices are in place. Lets check for CIRCUITS which are of type backhaul
-        #and get the device ids collected from there as well
-        circuit_objects = Circuit.objects.filter(circuit_type__icontains="Backhaul")
-        # try:
-        if len(circuit_objects):
-            for circuit_object in circuit_objects:
-                try:
-                    #add sector object
-                    collection_ptp_as_bh.append(circuit_object.sector.sector_configured_on_id)
-                except Exception as e:
-                    #database incorrect
-                    logger.exception(e.message)
-                    pass
-                try:
-                    #add sub station
-                    collection_ptp_as_bh.append(circuit_object.sub_station.device_id)
-                except Exception as e:
-                    #database incorrect
-                    logger.exception(e.message)
-                    pass
-        #
-        # except Exception as e:
-        #     #well this is database problem.
-        #     #how can there be multiple devices on same substation ?
-        #     #how can there be multiple device on same sector !!!
-        #     logger.exception(e.message)
-        #     pass
-
-        for organization in organizations:
-            organization_devices += Device.objects.exclude(id__in=collection_ptp_as_bh).\
-                filter(is_added_to_nms=1,
-                       is_deleted = 0,
-                       organization__id=organization.id,
-                       device_technology__in=device_technology_ids_ptp
-            )
-
-        # get the devices in an organisation which are added for monitoring
-        organization_devices = [ {'device_name': device.device_name, 'machine_name': device.machine.name}
-                                 for device in organization_devices
-                                 if device.substation_set.exists()
-                                 or device.sector_configured_on.exists()
-        ]
-    else:
-        #technology WiMax and PMP should behave normally
-        for organization in organizations:
-            organization_devices += Device.objects.filter(is_added_to_nms=1,
-                                                          is_deleted=0,
-                                                          organization__id=organization.id,
-                                                          device_technology=device_technology_id)
-
-        # get the devices in an organisation which are added for monitoring
-        organization_devices = [ {'device_name': device.device_name, 'machine_name': device.machine.name}
-                                 for device in organization_devices if device.substation_set.exists()
-        ]
+    # get the devices in an organisation which are added for monitoring
+    organization_devices = [
+        {'device_name': device.device_name, 'machine_name': device.machine.name}
+        for device in device_list
+    ]
 
 
     return organization_devices
