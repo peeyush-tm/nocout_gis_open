@@ -1,0 +1,61 @@
+{% extends "inventory/inventory.html" %}
+{% load staticfiles %}
+{% block breadcrumb_title %}
+    <li>Inventory</li>
+    <li>Bulk Import</li>
+    <li>GIS Inventory</li>
+{% endblock %}
+{% block content_title %}GIS Inventory Uploads{% endblock %}
+{% block content_description %}List of gis inventory upload sheets{% endblock %}
+{% block content %}
+    {% for group in user.groups.all %}
+        {% if group.name == 'group_admin' %}
+            <p>
+                <a href="/gis_inventory"><i class="fa fa-plus">&nbsp;</i>GIS Inventory Uploads</a>
+            </p>
+        {% endif %}
+    {% endfor %}
+
+    <div class="box border lite">
+        <div id="tableContainer_div" class="box-title">
+            <h4><i class="fa fa-table"></i>GIS INVENTORY UPLOADS LISTING</h4>
+{#            <div class="tools hidden-xs">#}
+{#                <a href="#box-config" data-toggle="modal" class="config">#}
+{#                    <i class="fa fa-cog"></i>#}
+{#                </a>#}
+{#                <a href="javascript:;" class="reload">#}
+{#                    <i class="fa fa-refresh"></i>#}
+{#                </a>#}
+{#            </div>#}
+        </div>
+
+        <div id="tableContainer" class="box-body">
+            <table cellpadding="0" cellspacing="0" border="0"
+                   class="datatable table table-striped table-bordered table-hover" id="GISInventoryUploadsListingTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jquery %}
+    <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+    <script type="text/javascript">
+
+        $(document).ready(function (e) {
+            /*Make a instance of ourDataTableWidget class */
+            var dataTableInstance = new ourDataTableWidget();
+            /*Grid headers object*/
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            /*Ajax url to get grid data*/
+            var ajax_url = '{% url "GISInventoryUploadsListingTable" %}';
+            /*Call createDataTable function of ourDataTableWidget class*/
+            var destroy=false;
+            dataTableInstance.createDataTable("GISInventoryUploadsListingTable", gridHeadersObj, ajax_url, destroy);
+        });
+
+    </script>
+{% endblock %}
+
+
