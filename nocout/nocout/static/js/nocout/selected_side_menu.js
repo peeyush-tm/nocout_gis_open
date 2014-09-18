@@ -136,7 +136,7 @@ $("#goFullScreen").click(function() {
     ) {
         if($("#goFullScreen").html()!== '<i class="fa fa-compress"></i> Exit Full Screen') {
             /*If page header is showing, hide it.*/
-            if($.trim($("#headerToggleBtn").html()) !== '<i class="fa fa-eye"></i> Show Page Header') {
+            if($.trim($("#headerToggleBtn").html()) !== '<i class="fa fa-eye"></i> Show Page Controls') {
                 $("#headerToggleBtn").click();
             }
             
