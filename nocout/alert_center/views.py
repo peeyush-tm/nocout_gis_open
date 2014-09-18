@@ -360,64 +360,25 @@ class GetNetworkAlertDetail(BaseDatatableView):
         else:
             return []
 
-        ptp_backhaul_devices=[]
         sector_configured_on_devices = []
 
         if tab_id:
 
-            # for organization in organizations:
-            #     sector_configured_on_devices_ids += Sector.objects.filter(
-            #         sector_configured_on__id__in=organization.device_set \
-            #         .values_list('id', flat=True)).values_list('sector_configured_on', flat=True).annotate(
-            #         dcount=Count('base_station'))
-            #
-            # sector_configured_on_devices = Device.objects.filter(~Q(device_technology = int(P2P.ID)),
-            #                                                      is_added_to_nms=1, is_deleted=0,
-            #                                                      id__in= sector_configured_on_devices_ids)\
-            #                                                      .values('device_name', 'machine__name')
-
             if tab_id == "ptp_backhaul":
-
+                technology = int(P2P.ID)
                 #need to add device with Circuit Type as : Backhaul
                 # (@TODO: make this a dropdown menu item and must for the user)
                 #INVALID :::: for technology = PTP and Circuit Type as Backhaul get the Device BH Configured On ::: INVALID
                 #VALID :::: confusion HERE. What we want is that CIRCUIT TYPE BACKHAUL's both SS and BS elements should
                 #be visible on network alert center ::: VALID
 
-                circuit_ptp_bh = Circuit.objects.\
-                    prefetch_related("sector", "sub_station").\
-                    filter(circuit_type__icontains="Backhaul")
-
-                for cc in circuit_ptp_bh:
-                    ##get the sector element
-                    try:
-                        sector_ptp_bh = cc.sector
-                        if sector_ptp_bh:
-                            ptp_backhaul_devices.append({
-                                "machine__name" : sector_ptp_bh.sector_configured_on.machine.name,
-                                "device_name" : sector_ptp_bh.sector_configured_on.device_name
-                            })
-
-                    except Exception as e:
-                        logger.exception(e.message)
-                        pass
-
-                    ##get the sub station element
-                    try:
-                        ss_ptp_bh = cc.sub_station
-
-                        if ss_ptp_bh:
-                            ptp_backhaul_devices.append({
-                                "machine__name" : ss_ptp_bh.device.machine.name,
-                                "device_name" : ss_ptp_bh.device.device_name
-                            })
-
-                    except Exception as e:
-                        logger.exception(e.message)
-                        pass
-
-                sector_configured_on_devices += ptp_backhaul_devices
-
+                device_list = organization_network_devices(organizations, technology=technology)
+                sector_configured_on_devices = [
+                                {'device_name': device.device_name, 'machine__name': device.machine.name}
+                                for device in device_list
+                ]
+            else:
+                return sector_configured_on_devices
         else:
             return []
 
@@ -1910,9 +1871,10 @@ def organization_network_devices(organizations, technology = None):
     :param organization:
     :return list of network devices
     """
-    if not technology:
-        device_list_with_circuit_type_backhaul = ptp_device_circuit_backhaul()
 
+    device_list_with_circuit_type_backhaul = ptp_device_circuit_backhaul()
+
+    if not technology:
         organization_network_devices = Device.objects.filter(
                                         Q(id__in= device_list_with_circuit_type_backhaul)
                                         |
@@ -1924,11 +1886,19 @@ def organization_network_devices(organizations, technology = None):
                                         organization__in= organizations
         )
     else:
-        organization_network_devices = Device.objects.filter(
-                                        Q(device_technology = int(technology),
+        if int(technology) == int(P2P.ID):
+            organization_network_devices = Device.objects.filter(
+                                        Q(id__in= device_list_with_circuit_type_backhaul),
                                         is_added_to_nms=1,
                                         is_deleted=0,
                                         organization__in= organizations
-        ))
+            )
+        else:
+            organization_network_devices = Device.objects.filter(
+                                            Q(device_technology = int(technology),
+                                            is_added_to_nms=1,
+                                            is_deleted=0,
+                                            organization__in= organizations
+            ))
 
     return organization_network_devices

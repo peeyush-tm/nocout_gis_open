@@ -1074,9 +1074,10 @@ def organization_network_devices(organizations, technology = None):
     :param organization:
     :return list of network devices
     """
-    if not technology:
-        device_list_with_circuit_type_backhaul = ptp_device_circuit_backhaul()
 
+    device_list_with_circuit_type_backhaul = ptp_device_circuit_backhaul()
+
+    if not technology:
         organization_network_devices = Device.objects.filter(
                                         Q(id__in= device_list_with_circuit_type_backhaul)
                                         |
@@ -1088,11 +1089,19 @@ def organization_network_devices(organizations, technology = None):
                                         organization__in= organizations
         )
     else:
-        organization_network_devices = Device.objects.filter(
-                                        Q(device_technology = int(technology),
+        if int(technology) == int(P2P.ID):
+            organization_network_devices = Device.objects.filter(
+                                        Q(id__in= device_list_with_circuit_type_backhaul),
                                         is_added_to_nms=1,
                                         is_deleted=0,
                                         organization__in= organizations
-        ))
+            )
+        else:
+            organization_network_devices = Device.objects.filter(
+                                            Q(device_technology = int(technology),
+                                            is_added_to_nms=1,
+                                            is_deleted=0,
+                                            organization__in= organizations
+            ))
 
     return organization_network_devices
