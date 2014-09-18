@@ -5,13 +5,13 @@
     <li>Bulk Import</li>
     <li>GIS Inventory</li>
 {% endblock %}
-{% block content_title %}GIS Inventory Uploads{% endblock %}
+{% block content_title %}GIS Inventory Bulk Import{% endblock %}
 {% block content_description %}List of gis inventory upload sheets{% endblock %}
 {% block content %}
     {% for group in user.groups.all %}
         {% if group.name == 'group_admin' %}
             <p>
-                <a href="/gis_inventory"><i class="fa fa-plus">&nbsp;</i>GIS Inventory Uploads</a>
+                <a href="/bulk_import/gis_inventory/"><i class="fa fa-plus">&nbsp;</i>GIS Inventory Bulk Import</a>
             </p>
         {% endif %}
     {% endfor %}
@@ -31,7 +31,7 @@
 
         <div id="tableContainer" class="box-body">
             <table cellpadding="0" cellspacing="0" border="0"
-                   class="datatable table table-striped table-bordered table-hover" id="GISInventoryUploadsListingTable">
+                   class="datatable table table-striped table-bordered table-hover" id="GISInventoryBulkImportListingTable">
                 <thead></thead>
                 <tbody></tbody>
             </table>
@@ -49,10 +49,10 @@
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
             /*Ajax url to get grid data*/
-            var ajax_url = '{% url "GISInventoryUploadsListingTable" %}';
+            var ajax_url = '{% url "GISInventoryBulkImportListingTable" %}';
             /*Call createDataTable function of ourDataTableWidget class*/
             var destroy=false;
-            dataTableInstance.createDataTable("GISInventoryUploadsListingTable", gridHeadersObj, ajax_url, destroy);
+            dataTableInstance.createDataTable("GISInventoryBulkImportListingTable", gridHeadersObj, ajax_url, destroy);
         });
 
     </script>

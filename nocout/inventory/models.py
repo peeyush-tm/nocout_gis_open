@@ -324,7 +324,6 @@ class ThematicSettings(models.Model):
 
 
 class GISInventoryBulkImport(models.Model):
-    PENDING, PROCESSED, FAILED = 'Pending', 'Processed', 'Failed'
     original_filename = models.CharField('Inventory', max_length=250, null=True, blank=True)
     valid_filename = models.CharField('Valid', max_length=250, null=True, blank=True)
     invalid_filename = models.CharField('Invalid', max_length=250, null=True, blank=True)
