@@ -89,3 +89,90 @@ for (var i = 0; i < sideMenu.length; i++) {
         }
     }
 }
+
+
+
+/*This event show/hide page header*/
+$("#headerToggleBtn").click(function(e) {
+    /*Get Current Style*/
+    var current_style = $.trim($("#page_header_container").attr("style"));
+
+    if(current_style.indexOf('block') > -1) {
+        $("#headerToggleBtn").html('<i class="fa fa-eye"></i> Show Page Header');
+        $("#headerToggleBtn").removeClass('btn-danger');
+        $("#headerToggleBtn").addClass('btn-info');
+    } else {
+        $("#headerToggleBtn").html('<i class="fa fa-eye-slash"></i> Hide Page Header');
+        $("#headerToggleBtn").removeClass('btn-info');
+        $("#headerToggleBtn").addClass('btn-danger');
+    }
+
+    /*Toggle Page Header*/
+    $("#page_header_container").slideToggle();
+});
+
+
+/*This event full screen page widget*/
+$("#goFullScreen").click(function() {
+
+    if (
+        document.fullscreenEnabled ||
+        document.webkitFullscreenEnabled ||
+        document.mozFullScreenEnabled ||
+        document.msFullscreenEnabled
+    ) {
+        if($("#goFullScreen").html()!== '<i class="fa fa-compress"></i> Exit Full Screen') {
+            /*If page header is showing, hide it.*/
+            if($.trim($("#headerToggleBtn").html()) !== '<i class="fa fa-eye"></i> Show Page Header') {
+                $("#headerToggleBtn").click();
+            }
+            
+            launchFullscreen(document.getElementById('page_content_div'));
+        } else {
+            exitFullscreen();
+        }
+    } else {
+        bootbox.alert("Fullscreen facility not supported by your browser.Please update.")
+    }
+});
+
+$(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange MSFullscreenChange', function(e) {
+    if (
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement
+    ) {
+        $("#goFullScreen").html('<i class="fa fa-compress"></i> Exit Full Screen');
+        $("#goFullScreen").removeClass('btn-info');
+        $("#goFullScreen").addClass('btn-danger');
+    } else {
+        $("#goFullScreen").html('<i class="fa fa-arrows-alt"></i> View Full Screen');
+        $("#goFullScreen").removeClass('btn-danger');
+        $("#goFullScreen").addClass('btn-info');
+    }
+});
+
+/*This function show the given element in full screen*/
+function launchFullscreen(element) {
+  if(element.requestFullscreen) {
+    element.requestFullscreen();
+  } else if(element.mozRequestFullScreen) {
+    element.mozRequestFullScreen();
+  } else if(element.webkitRequestFullscreen) {
+    element.webkitRequestFullscreen();
+  } else if(element.msRequestFullscreen) {
+    element.msRequestFullscreen();
+  }
+}
+
+// This function exit fullscreen mode
+function exitFullscreen() {
+  if(document.exitFullscreen) {
+    document.exitFullscreen();
+  } else if(document.mozCancelFullScreen) {
+    document.mozCancelFullScreen();
+  } else if(document.webkitExitFullscreen) {
+    document.webkitExitFullscreen();
+  }
+}
