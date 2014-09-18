@@ -2703,7 +2703,6 @@ class GISInventoryBulkImport(FormView):
         try:
             book = xlrd.open_workbook(uploaded_file.name, file_contents=uploaded_file.read())
         except Exception as e:
-            print "********************************* On opening xlrd- ", e.message
             return render_to_response('bulk_import/gis_bulk_validator.html', {'headers': "",
                                                                               'filename': uploaded_file.name,
                                                                               'sheet_name': "",
@@ -2736,9 +2735,13 @@ class GISInventoryBulkImport(FormView):
             valid_rows_lists = []
             invalid_rows_lists = []
 
+            complete_d = list()
             for row_index in xrange(1, sheet.nrows):
                 d = {keys[col_index].encode('utf-8').strip(): sheet.cell(row_index, col_index).value
                      for col_index in xrange(sheet.ncols)}
+                complete_d.append(d)
+
+            for d in complete_d:
 
                 # wimax bs fields but common with pmp bs
                 if 'City' in d.keys():
@@ -2984,8 +2987,8 @@ class GISInventoryBulkImport(FormView):
                 regex_alnum_hyphen = '^[a-zA-Z0-9-]+$'
                 regex_alnum_space = '^[a-zA-Z0-9\s]+$'
                 regex_mac = '^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$'
-                # regex_lat_long = '^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}'
-                regex_lat_long = '^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$'
+                regex_lat_long = '^-?([1-8]?[1-9]|[1-9]0)\.{1}\d+'
+                # regex_lat_long = '^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$'
 
                 # wimax bs fields validations but common with pmp bs
                 # 'city' validation (must be alphabetical and can contain space)
@@ -3409,16 +3412,12 @@ class GISInventoryBulkImport(FormView):
                 except Exception as e:
                     logger.info(e.message)
 
-
                 # 'qos_bw' validation (must be numeric)
                 try:
                     if isinstance(qos_bw, int) or isinstance(qos_bw, float):
                         if not re.match(regex_upto_two_dec_places, str(qos_bw).strip()):
                             errors += 'QOS (BW) must be a number.\n'
                     elif qos_bw:
-                        print "^^^^^^^^^^^^^^^^^^^^^^^^^ Exception: ******************************"
-                        print "**************************** qos - ", qos_bw
-                        print "**************************** type(qos) - ", type(qos_bw)
                         if not re.match(regex_upto_two_dec_places, str(qos_bw).strip()):
                             errors += 'QOS (BW) must be a number.\n'
                     else:
@@ -3572,7 +3571,8 @@ class ExcelWriterRowByRow(View):
             filename = "valid_{}_{}.xls".format(sheetname.lower().replace(" ", "_"), filename.lower().replace(" ", "_"))
         elif sheettype == repr('invalid'):
             content = request.session['invalid_rows_lists']
-            filename = "invalid_{}_{}.xls".format(sheetname.lower().replace(" ", "_"), filename.lower().replace(" ", "_"))
+            filename = "invalid_{}_{}.xls".format(sheetname.lower().replace(" ", "_"),
+                                                  filename.lower().replace(" ", "_"))
         else:
             content = ""
 
