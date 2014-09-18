@@ -50,9 +50,9 @@ $.urlParam = function(name){
 					var devices_options = '<option value="">Select Device</option>';
 					$.each(allDevices,function(key,value) {
 						if(value.id == device_id) {
-							devices_options += '<option value="'+value.id+'" selected>'+value.alias+'</option>';
+							devices_options += '<option value="'+value.id+'" selected>'+value.technology + ':' + value.alias+'</option>';
 						} else {
-							devices_options += '<option value="'+value.id+'">'+value.alias+'</option>';
+							devices_options += '<option value="'+value.id+'">'+value.technology + ':' + value.alias+'</option>';
 						}
 					});
 					$("#device_name").html(devices_options);
