@@ -749,9 +749,9 @@ function devicePlottingClass_gmap() {
 						position 		 	: new google.maps.LatLng(lat, lon),
 						ptLat 			 	: bs_ss_devices[i].data.lat,
 						ptLon 			 	: bs_ss_devices[i].data.lon,
-						icon 			 	: 'http 	://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
+						icon 			 	: new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
 						oldIcon 		 	: new google.maps.MarkerImage(base_url+"/"+sector_array[j].markerUrl,null,null,null,new google.maps.Size(32,37)),
-						clusterIcon 	 	: 'http 	://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
+						clusterIcon 	 	: new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
 						pointType 		 	: 'sector_Marker',
 						technology 		 	: sector_array[j].technology,
 						vendor 				: sector_array[j].vendor,
@@ -3006,7 +3006,7 @@ function devicePlottingClass_gmap() {
 				markerIcon.oldIcon= markerImage;
 
 				markerImage= new google.maps.MarkerImage(
-					"http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png",
+					base_url+'/static/img/icons/1x1.png',
 					null,
 					null,
 					null,
@@ -3015,7 +3015,7 @@ function devicePlottingClass_gmap() {
 				markerIcon.setIcon(markerImage);
 
 				markerImage= new google.maps.MarkerImage(
-					"http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png",
+					base_url+'/static/img/icons/1x1.png',
 					null,
 					null,
 					null,

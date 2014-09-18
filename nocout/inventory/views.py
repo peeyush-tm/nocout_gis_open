@@ -2331,7 +2331,7 @@ class ThematicSettingsList(ListView):
         user_id = self.request.user.id
 
         #if user is superadmin or gisadmin
-        if user_id in [1,2]:
+        if user_id in [NOCOUT_USER.ID, GISADMIN.ID]:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
