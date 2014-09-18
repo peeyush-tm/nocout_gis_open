@@ -28,7 +28,7 @@
 	                    <!--device_name Filter-->
 	                    <select name="device_name" id="device_name" class="form-control col-xs-1 input-sm">
                             {% for device in devices %}
-    	                        <option value='{{ device.id }}'>{{  device.alias }}</option>
+    	                        <option value='{{ device.id }}'>{{ device.technology }} : {{ device.alias }}</option>
                             {% endfor %}
 	                    </select>
 	                </li>

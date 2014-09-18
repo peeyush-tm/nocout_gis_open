@@ -13,6 +13,7 @@ from django.utils.dateformat import format
 from django.db.models import Q
 
 from django.conf import settings
+from nocout.settings import P2P, WiMAX, PMP
 
 # going deep with sql cursor to fetch the db results. as the RAW query executes everythong it is recursively used
 from django.db import connections
@@ -830,7 +831,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
         else:
             organizations_ids = [logged_in_user.organization.id]
 
-        sector_configured_on_devices = Device.objects.filter(~Q(device_technology = int(settings.P2P.ID)), is_added_to_nms=1,
+        sector_configured_on_devices = Device.objects.filter(~Q(device_technology = int(P2P.ID)), is_added_to_nms=1,
                                                              is_deleted=0, sector_configured_on__isnull=False,
                                                              organization__in= organizations_ids)\
                                                              .values('device_name', 'machine__name')
@@ -1486,49 +1487,22 @@ class SingleDeviceAlertDetails(View):
         return result
         """
 
+        device_result = []
+
         if page_type == "customer" :
-            substation_result = self.organization_customer_devices(organizations_ids)
-            return substation_result
+            device_result = organization_customer_devices(organizations_ids)
+
         elif page_type == "network":
-            basestation_result = self.organization_network_devices(organizations_ids)
-            return basestation_result
+            device_result = organization_network_devices(organizations_ids)
 
-
-    def organization_customer_devices(self, organizations_ids):
-        """
-        To result back the all the customer devices from the respective organization..
-
-        :param organization:
-        :return list of customer devices
-        """
-        organization_customer_devices= Device.objects.filter(
-                                       Q(sector_configured_on__isnull=False) | Q(substation__isnull=False),
-                                       is_added_to_nms=1,
-                                       is_deleted=0,
-                                       organization__in=
-                                       organizations_ids)
         result = list()
-        for device in organization_customer_devices:
-            result.append({'id': device.id, 'name':  device.device_name, 'alias': device.device_alias })
-
-        return result
-
-    def organization_network_devices(self, organizations_ids):
-        """
-        To result back the all the network devices from the respective organization..
-
-        :param organization:
-        :return list of network devices
-        """
-        organization_customer_devices= Device.objects.filter(
-                                       ~Q(device_technology = int(settings.P2P.ID)),
-                                       is_added_to_nms=1,
-                                       is_deleted=0,
-                                       organization__in= organizations_ids)
-        result = list()
-        for device in organization_customer_devices:
-            result.append({'id': device.id, 'name':  device.device_name, 'alias': device.device_alias })
-
+        for device in device_result:
+            result.append({'id': device.id,
+                           'name':  device.device_name,
+                           'alias': device.device_alias,
+                           'technology': DeviceTechnology.objects.get(id=device.device_technology).name
+            }
+            )
         return result
 
 
@@ -1797,7 +1771,7 @@ def filter_customer_devices(logged_in_user, data_tab = None):
 
     device_technology_ids_ptp = [device_technology_id]
 
-    if device_technology_id == int(settings.P2P.ID): #[, settings.TCLPTPPOP.ID]:
+    if device_technology_id == int(P2P.ID): #[, settings.TCLPTPPOP.ID]:
         #this means that device is PTP or TCL PTP POP
         is_p2p = True
         # device_technology_ids_ptp.append(settings.TCLPTPPOP.ID)
@@ -1991,3 +1965,87 @@ def prepare_customer_results(device_list, performance_data):
             #     pass
 
     return device_list
+
+
+#common function to get the devices
+
+def ptp_device_circuit_backhaul():
+    """
+    Special case fot PTP technology devices. Wherein Circuit type backhaul is required
+    :return:
+    """
+    device_list_with_circuit_type_backhaul = Device.objects.filter(
+        Q(id__in=Sector.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                        values_list('sector', flat=True)).
+                                        values_list('sector_configured_on', flat=True))
+        |
+        Q(id__in=SubStation.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                        values_list('sub_station', flat=True)).
+                                        values_list('device', flat=True))
+    )
+    return device_list_with_circuit_type_backhaul
+
+def organization_customer_devices(organizations, technology = None):
+    """
+    To result back the all the customer devices from the respective organization..
+
+    :param organization:
+    :return list of customer devices
+    """
+    if not technology:
+        organization_customer_devices= Device.objects.filter(
+                                    Q(sector_configured_on__isnull=False) | Q(substation__isnull=False),
+                                    is_added_to_nms=1,
+                                    is_deleted=0,
+                                    organization__in= organizations
+        )
+    else:
+        if int(technology) == int(P2P.ID):
+            organization_customer_devices = Device.objects.filter(
+                ~Q(id__in=ptp_device_circuit_backhaul()),
+                is_added_to_nms= 1,
+                is_deleted= 0,
+                organization__in= organizations,
+                device_technology= technology
+            )
+        else:
+            organization_customer_devices = Device.objects.filter(
+                is_added_to_nms= 1,
+                is_deleted= 0,
+                organization__in= organizations,
+                device_technology= technology
+            )
+
+    return organization_customer_devices
+
+def organization_network_devices(organizations, technology = None):
+    """
+    To result back the all the network devices from the respective organization..
+
+    :param organizations:
+    :param technology:
+    :param organization:
+    :return list of network devices
+    """
+    if not technology:
+        device_list_with_circuit_type_backhaul = ptp_device_circuit_backhaul()
+
+        organization_network_devices = Device.objects.filter(
+                                        Q(id__in= device_list_with_circuit_type_backhaul)
+                                        |
+                                        Q(device_technology = int(WiMAX.ID))
+                                        |
+                                        Q(device_technology = int(PMP.ID)),
+                                        is_added_to_nms=1,
+                                        is_deleted=0,
+                                        organization__in= organizations
+        )
+    else:
+        organization_network_devices = Device.objects.filter(
+                                        Q(device_technology = int(technology),
+                                        is_added_to_nms=1,
+                                        is_deleted=0,
+                                        organization__in= organizations
+        ))
+
+    return organization_network_devices
