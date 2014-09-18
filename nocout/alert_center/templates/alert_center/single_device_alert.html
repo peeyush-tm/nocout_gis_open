@@ -21,6 +21,17 @@
 	<div class='box border lite perfContainerBlock'>
 	    <div class='box-title'>
 	        <h4><i class='fa fa-file-text'></i> {{ page_type| title }} Alert - {{ current_device_name }}</h4>
+        </div>
+        <div class='box-body'>
+            <div class="tabbable header-tabs">
+                <ul id="device_page_tabs" class="nav nav-tabs">
+                    <li><a href="#" id="network_alert_service_tab" data-toggle="tab"><span class="hidden-inline-mobile">Service Impact Alerts</span></a></li>
+                    <li><a href="#" id="network_alert_down_tab" data-toggle="tab"><span class="hidden-inline-mobile">Down</span></a></li>
+                    <li><a href="#" id="network_alert_packet_tab" data-toggle="tab"><span class="hidden-inline-mobile">Packet Drop</span></a></li>
+                    <li><a href="#" id="network_alert_latency_tab" data-toggle="tab"><span class="hidden-inline-mobile">Latency</span></a></li>
+                </ul>
+            </div>
+            <div class="clear-fix"></div>
 	        <!--Filters Block Start-->
 	        <div class="pull-right">
 	            <ul class="list-unstyled list-inline">
@@ -215,16 +226,89 @@
 
 {% block load_js %}
     <script>
+        function findStringFromUrl() {
+            var words= ['down', 'latency', 'packet_drop', 'service'];
+            var x= location.href;
+            for(var i=0; i< words.length; i++) {
+                if(x.indexOf(words[i]) !== -1) {
+                    return words[i];
+                }
+            }
+        }
+
+        function replaceString(mainString, toReplace, replaceWith) {
+            var str = mainString, res;
+            if(toReplace=== "service") {
+                res = str.replace(toReplace+"/", replaceWith+"/");
+            } else {
+                res = str.replace(toReplace, replaceWith);
+            }
+            
+            return res;
+        }
+
+        function selectTab(tabId) {
+            $(tabId).parent().addClass('active').siblings().removeClass('active');
+        }
+
         $(document).ready(function () {
             $("#device_alert").tablecloth({
-              theme:"stats",
-              bordered: true,
-              sortable:true,
-              striped: true,
-              clean:true
+                theme:"stats",
+                bordered: true,
+                sortable:true,
+                striped: true,
+                clean:true
             });
+
+            $("#network_alert_service_tab").click(function(e) {
+                e.preventDefault();
+                var currentTab= findStringFromUrl();
+
+                var newUrl= replaceString(location.href, currentTab, 'service');
+                location.href= newUrl;
+                // selectTab('#network_alert_service_tab');
+            });
+
+            $("#network_alert_down_tab").click(function(e) {
+                e.preventDefault();
+                var currentTab= findStringFromUrl();
+                var newUrl= replaceString(location.href, currentTab, 'down');
+                location.href= newUrl;
+                // selectTab('#network_alert_down_tab');
+            });
+
+            $("#network_alert_packet_tab").click(function(e) {
+                e.preventDefault();
+                var currentTab= findStringFromUrl();
+                var newUrl= replaceString(location.href, currentTab, 'packet_drop');
+                location.href= newUrl;
+                // selectTab('#network_alert_packet_tab');
+            });
+
+            $("#network_alert_latency_tab").click(function(e) {
+                e.preventDefault();
+                var currentTab= findStringFromUrl();
+                var newUrl= replaceString(location.href, currentTab, 'latency');
+                location.href= newUrl;
+                // selectTab('#network_alert_latency_tab');
+            });
+
+
+            var currentPage= findStringFromUrl();
+            // ['down', 'latency', 'packet_drop', 'service'];
+            if(currentPage=== 'down') {
+                selectTab('#network_alert_down_tab');
+            } else if (currentPage=== 'latency') {
+                selectTab('#network_alert_latency_tab');
+            } else if (currentPage=== 'packet_drop') {
+                selectTab('#network_alert_packet_tab');
+            } else {
+                selectTab('#network_alert_service_tab');
+            }
+
         });
-    App.init(); //Initialise plugins and elements
+
+        App.init(); //Initialise plugins and elements
     </script>
 {% endblock %}
 
