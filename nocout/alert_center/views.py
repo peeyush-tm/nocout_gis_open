@@ -1264,8 +1264,18 @@ class SingleDeviceAlertDetails(View):
         machine_name = device_obj.machine.name
 
         data_list = None
-        required_columns = ["device_name", "ip_address", "service_name", "data_source",
-                            "severity", "current_value", "sys_timestamp", "description"]
+        required_columns = ["device_name",
+                            "ip_address",
+                            "service_name",
+                            "data_source",
+                            "severity",
+                            "current_value",
+                            "sys_timestamp",
+                            "description"
+        ]
+
+        is_ping = False
+
         if service_name == 'latency':
             data_list = EventNetwork.objects. \
                 filter(device_name=device_name,
@@ -1303,6 +1313,45 @@ class SingleDeviceAlertDetails(View):
                 order_by("-sys_timestamp"). \
                 values(*required_columns).using(alias=machine_name)
 
+        elif service_name == 'ping':
+
+            in_string = lambda x: "'" + str(x) + "'"
+            col_string = lambda x: "`" + str(x) + "`"
+            is_ping = True
+            # raw query is required here so as to get data
+            query = " "\
+                    " SELECT " \
+                    " original_table.`device_name`," \
+                    " original_table.`ip_address`," \
+                    " original_table.`service_name`," \
+                    " original_table.`severity`," \
+                    " original_table.`current_value` as latency," \
+                    " `derived_table`.`current_value` as packet_loss, " \
+                    " `original_table`.`sys_timestamp`," \
+                    " original_table.`description` " \
+                    " FROM `performance_eventnetwork` as original_table "\
+                    " INNER JOIN (`performance_eventnetwork` as derived_table) "\
+                    " ON( "\
+                    "    original_table.`data_source` <> derived_table.`data_source` "\
+                    "    AND "\
+                    "   original_table.`sys_timestamp` = derived_table.`sys_timestamp` "\
+                    "    AND "\
+                    "    original_table.`device_name` = derived_table.`device_name` "\
+                    " ) "\
+                    " WHERE( "\
+                    "    original_table.`device_name`= '{0}' "\
+                    "    AND "\
+                    "    original_table.`sys_timestamp` BETWEEN {1} AND {2} "\
+                    " ) "\
+                    " GROUP BY original_table.`sys_timestamp` "\
+                    " ORDER BY original_table.`sys_timestamp` DESC ".format(
+                    # (',').join(["original_table.`" + col_name + "`" for col_name in required_columns]),
+                    device_name,
+                    start_date,
+                    end_date
+                    )
+            data_list = fetch_raw_result(query, machine_name)
+
         required_columns = [
             "device_name",
             "ip_address",
@@ -1314,6 +1363,20 @@ class SingleDeviceAlertDetails(View):
             # "alert_time",
             "description"
         ]
+
+        if is_ping:
+            required_columns = [
+                "device_name",
+                "ip_address",
+                "service_name",
+                "severity",
+                "latency",
+                "packet_loss",
+                "alert_date_time",
+                # "alert_time",
+                "description"
+            ]
+
         for data in data_list:
             # data["alert_date"] = datetime.datetime. \
             #     fromtimestamp(float(data["sys_timestamp"])). \
@@ -1382,7 +1445,8 @@ class SingleDeviceAlertDetails(View):
         else:
 
             required_columns = map(lambda x: x.replace('_', ' '), required_columns)
-            context = dict(devices=devices_result,
+            context = dict(is_ping=is_ping,
+                           devices=devices_result,
                            current_device_id=device_id,
                            current_device_name=device_name,
                            page_type=page_type,

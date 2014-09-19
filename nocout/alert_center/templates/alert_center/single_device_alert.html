@@ -29,6 +29,7 @@
                     <li><a href="#" id="network_alert_down_tab" data-toggle="tab"><span class="hidden-inline-mobile">Down</span></a></li>
                     <li><a href="#" id="network_alert_packet_tab" data-toggle="tab"><span class="hidden-inline-mobile">Packet Drop</span></a></li>
                     <li><a href="#" id="network_alert_latency_tab" data-toggle="tab"><span class="hidden-inline-mobile">Latency</span></a></li>
+                    <li><a href="#" id="network_alert_ping_tab" data-toggle="tab"><span class="hidden-inline-mobile">Ping Details</span></a></li>
                 </ul>
             </div>
             <div class="clear-fix"></div>
@@ -95,56 +96,99 @@
                     </thead>
                     <tbody>
                     {% if table_data %}
-                        {% for data in table_data %}
+                        {% if is_ping %}
+                            {% for data in table_data %}
                             <tr>
                                 {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
-                                    <td><i class="fa fa-circle red-dot"></i></td>
+                                    <td><i class="fa fa-circle red-dot"><span style="display:none">1</span></i></td>
                                     <td>{{ data.device_name }}</td>
                                     <td>{{ data.ip_address }}</td>
                                     <td>{{ data.service_name }}</td>
-                                    <td>{{ data.data_source }}</td>
                                     <td><span class="text-danger">{{ data.severity }}</span></td>
-                                    <td><span class="text-danger">{{ data.current_value }}</span></td>
+                                    <td><span class="text-danger">{{ data.latency }} ms</span></td>
+                                    <td><span class="text-danger">{{ data.packet_loss }}%</span></td>
                                     <td>{{ data.alert_date_time }}</td>
-                                    <!-- <td>{{ data.alert_time }}</td> -->
                                     <td><span class="text-danger">{{ data.description }}</span></td>
                                 {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
-                                    <td><i class="fa fa-circle orange-dot"></i></td>
+                                    <td><i class="fa fa-circle orange-dot"><span style="display:none">2</span></i></td>
                                     <td>{{ data.device_name }}</td>
                                     <td>{{ data.ip_address }}</td>
                                     <td>{{ data.service_name }}</td>
-                                    <td>{{ data.data_source }}</td>
                                     <td><span class="text-warning">{{ data.severity }}</span></td>
-                                    <td><span class="text-warning">{{ data.current_value }}</span></td>
+                                    <td><span class="text-warning">{{ data.latency }} ms</span></td>
+                                    <td><span class="text-warning">{{ data.description | slice:"-4:" }}</span></td>
                                     <td>{{ data.alert_date_time }}</td>
-                                    <!-- <td>{{ data.alert_time }}</td> -->
                                     <td><span class="text-warning">{{ data.description }}</span></td>
                                 {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
-                                    <td><i class="fa fa-circle green-dot"></i></td>
+                                    <td><i class="fa fa-circle green-dot"><span style="display:none">3</span></i></td>
                                     <td>{{ data.device_name }}</td>
                                     <td>{{ data.ip_address }}</td>
                                     <td>{{ data.service_name }}</td>
-                                    <td>{{ data.data_source }}</td>
                                     <td><span class="text-success">{{ data.severity }}</span></td>
-                                    <td><span class="text-success">{{ data.current_value }}</span></td>
+                                    <td><span class="text-success">{{ data.latency }} ms</span></td>
+                                    <td><span class="text-success">{{ data.packet_loss }}%</span></td>
                                     <td>{{ data.alert_date_time }}</td>
-                                    <!-- <td>{{ data.alert_time }}</td> -->
                                     <td><span class="text-success">{{ data.description }}</span></td>
                                 {% else %}
-                                    <td><i class="fa fa-circle grey-dot"></i></td>
+                                    <td><i class="fa fa-circle grey-dot"><span style="display:none">4</span></i></td>
                                     <td>{{ data.device_name }}</td>
                                     <td>{{ data.ip_address }}</td>
                                     <td>{{ data.service_name }}</td>
-                                    <td>{{ data.data_source }}</td>
                                     <td><span class="text-muted">{{ data.severity }}</span></td>
-                                    <td><span class="text-muted">{{ data.current_value }}</span></td>
+                                    <td><span class="text-muted">{{ data.latency }} ms</span></td>
+                                    <td><span class="text-muted">{{ data.packet_loss }}%</span></td>
                                     <td>{{ data.alert_date_time }}</td>
-                                    <!-- <td>{{ data.alert_time }}</td> -->
                                     <td><span class="text-muted">{{ data.description }}</span></td>
                                 {% endif %}
                             </tr>
                         {% endfor %}
-
+                        {% else %}
+                            {% for data in table_data %}
+                                <tr>
+                                    {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
+                                        <td><i class="fa fa-circle red-dot"></i></td>
+                                        <td>{{ data.device_name }}</td>
+                                        <td>{{ data.ip_address }}</td>
+                                        <td>{{ data.service_name }}</td>
+                                        <td>{{ data.data_source }}</td>
+                                        <td><span class="text-danger">{{ data.severity }}</span></td>
+                                        <td><span class="text-danger">{{ data.current_value }}</span></td>
+                                        <td>{{ data.alert_date_time }}</td>
+                                        <td><span class="text-danger">{{ data.description }}</span></td>
+                                    {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
+                                        <td><i class="fa fa-circle orange-dot"></i></td>
+                                        <td>{{ data.device_name }}</td>
+                                        <td>{{ data.ip_address }}</td>
+                                        <td>{{ data.service_name }}</td>
+                                        <td>{{ data.data_source }}</td>
+                                        <td><span class="text-warning">{{ data.severity }}</span></td>
+                                        <td><span class="text-warning">{{ data.current_value }}</span></td>
+                                        <td>{{ data.alert_date_time }}</td>
+                                        <td><span class="text-warning">{{ data.description }}</span></td>
+                                    {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
+                                        <td><i class="fa fa-circle green-dot"></i></td>
+                                        <td>{{ data.device_name }}</td>
+                                        <td>{{ data.ip_address }}</td>
+                                        <td>{{ data.service_name }}</td>
+                                        <td>{{ data.data_source }}</td>
+                                        <td><span class="text-success">{{ data.severity }}</span></td>
+                                        <td><span class="text-success">{{ data.current_value }}</span></td>
+                                        <td>{{ data.alert_date_time }}</td>
+                                        <td><span class="text-success">{{ data.description }}</span></td>
+                                    {% else %}
+                                        <td><i class="fa fa-circle grey-dot"></i></td>
+                                        <td>{{ data.device_name }}</td>
+                                        <td>{{ data.ip_address }}</td>
+                                        <td>{{ data.service_name }}</td>
+                                        <td>{{ data.data_source }}</td>
+                                        <td><span class="text-muted">{{ data.severity }}</span></td>
+                                        <td><span class="text-muted">{{ data.current_value }}</span></td>
+                                        <td>{{ data.alert_date_time }}</td>
+                                        <td><span class="text-muted">{{ data.description }}</span></td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
                     {% else %}
 
                         <!-- <div>NO RECORD FOUND.</div> -->
@@ -164,7 +208,9 @@
     <script type="text/javascript">
         $(document).ready(function(e) {
 
-            $("#device_alert").DataTable();
+            $("#device_alert").DataTable({
+                aaSorting: [[7, 'desc']]
+            });
             $("#device_alert").removeClass("hide");
 
             // $("#device_alert").tablecloth({
@@ -208,6 +254,14 @@
                 // selectTab('#network_alert_latency_tab');
             });
 
+            $("#network_alert_ping_tab").click(function(e) {
+                e.preventDefault();
+                var currentTab= findStringFromUrl();
+                var newUrl= replaceString(location.href, currentTab, 'ping');
+                location.href= newUrl;
+                // selectTab('#network_alert_latency_tab');
+            });
+
 
             var currentPage= findStringFromUrl();
             // ['down', 'latency', 'packet_drop', 'service'];
@@ -217,8 +271,10 @@
                 selectTab('#network_alert_latency_tab');
             } else if (currentPage=== 'packet_drop') {
                 selectTab('#network_alert_packet_tab');
-            } else {
+            } else if (currentPage=== 'service') {
                 selectTab('#network_alert_service_tab');
+            } else {
+                selectTab('#network_alert_ping_tab');
             }
 
             //setting up a custom jquery function to retrive the get paramters.
@@ -280,13 +336,9 @@
         });
 
         function findStringFromUrl() {
-            var words= ['down', 'latency', 'packet_drop', 'service'];
-            var x= location.href;
-            for(var i=0; i< words.length; i++) {
-                if(x.indexOf(words[i]) !== -1) {
-                    return words[i];
-                }
-            }
+            var uri = $.url();
+            var path = uri.attr('path').split('/');
+            return path[path.length - 2 ]
         }
 
         function replaceString(mainString, toReplace, replaceWith) {
@@ -301,6 +353,7 @@
         }
 
         function selectTab(tabId) {
+            console.log(tabId);
             $(tabId).parent().addClass('active').siblings().removeClass('active');
         }
     </script>
