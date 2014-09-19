@@ -535,39 +535,73 @@ class Inventory_Device_Status(View):
 
         if page_type == 'customer':
             substation = SubStation.objects.get(device= device.id)
-
+            planned_frequency = "N/A"
             if substation.circuit_set.exists():
                 sector = Circuit.objects.get(sub_station=substation.id).sector
+                planned_frequency = sector.frequency.value if sector.frequency else "N/A"
                 base_station = BaseStation.objects.get(id=Sector.objects.get(id=sector.id).base_station.id)
                 bs_name = base_station.name
             else:
                 bs_name = "N/A"
 
-            result['data']['objects']['headers'] = ['BS Name', 'SSName', 'Building Height', 'Tower Height',
-                                                    'City', 'State', 'IP Address', 'MAC Address']
-            result['data']['objects']['values'] = [bs_name, substation.name,
+            result['data']['objects']['headers'] = ['BS Name',
+                                                    'SSName',
+                                                    'Building Height',
+                                                    'Tower Height',
+                                                    'City',
+                                                    'State',
+                                                    'IP Address',
+                                                    'MAC Address',
+                                                    'Planned Frequency'
+            ]
+
+            result['data']['objects']['values'] = [bs_name,
+                                                   substation.name,
                                                    substation.building_height,
                                                    substation.tower_height,
-                                                   City.objects.get(id=substation.city).city_name if substation.city else "N/A",
-                                                   State.objects.get(id=substation.state).state_name if substation.state else "N/A",
+                                                   City.objects.get(id=substation.city).city_name
+                                                        if substation.city
+                                                        else "N/A",
+                                                   State.objects.get(id=substation.state).state_name
+                                                        if substation.state
+                                                        else "N/A",
                                                    device.ip_address,
-                                                   device.mac_address]
+                                                   device.mac_address,
+                                                   planned_frequency
+            ]
 
         elif page_type == 'network':
+            sector_objects = Sector.objects.filter(sector_configured_on=device.id)
+            planned_frequency_list = []
+            base_station_list = []
+            if len(sector_objects):
+                base_station_list = sector_objects.values_list('base_station', flat=True)
+                planned_frequency_list = sector_objects.values_list('frequency__value', flat=True)
 
-            base_station_list = Sector.objects.filter(sector_configured_on=device.id).values_list(
-                'base_station', flat=True)
 
-            result['data']['objects']['headers'] = ['BS Name', 'Building Height', 'Tower Height',
-                                                    'City', 'State', 'IP Address', 'MAC Address']
+            result['data']['objects']['headers'] = ['BS Name',
+                                                    'Building Height',
+                                                    'Tower Height',
+                                                    'City',
+                                                    'State',
+                                                    'IP Address',
+                                                    'MAC Address',
+                                                    'Planned Frequency']
             if base_station_list:
                 base_station = BaseStation.objects.get(id= base_station_list[0])
+                planned_frequency = ",".join(planned_frequency_list)
                 result['data']['objects']['values'] = [base_station.name, base_station.building_height,
                                                        base_station.tower_height,
-                                                       City.objects.get(id=base_station.city).city_name if base_station.city else "N/A",
-                                                       State.objects.get(id=base_station.state).state_name if base_station.state else "N/A",
+                                                       City.objects.get(id=base_station.city).city_name
+                                                            if base_station.city
+                                                            else "N/A",
+                                                       State.objects.get(id=base_station.state).state_name
+                                                            if base_station.state
+                                                            else "N/A",
                                                        device.ip_address,
-                                                       device.mac_address]
+                                                       device.mac_address,
+                                                       planned_frequency
+                ]
 
         result['data']['objects']['values'] = map(lambda val: val if val else 'N/A',
                                                   result['data']['objects']['values'])
@@ -919,8 +953,8 @@ class Get_Service_Type_Performance_Data(View):
                                     )
                             )
 
-                    formula = SERVICE_DATA_SOURCE[str(data.data_source).lower()]["formula"]\
-                                if data.data_source in SERVICE_DATA_SOURCE \
+                    formula = SERVICE_DATA_SOURCE[str(data.data_source).lower().strip()]["formula"]\
+                                if str(data.data_source).lower().strip() in SERVICE_DATA_SOURCE \
                                 else None
 
                     if data.avg_value:
@@ -930,7 +964,9 @@ class Get_Service_Type_Performance_Data(View):
                                                    float(data.warning_threshold) if data.warning_threshold else 0,
                                                    float(data.critical_threshold) if data.critical_threshold else 0
                             ),
-                            "y": eval(formula + "(" +str(data.avg_value) + ")") if formula else float(data.avg_value),
+                            "y": eval(str(formula) + "(" +str(data.avg_value) + ")")
+                                    if formula
+                                    else float(data.avg_value),
                             "x": data.sys_timestamp * 1000
                         }
                     else:
