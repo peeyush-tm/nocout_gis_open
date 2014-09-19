@@ -278,18 +278,22 @@ $.urlParam = function(name){
 			success : function(result) {
 
 				if(result.success == 1) {
+
+                    if($(".chart_container .data_in_table").length > 0) {
+                        $(".chart_container .data_in_table").remove();
+                    }
+
 					/*Service Data Object*/
 					single_service_data = result.data.objects;
 
                     if (result.data.objects.table_data != undefined) {
                         if(result.data.objects.table_data.length > 0) {
-
                             var table_string = "";
                             var grid_headers = result.data.objects.table_data_header;
-                            table_string += '<table class="table table-bordered"><thead>';
+                            table_string += '<table id="other_perf_table" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
                             /*Table header creation start*/
                             for(var i=0;i<grid_headers.length;i++) {
-                                table_string += '<td>'+grid_headers[i]+'</td>';
+                                table_string += '<td><b>'+grid_headers[i]+'</b></td>';
                             }
                             table_string += '</thead><tbody>';
                             /*Table header creation end*/
@@ -306,6 +310,7 @@ $.urlParam = function(name){
                             /*Table data creation end*/
                             table_string += '</tbody></table>';
                             $('#'+service_id+'_chart').html(table_string);
+                            $("#other_perf_table").DataTable();
                         } else {
                             $('#'+service_id+'_chart').html(result.message);
                         }
@@ -364,9 +369,53 @@ $.urlParam = function(name){
                             },
                             series: single_service_data.chart_data
                         });
+                        
+                        var data_in_table = "<div class='data_in_table'><div class='divide-20'></div><table id='perf_data_table' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
+                        /*Make table headers*/
+                        for(var i=0;i<single_service_data.chart_data.length;i++) {
+                            data_in_table += '<td colspan="2" align="center"><b>'+single_service_data.chart_data[i].name+'</b></td>';
+                        }
+                        data_in_table += '</tr><tr>';
+                        
+                        for(var i=0;i<single_service_data.chart_data.length;i++) {
+                            data_in_table += '<td><em>Time</em></td><td><em>Value</em></td>';
+                        }
+
+                        data_in_table += '</tr></thead><tbody>';
+
+                        /*Make table data*/
+
+                        var data = single_service_data.chart_data[0].data;
+
+                        for(var j=0;j<data.length;j++) {
+
+                            data_in_table += '<tr>';
+
+                            for(var i=0;i<single_service_data.chart_data.length;i++) {
+                                var inner_data = single_service_data.chart_data[i].data[j];
+                                if(inner_data instanceof Array) {
+                                    data_in_table += '<td>'+ new Date(inner_data[0]).toLocaleString() +'</td><td>'+ inner_data[1] +'</td>';
+                                } else {
+                                    data_in_table += '<td>'+ new Date(inner_data.x).toLocaleString() +'</td><td>'+ inner_data.y +'</td>';
+                                }
+                            }
+                            data_in_table += '</tr>';
+                        }
+
+                        data_in_table += "</tbody></table><div class='clearfix'></div></div>";
+
+                        if($(".chart_container .data_in_table").length == 0) {
+                            $(".chart_container").append(data_in_table);
+                            $("#perf_data_table").DataTable();
+                        } else {
+                            $(".chart_container .data_in_table").empty();
+                            $(".chart_container  .data_in_table").remove();
+                            $(".chart_container").append(data_in_table);
+                            $("#perf_data_table").DataTable();
+                        }
 
                         /*Hide Highcharts.com Name*/
-                        var highcharts_link = $("#services_tab_container svg text:last-child");
+                        var highcharts_link = $('#'+service_id+'_chart svg text:last-child');
                         $.grep(highcharts_link,function(val) {
                             if($.trim(val.innerHTML) == 'Highcharts.com') {
                                 val.innerHTML = "";
