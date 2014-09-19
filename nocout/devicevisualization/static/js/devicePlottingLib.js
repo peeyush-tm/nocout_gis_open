@@ -274,23 +274,29 @@ function FullScreenCustomControl(controlDiv, map) {
   // Setting padding to 5 px will offset the control
   // from the edge of the map
   controlDiv.style.padding = '5px';
+  $(controlDiv).addClass('custom_fullscreen');
 
   // Set CSS for the control border
   var controlUI = document.createElement('div');
   controlUI.style.backgroundColor = 'white';
-  controlUI.style.borderStyle = 'solid';
-  controlUI.style.borderWidth = '2px';
-  controlUI.style.cursor = 'pointer';
-  controlUI.style.textAlign = 'center';
+    controlUI.style.borderStyle = 'solid';
+    controlUI.style.borderWidth = '1px';
+    controlUI.style.borderColor = '#717b87';
+    controlUI.style.cursor = 'pointer';
+    controlUI.style.textAlign = 'center';
   controlUI.title = 'Click here to full screen';
   controlDiv.appendChild(controlUI);
 
   // Set CSS for the control interior
   var controlText = document.createElement('div');
-  controlText.style.fontFamily = 'Arial,sans-serif';
-  controlText.style.fontSize = '12px';
-  controlText.style.paddingLeft = '4px';
-  controlText.style.paddingRight = '4px';
+
+    controlText.style.fontFamily = 'Roboto,Arial,sans-serif';
+    controlText.style.fontSize = '11px';
+    controlText.style.fontWeight = '400';
+    controlText.style.paddingTop = '1px';
+    controlText.style.paddingBottom = '1px';
+    controlText.style.paddingLeft = '6px';
+    controlText.style.paddingRight = '6px';
   controlText.innerHTML = '<b>Full Screen</b>';
   controlUI.appendChild(controlText);
 
@@ -447,7 +453,7 @@ function devicePlottingClass_gmap() {
 
 			
 			/*Add Full Screen Control*/
-			// mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(new FullScreenControl(mapInstance));
+			mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(new FullScreenControl(mapInstance));
 
 			/*Create performance lib instance*/
             gisPerformanceClass= new GisPerformance();
