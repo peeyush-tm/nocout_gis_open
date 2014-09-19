@@ -118,13 +118,73 @@ $("#headerToggleBtn").click(function(e) {
         $("#headerToggleBtn").html('<i class="fa fa-eye"></i> Show Page Controls');
         $("#headerToggleBtn").removeClass('btn-danger');
         $("#headerToggleBtn").addClass('btn-info');
+        $("#page_content_div .box-title").removeClass('hide');
     }
 
     /*Toggle Page Header*/
     $("#page_header_container").slideToggle();
 });
 
+/**
+ * This adds a  Page Control control to the map
+ * @constructor
+ */
+function ShowControl(controlDiv) {
+  
+  controlDiv.style.padding = '5px';
+  // Set CSS for the control border
+  var controlUI = document.createElement('div');
+  controlUI.style.backgroundColor = 'white';
+  controlUI.style.borderStyle = 'solid';
+  controlUI.style.borderWidth = '2px';
+  controlUI.style.cursor = 'pointer';
+  controlUI.style.textAlign = 'center';
+  controlUI.title = 'Click to see Page Controls';
+  controlDiv.appendChild(controlUI);
 
+  // Set CSS for the control interior
+  var controlText = document.createElement('div');
+  controlText.style.fontFamily = 'Arial,sans-serif';
+  controlText.style.fontSize = '12px';
+  controlText.style.paddingLeft = '4px';
+  controlText.style.paddingRight = '4px';
+  controlText.innerHTML = '<b>Show Page Controls</b>';
+  controlUI.appendChild(controlText);
+
+  // Setup the click event listeners: simply set the map to
+  // Chicago
+  google.maps.event.addDomListener(controlUI, 'click', function() {
+    $("#headerToggleBtn").trigger('click');
+    if($(this).find('b').html() === "Show Page Controls") {
+        $("#page_content_div .box-title").removeClass('hide');
+        $(this).find('b').html("Hide Page Controls");
+    } else {
+        $("#page_content_div .box-title").addClass('hide');
+        $(this).find('b').html("Show Page Controls");
+    }
+  });
+}
+
+function toggleControlButtons() {
+    if($("#goFullScreen").hasClass('hide')) {
+        $("#goFullScreen").removeClass('hide');
+        $("#headerToggleBtn").removeClass('hide');
+    } else {
+        $("#goFullScreen").addClass('hide');
+        $("#headerToggleBtn").addClass('hide');
+    }
+}
+
+function toggleBoxTitle() {
+    if($(".mapContainerBlock .box-title").hasClass('hide')) {
+        $(".mapContainerBlock .box-title").removeClass('hide');
+    } else {
+        $(".mapContainerBlock .box-title").addClass('hide');
+    }
+}
+
+var showControlDiv= "";
+var fullScreenControlDiv= "";
 /*This event full screen page widget*/
 $("#goFullScreen").click(function() {
 
@@ -141,8 +201,43 @@ $("#goFullScreen").click(function() {
             }
             
             launchFullscreen(document.getElementById('page_content_div'));
+
+
+            var aa= screen.height;
+            var bb= $("#page_content_div .box-title").height();
+            var cc= $("#page_header_container").height();
+            if($("#deviceMap").length) {
+
+                $("#deviceMap").height(aa-bb);
+                toggleControlButtons();
+                toggleBoxTitle();
+
+                if(showControlDiv) {
+                    showControlDiv= "";
+                    mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(1);
+                }
+                showControlDiv = document.createElement('div');
+                var showControl = new ShowControl(showControlDiv, mapInstance);
+                showControlDiv.index = 1;
+                mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(showControlDiv);
+                $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Exit Full Screen');
+            }
         } else {
             exitFullscreen();
+            if($("#deviceMap").length) {
+                showControlDiv= "";
+                if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length=== 2) {
+                    mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(1);    
+                }
+                $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Full Screen');
+                $("#deviceMap").height(550);
+                toggleControlButtons();
+                // toggleBoxTitle();
+                $(".mapContainerBlock .box-title").removeClass('hide');
+                $("#goFullScreen").removeClass('hide');
+                $("#headerToggleBtn").removeClass('hide');
+                // $("#headerToggleBtn").trigger('click');
+            }
         }
     } else {
         bootbox.alert("Fullscreen facility not supported by your browser.Please update.")
@@ -163,6 +258,20 @@ $(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange MSFu
         $("#goFullScreen").html('<i class="fa fa-arrows-alt"></i> View Full Screen');
         $("#goFullScreen").removeClass('btn-danger');
         $("#goFullScreen").addClass('btn-info');
+        if($("#deviceMap").length) {
+            showControlDiv= "";
+            if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length=== 2) {
+                mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(1);    
+            }
+            $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Full Screen');
+            $("#deviceMap").height(550);
+            toggleControlButtons();
+            // toggleBoxTitle();
+            $(".mapContainerBlock .box-title").removeClass('hide');
+            $("#goFullScreen").removeClass('hide');
+            $("#headerToggleBtn").removeClass('hide');
+            // $("#headerToggleBtn").trigger('click');
+        }
     }
 });
 
