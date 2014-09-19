@@ -103,15 +103,15 @@
                 {#					</div>#}
                 <div id="tableContainer" class="box-body">
                     <div class="tabbable header-tabs">
-                        <ul class="nav nav-tabs" style="top:-44px;float:left;padding-left:15px;">
-                            <li><a href="#inventory_status_tab" id="inventory_status" data-toggle="tab"><span
-                                    class="hidden-inline-mobile">Inventory Status</span></a></li>
-                            <li><a href="#service_status_tab" id="service_status" data-toggle="tab"><span
-                                    class="hidden-inline-mobile">Service Status</span></a></li>
-                            <li><a href="#service_perf_tab" id="service_perf" data-toggle="tab"><span
-                                    class="hidden-inline-mobile">Service Performance</span></a></li>
-                            <li class="active"><a href="#network_perf_tab" id="network_perf" data-toggle="tab"><span
-                                    class="hidden-inline-mobile">Network Performance</span></a></li>
+                        <ul class="nav nav-tabs" style="top:-44px;float:left;padding-left:15px;margin-right:0px;">
+                            <li><a href="#errors_tab" id="errors" data-toggle="tab"><span class="hidden-inline-mobile">Errors</span></a></li>
+                            <li><a href="#sia_tab" id="sia" data-toggle="tab"><span class="hidden-inline-mobile">SIA</span></a></li>
+                            <li><a href="#topology_tab" id="topology" data-toggle="tab"><span class="hidden-inline-mobile">Topology</span></a></li>
+                            <li><a href="#availability_tab" id="availability" data-toggle="tab"><span class="hidden-inline-mobile">Availability</span></a></li>
+                            <li><a href="#inventory_status_tab" id="inventory_status" data-toggle="tab"><span class="hidden-inline-mobile">Inventory Status</span></a></li>
+                            <li><a href="#service_status_tab" id="service_status" data-toggle="tab"><span class="hidden-inline-mobile">Service Status</span></a></li>
+                            <li><a href="#service_perf_tab" id="service_perf" data-toggle="tab"><span class="hidden-inline-mobile">Service Performance</span></a></li>
+                            <li class="active"><a href="#network_perf_tab" id="network_perf" data-toggle="tab"><span class="hidden-inline-mobile">Network Performance</span></a></li>
                         </ul>
 
                         <div class="clearfix"></div>
@@ -154,6 +154,87 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="tab-pane" id="availability_tab">
+                                <div class="panel panel-default">
+                                    <div class="panel-body">
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="topology_tab">
+                                <div class="panel panel-default">
+                                    <div class="panel-body">
+                                        <table class="temp_class datatable table table-striped table-bordered table-hover table-responsive">
+                                            <thead>
+                                                <tr>
+                                                    <th>Base Station</th>
+                                                    <th>Sub Station</th>
+                                                    <th>Circuit ID</th>
+                                                    <th>BS MAC</th>
+                                                    <th>SS MAC</th>
+                                                    <th>BS IP</th>
+                                                    <th>SS IP</th>
+                                                    <th>BS City</th>
+                                                    <th>BS State</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="sia_tab">
+                                <div class="panel panel-default">
+                                    <div class="panel-body">
+                                        <table class="temp_class datatable table table-striped table-bordered table-hover table-responsive">
+                                            <thead>
+                                                <tr>
+                                                    <th>Device Name</th>
+                                                    <th>Technology</th>
+                                                    <th>Type</th>
+                                                    <th>BS</th>
+                                                    <th>Sector ID</th>
+                                                    <th>Circuit ID</th>
+                                                    <th>City</th>
+                                                    <th>State</th>
+                                                    <th>Latency</th>
+                                                    <th>Timestamp</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="errors_tab">
+                                <div class="panel panel-default">
+                                    <div class="panel-body">
+                                        <table class="temp_class datatable table table-striped table-bordered table-hover table-responsive">
+                                            <thead>
+                                                <tr>
+                                                    <th>Device Name</th>
+                                                    <th>Technology</th>
+                                                    <th>Type</th>
+                                                    <th>BS</th>
+                                                    <th>Sector ID</th>
+                                                    <th>Circuit ID</th>
+                                                    <th>City</th>
+                                                    <th>State</th>
+                                                    <th>Latency</th>
+                                                    <th>Timestamp</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                        
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -188,6 +269,10 @@
 
 
         $(document).ready(function (e) {
+
+            /*Temporary Code*/
+            $(".temp_class").DataTable();
+
             //setting up a custom jquery function to retrive the get paramters.
             $.urlParam = function (name) {
                 var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
