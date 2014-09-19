@@ -24,7 +24,7 @@ function FullScreenControl(map) {
 	controlText.style.paddingBottom = '1px';
 	controlText.style.paddingLeft = '6px';
 	controlText.style.paddingRight = '6px';
-	controlText.innerHTML = '<strong>Full Screen</strong>';
+	controlText.innerHTML = '<strong>Full Screen(Only Map)</strong>';
 	controlUI.appendChild(controlText);
 
 	// set print CSS so the control is hidden
@@ -69,7 +69,7 @@ function FullScreenControl(map) {
 		mapDiv.style.left = "0";
 		mapDiv.style.zIndex = "100";
 		document.body.style.overflow = "hidden";
-		controlText.innerHTML = '<strong>Exit full screen</strong>';
+		controlText.innerHTML = '<strong>Exit full screen(Only Map)</strong>';
 		fullScreen = true;
 		google.maps.event.trigger(map, 'resize');
 		map.setCenter(center);
@@ -95,7 +95,7 @@ function FullScreenControl(map) {
 		mapDiv.style.left = originalLeft;
 		mapDiv.style.zIndex = originalZIndex;
 		document.body.style.overflow = originalOverflow;
-		controlText.innerHTML = '<strong>Full Screen</strong>';
+		controlText.innerHTML = '<strong>Full Screen(Only Map)</strong>';
 		fullScreen = false;
 		google.maps.event.trigger(map, 'resize');
 		map.setCenter(center);
@@ -105,9 +105,21 @@ function FullScreenControl(map) {
 	// Setup the click event listener
 	google.maps.event.addDomListener(controlUI, 'click', function() {
 		if (!fullScreen) {
+			if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length) {
+                $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].j[0]).addClass('hide');
+                if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length == 3) {
+                	$(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].j[2]).addClass('hide');
+                }
+            }
 			goFullScreen();
 		}
 		else {
+			if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length) {
+                $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].j[0]).removeClass('hide');
+                if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length == 3) {
+                	$(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].j[2]).removeClass('hide');
+                }
+            }
 			exitFullScreen();
 		}
 	});
