@@ -1310,17 +1310,21 @@ class SingleDeviceAlertDetails(View):
             "data_source",
             "severity",
             "current_value",
-            "alert_date",
-            "alert_time",
+            "alert_date_time",
+            # "alert_time",
             "description"
         ]
         for data in data_list:
-            data["alert_date"] = datetime.datetime. \
+            # data["alert_date"] = datetime.datetime. \
+            #     fromtimestamp(float(data["sys_timestamp"])). \
+            #     strftime("%d/%B/%Y")
+            # data["alert_time"] = datetime.datetime. \
+            #     fromtimestamp(float(data["sys_timestamp"])). \
+            #     strftime("%I:%M %p")
+            data["alert_date_time"] = datetime.datetime. \
                 fromtimestamp(float(data["sys_timestamp"])). \
-                strftime("%d/%B/%Y")
-            data["alert_time"] = datetime.datetime. \
-                fromtimestamp(float(data["sys_timestamp"])). \
-                strftime("%I:%M %p")
+                strftime("%d/%B/%Y %I:%M %p")
+                
             del (data["sys_timestamp"])
 
         download_excel = self.request.GET.get('download_excel', '')
