@@ -105,8 +105,8 @@
                                     <td>{{ data.data_source }}</td>
                                     <td><span class="text-danger">{{ data.severity }}</span></td>
                                     <td><span class="text-danger">{{ data.current_value }}</span></td>
-                                    <td>{{ data.alert_date }}</td>
-                                    <td>{{ data.alert_time }}</td>
+                                    <td>{{ data.alert_date_time }}</td>
+                                    <!-- <td>{{ data.alert_time }}</td> -->
                                     <td><span class="text-danger">{{ data.description }}</span></td>
                                 {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
                                     <td><i class="fa fa-circle orange-dot"></i></td>
@@ -116,8 +116,8 @@
                                     <td>{{ data.data_source }}</td>
                                     <td><span class="text-warning">{{ data.severity }}</span></td>
                                     <td><span class="text-warning">{{ data.current_value }}</span></td>
-                                    <td>{{ data.alert_date }}</td>
-                                    <td>{{ data.alert_time }}</td>
+                                    <td>{{ data.alert_date_time }}</td>
+                                    <!-- <td>{{ data.alert_time }}</td> -->
                                     <td><span class="text-warning">{{ data.description }}</span></td>
                                 {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
                                     <td><i class="fa fa-circle green-dot"></i></td>
@@ -127,8 +127,8 @@
                                     <td>{{ data.data_source }}</td>
                                     <td><span class="text-success">{{ data.severity }}</span></td>
                                     <td><span class="text-success">{{ data.current_value }}</span></td>
-                                    <td>{{ data.alert_date }}</td>
-                                    <td>{{ data.alert_time }}</td>
+                                    <td>{{ data.alert_date_time }}</td>
+                                    <!-- <td>{{ data.alert_time }}</td> -->
                                     <td><span class="text-success">{{ data.description }}</span></td>
                                 {% else %}
                                     <td><i class="fa fa-circle grey-dot"></i></td>
@@ -138,8 +138,8 @@
                                     <td>{{ data.data_source }}</td>
                                     <td><span class="text-muted">{{ data.severity }}</span></td>
                                     <td><span class="text-muted">{{ data.current_value }}</span></td>
-                                    <td>{{ data.alert_date }}</td>
-                                    <td>{{ data.alert_time }}</td>
+                                    <td>{{ data.alert_date_time }}</td>
+                                    <!-- <td>{{ data.alert_time }}</td> -->
                                     <td><span class="text-muted">{{ data.description }}</span></td>
                                 {% endif %}
                             </tr>
