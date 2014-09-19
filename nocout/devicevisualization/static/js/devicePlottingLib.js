@@ -268,6 +268,48 @@ function prepare_oms_object(oms_instance) {
     });
 }
 
+function FullScreenCustomControl(controlDiv, map) {
+
+  // Set CSS styles for the DIV containing the control
+  // Setting padding to 5 px will offset the control
+  // from the edge of the map
+  controlDiv.style.padding = '5px';
+
+  // Set CSS for the control border
+  var controlUI = document.createElement('div');
+  controlUI.style.backgroundColor = 'white';
+  controlUI.style.borderStyle = 'solid';
+  controlUI.style.borderWidth = '2px';
+  controlUI.style.cursor = 'pointer';
+  controlUI.style.textAlign = 'center';
+  controlUI.title = 'Click here to full screen';
+  controlDiv.appendChild(controlUI);
+
+  // Set CSS for the control interior
+  var controlText = document.createElement('div');
+  controlText.style.fontFamily = 'Arial,sans-serif';
+  controlText.style.fontSize = '12px';
+  controlText.style.paddingLeft = '4px';
+  controlText.style.paddingRight = '4px';
+  controlText.innerHTML = '<b>Full Screen</b>';
+  controlUI.appendChild(controlText);
+
+  // Setup the click event listeners: simply set the map to
+  // Chicago
+  google.maps.event.addDomListener(controlUI, 'click', function() {
+  	var currentMode= $(this).find('b').html();
+  	if(currentMode=== "Full Screen") {
+  		$(this).find('b').html("Exit Full Screen");
+  	} else {
+  		$(this).find('b').html("Full Screen");
+  	}
+  	$("#goFullScreen").trigger('click');
+    // map.setCenter(chicago)
+  });
+
+}
+
+
 /**
  * This class is used to plot the BS & SS on the google maps & performs their functionality.
  * @class gmap_devicePlottingLib
@@ -397,9 +439,15 @@ function devicePlottingClass_gmap() {
                     google.maps.event.removeListener(listener);
                 });
 			});
+
+			var fullScreenCustomDiv = document.createElement('div');
+			var fullScreenCustomControl = new FullScreenCustomControl(fullScreenCustomDiv, mapInstance);
+			fullScreenCustomDiv.index = 1;
+			mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(fullScreenCustomDiv);
+
 			
 			/*Add Full Screen Control*/
-			mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(new FullScreenControl(mapInstance));
+			// mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(new FullScreenControl(mapInstance));
 
 			/*Create performance lib instance*/
             gisPerformanceClass= new GisPerformance();
