@@ -179,7 +179,7 @@ class LivePerformanceListing(BaseDatatableView):
             sector_id = "N/A"
             circuit_id = "N/A"
             bs_name = "N/A"
-            if device['sector_configured_on']:
+            if 'sector_configured_on' in device and device['sector_configured_on']:
                 sectors = Sector.objects.filter(sector_configured_on=device["id"]).values("id", "sector_id", "base_station")
                 if len(sectors):
                     sector_id_list = [x["id"] for x in sectors]
@@ -194,7 +194,7 @@ class LivePerformanceListing(BaseDatatableView):
                         circuits_id_list = [x["circuit_id"] for x in circuits]
                         circuit_id = ",".join(map(lambda x: str(x), circuits_id_list ))
 
-            elif device['substation']:
+            elif 'substation' in device and device['substation']:
                 if self.request.GET['page_type'] == 'network' \
                         and ( device['device_technology'] in [int(WiMAX.ID), int(PMP.ID)]):
                     #dont process the substation for devices of WIMAX and PMP
