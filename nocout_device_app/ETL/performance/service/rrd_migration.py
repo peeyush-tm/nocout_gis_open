@@ -9,7 +9,6 @@ This script collects and stores data for all services running on all configured 
 from nocout_site_name import *
 import os
 import demjson,json
-from pprint import pformat
 import re
 from datetime import datetime, timedelta
 from xml.etree import ElementTree as ET
@@ -18,15 +17,11 @@ import pymongo
 import imp
 import time
 
-utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
-mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
-config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
-logging_module = imp.load_source('get_site_logger', '/opt/omd/sites/%s/nocout/utils/nocout_site_logs.py' % nocout_site_name)
+utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
+mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
+config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
-# Logger would write all activities to rrd_migration.log file
-logger = logging_module.get_site_logger('rrd_migration.log')
-
-def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
+def build_export(site, host, ip, services, mongo_host, mongo_db, mongo_port):
 	"""
 	Function name: build_export  (function export data from the rrdtool (which stores the period data) for all services for particular host
 	and stores them in mongodb in particular structure)
@@ -36,9 +31,10 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
                 mongo_db (mongo db connection),mongo_port(port for mongodb)
 	Return : None
         Raises:
-	    Exception: None
+	     Exception: IOError 
 	"""
-	_folder = '/opt/omd/sites/%s/var/pnp4nagios/perfdata/%s/' % (site,host)
+        print services
+	_folder = '/omd/sites/%s/var/pnp4nagios/perfdata/%s/' % (site,host)
 	xml_file_list = []
 	#tmp_service =service
 	#service = service.replace(' ','_')
@@ -74,12 +70,27 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 	    port=int(mongo_port),
 	    db_name=mongo_db
 	)
+        # Interface mac addr to be searched in service desc
+        search_for = r'([0-9A-Fa-f]{2}[:-_]){5}([0-9A-Fa-f]{2})'
 	# all rrdtool .xml files corresponding to services
 	for perf_file in os.listdir(_folder):
 		if perf_file.endswith(".xml"):
 			xml_file_list.append(perf_file)
+        # Append the ping service
+        services.append('_HOST_')
 	# Extracts the services data for each host from rrdtool
-	for xml_file in xml_file_list:
+	for xml_file in services:
+        	interface = None
+		service_name = xml_file
+                if 'cambium' in xml_file and ':' in xml_file:
+                        data_dict['service'] = xml_file.split(' ')[0]
+                        interface = xml_file.split(' ')[1]
+                        status_dict['service'] = xml_file.split(' ')[0]
+			xml_file = xml_file.replace(' ', '_').replace(':', '_')
+                else:
+                	data_dict['service'] = xml_file
+                	status_dict['service'] = xml_file
+                xml_file = xml_file + '.xml'
 		try:
 			tree = ET.parse(_folder + xml_file)
 			root = tree.getroot()
@@ -93,8 +104,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 			status_dict['service'] = 'ping'
 			serv_disc = 'ping'
 		else:
-			data_dict['service'] = serv_disc
-			status_dict['service'] = serv_disc
+			serv_disc = data_dict['service']
 
 		if serv_disc.endswith('_status') or serv_disc == 'Check_MK':
 			continue
@@ -113,9 +123,11 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 					service_state= "UNKNOWN"
 					
 			else:
+				print xml_file
 				query_string = "GET services\nColumns: service_state\nFilter: " + \
-				"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (serv_disc,host)
+				"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (service_name, host)
 				query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
+				print query_output
 				if query_output:
 					service_state = (query_output[0][0])
 					if service_state == 0:
@@ -181,6 +193,9 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 						"check_time":temp_dict.get('time')+ timedelta(minutes=5)})
 						continue
 					data_dict.get('data').append(temp_dict)
+			if interface:
+				data_dict['interface'] = interface
+				status_dict['interface'] = interface
 			data_dict['meta'] = threshold_values.get(ds_index)
 			# dictionariers to hold values for the service status tables
 			status_dict.get('data').append(temp_dict)	
@@ -221,6 +236,11 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 	
 		params = []
 		file_paths = []
+
+
+def split_service_interface(serv_disc):
+
+	return serv_disc[:-18], serv_disc[-17:]
 
 
 def do_export(site, host, file_name,data_source, start_time, serv):
@@ -266,7 +286,7 @@ def do_export(site, host, file_name,data_source, start_time, serv):
     #start_epoch -= 19800
     #end_epoch -= 19800
 
-    logger.debug('[do_export] - start_epoch, end_epoch: ' + pformat(start_epoch) + ' ' + pformat(end_epoch))
+    print start_epoch,end_epoch
     # Command for rrdtool data extraction
     cmd = '/omd/sites/%s/bin/rrdtool xport --json --daemon unix:/omd/sites/%s/tmp/run/rrdcached.sock -s %s -e %s --step 300 '\
         %(site,site, str(start_epoch), str(end_epoch))
@@ -386,7 +406,7 @@ def db_port(site_name=None):
         else:
             site = path[path.index('sites') + 1]
     
-    port_conf_file = '/opt/omd/sites/%s/etc/mongodb/mongod.d/port.conf' % site
+    port_conf_file = '/omd/sites/%s/etc/mongodb/mongod.d/port.conf' % site
     try:
         with open(port_conf_file, 'r') as portfile:
             port = portfile.readline().split('=')[1].strip()
@@ -462,9 +482,8 @@ def rrd_migration_main(site,host,services,ip, mongo_host, mongo_db, mongo_port):
 	Raise
 	    Exception : None
 	"""
-	logger.info('[-- rrd_migration start --]')
-	build_export(site, host, ip, mongo_host, mongo_db, mongo_port)
-	logger.info('[-- rrd_migration end --]')
+	build_export(site, host, ip, services, mongo_host, mongo_db, mongo_port)
+        #for service in services[0]:
 
 """if __name__ == '__main__':
     build_export('BT','AM-400','PING')

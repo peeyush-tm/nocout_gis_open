@@ -18,13 +18,9 @@ import socket
 import imp
 import time
 
-mongo_module = imp.load_source('mongo_functions', '/opt/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
-utility_module = imp.load_source('utility_functions', '/opt/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
-config_module = imp.load_source('configparser', '/opt/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
-logging_module = imp.load_source('get_site_logger', '/opt/omd/sites/%s/nocout/utils/nocout_site_logs.py' % nocout_site_name)
-
-# Get logger
-logger = logging_module.get_site_logger('migrations.log')
+mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
+utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
+config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
 def main(**configs):
     """
@@ -78,9 +74,9 @@ def main(**configs):
         	data_values.extend(values_list)
     if data_values:
     	insert_data(configs.get('table_name'), data_values, configs=configs)
-    	logger.debug("Data inserted into my mysql db")
+    	print "Data inserted into my mysql db"
     else:
-	logger.debug("No data in mongo db in this time frame")
+	print "No data in mongo db in this time frame"
 
 def read_data(start_time, end_time, **kwargs):
     """
@@ -152,7 +148,8 @@ def build_data(doc):
                 local_time_epoch,
                 check_time_epoch,
 		doc.get('ip_address'),
-		doc.get('severity')
+		doc.get('severity'),
+                doc.get('interface')
             )
         values_list.append(t)
         t = ()
@@ -175,8 +172,8 @@ def insert_data(table, data_values, **kwargs):
             (device_name, service_name, machine_name, 
             site_name, data_source, current_value, min_value, 
             max_value, avg_value, warning_threshold, 
-            critical_threshold, sys_timestamp, check_timestamp,ip_address,severity) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s,%s)
+            critical_threshold, sys_timestamp, check_timestamp,ip_address,severity, interface) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s,%s, %s)
             """
     cursor = db.cursor()
     try:
