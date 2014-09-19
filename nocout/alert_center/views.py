@@ -1448,6 +1448,7 @@ class SingleDeviceAlertDetails(View):
             context = dict(is_ping=is_ping,
                            devices=devices_result,
                            current_device_id=device_id,
+                           get_status_url='performance/get_inventory_device_status/' + page_type + '/device/' + str(device_id),
                            current_device_name=device_name,
                            page_type=page_type,
                            table_data=data_list,

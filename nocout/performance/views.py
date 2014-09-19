@@ -137,8 +137,10 @@ class LivePerformanceListing(BaseDatatableView):
         """
         device_list = list()
 
-        if self.request.GET['page_type'] == 'customer':
+        page_type = self.request.GET['page_type']
 
+        if self.request.GET['page_type'] == 'customer':
+            page_type = 'customer'
             device_tab_technology = self.request.GET.get('data_tab')
             device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
             #If the technology is P2P then fetch all the device without circuit_type backhaul and
@@ -164,6 +166,7 @@ class LivePerformanceListing(BaseDatatableView):
                                             'substation'])
 
         else:
+            page_type = 'network'
             # If the page_type is network then include only devices which are added to NMS and devices which are not P2P,
             # and must be either PMP or WiMAX.
             devices = organization_network_devices(organizations=kwargs['organizations']).\
@@ -212,6 +215,7 @@ class LivePerformanceListing(BaseDatatableView):
             else:
                 continue
             device.update({
+                "page_type":page_type,
                 "packet_loss": "",
                 "latency": "",
                 "last_updated": "",
@@ -308,24 +312,14 @@ class LivePerformanceListing(BaseDatatableView):
             for dct in qs:
                 device = Device.objects.get(id=dct['id'])
 
-                if device.substation_set.exists():
-                    dct.update(
-                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
-                        <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
-                        <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
-                        .format('customer',
-                                dct['id'],
-                                'latency' if 'latency' in dct.keys() else 'packet_drop')
-                    )
-                elif device.sector_configured_on.exists():
-                    dct.update(
-                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a> \
-                         <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
-                         <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'
-                        .format('network',
-                                dct['id'],
-                                'latency' if 'latency' in dct.keys() else 'packet_drop')
-                    )
+                dct.update(
+                    actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                    <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
+                    <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
+                    .format(dct['page_type'],
+                            dct['id'],
+                            'ping')
+                )
 
                 device_list.append({'device_name': dct["device_name"], 'device_machine': device.machine.name})
 
@@ -529,23 +523,12 @@ class Inventory_Device_Status(View):
         }
         result['data']['objects']['values'] = list()
 
-        device=Device.objects.get(id= device_id)
+        device = Device.objects.get(id=device_id)
+        technology = DeviceTechnology.objects.get(id=device.device_technology)
 
-        if device.sector_configured_on.exists(): page_type='network'
-
-        if page_type == 'customer':
-            substation = SubStation.objects.get(device= device.id)
-            planned_frequency = "N/A"
-            if substation.circuit_set.exists():
-                sector = Circuit.objects.get(sub_station=substation.id).sector
-                planned_frequency = sector.frequency.value if sector.frequency else "N/A"
-                base_station = BaseStation.objects.get(id=Sector.objects.get(id=sector.id).base_station.id)
-                bs_name = base_station.name
-            else:
-                bs_name = "N/A"
-
+        if device.sector_configured_on.exists():
             result['data']['objects']['headers'] = ['BS Name',
-                                                    'SSName',
+                                                    'Technology',
                                                     'Building Height',
                                                     'Tower Height',
                                                     'City',
@@ -554,43 +537,17 @@ class Inventory_Device_Status(View):
                                                     'MAC Address',
                                                     'Planned Frequency'
             ]
-
-            result['data']['objects']['values'] = [bs_name,
-                                                   substation.name,
-                                                   substation.building_height,
-                                                   substation.tower_height,
-                                                   City.objects.get(id=substation.city).city_name
-                                                        if substation.city
-                                                        else "N/A",
-                                                   State.objects.get(id=substation.state).state_name
-                                                        if substation.state
-                                                        else "N/A",
-                                                   device.ip_address,
-                                                   device.mac_address,
-                                                   planned_frequency
-            ]
-
-        elif page_type == 'network':
+            result['data']['objects']['values'] = []
             sector_objects = Sector.objects.filter(sector_configured_on=device.id)
-            planned_frequency_list = []
-            base_station_list = []
-            if len(sector_objects):
-                base_station_list = sector_objects.values_list('base_station', flat=True)
-                planned_frequency_list = sector_objects.values_list('frequency__value', flat=True)
 
+            for sector in sector_objects:
+                base_station = sector.base_station
+                planned_frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
+                planned_frequency = ",".join(planned_frequency)
 
-            result['data']['objects']['headers'] = ['BS Name',
-                                                    'Building Height',
-                                                    'Tower Height',
-                                                    'City',
-                                                    'State',
-                                                    'IP Address',
-                                                    'MAC Address',
-                                                    'Planned Frequency']
-            if base_station_list:
-                base_station = BaseStation.objects.get(id= base_station_list[0])
-                planned_frequency = ",".join(planned_frequency_list)
-                result['data']['objects']['values'] = [base_station.name, base_station.building_height,
+                result['data']['objects']['values'].append([base_station.alias,
+                                                       technology.alias,
+                                                       base_station.building_height,
                                                        base_station.tower_height,
                                                        City.objects.get(id=base_station.city).city_name
                                                             if base_station.city
@@ -601,10 +558,50 @@ class Inventory_Device_Status(View):
                                                        device.ip_address,
                                                        device.mac_address,
                                                        planned_frequency
-                ]
+                ])
 
-        result['data']['objects']['values'] = map(lambda val: val if val else 'N/A',
-                                                  result['data']['objects']['values'])
+        elif device.substation_set.exists():
+            result['data']['objects']['headers'] = ['BS Name',
+                                                    'SS Name',
+                                                    'Circuit ID',
+                                                    'Technology',
+                                                    'Building Height',
+                                                    'Tower Height',
+                                                    'City',
+                                                    'State',
+                                                    'IP Address',
+                                                    'MAC Address',
+                                                    'Planned Frequency'
+            ]
+            result['data']['objects']['values'] = []
+            substation_objects = device.substation_set.filter()
+            if len(substation_objects):
+                substation = substation_objects[0]
+                if substation.circuit_set.exists():
+                    circuit = substation.circuit_set.get()
+                    sector = circuit.sector
+                    base_station = sector.base_station
+
+                    planned_frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
+                    planned_frequency = ",".join(planned_frequency)
+
+                    result['data']['objects']['values'].append([base_station.alias,
+                                                           substation.alias,
+                                                           circuit.circuit_id,
+                                                           technology.alias,
+                                                           substation.building_height,
+                                                           substation.tower_height,
+                                                           City.objects.get(id=substation.city).city_name
+                                                                if substation.city
+                                                                else "N/A",
+                                                           State.objects.get(id=substation.state).state_name
+                                                                if substation.state
+                                                                else "N/A",
+                                                           device.ip_address,
+                                                           device.mac_address,
+                                                           planned_frequency
+                    ])
+
         result['success'] = 1
         result['message'] = 'Inventory Device Status Fetched Successfully.'
         return HttpResponse(json.dumps(result))

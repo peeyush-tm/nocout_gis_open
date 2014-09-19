@@ -32,8 +32,13 @@
                     <li><a href="#" id="network_alert_ping_tab" data-toggle="tab"><span class="hidden-inline-mobile">Ping Details</span></a></li>
                 </ul>
             </div>
-            <div class="clear-fix"></div>
 	        <!--Filters Block Start-->
+            <div class="box-body status_body">
+                <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
 	        <div class="pull-right">
 	            <ul class="list-unstyled list-inline">
 	                <li>
@@ -204,9 +209,27 @@
         </div>
     </div>
 
+    <script src={% static "js/nocout/nocoutPerfLib.js" %}></script>
 
     <script type="text/javascript">
         $(document).ready(function(e) {
+
+            var base_url = "";
+            /*Set the base url of application for ajax calls*/
+            if (window.location.origin) {
+                base_url = window.location.origin;
+            } else {
+                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
+            }
+
+            perfInstance = new nocoutPerfLib();
+            var current_device = "{{ current_device_name }}";
+            var statusUrl = base_url + "/" + "{{ get_status_url }}" + "/";
+            /*To populate the status table*/
+            perfInstance.getStatus(statusUrl, current_device);
+
+
+
 
             $("#device_alert").DataTable({
                 sPaginationType: "bs_full",

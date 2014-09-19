@@ -111,9 +111,13 @@ $.urlParam = function(name){
 
 					/*Loop for status table data*/
 					var status_val = "<tr>";
-					$.each(device_status.values,function(key, value) {
-						status_val += '<td>'+value+'</td>';
-					});
+                    for (var i = 0; i < device_status.values.length; i++){
+                        var loop_through = device_status.values[i];
+                        $.each(loop_through,function(key, value) {
+						    status_val += '<td>'+value+'</td>';
+					    });
+                    }
+
 
 					status_val += "</tr>";
 					/*Populate table data*/
