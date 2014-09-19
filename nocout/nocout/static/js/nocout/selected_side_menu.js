@@ -135,19 +135,25 @@ function ShowControl(controlDiv) {
   // Set CSS for the control border
   var controlUI = document.createElement('div');
   controlUI.style.backgroundColor = 'white';
-  controlUI.style.borderStyle = 'solid';
-  controlUI.style.borderWidth = '2px';
-  controlUI.style.cursor = 'pointer';
-  controlUI.style.textAlign = 'center';
+    controlUI.style.borderStyle = 'solid';
+    controlUI.style.borderWidth = '1px';
+    controlUI.style.borderColor = '#717b87';
+    controlUI.style.cursor = 'pointer';
+    controlUI.style.textAlign = 'center';
+    
   controlUI.title = 'Click to see Page Controls';
   controlDiv.appendChild(controlUI);
 
   // Set CSS for the control interior
   var controlText = document.createElement('div');
-  controlText.style.fontFamily = 'Arial,sans-serif';
-  controlText.style.fontSize = '12px';
-  controlText.style.paddingLeft = '4px';
-  controlText.style.paddingRight = '4px';
+
+    controlText.style.fontFamily = 'Roboto,Arial,sans-serif';
+    controlText.style.fontSize = '11px';
+    controlText.style.fontWeight = '400';
+    controlText.style.paddingTop = '1px';
+    controlText.style.paddingBottom = '1px';
+    controlText.style.paddingLeft = '6px';
+    controlText.style.paddingRight = '6px';
   controlText.innerHTML = '<b>Show Page Controls</b>';
   controlUI.appendChild(controlText);
 
@@ -226,8 +232,8 @@ $("#goFullScreen").click(function() {
             exitFullscreen();
             if($("#deviceMap").length) {
                 showControlDiv= "";
-                if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length=== 2) {
-                    mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(1);    
+                if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length=== 3) {
+                    mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(2);
                 }
                 $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Full Screen');
                 $("#deviceMap").height(550);
@@ -260,8 +266,8 @@ $(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange MSFu
         $("#goFullScreen").addClass('btn-info');
         if($("#deviceMap").length) {
             showControlDiv= "";
-            if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length=== 2) {
-                mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(1);    
+            if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length=== 3) {
+                mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(2);
             }
             $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Full Screen');
             $("#deviceMap").height(550);
