@@ -210,3 +210,24 @@ span.dept {
     height: 100%;
     overflow: scroll;
 }
+
+/*Box Tools*/
+.status_box .box-title .tools_status {
+  display: inline-block;
+  padding: 0;
+  margin-bottom: 7px;
+  float: right;
+  clear: both;
+  min-height: 30px;
+}
+.status_box .box-title .tools_status > a {
+  display: inline-block;
+  font-size: 14px;
+  line-height: 24px;
+  text-decoration: none;
+  color: #ababab;
+  margin-right: 5px;
+}
+.status_box .box-title .tools_status > a :hover {
+  color: #919191;
+}
