@@ -2,6 +2,7 @@
 {% block breadcrumb_title %}
     <li>Alert Center</li>
     <li>Network Alerts</li>
+    <li>{{ data_source }}</li>
 {% endblock %}
 {% block content_title %}Network Alerts{% endblock %}
 {% block content_description %}Network Alerts List{% endblock %}
@@ -13,64 +14,51 @@
 
 {% block content %}
 
-    <div class="box border lite">
+    <div class="box border lite" style="background: #fff;">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-bell"></i>NETWORK ALERT</h4>
+            <h4><i class="fa fa-bell"></i>Network ALERT - {{ data_source|upper }}</h4>
         </div>
 
         <div class="box-body">
-            <div id="networkAlertContainer">
-                
-                <div class="tabbable header-tabs">
-                    <ul class="nav nav-tabs">
-                        <li><a href="#network_alert_service" id="network_alert_service_tab" data-toggle="tab"><span class="hidden-inline-mobile">Service Impact Alerts</span></a></li>
-                        <li><a href="#network_alert_down" id="network_alert_down_tab" data-toggle="tab"><span class="hidden-inline-mobile">Down</span></a></li>
-                        <li><a href="#network_alert_packet" id="network_alert_packet_tab" data-toggle="tab"><span class="hidden-inline-mobile">Packet Drop</span></a></li>
-                        <li class="active"><a href="#network_alert_latency" id="network_alert_latency_tab" data-toggle="tab"><span class="hidden-inline-mobile">Latency</span></a></li>
-                    </ul>
-                    <div class="tab-content" style="overflow-y:auto;">
-                        <div class="tab-pane in active" id="network_alert_latency">
-                            <table id="latencylistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
-                                <thead></thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                        <div class="tab-pane" id="network_alert_packet">
-                            <table id="packetdroplistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
-                                <thead></thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                        <div class="tab-pane" id="network_alert_service">
-                            <table id="servicealertslistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
-                                <thead></thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                        <div class="tab-pane" id="network_alert_down">
-                            <table id="downlistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
-                                <thead></thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
+            <div class="tabbable header-tabs">
+                <ul class="nav nav-tabs">
+                        <li><a href="#network_wifi_block" id="network_wifi_tab" data-toggle="tab"><span class="hidden-inline-mobile">WiMAX</span></a></li>
+                        <li><a href="#network_pmp_block" id="network_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
+                        <li class="active"><a href="#network_p2p_block" id="network_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">P2P</span></a></li>
+                </ul>
+                <div class="tab-content" style="overflow:auto;">
+                    <div class="tab-pane in active" id="network_p2p_block">
+                        <table id="network_p2p_alertlistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="network_pmp_block">
+                        <table id="network_pmp_alertlistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="network_wifi_block">
+                        <table id="network_wifi_alertlistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
                 </div>
-            </div>
-{#            <div class="clearfix"></div>#}
+
+            <div class="clearfix"></div>
         </div>
     </div>
-
+    </div>
 {% endblock %}
-
 {% block jquery %}
-
 <script type="text/javascript">
-
     var dataTableInstance = "";
+    /*This is a temporary code which is replace when data for data table is provided*/
     $(document).ready(function (e) {
-            /* Removing the pagination in the datatable*/
-            function ourDataTableWidget()
-            {                
+          function ourDataTableWidget()
+            {
                 /**
                  * This function creates the jquery data table on given domElement
                  * @class ourDataTableWidget
@@ -98,7 +86,7 @@
                     if (destroy){
                         $("#"+tableId).dataTable().fnDestroy();
                     }
-                    $("#"+tableId).DataTable({
+                    var dtable = $("#"+tableId).DataTable({
                         bAutoWidth: false,
                         bPaginate: true,
                         bProcessing : true,
@@ -111,55 +99,57 @@
                         },
                         aoColumns:tableheaders,
                         sPaginationType: "bs_full",
-                        aaSorting: [[10, 'desc'],[0, 'asc']]
+                        aaSorting: [[9, 'desc'],[0, 'asc']]
                     });
                 };
             }
-
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
+            /*Grid headers object*/
+            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+            /*Ajax url to get grid data*/
+            ajax_url_get_parameter = "";
+
+            if(/latency/i.test(window.location.pathname)) {
+                ajax_url_get_parameter='latency'
+            } else if(/packet_drop/i.test(window.location.pathname)) {
+                ajax_url_get_parameter='packet_drop'
+            } else if(/down/i.test(window.location.pathname)) {
+                ajax_url_get_parameter='down'
+            } else if(/service/i.test(window.location.pathname)) {
+                ajax_url_get_parameter='service'
+            }
+
+
+            var ajax_url_wifi= '{% url "NetworkAlertListingTable" %}'+'?data_source='+ ajax_url_get_parameter+'&data_tab=' + 'WiMAX';
+            var ajax_url_pmp=  '{% url "NetworkAlertListingTable" %}'+'?data_source=' + ajax_url_get_parameter+'&data_tab=' + 'PMP';
+            var ajax_url_p2p=  '{% url "NetworkAlertListingTable" %}'+'?data_source=' + ajax_url_get_parameter+'&data_tab=' + 'P2P';
 
             /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
 
-            $("#network_alert_latency_tab").attr("data_url",'{% url "LatencyListingTable" %}');
-            $("#network_alert_latency_tab").attr("data_header",'{{ datatable_headers_latency|safe }}');
+            $("#network_wifi_tab").attr("data_url",ajax_url_wifi);
+            $("#network_wifi_tab").attr("data_header",'{{ datatable_headers|safe }}');
 
-            $("#network_alert_packet_tab").attr("data_url",'{% url "PacketDropListingTable" %}');
-            $("#network_alert_packet_tab").attr("data_header",'{{ datatable_headers_packetdrop|safe }}');
+            $("#network_pmp_tab").attr("data_url",ajax_url_pmp);
+            $("#network_pmp_tab").attr("data_header",'{{ datatable_headers|safe }}');
 
-            $("#network_alert_down_tab").attr("data_url",'{% url "DownListingTable" %}');
-            $("#network_alert_down_tab").attr("data_header",'{{ datatable_headers_down|safe }}');
-
-            $("#network_alert_service_tab").attr("data_url",'{% url "ServiceAlertListingTable" %}');
-            $("#network_alert_service_tab").attr("data_header",'{{ datatable_headers_servicealerts|safe }}');
+            $("#network_ptp_tab").attr("data_url",ajax_url_p2p);
+            $("#network_ptp_tab").attr("data_header",'{{ datatable_headers|safe }}');
 
             var location_array = window.location.href.split("#");
 
             if(location_array.length == 1) {
 
                 /*Trigger click event on active tab to load its data*/
-                $("#network_alert_latency_tab").trigger('click',true);
+                $("#network_ptp_tab").trigger('click',true);
             }
 
-            /*Grid headers object*/
-            // var gridHeadersObj_latency = $.parseJSON('{{ datatable_headers_latency|safe }}');
-            // var gridHeadersObj_packetdrop = $.parseJSON('{{ datatable_headers_packetdrop|safe }}');
-            // var gridHeadersObj_down = $.parseJSON('{{ datatable_headers_down|safe }}');
-            // var gridHeadersObj_servicealerts = $.parseJSON('{{ datatable_headers_servicealerts|safe }}');            
-
-            // /*Ajax url to get grid data*/
-            // var ajax_url_latency = '{% url "LatencyListingTable" %}';
-            // var ajax_url_packet_drop = '{% url "PacketDropListingTable" %}';
-            // var ajax_url_down = '{% url "DownListingTable" %}';
-            // var ajax_url_servicealerts = '{% url "ServiceAlertListingTable" %}';
-
-
-            /*Call createDataTable function of ourDataTableWidget class*/
             // var destroy=false;
-            // dataTableInstance.createDataTable("latencylistingtable", gridHeadersObj_latency, ajax_url_latency, destroy);
-            // dataTableInstance.createDataTable("packetdroplistingtable", gridHeadersObj_packetdrop, ajax_url_packet_drop, destroy);
-            // dataTableInstance.createDataTable("downlistingtable", gridHeadersObj_down, ajax_url_down, destroy);
-            // dataTableInstance.createDataTable("servicealertslistingtable", gridHeadersObj_servicealerts, ajax_url_servicealerts, destroy);
+            // /*Call createDataTable function of ourDataTableWidget class*/
+
+            // dataTableInstance.createDataTable("network_wifi_alertlistingtable", gridHeadersObj, ajax_url_wifi, destroy);
+            // dataTableInstance.createDataTable("network_pmp_alertlistingtable",  gridHeadersObj, ajax_url_pmp,  destroy);
+            // dataTableInstance.createDataTable("network_p2p_alertlistingtable",  gridHeadersObj, ajax_url_p2p,  destroy);
         });
 </script>
 <!-- Library to load tab content on tab click-->

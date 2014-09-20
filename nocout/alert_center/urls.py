@@ -3,15 +3,17 @@ from alert_center import views
 
 
 urlpatterns = patterns('',
-    url(r'^network/$', views.AlertCenterNetworkListing.as_view()),
+    url(r'^network/(?P<data_source>\w+)/$', views.AlertCenterNetworkListing.as_view()),
 
-    url(r'^latencylistingtable/',views.AlertCenterNetworkListingTable.as_view(), name='LatencyListingTable'),
+    url(r'^networklistingtable/',views.AlertCenterNetworkListingTable.as_view(), name='NetworkAlertListingTable'),
 
-    url(r'^packetdroplistingtable/',views.AlertCenterNetworkListingTable.as_view(), name='PacketDropListingTable'),
-
-    url(r'^downlistingtable/',views.AlertCenterNetworkListingTable.as_view(), name='DownListingTable'),
-
-    url(r'^servicealertslistingtable/',views.AlertCenterNetworkListingTable.as_view(), name='ServiceAlertListingTable'),
+    # url(r'^latencylistingtable/',views.AlertCenterNetworkListingTable.as_view(), name='LatencyListingTable'),
+    #
+    # url(r'^packetdroplistingtable/',views.AlertCenterNetworkListingTable.as_view(), name='PacketDropListingTable'),
+    #
+    # url(r'^downlistingtable/',views.AlertCenterNetworkListingTable.as_view(), name='DownListingTable'),
+    #
+    # url(r'^servicealertslistingtable/',views.AlertCenterNetworkListingTable.as_view(), name='ServiceAlertListingTable'),
 
     url(r'^customer/(?P<data_source>\w+)/$', views.CustomerAlertList.as_view()),
 

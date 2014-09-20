@@ -131,7 +131,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
 
         logged_in_user = self.request.user.userprofile
 
-        organization_devices = filter_customer_devices(logged_in_user, self.request.GET.get('data_tab'))
+        organization_devices = filter_devices(logged_in_user, self.request.GET.get('data_tab'), page_type="customer")
 
         required_data_columns = ["id",
                                  "ip_address",
@@ -191,7 +191,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
         # we should start with getting the
         # device and substation
 
-        device_list = prepare_customer_results(device_list, performance_data)
+        device_list = prepare_alert_results(device_list, performance_data)
 
         return device_list
 
@@ -211,30 +211,18 @@ class GetCustomerAlertDetail(BaseDatatableView):
             for dct in qs:
                 device_object = Device.objects.get(device_name=dct['device_name'])
                 device_id = device_object.id
-                if device_object.substation_set.exists():
 
-                    dct.update(action=''
-                        '<a href="/alert_center/customer/device/{0}/service_tab/{1}/" title="Device Alerts">'
-                        '<i class="fa fa-warning text-warning"></i>'
-                        '</a>'
-                        '<a href="/performance/customer_live/{0}/" title="Device Performance">'
-                        '<i class="fa fa-bar-chart-o text-info"></i>'
-                        '</a>'
-                        '<a href="/device/{0}" title="Device Inventory">'
-                        '<i class="fa fa-dropbox text-muted"></i>'
-                        '</a>'.format(device_id, service_tab_name))
+                dct.update(action=''
+                    '<a href="/alert_center/customer/device/{0}/service_tab/{1}/" title="Device Alerts">'
+                    '<i class="fa fa-warning text-warning"></i>'
+                    '</a>'
+                    '<a href="/performance/customer_live/{0}/" title="Device Performance">'
+                    '<i class="fa fa-bar-chart-o text-info"></i>'
+                    '</a>'
+                    '<a href="/device/{0}" title="Device Inventory">'
+                    '<i class="fa fa-dropbox text-muted"></i>'
+                    '</a>'.format(device_id, service_tab_name))
 
-                elif device_object.sector_configured_on.exists():
-
-                    dct.update(action=''
-                       '<a href="/alert_center/customer/device/{0}/service_tab/{1}/" title="Device Alerts">'
-                       '<i class="fa fa-warning text-warning"></i>'
-                       '</a>'
-                       '<a href="/performance/customer_live/{0}/" title="Device Performance">'
-                       '<i class="fa fa-bar-chart-o text-info"></i>'
-                       '</a>'
-                       '<a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'
-                       .format(device_id, service_tab_name))
 
         return common_prepare_results(qs)
 
@@ -635,114 +623,53 @@ class AlertCenterNetworkListing(ListView):
 
         """
         context = super(AlertCenterNetworkListing, self).get_context_data(**kwargs)
-        datatable_headers_latency = [
+        data_source=self.kwargs.get('data_source','')
+        data_source_title = data_source.title() \
+                            if data_source in ["latency", "packet_drop"] \
+                            else ("value".title() if data_source in ["service"] else "packet drop".title())
 
+        data_tab = self.request.GET.get('data_tab','P2P')
+
+        datatable_headers = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
             {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
+            # {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            #  'bSortable': True},
             {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            # {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': True},
+            # {'mData': 'sub_station', 'sTitle': 'Sub Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
             #  'bSortable': True},
-            {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
+             'bSortable': True},
+            {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'current_value', 'sTitle': 'Latency (ms)', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
+            ]
+        #TODO: conditional calling
+        datatable_headers += [{'mData': 'sector_id',
+                                       'sTitle': 'Sector ID',
+                                       'sWidth': 'null',
+                                       'sClass': 'hidden-xs',
+                                       'bSortable': True},
+                             ]
+
+        datatable_headers += [
+            {'mData': 'current_value',
+             'sTitle': '{0}'.format(data_source_title),
+             'sWidth': 'null',
+             'sClass': 'hidden-xs',
+             'bSortable': True },
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
             ]
 
-        datatable_headers_packetdrop = [
-            {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
-            {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            # {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
-            #  'bSortable': True},
-            {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'current_value', 'sTitle': 'Packet Drop (%)', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
-            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
-            ]
-        datatable_headers_down = [
-            {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
-            {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            # {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
-            #  'bSortable': True},
-            {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'current_value', 'sTitle': 'Packet Drop (%)', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
-            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
-            ]
-        datatable_headers_servicealerts = [
-            {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
-            {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            # {'mData': 'ip_address', 'sTitle': 'IP Address', 'sWidth': 'null', 'sClass': 'hidden-xs',
-            #  'bSortable': True},
-            {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
-            {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
-            {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
-            ]
-        context['datatable_headers_servicealerts'] = json.dumps(datatable_headers_servicealerts)
-        context['datatable_headers_down'] = json.dumps(datatable_headers_down)
-        context['datatable_headers_packetdrop'] = json.dumps(datatable_headers_packetdrop)
-        context['datatable_headers_latency'] = json.dumps(datatable_headers_latency)
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        context['data_source'] = " ".join(self.kwargs['data_source'].split('_')).title()
         return context
 
 
@@ -752,9 +679,9 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
     """
     model = EventNetwork
-    columns = ['device_name', "device_technology", "device_type" ,'machine_name', 'site_name', 'ip_address', 'severity',
-               'current_value', "device_technology", "device_type", 'sys_timestamp', 'description']
-    order_columns = ['device_name',  "device_technology", "device_type", 'machine_name', 'site_name', 'ip_address', 'severity',
+    columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
+               'current_value', 'sys_timestamp', 'description']
+    order_columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
                      'current_value', 'sys_timestamp', 'description']
 
     def filter_queryset(self, qs):
@@ -787,52 +714,46 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
         logged_in_user = self.request.user.userprofile
 
-        if logged_in_user.role.values_list('role_name', flat=True)[0] == 'admin':
-            organizations = list(logged_in_user.organization.get_descendants(include_self=True))
-        else:
-            organizations = [logged_in_user.organization]
-
-        sector_configured_on_devices = organization_network_devices(organizations).values('device_name', 'machine__name')
-
-        sector_configured_on_devices = list(sector_configured_on_devices)
+        organization_devices = filter_devices(logged_in_user, self.request.GET.get('data_tab'), page_type="network")
 
         device_list, performance_data, data_sources_list = list(), list(), list()
-        extra_query_condition = None
 
         search_table = "performance_eventnetwork"
 
-        if 'latency' in self.request.path_info:
-            data_sources_list.append('rta')
-            extra_query_condition = "AND (`{0}`.`current_value` > 0 ) "
-        elif 'packetdrop' in self.request.path_info:
-            data_sources_list.append('pl')
+        data_sources_list = list()
+
+        extra_query_condition = "AND (`{0}`.`current_value` > 0 ) "
+
+        if self.request.GET['data_source'] == 'latency':
+            data_sources_list = ['rta']
+        elif self.request.GET['data_source'] == 'packet_drop':
+            data_sources_list = ['pl']
             extra_query_condition = "AND (`{0}`.`current_value` BETWEEN 1 AND 99 ) "
-        elif 'down' in self.request.path_info:
-            data_sources_list.append('pl')
+        elif self.request.GET['data_source'] == 'down':
+            data_sources_list = ['pl']
             extra_query_condition = "AND (`{0}`.`current_value` = 100 ) "
-        elif 'service' in self.request.path_info:
+        elif self.request.GET['data_source'] == 'service':
+            extra_query_condition = None
             search_table = "performance_eventservice"
 
         required_data_columns = ["id",
                                  "ip_address",
-                                 "service_name",
-                                 "device_name",
                                  "data_source",
+                                 "device_name",
                                  "severity",
                                  "current_value",
+                                 "max_value",
                                  "sys_timestamp",
-                                 "description"
-        ]
-        # Unique machine from the sector_configured_on_devices
-        unique_device_machine_list = {device['machine__name']: True for device in sector_configured_on_devices}.keys()
-        machine_dict, device_data = dict(), list()
+                                 "description"]
+
+        sorted_device_list = list()
+
+        machine_dict = filter_machines(organization_devices=organization_devices)
         # Creating the machine as a key and device_name as a list for that machine.
-        for machine in unique_device_machine_list:
-            machine_dict[machine] = [device['device_name'] for device in sector_configured_on_devices if
-                                     device['machine__name'] == machine]
+
         #Fetching the data for the device w.r.t to their machine.
         for machine, machine_device_list in machine_dict.items():
-            device_data = []
+
             performance_data = raw_prepare_result(performance_data=performance_data,
                                                   machine=machine,
                                                   table_name=search_table,
@@ -843,135 +764,45 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
             )
 
 
-            for data in performance_data:
+            device_list = prepare_alert_results(device_list,performance_data)
 
-                circuit_id = "N/A"
-                sector_id = 'N/A'
-                device_object = Device.objects.get(device_name= data['device_name'])
-                sector = Sector.objects.filter(sector_configured_on__id=device_object.id)
+            sorted_device_list += sorted(device_list, key=itemgetter('sys_timestamp'), reverse=True)
 
-                #INVALID ::: now comes special case; wherein device is either backhaul or sector configured on :::INVALID
-                #INVALID ::: we need to make a check to identify whats what :::INVALID
-
-                # backhaul = Backhaul.objects.filter(bh_configured_on__device_name=data['device_name'])
-
-                if len(sector):
-
-                    #add sector info
-                    sector_id = sector[0].sector_id
-                    #add circuit info
-                    circuit = Circuit.objects.filter(sector=sector[0].id)
-                    if len(circuit):
-                        circuit_id = circuit[0].circuit_id
-
-                    device_base_station = sector[0].base_station
-                    #only display warning or critical devices
-                    if severity_level_check(list_to_check=[data['severity'], data['description']]):
-                        ddata = {
-                            'device_name': data['device_name'],
-                            'device_technology': DeviceTechnology.objects.get(id=device_object.device_technology).alias,
-                            'device_type': DeviceType.objects.get(id=device_object.device_type).alias,
-                            'severity': data['severity'],
-                            'ip_address': data['ip_address'],
-                            'circuit_id': circuit_id,
-                            'sector_id': sector_id,
-                            'base_station': device_base_station.name,
-                            'base_station__city': City.objects.get(id=device_base_station.city).city_name if device_base_station.city else 'N/A',
-                            'base_station__state': State.objects.get(id=device_base_station.state).state_name if device_base_station.state else "N/A",
-                            'current_value': data['current_value'],
-                            'sys_timestamp': datetime.datetime.fromtimestamp(
-                                float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                            'description': data['description']
-                        }
-                        #If service tab is requested then add an another key:data_source_name to render in the data table.
-                        if 'service' in self.request.path_info:
-                            ddata.update({'data_source_name': data['data_source']})
-                        device_data.append(ddata)
-
-                else:
-                    #hold on. can this device be Substation of Technoloty PTP ? because
-                    #PTP substation needs to be displayed in Network when there is Circuit Type as BACKHAUL
-                    #lets check the device
-                    device_base_station = ""
-                    device_base_station_name = ""
-                    city_name = ""
-                    state_name = ""
-
-                    substation_object = SubStation.objects.filter(device__device_name =  data['device_name'])
-                    if len(substation_object):
-                        #we have one substation
-                        substation = substation_object[0]
-                        #we have the circuit as well now
-                        circuit_obj = Circuit.objects.filter(sub_station__id=substation.id)
-                        if len(circuit_obj):
-                            circuit = circuit_obj[0]
-                            circuit_id = circuit.circuit_id
-                            sector_id = circuit.sector.sector_id
-                            device_base_station = circuit.sector.base_station
-                            device_base_station_name = device_base_station.name
-                            city_obj = City.objects.prefetch_related('state').get(id=device_base_station.city)
-                            city_name = city_obj.city_name
-                            state_name = city_obj.state.state_name
-                        #only display warning or critical devices
-                        if severity_level_check(list_to_check=[data['severity'], data['description']]):
-                            ddata = {
-                                'device_name': data['device_name'],
-                                'device_technology': "P2P", #this would always be P2P only
-                                'device_type': "Radwin2KSS", #this would always be P2P basesatation
-                                'severity': data['severity'],
-                                'ip_address': data['ip_address'],
-                                'circuit_id': circuit_id,
-                                'sector_id': sector_id,
-                                'base_station': device_base_station_name,
-                                'base_station__city': city_name,
-                                'base_station__state': state_name,
-                                'current_value': data['current_value'],
-                                'sys_timestamp': datetime.datetime.fromtimestamp(
-                                    float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                                'description': data['description']
-                            }
-                            #If service tab is requested then add an another key:data_source_name to render in the data table.
-                            if 'service' in self.request.path_info:
-                                ddata.update({'data_source_name': data['data_source']})
-                            device_data.append(ddata)
-                    else:
-                        pass
-        if device_data:
-            sorted_device_data = sorted(device_data, key=itemgetter('sys_timestamp'), reverse=True)
-            return sorted_device_data
-
-        return device_list
-
+        return sorted_device_list
 
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
 
         :param qs:
-        :return queryset.
+        :return queryset
         """
 
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
-            service_tab_name = None
+            data_unit = "%"
+            service_tab = 'down'
             # figure out which tab call is made.
-            if 'latency' in self.request.path_info:
-                service_tab_name = 'latency'
-            elif 'packetdrop' in self.request.path_info:
-                service_tab_name = 'packetdrop'
-            elif 'down' in self.request.path_info:
-                service_tab_name = 'down'
-            elif 'service' in self.request.path_info:
-                service_tab_name = 'service'
+            data_source = self.request.GET.get('data_source', '')
+            if 'latency' == data_source:
+                service_tab = 'latency'
+                data_unit = "ms"
+            elif 'packet_drop' == data_source:
+                service_tab = 'packet_drop'
+            elif 'service' == data_source:
+                service_tab = 'service'
 
             for dct in qs:
-                device_id = Device.objects.get(device_name=dct['device_name']).id
+                device = Device.objects.get(device_name= dct['device_name'])
+                dct.update(current_value = dct["current_value"] + " " + data_unit)
                 dct.update(action='<a href="/alert_center/network/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
-                                   <a href="/performance/network_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
-                                   <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.format(device_id,
-                                                                                                              service_tab_name))
+                                       <a href="/performance/network_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                                       <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
+                               format(device.id, service_tab ))
 
-        return common_prepare_results(qs)
+            return common_prepare_results(qs)
+
+        return []
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -1103,7 +934,7 @@ class CustomerAlertListingTable(BaseDatatableView):
 
         logged_in_user = self.request.user.userprofile
 
-        organization_devices = filter_customer_devices(logged_in_user, self.request.GET.get('data_tab'))
+        organization_devices = filter_devices(logged_in_user, self.request.GET.get('data_tab'), page_type="customer")
 
         machine_dict = filter_machines(organization_devices)
 
@@ -1143,7 +974,7 @@ class CustomerAlertListingTable(BaseDatatableView):
                                                   columns=required_data_columns,
                                                   condition= extra_query_condition )
 
-            device_list = prepare_customer_results(device_list,performance_data)
+            device_list = prepare_alert_results(device_list,performance_data)
 
             sorted_device_list += sorted(device_list, key=itemgetter('sys_timestamp'), reverse=True)
 
@@ -1721,7 +1552,7 @@ def dict_fetchall(cursor):
     ]
 
 
-def filter_customer_devices(logged_in_user, data_tab = None):
+def filter_devices(logged_in_user, data_tab = None, page_type="customer"):
 
     """
 
@@ -1738,14 +1569,16 @@ def filter_customer_devices(logged_in_user, data_tab = None):
     device_tab_technology = data_tab ##
     device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
 
-    device_list = organization_customer_devices(organizations, device_technology_id)
+    if page_type == "customer":
+        device_list = organization_customer_devices(organizations, device_technology_id)
+    else:
+        device_list = organization_network_devices(organizations, device_technology_id)
 
     # get the devices in an organisation which are added for monitoring
     organization_devices = [
         {'device_name': device.device_name, 'machine_name': device.machine.name}
         for device in device_list
     ]
-
 
     return organization_devices
 
@@ -1767,7 +1600,7 @@ def filter_machines(organization_devices):
     return machine_dict
 
 
-def prepare_customer_results(device_list, performance_data):
+def prepare_alert_results(device_list, performance_data):
 
     for data in performance_data:
         device_object = Device.objects.get(device_name=data['device_name'])

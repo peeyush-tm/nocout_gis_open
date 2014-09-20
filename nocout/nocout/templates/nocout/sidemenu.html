@@ -35,7 +35,22 @@
                     <span class="arrow"></span>
                 </a>
                 <ul class="sub">
-                    <li><a class="" href="/alert_center/network/"><span class="sub-menu-text">Network Alert Center</span></a></li>
+                    <li class="has-sub-sub">
+                    <!--
+                    {#<a class="" href="/alert_center/network/"><span class="sub-menu-text">Network Alert Center</span>#}
+                    {#</a>#}
+                    -->
+                        <a class="" href="javascript:;">
+                            <span class="sub-menu-text">Network Alert Center</span>
+                            <span class="arrow"></span>
+                        </a>
+                        <ul class="sub-sub">
+                            <li><a class="" href="/alert_center/network/packet_drop/"><span class="sub-menu-text">Packet Drop</span></a></li>
+                            <li><a class="" href="/alert_center/network/latency/"><span class="sub-menu-text">Latency</span></a></li>
+                            <li><a class="" href="/alert_center/network/down/"><span class="sub-menu-text">Down</span></a></li>
+                            <li><a class="" href="/alert_center/network/service/"><span class="sub-menu-text">Service Impact Alarms</span></a></li>
+                        </ul>
+                    </li>
                     <li class="has-sub-sub">
                         <a class="" href="javascript:;">
                             <span class="sub-menu-text">Customer Alert Center</span>
