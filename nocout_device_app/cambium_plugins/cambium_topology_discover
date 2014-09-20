@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import binascii
 """
 IDU serial number Poller script.
 
@@ -9,16 +10,16 @@ IDU serial number of IDU is sent to device application
 
 """
 # ######################################################################
-# Function : check_cambium_bs_connected_ss_mac_invent
+# Function : check_cambium_topology_discover
 #
 # Parameters: info (SNMP Output) _no_params(No Parameters)
 #
 # Output: service state and plugin output
 # #####################################################################
 
-def check_cambium_bs_connected_ss_mac_invent(item, _no_params, info):
+def check_cambium_topology_discover(item, params, info):
     """
-                check_cambium_bs_connected_ss_mac_invent function calculates the mac information of connected ss with ap
+                check_cambium_topology_discover function calculates the mac information of connected ss with ap
 
                 Args:
                         item (str) Specific item on SNMP output on which we want to filter results
@@ -40,25 +41,29 @@ def check_cambium_bs_connected_ss_mac_invent(item, _no_params, info):
                                Exception
     """
     state = 3
-    infotext = "unknown_value"
+    infotext = "unknown"
     try:
         if info:
-            if info[0][0]:
-                connected_bs_mac = info[0][0]
-                state = 0
-                infotext = "%s" % connected_bs_mac
+	    infotext = ""
+	    for i in range(len(info)):
+                connected_bs_mac = info[i][0]
+		a=binascii.b2a_hex(connected_bs_mac)
+        	state = 0
+                n = 2
+                connected_bs_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])		
+                infotext += "%s " % connected_bs_mac
     except:
-        infotext = "unknown_value"
+        infotext = "unknow"
     return (state, infotext)
 
 
-check_info["cambium_bs_connected_ss_mac_invent"] = {
-    'check_function': check_cambium_bs_connected_ss_mac_invent,
-    'service_description': 'cambium_bs_connected_ss_mac_invent',
+check_info["cambium_topology_discover"] = {
+    'check_function': check_cambium_topology_discover,
+    'service_description': 'cambium_topology_discover',
 }
 
 #################################################################
 #SNMP OID value for poller script
 ################################################################
 
-snmp_info["cambium_bs_connected_ss_mac_invent"] = ( ".1.3.6.1.4.1.161.19.3.1.4", ["1.3"] )
+snmp_info["cambium_topology_discover"] = ( ".1.3.6.1.4.1.161.19.3.1.4", ["1.3"] )
