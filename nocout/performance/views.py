@@ -10,7 +10,7 @@ from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
 import xlwt
 from device.models import Device, City, State, DeviceType, DeviceTechnology
-from inventory.models import SubStation, Circuit, Sector, BaseStation
+from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul
 from nocout.settings import P2P, WiMAX, PMP
 from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus, ServiceStatus, InventoryStatus, \
     PerformanceStatus, PerformanceInventory, Status
@@ -56,27 +56,65 @@ class Live_Performance(ListView):
 
         """
         context = super(Live_Performance, self).get_context_data(**kwargs)
-        datatable_headers = [
-            # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
-            {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False, 'bVisible': False},
-            {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            # {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'circuit_id', 'sTitle': 'Circuit IDs', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
-        ]
+        page_type = self.kwargs['page_type']
+        if page_type in ["customer"]:
+            datatable_headers = [
+                # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
+                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False, 'bVisible': False},
+                {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'circuit_id', 'sTitle': 'Circuit IDs', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
+            ]
+        elif page_type in ["network"]:
+            datatable_headers = [
+                # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
+                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False, 'bVisible': False},
+                {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'circuit_id', 'sTitle': 'Circuit IDs', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
+            ]
+        else:
+            datatable_headers = [
+                # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
+                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False, 'bVisible': False},
+                {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
+            ]
 
         context['datatable_headers'] = json.dumps(datatable_headers)
-        context['page_type'] = self.kwargs['page_type']
+        context['page_type'] = page_type
         return context
 
 
@@ -119,13 +157,7 @@ class LivePerformanceListing(BaseDatatableView):
             else:
                 organizations = [self.request.user.userprofile.organization]
 
-            if self.request.GET['page_type'] == 'customer':
-                return self.get_initial_query_set_data(organizations=organizations)
-
-            elif self.request.GET['page_type'] == 'network':
-                return self.get_initial_query_set_data(organizations=organizations)
-            else:
-                return []
+            return self.get_initial_query_set_data(organizations=organizations)
 
     def get_initial_query_set_data(self, **kwargs):
         """
@@ -138,16 +170,18 @@ class LivePerformanceListing(BaseDatatableView):
         device_list = list()
 
         page_type = self.request.GET['page_type']
+        device_technology_id = None
 
         if self.request.GET['page_type'] == 'customer':
             page_type = 'customer'
             device_tab_technology = self.request.GET.get('data_tab')
-            device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
+            device_technology_id = DeviceTechnology.objects.get(name__icontains=device_tab_technology).id
+
             #If the technology is P2P then fetch all the device without circuit_type backhaul and
             #include all the devices whether they are sector_configured_on or substation
             if int(device_technology_id) == int(P2P.ID):
                 #single query to fetch devices with circuit type as backhaul
-                device_list_with_circuit_type_backhaul = ptp_device_circuit_backhaul()
+                # device_list_with_circuit_type_backhaul = ptp_device_circuit_backhaul()
 
                 devices = organization_customer_devices(kwargs['organizations'], int(device_technology_id)).\
                     values(*self.columns + ['id',
@@ -158,18 +192,21 @@ class LivePerformanceListing(BaseDatatableView):
                                             'substation'])
             else:
                 #If the technology is not P2P then include devices which are substation.
-                devices = organization_network_devices(kwargs['organizations'], device_technology_id).\
+                devices = organization_customer_devices(kwargs['organizations'], device_technology_id).\
                     values(*self.columns + ['id',
                                             'device_technology',
                                             'device_name',
                                             'machine__name',
                                             'substation'])
 
-        else:
+        elif self.request.GET['page_type'] == 'network':
             page_type = 'network'
+            device_tab_technology = self.request.GET.get('data_tab')
+            device_technology_id = DeviceTechnology.objects.get(name__icontains=device_tab_technology).id
+
             # If the page_type is network then include only devices which are added to NMS and devices which are not P2P,
             # and must be either PMP or WiMAX.
-            devices = organization_network_devices(organizations=kwargs['organizations']).\
+            devices = organization_network_devices(organizations=kwargs['organizations'],technology=device_technology_id).\
                 values(*self.columns + ['id',
                                         'device_technology',
                                         'device_name',
@@ -177,59 +214,97 @@ class LivePerformanceListing(BaseDatatableView):
                                         'sector_configured_on',
                                         'substation'])
 
+        elif self.request.GET['page_type'] == 'other':
+            page_type = 'other'
+            # If the page_type is network then include only devices which are added to NMS and devices which are not P2P,
+            # and must be either PMP or WiMAX.
+            devices = organization_backhaul_devices(organizations=kwargs['organizations']).\
+                values(*self.columns + ['id',
+                                        'device_technology',
+                                        'device_name',
+                                        'machine__name',
+                                        'backhaul',
+                                        ])
+
+        else:
+            return []
+
         for device in devices:
+            skip_device = False
+            if page_type in ["customer", "network"]:
+                sector_id = "N/A"
+                circuit_id = "N/A"
+                bs_name = "N/A"
 
-            sector_id = "N/A"
-            circuit_id = "N/A"
-            bs_name = "N/A"
-            if 'sector_configured_on' in device and device['sector_configured_on']:
-                sectors = Sector.objects.filter(sector_configured_on=device["id"]).values("id", "sector_id", "base_station")
-                if len(sectors):
-                    sector_id_list = [x["id"] for x in sectors]
-                    sector_id = ", ".join(map(lambda x: str(x), [x["sector_id"] for x in sectors]))
-                    try:
-                        basestation = BaseStation.objects.get(id=sectors[0]["base_station"])
+                if 'sector_configured_on' in device and device['sector_configured_on']:
+                    if page_type in ['customer'] \
+                            and ( int(device['device_technology']) in [int(WiMAX.ID), int(PMP.ID)]):
+                        #dont process the substation for devices of WIMAX and PMP
+                        skip_device = True
+                    if not skip_device:
+                        sectors = Sector.objects.filter(sector_configured_on=device["id"]).values("id", "sector_id", "base_station")
+                        if len(sectors):
+                            sector_id_list = [x["id"] for x in sectors]
+                            sector_id = ", ".join(map(lambda x: str(x), [x["sector_id"] for x in sectors]))
+                            try:
+                                basestation = BaseStation.objects.get(id=sectors[0]["base_station"])
+                                bs_name = basestation.alias
+                            except:
+                                pass
+                            circuits = Circuit.objects.filter(sector__in=sector_id_list).values("circuit_id")
+                            if len(circuits):
+                                circuits_id_list = [x["circuit_id"] for x in circuits]
+                                circuit_id = ",".join(map(lambda x: str(x), circuits_id_list ))
+
+                elif 'substation' in device and device['substation']:
+                    if page_type in ['network'] \
+                            and ( int(device['device_technology']) in [int(WiMAX.ID), int(PMP.ID)]):
+                        #dont process the substation for devices of WIMAX and PMP
+                        skip_device = True
+
+                    if not skip_device:
+                        substation = SubStation.objects.filter(device=device["id"])
+                        if len(substation):
+                            ss_object = substation[0]
+                            circuit = Circuit.objects.filter(sub_station=ss_object.id)
+                            if len(circuit):
+                                circuit_obj = circuit[0]
+                                circuit_id = circuit_obj.circuit_id
+                                sector_id = circuit_obj.sector.sector_id
+                                bs_name = circuit_obj.sector.base_station.alias
+
+            elif page_type in ["backhaul", "other"]:
+                bs_name = "N/A"
+                sector_id = "N/A"
+                circuit_id = "N/A"
+                backhaul_objects = Backhaul.objects.filter(bh_configured_on__id=device["id"])
+                if len(backhaul_objects):
+                    backhaul = backhaul_objects[0]
+                    basestation_objects = backhaul.basestation_set.filter()
+                    if len(basestation_objects):
+                        basestation = basestation_objects[0]
                         bs_name = basestation.alias
-                    except:
-                        pass
-                    circuits = Circuit.objects.filter(sector__in=sector_id_list).values("circuit_id")
-                    if len(circuits):
-                        circuits_id_list = [x["circuit_id"] for x in circuits]
-                        circuit_id = ",".join(map(lambda x: str(x), circuits_id_list ))
 
-            elif 'substation' in device and device['substation']:
-                if self.request.GET['page_type'] == 'network' \
-                        and ( device['device_technology'] in [int(WiMAX.ID), int(PMP.ID)]):
-                    #dont process the substation for devices of WIMAX and PMP
-                    continue
-                else:
-                    substation = SubStation.objects.filter(device=device["id"])
-                    if len(substation):
-                        ss_object = substation[0]
-                        circuit = Circuit.objects.filter(sub_station=ss_object.id)
-                        if len(circuit):
-                            circuit_obj = circuit[0]
-                            circuit_id = circuit_obj.circuit_id
-                            sector_id = circuit_obj.sector.sector_id
-                            bs_name = circuit_obj.sector.base_station.alias
             else:
-                continue
-            device.update({
-                "page_type":page_type,
-                "packet_loss": "",
-                "latency": "",
-                "last_updated": "",
-                "last_updated_date": "",
-                "last_updated_time": "",
-                "sector_id": sector_id,
-                "circuit_id": circuit_id,
-                "bs_name": bs_name,
-                "city": City.objects.get(id=device['city']).city_name,
-                "state": State.objects.get(id=device['state']).state_name,
-                "device_type": DeviceType.objects.get(pk=int(device['device_type'])).name,
-                "device_technology": DeviceTechnology.objects.get(pk=int(device['device_technology'])).name
-            })
-            device_list.append(device)
+                skip_device = True
+
+            if not skip_device:
+                device.update({
+                    "page_type":page_type,
+                    "packet_loss": "",
+                    "latency": "",
+                    "last_updated": "",
+                    "last_updated_date": "",
+                    "last_updated_time": "",
+                    "sector_id": sector_id,
+                    "circuit_id": circuit_id,
+                    "bs_name": bs_name,
+                    "city": City.objects.get(id=device['city']).city_name,
+                    "state": State.objects.get(id=device['state']).state_name,
+                    "device_type": DeviceType.objects.get(pk=int(device['device_type'])).name,
+                    "device_technology": DeviceTechnology.objects.get(pk=int(device['device_technology'])).name
+                })
+                device_list.append(device)
 
         return device_list
 
@@ -287,10 +362,10 @@ class LivePerformanceListing(BaseDatatableView):
 
                     perf_result["last_updated"] = datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
                     #datetime.datetime.fromtimestamp(float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                    perf_result["last_updated_date"] = datetime.datetime.fromtimestamp(
-                        float(data.sys_timestamp)).strftime("%d/%B/%Y")
-                    perf_result["last_updated_time"] = datetime.datetime.fromtimestamp(
-                        float(data.sys_timestamp)).strftime("%I:%M %p")
+                    # perf_result["last_updated_date"] = datetime.datetime.fromtimestamp(
+                    #     float(data.sys_timestamp)).strftime("%d/%B/%Y")
+                    # perf_result["last_updated_time"] = datetime.datetime.fromtimestamp(
+                    #     float(data.sys_timestamp)).strftime("%I:%M %p")
                     device_result[device] = perf_result
 
         # log.debug(device_result)
@@ -311,15 +386,23 @@ class LivePerformanceListing(BaseDatatableView):
         if qs:
             for dct in qs:
                 device = Device.objects.get(id=dct['id'])
-
-                dct.update(
-                    actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
-                    <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
-                    <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
-                    .format(dct['page_type'],
-                            dct['id'],
-                            'ping')
-                )
+                if dct['page_type'] in ["customer", "network"]:
+                    dct.update(
+                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                        <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
+                        <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
+                        .format(dct['page_type'],
+                                dct['id'],
+                                'ping')
+                    )
+                else:
+                    dct.update(
+                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                        <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
+                        .format(dct['page_type'],
+                                dct['id']
+                        )
+                    )
 
                 device_list.append({'device_name': dct["device_name"], 'device_machine': device.machine.name})
 
@@ -493,6 +576,9 @@ class Fetch_Inventory_Devices(View):
 
         elif page_type == "network":
             device_list = organization_network_devices(organizations)
+
+        elif page_type == 'other':
+            device_list = organization_backhaul_devices(organizations)
 
         result = list()
         for device in device_list:
@@ -1091,6 +1177,7 @@ def organization_customer_devices(organizations, technology = None):
         else:
             organization_customer_devices = Device.objects.filter(
                 is_added_to_nms= 1,
+                substation__isnull=False,
                 is_deleted= 0,
                 organization__in= organizations,
                 device_technology= technology
@@ -1133,8 +1220,27 @@ def organization_network_devices(organizations, technology = None):
             organization_network_devices = Device.objects.filter(
                                             Q(device_technology = int(technology),
                                             is_added_to_nms=1,
+                                            sector_configured_on__isnull = False,
                                             is_deleted=0,
                                             organization__in= organizations
             ))
 
     return organization_network_devices
+
+
+def organization_backhaul_devices(organizations, technology = None):
+    """
+    To result back the all the network devices from the respective organization..
+
+    :param organizations:
+    :param technology:
+    :param organization:
+    :return list of network devices
+    """
+
+    return  Device.objects.filter(
+                                    backhaul__isnull=False,
+                                    is_added_to_nms=1,
+                                    is_deleted=0,
+                                    organization__in= organizations
+    )
