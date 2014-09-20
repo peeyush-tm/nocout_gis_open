@@ -110,16 +110,16 @@ $.urlParam = function(name){
 					$("#status_table thead").html(headers);
 
 					/*Loop for status table data*/
-					var status_val = "<tr>";
+					var status_val = "";
                     for (var i = 0; i < device_status.values.length; i++){
+                        status_val += "<tr>"
                         var loop_through = device_status.values[i];
                         $.each(loop_through,function(key, value) {
 						    status_val += '<td>'+value+'</td>';
 					    });
+                        status_val += "</tr>";
                     }
 
-
-					status_val += "</tr>";
 					/*Populate table data*/
 					$("#status_table tbody").html(status_val);
 				} else {

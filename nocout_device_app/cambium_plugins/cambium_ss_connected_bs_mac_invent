@@ -1,5 +1,4 @@
 #!/usr/bin/python
-import binascii
 """
 IDU serial number Poller script.
 
@@ -46,9 +45,6 @@ def check_cambium_ss_connected_bs_mac_invent(item, _no_params, info):
         if info:
             if info[0][0]:
                 connected_bs_mac = info[0][0]
-		a=binascii.b2a_hex(connected_bs_mac)
-                n = 2
-                connected_bs_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
                 state = 0
                 infotext = "%s" % connected_bs_mac
     except:
