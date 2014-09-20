@@ -11,7 +11,7 @@ RSSI information is sent to device application
 
 """
 # ##################################################################
-# Function : check_cambium_reg_count
+# Function : check_cambium_rereg_count
 #
 #  Parameters: info(SNMP output) ,params(parameters to check the service state) 
 #
@@ -19,16 +19,16 @@ RSSI information is sent to device application
 ##################################################################
 
 
-def inventory_cambium_reg_count(info):
+def inventory_cambium_rereg_count(info):
 	print info
 	for entry in info:
 		print entry
                 a=binascii.b2a_hex(entry[0])
                 n = 2
                 entry[0]=(':').join([a[i:i+2] for i in range(0, len(a), n)])
-def check_cambium_reg_count(item, params, info):
+def check_cambium_rereg_count(item, params, info):
     """
-        Check_cambium_reg_count function calcaulates the received signal strength indication
+        Check_cambium_rereg_count function calcaulates the received signal strength indication
 
         Args:
             item (str) Specific item on SNMP output on which we want to filter results
@@ -48,7 +48,7 @@ def check_cambium_reg_count(item, params, info):
 
             performance_data  (list):
                     performance data
-                    Example: cambium_reg_count=-76;-50;-80;;;
+                    Example: cambium_rereg_count=-76;-50;-80;;;
             Raises:
                 ValueError ,Exception
     """
@@ -64,15 +64,15 @@ def check_cambium_reg_count(item, params, info):
                 n = 2
                 entry[0]=(':').join([a[i:i+2] for i in range(0, len(a), n)])
 		if item in entry:
-			reg_count = int(entry[1])
-			if reg_count > crit:
+			rereg_count = int(entry[1])
+			if rereg_count > crit:
 				state = 3
-			elif reg_count <= crit and reg_count >= warn:
+			elif rereg_count <= crit and rereg_count >= warn:
 				state = 2
 			else:
 				state = 0
-            		infotext = "Reg count value is %s" % (reg_count)
-			status_list.extend([("reg_count",reg_count)])
+            		infotext = "rereg count values is %s" % (rereg_count)
+			status_list.extend([("rereg_count",rereg_count)])
 			break
     except ValueError:
         infotext = "type_mismatch_value"
@@ -81,14 +81,14 @@ def check_cambium_reg_count(item, params, info):
     return (state, infotext,status_list)
 
 
-check_info["cambium_reg_count"] = {
-    'check_function': check_cambium_reg_count,
-    'inventory_function': inventory_cambium_reg_count,
-    'service_description': 'cambium_reg_count',
+check_info["cambium_rereg_count"] = {
+    'check_function': check_cambium_rereg_count,
+    'inventory_function': inventory_cambium_rereg_count,
+    'service_description': 'cambium_rereg_count',
     'has_perfdata': True,
 }
 
 #######################################################################
 #	SNMP OID
 #######################################################################
-snmp_info["cambium_reg_count"] = ( ".1.3.6.1.4.1.161.19.3.1.4.1", ["3","25"] )
+snmp_info["cambium_rereg_count"] = ( ".1.3.6.1.4.1.161.19.3.1.4.1", ["3","26"] )
