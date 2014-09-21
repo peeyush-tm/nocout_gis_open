@@ -217,7 +217,8 @@ $("#goFullScreen").click(function() {
                 $("#content").addClass("zero_padding_margin");
                 $(".mapContainerBlock .box-body").addClass("zero_padding_margin");
 
-                $("#deviceMap").height(aa-bb);
+                // $("#deviceMap").height(aa-bb);
+                $("#deviceMap").height(aa);
                 toggleControlButtons();
                 toggleBoxTitle();
 
