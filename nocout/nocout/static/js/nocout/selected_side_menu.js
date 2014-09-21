@@ -213,8 +213,12 @@ $("#goFullScreen").click(function() {
             var bb= $("#page_content_div .box-title").height();
             var cc= $("#page_header_container").height();
             if($("#deviceMap").length) {
+                /*Remove padding & margin*/
+                $("#content").addClass("zero_padding_margin");
+                $(".mapContainerBlock .box-body").addClass("zero_padding_margin");
 
-                $("#deviceMap").height(aa-bb);
+                // $("#deviceMap").height(aa-bb);
+                $("#deviceMap").height(aa);
                 toggleControlButtons();
                 toggleBoxTitle();
 
@@ -265,6 +269,11 @@ $(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange MSFu
         $("#goFullScreen").removeClass('btn-danger');
         $("#goFullScreen").addClass('btn-info');
         if($("#deviceMap").length) {
+
+            /*Remove padding & margin*/
+            $("#content").removeClass("zero_padding_margin");
+            $(".mapContainerBlock .box-body").removeClass("zero_padding_margin");
+
             showControlDiv= "";
             if(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].length=== 3) {
                 mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(2);

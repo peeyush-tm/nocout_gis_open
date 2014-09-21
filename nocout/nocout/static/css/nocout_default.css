@@ -231,3 +231,8 @@ span.dept {
 .status_box .box-title .tools_status > a :hover {
   color: #919191;
 }
+
+.zero_padding_margin {
+  padding: 0px !important;
+  margin: 0px !important;
+}
