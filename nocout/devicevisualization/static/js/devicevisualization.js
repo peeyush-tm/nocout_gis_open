@@ -113,12 +113,12 @@ $("#technology").change(function(e) {
 
     // var vendorOptions= $("#vendor option");
     $("#vendor option").each(function(i, el) {
-        var optionValue= $(el).val();
+        var optionValue= $(el).attr('tech_id');
         var tech_name= $(el).attr('tech_name');
         //skip out default value
         if(!optionValue) {
         } else {
-            if(optionValue== tech_id && tech_name.toLowerCase()== tech_value.toLowerCase()) {
+            if(parseInt(optionValue, 10)== parseInt(tech_id, 10) && tech_name.toLowerCase()== tech_value.toLowerCase()) {
                 $(el).show();
             } else {
                 $(el).hide();
