@@ -200,7 +200,7 @@ $("#goFullScreen").click(function() {
         document.mozFullScreenEnabled ||
         document.msFullscreenEnabled
     ) {
-        if($("#goFullScreen").html()!== '<i class="fa fa-compress"></i> Exit Full Screen') {
+        if($("#goFullScreen").html() !== '<i class="fa fa-compress"></i> Exit Full Screen') {
             /*If page header is showing, hide it.*/
             if($.trim($("#headerToggleBtn").html()) !== '<i class="fa fa-eye"></i> Show Page Controls') {
                 $("#headerToggleBtn").click();
@@ -212,15 +212,25 @@ $("#goFullScreen").click(function() {
             var aa= screen.height;
             var bb= $("#page_content_div .box-title").height();
             var cc= $("#page_header_container").height();
+
             if($("#deviceMap").length) {
                 /*Remove padding & margin*/
                 $("#content").addClass("zero_padding_margin");
                 $(".mapContainerBlock .box-body").addClass("zero_padding_margin");
 
                 // $("#deviceMap").height(aa-bb);
-                $("#deviceMap").height(aa);
-                toggleControlButtons();
+                // $("#deviceMap").height(aa);
                 toggleBoxTitle();
+                toggleControlButtons();
+
+                /*Set width-height for map div in fullscreen*/
+                var mapDiv = mapInstance.getDiv();
+                mapDiv.style.width = "100%";
+                mapDiv.style.height = screen.height+"px";
+                $("#content").css("min-height","200px");
+
+                google.maps.event.trigger(mapInstance, 'resize');
+                mapInstance.setCenter(mapInstance.getCenter());
 
                 if(showControlDiv) {
                     showControlDiv= "";
@@ -240,9 +250,19 @@ $("#goFullScreen").click(function() {
                     mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(2);
                 }
                 $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Full Screen');
-                $("#deviceMap").height(550);
-                toggleControlButtons();
+                // $("#deviceMap").height(550);
                 // toggleBoxTitle();
+                toggleControlButtons();
+                
+                /*Reset width-height for map div in normal screen*/
+                var mapDiv = mapInstance.getDiv();
+                mapDiv.style.width = "100%";
+                mapDiv.style.height = "550px";
+                $("#content").removeAttr("style");
+
+                google.maps.event.trigger(mapInstance, 'resize');
+                mapInstance.setCenter(mapInstance.getCenter());
+
                 $(".mapContainerBlock .box-title").removeClass('hide');
                 $("#goFullScreen").removeClass('hide');
                 $("#headerToggleBtn").removeClass('hide');
@@ -279,13 +299,21 @@ $(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange MSFu
                 mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].removeAt(2);
             }
             $(mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].getAt(0)).find('b').html('Full Screen');
-            $("#deviceMap").height(550);
+            // $("#deviceMap").height(550);
             toggleControlButtons();
+
+            /*Reset width-height for map div in normal screen*/
+            var mapDiv = mapInstance.getDiv();
+            mapDiv.style.width = "100%";
+            mapDiv.style.height = "550px";
+            $("#content").removeAttr("style");
+            google.maps.event.trigger(mapInstance, 'resize');
+            mapInstance.setCenter(mapInstance.getCenter());
+
             // toggleBoxTitle();
             $(".mapContainerBlock .box-title").removeClass('hide');
             $("#goFullScreen").removeClass('hide');
             $("#headerToggleBtn").removeClass('hide');
-            // $("#headerToggleBtn").trigger('click');
         }
     }
 });
