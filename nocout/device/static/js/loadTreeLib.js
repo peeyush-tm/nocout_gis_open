@@ -387,7 +387,7 @@ function loadDeviceTreeLib() {
                 /*Ajax call to the API*/
                 $.ajax({
                     crossDomain: true,
-                    url: "/device/stats/?username=" + username + "&page_number=" + hitCounter + "&limit=" + showLimit,
+                    url: "/device/stats/?&page_number=" + hitCounter + "&total_count=" + showLimit,
                     // url : "http://127.0.0.1:8000/device/stats/?username="+username+"&page_number="+hitCounter+"&limit="+showLimit,
                     type: "GET",
                     dataType: "json",
