@@ -130,15 +130,16 @@ function prepare_oms_object(oms_instance) {
 	oms_instance.addListener('click', function(marker,e) {
 		var image = '/static/img/icons/caution.png';
 		
-		if(pointAdd=== 1) {
+		if(pointAdd === 1) {
 			map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image,zIndex: 500});
 			map_points_array.push(map_point);
 			map_point_count ++;
 			return ;
 		}		
 
-		var sectorMarker, sectorMarkerOms;
-		if(marker.pointType=== "base_station") {
+		var sectorMarker,
+			sectorMarkerOms;
+		if(marker.pointType === "base_station") {
 			//if marker is not spiderfied, stop event and add sector markers here and in oms
 			if(!marker.isMarkerSpiderfied) {
 				// clearPreviousSectorMarkers();
@@ -155,15 +156,20 @@ function prepare_oms_object(oms_instance) {
 				google.maps.event.trigger(marker, 'click');
 				return ;
 			}
-
 		}
-		var windowPosition = new google.maps.LatLng(marker.ptLat,marker.ptLon);
+
 		/*Call the function to create info window content*/
 		var content = gmap_self.makeWindowContent(marker);
 		/*Set the content for infowindow*/
 		infowindow.setContent(content);
-		/*Set The Position for InfoWindow*/
-		infowindow.setPosition(windowPosition);
+
+		if(e) {
+			/*Set The Position for InfoWindow*/
+			infowindow.setPosition(e.latLng);
+		} else {
+			/*Set The Position for InfoWindow*/
+			infowindow.setPosition(new google.maps.LatLng(marker.ptLat,marker.ptLon));
+		}
 		/*Open the info window*/
 		infowindow.open(mapInstance);
 
@@ -205,8 +211,6 @@ function prepare_oms_object(oms_instance) {
 				}
 			}
 		}
-        //freeze the map when spiderified
-        // isFreeze = 1;
         infowindow.close();
     });
 
@@ -384,14 +388,16 @@ function devicePlottingClass_gmap() {
             // });
 
             google.maps.event.addListener(mapInstance, 'idle', function() {
-            	var bs_list = getMarkerInCurrentBound();
-            	if(bs_list.length > 0 && isCallCompleted == 1) {
-            		if(recallPerf != "") {
-            			clearTimeout(recallPerf);
-            			recallPerf = "";
-            		}
-            		gisPerformanceClass.start(bs_list);
-            	}
+            	setTimeout(function() {
+            		var bs_list = getMarkerInCurrentBound();
+	            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
+	            		if(recallPerf != "") {
+	            			clearTimeout(recallPerf);
+	            			recallPerf = "";
+	            		}
+	            		gisPerformanceClass.start(bs_list);
+	            	}
+            	},1000);
             });
 
 			/*Event listener for search text box*/
@@ -619,7 +625,15 @@ function devicePlottingClass_gmap() {
 							gmap_self.plotDevices_gmap([],"base_station");
 
 							setTimeout(function() {
-								gisPerformanceClass.start(getMarkerInCurrentBound());
+								var bs_list = getMarkerInCurrentBound();
+				            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
+				            		if(recallPerf != "") {
+				            			clearTimeout(recallPerf);
+				            			recallPerf = "";
+				            		}
+				            		gisPerformanceClass.start(bs_list);
+				            	}
+								// gisPerformanceClass.start(getMarkerInCurrentBound());
 							}, 30000);
 
 							/*Hide The loading Icon*/
@@ -640,7 +654,15 @@ function devicePlottingClass_gmap() {
 						gmap_self.plotDevices_gmap([],"base_station");
 
 						setTimeout(function() {
-							gisPerformanceClass.start(getMarkerInCurrentBound());
+							var bs_list = getMarkerInCurrentBound();
+			            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
+			            		if(recallPerf != "") {
+			            			clearTimeout(recallPerf);
+			            			recallPerf = "";
+			            		}
+			            		gisPerformanceClass.start(bs_list);
+			            	}
+							// gisPerformanceClass.start(getMarkerInCurrentBound());
 						}, 30000);
 
 						disableAdvanceButton('no, enable it.');
@@ -687,7 +709,15 @@ function devicePlottingClass_gmap() {
 			disableAdvanceButton('no, enable it.');
 
 			setTimeout(function() {
-				gisPerformanceClass.start(getMarkerInCurrentBound());
+				var bs_list = getMarkerInCurrentBound();
+            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
+            		if(recallPerf != "") {
+            			clearTimeout(recallPerf);
+            			recallPerf = "";
+            		}
+            		gisPerformanceClass.start(bs_list);
+            	}
+				// gisPerformanceClass.start(getMarkerInCurrentBound());
 			}, 30000);
 			/*Recall the server after particular timeout if system is not freezed*/
 			setTimeout(function(e){
@@ -883,7 +913,12 @@ function devicePlottingClass_gmap() {
 				    google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
 
 					    if(ss_marker.hasPerf == 1) {
-					    	var info_html = '<table class="table table-hover"><tr><td>Frequency</td><td>'+ss_marker.perf_data_obj.frequency+'</td></tr><tr><td>Packet Loss</td><td>'+ss_marker.perf_data_obj.pl+'</td></tr><tr><td>'+ss_marker.perf_data_obj.performance_paramter+'</td><td>'+ss_marker.perf_data_obj.performance_value+'</td></tr></table>';
+					    	
+					    	var freq = ss_marker.perf_data_obj.frequency ? ss_marker.perf_data_obj.frequency : "-";
+					    	var pl = ss_marker.perf_data_obj.pl ? ss_marker.perf_data_obj.pl : "-";
+					    	var perf_val = ss_marker.perf_data_obj.performance_value ? ss_marker.perf_data_obj.performance_value : "-";
+
+					    	var info_html = '<table class="table table-hover"><tr><td>Frequency</td><td>'+freq+'</td></tr><tr><td>Packet Loss</td><td>'+pl+'</td></tr><tr><td>'+ss_marker.perf_data_obj.performance_paramter+'</td><td>'+perf_val+'</td></tr></table>';
 					    	/*Set the content for infowindow*/
 							infowindow.setContent(info_html);
 							/*Shift the window little up*/
@@ -1283,13 +1318,12 @@ function devicePlottingClass_gmap() {
 
 			gmap_self.plotDevices_gmap(this,"sub_station");
 
-			var windowPosition = new google.maps.LatLng(e.latLng.k,e.latLng.B);
 			/*Call the function to create info window content*/
 			var content = gmap_self.makeWindowContent(poly);
 			/*Set the content for infowindow*/
 			infowindow.setContent(content);
 			/*Set The Position for InfoWindow*/
-			infowindow.setPosition(windowPosition);
+			infowindow.setPosition(e.latLng);
 			/*Open the info window*/
 			infowindow.open(mapInstance);
 			/*Show only 5 rows, hide others*/
