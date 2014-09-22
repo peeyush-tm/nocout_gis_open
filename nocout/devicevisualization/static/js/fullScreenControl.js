@@ -43,7 +43,6 @@ function FullScreenControl(map) {
 		divStyle = mapDiv.runtimeStyle;
 	var originalPos = divStyle.position;
 	var originalWidth = divStyle.width;
-	console.log(mapDiv.style.height);
 	var originalHeight = divStyle.height;
 	
 	// IE8 hack
@@ -90,8 +89,6 @@ function FullScreenControl(map) {
 	};
 	
 	var exitFullScreen = function() {
-		console.log(mapDiv.style.height);
-		console.log(originalHeight);
 		var center = map.getCenter();
 		if (originalPos == "")
 			mapDiv.style.position = "relative";
