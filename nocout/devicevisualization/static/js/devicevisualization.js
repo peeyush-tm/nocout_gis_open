@@ -109,10 +109,7 @@ $("#technology").change(function(e) {
     getPageType();
     var tech_id = $(this).val();
     var tech_value= $('#technology option:selected').text();
-
-    // if (tech_id != ""){
-    //     $("#vendor").val(tech_id);
-    // }
+    $("#vendor").val("");
 
     // var vendorOptions= $("#vendor option");
     $("#vendor option").each(function(i, el) {

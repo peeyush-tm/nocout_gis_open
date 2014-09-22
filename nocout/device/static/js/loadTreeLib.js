@@ -12,6 +12,14 @@ var that = "",
 	devices_gmaps = [],
 	main_devices_data_gmaps= [];
 
+
+if(window.location.origin) {
+    base_url = window.location.origin;
+} else {
+    base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+}
+
+
 /**
  * This class is used to create the tree view of devices
  * @class loadDeviceTreeLib
@@ -71,7 +79,7 @@ function loadDeviceTreeLib() {
 
 			/*Ajax call to the API*/
 			$.ajax({
-				url : "http://localhost:8000/"+"device/stats/?total_count="+devicesCount+"&page_number="+hitCounter,
+				url : base_url+"/"+"device/stats/?total_count="+devicesCount+"&page_number="+hitCounter,
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
@@ -155,7 +163,7 @@ function loadDeviceTreeLib() {
 		var citiesObject= {};
 		/*Ajax call for filters data*/
 		$.ajax({
-			url : "http://localhost:8000/"+"device/filter/",
+			url : base_url+"/"+"device/filter/",
 			success : function(result) {				
 				var filtersData = JSON.parse(result);
 				
