@@ -88,6 +88,8 @@ def mongo_db_insert(db,event_dict,flag):
 			db.network_perf.insert(event_dict)
 		elif flag == "status_services":
 			db.status_perf.insert(event_dict)
+		elif flag == "availability":
+			db.device_availability.insert(event_dict)
                 return success
         else:
                 print "Mongo_db insertion failed"
@@ -115,6 +117,8 @@ def mongo_db_update(db,matching_criteria,event_dict,flag):
 				db.device_network_status.update(matching_criteria,event_dict,upsert=True)
 			elif flag == "status_services":
 				db.device_status_services_status.update(matching_criteria,event_dict,upsert=True)
+			elif flag == "topology":
+				db.cambium_topology_data.update(macthing_criteria,event_dict,upsert=True)
                 	return success
 		except Exception, ReferenceError:
         		print "Mongodb updation failed"
