@@ -12,7 +12,8 @@ var perf_that = "",
 	device_services = "",
 	single_service_data = "",
 	getServiceDataUrl = "",
-	x=0;
+	x=0,
+    old_table = "";
 
 $.urlParam = function(name){
                     var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
@@ -197,10 +198,10 @@ $.urlParam = function(name){
                                 active_tab_url = "/"+value.url;
 
                                 service_tabs += '<li class="active" style="'+li_style+'"><a href="#'+value.name+'_block" url="'+value.url+'" id="'+value.name+'_tab" data-toggle="tab" style="'+li_a_style+'">'+value.title+'</a></li>';
-                                service_tabs_data += '<div class="tab-pane active" id="'+value.name+'_block"><div class="chart_container"><div id="'+value.name+'_chart" style="height:350px;width:100%;"></div></div></div>';
+                                service_tabs_data += '<div class="tab-pane active" id="'+value.name+'_block"><div class="chart_container"><div id="'+value.name+'_chart" style="height:350px;width:100%;"></div><div class="divide-20"></div><div id="'+value.name+'_bottom_table"></div></div></div>';
                             } else {
                                 service_tabs += '<li class="" style="'+li_style+'"><a href="#'+value.name+'_block" url="'+value.url+'" id="'+value.name+'_tab" data-toggle="tab" style="'+li_a_style+'">'+value.title+'</a></li>';
-                                service_tabs_data += '<div class="tab-pane" id="'+value.name+'_block"><div class="chart_container" style="width:100%;"><div id="'+value.name+'_chart" style="height:350px;width:100%;"></div></div></div>';
+                                service_tabs_data += '<div class="tab-pane" id="'+value.name+'_block"><div class="chart_container" style="width:100%;"><div id="'+value.name+'_chart" style="height:350px;width:100%;"></div><div class="divide-20"></div><div id="'+value.name+'_bottom_table"></div></div></div>';
                             }
                         });
                         service_tabs += '</ul></div>';
@@ -274,6 +275,7 @@ $.urlParam = function(name){
         var start_date=$.urlParam('start_date');
         var end_date=$.urlParam('end_date');
         var get_url = base_url+""+get_service_data_url;
+
 		$.ajax({
 			url : get_url,
             data : {'start_date':start_date, 'end_date':end_date },
@@ -283,17 +285,18 @@ $.urlParam = function(name){
 
 				if(result.success == 1) {
 
-                    if($(".chart_container .data_in_table").length > 0) {
-                        $(".chart_container .data_in_table").remove();
-                    }
-
 					/*Service Data Object*/
 					single_service_data = result.data.objects;
 
                     if (result.data.objects.table_data != undefined) {
                         if(result.data.objects.table_data.length > 0) {
+
+                            if($("#other_perf_table").length > 0) {
+                                $("#other_perf_table").remove();
+                            }
                             var table_string = "";
                             var grid_headers = result.data.objects.table_data_header;
+
                             table_string += '<table id="other_perf_table" class="datatable table table-striped table-bordered table-hover table-responsive"><thead>';
                             /*Table header creation start*/
                             for(var i=0;i<grid_headers.length;i++) {
@@ -313,14 +316,18 @@ $.urlParam = function(name){
                             }
                             /*Table data creation end*/
                             table_string += '</tbody></table>';
+
                             $('#'+service_id+'_chart').html(table_string);
-                            $("#other_perf_table").DataTable();
+                            $("#other_perf_table").DataTable({
+                                bPaginate: true,
+                                sPaginationType: "full_numbers"
+                            });
                         } else {
                             $('#'+service_id+'_chart').html(result.message);
                         }
 
                     }
-                    else{
+                    else{                        
                         $('#'+service_id+'_chart').highcharts({
                             chart: {
                                 zoomType: 'x',
@@ -374,7 +381,7 @@ $.urlParam = function(name){
                             series: single_service_data.chart_data
                         });
                         
-                        var data_in_table = "<div class='data_in_table'><div class='divide-20'></div><table id='perf_data_table' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
+                        var data_in_table = "<table id='perf_data_table' class='datatable table table-striped table-bordered table-hover table-responsive'><thead><tr>";
                         /*Make table headers*/
                         for(var i=0;i<single_service_data.chart_data.length;i++) {
                             data_in_table += '<td colspan="2" align="center"><b>'+single_service_data.chart_data[i].name+'</b></td>';
@@ -406,16 +413,23 @@ $.urlParam = function(name){
                             data_in_table += '</tr>';
                         }
 
-                        data_in_table += "</tbody></table><div class='clearfix'></div></div>";
+                        data_in_table += "</tbody></table>";
 
-                        if($(".chart_container .data_in_table").length == 0) {
-                            $(".chart_container").append(data_in_table);
-                            $("#perf_data_table").DataTable();
+                        if($("#perf_data_table").length == 0) {
+                            $('#'+service_id+'_bottom_table').empty();
+                            $('#'+service_id+'_bottom_table').html(data_in_table);
+                            $("#perf_data_table").DataTable({
+                                bPaginate: true,
+                                sPaginationType: "full_numbers"
+                            });
                         } else {
-                            $(".chart_container .data_in_table").empty();
-                            $(".chart_container  .data_in_table").remove();
-                            $(".chart_container").append(data_in_table);
-                            $("#perf_data_table").DataTable();
+                            $("#perf_data_table").remove();
+                            $('#'+service_id+'_bottom_table').empty();
+                            $('#'+service_id+'_bottom_table').html(data_in_table);
+                            $("#perf_data_table").DataTable({
+                                bPaginate: true,
+                                sPaginationType: "full_numbers"
+                            });
                         }
 
                         /*Hide Highcharts.com Name*/
