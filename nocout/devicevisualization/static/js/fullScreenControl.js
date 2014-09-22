@@ -61,6 +61,11 @@ function FullScreenControl(map) {
 	var originalOverflow = bodyStyle.overflow;
 	
 	var goFullScreen = function() {
+		
+		if(mapDiv.style.height) {
+			originalHeight = mapDiv.style.height;
+		}
+		
 		var center = map.getCenter();
 		mapDiv.style.position = "fixed";
 		mapDiv.style.width = "100%";

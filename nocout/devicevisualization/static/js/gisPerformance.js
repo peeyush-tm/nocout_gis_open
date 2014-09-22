@@ -13,7 +13,7 @@ function createGoogleMarker(url, oldMarkerIcon) {
 	//Get size setting from oldMarkerIcon
 	oldMarObj['size']= oldMarkerIcon['icon']['size'] ? oldMarkerIcon['icon']['size'] : null;
 	//Create a new MarkerImage with new url, and all others value from previous defined settings
-	newMarkerImage= new google.maps.MarkerImage(url,oldMarObj['size'],oldMarObj['origin'],oldMarObj['anchor'],oldMarObj['scaledSize']);
+	newMarkerImage = new google.maps.MarkerImage(url,oldMarObj['size'],oldMarObj['origin'],oldMarObj['anchor'],oldMarObj['scaledSize']);
 	//Return newMarker
 	return newMarkerImage;
 }
@@ -54,10 +54,9 @@ function GisPerformance() {
 		this.bsNamesList = bs_list;
 		//Store Length of Total BS
 		this.bsLength = this.bsNamesList.length;
-		// console.log(this.bsLength);
 
 		// Global Variable
-		this._isFrozen= isFreeze;
+		// this._isFrozen= isFreeze;
 
 		//Start Request for First BS
 		gisPerformance_this.sendRequest(0);
@@ -95,7 +94,6 @@ function GisPerformance() {
 	This function sends Request based on the counter value.
 	 */
 	this.sendRequest = function(counter) {
-		// console.log(($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0);consl
 		//If isFrozen is false and Cookie value for freezeSelected is also false
 		if(($.cookie('isFreezeSelected') == 0 || +($.cookie('freezedAt')) > 0) && isPollingActive == 0) {
 			var gisPerformance_this = this;
@@ -125,10 +123,10 @@ function GisPerformance() {
 
 		//Ajax Request
 		$.ajax({
+			url:  '/network_maps/performance_data/?freeze_time='+freezedAt,
+			data: JSON.stringify(getBsRequestData),
 			type : 'POST',
 			dataType : 'json',
-			data: JSON.stringify(getBsRequestData),
-			url:  '/network_maps/performance_data/?freeze_time='+freezedAt,
 			//In success
 			success : function (data) {
 				//If data is there
@@ -142,7 +140,7 @@ function GisPerformance() {
 				recallPerf = setTimeout(function() {
 					//Send Request for the next counter
 					gisPerformance_this.sendRequest(counter);
-				}, 500);
+				}, 1000);
 			},
 			//On Error, do nothing
 			error : function(err){
@@ -339,4 +337,3 @@ function GisPerformance() {
 		return ;
 	}
 }
-
