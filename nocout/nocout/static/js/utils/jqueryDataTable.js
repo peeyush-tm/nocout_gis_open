@@ -44,7 +44,7 @@ function ourDataTableWidget()
                 hideSpinner();
             },
             aoColumns:tableheaders,
-            sPaginationType: "bs_full"
+            sPaginationType: "full_numbers"
  		});
     };
 }
