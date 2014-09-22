@@ -12,11 +12,12 @@ import xlwt
 from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul
 from nocout.settings import P2P, WiMAX, PMP
-from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus, ServiceStatus, InventoryStatus, \
+from performance.models import PerformanceService, PerformanceNetwork, EventNetwork, EventService, NetworkStatus, ServiceStatus, InventoryStatus, \
     PerformanceStatus, PerformanceInventory, Status
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
 from django.utils.dateformat import format
 from operator import itemgetter
+from alert_center.views import fetch_raw_result
 
 import logging
 
@@ -39,7 +40,7 @@ SERVICES = {
 
 # def uptime_to_days(uptime=0):
 #     if uptime:
-#         ret_val = int(float(uptime)/(60 * 60 * 24))
+#         ret_val = int(float(uptime)/(60 * 60 * 2``))
 #         return ret_val if ret_val > 0 else int(float(uptime)/(60 * 60))
 
 class Live_Performance(ListView):
@@ -477,6 +478,97 @@ class Get_Perfomance(View):
 
         device = Device.objects.get(id=device_id)
         realdevice = device
+
+        """
+            TODO START :- Replace below code by calling alert_center's 'SingleDeviceAlertDetails' class
+        """
+        start_date= self.request.GET.get('start_date','')
+        end_date= self.request.GET.get('end_date','')
+        isSet = False
+
+        if len(start_date) and len(end_date):
+            start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
+            end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
+            start_date= format( start_date_object, 'U')
+            end_date= format( end_date_object, 'U')
+            isSet = True
+            if start_date == end_date:
+                # Converting the end date to the highest time in a day.
+                end_date_object = datetime.datetime.strptime(end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S")
+        else:
+            # The end date is the end limit we need to make query till.
+            end_date_object = datetime.datetime.now()
+            # The start date is the last monday of the week we need to calculate from.
+            start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
+            # Replacing the time, to start with the 00:00:00 of the last monday obtained.
+            start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
+            # Converting the date to epoch time or Unix Timestamp
+            end_date = format(end_date_object, 'U')
+            start_date = format(start_date_object, 'U')
+            isSet = True
+
+        sia_data_list = None
+        error_data_list = None
+
+        required_columns = ["device_name",
+            "ip_address",
+            "service_name",
+            "data_source",
+            "severity",
+            "current_value",
+            "sys_timestamp",
+            "description"
+        ]
+
+        sia_data_list = EventService.objects. \
+            filter(device_name=device.device_name,
+                   sys_timestamp__gte=start_date,
+                   sys_timestamp__lte=end_date). \
+            order_by("-sys_timestamp"). \
+            values(*required_columns).using(alias=device.machine.name)
+
+        
+        in_string = lambda x: "'" + str(x) + "'"
+        col_string = lambda x: "`" + str(x) + "`"
+        is_ping = True
+        # raw query is required here so as to get data
+        query = " "\
+                " SELECT " \
+                " original_table.`device_name`," \
+                " original_table.`ip_address`," \
+                " original_table.`service_name`," \
+                " original_table.`severity`," \
+                " original_table.`current_value` as latency," \
+                " `derived_table`.`current_value` as packet_loss, " \
+                " `original_table`.`sys_timestamp`," \
+                " original_table.`description` " \
+                " FROM `performance_eventnetwork` as original_table "\
+                " INNER JOIN (`performance_eventnetwork` as derived_table) "\
+                " ON( "\
+                "    original_table.`data_source` <> derived_table.`data_source` "\
+                "    AND "\
+                "   original_table.`sys_timestamp` = derived_table.`sys_timestamp` "\
+                "    AND "\
+                "    original_table.`device_name` = derived_table.`device_name` "\
+                " ) "\
+                " WHERE( "\
+                "    original_table.`device_name`= '{0}' "\
+                "    AND "\
+                "    original_table.`sys_timestamp` BETWEEN {1} AND {2} "\
+                " ) "\
+                " GROUP BY original_table.`sys_timestamp` "\
+                " ORDER BY original_table.`sys_timestamp` DESC ".format(
+                # (',').join(["original_table.`" + col_name + "`" for col_name in required_columns]),
+                device.device_name,
+                start_date,
+                end_date
+                )
+        error_data_list = fetch_raw_result(query, device.machine.name)
+
+        """
+            TODO END
+        """
+        
         page_data = {
             'page_title': page_type.capitalize(),
             'device': device,
@@ -485,7 +577,9 @@ class Get_Perfomance(View):
             'get_status_url':  'performance/get_inventory_device_status/' + page_type + '/device/' + str(device_id),
             'get_services_url': 'performance/get_inventory_service_data_sources/device/' + str(
                 device_id),
-            'page_type':page_type
+            'page_type':page_type,
+            'error_data' : error_data_list,
+            'sia_data' : sia_data_list
             }
 
         return render(request, 'performance/single_device_perf.html', page_data)
