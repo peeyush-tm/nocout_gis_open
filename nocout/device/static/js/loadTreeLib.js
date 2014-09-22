@@ -1,16 +1,18 @@
 /*Global Variables*/
 var that = "",
-	hitCounter = 1,
-	showLimit = 0,
-	devicesCount = 0,
-	counter = -999,
-	devicesObject = {},
-	treeDataArray = [],
-	treeDataObject = {},
-	isCallCompleted= 0,
-	devicesCount= 0,
-	devices_gmaps = [],
-	main_devices_data_gmaps= [];
+
+    hitCounter = 1,
+    showLimit = 0,
+    devicesCount = 0,
+    counter = -999,
+    devicesObject = {},
+    treeDataArray = [],
+    treeDataObject = {},
+    isCallCompleted = 0,
+    devicesCount = 0,
+    devices_gmaps = [],
+    main_devices_data_gmaps = [];
+
 
 
 if(window.location.origin) {
@@ -27,6 +29,7 @@ if(window.location.origin) {
  * @uses fuelux.tree.js
  * Coded By :- Yogender Purohit
  */
+
 function loadDeviceTreeLib() {	
 
 	/*Store the reference of current pointer in a global variable*/
@@ -281,67 +284,25 @@ function loadDeviceTreeLib() {
 			'unselected-icon' : null,//'fa-times'
 		});
 		$('.tree').find('[class*="fa-"]').addClass("fa");
-	}
-
-	/**
-	 * This function is used to load the tree view with the devices data
-	 * @class loadDeviceTreeLib
-	 * @method loadDevices
-	 * @param devicesData {Object} It contains the devices heirarchy object
-	 * @param domElement "String" It is the DOM element selector on which the tree view is created
-	 */
-	this.loadDevices = function(devicesData,domElement) {
-
-		for(var i=0;i<devicesData.length;i++) {
-
-			if(devicesData[i].children.length > 0) {
-				treeDataObject[devicesData[i].name] = {"name" : devicesData[i].data.alias+" ("+devicesData[i].name+" / "+devicesData[i].data.ip+" / "+devicesData[i].data.mac+")", "type" : "folder","additionalParameters" : {"children" : ""}};
-			} else {
-				treeDataObject[devicesData[i].name] = {"name" : devicesData[i].data.alias+" ("+devicesData[i].name+" / "+devicesData[i].data.ip+" / "+devicesData[i].data.mac+")", "type" : "item"};
-			}
-
-			var slaveCount = devicesData[i].children.length;
-			var child  = {};			
-			for(var j=0;j<slaveCount;j++) {					
-				child[devicesData[i].children[j].name] = { "name" : "<a href='/network_maps/gis/"+devicesData[i].children[j].name+"'><i class='fa fa-arrow-circle-right'></i> "+devicesData[i].children[j].data.alias+" ("+devicesData[i].children[j].name+" / "+devicesData[i].children[j].data.ip+" / "+devicesData[i].children[j].data.mac+")</a>" , "type" : "item" };
-				treeDataObject[devicesData[i].name]["additionalParameters"]["children"] = child;
-			}
-		}
-
-		var treeDataSource = new DataSourceTree({data: treeDataObject});
-
-		$('#'+domElement).admin_tree({
-			dataSource: treeDataSource,			
-			loadingHTML:'<div class="tree-loading"><i class="fa fa-spinner fa-2x fa-spin"></i> Loading...</div>',
-			'open-icon' : 'fa-minus-square',
-			'close-icon' : 'fa-plus-square',
-			// multiSelect:true,
-			// 'selectable' : true,
-			'selected-icon' : null,//'fa-check',
-			'unselected-icon' : null,//'fa-times'
-		});
-		//To add font awesome support
-		$('.tree').find('[class*="fa-"]').addClass("fa");
-
 	};
 
-	(function (a, b) {
-    a.fn.admin_tree = function (d) {
-        var c = {
-            "open-icon": "fa fa-folder-open",
-            "close-icon": "fa fa-folder",
-            selectable: true,
-            "selected-icon": "fa fa-check",
-            "unselected-icon": "tree-dot"
-        };
-        c = a.extend({}, c, d);
-        this.each(function () {
-            var e = a(this);
-            e.html('<div class = "tree-folder" style="display:none;">				<div class="tree-folder-header">					<i class="' + c["close-icon"] + '"></i>					<div class="tree-folder-name"></div>				</div>				<div class="tree-folder-content"></div>				<div class="tree-loader" style="display:none"></div>			</div>			<div class="tree-item" style="display:none;">				' + (c["unselected-icon"] == null ? "" : '<i class="' + c["unselected-icon"] + '"></i>') + '				<div class="tree-item-name"></div>			</div>');
-            e.addClass(c.selectable == true ? "tree-selectable" : "tree-unselectable");
-            e.tree(c)
-        });
-        return this
-    }
-})(window.jQuery);
+    (function (a, b) {
+        a.fn.admin_tree = function (d) {
+            var c = {
+                "open-icon": "fa fa-folder-open",
+                "close-icon": "fa fa-folder",
+                selectable: true,
+                "selected-icon": "fa fa-check",
+                "unselected-icon": "tree-dot"
+            };
+            c = a.extend({}, c, d);
+            this.each(function () {
+                var e = a(this);
+                e.html('<div class = "tree-folder" style="display:none;">				<div class="tree-folder-header">					<i class="' + c["close-icon"] + '"></i>					<div class="tree-folder-name"></div>				</div>				<div class="tree-folder-content"></div>				<div class="tree-loader" style="display:none"></div>			</div>			<div class="tree-item" style="display:none;">				' + (c["unselected-icon"] == null ? "" : '<i class="' + c["unselected-icon"] + '"></i>') + '				<div class="tree-item-name"></div>			</div>');
+                e.addClass(c.selectable == true ? "tree-selectable" : "tree-unselectable");
+                e.tree(c);
+            });
+            return this
+        }
+    })(window.jQuery);
 }
