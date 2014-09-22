@@ -44,9 +44,9 @@ def check_cambium_ss_connected_bs_ip_invent(item, _no_params, info):
     try:
         if info:
             if info[0][0]:
-                connected_bs_mac = info[0][0]
+                connected_bs_ip = info[0][0]
                 state = 0
-                infotext = "%s" % connected_bs_mac
+                infotext = "%s" % connected_bs_ip
     except:
         infotext = "unknown_value"
     return (state, infotext)
