@@ -1,8 +1,10 @@
 """
-cambium_topology_discovery.py
+device_availability.py
 =======================
 
-This file contains the code for extracting and collecting the data for cambium topology and storing this data into embeded mongodb database.
+This file contains the code for extracting and collecting the data for inventory services and storing this data into embeded mongodb database.
+
+Inventory services are services for which data is coming in 1 day interval.
 
 """
 
@@ -10,6 +12,8 @@ from nocout_site_name import *
 import socket,json
 import time
 import imp
+from datetime import datetime, timedelta
+
 
 utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/utils/utility_functions.py' % nocout_site_name)
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
@@ -31,7 +35,7 @@ class MKGeneralException(Exception):
     def __str__(self):
         return self.reason
 
-def topology_discovery_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
+def device_availability_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	"""
 	inventory_perf_data : Function for collecting the data for inventory serviecs.Service state is also retunred for those services
 	Args: site (site on poller on which devices are monitored)
@@ -41,45 +45,45 @@ def topology_discovery_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	Raises: No Exception
 	"""
 
-	invent_check_list = []
-	invent_service_dict = {}
-	matching_criteria = {}
+
+	end_time = datetime.now()
+	start_time = end_time - timedelta(minutes=1440)
+	start_epoch = int(time.mktime(start_time.timetuple()))
+    	end_epoch = int(time.mktime(end_time.timetuple()))
+	
 	db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
-	service = "cambium_topology_discover"
+	service = "ping"
+	print hostlist
 	for host in hostlist:
-		query_string = "GET services\nColumns: service_state plugin_output host_address\nFilter: " + \
-		"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (service,host[0])
+		query_string = "GET statehist\nColumns: host_name state host_address current_host_state\nFilter: host_name = %s\n" %(str(host[0]))+ \
+		"Filter: state = 1\nFilter: time >= %s\nFilter: time < %s\nStats: sum duration\n" % (start_epoch,end_epoch) + \
+		"Stats: sum duration_part\nOutputFormat: json\n"
+		 
 		query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
+		print query_output[0][0]
 		try:
-			if query_output[0][1]:
-				plugin_output = str(query_output[0][1].split('- ')[1])
-				plugin_output =	[mac for mac in plugin_output.split(' ')]
-				service_state = (query_output[0][0])
-				if service_state == 0:
-					service_state = "OK"
-				elif service_state == 1:
-					service_state = "WARNING"
-				elif service_state == 2:
-					service_state = "CRITICAL"
-				elif service_state == 3:
-					service_state = "UNKNOWN"
+			if query_output[0][0]:
+				total_up = query_output[0][5]
+				total_up = 100-(total_up * 100)
 				host_ip = str(query_output[0][2])
-				ds="topology"
+				if query_output[0][3] == "0":
+					host_state = "up"
+				else:
+					host_state = "down"
+				ds="availability"
 			else:
 				continue
 		except:
 			continue
 		current_time = int(time.time())
-		topology_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host[0]),
-						service_name=service,current_value=plugin_output,min_value=0,max_value=0,avg_value=0,
-						data_source=ds,severity=service_state,site_name=site,warning_threshold=0,
+		availability_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host[0]),
+						service_name=service,current_value=total_up,min_value=0,max_value=0,avg_value=0,
+						data_source=ds,severity=host_state,site_name=site,warning_threshold=0,
 						critical_threshold=0,ip_address=host_ip)
-		matching_criteria.update({'device_name':str(host[0]),'service_name':service,'site_name':site})
-		mongo_module.mongo_db_update(db,matching_criteria,topology_dict,"topology")
-		#mongo_module.mongo_db_insert(db,topology_dict,"inventory_services")
-		matching_criteria ={}
+		print availability_dict
+		mongo_module.mongo_db_insert(db,availability_dict,"availability")
 
-def topology_discovery_data_main():
+def device_availability_main():
 	"""
 	inventory_perf_data_main : Main Function for data extraction for inventory services.Function get all configuration from config.ini
 	Args: None
@@ -94,16 +98,16 @@ def topology_discovery_data_main():
 		desired_config = configs.get(desired_site)
 		site = desired_config.get('site')
 		mongo_host = desired_config.get('host')
-                mongo_port = desired_config.get('port')
-                mongo_db_name = desired_config.get('nosql_db')
-		query = "GET services\nColumns: host_name\nFilter: service_description = cambium_topology_discover\nOutputFormat: json\n"
+		mongo_port = desired_config.get('port')
+		mongo_db_name = desired_config.get('nosql_db')
+		query = "GET hosts\nColumns: host_name\nOutputFormat: json\n"
 		output = json.loads(utility_module.get_from_socket(site,query))
-		topology_discovery_data(site,output,mongo_host,int(mongo_port),mongo_db_name)
+		device_availability_data(site,output,mongo_host,int(mongo_port),mongo_db_name)
 	except SyntaxError, e:
 		raise MKGeneralException(("Can not get performance data: %s") % (e))
 	except socket.error, msg:
 		raise MKGeneralException(("Failed to create socket. Error code %s Error Message %s:") % (str(msg[0]), msg[1]))
 if __name__ == '__main__':
-	topology_discovery_data_main()	
+	device_availability_main()	
 		
 				
