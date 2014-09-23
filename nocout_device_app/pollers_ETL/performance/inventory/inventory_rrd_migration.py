@@ -33,7 +33,7 @@ class MKGeneralException(Exception):
     def __str__(self):
         return self.reason
 
-def inventory_perf_data(site,hostlist):
+def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	"""
 	inventory_perf_data : Function for collecting the data for inventory serviecs.Service state is also retunred for those services
 	Args: site (site on poller on which devices are monitored)
@@ -46,7 +46,7 @@ def inventory_perf_data(site,hostlist):
 	invent_check_list = []
 	invent_service_dict = {}
 	matching_criteria = {}
-	db = mongo_module.mongo_db_conn(site,"nocout")
+	db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
 	for host in hostlist:
 		query = "GET hosts\nColumns: host_services\nFilter: host_name = %s\n" %(host[0])
 		query_output = utility_module.get_from_socket(site,query).strip()
@@ -103,9 +103,12 @@ def inventory_perf_data_main():
 		desired_site = filter(lambda x: x == nocout_site_name, configs.keys())[0]
 		desired_config = configs.get(desired_site)
 		site = desired_config.get('site')
+		mongo_host = desired_config.get('host')
+                mongo_port = desired_config.get('port')
+                mongo_db_name = desired_config.get('nosql_db')
 		query = "GET hosts\nColumns: host_name\nOutputFormat: json\n"
 		output = json.loads(utility_module.get_from_socket(site,query))
-		inventory_perf_data(site,output)
+		inventory_perf_data(site,output,mongo_host,int(mongo_port),mongo_db_name)
 	except SyntaxError, e:
 		raise MKGeneralException(("Can not get performance data: %s") % (e))
 	except socket.error, msg:
