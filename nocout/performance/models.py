@@ -492,3 +492,31 @@ class NetworkAvailabilityYearly(models.Model):
 
     def __unicode__(self):
         return self.device_name
+
+
+############################################################################################################
+############################################################################################################
+#####################             Network Topology                 #########################################
+############################################################################################################
+############################################################################################################
+
+
+class Topology(models.Model):
+    """
+    Status Table columns declared
+    """
+    device_name = models.CharField('Device Name', max_length=100, db_index=True, null=True, blank=True)
+    service_name = models.CharField('Service Name', max_length=100, db_index=True, null=True, blank=True)
+    data_source = models.CharField('Data Source', max_length=100, null=True, db_index=True, blank=True)
+    machine_name = models.CharField('Machine Name', max_length=100, null=True, blank=True)
+    site_name = models.CharField('Site Name', max_length=100, null=True, blank=True)
+    ip_address = models.CharField('IP Address', max_length=20, null=True, db_index=True, blank=True)
+    mac_address = models.CharField('MAC Address', max_length=20, null=True, db_index=True, blank=True)
+    sector_id = models.CharField('Sector Id', max_length=32, null=True, db_index=True, blank=True)
+    connected_device_ip = models.CharField('Connected Device IP Address', max_length=20, null=True, db_index=True, blank=True)
+    connected_device_mac = models.CharField('Connected Device MAC Address', max_length=20, null=True, db_index=True, blank=True)
+    sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
+    check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+
+    def __unicode__(self):
+        return self.device_name
