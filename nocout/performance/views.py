@@ -13,7 +13,7 @@ from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul
 from nocout.settings import P2P, WiMAX, PMP
 from performance.models import PerformanceService, PerformanceNetwork, EventNetwork, EventService, NetworkStatus, ServiceStatus, InventoryStatus, \
-    PerformanceStatus, PerformanceInventory, Status
+    PerformanceStatus, PerformanceInventory, Status, NetworkAvailabilityDaily
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
 from django.utils.dateformat import format
 from operator import itemgetter
@@ -32,6 +32,7 @@ SERVICE_DATA_SOURCE = {
     "service_throughput": {"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
     "management_port_on_odu": {"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
     "radio_interface": {"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
+    "availability": {"type": "column", "valuesuffix": " %", "valuetext": " %", "formula": None},
     }
 
 SERVICES = {
@@ -837,7 +838,8 @@ class Inventory_Device_Service_Data_Source(View):
                     'network_perf_tab': [],
                     'service_status_tab': [],
                     'inventory_status_tab': [],
-                    'service_perf_tab': []
+                    'service_perf_tab': [],
+                    'availability_tab': []
                 }
             }
         }
@@ -912,6 +914,15 @@ class Inventory_Device_Service_Data_Source(View):
                         'active': 0,
                     })
 
+        result['data']['objects']['availability_tab'].append(
+        {
+            'name': 'availability',
+            'title': 'Availability',
+            'url': 'performance/service/availability/service_data_source/availability/device/' +
+                   str(device_id),
+            'active': 0,
+        })
+
         result['success'] = 1
         result['message'] = 'Substation Devices Services Data Source Fetched Successfully.'
         return HttpResponse(json.dumps(result))
@@ -964,6 +975,19 @@ class Get_Service_Type_Performance_Data(View):
                 start_date = format(datetime.datetime.now() + datetime.timedelta(minutes=-180), 'U')
 
             performance_data = PerformanceNetwork.objects.filter(device_name=inventory_device_name,
+                                                                 service_name=service_name,
+                                                                 data_source=service_data_source_type,
+                                                                 sys_timestamp__gte=start_date,
+                                                                 sys_timestamp__lte=end_date).using(
+                                                                 alias=inventory_device_machine_name)
+
+            result = self.get_performance_data_result(performance_data)
+
+        elif "availability" in service_name or service_data_source_type in ['availability']:
+            if not isSet:
+                end_date = format(datetime.datetime.now(), 'U')
+                start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
+            performance_data = NetworkAvailabilityDaily.objects.filter(device_name=inventory_device_name,
                                                                  service_name=service_name,
                                                                  data_source=service_data_source_type,
                                                                  sys_timestamp__gte=start_date,
