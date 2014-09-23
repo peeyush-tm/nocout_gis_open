@@ -107,18 +107,18 @@
                             <li><a href="#errors_tab" id="errors" data-toggle="tab"><span class="hidden-inline-mobile">Errors</span></a></li>
                             <li><a href="#sia_tab" id="sia" data-toggle="tab"><span class="hidden-inline-mobile">SIA</span></a></li>
                             <li><a href="#topology_tab" id="topology" data-toggle="tab"><span class="hidden-inline-mobile">Topology</span></a></li>
-                            <li><a href="#availability_tab" id="availability" data-toggle="tab"><span class="hidden-inline-mobile">Availability</span></a></li>
                             <li><a href="#inventory_status_tab" id="inventory_status" data-toggle="tab"><span class="hidden-inline-mobile">Inventory Status</span></a></li>
                             <li><a href="#service_status_tab" id="service_status" data-toggle="tab"><span class="hidden-inline-mobile">Service Status</span></a></li>
                             <li><a href="#service_perf_tab" id="service_perf" data-toggle="tab"><span class="hidden-inline-mobile">Service Performance</span></a></li>
-                            <li class="active"><a href="#network_perf_tab" id="network_perf" data-toggle="tab"><span class="hidden-inline-mobile">Network Performance</span></a></li>
+                            <li><a href="#network_perf_tab" id="network_perf" data-toggle="tab"><span class="hidden-inline-mobile">Network Performance</span></a></li>
+                            <li class="active"><a href="#availability_tab" id="availability" data-toggle="tab"><span class="hidden-inline-mobile">Availability</span></a></li>
                         </ul>
 
                         <div class="clearfix"></div>
                     </div>
                     <div>
                         <div class="tab-content">
-                            <div class="tab-pane fade in active" id="network_perf_tab">
+                            <div class="tab-pane" id="network_perf_tab">
                                 <div class="panel panel-default inner_tab_container">
                                     <div class="panel-body">
                                         <div class="tabbable tabs-left">
@@ -154,34 +154,21 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="tab-pane" id="availability_tab">
-                                <div class="panel panel-default">
+                            <div class="tab-pane active" id="availability_tab">
+                                <div class="panel panel-default inner_tab_container">
                                     <div class="panel-body">
+                                        <div class="tabbable tabs-left">
 
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="tab-pane" id="topology_tab">
-                                <div class="panel panel-default">
-                                    <div class="panel-body" style="overflow-x: auto;">
-                                        <table class="temp_class datatable table table-striped table-bordered table-hover table-responsive">
-                                            <thead>
-                                                <tr>
-                                                    <th>Base Station</th>
-                                                    <th>Sub Station</th>
-                                                    <th>Circuit ID</th>
-                                                    <th>BS MAC</th>
-                                                    <th>SS MAC</th>
-                                                    <th>BS IP</th>
-                                                    <th>SS IP</th>
-                                                    <th>BS City</th>
-                                                    <th>BS State</th>
-                                                    <th>Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody></tbody>
-                                        </table>
-                                        
+                                <div class="panel panel-default inner_tab_container">
+                                    <div class="panel-body">
+                                        <div class="tabbable tabs-left">
+
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -203,53 +190,53 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <!-- {% if sia_data %}
-                                                    {% for data in sia_data %}
-                                                    <tr>
-                                                        {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
-                                                            <td><i class="fa fa-circle red-dot"></i></td>
-                                                            <td>{{ data.device_name }}</td>
-                                                            <td>{{ data.ip_address }}</td>
-                                                            <td>{{ data.service_name }}</td>
-                                                            <td>{{ data.data_source }}</td>
-                                                            <td><span class="text-danger">{{ data.severity }}</span></td>
-                                                            <td><span class="text-danger">{{ data.current_value }}</span></td>
-                                                            <td>{{ data.alert_date_time }}</td>
-                                                            <td><span class="text-danger">{{ data.description }}</span></td>
-                                                        {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
-                                                            <td><i class="fa fa-circle orange-dot"></i></td>
-                                                            <td>{{ data.device_name }}</td>
-                                                            <td>{{ data.ip_address }}</td>
-                                                            <td>{{ data.service_name }}</td>
-                                                            <td>{{ data.data_source }}</td>
-                                                            <td><span class="text-warning">{{ data.severity }}</span></td>
-                                                            <td><span class="text-warning">{{ data.current_value }}</span></td>
-                                                            <td>{{ data.alert_date_time }}</td>
-                                                            <td><span class="text-warning">{{ data.description }}</span></td>
-                                                        {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
-                                                            <td><i class="fa fa-circle green-dot"></i></td>
-                                                            <td>{{ data.device_name }}</td>
-                                                            <td>{{ data.ip_address }}</td>
-                                                            <td>{{ data.service_name }}</td>
-                                                            <td>{{ data.data_source }}</td>
-                                                            <td><span class="text-success">{{ data.severity }}</span></td>
-                                                            <td><span class="text-success">{{ data.current_value }}</span></td>
-                                                            <td>{{ data.alert_date_time }}</td>
-                                                            <td><span class="text-success">{{ data.description }}</span></td>
-                                                        {% else %}
-                                                            <td><i class="fa fa-circle grey-dot"></i></td>
-                                                            <td>{{ data.device_name }}</td>
-                                                            <td>{{ data.ip_address }}</td>
-                                                            <td>{{ data.service_name }}</td>
-                                                            <td>{{ data.data_source }}</td>
-                                                            <td><span class="text-muted">{{ data.severity }}</span></td>
-                                                            <td><span class="text-muted">{{ data.current_value }}</span></td>
-                                                            <td>{{ data.alert_date_time }}</td>
-                                                            <td><span class="text-muted">{{ data.description }}</span></td>
-                                                        {% endif %}
-                                                    </tr>
-                                                {% endfor %}
-                                                {% endif %} -->
+{#                                                <!-- {% if sia_data %}#}
+{#                                                    {% for data in sia_data %}#}
+{#                                                    <tr>#}
+{#                                                        {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}#}
+{#                                                            <td><i class="fa fa-circle red-dot"></i></td>#}
+{#                                                            <td>{{ data.device_name }}</td>#}
+{#                                                            <td>{{ data.ip_address }}</td>#}
+{#                                                            <td>{{ data.service_name }}</td>#}
+{#                                                            <td>{{ data.data_source }}</td>#}
+{#                                                            <td><span class="text-danger">{{ data.severity }}</span></td>#}
+{#                                                            <td><span class="text-danger">{{ data.current_value }}</span></td>#}
+{#                                                            <td>{{ data.alert_date_time }}</td>#}
+{#                                                            <td><span class="text-danger">{{ data.description }}</span></td>#}
+{#                                                        {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}#}
+{#                                                            <td><i class="fa fa-circle orange-dot"></i></td>#}
+{#                                                            <td>{{ data.device_name }}</td>#}
+{#                                                            <td>{{ data.ip_address }}</td>#}
+{#                                                            <td>{{ data.service_name }}</td>#}
+{#                                                            <td>{{ data.data_source }}</td>#}
+{#                                                            <td><span class="text-warning">{{ data.severity }}</span></td>#}
+{#                                                            <td><span class="text-warning">{{ data.current_value }}</span></td>#}
+{#                                                            <td>{{ data.alert_date_time }}</td>#}
+{#                                                            <td><span class="text-warning">{{ data.description }}</span></td>#}
+{#                                                        {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}#}
+{#                                                            <td><i class="fa fa-circle green-dot"></i></td>#}
+{#                                                            <td>{{ data.device_name }}</td>#}
+{#                                                            <td>{{ data.ip_address }}</td>#}
+{#                                                            <td>{{ data.service_name }}</td>#}
+{#                                                            <td>{{ data.data_source }}</td>#}
+{#                                                            <td><span class="text-success">{{ data.severity }}</span></td>#}
+{#                                                            <td><span class="text-success">{{ data.current_value }}</span></td>#}
+{#                                                            <td>{{ data.alert_date_time }}</td>#}
+{#                                                            <td><span class="text-success">{{ data.description }}</span></td>#}
+{#                                                        {% else %}#}
+{#                                                            <td><i class="fa fa-circle grey-dot"></i></td>#}
+{#                                                            <td>{{ data.device_name }}</td>#}
+{#                                                            <td>{{ data.ip_address }}</td>#}
+{#                                                            <td>{{ data.service_name }}</td>#}
+{#                                                            <td>{{ data.data_source }}</td>#}
+{#                                                            <td><span class="text-muted">{{ data.severity }}</span></td>#}
+{#                                                            <td><span class="text-muted">{{ data.current_value }}</span></td>#}
+{#                                                            <td>{{ data.alert_date_time }}</td>#}
+{#                                                            <td><span class="text-muted">{{ data.description }}</span></td>#}
+{#                                                        {% endif %}#}
+{#                                                    </tr>#}
+{#                                                {% endfor %}#}
+{#                                                {% endif %} -->#}
                                             </tbody>
                                         </table>
                                         
@@ -536,7 +523,12 @@
         });
 
         /*Load first inner tab of inventory status*/
-        $("#availability_tab").click(function (e) {
+        $("#availability").click(function (e) {
+            fetchFirstTabContent(e);
+        });
+
+        /*Load first inner tab of inventory status*/
+        $("#topology").click(function (e) {
             fetchFirstTabContent(e);
         });
 
