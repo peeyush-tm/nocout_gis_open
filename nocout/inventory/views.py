@@ -1,8 +1,10 @@
 import ast
 import copy
 from operator import itemgetter
-import pickle
+import time
+from datetime import datetime
 from django.contrib.auth.models import User
+import os
 from os.path import basename
 from django.views.generic.base import View
 import re
@@ -22,7 +24,7 @@ from device_group.models import DeviceGroup
 from nocout.utils.util import DictDiffer
 from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings, GISInventoryBulkImport
 from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
-    ThematicSettingsForm, GISInventoryBulkImportForm
+    ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm
 from organization.models import Organization
 from user_group.models import UserGroup
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
@@ -2635,62 +2637,73 @@ class GISInventoryBulkImportView(FormView):
     def form_valid(self, form):
         # get uploaded file
         uploaded_file = self.request.FILES['file_upload']
+        description = self.request.POST['description']
+        timestamp = time.time()
+        full_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
+
+        # if directory for uploaded excel sheets didn't exist than create one
+        if not os.path.exists('media/uploaded/inventory_files/original'):
+            os.makedirs('media/uploaded/inventory_files/original')
+
+        filepath = 'media/uploaded/inventory_files/original/{}_{}'.format(full_time, uploaded_file.name)
 
         # used in checking headers of excel sheet
         # dictionary containing all 'pts bs' fields
         ptp_bs_fields = ['City', 'State', 'Circuit ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
-                         'QOS (BW)', 'Latitude', 'Longititude', 'Antenna Height', 'Polarisation', 'Antenna Type',
+                         'QOS (BW)', 'Latitude', 'Longitude', 'Antenna Height', 'Polarization', 'Antenna Type',
                          'Antenna Gain', 'Antenna Mount Type', 'Ethernet Extender', 'Building Height',
                          'Tower/Pole Height', 'Cable Length', 'RSSI During Acceptance',
-                         'Throughput During Acceptance', 'Date Of Acceptance', 'BH BSO', 'IP', 'MAC', 'HSSU used',
+                         'Throughput During Acceptance', 'Date Of Acceptance', 'BH BSO', 'IP', 'MAC', 'HSSU Used',
                          'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port', 'BS Converter IP',
                          'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
                          'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type',
-                         'BH Circuit ID', 'PE Hostname', 'PE IP', 'TTSL Circuit ID']
+                         'BH Circuit ID', 'PE Hostname', 'PE IP', 'BSO Circuit ID', 'Site ID', 'HSSU Port']
 
         # dictionary containing all 'pmp bs' fields
         pmp_bs_fields = ['City', 'State', 'Address', 'BS Name', 'Type Of BS (Technology)', 'Site Type',
                          'Infra Provider', 'Site ID', 'Building Height', 'Tower Height', 'Latitude', 'Longitude',
-                         'ODU IP', 'Sector Name', 'Make Of Antenna', 'Antenna Polarisation', 'Antenna Tilt',
-                         'Antenna Height', 'Antenna Beamwidth', 'Azimuth', 'Sync Splitter Used(Y/N)',
+                         'ODU IP', 'Sector Name', 'Make Of Antenna', 'Polarization', 'Antenna Tilt',
+                         'Antenna Height', 'Antenna Beamwidth', 'Azimuth', 'Sync Splitter Used',
                          'Type Of GPS', 'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port',
                          'BS Converter IP', 'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
                          'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID',
-                         'PE Hostname', 'PE IP', 'DR site', 'TTSL Circuit ID']
+                         'PE Hostname', 'PE IP', 'DR Site', 'BSO Circuit ID']
 
         # dictionary containing all 'wimax bs' fields
         wimax_bs_fields = ['City', 'State', 'Address', 'BS Name', 'Type Of BS (Technology)', 'Site Type',
                            'Infra Provider', 'Site ID', 'Building Height', 'Tower Height', 'Latitude', 'Longitude',
-                           'IDU IP', 'Sector Name', 'PMP', 'Make Of Antenna', 'Antenna Polarisation', 'Antenna Tilt',
-                           'Antenna Height', 'Antenna Beamwidth', 'Azimuth', 'Installation of Splitter',
+                           'IDU IP', 'Sector Name', 'PMP', 'Make Of Antenna', 'Polarization', 'Antenna Tilt',
+                           'Antenna Height', 'Antenna Beamwidth', 'Azimuth', 'Installation Of Splitter',
                            'Type Of GPS', 'BS Switch IP', 'Aggregation Switch', 'Aggregation Switch Port',
                            'BS Converter IP', 'POP Converter IP', 'Converter Type', 'BH Configured On Switch/Converter',
                            'Switch/Converter Port', 'BH Capacity', 'BH Offnet/Onnet', 'Backhaul Type', 'BH Circuit ID',
-                           'PE Hostname', 'PE IP', 'DR site', 'TTSL Circuit ID']
+                           'PE Hostname', 'PE IP', 'DR Site', 'BSO Circuit ID']
 
         # dictionary containing all 'ptp ss' fields
-        ptp_ss_fields = ['City', 'State', 'Circuit ID', 'Customer Name', 'Customer Address', 'BS Name', 'QOS (BW)',
-                         'Latitude', 'Longitude', 'MIMO/Diversity', 'Antenna Height', 'Polarisation', 'Antenna Type',
-                         'Antenna Gain', 'Antenna Mount Type', 'Ethernet Extender', 'Building Height',
-                         'Tower/Pole Height', 'Cable Length', 'RSSI During Acceptance', 'Throughput During Acceptance',
-                         'Date Of Acceptance', 'BH BSO', 'IP', 'MAC']
+        ptp_ss_fields = ['SS City', 'SS State', 'SS Circuit ID', 'SS Customer Name', 'SS Customer Address',
+                         'SS BS Name', 'SS QOS (BW)', 'SS Latitude', 'SS Longitude', 'SS MIMO/Diversity',
+                         'SS Antenna Height', 'SS Polarization', 'SS Antenna Type', 'SS Antenna Gain',
+                         'SS Antenna Mount Type', 'SS Ethernet Extender', 'SS Building Height', 'SS Tower/Pole Height',
+                         'SS Cable Length', 'SS RSSI During Acceptance', 'SS Throughput During Acceptance',
+                         'SS Date Of Acceptance', 'SS BH BSO', 'SS IP', 'SS MAC']
 
         # dictionary containing all 'pmp ss' fields
         pmp_ss_fields = ['Customer Name', 'Circuit ID', 'QOS (BW)', 'Latitude', 'Longitude', 'Building Height',
-                         'Tower/Pole Height', 'Antenna Height', 'Polarisation', 'Antenna Type', 'SS mount type',
-                         'Ethernet Extender', 'Cable Length', 'DL RSSI During Acceptance', 'CINR During Acceptance',
+                         'Tower/Pole Height', 'Antenna Height', 'Polarization', 'Antenna Type', 'SS Mount Type',
+                         'Ethernet Extender', 'Cable Length', 'RSSI During Acceptance', 'CINR During Acceptance',
                          'Customer Address', 'Date Of Acceptance', 'SS IP', 'Lens/Reflector', 'Antenna Beamwidth']
 
         # dictionary containing all 'wimax ss' fields
         wimax_ss_fields = ['Customer Name', 'Circuit ID', 'QOS (BW)', 'Latitude', 'Longitude', 'Building Height',
-                           'Tower/Pole Height', 'Antenna Height', 'Polarisation', 'Antenna Type', 'SS mount type',
-                           'Ethernet Extender', 'Cable Length', 'DL RSSI During Acceptance',
+                           'Tower/Pole Height', 'Antenna Height', 'Polarization', 'Antenna Type', 'SS Mount Type',
+                           'Ethernet Extender', 'Cable Length', 'RSSI During Acceptance',
                            'CINR During Acceptance', 'Customer Address', 'Date Of Acceptance', 'SS IP']
 
         # initialize variables for bs sheet name, ss sheet name, ptp sheet name
         bs_sheet = ""
         ss_sheet = ""
         ptp_sheet = ""
+        technology = ""
 
         # fetching values form POST
         try:
@@ -2702,7 +2715,7 @@ class GISInventoryBulkImportView(FormView):
 
         # reading workbook using 'xlrd' module
         try:
-            book = xlrd.open_workbook(uploaded_file.name, file_contents=uploaded_file.read())
+            book = xlrd.open_workbook(uploaded_file.name, file_contents=uploaded_file.read(), formatting_info=True)
         except Exception as e:
             return render_to_response('bulk_import/gis_bulk_validator.html', {'headers': "",
                                                                               'filename': uploaded_file.name,
@@ -2727,23 +2740,43 @@ class GISInventoryBulkImportView(FormView):
                 sheet = ""
                 sheet_name = ""
 
-            keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols)]
-            keys_list = [x.encode('utf-8').strip() for x in keys]
+            # get the technology of uploaded inventory sheet
+            if "Wimax" in sheet_name:
+                technology = "Wimax"
+            elif "PMP" in sheet_name:
+                technology = "PMP"
+            elif "PTP" in sheet_name:
+                technology = "PTP"
+            elif "Converter" in sheet_name:
+                technology = "Converter"
+            else:
+                technology = "Unknown"
 
+            keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
+            keys_list = [x.encode('utf-8').strip() for x in keys]
             complete_d = list()
             for row_index in xrange(1, sheet.nrows):
                 d = {keys[col_index].encode('utf-8').strip(): sheet.cell(row_index, col_index).value
-                     for col_index in xrange(sheet.ncols)}
+                     for col_index in xrange(len(keys))}
                 complete_d.append(d)
 
+            # book_to_upload = xlcopy(book)
+            destination = open(filepath, 'wb+')
+            for chunk in uploaded_file.chunks():
+                destination.write(chunk)
+            destination.close()
+            #xlsave(book, filepath)
             gis_bulk_obj = GISInventoryBulkImport()
-            gis_bulk_obj.original_filename = uploaded_file.name
+            gis_bulk_obj.original_filename = filepath
             gis_bulk_obj.status = 0
+            gis_bulk_obj.sheet_name = sheet_name
+            gis_bulk_obj.technology = technology
+            gis_bulk_obj.description = description
+            gis_bulk_obj.uploaded_by = self.request.user
             gis_bulk_obj.save()
             gis_bulk_id = gis_bulk_obj.id
 
-            result = validate_gis_inventory_excel_sheet.delay(gis_bulk_id, complete_d, sheet_name, keys_list)
-            print result.status
+            result = validate_gis_inventory_excel_sheet.delay(gis_bulk_id, complete_d, sheet_name, keys_list, full_time, uploaded_file.name)
             return HttpResponseRedirect('/bulk_import/')
         else:
             print "No sheet is selected."
@@ -2816,6 +2849,9 @@ class GISInventoryBulkImportList(ListView):
             {'mData': 'valid_filename', 'sTitle': 'Valid Sheet', 'sWidth': 'null', },
             {'mData': 'invalid_filename', 'sTitle': 'Invalid Sheet', 'sWidth': 'null', },
             {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'null', },
+            {'mData': 'sheet_name', 'sTitle': 'Sheet Name', 'sWidth': 'null', },
+            {'mData': 'technology', 'sTitle': 'Technology', 'sWidth': 'null', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', },
             {'mData': 'uploaded_by', 'sTitle': 'Uploaded By', 'sWidth': 'null', },
             {'mData': 'added_on', 'sTitle': 'Added On', 'sWidth': 'null', },
             {'mData': 'modified_on', 'sTitle': 'Modified On', 'sWidth': 'null', },
@@ -2832,8 +2868,8 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
 
     """
     model = GISInventoryBulkImport
-    columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'uploaded_by', 'added_on', 'modified_on']
-    order_columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'uploaded_by', 'added_on', 'modified_on']
+    columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'description', 'uploaded_by', 'added_on', 'modified_on']
+    order_columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'description', 'uploaded_by', 'added_on', 'modified_on']
 
     def filter_queryset(self, qs):
         """
@@ -2872,10 +2908,74 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
         :return qs
         """
         if qs:
-            qs = [ { key: val if val else "" for key, val in dct.items() } for dct in qs ]
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/command/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/command/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            try:
+                excel_green = static("img/ms-office-icons/excel_2013_green.png")
+                excel_grey = static("img/ms-office-icons/excel_2013_grey.png")
+                excel_red = static("img/ms-office-icons/excel_2013_red.png")
+                excel_light_green = static("img/ms-office-icons/excel_2013_light_green.png")
+                # excel_blue = static("img/ms-office-icons/excel_2013_blue.png")
+
+                # show 'Success', 'Pending' and 'Failed' in status
+                try:
+                    if not dct.get('status'):
+                        dct.update(status='Pending')
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('status') == 0:
+                        dct.update(status='Pending')
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('status') == 1:
+                        dct.update(status='Success')
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('status') == 2:
+                        dct.update(status='Failed')
+                except Exception as e:
+                    logger.info(e.message)
+
+                # show icon instead of url in data tables view
+                try:
+                    dct.update(original_filename='<a href="/{0}"><img src="{1}" style="float:left; display:block; height:25px; width:25px;">'.format(dct.pop('original_filename'), excel_light_green))
+                except Exception as e:
+                    logger.info(e.message)
+                print "********************************** dct.get('status') - ", dct.get('status')
+                try:
+                    if dct.get('status') == "Success":
+                        dct.update(valid_filename='<a href="/{0}"><img src="{1}" style="float:left; display:block; height:25px; width:25px;">'.format(dct.pop('valid_filename'), excel_green))
+                    else:
+                        dct.update(valid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(excel_grey))
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('status') == "Success":
+                        dct.update(invalid_filename='<a href="/{0}"><img src="{1}" style="float:left; display:block; height:25px; width:25px;">'.format(dct.pop('invalid_filename'), excel_red))
+                    else:
+                        dct.update(invalid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(excel_grey))
+                except Exception as e:
+                    logger.info(e.message)
+
+                # show user full name in uploded by field
+                try:
+                    if dct.get('uploaded_by'):
+                        user = User.objects.get(pk=2)
+                        dct.update(uploaded_by='{} {}'.format(user.first_name, user.last_name))
+                except Exception as e:
+                    logger.info(e.message)
+
+            except Exception as e:
+                logger.info(e)
+            dct.update(actions='<a href="/bulk_import/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
+                                <a href="/bulk_import/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -2910,3 +3010,54 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
                'aaData': aaData
                }
         return ret
+
+
+class GISInventoryBulkImportDelete(DeleteView):
+    """
+    Class based View to delete the GISInventoryBulkImport
+    """
+    model = GISInventoryBulkImport
+    template_name = 'bulk_import/gis_bulk_import_delete.html'
+    success_url = reverse_lazy('gis_inventory_bulk_import_list')
+
+    def delete(self, request, *args, **kwargs):
+        # bulk import object
+        bi_obj = self.get_object()
+
+        # remove original file if it exists
+        try:
+            os.remove(bi_obj.original_filename)
+        except Exception as e:
+            logger.info(e.message)
+
+        # remove valid rows file if it exists
+        try:
+            os.remove(bi_obj.valid_filename)
+        except Exception as e:
+            logger.info(e.message)
+
+        # remove invalid rows file if it exists
+        try:
+            os.remove(bi_obj.invalid_filename)
+        except Exception as e:
+            logger.info(e.message)
+
+        # delete entry from database
+        bi_obj.delete()
+        return HttpResponseRedirect(GISInventoryBulkImportDelete.success_url)
+
+
+class GISInventoryBulkImportUpdate(UpdateView):
+    """
+    Class based view to update GISInventoryBulkImport .
+    """
+    template_name = 'bulk_import/gis_bulk_import_update.html'
+    model = GISInventoryBulkImport
+    form_class = GISInventoryBulkImportEditForm
+    success_url = reverse_lazy('gis_inventory_bulk_import_list')
+
+
+
+
+
+
