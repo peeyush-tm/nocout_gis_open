@@ -17,11 +17,11 @@ if(window.location.origin) {
 
 /*Set cookies if not exist*/
 if(!$.cookie("isFreezeSelected")) {
-    $.cookie("isFreezeSelected", 0, {path: '/'});
+    $.cookie("isFreezeSelected", 0, {path: '/', secure: true});
 }
 
 if(!$.cookie("freezedAt")) {
-    $.cookie("freezedAt", 0, {path: '/'});
+    $.cookie("freezedAt", 0, {path: '/', secure: true});
 }
 
 /*Save cookie value to variable*/
@@ -384,7 +384,7 @@ function showToolsPanel() {
     if(isMaintained != 0) {
 
         $("#point_remove").removeClass("hide");
-        $("#point_select").removeClass("hide");
+        $("#point_select").addClass("hide");
     } else {
         $("#point_remove").addClass("hide");
         $("#point_select").removeClass("hide");
@@ -453,7 +453,7 @@ function removetoolsPanel() {
 
     if(isMaintained != 0) {
         $("#point_remove").removeClass("hide");
-        $("#point_select").removeClass("hide");
+        $("#point_select").addClass("hide");
     } else {
         $("#point_remove").addClass("hide");
         $("#point_select").removeClass("hide");
@@ -482,6 +482,19 @@ function removetoolsPanel() {
     }
 
     networkMapInstance.addRulerTool_gmap();
+ });
+
+ $("#line_select").click(function(e) {
+    is_line_active= 1;
+    $(this).next().removeClass('hide');
+    $(this).addClass('hide');
+    networkMapInstance.createLineTool_gmap();
+ });
+
+  $("#line_remove").click(function(e) {
+    is_line_active= 0;
+    $(this).prev().removeClass('hide');
+    $(this).addClass('hide');
  });
 
  /**
