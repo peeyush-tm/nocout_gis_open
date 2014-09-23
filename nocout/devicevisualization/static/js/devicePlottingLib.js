@@ -64,6 +64,7 @@ var base_url = "",
 	depthStep = 6,
 	freq_mhz = 900, //MHZ
 	total_bs = [],
+	fresnel_isBSLeft = 1,
 	HEIGHT_CHANGED = false,
 	clear_factor = 100,
 	/*Default antina heights*/
@@ -1386,18 +1387,30 @@ function devicePlottingClass_gmap() {
 			infoTable += "</tr>";
 			infoTable += "</tbody></table>";
 
+			var isBSLeft = 0;
+
+			if(+(contentObject.bs_lon) > +(contentObject.ss_lon)) {
+				isBSLeft = 1;
+			}
+
 			var sector_ss_name_obj = {
 				sector_Alias: contentObject.bs_info[0].value,
 				sector_name : contentObject.sectorName,
 				ss_name : contentObject.ssName,
 				ss_customerName: contentObject.ss_info[17].value,
-				ss_circuitId: contentObject.ss_info[3].value
+				ss_circuitId: contentObject.ss_info[3].value,
+				isBSLeft : isBSLeft
 			};
 
 			var sector_ss_name = JSON.stringify(sector_ss_name_obj);
 
-			/*Concat infowindow content*/
-			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.bs_lat+","+contentObject.bs_lon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
+			if(+(contentObject.bs_lon) > +(contentObject.ss_lon)) {
+				/*Concat infowindow content*/
+				windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.bs_lat+","+contentObject.bs_lon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
+			} else {
+				/*Concat infowindow content*/
+				windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_lat+","+contentObject.bs_lon+","+contentObject.ss_height+","+contentObject.bs_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
+			}
 
 		} else if (clickedType == 'sector_Marker') {
 
@@ -1513,6 +1526,7 @@ function devicePlottingClass_gmap() {
 		fresnelData.bts1_alias= sector_ss_obj.sector_Alias;
 		fresnelData.bts2_customerName= sector_ss_obj.ss_customerName;
 		fresnelData.bts2_circuitId= sector_ss_obj.ss_circuitId;
+		fresnel_isBSLeft = sector_ss_obj.isBSLeft;
 
 		/** Converts numeric degrees to radians */
 		Number.prototype.toRad = function() {
@@ -1767,19 +1781,21 @@ function devicePlottingClass_gmap() {
 			dataPinpoints.push([parseFloat(latLongArray[i][3]), parseFloat(latLongArray[i][9])]);
 		}
 
-
-
-
-		// fresnelData.bts1_alias= sector_ss_obj.sector_Alias;
-		// fresnelData.bts2_customerName= sector_ss_obj.ss_customerName;
-		// fresnelData.bts2_circuitId= sector_ss_obj.ss_circuitId;
-
 		if(isDialogOpen) {
+			
+			var left_str = '<div class="col-md-12"><b>BS</b><br/>'+fresnelData.bts1_alias+"<br />"+bts1_name+'<br /> (Height)</div>',
+				right_str = '<div class="col-md-12"><b>SS</b><br/>'+fresnelData.bts2_customerName+"<br />"+fresnelData.bts2_circuitId+ "<br />"+ bts2_name+' (Height)</div>';
+			
+			if(fresnel_isBSLeft == 0) {
+				left_str = '<div class="col-md-12"><b>SS</b><br/>'+fresnelData.bts2_customerName+"<br />"+fresnelData.bts2_circuitId+ "<br />"+ bts2_name+' (Height)</div>';
+				right_str = '<div class="col-md-12"><b>BS</b><br/>'+fresnelData.bts1_alias+"<br />"+bts1_name+'<br /> (Height)</div>';
+			}
+
 			/*Fresnel template String*/
-			var leftSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal1" class="form-control" value="'+antenaHight1+'"></div><div class="clearfix"></div><div id="antina_height1" style="height:300px;" class="slider slider-blue"></div><div class="col-md-12"><b>BS</b><br/>'+fresnelData.bts1_alias+"<br />"+bts1_name+'<br /> (Height)</div></div>';
+			var leftSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal1" class="form-control" value="'+antenaHight1+'"></div><div class="clearfix"></div><div id="antina_height1" style="height:300px;" class="slider slider-blue"></div>'+left_str+'</div>';
 			var chart_detail = '<div id="chart-details"><div><span id="longitude-lbl" class="chart-detail-lbl">Longitude </span> <span id="longitude"></span></div><div><span id="latitude-lbl" class="chart-detail-lbl">Latitude </span> <span id="latitude"></span></div><div><span id="distance-lbl" class="chart-detail-lbl">Distance </span> <span id="distance"></span></div><div><span id="altitude-lbl" class="chart-detail-lbl">Altitude </span> <span id="altitude"></span></div><div><span id="obstacle-lbl" class="chart-detail-lbl">Obstacle </span> <span id="obstacle"></span></div><div><span id="los-lbl" class="chart-detail-lbl">LOS </span> <span id="los"></span></div><div><span id="fresnel1-lbl" class="chart-detail-lbl">Fresnel-1 </span> <span id="fresnel1"></span></div><div><span id="fresnel2-lbl" class="chart-detail-lbl">Fresnel-2 </span> <span id="fresnel2"></span></div><div><span id="fresnel2-altitude-lbl" class="chart-detail-lbl">Clearance </span> <span id="fresnel-altitude"></span></div></div>';
 			var middleBlock = '<div class="col-md-8 mid_fresnel_container"><div align="center"><div class="col-md-12">Clearance Factor</div><div class="col-md-4 col-md-offset-3"><div id="clear-factor" class="slider slider-red"></div></div><div class="col-md-2"><input type="text" id="clear-factor_val" class="form-control" value="'+clear_factor+'"></div><div class="clearfix"></div></div><div id="chart_div" style="width:600px;max-width:100%;height:300px;"></div><div class="clearfix divide-10"></div><div id="pin-points-container" class="col-md-12" align="center"></div></div>';
-			var rightSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal2" class="form-control" value="'+antenaHight2+'"></div><div class="clearfix"></div><div id="antina_height2" class="slider slider-blue" style="height:300px;"></div><div class="col-md-12"><b>SS</b><br/>'+fresnelData.bts2_customerName+"<br />"+fresnelData.bts2_circuitId+ "<br />"+ bts2_name+' (Height)</div></div>';
+			var rightSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal2" class="form-control" value="'+antenaHight2+'"></div><div class="clearfix"></div><div id="antina_height2" class="slider slider-blue" style="height:300px;"></div>'+right_str+'</div>';
 
 			var fresnelTemplate = "<div class='fresnelContainer row' style='height:400px;overflow-y:auto;'>"+leftSlider+" "+middleBlock+" "+rightSlider+"</div>"+chart_detail;
 
@@ -2009,7 +2025,8 @@ function devicePlottingClass_gmap() {
 			"ss_name" : bts2_name,
 			"sector_Alias" : fresnelData.bts1_alias,
 			"ss_customerName" : fresnelData.bts2_customerName,
-			"ss_circuitId" : fresnelData.bts2_circuitId
+			"ss_circuitId" : fresnelData.bts2_circuitId,
+			"isBSLeft" : fresnel_isBSLeft
 		};
 
 		gmap_self.claculateFresnelZone(fresnelLat1,fresnelLon1,fresnelLat2,fresnelLon2,antenaHight1,antenaHight2,sector_ss_obj);
