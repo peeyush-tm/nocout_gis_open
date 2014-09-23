@@ -52,35 +52,40 @@ def device_availability_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
     	end_epoch = int(time.mktime(end_time.timetuple()))
 	
 	db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
-	service = "ping"
-	print hostlist
-	for host in hostlist:
-		query_string = "GET statehist\nColumns: host_name state host_address current_host_state\nFilter: host_name = %s\n" %(str(host[0]))+ \
-		"Filter: state = 1\nFilter: time >= %s\nFilter: time < %s\nStats: sum duration\n" % (start_epoch,end_epoch) + \
+	service = "availability"
+	for host,service_list in hostlist:
+		if "Check_MK" in service_list:
+			serv= "Check_MK"
+		else:
+			serv= "PING"
+		query_string = "GET statehist\nColumns: host_name host_down host_address current_host_state\n"+ \
+		"Filter: host_name = %s\nFilter: service_description = %s\n" %(str(host),serv) + \
+		"Filter: time >= %s\nFilter: time < %s\nStats: sum duration\n" % (start_epoch,end_epoch) + \
 		"Stats: sum duration_part\nOutputFormat: json\n"
-		 
+		
 		query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
-		print query_output[0][0]
 		try:
-			if query_output[0][0]:
-				total_up = query_output[0][5]
-				total_up = 100-(total_up * 100)
-				host_ip = str(query_output[0][2])
-				if query_output[0][3] == "0":
-					host_state = "up"
-				else:
-					host_state = "down"
-				ds="availability"
+			if query_output[0][1] == '0':
+				total_up = (query_output[0][5]  * 100)
+			elif query_output[0][1] == '1':
+				total_down = query_output[0][5]
+				total_up = 100-(total_down * 100)
 			else:
 				continue
+			
+			host_ip = str(query_output[0][2])
+			if query_output[0][3] == "0":
+				host_state = "up"
+			else:
+				host_state = "down"
+			ds="availability"
 		except:
 			continue
 		current_time = int(time.time())
-		availability_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host[0]),
+		availability_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host),
 						service_name=service,current_value=total_up,min_value=0,max_value=0,avg_value=0,
 						data_source=ds,severity=host_state,site_name=site,warning_threshold=0,
 						critical_threshold=0,ip_address=host_ip)
-		print availability_dict
 		mongo_module.mongo_db_insert(db,availability_dict,"availability")
 
 def device_availability_main():
@@ -100,7 +105,7 @@ def device_availability_main():
 		mongo_host = desired_config.get('host')
 		mongo_port = desired_config.get('port')
 		mongo_db_name = desired_config.get('nosql_db')
-		query = "GET hosts\nColumns: host_name\nOutputFormat: json\n"
+		query = "GET hosts\nColumns: host_name host_services\nOutputFormat: json\n"
 		output = json.loads(utility_module.get_from_socket(site,query))
 		device_availability_data(site,output,mongo_host,int(mongo_port),mongo_db_name)
 	except SyntaxError, e:
