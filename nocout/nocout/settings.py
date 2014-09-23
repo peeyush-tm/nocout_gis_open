@@ -186,7 +186,30 @@ INSTALLED_APPS = (
     'actstream',
     'activity_stream',
     'jsonify'
+    'djcelery'
 )
+
+'''
+# RabbitMQ configuration for django-celery
+BROKER_HOST = "localhost"
+BROKER_PORT = 5672
+BROKER_USER = "priyesh"
+BROKER_PASSWORD = "pass"
+BROKER_VHOST = "/nocout_dev"
+'''
+
+# MongoDB configuration for django-celery
+CELERY_RESULT_BACKEND = "mongodb"
+CELERY_MONGODB_BACKEND_SETTINGS = {
+    "host": "127.0.0.1",
+    "port": 27017,
+    "database": "nocout_celery_db",             # mongodb database for django-celery
+    "taskmeta_collection": "c_queue"            # collection name to use for task output
+}
+BROKER_URL = 'mongodb://localhost:27017/nocout_celery_db'
+
+import djcelery
+djcelery.setup_loader()
 
 CORS_ORIGIN_ALLOW_ALL = True
 
