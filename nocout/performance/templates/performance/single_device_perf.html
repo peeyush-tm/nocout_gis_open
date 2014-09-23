@@ -362,6 +362,14 @@
 
         $(document).ready(function (e) {
 
+            var url_array = window.location.href.split("/"),
+                page_type_val = "";
+            for(var i=0;i<url_array.length;i++) {
+                if(url_array[i].indexOf("_live") > -1) {
+                    page_type_val = url_array[i].split("_")[0];
+                }
+            }
+
             /*Error & SIA table initialization*/
             $("#sia_table").DataTable({
                 bPaginate: true,
@@ -427,22 +435,45 @@
             });
 
             $("#download_excel").on('click', function () {
-                var service_name = window.location.href.split('#')[1];
-                var service_data_source = window.location.href.split('#')[2];
-                window.location.replace('/performance/service/' + service_name + '/service_data_source/' + service_data_source +
+
+                if(!($("#sia").parent().hasClass("active")) && !($("#errors").parent().hasClass("active"))) {
+                    var service_name = window.location.href.split('#')[1];
+                    var service_data_source = window.location.href.split('#')[2];
+                    window.location.replace('/performance/service/' + service_name + '/service_data_source/' + service_data_source +
                         '/device/{{ device.id }}' +
                         '?download_excel=true' + '&start_date=' + encodeURIComponent($("#start_date").val()) +
-                        '&end_date=' + encodeURIComponent($("#end_date").val()))
+                        '&end_date=' + encodeURIComponent($("#end_date").val()));
+                } else {
+
+                    if($("#errors").parent().hasClass("active")) {
+                        window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/ping/?start_date="+encodeURIComponent($("#start_date").val())+"&end_date="+encodeURIComponent($("#end_date").val())+"&download_excel=true";
+
+                    } else if($("#sia").parent().hasClass("active")) {
+                        window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/service/?start_date="+encodeURIComponent($("#start_date").val())+"&end_date="+encodeURIComponent($("#end_date").val())+"&download_excel=true";
+                    }
+                }
             });
 
             $("#download_csv").on('click', function () {
-                var service_name = window.location.href.split('#')[1];
-                var service_data_source = window.location.href.split('#')[2];
 
-                window.location.replace('/performance/service/' + service_name + '/service_data_source/' + service_data_source +
-                        '/device/{{ device.id }}' +
-                        '?download_csv=true' + '&start_date=' + encodeURIComponent($("#start_date").val()) +
-                        '&end_date=' + encodeURIComponent($("#end_date").val()))
+                if(!($("#sia").parent().hasClass("active")) && !($("#errors").parent().hasClass("active"))) {
+                    
+                    var service_name = window.location.href.split('#')[1];
+                    var service_data_source = window.location.href.split('#')[2];
+
+                    window.location.replace('/performance/service/' + service_name + '/service_data_source/' + service_data_source +
+                            '/device/{{ device.id }}' +
+                            '?download_csv=true' + '&start_date=' + encodeURIComponent($("#start_date").val()) +
+                            '&end_date=' + encodeURIComponent($("#end_date").val()))
+                } else {
+
+                    if($("#errors").parent().hasClass("active")) {
+                        window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/ping/?start_date="+encodeURIComponent($("#start_date").val())+"&end_date="+encodeURIComponent($("#end_date").val())+"&download_csv=true";
+
+                    } else if($("#sia").parent().hasClass("active")) {
+                        window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/service/?start_date="+encodeURIComponent($("#start_date").val())+"&end_date="+encodeURIComponent($("#end_date").val())+"&download_csv=true";
+                    }
+                }
             });
             var base_url = "";
             /*Set the base url of application for ajax calls*/

@@ -527,6 +527,19 @@ class Get_Perfomance(View):
             order_by("-sys_timestamp"). \
             values(*required_columns).using(alias=device.machine.name)
 
+        for data in sia_data_list:
+            # data["alert_date"] = datetime.datetime. \
+            #     fromtimestamp(float(data["sys_timestamp"])). \
+            #     strftime("%d/%B/%Y")
+            # data["alert_time"] = datetime.datetime. \
+            #     fromtimestamp(float(data["sys_timestamp"])). \
+            #     strftime("%I:%M %p")
+            data["alert_date_time"] = datetime.datetime. \
+                fromtimestamp(float(data["sys_timestamp"])). \
+                strftime("%d/%B/%Y %I:%M %p")
+                
+            del (data["sys_timestamp"])
+
         
         in_string = lambda x: "'" + str(x) + "'"
         col_string = lambda x: "`" + str(x) + "`"
@@ -565,10 +578,23 @@ class Get_Perfomance(View):
                 )
         error_data_list = fetch_raw_result(query, device.machine.name)
 
+        for data in error_data_list:
+            # data["alert_date"] = datetime.datetime. \
+            #     fromtimestamp(float(data["sys_timestamp"])). \
+            #     strftime("%d/%B/%Y")
+            # data["alert_time"] = datetime.datetime. \
+            #     fromtimestamp(float(data["sys_timestamp"])). \
+            #     strftime("%I:%M %p")
+            data["alert_date_time"] = datetime.datetime. \
+                fromtimestamp(float(data["sys_timestamp"])). \
+                strftime("%d/%B/%Y %I:%M %p")
+                
+            del (data["sys_timestamp"])
+
         """
             TODO END
         """
-        
+
         page_data = {
             'page_title': page_type.capitalize(),
             'device': device,
