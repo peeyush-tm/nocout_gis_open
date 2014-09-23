@@ -13,7 +13,7 @@ from device.models import Device, City, State, DeviceType, DeviceTechnology
 from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul
 from nocout.settings import P2P, WiMAX, PMP
 from performance.models import PerformanceService, PerformanceNetwork, EventNetwork, EventService, NetworkStatus, ServiceStatus, InventoryStatus, \
-    PerformanceStatus, PerformanceInventory, Status, NetworkAvailabilityDaily
+    PerformanceStatus, PerformanceInventory, Status, NetworkAvailabilityDaily, Topology
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
 from django.utils.dateformat import format
 from operator import itemgetter
@@ -839,7 +839,8 @@ class Inventory_Device_Service_Data_Source(View):
                     'service_status_tab': [],
                     'inventory_status_tab': [],
                     'service_perf_tab': [],
-                    'availability_tab': []
+                    'availability_tab': [],
+                    'topology_tab': []
                 }
             }
         }
@@ -923,6 +924,15 @@ class Inventory_Device_Service_Data_Source(View):
             'active': 0,
         })
 
+        result['data']['objects']['topology_tab'].append(
+        {
+            'name': 'availability',
+            'title': 'Availability',
+            'url': 'performance/service/topology/service_data_source/topology/device/' +
+                   str(device_id),
+            'active': 0,
+        })
+
         result['success'] = 1
         result['message'] = 'Substation Devices Services Data Source Fetched Successfully.'
         return HttpResponse(json.dumps(result))
@@ -995,6 +1005,20 @@ class Get_Service_Type_Performance_Data(View):
                                                                  alias=inventory_device_machine_name)
 
             result = self.get_performance_data_result(performance_data)
+
+        elif "topology" in service_name or service_data_source_type in ['topology']:
+            if not isSet:
+                end_date = format(datetime.datetime.now(), 'U')
+                start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
+            performance_data = Topology.objects.filter(device_name=inventory_device_name,
+                                                                 service_name=service_name,
+                                                                 data_source=service_data_source_type,
+                                                                 sys_timestamp__gte=start_date,
+                                                                 sys_timestamp__lte=end_date).using(
+                                                                 alias=inventory_device_machine_name)
+
+            result = self.get_topology_result(performance_data)
+
 
         elif '_status' in service_name:
             if not isSet:
@@ -1131,6 +1155,45 @@ class Get_Service_Type_Performance_Data(View):
         self.result['data']['objects']['table_data'] = result_data
         self.result['data']['objects']['table_data_header'] = ['Date', 'Time', 'Value']
         return self.result
+
+    def get_topology_result(self, performance_data):
+        """
+        Getting the current topology of any elements of the network
+        """
+
+        result_data, aggregate_data = list(), dict()
+        for data in performance_data:
+            temp_time = data.sys_timestamp
+
+            if temp_time in aggregate_data:
+                continue
+            else:
+                aggregate_data[temp_time] = data.sys_timestamp
+                result_data.append({
+                        'device_name': data.device_name,
+                        'ip_address': data.ip_address,
+                        'mac_address': data.mac_address,
+                        'sector_id': data.sector_id,
+                        'connected_device_ip': data.connected_device_ip,
+                        'connected_device_mac': data.connected_device_mac,
+                        'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
+                        'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%I:%M %p"),
+                    })
+        self.result['success'] = 1
+        self.result['message'] = 'Device Data Fetched Successfully.' if result_data else 'No Record Found.'
+        self.result['data']['objects']['table_data'] = result_data
+        self.result['data']['objects']['table_data_header'] = ['device_name',
+                                                               'ip_address',
+                                                               'mac_address',
+                                                               'sector_id',
+                                                               'connected_device_ip',
+                                                               'connected_device_mac',
+                                                               'date',
+                                                               'time'
+        ]
+        return self.result
+
+
 
     def get_performance_data_result(self, performance_data):
 
