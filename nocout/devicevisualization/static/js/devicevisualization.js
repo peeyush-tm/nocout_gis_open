@@ -3,7 +3,10 @@ var mapPageType = "",
     hasAdvFilter = 0,
     hasSelectDevice = 0,
     hasTools = 0,
-    freezedAt = 0;
+    freezedAt = 0,
+    isMaintained= "",
+    tools_ruler= "",
+    tools_line = "";
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -24,16 +27,19 @@ if(!$.cookie("freezedAt")) {
 /*Save cookie value to variable*/
 isFreeze = $.cookie("isFreezeSelected");
 freezedAt = $.cookie("freezedAt");
+isMaintained= $.cookie("isMaintained");
+tools_ruler = $.cookie("tools_ruler");        
+tools_line = $.cookie("tools_line");
+
 isPollingActive = 0;
 
-if(isFreeze == 1) {
+if(isFreeze == 1 || isMaintained != 0 || tools_ruler != 0 || tools_line != 0) {
     $("#showToolsBtn").removeClass("btn-info");
     $("#showToolsBtn").addClass("btn-warning");
 } else {
     $("#showToolsBtn").addClass("btn-info");
     $("#showToolsBtn").removeClass("btn-warning");
 }
-
 
 
 /*Call get_page_status function to show the current status*/
@@ -375,6 +381,14 @@ function showToolsPanel() {
             $("#freeze_select").removeClass("hide");
         }
     }
+    if(isMaintained != 0) {
+
+        $("#point_remove").removeClass("hide");
+        $("#point_select").removeClass("hide");
+    } else {
+        $("#point_remove").addClass("hide");
+        $("#point_select").removeClass("hide");
+    }
 
     /*Hide Tools Button*/
     $("#showToolsBtn").addClass("hide");
@@ -396,7 +410,7 @@ function removetoolsPanel() {
     /*Hide Tools Button*/
     $("#showToolsBtn").removeClass("hide");
 
-    if(isFreeze == 1) {
+    if(isFreeze == 1 || isMaintained != 0  || tools_ruler != 0 || tools_line != 0) {
         $("#showToolsBtn").removeClass("btn-info");
         $("#showToolsBtn").addClass("btn-warning");
     } else {
@@ -437,9 +451,17 @@ function removetoolsPanel() {
         }
     }
 
-    networkMapInstance.clearToolsParams_gmap();
+    if(isMaintained != 0) {
+        $("#point_remove").removeClass("hide");
+        $("#point_select").removeClass("hide");
+    } else {
+        $("#point_remove").addClass("hide");
+        $("#point_select").removeClass("hide");
+    }
 
-    networkMapInstance.clearPointTool_gmap();
+    // networkMapInstance.clearToolsParams_gmap();
+
+    // networkMapInstance.clearPointTool_gmap();
 
     /*Call get_page_status function to show the current status*/
     get_page_status();

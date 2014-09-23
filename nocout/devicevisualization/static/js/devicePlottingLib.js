@@ -83,6 +83,7 @@ var base_url = "",
 	distance_label = {},
 	isFreeze = 0;
     map_points_array = [],
+    map_points_lat_lng_array= [],
     lastSearchedPt = {},
     map_point_count = 0,
     zoomAfterRightClickComes= 10,
@@ -128,12 +129,17 @@ function clearPreviousSectorMarkers() {
 function prepare_oms_object(oms_instance) {
 	
 	oms_instance.addListener('click', function(marker,e) {
-		var image = '/static/img/icons/caution.png';
+		var image = base_url+'/static/img/icons/caution.png';
 		
 		if(pointAdd === 1) {
+			var ob= {'latLng': e.latLng, 'icon': base_url+"/static/img/icons/caution.png"};
+			map_points_lat_lng_array.push(ob);
 			map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image,zIndex: 500});
 			map_points_array.push(map_point);
 			map_point_count ++;
+			$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/'});
+			isMaintained = JSON.stringify(map_points_lat_lng_array);
+
 			return ;
 		}		
 
@@ -636,6 +642,8 @@ function devicePlottingClass_gmap() {
 								// gisPerformanceClass.start(getMarkerInCurrentBound());
 							}, 30000);
 
+							gmap_self.addPointTool_gmap('yes');
+							gmap_self.create_old_ruler();
 							/*Hide The loading Icon*/
 							$("#loadingIcon").hide();
 
@@ -664,7 +672,8 @@ function devicePlottingClass_gmap() {
 			            	}
 							// gisPerformanceClass.start(getMarkerInCurrentBound());
 						}, 30000);
-
+						gmap_self.addPointTool_gmap('yes');
+						gmap_self.create_old_ruler()
 						disableAdvanceButton('no, enable it.');
 
 						/*Recall the server after particular timeout if system is not freezed*/
@@ -708,6 +717,9 @@ function devicePlottingClass_gmap() {
 
 			disableAdvanceButton('no, enable it.');
 
+
+			gmap_self.addPointTool_gmap('yes');
+			gmap_self.create_old_ruler()
 			setTimeout(function() {
 				var bs_list = getMarkerInCurrentBound();
             	if(bs_list.length > 0 && isCallCompleted == 1) {            		
@@ -2656,6 +2668,47 @@ function devicePlottingClass_gmap() {
     	}
     };
 
+
+    /**
+     * This function create a ruler if any ruler exist in cookie
+     */
+    this.create_old_ruler = function() {
+    	var ruler_obj = JSON.parse($.cookie('tools_ruler'));
+    	if(ruler_obj) {
+
+	    	isCreated = 1;
+	    	var first_point = new google.maps.Marker({position: new google.maps.LatLng(ruler_obj["startLat"], ruler_obj["startLon"]), map: mapInstance});
+	    	var second_point = new google.maps.Marker({position: new google.maps.LatLng(ruler_obj["endLat"], ruler_obj["endLon"]), map: mapInstance});
+	    	ruler_array.push(first_point);
+	    	ruler_array.push(second_point);
+	    	var current_line =  gmap_self.createLink_gmaps(ruler_obj);
+	    	tools_line_array.push(current_line);
+
+	    	/*Create distance infobox(label)*/
+			distance_label = new InfoBox({
+				content: ruler_obj.distance+" m<br />Starting Point: ("+ruler_obj['startLat'].toFixed(4)+","+ruler_obj['startLon'].toFixed(4)+")<br />End Point: ("+ruler_obj['endLat'].toFixed(4)+","+ruler_obj['endLon'].toFixed(4)+")",
+				boxStyle: {
+					border: "2px solid black",
+					background: "white",
+				    textAlign: "center",
+				    fontSize: "9pt",
+				    color: "black",
+				    width: '210px'
+				},
+				disableAutoPan: true,
+				pixelOffset: new google.maps.Size(-90, 0),
+				position: new google.maps.LatLng(ruler_obj['lat3'] * 180 / Math.PI,ruler_obj['lon3'] * 180 / Math.PI),
+				closeBoxURL: "",
+				isHidden: false,
+				enableEventPropagation: true,
+				zIndex_: 9999
+			});
+
+			/*Show distance infobox*/
+			distance_label.open(mapInstance);
+		}
+    }
+
 	/**
 	 * This function enables ruler tool & perform corresponding functionality.
 	 * @method addRulerTool_gmap
@@ -2667,6 +2720,8 @@ function devicePlottingClass_gmap() {
 		google.maps.event.addListener(mapInstance,'click',function(e) {
 
 			if(isCreated == 0) {
+				/*Reset Cookie*/
+				$.cookie('tools_ruler',0,{path : '/'});
 
 				if(ruler_pt_count < 2) {
 
@@ -2705,6 +2760,12 @@ function devicePlottingClass_gmap() {
 					    var By = Math.cos(lat2) * Math.sin(dLon);
 					    var lat3 = Math.atan2(Math.sin(lat1) + Math.sin(lat2), Math.sqrt((Math.cos(lat1) + Bx) * (Math.cos(lat1) + Bx) + By * By));
 					    var lon3 = lon1 + Math.atan2(By, Math.cos(lat1) + Bx);
+
+					    latLonObj["distance"] = distance;
+					    latLonObj["lat3"] = lat3;
+					    latLonObj["lon3"] = lon3;
+
+					    $.cookie('tools_ruler',JSON.stringify(latLonObj),{path : '/'});
 
 					    /*Create distance infobox(label)*/
 						distance_label = new InfoBox({
@@ -2810,6 +2871,8 @@ function devicePlottingClass_gmap() {
 			distance_label.setMap(null);
 		}
 
+		$.cookie('tools_ruler',0,{path : '/'});
+
         if (map_point_count == 0){
             /*Remove click listener from google maps*/
 		    google.maps.event.clearListeners(mapInstance,'click');
@@ -2820,20 +2883,41 @@ function devicePlottingClass_gmap() {
 	 * This function enables point tool & perform corresponding functionality.
 	 * @method addPointTool_gmap
 	 */
-	this.addPointTool_gmap = function() {
+	this.addPointTool_gmap = function(fromArray) {
 
         //first clear the listners. as ruler tool might be in place
         google.maps.event.clearListeners(mapInstance,'click');
 
         var image = new google.maps.MarkerImage(base_url+"/static/img/icons/caution.png",null,null,null,new google.maps.Size(32, 37));
 
+        if(fromArray) {
+        	if($.cookie("isMaintained")) {
+	        	var arr= JSON.parse($.cookie("isMaintained"));
+	        	for(var i=0; i< arr.length; i++) {
+	        		map_point = new google.maps.Marker({position: new google.maps.LatLng(arr[i]['latLng']["k"], arr[i]['latLng']["B"]), map: mapInstance, icon: image,zIndex: 500});		
+	        		map_points_array.push(map_point);
+	        		var ob= {'latLng': arr[i]['latLng'], 'icon': base_url+"/static/img/icons/caution.png"};
+	        		map_points_lat_lng_array.push(ob);
+	        		isMaintained = JSON.stringify(map_points_lat_lng_array);
+	        		map_point_count ++;
+	        	}
+	        	return ;
+        	}
+        }
+
 		google.maps.event.addListener(mapInstance,'click',function(e) {
+			var ob= {'latLng': e.latLng, 'icon': base_url+"/static/img/icons/caution.png"};
+
+			map_points_lat_lng_array.push(ob);
 
             map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image,zIndex: 500});
 
             map_points_array.push(map_point);
 
             map_point_count ++;
+
+            $.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/'});
+            isMaintained = JSON.stringify(map_points_lat_lng_array);
 
 		});
 	};
@@ -2848,7 +2932,10 @@ function devicePlottingClass_gmap() {
 			map_points_array[j].setMap(null);
 		}
         map_points_array = [];
-        map_point_count = 0;
+        map_points_lat_lng_array= [];
+        map_point_count = 0;        
+        $.cookie("isMaintained", 0, {path: '/'});
+        isMaintained = $.cookie("isMaintained");
         /*Remove click listener from google maps*/
         if (ruler_pt_count == 0){
             google.maps.event.clearListeners(mapInstance,'click');
