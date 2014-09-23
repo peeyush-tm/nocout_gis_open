@@ -1300,7 +1300,7 @@ class Get_Service_Type_Performance_Data(View):
                             }
                             formatter_data_point_down = {
                                 "name": "UnAvailability",
-                                "color": '#70AFC4',
+                                "color": '#FF193B',
                                 "y": 100.00 - float(data.current_value),
                                 "x": data.sys_timestamp * 1000
                             }
@@ -1313,7 +1313,7 @@ class Get_Service_Type_Performance_Data(View):
                             }
                             formatter_data_point_down = {
                                 "name": "UnAvailability",
-                                "color": '#70AFC4',
+                                "color": '#FF193B',
                                 "y": None,
                                 "x": data.sys_timestamp * 1000
                             }
@@ -1328,7 +1328,7 @@ class Get_Service_Type_Performance_Data(View):
                                      'valuetext': self.result['data']['objects']['valuetext']
                         },
                                       {'name': 'UnAvailability'.upper(),
-                                     'color': '#70AFC4',
+                                     'color': '#FF193B',
                                      'data': warn_data_list,
                                      'type': 'column',
                                      'marker' : {
