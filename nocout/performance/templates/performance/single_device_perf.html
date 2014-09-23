@@ -155,9 +155,11 @@
                                 </div>
                             </div>
                             <div class="tab-pane" id="availability_tab">
-                                <div class="panel panel-default">
+                                <div class="panel panel-default inner_tab_container">
                                     <div class="panel-body">
+                                        <div class="tabbable tabs-left">
 
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -181,7 +183,6 @@
                                             </thead>
                                             <tbody></tbody>
                                         </table>
-                                        
                                     </div>
                                 </div>
                             </div>
@@ -536,7 +537,7 @@
         });
 
         /*Load first inner tab of inventory status*/
-        $("#availability_tab").click(function (e) {
+        $("#availability").click(function (e) {
             fetchFirstTabContent(e);
         });
 
