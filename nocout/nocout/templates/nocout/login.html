@@ -100,8 +100,19 @@
   <script type="text/javascript" src={% static "js/spin/spin.js" %}></script>
   <!-- Custom library for page spinner-->
   <script type="text/javascript" src={% static "js/nocout/nocoutSpinnerLib.js" %}></script>
+  <!-- Script Library for COokies -->
+  <script type="text/javascript" src={% static "js/jQuery-Cookie/src/jquery.cookie.js" %}></script>
 
   <script type="text/javascript">
+
+      $(document).ready(function(e) {
+        /*Set cookies for devicevisualization app*/
+        $.cookie("isFreezeSelected", 0, {path: '/', secure: true});
+        $.cookie("freezedAt", 0, {path: '/', secure: true});
+        $.cookie("isMaintained", 0, {path: '/', secure: true});
+        $.cookie("tools_ruler", 0, {path: '/', secure: true});
+        $.cookie("tools_line", 0, {path: '/', secure: true});
+      });
 
       /*Triggers when login form is submitted*/
       $("#login_form").on("submit", function (event) {
@@ -202,6 +213,8 @@
         }
         return false;
       });//onclick
+
+      
 
   </script>
 <!-- /JAVASCRIPTS -->

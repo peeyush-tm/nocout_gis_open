@@ -8,10 +8,14 @@
 {% block content_title %}Network Details{% endblock %}
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
+{% block css %}
+    <!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} >
+{% endblock %}
 
 {% block page_setting_block %}
     <!-- GIS Page  -->
-    <span class="pull-right col-md-6">
+  <!--   <span class="pull-right col-md-6">
         <div class="btn-group pull-right">
             <ul class="list-unstyled list-inline">
                 <li>
@@ -45,7 +49,7 @@
             <div class="clearfix"></div>
         </form>
         <div class="clearfix"></div>        
-    </span>
+    </span> -->
     <!-- /DATE RANGE PICKER -->
 {% endblock %}
 
@@ -62,14 +66,7 @@
 
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <div class="tools hidden-xs">
-                <a href="#box-config" data-toggle="modal" class="config">
-                    <i class="fa fa-cog"></i>
-                </a>
-                <a href="javascript:;" class="reload">
-                    <i class="fa fa-refresh"></i>
-                </a>
-            </div>
+
         </div>
 
         <div class="box-body">
@@ -91,7 +88,7 @@
                     <!-- nav-tab End -->
 
                     <!-- tab-content Start -->
-                    <div class="tab-content">
+                    <div class="tab-content" style="overflow:auto;">
                         <!-- network_bhUtil_block Start -->
                         <div class="tab-pane fade" id="network_bhUtil_block">
                             <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="">

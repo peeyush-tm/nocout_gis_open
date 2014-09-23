@@ -1,170 +1,343 @@
 {% extends "nocout/base.html" %}
 {% block breadcrumb_title %}
-	<li>Performance Reports</li>
-	<li>{{ page_title }} Live</li>
+    <li>Performance Reports</li>
+    <li>{{ page_title }} Live</li>
 {% endblock %}
 {% block content_title %} {{ page_title }} Live{% endblock %}
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
 {% block css %}
-	<!-- JQUERY UI-->
-    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} />
+    <!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}/>
 {% endblock %}
 
 {% block content %}
-	<style>
-		.perfContainerBlock .box-title .pull-right .list-inline > li {
-			max-width: 200px !important;
-		}
-	</style>
-	<!--Single Device Live Perf Start-->
-	<div class='box border lite perfContainerBlock'>
-	    <div class='box-title'>
-	        <h4><i class='fa fa-file-text'></i> {{ realdevice.device_alias }} ( {{ realdevice.ip_address }} : {{ realdevice.device_name }} )</h4>
-	        <!--Filters Block Start-->
-	        <div class="pull-right">
-	            <ul class="list-unstyled list-inline">
-	                <li>
-	                    <!--device_name Filter-->
-	                    <select name="device_name" id="device_name" class="form-control col-xs-1 input-sm">
-	                        <option value="">Select Device</option>
-	                    </select>
-	                </li>
-	                <li>
-	                    <!--start_date Filter-->
-	                    <input class="form-control col-xs-1 input-sm datepicker" type="text" name="start_date" size="10" id="start_date" placeholder="Start Date">
-	                </li>
-	                <li>
-	                	<span class="col-xs-1 input-sm">To</span>
-	                </li>
-	                <li>
-	                    <!--end_date Filter-->
-	                    <input class="form-control col-xs-1 input-sm datepicker" type="text" name="end_date" size="10" id="end_date" placeholder="End Date">
-	                </li>
+    <style>
+        .perfContainerBlock .box-title .pull-right .list-inline > li {
+            max-width: 200px !important;
+        }
+    </style>
+    <!--Single Device Live Perf Start-->
+    <div class='box border lite perfContainerBlock'>
+        <div class='box-title'>
+            <h4><i class='fa fa-file-text'></i> {{ realdevice.device_alias }} ( {{ realdevice.ip_address }} )</h4>
+            <!--Filters Block Start-->
+            <div class="pull-right">
+                <ul class="list-unstyled list-inline">
+                    <li>
+                        <!--device_name Filter-->
+                        <select name="device_name" id="device_name" class="form-control col-xs-1 input-sm">
+                            <option value="">Select Device</option>
+                        </select>
+                    </li>
+                    <li>
+                        <!--start_date Filter-->
+                        <input class="form-control col-xs-1 input-sm datepicker" type="text" name="start_date" size="10"
+                               id="start_date" placeholder="Start Date">
+                    </li>
+                    <li>
+                        <span class="col-xs-1 input-sm">To</span>
+                    </li>
+                    <li>
+                        <!--end_date Filter-->
+                        <input class="form-control col-xs-1 input-sm datepicker" type="text" name="end_date" size="10"
+                               id="end_date" placeholder="End Date">
+                    </li>
                     <li>
                         <div class="btn-group dropdown col-xs-1">
                             <button id="apply_filter" class="btn  btn-default btn-sm">
-                                    Apply Filter
+                                Apply Filter
                             </button>
                         </div>
                     </li>
-	                <li>
-	                	<!--CSV or Excel download action. -->
-	                    <div class="btn-group dropdown col-xs-1">
-							<button class="btn  btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
-								Download Report
-								<span class="caret"></span>
-							</button>
-							<ul class="dropdown-menu context">
-								<li>
-									<a id="download_excel">Excel</a>
-								</li>
-								<li>
-									<a id="download_csv">CSV</a>
-								</li>
-							</ul>
-						</div>
-	                </li>
-	            </ul>
-	        </div>
-	        <!--Filters Block End-->
-	        <div class="clearfix"></div>
-	    </div>
-	    <div class='box-body'>
-	    	<!--Device Status Block Start-->
-	    	<button class="btn btn-info btn-xs" title="Hide Status" id="show_status_btn">Hide Status</button>
-	    	<div class="clearfix"></div>
-	        <div class="well well-sm" id="status_container" style="margin:10px;">
-	        	<table id="status_table" class="table table-bordered">
-					<thead></thead>
-					<tbody></tbody>
-				</table>
-        	</div>        	
-        	<!--Device Status Block End-->
-        	<div class="clearfix"></div>
-        	<div class="divide-20"></div>
-        	<div class="box">
-                <div class="box-title">
-
-                </div>
-	        		<!--Services Tabs & their content Start-->
-{#	        		<div class="tabbable row" id="services_tab_container">#}
-{##}
-{#					</div>#}
-                    <div id="tableContainer" class="box-body">
-                        <div class="tabbable header-tabs">
-                            <ul class="nav nav-tabs" >
-                                <li><a href="#inventory_status_tab" id="inventory_status"  data-toggle="tab"><span class="hidden-inline-mobile">Inventory Status</span></a></li>
-                                <li><a href="#service_status_tab" id="service_status"  data-toggle="tab"><span class="hidden-inline-mobile">Service Status</span></a></li>
-                                <li><a href="#service_perf_tab" id="service_perf"  data-toggle="tab"><span class="hidden-inline-mobile">Service Performance</span></a></li>
-                                <li class="active"><a href="#network_perf_tab" id="network_perf"  data-toggle="tab"><span class="hidden-inline-mobile">Network Performance</span></a></li>
+                    <li>
+                        <!--CSV or Excel download action. -->
+                        <div class="btn-group dropdown col-xs-1">
+                            <button class="btn  btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+                                Download Report
+                                <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu context">
+                                <li>
+                                    <a id="download_excel">Excel</a>
+                                </li>
+                                <li>
+                                    <a id="download_csv">CSV</a>
+                                </li>
                             </ul>
-
-{#                            <div class="clearfix"></div>#}
                         </div>
-                        <div>
-                                <div class="tab-content">
-                                    <div class="tab-pane fade in active" id="network_perf_tab">
-                                        <div class="panel panel-default inner_tab_container">
-                                            <div class="panel-body">
-                                                 <div class="tabbable tabs-left">
+                    </li>
+                </ul>
+            </div>
+            <!--Filters Block End-->
+            <div class="clearfix"></div>
+        </div>
+        <div class='box-body'>
+            <div class="box status_box">
+                <div class="box-title" style="background:transparent;">
+                    <h4>Device Status</h4>
+                    <div class="tools_status">
+                        <a href="javascript:;" title="Hide Status" class="collapse">
+                            <i class="fa fa-chevron-up"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="box-body status_body">
+                    <div class="well well-sm" id="status_container" style="overflow:auto;">
+                        <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!--Device Status Block Start-->
+            <!-- <button class="btn btn-info btn-xs" title="Hide Status" id="show_status_btn">Hide Status</button>
+            <div class="clearfix"></div> -->
+            <!--Device Status Block End-->            
+            <div class="box">
+                <div class="box-title" style="background:transparent;"></div>
+                <!--Services Tabs & their content Start-->
+                {#	        		<div class="tabbable row" id="services_tab_container">#}
+                {##}
+                {#					</div>#}
+                <div id="tableContainer" class="box-body">
+                    <div class="tabbable header-tabs">
+                        <ul class="nav nav-tabs" style="top:-44px;float:left;padding-left:15px;margin-right:0px;">
+                            <li><a href="#errors_tab" id="errors" data-toggle="tab"><span class="hidden-inline-mobile">Errors</span></a></li>
+                            <li><a href="#sia_tab" id="sia" data-toggle="tab"><span class="hidden-inline-mobile">SIA</span></a></li>
+                            <li><a href="#topology_tab" id="topology" data-toggle="tab"><span class="hidden-inline-mobile">Topology</span></a></li>
+                            <li><a href="#inventory_status_tab" id="inventory_status" data-toggle="tab"><span class="hidden-inline-mobile">Inventory Status</span></a></li>
+                            <li><a href="#service_status_tab" id="service_status" data-toggle="tab"><span class="hidden-inline-mobile">Service Status</span></a></li>
+                            <li><a href="#service_perf_tab" id="service_perf" data-toggle="tab"><span class="hidden-inline-mobile">Service Performance</span></a></li>
+                            <li><a href="#network_perf_tab" id="network_perf" data-toggle="tab"><span class="hidden-inline-mobile">Network Performance</span></a></li>
+                            <li class="active"><a href="#availability_tab" id="availability" data-toggle="tab"><span class="hidden-inline-mobile">Availability</span></a></li>
+                        </ul>
 
-                                                 </div>
-                                            </div>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div>
+                        <div class="tab-content">
+                            <div class="tab-pane" id="network_perf_tab">
+                                <div class="panel panel-default inner_tab_container">
+                                    <div class="panel-body">
+                                        <div class="tabbable tabs-left">
+
                                         </div>
                                     </div>
-                                    <div class="tab-pane" id="service_perf_tab">
-                                        <div class="panel panel-default inner_tab_container">
-                                            <div class="panel-body">
-                                                 <div class="tabbable tabs-left">
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="service_perf_tab">
+                                <div class="panel panel-default inner_tab_container">
+                                    <div class="panel-body">
+                                        <div class="tabbable tabs-left">
 
-                                                 </div>
-                                            </div>
                                         </div>
                                     </div>
-                                    <div class="tab-pane" id="service_status_tab">
-                                        <div class="panel panel-default inner_tab_container">
-                                            <div class="panel-body">
-                                                 <div class="tabbable tabs-left">
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="service_status_tab">
+                                <div class="panel panel-default inner_tab_container">
+                                    <div class="panel-body">
+                                        <div class="tabbable tabs-left">
 
-                                                 </div>
-                                            </div>
                                         </div>
                                     </div>
-                                    <div class="tab-pane" id="inventory_status_tab">
-                                        <div class="panel panel-default inner_tab_container">
-                                            <div class="panel-body">
-                                                 <div class="tabbable tabs-left">
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="inventory_status_tab">
+                                <div class="panel panel-default inner_tab_container">
+                                    <div class="panel-body">
+                                        <div class="tabbable tabs-left">
 
-                                                 </div>
-                                            </div>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane active" id="availability_tab">
+                                <div class="panel panel-default inner_tab_container">
+                                    <div class="panel-body">
+                                        <div class="tabbable tabs-left">
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="topology_tab">
+                                <div class="panel panel-default inner_tab_container">
+                                    <div class="panel-body">
+                                        <div class="tabbable tabs-left">
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="sia_tab">
+                                <div class="panel panel-default">
+                                    <div class="panel-body" style="overflow-x: auto;">
+                                        <table id="sia_table" class="datatable table table-striped table-bordered table-hover table-responsive">
+                                            <thead>
+                                                <tr>
+                                                    <th></th>
+                                                    <th>Device Name</th>
+                                                    <th>IP Address</th>
+                                                    <th>Service Name</th>
+                                                    <th>Severity</th>
+                                                    <th>Latency</th>
+                                                    <th>Packet Loss</th>
+                                                    <th>Alert Date Time</th>
+                                                    <th>Description</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+{#                                                <!-- {% if sia_data %}#}
+{#                                                    {% for data in sia_data %}#}
+{#                                                    <tr>#}
+{#                                                        {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}#}
+{#                                                            <td><i class="fa fa-circle red-dot"></i></td>#}
+{#                                                            <td>{{ data.device_name }}</td>#}
+{#                                                            <td>{{ data.ip_address }}</td>#}
+{#                                                            <td>{{ data.service_name }}</td>#}
+{#                                                            <td>{{ data.data_source }}</td>#}
+{#                                                            <td><span class="text-danger">{{ data.severity }}</span></td>#}
+{#                                                            <td><span class="text-danger">{{ data.current_value }}</span></td>#}
+{#                                                            <td>{{ data.alert_date_time }}</td>#}
+{#                                                            <td><span class="text-danger">{{ data.description }}</span></td>#}
+{#                                                        {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}#}
+{#                                                            <td><i class="fa fa-circle orange-dot"></i></td>#}
+{#                                                            <td>{{ data.device_name }}</td>#}
+{#                                                            <td>{{ data.ip_address }}</td>#}
+{#                                                            <td>{{ data.service_name }}</td>#}
+{#                                                            <td>{{ data.data_source }}</td>#}
+{#                                                            <td><span class="text-warning">{{ data.severity }}</span></td>#}
+{#                                                            <td><span class="text-warning">{{ data.current_value }}</span></td>#}
+{#                                                            <td>{{ data.alert_date_time }}</td>#}
+{#                                                            <td><span class="text-warning">{{ data.description }}</span></td>#}
+{#                                                        {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}#}
+{#                                                            <td><i class="fa fa-circle green-dot"></i></td>#}
+{#                                                            <td>{{ data.device_name }}</td>#}
+{#                                                            <td>{{ data.ip_address }}</td>#}
+{#                                                            <td>{{ data.service_name }}</td>#}
+{#                                                            <td>{{ data.data_source }}</td>#}
+{#                                                            <td><span class="text-success">{{ data.severity }}</span></td>#}
+{#                                                            <td><span class="text-success">{{ data.current_value }}</span></td>#}
+{#                                                            <td>{{ data.alert_date_time }}</td>#}
+{#                                                            <td><span class="text-success">{{ data.description }}</span></td>#}
+{#                                                        {% else %}#}
+{#                                                            <td><i class="fa fa-circle grey-dot"></i></td>#}
+{#                                                            <td>{{ data.device_name }}</td>#}
+{#                                                            <td>{{ data.ip_address }}</td>#}
+{#                                                            <td>{{ data.service_name }}</td>#}
+{#                                                            <td>{{ data.data_source }}</td>#}
+{#                                                            <td><span class="text-muted">{{ data.severity }}</span></td>#}
+{#                                                            <td><span class="text-muted">{{ data.current_value }}</span></td>#}
+{#                                                            <td>{{ data.alert_date_time }}</td>#}
+{#                                                            <td><span class="text-muted">{{ data.description }}</span></td>#}
+{#                                                        {% endif %}#}
+{#                                                    </tr>#}
+{#                                                {% endfor %}#}
+{#                                                {% endif %} -->#}
+                                            </tbody>
+                                        </table>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="errors_tab">
+                                <div class="panel panel-default">
+                                    <div class="panel-body">
+                                        <table id="error_table" class="datatable table table-striped table-bordered table-hover table-responsive">
+                                            <thead>
+                                                <tr>
+                                                    <th></th>
+                                                    <th>Device Name</th>
+                                                    <th>IP Address</th>
+                                                    <th>Service Name</th>
+                                                    <th>Severity</th>
+                                                    <th>Latency</th>
+                                                    <th>Packet Loss</th>
+                                                    <th>Alert Date Time</th>
+                                                    <th>Description</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% if error_data %}
+                                                    {% for data in error_data %}
+                                                    <tr>
+                                                        {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
+                                                            <td><i class="fa fa-circle red-dot"><span style="display:none">1</span></i></td>
+                                                            <td>{{ data.device_name }}</td>
+                                                            <td>{{ data.ip_address }}</td>
+                                                            <td>{{ data.service_name }}</td>
+                                                            <td><span class="text-danger">{{ data.severity }}</span></td>
+                                                            <td><span class="text-danger">{{ data.latency }} ms</span></td>
+                                                            <td><span class="text-danger">{{ data.packet_loss }}%</span></td>
+                                                            <td>{{ data.alert_date_time }}</td>
+                                                            <td><span class="text-danger">{{ data.description }}</span></td>
+                                                        {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
+                                                            <td><i class="fa fa-circle orange-dot"><span style="display:none">2</span></i></td>
+                                                            <td>{{ data.device_name }}</td>
+                                                            <td>{{ data.ip_address }}</td>
+                                                            <td>{{ data.service_name }}</td>
+                                                            <td><span class="text-warning">{{ data.severity }}</span></td>
+                                                            <td><span class="text-warning">{{ data.latency }} ms</span></td>
+                                                            <td><span class="text-warning">{{ data.description | slice:"-4:" }}</span></td>
+                                                            <td>{{ data.alert_date_time }}</td>
+                                                            <td><span class="text-warning">{{ data.description }}</span></td>
+                                                        {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
+                                                            <td><i class="fa fa-circle green-dot"><span style="display:none">3</span></i></td>
+                                                            <td>{{ data.device_name }}</td>
+                                                            <td>{{ data.ip_address }}</td>
+                                                            <td>{{ data.service_name }}</td>
+                                                            <td><span class="text-success">{{ data.severity }}</span></td>
+                                                            <td><span class="text-success">{{ data.latency }} ms</span></td>
+                                                            <td><span class="text-success">{{ data.packet_loss }}%</span></td>
+                                                            <td>{{ data.alert_date_time }}</td>
+                                                            <td><span class="text-success">{{ data.description }}</span></td>
+                                                        {% else %}
+                                                            <td><i class="fa fa-circle grey-dot"><span style="display:none">4</span></i></td>
+                                                            <td>{{ data.device_name }}</td>
+                                                            <td>{{ data.ip_address }}</td>
+                                                            <td>{{ data.service_name }}</td>
+                                                            <td><span class="text-muted">{{ data.severity }}</span></td>
+                                                            <td><span class="text-muted">{{ data.latency }} ms</span></td>
+                                                            <td><span class="text-muted">{{ data.packet_loss }}%</span></td>
+                                                            <td>{{ data.alert_date_time }}</td>
+                                                            <td><span class="text-muted">{{ data.description }}</span></td>
+                                                        {% endif %}
+                                                    </tr>
+                                                    {% endfor %}
+                                                {% endif %}
+                                            </tbody>
+                                        </table>
+                                        
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-					<!--Services Tabs & their content End-->
-	        	</div>
-        	</div>
-        	<div class="clearfix"></div>
-	    </div>
-	</div>
-	<!--Single Device Live Perf End-->
+                </div>
+                <!--Services Tabs & their content End-->
+            </div>
+        </div>
+        <div class="clearfix"></div>
+    </div>
+    <!--Single Device Live Perf End-->
 
-	<!--Highcharts Library-->
-	<script src={% static "js/highcharts.js" %}></script>
+    <!--Highcharts Library-->
+    <script src={% static "js/highcharts.js" %}></script>
     <script src={% static "js/highcharttheme.js" %}></script>
     <script src={% static "js/highchartstable.js" %}></script>
-	<!--Our Custom Script-->
-	<script src={% static "js/nocout/nocoutPerfLib.js" %}></script>
+    <!--Our Custom Script-->
+    <script src={% static "js/nocout/nocoutPerfLib.js" %}></script>
 
-	<script type="text/javascript">
-		/*Global Variables*/
-		var perfInstance = "",
-			current_device = "";
+    <script type="text/javascript">
+        /*Global Variables*/
+        var perfInstance = "",
+                current_device = "";
 
         var desired_url_string = "https";
-        if (window.location.protocol == "https:"){
+        if (window.location.protocol == "https:") {
             desired_url_string = "https://";
         }
 
@@ -174,36 +347,56 @@
         }
 
 
-		$(document).ready(function(e) {
-            //setting up a custom jquery function to retrive the get paramters.
-            $.urlParam = function(name){
-                    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
-                    if (results==null){
-                       return null;
-                    }
-                    else{
-                       return results[1] || 0;
-                    }};
+        $(document).ready(function (e) {
 
-            start_date= $.urlParam('start_date');
-            
-            if (start_date){
-                 $("#start_date").val(decodeURIComponent(start_date));
+            var url_array = window.location.href.split("/"),
+                page_type_val = "";
+            for(var i=0;i<url_array.length;i++) {
+                if(url_array[i].indexOf("_live") > -1) {
+                    page_type_val = url_array[i].split("_")[0];
+                }
             }
-            end_date= $.urlParam('end_date');
-            if (end_date){
-                 $("#end_date").val(decodeURIComponent(end_date));
+
+            /*Error & SIA table initialization*/
+            $("#sia_table").DataTable({
+                bPaginate: true,
+                sPaginationType: "full_numbers"
+            });
+            $("#error_table").DataTable({
+                bPaginate: true,
+                sPaginationType: "full_numbers"
+            });
+
+            //setting up a custom jquery function to retrive the get paramters.
+            $.urlParam = function (name) {
+                var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                if (results == null) {
+                    return null;
+                }
+                else {
+                    return results[1] || 0;
+                }
+            };
+
+            start_date = $.urlParam('start_date');
+
+            if (start_date) {
+                $("#start_date").val(decodeURIComponent(start_date));
+            }
+            end_date = $.urlParam('end_date');
+            if (end_date) {
+                $("#end_date").val(decodeURIComponent(end_date));
             }
             //set the dropdown to current device value
             $("#device_name").val("{{ device.id }}");
 
             //on change of selection element in device_name
             // we should redirect user to the new page for the device
-            $("#device_name").on('change', function(){
+            $("#device_name").on('change', function () {
                 var new_device = $(this).val();
                 var uri = $.url();
                 var path = uri.attr('path').split('/');
-                path[path.length-2] = new_device;
+                path[path.length - 2] = new_device;
                 var new_url = uri.attr('protocol') + "://" + uri.attr('host') + ":" + uri.attr('port') + path.join("/");
                 window.location.href = new_url;
             });
@@ -213,122 +406,174 @@
                     useUTC: false
                 }
             });
-			
-			/*Initialize Datepicker*/
+
+            /*Initialize Datepicker*/
             $(".datepicker").datepicker({ dateFormat: 'dd-mm-yy' });
 
-            $("#apply_filter").on('click', function(){
-                if ( $("#start_date").datepicker("getDate") > $("#end_date").datepicker("getDate") ){
-                    alert ("Start Date Can not be greater than End Date");
+            $("#apply_filter").on('click', function () {
+                if ($("#start_date").datepicker("getDate") > $("#end_date").datepicker("getDate")) {
+                    alert("Start Date Can not be greater than End Date");
                     return false
                 }
-                else{
-                    window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' +'?start_date=' + encodeURIComponent($("#start_date").val())
-                                       + '&end_date=' + encodeURIComponent($("#end_date").val());
+                else {
+                    window.location.href = '{% url "SingleDevicePerf"  page_type device.id %}' + '?start_date=' + encodeURIComponent($("#start_date").val())
+                            + '&end_date=' + encodeURIComponent($("#end_date").val());
                 }
             });
 
-            $("#download_excel").on('click', function(){
-                var service_name = window.location.href.split('#')[1];
-                var service_data_source= window.location.href.split('#')[2];
-                window.location.replace('/performance/service/'+ service_name +'/service_data_source/'+ service_data_source +
-                '/device/{{ device.id }}' +
-                '?download_excel=true' +'&start_date=' + encodeURIComponent($("#start_date").val()) +
-                '&end_date=' + encodeURIComponent($("#end_date").val()))
+            $("#download_excel").on('click', function () {
+
+                if(!($("#sia").parent().hasClass("active")) && !($("#errors").parent().hasClass("active"))) {
+                    var service_name = window.location.href.split('#')[1];
+                    var service_data_source = window.location.href.split('#')[2];
+                    window.location.replace('/performance/service/' + service_name + '/service_data_source/' + service_data_source +
+                        '/device/{{ device.id }}' +
+                        '?download_excel=true' + '&start_date=' + encodeURIComponent($("#start_date").val()) +
+                        '&end_date=' + encodeURIComponent($("#end_date").val()));
+                } else {
+
+                    if($("#errors").parent().hasClass("active")) {
+                        window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/ping/?start_date="+encodeURIComponent($("#start_date").val())+"&end_date="+encodeURIComponent($("#end_date").val())+"&download_excel=true";
+
+                    } else if($("#sia").parent().hasClass("active")) {
+                        window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/service/?start_date="+encodeURIComponent($("#start_date").val())+"&end_date="+encodeURIComponent($("#end_date").val())+"&download_excel=true";
+                    }
+                }
             });
 
-            $("#download_csv").on('click', function(){
-                var service_name = window.location.href.split('#')[1];
-                var service_data_source= window.location.href.split('#')[2];
+            $("#download_csv").on('click', function () {
 
-                window.location.replace('/performance/service/'+ service_name +'/service_data_source/'+ service_data_source +
-                '/device/{{ device.id }}' +
-                '?download_csv=true' +'&start_date=' + encodeURIComponent($("#start_date").val()) +
-                '&end_date=' + encodeURIComponent($("#end_date").val()))
+                if(!($("#sia").parent().hasClass("active")) && !($("#errors").parent().hasClass("active"))) {
+                    
+                    var service_name = window.location.href.split('#')[1];
+                    var service_data_source = window.location.href.split('#')[2];
+
+                    window.location.replace('/performance/service/' + service_name + '/service_data_source/' + service_data_source +
+                            '/device/{{ device.id }}' +
+                            '?download_csv=true' + '&start_date=' + encodeURIComponent($("#start_date").val()) +
+                            '&end_date=' + encodeURIComponent($("#end_date").val()))
+                } else {
+
+                    if($("#errors").parent().hasClass("active")) {
+                        window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/ping/?start_date="+encodeURIComponent($("#start_date").val())+"&end_date="+encodeURIComponent($("#end_date").val())+"&download_csv=true";
+
+                    } else if($("#sia").parent().hasClass("active")) {
+                        window.location.href = base_url+"/alert_center/"+page_type_val+"/device/{{ device.id }}/service_tab/service/?start_date="+encodeURIComponent($("#start_date").val())+"&end_date="+encodeURIComponent($("#end_date").val())+"&download_csv=true";
+                    }
+                }
             });
             var base_url = "";
             /*Set the base url of application for ajax calls*/
-            if(window.location.origin) {
+            if (window.location.origin) {
                 base_url = window.location.origin;
             } else {
-                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
             }
 
 
-			/*Hide Status Container*/
-			//$("#status_container").hide();
+            /*Hide Status Container*/
+            //$("#status_container").hide();
 
-			var devicesUrl = base_url + "/" + "{{ get_devices_url }}";
-			var statusUrl = base_url + "/" + "{{ get_status_url }}" + "/";
-			var serviceUrl = base_url + "/" + "{{ get_services_url }}" + "/";
+            var devicesUrl = base_url + "/" + "{{ get_devices_url }}";
+            var statusUrl = base_url + "/" + "{{ get_status_url }}" + "/";
+            var serviceUrl = base_url + "/" + "{{ get_services_url }}" + "/";
 
-			current_device = "{{ device.id }}";
-			perfInstance = new nocoutPerfLib();
+            current_device = "{{ device.id }}";
+            perfInstance = new nocoutPerfLib();
 
-			/*To Populate the device dropdown*/
-			perfInstance.getAllDevices(devicesUrl, current_device);
+            /*To Populate the device dropdown*/
+            perfInstance.getAllDevices(devicesUrl, current_device);
 
-			/*To populate the status table*/
-			perfInstance.getStatus(statusUrl, current_device);
+            /*To populate the status table*/
+            perfInstance.getStatus(statusUrl, current_device);
 
-			/*To populate the services tabs*/
-			perfInstance.getServices(serviceUrl, current_device);
+            /*To populate the services tabs*/
+            perfInstance.getServices(serviceUrl, current_device);
+        });
 
+        $("#show_status_btn").click(function (e) {
 
-		});
-
-		$("#show_status_btn").click(function(e) {
-
-			$("#status_container").slideToggle();
-            if ( $("#show_status_btn").text() == "Hide Status") {
+            $("#status_container").slideToggle();
+            if ($("#show_status_btn").text() == "Hide Status") {
                 $("#show_status_btn").text("Show Status");
             }
-            else{
+            else {
                 $("#show_status_btn").text("Hide Status");
             }
-		});
+        });
 
-		/*Load first inner tab of network performance*/
-		$("#network_perf").click(function(e) {
-			fetchFirstTabContent(e);
-		});
+        /*Load first inner tab of network performance*/
+        $("#network_perf").click(function (e) {
+            fetchFirstTabContent(e);
+        });
 
-		/*Load first inner tab of service performance*/
-		$("#service_perf").click(function(e) {
-			fetchFirstTabContent(e);
-		});
+        /*Load first inner tab of service performance*/
+        $("#service_perf").click(function (e) {
+            fetchFirstTabContent(e);
+        });
 
-		/*Load first inner tab of service status*/
-		$("#service_status").click(function(e) {
-			fetchFirstTabContent(e);
-		});
+        /*Load first inner tab of service status*/
+        $("#service_status").click(function (e) {
+            fetchFirstTabContent(e);
+        });
 
-		/*Load first inner tab of inventory status*/
-		$("#inventory_status").click(function(e) {
-			fetchFirstTabContent(e);
-		});
+        /*Load first inner tab of inventory status*/
+        $("#inventory_status").click(function (e) {
+            fetchFirstTabContent(e);
+        });
 
-		/**
-		 * This function load the first inner tab content when the tab is opened.
-		 */
-		function fetchFirstTabContent(e) {
-			var tab_id = e.currentTarget.attributes.href.value.split("#")[1];
-			var li_count = $("#"+tab_id+" .inner_tab_container .col-md-3 ul li").length;
-			if(li_count > 0) {
-				$("#"+tab_id+" .inner_tab_container .col-md-3 ul li:first-child a").trigger('click');
-			}
-		}
+        /*Load first inner tab of inventory status*/
+        $("#availability").click(function (e) {
+            fetchFirstTabContent(e);
+        });
 
-	</script>
+        /*Load first inner tab of inventory status*/
+        $("#topology").click(function (e) {
+            fetchFirstTabContent(e);
+        });
+
+        /**
+         * This function load the first inner tab content when the tab is opened.
+         */
+        function fetchFirstTabContent(e) {
+            var tab_id = e.currentTarget.attributes.href.value.split("#")[1];
+            var li_count = $("#" + tab_id + " .inner_tab_container .col-md-3 ul li").length;
+            if (li_count > 0) {
+                $("#" + tab_id + " .inner_tab_container .col-md-3 ul li:first-child a").trigger('click');
+            }
+        }
+
+        /*This event will collapse & expand device status block*/
+        $('.status_box .tools_status .collapse, .status_box .tools_status .expand').click(function () {
+            var el = $(this).parents(".status_box").children(".status_body");
+
+            if ($(this).hasClass("collapse")) {
+                $(this).removeClass("collapse");
+                $(this).addClass("expand");
+                $(this).attr("title","Show Status")
+                var i = $(this).children(".fa-chevron-up");
+                i.removeClass("fa-chevron-up").addClass("fa-chevron-down");
+                el.slideUp();
+            } else {
+                $(this).removeClass("expand");
+                $(this).addClass("collapse");
+                $(this).attr("title","Hide Status");
+                var i = $(this).children(".fa-chevron-down");
+                i.removeClass("fa-chevron-down").addClass("fa-chevron-up");
+                el.slideDown();
+            }
+        });
+
+    </script>
 
 {% endblock %}
 
 
 {% block load_js %}
-	<script>
-	    jQuery(document).ready(function () {
-	        App.setPage("");  //Set current page
-	        App.init(); //Initialise plugins and elements
-	    });
-	</script>
+    <script>
+        jQuery(document).ready(function () {
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+        });
+    </script>
 {% endblock %}

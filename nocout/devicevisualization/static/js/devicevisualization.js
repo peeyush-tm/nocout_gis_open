@@ -1,7 +1,12 @@
+
 var mapPageType = "",
     hasAdvFilter = 0,
     hasSelectDevice = 0,
-    hasTools = 0;
+    hasTools = 0,
+    freezedAt = 0,
+    isMaintained= "",
+    tools_ruler= "",
+    tools_line = "";
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -10,22 +15,31 @@ if(window.location.origin) {
     base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
 }
 
-/*Set isFreeze from cookies*/
-if(!($.cookie('isFreezeSelected'))) {
-    $.cookie("isFreezeSelected", 0);
+/*Set cookies if not exist*/
+if(!$.cookie("isFreezeSelected")) {
+    $.cookie("isFreezeSelected", 0, {path: '/', secure: true});
 }
 
-/*Save cookie value to isFreeze variable*/
-isFreeze = $.cookie("isFreezeSelected");
+if(!$.cookie("freezedAt")) {
+    $.cookie("freezedAt", 0, {path: '/', secure: true});
+}
 
-if(isFreeze == 1) {
+/*Save cookie value to variable*/
+isFreeze = $.cookie("isFreezeSelected");
+freezedAt = $.cookie("freezedAt");
+isMaintained= $.cookie("isMaintained");
+tools_ruler = $.cookie("tools_ruler");        
+tools_line = $.cookie("tools_line");
+
+isPollingActive = 0;
+
+if(isFreeze == 1 || isMaintained != 0 || tools_ruler != 0 || tools_line != 0) {
     $("#showToolsBtn").removeClass("btn-info");
     $("#showToolsBtn").addClass("btn-warning");
 } else {
     $("#showToolsBtn").addClass("btn-info");
     $("#showToolsBtn").removeClass("btn-warning");
 }
-
 
 
 /*Call get_page_status function to show the current status*/
@@ -100,10 +114,30 @@ $("#technology").change(function(e) {
 
     getPageType();
     var tech_id = $(this).val();
+    var tech_value= $('#technology option:selected').text();
+    $("#vendor").val("");
 
-    if (tech_id != ""){
-        $("#vendor").val(tech_id);
+    // var vendorOptions= $("#vendor option");
+    $("#vendor option").each(function(i, el) {
+        var optionValue= $(el).attr('tech_id');
+        var tech_name= $(el).attr('tech_name');
+        //skip out default value
+        if(!optionValue) {
+        } else {
+            if(parseInt(optionValue, 10)== parseInt(tech_id, 10) && tech_name.toLowerCase()== tech_value.toLowerCase()) {
+                $(el).show();
+            } else {
+                $(el).hide();
+            }
+        }
+    });
+
+    if(tech_id == "") {
+        $("#vendor option").each(function(i, el) {
+            $(el).show();
+        });
     }
+    // $("#mySelect option[value=" + title + "]").hide();
     networkMapInstance.makeFiltersArray(mapPageType);
 });
 
@@ -118,8 +152,12 @@ $("#resetFilters").click(function(e) {
     $("#state").val($("#state option:first").val());
     $("#city").val($("#city option:first").val());
     /*Reset search txt box*/
-    $("#searchTxt").val("");
+    $("#google_loc_search").val("");
     $("#lat_lon_search").val("");
+
+    $("#vendor option").each(function(i, el) {
+            $(el).show();
+        });
 
     data_for_filters = main_devices_data_gmaps;    
     isCallCompleted = 1;/*Remove this call if server call is started on click of reset button*/
@@ -174,7 +212,8 @@ function showAdvSearch() {
     showSpinner();
     $("#advFilterContainerBlock").hide();
     $("#advSearchContainerBlock").show();
-    advJustSearch.getFilterInfofrompagedata("searchInfoModal", "Advance Search", "advSearchBtn");
+    // advJustSearch.getFilterInfofrompagedata("searchInfoModal", "advSearchBtn");
+    advJustSearch.prepareAdvanceSearchHtml("searchInfoModal");
 }
 
 $("#setAdvSearchBtn").click(function(e) {
@@ -205,7 +244,7 @@ $("#resetSearchForm").click(function(e) {
             // } 
         }
     });
-    advJustSearch.resetPreviousSearchedMarkers();
+    advJustSearch.removeSearchMarkers();
     advJustSearch.resetVariables();
     // mapInstance.setCenter(new google.maps.LatLng(21.1500,79.0900));
     // mapInstance.setZoom(5);
@@ -342,6 +381,14 @@ function showToolsPanel() {
             $("#freeze_select").removeClass("hide");
         }
     }
+    if(isMaintained != 0) {
+
+        $("#point_remove").removeClass("hide");
+        $("#point_select").addClass("hide");
+    } else {
+        $("#point_remove").addClass("hide");
+        $("#point_select").removeClass("hide");
+    }
 
     /*Hide Tools Button*/
     $("#showToolsBtn").addClass("hide");
@@ -363,7 +410,7 @@ function removetoolsPanel() {
     /*Hide Tools Button*/
     $("#showToolsBtn").removeClass("hide");
 
-    if(isFreeze == 1) {
+    if(isFreeze == 1 || isMaintained != 0  || tools_ruler != 0 || tools_line != 0) {
         $("#showToolsBtn").removeClass("btn-info");
         $("#showToolsBtn").addClass("btn-warning");
     } else {
@@ -404,9 +451,17 @@ function removetoolsPanel() {
         }
     }
 
-    networkMapInstance.clearToolsParams_gmap();
+    if(isMaintained != 0) {
+        $("#point_remove").removeClass("hide");
+        $("#point_select").addClass("hide");
+    } else {
+        $("#point_remove").addClass("hide");
+        $("#point_select").removeClass("hide");
+    }
 
-    networkMapInstance.clearPointTool_gmap();
+    // networkMapInstance.clearToolsParams_gmap();
+
+    // networkMapInstance.clearPointTool_gmap();
 
     /*Call get_page_status function to show the current status*/
     get_page_status();
@@ -427,6 +482,19 @@ function removetoolsPanel() {
     }
 
     networkMapInstance.addRulerTool_gmap();
+ });
+
+ $("#line_select").click(function(e) {
+    is_line_active= 1;
+    $(this).next().removeClass('hide');
+    $(this).addClass('hide');
+    networkMapInstance.createLineTool_gmap();
+ });
+
+  $("#line_remove").click(function(e) {
+    is_line_active= 0;
+    $(this).prev().removeClass('hide');
+    $(this).addClass('hide');
  });
 
  /**
@@ -553,7 +621,7 @@ When call is completed, we use the same function to enable Button by passing 'no
 function disableAdvanceButton(status) {
     var buttonEls= ['advSearchBtn', 'advFilterBtn', 'createPolygonBtn', 'showToolsBtn'];
     var selectBoxes= ['technology', 'vendor', 'state', 'city'];
-    var textBoxes= ['searchTxt','lat_lon_search'];
+    var textBoxes= ['google_loc_search','lat_lon_search'];
     var disablingBit = false;
     if(status=== undefined) {
         disablingBit= true;
@@ -594,23 +662,58 @@ function isLatLon(e) {
     var entered_key_code = (e.keyCode ? e.keyCode : e.which),
         entered_txt = $("#lat_lon_search").val();
 
-    if(((entered_key_code >47 && entered_key_code <=57) || ( entered_key_code ==8)||(entered_key_code==44)|| ( entered_key_code ==46)||( entered_key_code == 0)||(entered_key_code==127))) {
-                
-        return true;
-
-    } else if(entered_key_code == 13) {
+    if(entered_key_code == 13) {
         if(entered_txt.length > 0) {
             if(entered_txt.split(",").length != 2) {
                 alert("Please Enter Proper Lattitude,Longitude.");
+                $("#lat_lon_search").val("");
             } else {
-                networkMapInstance.pointToLatLon(entered_txt);
+                
+                var lat = +(entered_txt.split(",")[0]),
+                    lng = +(entered_txt.split(",")[1]),
+                    lat_check = (lat >= -90 && lat < 90),
+                    lon_check = (lat >= -180 && lat < 180),
+                    dms_pattern = /^(-?\d+(?:\.\d+)?)[°:d]?\s?(?:(\d+(?:\.\d+)?)['′:]?\s?(?:(\d+(?:\.\d+)?)["″]?)?)?\s?([NSEW])?/i;
+                    dms_regex = new RegExp(dms_pattern);
+                
+                if((lat_check && lon_check) || (dms_regex.exec(entered_txt.split(",")[0]) && dms_regex.exec(entered_txt.split(",")[1]))) {
+                    if((lat_check && lon_check)) {
+                        networkMapInstance.pointToLatLon(entered_txt);
+                    } else {
+                        var converted_lat = dmsToDegree(dms_regex.exec(entered_txt.split(",")[0]));
+                        var converted_lng = dmsToDegree(dms_regex.exec(entered_txt.split(",")[1]));
+                        networkMapInstance.pointToLatLon(converted_lat+","+converted_lng);
+                    }
+                } else {
+                    alert("Please Enter Proper Lattitude,Longitude.");
+                    $("#lat_lon_search").val("");
+                }                
             }                
         } else {
             alert("Please Enter Lattitude,Longitude.");
         }
-    } else {
-        return false;
     }
+}
+
+/*This function converts dms lat lon to decimal degree lat lon*/
+function dmsToDegree(latLng) {
+
+    var new_pt = NaN,degrees,minutes,seconds,hemisphere;
+
+    degrees = Number(latLng[1]);
+    minutes = typeof (latLng[2]) !== "undefined" ? Number(latLng[2]) / 60 : 0;
+    seconds = typeof (latLng[3]) !== "undefined" ? Number(latLng[3]) / 3600 : 0;
+    hemisphere = latLng[4] || null;
+    if (hemisphere !== null && /[SW]/i.test(hemisphere)) {
+        degrees = Math.abs(degrees) * -1;
+    }
+    if(degrees < 0) {
+        new_pt = degrees - minutes - seconds;
+    } else {
+        new_pt = degrees + minutes + seconds;
+    }
+
+    return new_pt;
 }
 
 /*Object.key for IE*/

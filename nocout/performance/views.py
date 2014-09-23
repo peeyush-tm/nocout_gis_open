@@ -10,30 +10,39 @@ from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
 import xlwt
 from device.models import Device, City, State, DeviceType, DeviceTechnology
-from inventory.models import SubStation, Circuit, Sector, BaseStation
+from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul
 from nocout.settings import P2P, WiMAX, PMP
-from performance.models import PerformanceService, PerformanceNetwork, NetworkStatus, ServiceStatus, InventoryStatus, \
-    PerformanceStatus, PerformanceInventory, Status
+from performance.models import PerformanceService, PerformanceNetwork, EventNetwork, EventService, NetworkStatus, ServiceStatus, InventoryStatus, \
+    PerformanceStatus, PerformanceInventory, Status, NetworkAvailabilityDaily, Topology
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
 from django.utils.dateformat import format
 from operator import itemgetter
+from alert_center.views import fetch_raw_result
 
 import logging
 
 log = logging.getLogger(__name__)
 
 SERVICE_DATA_SOURCE = {
-    "uas": {"type": "area", "valuesuffix": "seconds", "valuetext": "Seconds"},
-    "rssi": {"type": "column", "valuesuffix": "dB", "valuetext": "dB"},
-    "uptime": {"type": "area", "valuesuffix": "ms", "valuetext": "milliseconds"},
-    "rta": {"type": "area", "valuesuffix": "ms", "valuetext": "ms"},
-    "pl": {"type": "column", "valuesuffix": "%", "valuetext": "Percentage (%)"},
+    "uas": {"type": "area", "valuesuffix": "seconds", "valuetext": "Seconds", "formula": None},
+    "rssi": {"type": "column", "valuesuffix": "dB", "valuetext": "dB", "formula": None},
+    "uptime": {"type": "line", "valuesuffix": " seconds", "valuetext": "up since (timeticks)", "formula": None},
+    "rta": {"type": "area", "valuesuffix": "ms", "valuetext": "ms", "formula": None},
+    "pl": {"type": "column", "valuesuffix": "%", "valuetext": "Percentage (%)", "formula": None},
+    "service_throughput": {"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
+    "management_port_on_odu": {"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
+    "radio_interface": {"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
+    "availability": {"type": "column", "valuesuffix": " %", "valuetext": " %", "formula": None},
     }
 
 SERVICES = {
 
 }
 
+# def uptime_to_days(uptime=0):
+#     if uptime:
+#         ret_val = int(float(uptime)/(60 * 60 * 2``))
+#         return ret_val if ret_val > 0 else int(float(uptime)/(60 * 60))
 
 class Live_Performance(ListView):
     """
@@ -49,27 +58,65 @@ class Live_Performance(ListView):
 
         """
         context = super(Live_Performance, self).get_context_data(**kwargs)
-        datatable_headers = [
-            # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
-            {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False, 'bVisible': False},
-            {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            # {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'circuit_id', 'sTitle': 'Circuit IDs', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
-            {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
-        ]
+        page_type = self.kwargs['page_type']
+        if page_type in ["customer"]:
+            datatable_headers = [
+                # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
+                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False, 'bVisible': False},
+                {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'circuit_id', 'sTitle': 'Circuit IDs', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
+            ]
+        elif page_type in ["network"]:
+            datatable_headers = [
+                # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
+                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False, 'bVisible': False},
+                {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'circuit_id', 'sTitle': 'Circuit IDs', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
+            ]
+        else:
+            datatable_headers = [
+                # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
+                {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False, 'bVisible': False},
+                {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'state', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'packet_loss', 'sTitle': 'Packet Loss', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'latency', 'sTitle': 'Latency', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'last_updated', 'sTitle': 'Last Updated Time', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '5%', 'bSortable': False}
+            ]
 
         context['datatable_headers'] = json.dumps(datatable_headers)
-        context['page_type'] = self.kwargs['page_type']
+        context['page_type'] = page_type
         return context
 
 
@@ -108,18 +155,11 @@ class LivePerformanceListing(BaseDatatableView):
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         else:
             if self.request.user.userprofile.role.values_list('role_name', flat=True)[0] == 'admin':
-                organization_ids = list(self.request.user.userprofile.organization.get_descendants(include_self=True)
-                                        .values_list('id', flat=True))
+                organizations = list(self.request.user.userprofile.organization.get_descendants(include_self=True))
             else:
-                organization_ids = [self.request.user.userprofile.organization.id]
+                organizations = [self.request.user.userprofile.organization]
 
-            if self.request.GET['page_type'] == 'customer':
-                return self.get_initial_query_set_data(organization_ids=organization_ids)
-
-            elif self.request.GET['page_type'] == 'network':
-                return self.get_initial_query_set_data(organization_ids=organization_ids)
-            else:
-                return []
+            return self.get_initial_query_set_data(organizations=organizations)
 
     def get_initial_query_set_data(self, **kwargs):
         """
@@ -131,92 +171,142 @@ class LivePerformanceListing(BaseDatatableView):
         """
         device_list = list()
 
-        substation_list_with_circuit_type_backhaul = list(SubStation.objects.filter(id__in =
-                                                    Circuit.objects.filter(circuit_type__icontains="Backhaul")\
-                                                .values_list('sub_station',flat=True)).values_list('device', flat=True))
-
-        sco_list_with_circuit_type_backhaul = list(Sector.objects.filter(id__in = \
-                                      Circuit.objects.filter(circuit_type__icontains="Backhaul") \
-                                      .values_list('sector', flat=True )).values_list('sector_configured_on', flat=True))
-
-        device_list_with_circuit_type_backhaul= substation_list_with_circuit_type_backhaul + \
-                                                sco_list_with_circuit_type_backhaul
+        page_type = self.request.GET['page_type']
+        device_technology_id = None
 
         if self.request.GET['page_type'] == 'customer':
+            page_type = 'customer'
             device_tab_technology = self.request.GET.get('data_tab')
-            device_technology_id = DeviceTechnology.objects.get(name=device_tab_technology).id
+            device_technology_id = DeviceTechnology.objects.get(name__icontains=device_tab_technology).id
+
             #If the technology is P2P then fetch all the device without circuit_type backhaul and
             #include all the devices whether they are sector_configured_on or substation
             if int(device_technology_id) == int(P2P.ID):
-                devices = Device.objects.filter(~Q(id__in=device_list_with_circuit_type_backhaul),
-                                                is_added_to_nms= 1,
-                                                is_deleted= 0,
-                                                organization__in= kwargs['organization_ids'],
-                                                device_technology= device_technology_id).\
-                    values(*self.columns + ['id', 'device_name', 'machine__name','sector_configured_on', 'substation'])
+                #single query to fetch devices with circuit type as backhaul
+                # device_list_with_circuit_type_backhaul = ptp_device_circuit_backhaul()
+
+                devices = organization_customer_devices(kwargs['organizations'], int(device_technology_id)).\
+                    values(*self.columns + ['id',
+                                            'device_technology',
+                                            'device_name',
+                                            'machine__name',
+                                            'sector_configured_on',
+                                            'substation'])
             else:
                 #If the technology is not P2P then include devices which are substation.
-                devices = Device.objects.filter(is_added_to_nms= 1,  is_deleted= 0,
-                                                organization__in= kwargs['organization_ids'],
-                                                device_technology= device_technology_id).\
-                    values(*self.columns + ['id', 'device_name', 'machine__name', 'substation'])
+                devices = organization_customer_devices(kwargs['organizations'], device_technology_id).\
+                    values(*self.columns + ['id',
+                                            'device_technology',
+                                            'device_name',
+                                            'machine__name',
+                                            'substation'])
 
-        else:
+        elif self.request.GET['page_type'] == 'network':
+            page_type = 'network'
+            device_tab_technology = self.request.GET.get('data_tab')
+            device_technology_id = DeviceTechnology.objects.get(name__icontains=device_tab_technology).id
+
             # If the page_type is network then include only devices which are added to NMS and devices which are not P2P,
             # and must be either PMP or WiMAX.
-            devices = Device.objects.filter(Q(id__in= device_list_with_circuit_type_backhaul),
-                                            Q(device_technology = int(WiMAX.ID)) |Q(device_technology = int(PMP.ID)),
-                                            is_added_to_nms=1, is_deleted=0,
-                                            organization__in= kwargs['organization_ids']).values(*self.columns +
-                                            ['id', 'device_name', 'machine__name', 'sector_configured_on'])
+            devices = organization_network_devices(organizations=kwargs['organizations'],technology=device_technology_id).\
+                values(*self.columns + ['id',
+                                        'device_technology',
+                                        'device_name',
+                                        'machine__name',
+                                        'sector_configured_on',
+                                        'substation'])
+
+        elif self.request.GET['page_type'] == 'other':
+            page_type = 'other'
+            # If the page_type is network then include only devices which are added to NMS and devices which are not P2P,
+            # and must be either PMP or WiMAX.
+            devices = organization_backhaul_devices(organizations=kwargs['organizations']).\
+                values(*self.columns + ['id',
+                                        'device_technology',
+                                        'device_name',
+                                        'machine__name',
+                                        'backhaul',
+                                        ])
+
+        else:
+            return []
 
         for device in devices:
+            skip_device = False
+            if page_type in ["customer", "network"]:
+                sector_id = "N/A"
+                circuit_id = "N/A"
+                bs_name = "N/A"
 
-            sector_id = "N/A"
-            circuit_id = "N/A"
-            bs_name = "N/A"
-            if device['sector_configured_on']:
-                sectors = Sector.objects.filter(sector_configured_on=device["id"]).values("id", "sector_id", "base_station")
-                if len(sectors):
-                    sector_id_list = [x["id"] for x in sectors]
-                    sector_id = ", ".join(map(lambda x: str(x), [x["sector_id"] for x in sectors]))
-                    try:
-                        basestation = BaseStation.objects.get(id=sectors[0]["base_station"])
+                if 'sector_configured_on' in device and device['sector_configured_on']:
+                    if page_type in ['customer'] \
+                            and ( int(device['device_technology']) in [int(WiMAX.ID), int(PMP.ID)]):
+                        #dont process the substation for devices of WIMAX and PMP
+                        skip_device = True
+                    if not skip_device:
+                        sectors = Sector.objects.filter(sector_configured_on=device["id"]).values("id", "sector_id", "base_station")
+                        if len(sectors):
+                            sector_id_list = [x["id"] for x in sectors]
+                            sector_id = ", ".join(map(lambda x: str(x), [x["sector_id"] for x in sectors]))
+                            try:
+                                basestation = BaseStation.objects.get(id=sectors[0]["base_station"])
+                                bs_name = basestation.alias
+                            except:
+                                pass
+                            circuits = Circuit.objects.filter(sector__in=sector_id_list).values("circuit_id")
+                            if len(circuits):
+                                circuits_id_list = [x["circuit_id"] for x in circuits]
+                                circuit_id = ",".join(map(lambda x: str(x), circuits_id_list ))
+
+                elif 'substation' in device and device['substation']:
+                    if page_type in ['network'] \
+                            and ( int(device['device_technology']) in [int(WiMAX.ID), int(PMP.ID)]):
+                        #dont process the substation for devices of WIMAX and PMP
+                        skip_device = True
+
+                    if not skip_device:
+                        substation = SubStation.objects.filter(device=device["id"])
+                        if len(substation):
+                            ss_object = substation[0]
+                            circuit = Circuit.objects.filter(sub_station=ss_object.id)
+                            if len(circuit):
+                                circuit_obj = circuit[0]
+                                circuit_id = circuit_obj.circuit_id
+                                sector_id = circuit_obj.sector.sector_id
+                                bs_name = circuit_obj.sector.base_station.alias
+
+            elif page_type in ["backhaul", "other"]:
+                bs_name = "N/A"
+                sector_id = "N/A"
+                circuit_id = "N/A"
+                backhaul_objects = Backhaul.objects.filter(bh_configured_on__id=device["id"])
+                if len(backhaul_objects):
+                    backhaul = backhaul_objects[0]
+                    basestation_objects = backhaul.basestation_set.filter()
+                    if len(basestation_objects):
+                        basestation = basestation_objects[0]
                         bs_name = basestation.alias
-                    except:
-                        pass
-                    circuits = Circuit.objects.filter(sector__in=sector_id_list).values("circuit_id")
-                    if len(circuits):
-                        circuits_id_list = [x["circuit_id"] for x in circuits]
-                        circuit_id = ",".join(map(lambda x: str(x), circuits_id_list ))
 
-            elif device['substation']:
-                substation = SubStation.objects.filter(device=device["id"])
-                if len(substation):
-                    ss_object = substation[0]
-                    circuit = Circuit.objects.filter(sub_station=ss_object.id)
-                    if len(circuit):
-                        circuit_obj = circuit[0]
-                        circuit_id = circuit_obj.circuit_id
-                        sector_id = circuit_obj.sector.sector_id
-                        bs_name = circuit_obj.sector.base_station.alias
             else:
-                continue
-            device.update({
-                "packet_loss": "",
-                "latency": "",
-                "last_updated": "",
-                "last_updated_date": "",
-                "last_updated_time": "",
-                "sector_id": sector_id,
-                "circuit_id": circuit_id,
-                "bs_name": bs_name,
-                "city": City.objects.get(id=device['city']).city_name,
-                "state": State.objects.get(id=device['state']).state_name,
-                "device_type": DeviceType.objects.get(pk=int(device['device_type'])).name,
-                "device_technology": DeviceTechnology.objects.get(pk=int(device['device_technology'])).name
-            })
-            device_list.append(device)
+                skip_device = True
+
+            if not skip_device:
+                device.update({
+                    "page_type":page_type,
+                    "packet_loss": "",
+                    "latency": "",
+                    "last_updated": "",
+                    "last_updated_date": "",
+                    "last_updated_time": "",
+                    "sector_id": sector_id,
+                    "circuit_id": circuit_id,
+                    "bs_name": bs_name,
+                    "city": City.objects.get(id=device['city']).city_name,
+                    "state": State.objects.get(id=device['state']).state_name,
+                    "device_type": DeviceType.objects.get(pk=int(device['device_type'])).name,
+                    "device_technology": DeviceTechnology.objects.get(pk=int(device['device_technology'])).name
+                })
+                device_list.append(device)
 
         return device_list
 
@@ -231,7 +321,6 @@ class LivePerformanceListing(BaseDatatableView):
         device_result = {}
         perf_result = {"packet_loss": "N/A",
                        "latency": "N/A",
-                       "last_updated": "N/A",
                        "last_updated": "N/A",
                        "last_updated_date": "N/A",
                        "last_updated_time": "N/A"
@@ -275,10 +364,10 @@ class LivePerformanceListing(BaseDatatableView):
 
                     perf_result["last_updated"] = datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
                     #datetime.datetime.fromtimestamp(float(data['sys_timestamp'])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                    perf_result["last_updated_date"] = datetime.datetime.fromtimestamp(
-                        float(data.sys_timestamp)).strftime("%d/%B/%Y")
-                    perf_result["last_updated_time"] = datetime.datetime.fromtimestamp(
-                        float(data.sys_timestamp)).strftime("%I:%M %p")
+                    # perf_result["last_updated_date"] = datetime.datetime.fromtimestamp(
+                    #     float(data.sys_timestamp)).strftime("%d/%B/%Y")
+                    # perf_result["last_updated_time"] = datetime.datetime.fromtimestamp(
+                    #     float(data.sys_timestamp)).strftime("%I:%M %p")
                     device_result[device] = perf_result
 
         # log.debug(device_result)
@@ -299,21 +388,23 @@ class LivePerformanceListing(BaseDatatableView):
         if qs:
             for dct in qs:
                 device = Device.objects.get(id=dct['id'])
-
-                if device.substation_set.exists():
+                if dct['page_type'] in ["customer", "network"]:
                     dct.update(
                         actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
                         <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
                         <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
-                        .format('customer', dct['id'], 'latency'  if 'latency' in dct.keys() else 'packet_drop'))
-                elif device.sector_configured_on.exists():
-                    dct.update(
-                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a> \
-                         <a href="/alert_center/{0}/device/{1}/service_tab/{2}/" title="Device Alert"><i class="fa fa-warning text-warning"></i></a> \
-                         <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'
-                        .format('customer' if dct['device_technology'] == P2P.NAME else 'network',
+                        .format(dct['page_type'],
                                 dct['id'],
-                                'latency'  if 'latency' in dct.keys() else 'packet_drop'))
+                                'ping')
+                    )
+                else:
+                    dct.update(
+                        actions='<a href="/performance/{0}_live/{1}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
+                        <a href="/device/{1}" title="Device Inventory"><i class="fa fa-dropbox text-muted" ></i></a>'
+                        .format(dct['page_type'],
+                                dct['id']
+                        )
+                    )
 
                 device_list.append({'device_name': dct["device_name"], 'device_machine': device.machine.name})
 
@@ -388,6 +479,123 @@ class Get_Perfomance(View):
 
         device = Device.objects.get(id=device_id)
         realdevice = device
+
+        """
+            TODO START :- Replace below code by calling alert_center's 'SingleDeviceAlertDetails' class
+        """
+        start_date= self.request.GET.get('start_date','')
+        end_date= self.request.GET.get('end_date','')
+        isSet = False
+
+        if len(start_date) and len(end_date):
+            start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
+            end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
+            start_date= format( start_date_object, 'U')
+            end_date= format( end_date_object, 'U')
+            isSet = True
+            if start_date == end_date:
+                # Converting the end date to the highest time in a day.
+                end_date_object = datetime.datetime.strptime(end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S")
+        else:
+            # The end date is the end limit we need to make query till.
+            end_date_object = datetime.datetime.now()
+            # The start date is the last monday of the week we need to calculate from.
+            start_date_object = end_date_object - datetime.timedelta(days=end_date_object.weekday())
+            # Replacing the time, to start with the 00:00:00 of the last monday obtained.
+            start_date_object = start_date_object.replace(hour=00, minute=00, second=00, microsecond=00)
+            # Converting the date to epoch time or Unix Timestamp
+            end_date = format(end_date_object, 'U')
+            start_date = format(start_date_object, 'U')
+            isSet = True
+
+        sia_data_list = None
+        error_data_list = None
+
+        required_columns = ["device_name",
+            "ip_address",
+            "service_name",
+            "data_source",
+            "severity",
+            "current_value",
+            "sys_timestamp",
+            "description"
+        ]
+
+        sia_data_list = EventService.objects. \
+            filter(device_name=device.device_name,
+                   sys_timestamp__gte=start_date,
+                   sys_timestamp__lte=end_date). \
+            order_by("-sys_timestamp"). \
+            values(*required_columns).using(alias=device.machine.name)
+
+        for data in sia_data_list:
+            # data["alert_date"] = datetime.datetime. \
+            #     fromtimestamp(float(data["sys_timestamp"])). \
+            #     strftime("%d/%B/%Y")
+            # data["alert_time"] = datetime.datetime. \
+            #     fromtimestamp(float(data["sys_timestamp"])). \
+            #     strftime("%I:%M %p")
+            data["alert_date_time"] = datetime.datetime. \
+                fromtimestamp(float(data["sys_timestamp"])). \
+                strftime("%d/%B/%Y %I:%M %p")
+                
+            del (data["sys_timestamp"])
+
+        
+        in_string = lambda x: "'" + str(x) + "'"
+        col_string = lambda x: "`" + str(x) + "`"
+        is_ping = True
+        # raw query is required here so as to get data
+        query = " "\
+                " SELECT " \
+                " original_table.`device_name`," \
+                " original_table.`ip_address`," \
+                " original_table.`service_name`," \
+                " original_table.`severity`," \
+                " original_table.`current_value` as latency," \
+                " `derived_table`.`current_value` as packet_loss, " \
+                " `original_table`.`sys_timestamp`," \
+                " original_table.`description` " \
+                " FROM `performance_eventnetwork` as original_table "\
+                " INNER JOIN (`performance_eventnetwork` as derived_table) "\
+                " ON( "\
+                "    original_table.`data_source` <> derived_table.`data_source` "\
+                "    AND "\
+                "   original_table.`sys_timestamp` = derived_table.`sys_timestamp` "\
+                "    AND "\
+                "    original_table.`device_name` = derived_table.`device_name` "\
+                " ) "\
+                " WHERE( "\
+                "    original_table.`device_name`= '{0}' "\
+                "    AND "\
+                "    original_table.`sys_timestamp` BETWEEN {1} AND {2} "\
+                " ) "\
+                " GROUP BY original_table.`sys_timestamp` "\
+                " ORDER BY original_table.`sys_timestamp` DESC ".format(
+                # (',').join(["original_table.`" + col_name + "`" for col_name in required_columns]),
+                device.device_name,
+                start_date,
+                end_date
+                )
+        error_data_list = fetch_raw_result(query, device.machine.name)
+
+        for data in error_data_list:
+            # data["alert_date"] = datetime.datetime. \
+            #     fromtimestamp(float(data["sys_timestamp"])). \
+            #     strftime("%d/%B/%Y")
+            # data["alert_time"] = datetime.datetime. \
+            #     fromtimestamp(float(data["sys_timestamp"])). \
+            #     strftime("%I:%M %p")
+            data["alert_date_time"] = datetime.datetime. \
+                fromtimestamp(float(data["sys_timestamp"])). \
+                strftime("%d/%B/%Y %I:%M %p")
+                
+            del (data["sys_timestamp"])
+
+        """
+            TODO END
+        """
+
         page_data = {
             'page_title': page_type.capitalize(),
             'device': device,
@@ -396,7 +604,9 @@ class Get_Perfomance(View):
             'get_status_url':  'performance/get_inventory_device_status/' + page_type + '/device/' + str(device_id),
             'get_services_url': 'performance/get_inventory_service_data_sources/device/' + str(
                 device_id),
-            'page_type':page_type
+            'page_type':page_type,
+            'error_data' : error_data_list,
+            'sia_data' : sia_data_list
             }
 
         return render(request, 'performance/single_device_perf.html', page_data)
@@ -462,17 +672,17 @@ class Fetch_Inventory_Devices(View):
         logged_in_user = request.user.userprofile
 
         if 'admin' in logged_in_user.role.values_list('role_name', flat=True):
-            organizations_ids = list(logged_in_user.organization.get_descendants(include_self=True).values_list('id', flat=True))
+            organizations = list(logged_in_user.organization.get_descendants(include_self=True))
         else:
-            organizations_ids = [logged_in_user.organization.id]
+            organizations = [logged_in_user.organization]
 
-        result['data']['objects'] += self.get_result(page_type, organizations_ids)
+        result['data']['objects'] += self.get_result(page_type, organizations)
 
         result['success'] = 1
         result['message'] = 'Substation Devices Fetched Successfully.'
         return HttpResponse(json.dumps(result))
 
-    def get_result(self, page_type, organizations_ids):
+    def get_result(self, page_type, organizations):
         """
         Generic function to return the result w.r.t the page_type and organization of the current logged in user.
 
@@ -480,47 +690,24 @@ class Fetch_Inventory_Devices(View):
         :param organization:
         return result
         """
+        device_list = []
 
         if page_type == "customer":
-            customer_device_result = self.organization_customer_devices(organizations_ids)
-            return customer_device_result
+            device_list = organization_customer_devices(organizations)
 
         elif page_type == "network":
-            network_device_result = self.organization_network_devices(organizations_ids)
-            return network_device_result
+            device_list = organization_network_devices(organizations)
 
-    def organization_customer_devices(self, organizations_ids):
-        """
-        To result back the all the customer devices from the respective organization..
+        elif page_type == 'other':
+            device_list = organization_backhaul_devices(organizations)
 
-        :param organization:
-        :return list of customer devices
-        """
-        organization_customer_devices= Device.objects.filter(Q(sector_configured_on__isnull=False) | Q(substation__isnull=False),
-            is_added_to_nms=1, is_deleted=0, organization__in= organizations_ids)
         result = list()
-        for device in organization_customer_devices:
-            result.append({'id': device.id, 'alias': device.device_name })
-
+        for device in device_list:
+            result.append({'id': device.id,
+                           'alias': device.device_name,
+                           'technology': DeviceTechnology.objects.get(id=device.device_technology).name }
+        )
         return result
-
-    def organization_network_devices(self, organization):
-        """
-        To result back the all the network devices from the respective organization..
-
-        :param organization:
-        :return list of network devices
-        """
-        organization_network_devices = Device.objects.filter(~Q(device_technology = int(P2P.ID)),
-                                       is_added_to_nms=1, is_deleted=0, organization= organization.id)
-        result = list()
-        #Validate the condition if the sector_configured_on(master) exists
-        for device in organization_network_devices:
-            if device.sector_configured_on.exists():
-                result.append({'id': device.id, 'alias': device.device_name})
-
-        return result
-
 
 class Inventory_Device_Status(View):
     """
@@ -543,48 +730,85 @@ class Inventory_Device_Status(View):
         }
         result['data']['objects']['values'] = list()
 
-        device=Device.objects.get(id= device_id)
+        device = Device.objects.get(id=device_id)
+        technology = DeviceTechnology.objects.get(id=device.device_technology)
 
-        if device.sector_configured_on.exists(): page_type='network'
+        if device.sector_configured_on.exists():
+            result['data']['objects']['headers'] = ['BS Name',
+                                                    'Technology',
+                                                    'Building Height',
+                                                    'Tower Height',
+                                                    'City',
+                                                    'State',
+                                                    'IP Address',
+                                                    'MAC Address',
+                                                    'Planned Frequency'
+            ]
+            result['data']['objects']['values'] = []
+            sector_objects = Sector.objects.filter(sector_configured_on=device.id)
 
-        if page_type == 'customer':
-            substation = SubStation.objects.get(device= device.id)
+            for sector in sector_objects:
+                base_station = sector.base_station
+                planned_frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
+                planned_frequency = ",".join(planned_frequency)
 
-            if substation.circuit_set.exists():
-                sector = Circuit.objects.get(sub_station=substation.id).sector
-                base_station = BaseStation.objects.get(id=Sector.objects.get(id=sector.id).base_station.id)
-                bs_name = base_station.name
-            else:
-                bs_name = "N/A"
-
-            result['data']['objects']['headers'] = ['BS Name', 'SSName', 'Building Height', 'Tower Height',
-                                                    'City', 'State', 'IP Address', 'MAC Address']
-            result['data']['objects']['values'] = [bs_name, substation.name,
-                                                   substation.building_height,
-                                                   substation.tower_height,
-                                                   City.objects.get(id=substation.city).city_name if substation.city else "N/A",
-                                                   State.objects.get(id=substation.state).state_name if substation.state else "N/A",
-                                                   device.ip_address,
-                                                   device.mac_address]
-
-        elif page_type == 'network':
-
-            base_station_list = Sector.objects.filter(sector_configured_on=device.id).values_list(
-                'base_station', flat=True)
-
-            result['data']['objects']['headers'] = ['BS Name', 'Building Height', 'Tower Height',
-                                                    'City', 'State', 'IP Address', 'MAC Address']
-            if base_station_list:
-                base_station = BaseStation.objects.get(id= base_station_list[0])
-                result['data']['objects']['values'] = [base_station.name, base_station.building_height,
+                result['data']['objects']['values'].append([base_station.alias,
+                                                       technology.alias,
+                                                       base_station.building_height,
                                                        base_station.tower_height,
-                                                       City.objects.get(id=base_station.city).city_name if base_station.city else "N/A",
-                                                       State.objects.get(id=base_station.state).state_name if base_station.state else "N/A",
+                                                       City.objects.get(id=base_station.city).city_name
+                                                            if base_station.city
+                                                            else "N/A",
+                                                       State.objects.get(id=base_station.state).state_name
+                                                            if base_station.state
+                                                            else "N/A",
                                                        device.ip_address,
-                                                       device.mac_address]
+                                                       device.mac_address,
+                                                       planned_frequency
+                ])
 
-        result['data']['objects']['values'] = map(lambda val: val if val else 'N/A',
-                                                  result['data']['objects']['values'])
+        elif device.substation_set.exists():
+            result['data']['objects']['headers'] = ['BS Name',
+                                                    'SS Name',
+                                                    'Circuit ID',
+                                                    'Technology',
+                                                    'Building Height',
+                                                    'Tower Height',
+                                                    'City',
+                                                    'State',
+                                                    'IP Address',
+                                                    'MAC Address',
+                                                    'Planned Frequency'
+            ]
+            result['data']['objects']['values'] = []
+            substation_objects = device.substation_set.filter()
+            if len(substation_objects):
+                substation = substation_objects[0]
+                if substation.circuit_set.exists():
+                    circuit = substation.circuit_set.get()
+                    sector = circuit.sector
+                    base_station = sector.base_station
+
+                    planned_frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
+                    planned_frequency = ",".join(planned_frequency)
+
+                    result['data']['objects']['values'].append([base_station.alias,
+                                                           substation.alias,
+                                                           circuit.circuit_id,
+                                                           technology.alias,
+                                                           substation.building_height,
+                                                           substation.tower_height,
+                                                           City.objects.get(id=substation.city).city_name
+                                                                if substation.city
+                                                                else "N/A",
+                                                           State.objects.get(id=substation.state).state_name
+                                                                if substation.state
+                                                                else "N/A",
+                                                           device.ip_address,
+                                                           device.mac_address,
+                                                           planned_frequency
+                    ])
+
         result['success'] = 1
         result['message'] = 'Inventory Device Status Fetched Successfully.'
         return HttpResponse(json.dumps(result))
@@ -614,7 +838,9 @@ class Inventory_Device_Service_Data_Source(View):
                     'network_perf_tab': [],
                     'service_status_tab': [],
                     'inventory_status_tab': [],
-                    'service_perf_tab': []
+                    'service_perf_tab': [],
+                    'availability_tab': [],
+                    'topology_tab': []
                 }
             }
         }
@@ -689,6 +915,24 @@ class Inventory_Device_Service_Data_Source(View):
                         'active': 0,
                     })
 
+        result['data']['objects']['availability_tab'].append(
+        {
+            'name': 'availability',
+            'title': 'Availability',
+            'url': 'performance/service/availability/service_data_source/availability/device/' +
+                   str(device_id),
+            'active': 0,
+        })
+
+        result['data']['objects']['topology_tab'].append(
+        {
+            'name': 'topology',
+            'title': 'Topology',
+            'url': 'performance/service/topology/service_data_source/topology/device/' +
+                   str(device_id),
+            'active': 0,
+        })
+
         result['success'] = 1
         result['message'] = 'Substation Devices Services Data Source Fetched Successfully.'
         return HttpResponse(json.dumps(result))
@@ -748,6 +992,33 @@ class Get_Service_Type_Performance_Data(View):
                                                                  alias=inventory_device_machine_name)
 
             result = self.get_performance_data_result(performance_data)
+
+        elif "availability" in service_name or service_data_source_type in ['availability']:
+            if not isSet:
+                end_date = format(datetime.datetime.now(), 'U')
+                start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
+            performance_data = NetworkAvailabilityDaily.objects.filter(device_name=inventory_device_name,
+                                                                 service_name=service_name,
+                                                                 data_source=service_data_source_type,
+                                                                 sys_timestamp__gte=start_date,
+                                                                 sys_timestamp__lte=end_date).using(
+                                                                 alias=inventory_device_machine_name)
+
+            result = self.get_performance_data_result(performance_data, data_source="availability")
+
+        elif "topology" in service_name or service_data_source_type in ['topology']:
+            if not isSet:
+                end_date = format(datetime.datetime.now(), 'U')
+                start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
+            performance_data = Topology.objects.filter(device_name=inventory_device_name,
+                                                                 service_name=service_name,
+                                                                 data_source=service_data_source_type,
+                                                                 sys_timestamp__gte=start_date,
+                                                                 sys_timestamp__lte=end_date).using(
+                                                                 alias=inventory_device_machine_name)
+
+            result = self.get_topology_result(performance_data)
+
 
         elif '_status' in service_name:
             if not isSet:
@@ -885,8 +1156,47 @@ class Get_Service_Type_Performance_Data(View):
         self.result['data']['objects']['table_data_header'] = ['Date', 'Time', 'Value']
         return self.result
 
-    def get_performance_data_result(self, performance_data):
+    def get_topology_result(self, performance_data):
+        """
+        Getting the current topology of any elements of the network
+        """
 
+        result_data, aggregate_data = list(), dict()
+        for data in performance_data:
+            temp_time = data.sys_timestamp
+
+            if temp_time in aggregate_data:
+                continue
+            else:
+                aggregate_data[temp_time] = data.sys_timestamp
+                result_data.append({
+                        'device_name': data.device_name,
+                        'ip_address': data.ip_address,
+                        'mac_address': data.mac_address,
+                        'sector_id': data.sector_id,
+                        'connected_device_ip': data.connected_device_ip,
+                        'connected_device_mac': data.connected_device_mac,
+                        'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
+                        'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%I:%M %p"),
+                    })
+        self.result['success'] = 1
+        self.result['message'] = 'Device Data Fetched Successfully.' if result_data else 'No Record Found.'
+        self.result['data']['objects']['table_data'] = result_data
+        self.result['data']['objects']['table_data_header'] = ['device_name',
+                                                               'ip_address',
+                                                               'mac_address',
+                                                               'sector_id',
+                                                               'connected_device_ip',
+                                                               'connected_device_mac',
+                                                               'date',
+                                                               'time'
+        ]
+        return self.result
+
+
+
+    def get_performance_data_result(self, performance_data, data_source = None):
+        chart_data = list()
         if performance_data:
             data_list, warn_data_list, crit_data_list, aggregate_data = list(), list(), list(), dict()
             for data in performance_data:
@@ -896,96 +1206,142 @@ class Get_Service_Type_Performance_Data(View):
                     continue
                 else:
                     aggregate_data[temp_time] = data.sys_timestamp
-                    self.result['data']['objects']['type'] = SERVICE_DATA_SOURCE[str(data.data_source).lower()][
-                        "type"] if \
-                        data.data_source in SERVICE_DATA_SOURCE else "area"
-
-                    self.result['data']['objects']['valuesuffix'] = \
-                        SERVICE_DATA_SOURCE[str(data.data_source).lower()]["type"] \
-                            if data.data_source in SERVICE_DATA_SOURCE \
+                    self.result['data']['objects']['type'] = \
+                        SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["type"]\
+                            if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
                             else "area"
 
                     self.result['data']['objects']['valuesuffix'] = \
-                        SERVICE_DATA_SOURCE[str(data.data_source).lower()]["valuesuffix"] \
-                            if data.data_source in SERVICE_DATA_SOURCE \
+                        SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["valuesuffix"]\
+                            if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
                             else ""
 
                     self.result['data']['objects']['valuetext'] = \
-                        SERVICE_DATA_SOURCE[str(data.data_source).lower()]["valuetext"] \
-                            if data.data_source in SERVICE_DATA_SOURCE \
+                        SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["valuetext"]\
+                            if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
                             else str(data.data_source).upper()
 
                     self.result['data']['objects']['plot_type'] = 'charts'
-                    # data_list.append([data.sys_timestamp, data.avg_value ])
+                    # data_list.append([data.sys_timestamp, data.current_value ])
 
-                    # data_list.append([data.sys_timestamp*1000, float(data.avg_value) if data.avg_value else 0])
+                    # data_list.append([data.sys_timestamp*1000, float(data.current_value) if data.current_value else 0])
+                    if data_source not in ["availability"]:
+                        warn_data_list.append([data.sys_timestamp * 1000, float(data.warning_threshold)
+                        if data.critical_threshold else None])
 
-                    warn_data_list.append([data.sys_timestamp * 1000, float(data.warning_threshold)
-                    if data.critical_threshold else None])
+                        crit_data_list.append([data.sys_timestamp * 1000, float(data.critical_threshold)
+                        if data.critical_threshold else None])
 
-                    crit_data_list.append([data.sys_timestamp * 1000, float(data.critical_threshold)
-                    if data.critical_threshold else None])
+                        ###to draw each data point w.r.t threshold we would need to use the following
 
-                    ###to draw each data point w.r.t threshold we would need to use the following
+                        compare_point = lambda p1, p2, p3: '#70AFC4' \
+                            if abs(p1) < abs(p2) \
+                            else ('#FFE90D'
+                                  if abs(p2) < abs(p1) < abs(p3)
+                                  else ('#FF193B' if abs(p3) < abs(p1)
+                                                else "#70AFC4"
+                                        )
+                                )
 
-                    compare_point = lambda p1, p2, p3: '#70AFC4' \
-                        if abs(p1) < abs(p2) \
-                        else ('#FFE90D'
-                              if abs(p2) < abs(p1) < abs(p3)
-                              else ('#FF193B' if abs(p3) < abs(p1)
-                                            else "#70AFC4"
-                                    )
-                            )
+                        formula = SERVICE_DATA_SOURCE[str(data.data_source).lower().strip()]["formula"]\
+                                    if str(data.data_source).lower().strip() in SERVICE_DATA_SOURCE \
+                                    else None
 
-                    if data.avg_value:
-                        formatter_data_point = {
-                            "name": str(data.data_source).upper(),
-                            "color": compare_point(float(data.avg_value) if data.avg_value else 0,
-                                                   float(data.warning_threshold) if data.warning_threshold else 0,
-                                                   float(data.critical_threshold) if data.critical_threshold else 0
-                            ),
-                            "y": float(data.avg_value),
-                            "x": data.sys_timestamp * 1000
-                        }
+                        if data.current_value:
+                            formatter_data_point = {
+                                "name": str(data.data_source).upper(),
+                                "color": compare_point(float(data.current_value) if data.current_value else 0,
+                                                       float(data.warning_threshold) if data.warning_threshold else 0,
+                                                       float(data.critical_threshold) if data.critical_threshold else 0
+                                ),
+                                "y": eval(str(formula) + "(" +str(data.current_value) + ")")
+                                        if formula
+                                        else float(data.current_value),
+                                "x": data.sys_timestamp * 1000
+                            }
+                        else:
+                            formatter_data_point = {
+                                "name": str(data.data_source).upper(),
+                                "color": '#70AFC4',
+                                "y": None,
+                                "x": data.sys_timestamp * 1000
+                            }
+
+                        data_list.append(formatter_data_point)
+                        chart_data = [{'name': str(data.data_source).upper(),
+                                     'data': data_list,
+                                     'type': self.result['data']['objects']['type'],
+                                     'valuesuffix': self.result['data']['objects']['valuesuffix'],
+                                     'valuetext': self.result['data']['objects']['valuetext']
+                                    },
+                                    {'name': str("warning threshold").title(),
+                                     'color': '#FFE90D',
+                                     'data': warn_data_list,
+                                     'type': 'line',
+                                     'marker' : {
+                                         'enabled': False
+                                     }
+                                    },
+                                    {'name': str("critical threshold").title(),
+                                     'color': '#FF193B',
+                                     'data': crit_data_list,
+                                     'type': 'line',
+                                     'marker' : {
+                                         'enabled': False
+                                     }
+                        }]
                     else:
-                        formatter_data_point = {
-                            "name": str(data.data_source).upper(),
-                            "color": '#70AFC4',
-                            "y": None,
-                            "x": data.sys_timestamp * 1000
-                        }
+                        if data.current_value:
+                            formatter_data_point = {
+                                "name": "Availability",
+                                "color": '#70AFC4',
+                                "y": float(data.current_value),
+                                "x": data.sys_timestamp * 1000
+                            }
+                            formatter_data_point_down = {
+                                "name": "UnAvailability",
+                                "color": '#FF193B',
+                                "y": 100.00 - float(data.current_value),
+                                "x": data.sys_timestamp * 1000
+                            }
+                        else:
+                            formatter_data_point = {
+                                "name": str(data.data_source).upper(),
+                                "color": '#70AFC4',
+                                "y": None,
+                                "x": data.sys_timestamp * 1000
+                            }
+                            formatter_data_point_down = {
+                                "name": "UnAvailability",
+                                "color": '#FF193B',
+                                "y": None,
+                                "x": data.sys_timestamp * 1000
+                            }
 
-                    data_list.append(formatter_data_point)
+                        data_list.append(formatter_data_point)
+                        warn_data_list.append(formatter_data_point_down)
 
-                    #this ensures a further good presentation of data w.r.t thresholds
+                        chart_data = [{'name': str(data.data_source).upper(),
+                                     'data': data_list,
+                                     'type': self.result['data']['objects']['type'],
+                                     'valuesuffix': self.result['data']['objects']['valuesuffix'],
+                                     'valuetext': self.result['data']['objects']['valuetext']
+                        },
+                                      {'name': 'UnAvailability'.upper(),
+                                     'color': '#FF193B',
+                                     'data': warn_data_list,
+                                     'type': 'column',
+                                     'marker' : {
+                                         'enabled': False
+                                     }}
+                        ]
 
-                    self.result['success'] = 1
-                    self.result['message'] = 'Device Performance Data Fetched Successfully To Plot Graphs.'
-                    self.result['data']['objects']['chart_data'] = [{'name': str(data.data_source).upper(),
-                                                                     'data': data_list,
-                                                                     'type': self.result['data']['objects']['type'],
-                                                                     'valuesuffix': self.result['data']['objects'][
-                                                                         'valuesuffix'],
-                                                                     'valuetext': self.result['data']['objects'][
-                                                                         'valuetext']
-                                                                    },
-                                                                    {'name': str("warning threshold").title(),
-                                                                     'color': '#FFE90D',
-                                                                     'data': warn_data_list,
-                                                                     'type': 'line',
-                                                                     'marker' : {
-                                                                         'enabled': False
-                                                                     }
-                                                                    },
-                                                                    {'name': str("critical threshold").title(),
-                                                                     'color': '#FF193B',
-                                                                     'data': crit_data_list,
-                                                                     'type': 'line',
-                                                                     'marker' : {
-                                                                         'enabled': False
-                                                                     }
-                                                                    }
-                    ]
+
+            #this ensures a further good presentation of data w.r.t thresholds
+
+            self.result['success'] = 1
+            self.result['message'] = 'Device Performance Data Fetched Successfully To Plot Graphs.'
+            self.result['data']['objects']['chart_data'] = chart_data
 
         return self.result
 
@@ -1026,3 +1382,116 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
         )
 
     return query
+
+
+#common function to get the devices
+
+def ptp_device_circuit_backhaul():
+    """
+    Special case fot PTP technology devices. Wherein Circuit type backhaul is required
+    :return:
+    """
+    device_list_with_circuit_type_backhaul = Device.objects.filter(
+        Q(id__in=Sector.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                        values_list('sector', flat=True)).
+                                        values_list('sector_configured_on', flat=True))
+        |
+        Q(id__in=SubStation.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                        values_list('sub_station', flat=True)).
+                                        values_list('device', flat=True))
+    )
+    return device_list_with_circuit_type_backhaul
+
+def organization_customer_devices(organizations, technology = None):
+    """
+    To result back the all the customer devices from the respective organization..
+
+    :param organization:
+    :return list of customer devices
+    """
+    if not technology:
+        organization_customer_devices= Device.objects.filter(
+                                    Q(sector_configured_on__isnull=False) | Q(substation__isnull=False),
+                                    is_added_to_nms=1,
+                                    is_deleted=0,
+                                    organization__in= organizations
+        )
+    else:
+        if int(technology) == int(P2P.ID):
+            organization_customer_devices = Device.objects.filter(
+                ~Q(id__in=ptp_device_circuit_backhaul()),
+                is_added_to_nms= 1,
+                is_deleted= 0,
+                organization__in= organizations,
+                device_technology= technology
+            )
+        else:
+            organization_customer_devices = Device.objects.filter(
+                is_added_to_nms= 1,
+                substation__isnull=False,
+                is_deleted= 0,
+                organization__in= organizations,
+                device_technology= technology
+            )
+
+    return organization_customer_devices
+
+def organization_network_devices(organizations, technology = None):
+    """
+    To result back the all the network devices from the respective organization..
+
+    :param organizations:
+    :param technology:
+    :param organization:
+    :return list of network devices
+    """
+
+    device_list_with_circuit_type_backhaul = ptp_device_circuit_backhaul()
+
+    if not technology:
+        organization_network_devices = Device.objects.filter(
+                                        Q(id__in= device_list_with_circuit_type_backhaul)
+                                        |
+                                        Q(device_technology = int(WiMAX.ID))
+                                        |
+                                        Q(device_technology = int(PMP.ID)),
+                                        is_added_to_nms=1,
+                                        is_deleted=0,
+                                        organization__in= organizations
+        )
+    else:
+        if int(technology) == int(P2P.ID):
+            organization_network_devices = Device.objects.filter(
+                                        Q(id__in= device_list_with_circuit_type_backhaul),
+                                        is_added_to_nms=1,
+                                        is_deleted=0,
+                                        organization__in= organizations
+            )
+        else:
+            organization_network_devices = Device.objects.filter(
+                                            Q(device_technology = int(technology),
+                                            is_added_to_nms=1,
+                                            sector_configured_on__isnull = False,
+                                            is_deleted=0,
+                                            organization__in= organizations
+            ))
+
+    return organization_network_devices
+
+
+def organization_backhaul_devices(organizations, technology = None):
+    """
+    To result back the all the network devices from the respective organization..
+
+    :param organizations:
+    :param technology:
+    :param organization:
+    :return list of network devices
+    """
+
+    return  Device.objects.filter(
+                                    backhaul__isnull=False,
+                                    is_added_to_nms=1,
+                                    is_deleted=0,
+                                    organization__in= organizations
+    )

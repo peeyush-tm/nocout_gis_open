@@ -18,7 +18,7 @@ Information of ss type cambium device is sent to device application
 
 params = (6, 10)
 
-def check_cambium_dl_jitter(item, _no_params, info):
+def check_cambium_dl_jitter(item, params, info):
     """
                 check_cambium_dl_jitter function calculates the downlink jitter
 

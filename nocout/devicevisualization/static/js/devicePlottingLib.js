@@ -40,6 +40,9 @@ var base_url = "",
 	allSSIds = [],
 	pathArray = [],
 	polygon = "",
+	is_line_active = 0,
+	is_bs_clicked = 0,
+	line_pt_array =[],
 	pointsArray = [],
 	currentPolygon = {},
 	drawingManager = "",
@@ -49,6 +52,7 @@ var base_url = "",
 	sectorArray = [],
 	circleArray = [],
 	servicesData = {},
+	isPollingActive = 0,
 	/*Variables used in fresnel zone calculation*/
 	isDialogOpen = true,
 	bts1_name = "",
@@ -63,6 +67,7 @@ var base_url = "",
 	depthStep = 6,
 	freq_mhz = 900, //MHZ
 	total_bs = [],
+	fresnel_isBSLeft = 1,
 	HEIGHT_CHANGED = false,
 	clear_factor = 100,
 	/*Default antina heights*/
@@ -82,6 +87,7 @@ var base_url = "",
 	distance_label = {},
 	isFreeze = 0;
     map_points_array = [],
+    map_points_lat_lng_array= [],
     lastSearchedPt = {},
     map_point_count = 0,
     zoomAfterRightClickComes= 10,
@@ -97,7 +103,8 @@ var base_url = "",
     sectorMarkerConfiguredOn= [],
     defaultIconSize= 'medium',
     gisPerformanceClass = {},
-    place_markers = [];
+    place_markers = [],
+    bsMarkersInBound= [];
 
 function displayCoordinates(pnt) {
       var coordsLabel = $("#cursor_lat_long");
@@ -126,16 +133,29 @@ function clearPreviousSectorMarkers() {
 function prepare_oms_object(oms_instance) {
 	
 	oms_instance.addListener('click', function(marker,e) {
-		var image = '/static/img/icons/caution.png';
-		if(pointAdd=== 1) {
-			map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image, zIndex: 990});
+		var image = base_url+'/static/img/icons/caution.png';
+		
+		if(pointAdd === 1) {
+			var ob= {'latLng': e.latLng, 'icon': base_url+"/static/img/icons/caution.png"};
+			map_points_lat_lng_array.push(ob);
+			map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image,zIndex: 500});
 			map_points_array.push(map_point);
 			map_point_count ++;
-			return ;
-		}		
+			$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/', secure: true});
+			isMaintained = JSON.stringify(map_points_lat_lng_array);
 
-		var sectorMarker, sectorMarkerOms;
-		if(marker.pointType=== "base_station") {
+			return ;
+		}	
+
+		if(is_line_active == 1) {
+			is_bs_clicked = 1;
+			line_pt_array.push(e.latLng);
+			return ;
+		}	
+
+		var sectorMarker,
+			sectorMarkerOms;
+		if(marker.pointType === "base_station") {
 			//if marker is not spiderfied, stop event and add sector markers here and in oms
 			if(!marker.isMarkerSpiderfied) {
 				// clearPreviousSectorMarkers();
@@ -152,15 +172,20 @@ function prepare_oms_object(oms_instance) {
 				google.maps.event.trigger(marker, 'click');
 				return ;
 			}
-
 		}
-		var windowPosition = new google.maps.LatLng(marker.ptLat,marker.ptLon);
+
 		/*Call the function to create info window content*/
 		var content = gmap_self.makeWindowContent(marker);
 		/*Set the content for infowindow*/
 		infowindow.setContent(content);
-		/*Set The Position for InfoWindow*/
-		infowindow.setPosition(windowPosition);
+
+		if(e) {
+			/*Set The Position for InfoWindow*/
+			infowindow.setPosition(e.latLng);
+		} else {
+			/*Set The Position for InfoWindow*/
+			infowindow.setPosition(new google.maps.LatLng(marker.ptLat,marker.ptLon));
+		}
 		/*Open the info window*/
 		infowindow.open(mapInstance);
 
@@ -202,8 +227,6 @@ function prepare_oms_object(oms_instance) {
 				}
 			}
 		}
-        //freeze the map when spiderified
-        // isFreeze = 1;
         infowindow.close();
     });
 
@@ -265,6 +288,54 @@ function prepare_oms_object(oms_instance) {
     });
 }
 
+function FullScreenCustomControl(controlDiv, map) {
+
+  // Set CSS styles for the DIV containing the control
+  // Setting padding to 5 px will offset the control
+  // from the edge of the map
+  controlDiv.style.padding = '5px';
+  $(controlDiv).addClass('custom_fullscreen');
+
+  // Set CSS for the control border
+  var controlUI = document.createElement('div');
+  controlUI.style.backgroundColor = 'white';
+    controlUI.style.borderStyle = 'solid';
+    controlUI.style.borderWidth = '1px';
+    controlUI.style.borderColor = '#717b87';
+    controlUI.style.cursor = 'pointer';
+    controlUI.style.textAlign = 'center';
+  controlUI.title = 'Click here to full screen';
+  controlDiv.appendChild(controlUI);
+
+  // Set CSS for the control interior
+  var controlText = document.createElement('div');
+
+    controlText.style.fontFamily = 'Roboto,Arial,sans-serif';
+    controlText.style.fontSize = '11px';
+    controlText.style.fontWeight = '400';
+    controlText.style.paddingTop = '1px';
+    controlText.style.paddingBottom = '1px';
+    controlText.style.paddingLeft = '6px';
+    controlText.style.paddingRight = '6px';
+  controlText.innerHTML = '<b>Full Screen</b>';
+  controlUI.appendChild(controlText);
+
+  // Setup the click event listeners: simply set the map to
+  // Chicago
+  google.maps.event.addDomListener(controlUI, 'click', function() {
+  	var currentMode= $(this).find('b').html();
+  	if(currentMode=== "Full Screen") {
+  		$(this).find('b').html("Exit Full Screen");
+  	} else {
+  		$(this).find('b').html("Full Screen");
+  	}
+  	$("#goFullScreen").trigger('click');
+    // map.setCenter(chicago)
+  });
+
+}
+
+
 /**
  * This class is used to plot the BS & SS on the google maps & performs their functionality.
  * @class gmap_devicePlottingLib
@@ -296,7 +367,11 @@ function devicePlottingClass_gmap() {
 					center    : new google.maps.LatLng(21.1500,79.0900),
 					zoom      : 5,
 					mapTypeId : google.maps.MapTypeId.HYBRID/*google.maps.MapTypeId.SATELLITE*/,
-					mapTypeControl : false
+					mapTypeControl : true,
+					mapTypeControlOptions: {
+						mapTypeIds: [google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.HYBRID],
+						style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+					}
 				};
 			} else {
 				mapObject = {
@@ -305,6 +380,7 @@ function devicePlottingClass_gmap() {
 					mapTypeId : google.maps.MapTypeId.ROADMAP,
 					mapTypeControl : true,
 					mapTypeControlOptions: {
+						mapTypeIds: [google.maps.MapTypeId.ROADMAP, google.maps.MapTypeId.TERRAIN],
 						style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
 					}
 				};
@@ -313,7 +389,7 @@ function devicePlottingClass_gmap() {
 			/*Create Map Type Object*/
 			mapInstance = new google.maps.Map(document.getElementById(domElement),mapObject);		
 			/*Search text box object*/
-			var searchTxt = document.getElementById('searchTxt');
+			var searchTxt = document.getElementById('google_loc_search');
 
 			/*google search object for search text box*/
 			var searchBox = new google.maps.places.SearchBox(searchTxt);
@@ -321,6 +397,23 @@ function devicePlottingClass_gmap() {
             /*show co ordinates on mouse move*/
             google.maps.event.addListener(mapInstance, 'mousemove', function (event) {
                 displayCoordinates(event.latLng);
+            });
+
+            // google.maps.event.addListener(mapInstance, 'zoom_changed', function() {
+
+            // });
+
+            google.maps.event.addListener(mapInstance, 'idle', function() {
+            	setTimeout(function() {
+            		var bs_list = getMarkerInCurrentBound();
+	            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
+	            		if(recallPerf != "") {
+	            			clearTimeout(recallPerf);
+	            			recallPerf = "";
+	            		}
+	            		gisPerformanceClass.start(bs_list);
+	            	}
+            	},1000);
             });
 
 			/*Event listener for search text box*/
@@ -374,12 +467,15 @@ function devicePlottingClass_gmap() {
                     google.maps.event.removeListener(listener);
                 });
 			});
+
+			var fullScreenCustomDiv = document.createElement('div');
+			var fullScreenCustomControl = new FullScreenCustomControl(fullScreenCustomDiv, mapInstance);
+			fullScreenCustomDiv.index = 1;
+			mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(fullScreenCustomDiv);
+
 			
-			/*Don't show full screen control in IE*/
-			if(window.navigator.appName.indexOf('internet explorer') == -1 && window.navigator.appName.indexOf('Microsoft Internet Explorer') == -1) {
-				/*Add Full Screen Control*/
-				mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(new FullScreenControl(mapInstance));
-			}
+			/*Add Full Screen Control*/
+			mapInstance.controls[google.maps.ControlPosition.TOP_RIGHT].push(new FullScreenControl(mapInstance));
 
 			/*Create performance lib instance*/
             gisPerformanceClass= new GisPerformance();
@@ -544,6 +640,20 @@ function devicePlottingClass_gmap() {
 							disableAdvanceButton('no');
 							gmap_self.plotDevices_gmap([],"base_station");
 
+							setTimeout(function() {
+								var bs_list = getMarkerInCurrentBound();
+				            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
+				            		if(recallPerf != "") {
+				            			clearTimeout(recallPerf);
+				            			recallPerf = "";
+				            		}
+				            		gisPerformanceClass.start(bs_list);
+				            	}
+								// gisPerformanceClass.start(getMarkerInCurrentBound());
+							}, 30000);
+
+							gmap_self.addPointTool_gmap('yes');
+							gmap_self.create_old_ruler();
 							/*Hide The loading Icon*/
 							$("#loadingIcon").hide();
 
@@ -562,9 +672,18 @@ function devicePlottingClass_gmap() {
 						gmap_self.plotDevices_gmap([],"base_station");
 
 						setTimeout(function() {
-							// gisPerformanceClass.start();
+							var bs_list = getMarkerInCurrentBound();
+			            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
+			            		if(recallPerf != "") {
+			            			clearTimeout(recallPerf);
+			            			recallPerf = "";
+			            		}
+			            		gisPerformanceClass.start(bs_list);
+			            	}
+							// gisPerformanceClass.start(getMarkerInCurrentBound());
 						}, 30000);
-
+						gmap_self.addPointTool_gmap('yes');
+						gmap_self.create_old_ruler()
 						disableAdvanceButton('no, enable it.');
 
 						/*Recall the server after particular timeout if system is not freezed*/
@@ -608,9 +727,19 @@ function devicePlottingClass_gmap() {
 
 			disableAdvanceButton('no, enable it.');
 
-			setTimeout(function() {
 
-				gisPerformanceClass.start();
+			gmap_self.addPointTool_gmap('yes');
+			gmap_self.create_old_ruler()
+			setTimeout(function() {
+				var bs_list = getMarkerInCurrentBound();
+            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
+            		if(recallPerf != "") {
+            			clearTimeout(recallPerf);
+            			recallPerf = "";
+            		}
+            		gisPerformanceClass.start(bs_list);
+            	}
+				// gisPerformanceClass.start(getMarkerInCurrentBound());
 			}, 30000);
 			/*Recall the server after particular timeout if system is not freezed*/
 			setTimeout(function(e){
@@ -726,9 +855,9 @@ function devicePlottingClass_gmap() {
 						position 		 	: new google.maps.LatLng(lat, lon),
 						ptLat 			 	: bs_ss_devices[i].data.lat,
 						ptLon 			 	: bs_ss_devices[i].data.lon,
-						icon 			 	: 'http 	://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
+						icon 			 	: new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
 						oldIcon 		 	: new google.maps.MarkerImage(base_url+"/"+sector_array[j].markerUrl,null,null,null,new google.maps.Size(32,37)),
-						clusterIcon 	 	: 'http 	://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png',
+						clusterIcon 	 	: new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
 						pointType 		 	: 'sector_Marker',
 						technology 		 	: sector_array[j].technology,
 						vendor 				: sector_array[j].vendor,
@@ -806,11 +935,16 @@ function devicePlottingClass_gmap() {
 				    google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
 
 					    if(ss_marker.hasPerf == 1) {
-					    	var info_html = '<table class="table table-hover"><tr><td>Frequency</td><td>'+ss_marker.perf_data_obj.frequency+'</td></tr><tr><td>Packet Loss</td><td>'+ss_marker.perf_data_obj.pl+'</td></tr><tr><td>'+ss_marker.perf_data_obj.performance_paramter+'</td><td>'+ss_marker.perf_data_obj.performance_value+'</td></tr></table>';
+					    	
+					    	var freq = ss_marker.perf_data_obj.frequency ? ss_marker.perf_data_obj.frequency : "-";
+					    	var pl = ss_marker.perf_data_obj.pl ? ss_marker.perf_data_obj.pl : "-";
+					    	var perf_val = ss_marker.perf_data_obj.performance_value ? ss_marker.perf_data_obj.performance_value : "-";
+
+					    	var info_html = '<table class="table table-hover"><tr><td>Frequency</td><td>'+freq+'</td></tr><tr><td>Packet Loss</td><td>'+pl+'</td></tr><tr><td>'+ss_marker.perf_data_obj.performance_paramter+'</td><td>'+perf_val+'</td></tr></table>';
 					    	/*Set the content for infowindow*/
 							infowindow.setContent(info_html);
 							/*Shift the window little up*/
-							infowindow.setOptions({pixelOffset: new google.maps.Size(0, -20)});
+							infowindow.setOptions({pixelOffset: new google.maps.Size(0, -20), window_type : "hover"});
 							/*Set The Position for InfoWindow*/
 							infowindow.setPosition(new google.maps.LatLng(e.latLng.lat(),e.latLng.lng()));
 							/*Open the info window*/
@@ -818,12 +952,12 @@ function devicePlottingClass_gmap() {
 					    }
 					});
 
-					google.maps.event.addListener(ss_marker, 'mouseout', function() {
-						
-						if(ss_marker.hasPerf == 1) {
-					    	infowindow.close();
-					    }
-					});
+					// google.maps.event.addListener(ss_marker, 'mouseout', function() {
+
+					// 	if(ss_marker.hasPerf == 1 &&  $.trim(infowindow.window_type) == "hover") {
+					//     	infowindow.close();
+					//     }
+					// });
 
 				    markersMasterObj['SS'][String(ss_marker_obj.data.lat)+ ss_marker_obj.data.lon]= ss_marker;
 				    markersMasterObj['SSNamae'][String(ss_marker_obj.device_name)]= ss_marker;
@@ -1206,13 +1340,12 @@ function devicePlottingClass_gmap() {
 
 			gmap_self.plotDevices_gmap(this,"sub_station");
 
-			var windowPosition = new google.maps.LatLng(e.latLng.k,e.latLng.B);
 			/*Call the function to create info window content*/
 			var content = gmap_self.makeWindowContent(poly);
 			/*Set the content for infowindow*/
 			infowindow.setContent(content);
 			/*Set The Position for InfoWindow*/
-			infowindow.setPosition(windowPosition);
+			infowindow.setPosition(e.latLng);
 			/*Open the info window*/
 			infowindow.open(mapInstance);
 			/*Show only 5 rows, hide others*/
@@ -1275,18 +1408,30 @@ function devicePlottingClass_gmap() {
 			infoTable += "</tr>";
 			infoTable += "</tbody></table>";
 
+			var isBSLeft = 0;
+
+			if(+(contentObject.bs_lon) > +(contentObject.ss_lon)) {
+				isBSLeft = 1;
+			}
+
 			var sector_ss_name_obj = {
 				sector_Alias: contentObject.bs_info[0].value,
 				sector_name : contentObject.sectorName,
 				ss_name : contentObject.ssName,
 				ss_customerName: contentObject.ss_info[17].value,
-				ss_circuitId: contentObject.ss_info[3].value
+				ss_circuitId: contentObject.ss_info[3].value,
+				isBSLeft : isBSLeft
 			};
 
 			var sector_ss_name = JSON.stringify(sector_ss_name_obj);
 
-			/*Concat infowindow content*/
-			windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.bs_lat+","+contentObject.bs_lon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
+			if(+(contentObject.bs_lon) > +(contentObject.ss_lon)) {
+				/*Concat infowindow content*/
+				windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.bs_lat+","+contentObject.bs_lon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
+			} else {
+				/*Concat infowindow content*/
+				windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_lat+","+contentObject.bs_lon+","+contentObject.ss_height+","+contentObject.bs_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
+			}
 
 		} else if (clickedType == 'sector_Marker') {
 
@@ -1402,6 +1547,7 @@ function devicePlottingClass_gmap() {
 		fresnelData.bts1_alias= sector_ss_obj.sector_Alias;
 		fresnelData.bts2_customerName= sector_ss_obj.ss_customerName;
 		fresnelData.bts2_circuitId= sector_ss_obj.ss_circuitId;
+		fresnel_isBSLeft = sector_ss_obj.isBSLeft;
 
 		/** Converts numeric degrees to radians */
 		Number.prototype.toRad = function() {
@@ -1656,19 +1802,21 @@ function devicePlottingClass_gmap() {
 			dataPinpoints.push([parseFloat(latLongArray[i][3]), parseFloat(latLongArray[i][9])]);
 		}
 
-
-
-
-		// fresnelData.bts1_alias= sector_ss_obj.sector_Alias;
-		// fresnelData.bts2_customerName= sector_ss_obj.ss_customerName;
-		// fresnelData.bts2_circuitId= sector_ss_obj.ss_circuitId;
-
 		if(isDialogOpen) {
+			
+			var left_str = '<div class="col-md-12"><b>BS</b><br/>'+fresnelData.bts1_alias+"<br />"+bts1_name+'<br /> (Height)</div>',
+				right_str = '<div class="col-md-12"><b>SS</b><br/>'+fresnelData.bts2_customerName+"<br />"+fresnelData.bts2_circuitId+ "<br />"+ bts2_name+' (Height)</div>';
+			
+			if(fresnel_isBSLeft == 0) {
+				left_str = '<div class="col-md-12"><b>SS</b><br/>'+fresnelData.bts2_customerName+"<br />"+fresnelData.bts2_circuitId+ "<br />"+ bts2_name+' (Height)</div>';
+				right_str = '<div class="col-md-12"><b>BS</b><br/>'+fresnelData.bts1_alias+"<br />"+bts1_name+'<br /> (Height)</div>';
+			}
+
 			/*Fresnel template String*/
-			var leftSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal1" class="form-control" value="'+antenaHight1+'"></div><div class="clearfix"></div><div id="antina_height1" style="height:300px;" class="slider slider-blue"></div><div class="col-md-12"><b>BS</b><br/>'+fresnelData.bts1_alias+"<br />"+bts1_name+'<br /> (Height)</div></div>';
+			var leftSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal1" class="form-control" value="'+antenaHight1+'"></div><div class="clearfix"></div><div id="antina_height1" style="height:300px;" class="slider slider-blue"></div>'+left_str+'</div>';
 			var chart_detail = '<div id="chart-details"><div><span id="longitude-lbl" class="chart-detail-lbl">Longitude </span> <span id="longitude"></span></div><div><span id="latitude-lbl" class="chart-detail-lbl">Latitude </span> <span id="latitude"></span></div><div><span id="distance-lbl" class="chart-detail-lbl">Distance </span> <span id="distance"></span></div><div><span id="altitude-lbl" class="chart-detail-lbl">Altitude </span> <span id="altitude"></span></div><div><span id="obstacle-lbl" class="chart-detail-lbl">Obstacle </span> <span id="obstacle"></span></div><div><span id="los-lbl" class="chart-detail-lbl">LOS </span> <span id="los"></span></div><div><span id="fresnel1-lbl" class="chart-detail-lbl">Fresnel-1 </span> <span id="fresnel1"></span></div><div><span id="fresnel2-lbl" class="chart-detail-lbl">Fresnel-2 </span> <span id="fresnel2"></span></div><div><span id="fresnel2-altitude-lbl" class="chart-detail-lbl">Clearance </span> <span id="fresnel-altitude"></span></div></div>';
 			var middleBlock = '<div class="col-md-8 mid_fresnel_container"><div align="center"><div class="col-md-12">Clearance Factor</div><div class="col-md-4 col-md-offset-3"><div id="clear-factor" class="slider slider-red"></div></div><div class="col-md-2"><input type="text" id="clear-factor_val" class="form-control" value="'+clear_factor+'"></div><div class="clearfix"></div></div><div id="chart_div" style="width:600px;max-width:100%;height:300px;"></div><div class="clearfix divide-10"></div><div id="pin-points-container" class="col-md-12" align="center"></div></div>';
-			var rightSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal2" class="form-control" value="'+antenaHight2+'"></div><div class="clearfix"></div><div id="antina_height2" class="slider slider-blue" style="height:300px;"></div><div class="col-md-12"><b>SS</b><br/>'+fresnelData.bts2_customerName+"<br />"+fresnelData.bts2_circuitId+ "<br />"+ bts2_name+' (Height)</div></div>';
+			var rightSlider = '<div class="col-md-2" align="center"><div class="col-md-8 col-md-offset-2"><input type="text" id="antinaVal2" class="form-control" value="'+antenaHight2+'"></div><div class="clearfix"></div><div id="antina_height2" class="slider slider-blue" style="height:300px;"></div>'+right_str+'</div>';
 
 			var fresnelTemplate = "<div class='fresnelContainer row' style='height:400px;overflow-y:auto;'>"+leftSlider+" "+middleBlock+" "+rightSlider+"</div>"+chart_detail;
 
@@ -1898,7 +2046,8 @@ function devicePlottingClass_gmap() {
 			"ss_name" : bts2_name,
 			"sector_Alias" : fresnelData.bts1_alias,
 			"ss_customerName" : fresnelData.bts2_customerName,
-			"ss_circuitId" : fresnelData.bts2_circuitId
+			"ss_circuitId" : fresnelData.bts2_circuitId,
+			"isBSLeft" : fresnel_isBSLeft
 		};
 
 		gmap_self.claculateFresnelZone(fresnelLat1,fresnelLon1,fresnelLat2,fresnelLon2,antenaHight1,antenaHight2,sector_ss_obj);
@@ -2145,8 +2294,8 @@ function devicePlottingClass_gmap() {
      */
     this.initLivePolling = function() {
 
-    	/*Freeze the system i.e. stop server calls*/
-    	isFreeze = 1;
+    	/*Set isPollingActive flag*/
+    	isPollingActive = 1;
 
     	$("#sideInfo > .panel-body > .col-md-12 > .devices_container").html("");
 
@@ -2545,20 +2694,149 @@ function devicePlottingClass_gmap() {
     	}
     };
 
+
+    /**
+     * This function create a ruler if any ruler exist in cookie
+     */
+    this.create_old_ruler = function() {
+    	var ruler_obj = JSON.parse($.cookie('tools_ruler'));
+    	if(ruler_obj) {
+
+	    	isCreated = 1;
+	    	var first_point = new google.maps.Marker({position: new google.maps.LatLng(ruler_obj["startLat"], ruler_obj["startLon"]), map: mapInstance});
+	    	var second_point = new google.maps.Marker({position: new google.maps.LatLng(ruler_obj["endLat"], ruler_obj["endLon"]), map: mapInstance});
+	    	ruler_array.push(first_point);
+	    	ruler_array.push(second_point);
+	    	var current_line =  gmap_self.createLink_gmaps(ruler_obj);
+	    	tools_line_array.push(current_line);
+
+	    	/*Create distance infobox(label)*/
+			distance_label = new InfoBox({
+				content: ruler_obj.distance+" m<br />Starting Point: ("+ruler_obj['startLat'].toFixed(4)+","+ruler_obj['startLon'].toFixed(4)+")<br />End Point: ("+ruler_obj['endLat'].toFixed(4)+","+ruler_obj['endLon'].toFixed(4)+")",
+				boxStyle: {
+					border: "2px solid black",
+					background: "white",
+				    textAlign: "center",
+				    fontSize: "9pt",
+				    color: "black",
+				    width: '210px'
+				},
+				disableAutoPan: true,
+				pixelOffset: new google.maps.Size(-90, 0),
+				position: new google.maps.LatLng(ruler_obj['lat3'] * 180 / Math.PI,ruler_obj['lon3'] * 180 / Math.PI),
+				closeBoxURL: "",
+				isHidden: false,
+				enableEventPropagation: true,
+				zIndex_: 9999
+			});
+
+			/*Show distance infobox*/
+			distance_label.open(mapInstance);
+		}
+    }
+
+    this.createLineTool_gmap = function() {
+    	ruler_array= [];
+    	google.maps.event.clearListeners(mapInstance, 'click');
+
+    	google.maps.event.addListener(mapInstance, 'click', function(e) {
+    		if(tools_line_array.length) {
+    			for(var i=0; i< ruler_array.length; i++) {
+    				ruler_array[i].setMap(null);
+    			}
+    			ruler_array= [];
+    			is_bs_clicked= 0;
+    			for(var j=0; j< tools_line_array.length; j++) {
+    				tools_line_array[j].setMap(null);
+    			}
+    			tools_line_array= [];
+
+				/*Remove Distance Label*/
+				if(distance_label.map != undefined) {
+					distance_label.setMap(null);
+				}
+    			return ;
+    		}
+    		if(!is_bs_clicked) {
+    			bootbox.alert("Select BS First");
+    		} else {
+    			
+    			var eventLatLng= e.latLng;
+    			var first_marker = new google.maps.Marker({position: line_pt_array[0], map: mapInstance, icon: base_url+'/static/img/icons/1x1.png'});
+    			ruler_array.push(first_marker);
+    			var second_marker = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: base_url+'/static/img/icons/1x1.png'});
+    			ruler_array.push(second_marker);
+
+    			var latLonObj = {
+    				"startLat" : ruler_array[0].getPosition().lat(),
+    				"startLon" : ruler_array[0].getPosition().lng(),
+    				"endLat" : ruler_array[1].getPosition().lat(),
+    				"endLon" : ruler_array[1].getPosition().lng()
+    			};
+
+    			var ruler_line = gmap_self.createLink_gmaps(latLonObj);
+    			tools_line_array.push(ruler_line);
+
+    			var latLon1 = new google.maps.LatLng(ruler_array[0].getPosition().lat(), ruler_array[0].getPosition().lng()),
+    			latLon2 = new google.maps.LatLng(ruler_array[1].getPosition().lat(), ruler_array[1].getPosition().lng());
+
+    			/*Distance in Km's */
+    			var distance = (google.maps.geometry.spherical.computeDistanceBetween(latLon1, latLon2) / 1000).toFixed(2) * 1000;
+
+    			//convert degree to radians
+    			var lat1 = ruler_array[0].getPosition().lat() * Math.PI / 180;
+    			var lat2 = ruler_array[1].getPosition().lat() * Math.PI / 180;
+    			var lon1 = ruler_array[0].getPosition().lng() * Math.PI / 180;
+
+    			var dLon = (ruler_array[1].getPosition().lng() - ruler_array[0].getPosition().lng()) * Math.PI / 180;
+
+    			var Bx = Math.cos(lat2) * Math.cos(dLon);
+    			var By = Math.cos(lat2) * Math.sin(dLon);
+    			var lat3 = Math.atan2(Math.sin(lat1) + Math.sin(lat2), Math.sqrt((Math.cos(lat1) + Bx) * (Math.cos(lat1) + Bx) + By * By));
+    			var lon3 = lon1 + Math.atan2(By, Math.cos(lat1) + Bx);
+    			/*Create distance infobox(label)*/
+    			distance_label = new InfoBox({
+    				content: distance+" m<br />Starting Point: ("+latLonObj['startLat'].toFixed(4)+","+latLonObj['startLon'].toFixed(4)+")<br />End Point: ("+latLonObj['endLat'].toFixed(4)+","+latLonObj['endLon'].toFixed(4)+")",
+    				boxStyle: {
+    					border: "2px solid black",
+    					background: "white",
+    					textAlign: "center",
+    					fontSize: "9pt",
+    					color: "black",
+    					width: '210px'
+    				},
+    				disableAutoPan: true,
+    				pixelOffset: new google.maps.Size(-90, 0),
+    				position: new google.maps.LatLng(lat3 * 180 / Math.PI,lon3 * 180 / Math.PI),
+    				closeBoxURL: "",
+    				isHidden: false,
+    				enableEventPropagation: true,
+    				zIndex_: 9999
+    			});
+    			/*Show distance infobox*/
+    			distance_label.open(mapInstance);
+    		}
+    	});
+
+
+    }
+
 	/**
 	 * This function enables ruler tool & perform corresponding functionality.
 	 * @method addRulerTool_gmap
 	 */
-	this.addRulerTool_gmap = function() {
+	this.addRulerTool_gmap = function(tool_type) {
+       
         //first clear the click listners. point tool might be in use
         google.maps.event.clearListeners(mapInstance,'click');
 
 		google.maps.event.addListener(mapInstance,'click',function(e) {
 
 			if(isCreated == 0) {
+				/*Reset Cookie*/
+				$.cookie('tools_ruler',0,{path : '/'});
 
 				if(ruler_pt_count < 2) {
-
 					/*Create Point*/
 					ruler_point = new google.maps.Marker({position: e.latLng, map: mapInstance});
 					ruler_array.push(ruler_point);
@@ -2581,7 +2859,7 @@ function devicePlottingClass_gmap() {
 							latLon2 = new google.maps.LatLng(ruler_array[1].getPosition().lat(), ruler_array[1].getPosition().lng());
 
 						/*Distance in Km's */
-						var distance = (google.maps.geometry.spherical.computeDistanceBetween(latLon1, latLon2) / 1000).toFixed(2);
+						var distance = (google.maps.geometry.spherical.computeDistanceBetween(latLon1, latLon2) / 1000).toFixed(2) * 1000;
 
 					    //convert degree to radians
 					    var lat1 = ruler_array[0].getPosition().lat() * Math.PI / 180;
@@ -2595,9 +2873,15 @@ function devicePlottingClass_gmap() {
 					    var lat3 = Math.atan2(Math.sin(lat1) + Math.sin(lat2), Math.sqrt((Math.cos(lat1) + Bx) * (Math.cos(lat1) + Bx) + By * By));
 					    var lon3 = lon1 + Math.atan2(By, Math.cos(lat1) + Bx);
 
+					    latLonObj["distance"] = distance;
+					    latLonObj["lat3"] = lat3;
+					    latLonObj["lon3"] = lon3;
+
+					    $.cookie('tools_ruler',JSON.stringify(latLonObj),{path : '/'});
+
 					    /*Create distance infobox(label)*/
 						distance_label = new InfoBox({
-							content: distance+" Km<br />Starting Point: ("+latLonObj['startLat'].toFixed(4)+","+latLonObj['startLon'].toFixed(4)+")<br />End Point: ("+latLonObj['endLat'].toFixed(4)+","+latLonObj['endLon'].toFixed(4)+")",
+							content: distance+" m<br />Starting Point: ("+latLonObj['startLat'].toFixed(4)+","+latLonObj['startLon'].toFixed(4)+")<br />End Point: ("+latLonObj['endLat'].toFixed(4)+","+latLonObj['endLon'].toFixed(4)+")",
 							boxStyle: {
 								border: "2px solid black",
 								background: "white",
@@ -2699,6 +2983,8 @@ function devicePlottingClass_gmap() {
 			distance_label.setMap(null);
 		}
 
+		$.cookie('tools_ruler',0,{path : '/'});
+
         if (map_point_count == 0){
             /*Remove click listener from google maps*/
 		    google.maps.event.clearListeners(mapInstance,'click');
@@ -2709,20 +2995,41 @@ function devicePlottingClass_gmap() {
 	 * This function enables point tool & perform corresponding functionality.
 	 * @method addPointTool_gmap
 	 */
-	this.addPointTool_gmap = function() {
+	this.addPointTool_gmap = function(fromArray) {
 
         //first clear the listners. as ruler tool might be in place
         google.maps.event.clearListeners(mapInstance,'click');
 
         var image = new google.maps.MarkerImage(base_url+"/static/img/icons/caution.png",null,null,null,new google.maps.Size(32, 37));
 
-		google.maps.event.addListener(mapInstance,'click',function(e) {
+        if(fromArray) {
+        	if($.cookie("isMaintained")) {
+	        	var arr= JSON.parse($.cookie("isMaintained"));
+	        	for(var i=0; i< arr.length; i++) {
+	        		map_point = new google.maps.Marker({position: new google.maps.LatLng(arr[i]['latLng']["k"], arr[i]['latLng']["B"]), map: mapInstance, icon: image,zIndex: 500});		
+	        		map_points_array.push(map_point);
+	        		var ob= {'latLng': arr[i]['latLng'], 'icon': base_url+"/static/img/icons/caution.png"};
+	        		map_points_lat_lng_array.push(ob);
+	        		isMaintained = JSON.stringify(map_points_lat_lng_array);
+	        		map_point_count ++;
+	        	}
+	        	return ;
+        	}
+        }
 
-            map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image});
+		google.maps.event.addListener(mapInstance,'click',function(e) {
+			var ob= {'latLng': e.latLng, 'icon': base_url+"/static/img/icons/caution.png"};
+
+			map_points_lat_lng_array.push(ob);
+
+            map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image,zIndex: 500});
 
             map_points_array.push(map_point);
 
             map_point_count ++;
+
+            $.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/', secure: true});
+            isMaintained = JSON.stringify(map_points_lat_lng_array);
 
 		});
 	};
@@ -2737,7 +3044,10 @@ function devicePlottingClass_gmap() {
 			map_points_array[j].setMap(null);
 		}
         map_points_array = [];
-        map_point_count = 0;
+        map_points_lat_lng_array= [];
+        map_point_count = 0;        
+        $.cookie("isMaintained", 0, {path: '/', secure: true});
+        isMaintained = $.cookie("isMaintained");
         /*Remove click listener from google maps*/
         if (ruler_pt_count == 0){
             google.maps.event.clearListeners(mapInstance,'click');
@@ -2752,7 +3062,14 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 1;
-	 	$.cookie("isFreezeSelected", isFreeze);
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure: true});
+
+	 	freezedAt = (new Date()).getTime();
+	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
+
+	 	/*Set Live Polling flag*/
+	 	// isPollingActive = 1;
+	 	
 	 	gisPerformanceClass.stop();
 	 };
 
@@ -2764,7 +3081,14 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 0;
-	 	$.cookie("isFreezeSelected", isFreeze);
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure: true});
+
+	 	freezedAt = 0;
+	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
+
+	 	/*Set Live Polling flag*/
+	 	// isPollingActive = 0;
+
 	 	gisPerformanceClass.restart();
 
 	 	/*Recall the server*/
@@ -2821,8 +3145,11 @@ function devicePlottingClass_gmap() {
 			$("#clearPolygonBtn").addClass("hide");
 		}
 
-		/*Unfreeze the system i.e. Restart server calls*/
-    	isFreeze = 0;
+		/*Reset isPollingActive flag*/
+    	isPollingActive = 0;
+    	
+    	/*Restart performance calling*/
+    	gisPerformanceClass.restart();
 
 		/*Enable other buttons*/
     	disableAdvanceButton("no");
@@ -2966,7 +3293,7 @@ function devicePlottingClass_gmap() {
 				markerIcon.oldIcon= markerImage;
 
 				markerImage= new google.maps.MarkerImage(
-					"http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png",
+					base_url+'/static/img/icons/1x1.png',
 					null,
 					null,
 					null,
@@ -2975,7 +3302,7 @@ function devicePlottingClass_gmap() {
 				markerIcon.setIcon(markerImage);
 
 				markerImage= new google.maps.MarkerImage(
-					"http://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png",
+					base_url+'/static/img/icons/1x1.png',
 					null,
 					null,
 					null,
@@ -3271,4 +3598,17 @@ function unique_values_field_and_with_base_station_ids(filter_data_collection, t
         result_bs_collection.push({'id':unique_device_ids, 'value': unique_names[i] });
         }
     return result_bs_collection
+}
+
+function getMarkerInCurrentBound() {
+    bsMarkersInBound= [];
+    for(var key in markersMasterObj['BS']) {
+        if(markersMasterObj['BS'].hasOwnProperty(key)) {
+            var markerVisible = mapInstance.getBounds().contains(markersMasterObj['BS'][key].getPosition());
+            if(markerVisible) {
+                bsMarkersInBound.push(markersMasterObj['BS'][key]['name']);
+            }
+        }
+    }
+    return bsMarkersInBound;
 }

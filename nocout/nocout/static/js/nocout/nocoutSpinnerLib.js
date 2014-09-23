@@ -36,7 +36,7 @@ function showSpinner() {
         $("#ajax_spinner").removeClass("hide");
         /*If ajax_backdrop div not exist then appent it to body */
         if($("#ajax_backdrop").length == 0) {
-            $("body").append('<div class="modal-backdrop fade in" id="ajax_backdrop" style="background: #FFFFFF;"></div>');
+            $("#page_content_div").append('<div class="modal-backdrop fade in" id="ajax_backdrop" style="background: #FFFFFF;"></div>');
         }            
     }
 }

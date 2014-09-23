@@ -7,5 +7,5 @@ urlpatterns = patterns('',
   url(r'^new/$', views.ThresholdConfigurationCreate.as_view(), name='threshold_configuration_new'),
   url(r'^edit/(?P<pk>\d+)$', views.ThresholdConfigurationUpdate.as_view(), name='threshold_configuration_edit'),
   url(r'^delete/(?P<pk>\d+)$', views.ThresholdConfigurationDelete.as_view(), name='threshold_configuration_delete'),
-  url(r'^ThresholdConfigurationlistingtable/', views.ThresholdConfigurationListingTable.as_view(), name='ThresholdConfigurationListingTable'),
+  url(r'^ThresholdConfigurationlistingtable/(?P<technology>\w+)$', views.ThresholdConfigurationListingTable.as_view(), name='ThresholdConfigurationListingTable'),
 )

@@ -21,14 +21,31 @@
 	<div class='box border lite perfContainerBlock'>
 	    <div class='box-title'>
 	        <h4><i class='fa fa-file-text'></i> {{ page_type| title }} Alert - {{ current_device_name }}</h4>
+        </div>
+        <div class='box-body'>
+            <div class="tabbable header-tabs">
+                <ul id="device_page_tabs" class="nav nav-tabs">
+                    <li><a href="#" id="network_alert_service_tab" data-toggle="tab"><span class="hidden-inline-mobile">Service Impact Alerts</span></a></li>
+                    <li><a href="#" id="network_alert_down_tab" data-toggle="tab"><span class="hidden-inline-mobile">Down</span></a></li>
+                    <li><a href="#" id="network_alert_packet_tab" data-toggle="tab"><span class="hidden-inline-mobile">Packet Drop</span></a></li>
+                    <li><a href="#" id="network_alert_latency_tab" data-toggle="tab"><span class="hidden-inline-mobile">Latency</span></a></li>
+                    <li><a href="#" id="network_alert_ping_tab" data-toggle="tab"><span class="hidden-inline-mobile">Ping Details</span></a></li>
+                </ul>
+            </div>
 	        <!--Filters Block Start-->
+            <div class="box-body status_body">
+                <table id="status_table" class="table table-responsive table-bordered" style="background:#FFFFFF;">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
 	        <div class="pull-right">
 	            <ul class="list-unstyled list-inline">
 	                <li>
 	                    <!--device_name Filter-->
 	                    <select name="device_name" id="device_name" class="form-control col-xs-1 input-sm">
                             {% for device in devices %}
-    	                        <option value='{{ device.id }}'>{{  device.alias }}</option>
+    	                        <option value='{{ device.id }}'>{{ device.technology }} : {{ device.alias }}</option>
                             {% endfor %}
 	                    </select>
 	                </li>
@@ -69,87 +86,221 @@
 	                </li>
 	            </ul>
 	        </div>
-        <div>
 
-        </div>
-
-        <div>{{ start_date_object|date:'l d M, Y' }} TO {{ end_date_object|date:'l d M, Y' }}</div>
-
-            <table id="device_alert" class="table table-bordered table-stripped table-sortable">
-                <thead>
-                    <tr>
-                        <th>&nbsp;</th>
-                        {% for data in table_header %}
-                            <th class="headerSortable" style="background: none;">{{ data | title }}</th>
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                {% if table_data %}
-                    {% for data in table_data %}
+            <div>{{ start_date_object|date:'l d M, Y' }} TO {{ end_date_object|date:'l d M, Y' }}</div>
+            <div class="clearfix"></div>
+            <div style="overflow:auto;">
+                <table id="device_alert" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover hide">
+                    <thead>
                         <tr>
-                            {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
-                                <td><i class="fa fa-circle red-dot"></i></td>
-                                <td>{{ data.device_name }}</td>
-                                <td>{{ data.ip_address }}</td>
-                                <td>{{ data.service_name }}</td>
-                                <td>{{ data.data_source }}</td>
-                                <td><span class="text-danger">{{ data.severity }}</span></td>
-                                <td><span class="text-danger">{{ data.current_value }}</span></td>
-                                <td>{{ data.alert_date }}</td>
-                                <td>{{ data.alert_time }}</td>
-                                <td><span class="text-danger">{{ data.description }}</span></td>
-                            {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
-                                <td><i class="fa fa-circle orange-dot"></i></td>
-                                <td>{{ data.device_name }}</td>
-                                <td>{{ data.ip_address }}</td>
-                                <td>{{ data.service_name }}</td>
-                                <td>{{ data.data_source }}</td>
-                                <td><span class="text-warning">{{ data.severity }}</span></td>
-                                <td><span class="text-warning">{{ data.current_value }}</span></td>
-                                <td>{{ data.alert_date }}</td>
-                                <td>{{ data.alert_time }}</td>
-                                <td><span class="text-warning">{{ data.description }}</span></td>
-                            {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
-                                <td><i class="fa fa-circle green-dot"></i></td>
-                                <td>{{ data.device_name }}</td>
-                                <td>{{ data.ip_address }}</td>
-                                <td>{{ data.service_name }}</td>
-                                <td>{{ data.data_source }}</td>
-                                <td><span class="text-success">{{ data.severity }}</span></td>
-                                <td><span class="text-success">{{ data.current_value }}</span></td>
-                                <td>{{ data.alert_date }}</td>
-                                <td>{{ data.alert_time }}</td>
-                                <td><span class="text-success">{{ data.description }}</span></td>
-                            {% else %}
-                                <td><i class="fa fa-circle grey-dot"></i></td>
-                                <td>{{ data.device_name }}</td>
-                                <td>{{ data.ip_address }}</td>
-                                <td>{{ data.service_name }}</td>
-                                <td>{{ data.data_source }}</td>
-                                <td><span class="text-muted">{{ data.severity }}</span></td>
-                                <td><span class="text-muted">{{ data.current_value }}</span></td>
-                                <td>{{ data.alert_date }}</td>
-                                <td>{{ data.alert_time }}</td>
-                                <td><span class="text-muted">{{ data.description }}</span></td>
-                            {% endif %}
+                            <th>&nbsp;</th>
+                            {% for data in table_header %}
+                                <th class="headerSortable" style="background: none;">{{ data | title }}</th>
+                            {% endfor %}
                         </tr>
-                    {% endfor %}
+                    </thead>
+                    <tbody>
+                    {% if table_data %}
+                        {% if is_ping %}
+                            {% for data in table_data %}
+                            <tr>
+                                {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
+                                    <td><i class="fa fa-circle red-dot"><span style="display:none">1</span></i></td>
+                                    <td>{{ data.device_name }}</td>
+                                    <td>{{ data.ip_address }}</td>
+                                    <td>{{ data.service_name }}</td>
+                                    <td><span class="text-danger">{{ data.severity }}</span></td>
+                                    <td><span class="text-danger">{{ data.latency }} ms</span></td>
+                                    <td><span class="text-danger">{{ data.packet_loss }}%</span></td>
+                                    <td>{{ data.alert_date_time }}</td>
+                                    <td><span class="text-danger">{{ data.description }}</span></td>
+                                {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
+                                    <td><i class="fa fa-circle orange-dot"><span style="display:none">2</span></i></td>
+                                    <td>{{ data.device_name }}</td>
+                                    <td>{{ data.ip_address }}</td>
+                                    <td>{{ data.service_name }}</td>
+                                    <td><span class="text-warning">{{ data.severity }}</span></td>
+                                    <td><span class="text-warning">{{ data.latency }} ms</span></td>
+                                    <td><span class="text-warning">{{ data.description | slice:"-4:" }}</span></td>
+                                    <td>{{ data.alert_date_time }}</td>
+                                    <td><span class="text-warning">{{ data.description }}</span></td>
+                                {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
+                                    <td><i class="fa fa-circle green-dot"><span style="display:none">3</span></i></td>
+                                    <td>{{ data.device_name }}</td>
+                                    <td>{{ data.ip_address }}</td>
+                                    <td>{{ data.service_name }}</td>
+                                    <td><span class="text-success">{{ data.severity }}</span></td>
+                                    <td><span class="text-success">{{ data.latency }} ms</span></td>
+                                    <td><span class="text-success">{{ data.packet_loss }}%</span></td>
+                                    <td>{{ data.alert_date_time }}</td>
+                                    <td><span class="text-success">{{ data.description }}</span></td>
+                                {% else %}
+                                    <td><i class="fa fa-circle grey-dot"><span style="display:none">4</span></i></td>
+                                    <td>{{ data.device_name }}</td>
+                                    <td>{{ data.ip_address }}</td>
+                                    <td>{{ data.service_name }}</td>
+                                    <td><span class="text-muted">{{ data.severity }}</span></td>
+                                    <td><span class="text-muted">{{ data.latency }} ms</span></td>
+                                    <td><span class="text-muted">{{ data.packet_loss }}%</span></td>
+                                    <td>{{ data.alert_date_time }}</td>
+                                    <td><span class="text-muted">{{ data.description }}</span></td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                        {% else %}
+                            {% for data in table_data %}
+                                <tr>
+                                    {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
+                                        <td><i class="fa fa-circle red-dot"></i></td>
+                                        <td>{{ data.device_name }}</td>
+                                        <td>{{ data.ip_address }}</td>
+                                        <td>{{ data.service_name }}</td>
+                                        <td>{{ data.data_source }}</td>
+                                        <td><span class="text-danger">{{ data.severity }}</span></td>
+                                        <td><span class="text-danger">{{ data.current_value }}</span></td>
+                                        <td>{{ data.alert_date_time }}</td>
+                                        <td><span class="text-danger">{{ data.description }}</span></td>
+                                    {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
+                                        <td><i class="fa fa-circle orange-dot"></i></td>
+                                        <td>{{ data.device_name }}</td>
+                                        <td>{{ data.ip_address }}</td>
+                                        <td>{{ data.service_name }}</td>
+                                        <td>{{ data.data_source }}</td>
+                                        <td><span class="text-warning">{{ data.severity }}</span></td>
+                                        <td><span class="text-warning">{{ data.current_value }}</span></td>
+                                        <td>{{ data.alert_date_time }}</td>
+                                        <td><span class="text-warning">{{ data.description }}</span></td>
+                                    {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
+                                        <td><i class="fa fa-circle green-dot"></i></td>
+                                        <td>{{ data.device_name }}</td>
+                                        <td>{{ data.ip_address }}</td>
+                                        <td>{{ data.service_name }}</td>
+                                        <td>{{ data.data_source }}</td>
+                                        <td><span class="text-success">{{ data.severity }}</span></td>
+                                        <td><span class="text-success">{{ data.current_value }}</span></td>
+                                        <td>{{ data.alert_date_time }}</td>
+                                        <td><span class="text-success">{{ data.description }}</span></td>
+                                    {% else %}
+                                        <td><i class="fa fa-circle grey-dot"></i></td>
+                                        <td>{{ data.device_name }}</td>
+                                        <td>{{ data.ip_address }}</td>
+                                        <td>{{ data.service_name }}</td>
+                                        <td>{{ data.data_source }}</td>
+                                        <td><span class="text-muted">{{ data.severity }}</span></td>
+                                        <td><span class="text-muted">{{ data.current_value }}</span></td>
+                                        <td>{{ data.alert_date_time }}</td>
+                                        <td><span class="text-muted">{{ data.description }}</span></td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                    {% else %}
 
-                {% else %}
+                        <!-- <div>NO RECORD FOUND.</div> -->
+                        <tr>
+                            <td colspan="10" align="center">NO RECORD FOUND.</td>
+                        </tr>
 
-                    <div>NO RECORD FOUND.</div>
+                    {% endif %}
 
-                {% endif %}
-
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
+    <script src={% static "js/nocout/nocoutPerfLib.js" %}></script>
 
     <script type="text/javascript">
         $(document).ready(function(e) {
+
+            var base_url = "";
+            /*Set the base url of application for ajax calls*/
+            if (window.location.origin) {
+                base_url = window.location.origin;
+            } else {
+                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
+            }
+
+            perfInstance = new nocoutPerfLib();
+            var current_device = "{{ current_device_name }}";
+            var statusUrl = base_url + "/" + "{{ get_status_url }}" + "/";
+            /*To populate the status table*/
+            perfInstance.getStatus(statusUrl, current_device);
+
+
+
+
+            $("#device_alert").DataTable({
+                sPaginationType: "bs_full",
+                aaSorting: [[7, 'desc']]
+            });
+            $("#device_alert").removeClass("hide");
+
+            // $("#device_alert").tablecloth({
+            //     theme:"stats",
+            //     bordered: true,
+            //     sortable:true,
+            //     striped: true,
+            //     clean:true
+            // });
+
+            $("#network_alert_service_tab").click(function(e) {
+                e.preventDefault();
+                var currentTab= findStringFromUrl();
+
+                var newUrl= replaceString(location.href, currentTab, 'service');
+                location.href= newUrl;
+                // selectTab('#network_alert_service_tab');
+            });
+
+            $("#network_alert_down_tab").click(function(e) {
+                e.preventDefault();
+                var currentTab= findStringFromUrl();
+                var newUrl= replaceString(location.href, currentTab, 'down');
+                location.href= newUrl;
+                // selectTab('#network_alert_down_tab');
+            });
+
+            $("#network_alert_packet_tab").click(function(e) {
+                e.preventDefault();
+                var currentTab= findStringFromUrl();
+                var newUrl= replaceString(location.href, currentTab, 'packet_drop');
+                location.href= newUrl;
+                // selectTab('#network_alert_packet_tab');
+            });
+
+            $("#network_alert_latency_tab").click(function(e) {
+                e.preventDefault();
+                var currentTab= findStringFromUrl();
+                var newUrl= replaceString(location.href, currentTab, 'latency');
+                location.href= newUrl;
+                // selectTab('#network_alert_latency_tab');
+            });
+
+            $("#network_alert_ping_tab").click(function(e) {
+                e.preventDefault();
+                var currentTab= findStringFromUrl();
+                var newUrl= replaceString(location.href, currentTab, 'ping');
+                location.href= newUrl;
+                // selectTab('#network_alert_latency_tab');
+            });
+
+
+            var currentPage= findStringFromUrl();
+            // ['down', 'latency', 'packet_drop', 'service'];
+            if(currentPage=== 'down') {
+                selectTab('#network_alert_down_tab');
+            } else if (currentPage=== 'latency') {
+                selectTab('#network_alert_latency_tab');
+            } else if (currentPage=== 'packet_drop') {
+                selectTab('#network_alert_packet_tab');
+            } else if (currentPage=== 'service') {
+                selectTab('#network_alert_service_tab');
+            } else {
+                selectTab('#network_alert_ping_tab');
+            }
+
             //setting up a custom jquery function to retrive the get paramters.
             $.urlParam = function(name){
                     var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
@@ -206,27 +357,35 @@
                 window.location.replace('{% url "SingleDeviceDetails"  page_type current_device_id service_name %}'
                         + '?download_csv=true')
             });
+        });
 
+        function findStringFromUrl() {
+            var uri = $.url();
+            var path = uri.attr('path').split('/');
+            return path[path.length - 2 ]
+        }
 
-        })
+        function replaceString(mainString, toReplace, replaceWith) {
+            var str = mainString, res;
+            if(toReplace=== "service") {
+                res = str.replace(toReplace+"/", replaceWith+"/");
+            } else {
+                res = str.replace(toReplace, replaceWith);
+            }
+            
+            return res;
+        }
+
+        function selectTab(tabId) {
+            console.log(tabId);
+            $(tabId).parent().addClass('active').siblings().removeClass('active');
+        }
     </script>
 
 {% endblock %}
 
 {% block load_js %}
     <script>
-        $(document).ready(function () {
-            $("#device_alert").tablecloth({
-              theme:"stats",
-              bordered: true,
-              sortable:true,
-              striped: true,
-              clean:true
-            });
-        });
-    App.init(); //Initialise plugins and elements
+        App.init(); //Initialise plugins and elements
     </script>
 {% endblock %}
-
-
-

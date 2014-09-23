@@ -12,15 +12,39 @@
             <p><a href="/threshold_configuration/new"><i class="fa fa-plus">&nbsp;</i> Create Threshold Configuration</a></p>
         {% endif %}
     {% endfor %}
-    <div class="box border lite" style="overflow-x: auto; background: #fff;">
+    <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>THRESHOLD CONFIGURATION LISTING</h4>
         </div>
         <div id="tableContainer" class="box-body">
-            <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="ThresholdConfigurationListingTable">
-                <thead></thead>
-                <tbody></tbody>
-            </table>
+            <div class="tabbable header-tabs">
+                <ul class="nav nav-tabs">
+                        <li><a href="#network_wifi_block" id="network_wifi_tab" data-toggle="tab"><span class="hidden-inline-mobile">WiMAX</span></a></li>
+                        <li><a href="#network_pmp_block" id="network_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
+                        <li class="active"><a href="#network_p2p_block" id="network_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">P2P</span></a></li>
+                </ul>
+                <div class="tab-content" style="overflow:auto;">
+                    <div class="tab-pane in active" id="network_p2p_block">
+                        <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="ThresholdConfigurationListingTable_ptp">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="network_pmp_block">
+                        <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="ThresholdConfigurationListingTable_pmp">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane" id="network_wifi_block">
+                        <table cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover" id="ThresholdConfigurationListingTable_wimax">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="clearfix"></div>
+            </div>
         </div>
     </div>
 {% endblock %}
@@ -29,15 +53,24 @@
     <script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
     <script type="text/javascript">
         $(document).ready(function (e) {
+            
             /*Make a instance of ourDataTableWidget class */
             var dataTableInstance = new ourDataTableWidget();
+            
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
-            /*Ajax url to get grid data*/
-            var ajax_url = '{% url "ThresholdConfigurationListingTable" %}';
-            /*Call createDataTable function of ourDataTableWidget class*/
+
+            /*Ajax url to get ptp,pmp & wimax grid data*/
+            var ajax_url_ptp = '{% url "ThresholdConfigurationListingTable" technology="p2p" %}';
+            var ajax_url_pmp = '{% url "ThresholdConfigurationListingTable" technology="pmp" %}';
+            var ajax_url_wimax = '{% url "ThresholdConfigurationListingTable" technology="wimax" %}';
+
             var destroy = false;
-            dataTableInstance.createDataTable("ThresholdConfigurationListingTable", gridHeadersObj, ajax_url, destroy);
+
+            /*Call createDataTable function of ourDataTableWidget class*/
+            dataTableInstance.createDataTable("ThresholdConfigurationListingTable_ptp", gridHeadersObj, ajax_url_ptp, destroy);
+            dataTableInstance.createDataTable("ThresholdConfigurationListingTable_pmp", gridHeadersObj, ajax_url_pmp, destroy);
+            dataTableInstance.createDataTable("ThresholdConfigurationListingTable_wimax", gridHeadersObj, ajax_url_wimax, destroy);
         });
     </script>
 {% endblock %}

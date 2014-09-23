@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import binascii
+
 """
 Poller script which runs on ss and calculates the Rereg count for SS.
 
@@ -17,7 +19,14 @@ RSSI information is sent to device application
 ##################################################################
 
 
-def check_cambium_reg_count(item, _no_params, info):
+def inventory_cambium_reg_count(info):
+	print info
+	for entry in info:
+		print entry
+                a=binascii.b2a_hex(entry[0])
+                n = 2
+                entry[0]=(':').join([a[i:i+2] for i in range(0, len(a), n)])
+def check_cambium_reg_count(item, params, info):
     """
         Check_cambium_reg_count function calcaulates the received signal strength indication
 
@@ -46,26 +55,35 @@ def check_cambium_reg_count(item, _no_params, info):
     state = 3
     infotext = "unknown_value"
     status_list = []
+    warn ,crit = params
     try:
         if info:
 	    status_list = []
 	    for entry in info:
+                a=binascii.b2a_hex(entry[0])
+                n = 2
+                entry[0]=(':').join([a[i:i+2] for i in range(0, len(a), n)])
 		if item in entry:
-			reg_count = entry[1]
-			rereg_count= entry[2]
-            		infotext = "Reg count and rereg count values are %s %s" % (reg_count,rereg_count)
-			status_list.append(("reg_count",reg_count),("rereg_count",rereg_count))
-			state = 0
+			reg_count = int(entry[1])
+			if reg_count > crit:
+				state = 3
+			elif reg_count <= crit and reg_count >= warn:
+				state = 2
+			else:
+				state = 0
+            		infotext = "Reg count value is %s" % (reg_count)
+			status_list.extend([("reg_count",reg_count)])
 			break
     except ValueError:
         infotext = "type_mismatch_value"
     except:
-        infotext = "unknown_value"
+        infotext = "u_value"
     return (state, infotext,status_list)
 
 
 check_info["cambium_reg_count"] = {
     'check_function': check_cambium_reg_count,
+    'inventory_function': inventory_cambium_reg_count,
     'service_description': 'cambium_reg_count',
     'has_perfdata': True,
 }
@@ -73,4 +91,4 @@ check_info["cambium_reg_count"] = {
 #######################################################################
 #	SNMP OID
 #######################################################################
-snmp_info["cambium_reg_count"] = ( ".1.3.6.1.4.1.161.19.3.1.4.1", ["3","25","26"] )
+snmp_info["cambium_reg_count"] = ( ".1.3.6.1.4.1.161.19.3.1.4.1", ["3","25"] )

@@ -21,8 +21,10 @@ from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.db.models import Q
 from device_group.models import DeviceGroup
+from nocout.settings import GISADMIN, NOCOUT_USER
 from nocout.utils.util import DictDiffer
-from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings, GISInventoryBulkImport
+from models import Inventory, DeviceTechnology, IconSettings, LivePollingSettings, ThresholdConfiguration, \
+    ThematicSettings, GISInventoryBulkImport
 from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
     ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm
 from organization.models import Organization
@@ -2170,13 +2172,14 @@ class ThresholdConfigurationListingTable(BaseDatatableView):
 
         return qs
 
-    def get_initial_queryset(self):
+    def get_initial_queryset(self, technology="no"):
         """
         Preparing  Initial Queryset for the for rendering the data table.
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return ThresholdConfiguration.objects.values(*self.columns + ['id'])
+        # return ThresholdConfiguration.objects.values(*self.columns + ['id'])
+        return ThresholdConfiguration.objects.filter(live_polling_template__id__in=LivePollingSettings.objects.filter(technology__name=technology).values('id')).values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -2192,14 +2195,15 @@ class ThresholdConfigurationListingTable(BaseDatatableView):
                 <a href="/threshold_configuration/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
-    def get_context_data(self, *args, **kwargs):
+    def get_context_data(self, technology):
         """
         The main method call to fetch, search, ordering , prepare and display the data on the data table.
         """
         request = self.request
-        self.initialize(*args, **kwargs)
+        # self.initialize(*args, **kwargs)
+        self.initialize()
 
-        qs = self.get_initial_queryset()
+        qs = self.get_initial_queryset(technology)
 
         # number of records before filtering
         total_records = qs.count()
@@ -2333,7 +2337,7 @@ class ThematicSettingsList(ListView):
         user_id = self.request.user.id
 
         #if user is superadmin or gisadmin
-        if user_id in [1,2]:
+        if user_id in [NOCOUT_USER.ID, GISADMIN.ID]:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -2368,13 +2372,20 @@ class ThematicSettingsListingTable(BaseDatatableView):
 
         return qs
 
-    def get_initial_queryset(self):
+    def get_initial_queryset(self, technology="no"):
         """
         Preparing  Initial Queryset for the for rendering the data table.
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return ThematicSettings.objects.values(*self.columns + ['id'])
+
+        if self.request.user.id in [NOCOUT_USER.ID, GISADMIN.ID]:
+            # return ThematicSettings.objects.values(*self.columns + ['id'])
+            return ThematicSettings.objects.filter(threshold_template__in=ThresholdConfiguration.objects.filter(live_polling_template__id__in=LivePollingSettings.objects.filter(technology__name=technology).values('id')).values('id')).values(*self.columns + ['id'])
+
+        else:
+            # return ThematicSettings.objects.filter(is_global=True).values(*self.columns + ['id'])
+            return ThematicSettings.objects.filter(threshold_template__in=ThresholdConfiguration.objects.filter(live_polling_template__id__in=LivePollingSettings.objects.filter(technology__name=technology).values('id')).values('id')).filter(is_global=True).values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -2406,14 +2417,16 @@ class ThematicSettingsListingTable(BaseDatatableView):
                 <a href="/thematic_settings/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
 
-    def get_context_data(self, *args, **kwargs):
+    def get_context_data(self, technology):
         """
         The main method call to fetch, search, ordering , prepare and display the data on the data table.
         """
         request = self.request
-        self.initialize(*args, **kwargs)
 
-        qs = self.get_initial_queryset()
+        # self.initialize(*args, **kwargs)
+        self.initialize()
+
+        qs = self.get_initial_queryset(technology)
 
         # number of records before filtering
         total_records = qs.count()

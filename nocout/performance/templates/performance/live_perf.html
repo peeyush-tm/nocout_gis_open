@@ -11,12 +11,12 @@
 
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
-            <h4><i class="fa fa-table"></i> {{ page_type|upper }} LISTING</h4>
+            <h4><i class="fa fa-table"></i> {{ page_type|title }} LISTING</h4>
         </div>
 
-        {% ifequal page_type 'network' %}
+        {% ifequal page_type 'other' %}
 
-            <div id="tableContainer" class="box-body">
+            <div id="tableContainer" class="box-body" style="overflow-y:auto;">
                 <table cellpadding="0" cellspacing="0" border="0"
                        class="datatable table table-striped table-bordered table-hover" id="PerformanceLiveTable">
                     <thead></thead>
@@ -28,27 +28,27 @@
             <div id="tableContainer" class="box-body">
                 <div class="tabbable header-tabs">
                     <ul class="nav nav-tabs">
-                        <li><a href="#customer_wifi_block" id="customer_wifi_tab" data-toggle="tab"><span class="hidden-inline-mobile">WiMAX</span></a></li>
-                        <li><a href="#customer_pmp_block" id="customer_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
-                        <li class="active"><a href="#customer_p2p_block" id="customer_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">P2P</span></a></li>
+                        <li><a href="#{{ page_type|slugify|lower }}_wifi_block" id="{{ page_type|slugify|lower }}_wifi_tab" data-toggle="tab"><span class="hidden-inline-mobile">WiMAX</span></a></li>
+                        <li><a href="#{{ page_type|slugify|lower }}_pmp_block" id="{{ page_type|slugify|lower }}_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
+                        <li class="active"><a href="#{{ page_type|slugify|lower }}_p2p_block" id="{{ page_type|slugify|lower }}_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">P2P</span></a></li>
                     </ul>
-                    <div class="tab-content">
-                        <div class="tab-pane" id="customer_wifi_block">
-                            <table id="customer_wifi_performancelistingtable" cellpadding="0" cellspacing="0" border="0"
+                    <div class="tab-content" style="overflow-y:auto;">
+                        <div class="tab-pane" id="{{ page_type|slugify|lower }}_wifi_block">
+                            <table id="{{ page_type|slugify|lower }}_wifi_performancelistingtable" cellpadding="0" cellspacing="0" border="0"
                                    class="datatable table table-striped table-bordered table-hover">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
-                        <div class="tab-pane" id="customer_pmp_block">
-                            <table id="customer_pmp_performancelistingtable" cellpadding="0" cellspacing="0" border="0"
+                        <div class="tab-pane" id="{{ page_type|slugify|lower }}_pmp_block">
+                            <table id="{{ page_type|slugify|lower }}_pmp_performancelistingtable" cellpadding="0" cellspacing="0" border="0"
                                    class="datatable table table-striped table-bordered table-hover">
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
-                        <div class="tab-pane active" id="customer_p2p_block">
-                            <table id="customer_p2p_performancelistingtable" cellpadding="0" cellspacing="0" border="0"
+                        <div class="tab-pane active" id="{{ page_type|slugify|lower }}_p2p_block">
+                            <table id="{{ page_type|slugify|lower }}_p2p_performancelistingtable" cellpadding="0" cellspacing="0" border="0"
                                    class="datatable table table-striped table-bordered table-hover">
                                 <thead></thead>
                                 <tbody></tbody>
@@ -58,6 +58,7 @@
                 </div>
             </div>
         {% endifequal %}
+
     </div>
     <div class="clearfix"></div>
 
@@ -71,7 +72,7 @@
     <!-- Custom Script for soft delete-->
     <script type="text/javascript" src={% static "js/nocout/softDeleteLib.js" %}></script>
     <script type="text/javascript">
-        
+
         var dataTableInstance = "";
 
         $(document).ready(function (e) {
@@ -80,26 +81,33 @@
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
 
-            ajax_url_get_parameter = 0
-            if (/customer/i.test(window.location.pathname)) {
-                ajax_url_get_parameter = 'customer'
-            }
-            else if (/network/i.test(window.location.pathname)) {
-                ajax_url_get_parameter = 'network'
-            }
-
+            ajax_url_get_parameter = "{{ page_type|slugify|lower }}";
 
             /*Ajax url to get grid data*/
             var destroy = false;
-            {% ifequal page_type 'network' %}
-                var ajax_url = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter;
-                dataTableInstance.createDataTable("PerformanceLiveTable", gridHeadersObj, ajax_url, destroy);
-            {% else %}
+            ///for backhaul devices
+            if (ajax_url_get_parameter == "other"){
+                var ajax_url_bh = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter;
+                dataTableInstance.createDataTable("PerformanceLiveTable", gridHeadersObj, ajax_url_bh, destroy);
+            }
+            else {
+
+                ///for network and cusotmer devices
                 var ajax_url_wifi = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'WiMAX';
                 var ajax_url_pmp = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'PMP';
                 var ajax_url_p2p = '{% url "LivePerformanceListing" %}' + '?page_type=' + ajax_url_get_parameter + '&data_tab=' + 'P2P';
-    
+                ///end: for network and cusotmer devices
                 /*Add custom attributes for ajax_url & grid header to the tab i.e 'a' tag.*/
+
+                $("#network_wifi_tab").attr("data_url", ajax_url_wifi);
+                $("#network_wifi_tab").attr("data_header",'{{ datatable_headers|safe }}');
+
+                $("#network_pmp_tab").attr("data_url", ajax_url_pmp);
+                $("#network_pmp_tab").attr("data_header",'{{ datatable_headers|safe }}');
+
+                $("#network_ptp_tab").attr("data_url", ajax_url_p2p);
+                $("#network_ptp_tab").attr("data_header", '{{ datatable_headers|safe }}');
+
 
                 $("#customer_wifi_tab").attr("data_url", ajax_url_wifi);
                 $("#customer_wifi_tab").attr("data_header",'{{ datatable_headers|safe }}');
@@ -113,19 +121,10 @@
                 var location_array = window.location.href.split("#");
 
                 if(location_array.length == 1) {
-
                     /*Trigger click event on active tab to load its data*/
-                    $("#customer_ptp_tab").trigger('click', true);
+                    $("#"+ajax_url_get_parameter+"_ptp_tab").trigger('click', true);
                 }
-
-                // dataTableInstance.createDataTable("customer_wifi_performancelistingtable", gridHeadersObj, ajax_url_wifi, destroy);
-                // dataTableInstance.createDataTable("customer_pmp_performancelistingtable", gridHeadersObj, ajax_url_pmp, destroy);
-                // dataTableInstance.createDataTable("customer_p2p_performancelistingtable", gridHeadersObj, ajax_url_p2p, destroy);
-
-
-            {% endifequal %}
-            /*Call createDataTable function of ourDataTableWidget class*/
-
+            }
         });
     </script>
 {% endblock %}
@@ -137,8 +136,6 @@
             App.setPage("");  //Set current page
             App.init(); //Initialise plugins and elements
 
-            //remove select class from network live and add it to customer live in side menu.
-            $("li.current").removeClass('current').prev().addClass('current');
         });
     </script>
 {% endblock %}

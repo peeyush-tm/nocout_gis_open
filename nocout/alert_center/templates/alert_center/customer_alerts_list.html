@@ -7,10 +7,14 @@
 {% block content_title %}Customer Alerts{% endblock %}
 {% block content_description %}Customer Alerts List{% endblock %}
 {% load staticfiles %}
+{% block css %}
+    <!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css" href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %} >
+{% endblock %}
 
 {% block content %}
 
-    <div class="box border lite" style="overflow-x: auto; background: #fff;">
+    <div class="box border lite" style="background: #fff;">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-bell"></i>CUSTOMER ALERT - {{ data_source|upper }}</h4>
         </div>
@@ -22,7 +26,7 @@
                         <li><a href="#customer_pmp_block" id="customer_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
                         <li class="active"><a href="#customer_p2p_block" id="customer_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">P2P</span></a></li>
                 </ul>
-                <div class="tab-content">
+                <div class="tab-content" style="overflow:auto;">
                     <div class="tab-pane in active" id="customer_p2p_block">
                         <table id="customer_p2p_alertlistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
