@@ -106,7 +106,7 @@
                         <ul class="nav nav-tabs" style="top:-44px;float:left;padding-left:15px;margin-right:0px;">
                             <li><a href="#errors_tab" id="errors" data-toggle="tab"><span class="hidden-inline-mobile">Errors</span></a></li>
                             <li><a href="#sia_tab" id="sia" data-toggle="tab"><span class="hidden-inline-mobile">SIA</span></a></li>
-                            <li><a href="#topology_tab" id="topology" data-toggle="tab"><span class="hidden-inline-mobile">Topology</span></a></li>
+{#                            <li><a href="#topology_tab" id="topology" data-toggle="tab"><span class="hidden-inline-mobile">Topology</span></a></li>#}
                             <li><a href="#inventory_status_tab" id="inventory_status" data-toggle="tab"><span class="hidden-inline-mobile">Inventory Status</span></a></li>
                             <li><a href="#service_status_tab" id="service_status" data-toggle="tab"><span class="hidden-inline-mobile">Service Status</span></a></li>
                             <li><a href="#service_perf_tab" id="service_perf" data-toggle="tab"><span class="hidden-inline-mobile">Service Performance</span></a></li>
@@ -163,15 +163,15 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="tab-pane" id="topology_tab">
-                                <div class="panel panel-default inner_tab_container">
-                                    <div class="panel-body">
-                                        <div class="tabbable tabs-left">
-
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+{#                            <div class="tab-pane" id="topology_tab">#}
+{#                                <div class="panel panel-default inner_tab_container">#}
+{#                                    <div class="panel-body">#}
+{#                                        <div class="tabbable tabs-left">#}
+{##}
+{#                                        </div>#}
+{#                                    </div>#}
+{#                                </div>#}
+{#                            </div>#}
                             <div class="tab-pane" id="sia_tab">
                                 <div class="panel panel-default">
                                     <div class="panel-body" style="overflow-x: auto;">
@@ -528,9 +528,9 @@
         });
 
         /*Load first inner tab of inventory status*/
-        $("#topology").click(function (e) {
-            fetchFirstTabContent(e);
-        });
+{#        $("#topology").click(function (e) {#}
+{#            fetchFirstTabContent(e);#}
+{#        });#}
 
         /**
          * This function load the first inner tab content when the tab is opened.

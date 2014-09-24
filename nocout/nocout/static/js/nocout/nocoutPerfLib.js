@@ -306,12 +306,17 @@ $.urlParam = function(name){
                             /*Table header creation end*/
 
                             /*Table data creation start*/
-
-                            for(var i=0;i<result.data.objects.table_data.length;i++) {
+                            var i = 0;
+                            var j = 0;
+                            for(i=0;i<result.data.objects.table_data.length;i++) {
                                 table_string += '<tr>';
-                                table_string += '<td>'+result.data.objects.table_data[i].date+'</td>';
-                                table_string += '<td>'+result.data.objects.table_data[i].time+'</td>';
-                                table_string += '<td>'+result.data.objects.table_data[i].value+'</td>';
+                                for(j=0; j < result.data.objects.table_data_header.length; j++ ){
+                                    var ace = result.data.objects.table_data_header[j];
+                                    table_string += '<td>';
+                                    table_string += result.data.objects.table_data[i][ace];
+                                    table_string += '</td>';
+                                }
+
                                 table_string += '</tr>';
                             }
                             /*Table data creation end*/

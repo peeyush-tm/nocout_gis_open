@@ -1011,8 +1011,8 @@ class Get_Service_Type_Performance_Data(View):
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
             performance_data = Topology.objects.filter(device_name=inventory_device_name,
-                                                                 service_name=service_name,
-                                                                 data_source=service_data_source_type,
+                                                                 # service_name=service_name,
+                                                                 data_source='topology',#service_data_source_type,
                                                                  sys_timestamp__gte=start_date,
                                                                  sys_timestamp__lte=end_date).using(
                                                                  alias=inventory_device_machine_name)
@@ -1153,7 +1153,7 @@ class Get_Service_Type_Performance_Data(View):
         self.result[
             'message'] = 'Device Performance Data Fetched Successfully To Plot Table.' if result_data else 'No Record Found.'
         self.result['data']['objects']['table_data'] = result_data
-        self.result['data']['objects']['table_data_header'] = ['Date', 'Time', 'Value']
+        self.result['data']['objects']['table_data_header'] = ['date', 'time', 'value']
         return self.result
 
     def get_topology_result(self, performance_data):
@@ -1177,7 +1177,7 @@ class Get_Service_Type_Performance_Data(View):
                         'connected_device_ip': data.connected_device_ip,
                         'connected_device_mac': data.connected_device_mac,
                         'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
-                        'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%I:%M %p"),
+                        'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%I:%M %p")
                     })
         self.result['success'] = 1
         self.result['message'] = 'Device Data Fetched Successfully.' if result_data else 'No Record Found.'
