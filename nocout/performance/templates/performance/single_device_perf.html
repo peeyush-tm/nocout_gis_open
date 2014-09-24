@@ -107,18 +107,18 @@
                             <li><a href="#errors_tab" id="errors" data-toggle="tab"><span class="hidden-inline-mobile">Errors</span></a></li>
                             <li><a href="#sia_tab" id="sia" data-toggle="tab"><span class="hidden-inline-mobile">SIA</span></a></li>
                             <li><a href="#topology_tab" id="topology" data-toggle="tab"><span class="hidden-inline-mobile">Topology</span></a></li>
+                            <li><a href="#availability_tab" id="availability" data-toggle="tab"><span class="hidden-inline-mobile">Availability</span></a></li>
                             <li><a href="#inventory_status_tab" id="inventory_status" data-toggle="tab"><span class="hidden-inline-mobile">Inventory Status</span></a></li>
                             <li><a href="#service_status_tab" id="service_status" data-toggle="tab"><span class="hidden-inline-mobile">Service Status</span></a></li>
                             <li><a href="#service_perf_tab" id="service_perf" data-toggle="tab"><span class="hidden-inline-mobile">Service Performance</span></a></li>
-                            <li><a href="#network_perf_tab" id="network_perf" data-toggle="tab"><span class="hidden-inline-mobile">Network Performance</span></a></li>
-                            <li class="active"><a href="#availability_tab" id="availability" data-toggle="tab"><span class="hidden-inline-mobile">Availability</span></a></li>
+                            <li class="active"><a href="#network_perf_tab" id="network_perf" data-toggle="tab"><span class="hidden-inline-mobile">Network Performance</span></a></li>
                         </ul>
 
                         <div class="clearfix"></div>
                     </div>
                     <div>
                         <div class="tab-content">
-                            <div class="tab-pane" id="network_perf_tab">
+                            <div class="tab-pane active" id="network_perf_tab">
                                 <div class="panel panel-default inner_tab_container">
                                     <div class="panel-body">
                                         <div class="tabbable tabs-left">
@@ -154,7 +154,8 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="tab-pane active" id="availability_tab">
+
+                            <div class="tab-pane" id="availability_tab">
                                 <div class="panel panel-default inner_tab_container">
                                     <div class="panel-body">
                                         <div class="tabbable tabs-left">
@@ -522,12 +523,12 @@
             fetchFirstTabContent(e);
         });
 
-        /*Load first inner tab of inventory status*/
+        /*Load first inner tab of availability*/
         $("#availability").click(function (e) {
             fetchFirstTabContent(e);
         });
 
-        /*Load first inner tab of inventory status*/
+        /*Load first inner tab of topology*/
         $("#topology").click(function (e) {
             fetchFirstTabContent(e);
         });
