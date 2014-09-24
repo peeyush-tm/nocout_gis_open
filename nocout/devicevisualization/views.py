@@ -104,7 +104,7 @@ class Gis_Map_Performance_Data(View):
             try:
                 device= Device.objects.get(device_name= device_name, is_added_to_nms=1, is_deleted=0)
                 device_technology = DeviceTechnology.objects.get(id=device.device_technology)
-                user_obj = UserProfile.objects.get(id= self.request.user)
+                user_obj = UserProfile.objects.get(id= self.request.user.id)
 
                 uts = UserThematicSettings.objects.get(user_profile=user_obj,
                                                        thematic_technology=device_technology)
