@@ -704,7 +704,9 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
 
             # 'qos_bw' validation (must be numeric)
             try:
-                if not isinstance(qos_bw, int) or not isinstance(qos_bw, float):
+                if isinstance(qos_bw, int) or isinstance(qos_bw, float):
+                    pass
+                elif isinstance(qos_bw, str) or isinstance(qos_bw, unicode):
                     errors += 'QOS (BW) must be a number.\n'
                 else:
                     errors += 'QOS (BW) must not be empty.\n'
@@ -721,11 +723,12 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
 
             # 'antenna gain' validation (must be a number)
             try:
-                if antenna_gain:
-                    if isinstance(antenna_gain, int) or isinstance(antenna_gain, float):
-                        pass
-                    else:
-                        errors += 'Antenna Gain must be a number.\n'
+                if isinstance(antenna_gain, int) or isinstance(antenna_gain, float):
+                    pass
+                elif isinstance(antenna_gain, str) or isinstance(antenna_gain, unicode):
+                    errors += 'Antenna Gain must be a number.\n'
+                else:
+                    pass
             except Exception as e:
                 pass
 
@@ -1117,7 +1120,9 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
 
                 # 'ss cable length' validation (must be upto 2 decimal places)
                 try:
-                    if not isinstance(ss_cable_length, int) or not isinstance(ss_cable_length, float):
+                    if isinstance(ss_cable_length, int) or isinstance(ss_cable_length, float):
+                        pass
+                    elif isinstance(ss_cable_length, str) or isinstance(ss_cable_length, unicode):
                         errors += 'SS Cable Length must be a number.\n'
                     else:
                         errors += 'SS Cable Length must not be empty.\n'

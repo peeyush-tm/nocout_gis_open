@@ -11,5 +11,5 @@ urlpatterns = patterns('',
     url(r'^inventorylistingtable/',views.InventoryListingTable.as_view(), name='InventoryListingTable'),
     url(r'^inventory_details_wrt_organization/', views.inventory_details_wrt_organization, name='InventoryDetailWRTOrganization'),
     url(r'^export_excel_row_by_row/', views.ExcelWriterRowByRow.as_view(), name='ExcelWriterRowByRow'),
-
+    url(r'^bulk_upload_valid_data/', views.BulkUploadValidData.as_view(), name='BulkUploadValidData'),
 )

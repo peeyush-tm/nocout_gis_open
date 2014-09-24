@@ -3070,6 +3070,11 @@ class GISInventoryBulkImportUpdate(UpdateView):
     success_url = reverse_lazy('gis_inventory_bulk_import_list')
 
 
+class BulkUploadValidData(View):
+    def get(self, request):
+        pass
+
+
 
 
 
