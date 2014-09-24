@@ -132,7 +132,9 @@
 
 {% block jquery %}
 <!-- Custom script for data table-->
-<script type="text/javascript" src={% static "js/utils/jqueryDataTable.js" %}></script>
+
+<!-- Library to load tab content on tab click-->
+<script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
 <script type="text/javascript">
     var dataTableInstance = "";
     $(document).ready(function () {
@@ -186,12 +188,23 @@
 
         /*Make a instance of ourDataTableWidget class */
         var dataTableInstance = new ourDataTableWidget();
-        /*Grid headers object*/
-        var gridHeadersObj = $.parseJSON('{{ customer_ptp_block_table_header|safe }}');
         /*Ajax url to get grid data*/
-        var ajax_url = '{% url "Customer_PTP_Block_Table" %}?data_tab=' + 'P2P';
-        /*Call createDataTable function of ourDataTableWidget class*/
-        var destroy= false;
+        var ajax_url = '{% url "Customer_PTP_Block_Table" %}?data_tab=' + 'P2P',
+        	destroy= false,
+        	gridHeadersObj = $.parseJSON('{{ customer_ptp_block_table_header|safe }}');
+
+        /*Hide SECTOR ID Column*/
+        for(var i=0;i<gridHeadersObj.length;i++) {
+			var column = gridHeadersObj[i];
+			if(column.mData.indexOf("sector_id") > -1) {
+				if(column.bVisible) {
+					column.bVisible = false;
+				} else {
+					column["bVisible"] = false;
+				}
+			}
+		}
+		/*Call createDataTable function of ourDataTableWidget class*/
         dataTableInstance.createDataTable("customer_ptp_block_table", gridHeadersObj, ajax_url, destroy);
     });
 

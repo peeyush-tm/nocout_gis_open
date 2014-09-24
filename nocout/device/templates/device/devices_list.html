@@ -124,7 +124,7 @@
 
             var location_array = window.location.href.split("#");
 
-            if(location_array.length == 1) {
+            if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
 
                 /*Trigger click event on active tab to load its data*/
                 $("#operationalDeviceListing_tab").trigger('click',true);

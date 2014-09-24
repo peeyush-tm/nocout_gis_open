@@ -316,6 +316,19 @@
         var ajax_url = '{% url "Network_PTP_Block_Table" %}' + '?data_source=ptp_backhaul';
         /*Call createDataTable function of ourDataTableWidget class*/
         var destroy= false;
+
+        /*Hide SECTOR ID Column*/
+        for(var i=0;i<gridHeadersObj.length;i++) {
+			var column = gridHeadersObj[i];
+			if(column.mData.indexOf("sector_id") > -1) {
+				if(column.bVisible) {
+					column.bVisible = false;
+				} else {
+					column["bVisible"] = false;
+				}
+			}
+		}
+
         dataTableInstance.createDataTable("network_ptp_block_table", gridHeadersObj, ajax_url, destroy);
 
     });

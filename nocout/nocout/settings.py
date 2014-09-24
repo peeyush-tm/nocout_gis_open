@@ -185,7 +185,7 @@ INSTALLED_APPS = (
     'corsheaders',
     'actstream',
     'activity_stream',
-    'jsonify'
+    'jsonify',
     'djcelery'
 )
 
