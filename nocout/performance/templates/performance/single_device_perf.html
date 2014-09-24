@@ -118,7 +118,7 @@
                     </div>
                     <div>
                         <div class="tab-content">
-                            <div class="tab-pane fade in active" id="network_perf_tab">
+                            <div class="tab-pane active" id="network_perf_tab">
                                 <div class="panel panel-default inner_tab_container">
                                     <div class="panel-body">
                                         <div class="tabbable tabs-left">
@@ -154,6 +154,7 @@
                                     </div>
                                 </div>
                             </div>
+
                             <div class="tab-pane" id="availability_tab">
                                 <div class="panel panel-default inner_tab_container">
                                     <div class="panel-body">
@@ -165,27 +166,10 @@
                             </div>
                             <div class="tab-pane" id="topology_tab">
                                 <div class="panel panel-default inner_tab_container">
-                                    <div class="panel-body" style="overflow-x: auto;">
+                                    <div class="panel-body">
                                         <div class="tabbable tabs-left">
 
                                         </div>
-                                        <!-- <table class="temp_class datatable table table-striped table-bordered table-hover table-responsive">
-                                            <thead>
-                                                <tr>
-                                                    <th>Base Station</th>
-                                                    <th>Sub Station</th>
-                                                    <th>Circuit ID</th>
-                                                    <th>BS MAC</th>
-                                                    <th>SS MAC</th>
-                                                    <th>BS IP</th>
-                                                    <th>SS IP</th>
-                                                    <th>BS City</th>
-                                                    <th>BS State</th>
-                                                    <th>Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody></tbody>
-                                        </table> -->
                                     </div>
                                 </div>
                             </div>
@@ -207,53 +191,53 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <!-- {% if sia_data %}
-                                                    {% for data in sia_data %}
-                                                    <tr>
-                                                        {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}
-                                                            <td><i class="fa fa-circle red-dot"></i></td>
-                                                            <td>{{ data.device_name }}</td>
-                                                            <td>{{ data.ip_address }}</td>
-                                                            <td>{{ data.service_name }}</td>
-                                                            <td>{{ data.data_source }}</td>
-                                                            <td><span class="text-danger">{{ data.severity }}</span></td>
-                                                            <td><span class="text-danger">{{ data.current_value }}</span></td>
-                                                            <td>{{ data.alert_date_time }}</td>
-                                                            <td><span class="text-danger">{{ data.description }}</span></td>
-                                                        {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}
-                                                            <td><i class="fa fa-circle orange-dot"></i></td>
-                                                            <td>{{ data.device_name }}</td>
-                                                            <td>{{ data.ip_address }}</td>
-                                                            <td>{{ data.service_name }}</td>
-                                                            <td>{{ data.data_source }}</td>
-                                                            <td><span class="text-warning">{{ data.severity }}</span></td>
-                                                            <td><span class="text-warning">{{ data.current_value }}</span></td>
-                                                            <td>{{ data.alert_date_time }}</td>
-                                                            <td><span class="text-warning">{{ data.description }}</span></td>
-                                                        {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}
-                                                            <td><i class="fa fa-circle green-dot"></i></td>
-                                                            <td>{{ data.device_name }}</td>
-                                                            <td>{{ data.ip_address }}</td>
-                                                            <td>{{ data.service_name }}</td>
-                                                            <td>{{ data.data_source }}</td>
-                                                            <td><span class="text-success">{{ data.severity }}</span></td>
-                                                            <td><span class="text-success">{{ data.current_value }}</span></td>
-                                                            <td>{{ data.alert_date_time }}</td>
-                                                            <td><span class="text-success">{{ data.description }}</span></td>
-                                                        {% else %}
-                                                            <td><i class="fa fa-circle grey-dot"></i></td>
-                                                            <td>{{ data.device_name }}</td>
-                                                            <td>{{ data.ip_address }}</td>
-                                                            <td>{{ data.service_name }}</td>
-                                                            <td>{{ data.data_source }}</td>
-                                                            <td><span class="text-muted">{{ data.severity }}</span></td>
-                                                            <td><span class="text-muted">{{ data.current_value }}</span></td>
-                                                            <td>{{ data.alert_date_time }}</td>
-                                                            <td><span class="text-muted">{{ data.description }}</span></td>
-                                                        {% endif %}
-                                                    </tr>
-                                                {% endfor %}
-                                                {% endif %} -->
+{#                                                <!-- {% if sia_data %}#}
+{#                                                    {% for data in sia_data %}#}
+{#                                                    <tr>#}
+{#                                                        {% if data.severity in 'DOWN,CRITICAL' or 'CRIT' in data.description %}#}
+{#                                                            <td><i class="fa fa-circle red-dot"></i></td>#}
+{#                                                            <td>{{ data.device_name }}</td>#}
+{#                                                            <td>{{ data.ip_address }}</td>#}
+{#                                                            <td>{{ data.service_name }}</td>#}
+{#                                                            <td>{{ data.data_source }}</td>#}
+{#                                                            <td><span class="text-danger">{{ data.severity }}</span></td>#}
+{#                                                            <td><span class="text-danger">{{ data.current_value }}</span></td>#}
+{#                                                            <td>{{ data.alert_date_time }}</td>#}
+{#                                                            <td><span class="text-danger">{{ data.description }}</span></td>#}
+{#                                                        {% elif data.severity in 'WARN,WARNING,STARTED' or 'WARN' in data.description %}#}
+{#                                                            <td><i class="fa fa-circle orange-dot"></i></td>#}
+{#                                                            <td>{{ data.device_name }}</td>#}
+{#                                                            <td>{{ data.ip_address }}</td>#}
+{#                                                            <td>{{ data.service_name }}</td>#}
+{#                                                            <td>{{ data.data_source }}</td>#}
+{#                                                            <td><span class="text-warning">{{ data.severity }}</span></td>#}
+{#                                                            <td><span class="text-warning">{{ data.current_value }}</span></td>#}
+{#                                                            <td>{{ data.alert_date_time }}</td>#}
+{#                                                            <td><span class="text-warning">{{ data.description }}</span></td>#}
+{#                                                        {% elif data.severity in 'OK,STOPPED' or 'OK' in data.description %}#}
+{#                                                            <td><i class="fa fa-circle green-dot"></i></td>#}
+{#                                                            <td>{{ data.device_name }}</td>#}
+{#                                                            <td>{{ data.ip_address }}</td>#}
+{#                                                            <td>{{ data.service_name }}</td>#}
+{#                                                            <td>{{ data.data_source }}</td>#}
+{#                                                            <td><span class="text-success">{{ data.severity }}</span></td>#}
+{#                                                            <td><span class="text-success">{{ data.current_value }}</span></td>#}
+{#                                                            <td>{{ data.alert_date_time }}</td>#}
+{#                                                            <td><span class="text-success">{{ data.description }}</span></td>#}
+{#                                                        {% else %}#}
+{#                                                            <td><i class="fa fa-circle grey-dot"></i></td>#}
+{#                                                            <td>{{ data.device_name }}</td>#}
+{#                                                            <td>{{ data.ip_address }}</td>#}
+{#                                                            <td>{{ data.service_name }}</td>#}
+{#                                                            <td>{{ data.data_source }}</td>#}
+{#                                                            <td><span class="text-muted">{{ data.severity }}</span></td>#}
+{#                                                            <td><span class="text-muted">{{ data.current_value }}</span></td>#}
+{#                                                            <td>{{ data.alert_date_time }}</td>#}
+{#                                                            <td><span class="text-muted">{{ data.description }}</span></td>#}
+{#                                                        {% endif %}#}
+{#                                                    </tr>#}
+{#                                                {% endfor %}#}
+{#                                                {% endif %} -->#}
                                             </tbody>
                                         </table>
                                         
