@@ -144,7 +144,7 @@ function prepare_oms_object(oms_instance) {
 			map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image,zIndex: 500});
 			map_points_array.push(map_point);
 			map_point_count ++;
-			$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/'});
+			$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/', secure: true});
 			isMaintained = JSON.stringify(map_points_lat_lng_array);
 
 			return ;
@@ -2780,7 +2780,7 @@ function devicePlottingClass_gmap() {
     	isCreated= 0;
 
     	//Reset Cookie
-    	$.cookie('tools_ruler', 0, {path: '/'});
+    	$.cookie('tools_ruler', 0, {path: '/', secure: true});
 
     	tools_ruler = $.cookie("tools_ruler");
 
@@ -2904,7 +2904,7 @@ function devicePlottingClass_gmap() {
     	is_bs_clicked= 0;
 
     	//Reset Cookie
-    	$.cookie('tools_line', 0, {path: '/'});
+    	$.cookie('tools_line', 0, {path: '/', secure: true});
 
     	tools_line = $.cookie("tools_line");
 	}
@@ -3003,7 +3003,7 @@ function devicePlottingClass_gmap() {
 
     	map_point_count= 0;
 
-    	$.cookie("isMaintained", 0, {path: '/'});
+    	$.cookie("isMaintained", 0, {path: '/', secure: true});
 
     	isMaintained = $.cookie("isMaintained");
     }
@@ -3059,7 +3059,7 @@ function devicePlottingClass_gmap() {
 
 				map_point_count ++;
 
-				$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/'});
+				$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/', secure: true});
 
 				isMaintained = $.cookie("isMaintained");
 
@@ -3114,10 +3114,10 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 1;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/'});
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure: true});
 
 	 	freezedAt = (new Date()).getTime();
-	 	$.cookie("freezedAt", freezedAt, {path: '/'});
+	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
 
 	 	/*Set Live Polling flag*/
 	 	// isPollingActive = 1;
@@ -3133,10 +3133,10 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 0;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/'});
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure: true});
 
 	 	freezedAt = 0;
-	 	$.cookie("freezedAt", freezedAt, {path: '/'});
+	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
 
 	 	/*Set Live Polling flag*/
 	 	// isPollingActive = 0;
