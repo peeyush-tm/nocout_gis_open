@@ -340,3 +340,7 @@
 .fright {
     float: right;
 }
+
+#gis_status_txt li {
+    padding: 4px;
+}

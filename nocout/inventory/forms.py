@@ -4,12 +4,14 @@ import re
 from django import forms
 from device.models import Country, State, City
 from device_group.models import DeviceGroup
-from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings
+from models import Inventory, IconSettings, LivePollingSettings, ThresholdConfiguration, ThematicSettings, \
+    GISInventoryBulkImport
 from nocout.widgets import IntReturnModelChoiceField
 from organization.models import Organization
 from user_group.models import UserGroup
 from django.forms.util import ErrorList
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
+from django.utils.html import escape
 import logging
 logger = logging.getLogger(__name__)
 
@@ -1017,7 +1019,7 @@ class ThematicSettingsForm(forms.ModelForm):
 
 #*********************************** Bulk Import ***************************************
 class GISInventoryBulkImportForm(forms.Form):
-    IMPORT_FILE_TYPES = ['.xlsx', '.xls']
+    IMPORT_FILE_TYPES = ['.xls']
     # SHEET_CHOICES = [('', 'Select')] + [(str(id), str(id)) for id in range(50)]
     SHEET_CHOICES = (
         ("", "Select"),
@@ -1032,6 +1034,7 @@ class GISInventoryBulkImportForm(forms.Form):
     bs_sheet = forms.ChoiceField(label='Wimax/PMP BS Sheet', choices=SHEET_CHOICES, required=False)
     ss_sheet = forms.ChoiceField(label='Wimax/PMP SS Sheet', choices=SHEET_CHOICES, required=False)
     ptp_sheet = forms.ChoiceField(label='PTP Sheet', choices=SHEET_CHOICES, required=False)
+    description = forms.CharField(label='Description', widget=forms.Textarea, required=False)
 
     def __init__(self, *args, **kwargs):
         super(GISInventoryBulkImportForm, self).__init__(*args, **kwargs)
@@ -1052,6 +1055,48 @@ class GISInventoryBulkImportForm(forms.Form):
         input_excel = self.cleaned_data['file_upload']
         extension = os.path.splitext(input_excel.name)[1]
         if not (extension in GISInventoryBulkImportForm.IMPORT_FILE_TYPES):
-            raise forms.ValidationError( u'%s is not a valid excel file. Please make sure your input file is an excel file.' % extension )
+            raise forms.ValidationError( u'%s is not the supported file. Please make sure your input file is an excel(.xls) file.' % extension )
         else:
             return input_excel
+
+    def clean_description(self):
+        description = self.cleaned_data['description']
+        try:
+            description = escape(description)
+        except Exception as e:
+            logger.info(e.message)
+        return description
+
+
+#*********************************** LivePollingSettings ***************************************
+class GISInventoryBulkImportEditForm(forms.ModelForm):
+
+    """
+    Class Based View GISInventoryBulkImport Model form to update and create.
+    """
+    def __init__(self, *args, **kwargs):
+        super(GISInventoryBulkImportEditForm, self).__init__(*args, **kwargs)
+        self.fields['original_filename'].widget.attrs['readonly'] = True
+        self.fields['valid_filename'].widget.attrs['readonly'] = True
+        self.fields['invalid_filename'].widget.attrs['readonly'] = True
+        self.fields['sheet_name'].widget.attrs['readonly'] = True
+        self.fields['technology'].widget.attrs['readonly'] = True
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs['class'] += ' col-md-12'
+                    field.widget.attrs['class'] += ' select2select'
+                else:
+                    field.widget.attrs['class'] += ' form-control'
+            else:
+                if isinstance(field.widget, forms.widgets.Select):
+                    field.widget.attrs.update({'class': 'col-md-12 select2select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = GISInventoryBulkImport
+        exclude = ['status', 'uploaded_by', 'added_on', 'modified_on']

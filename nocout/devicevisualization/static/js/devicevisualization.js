@@ -41,7 +41,26 @@ if(isFreeze == 1 || isMaintained != 0 || tools_ruler != 0 || tools_line != 0) {
     $("#showToolsBtn").removeClass("btn-warning");
 }
 
+if(tools_ruler != 0) {
+    $("#ruler_select").removeClass('hide');
+    $("#ruler_remove").removeClass('hide');
+}
 
+if(tools_line != 0) {
+    $("#line_select").removeClass('hide');
+    $("#line_remove").removeClass('hide');
+}
+
+if(isMaintained != 0) {
+    $("#point_select").removeClass('hide');
+    $("#point_remove").removeClass('hide');
+}
+
+google.maps.event.clearListeners(mapInstance,'click');
+
+pointAdd= -1;
+
+is_line_active = 0;
 /*Call get_page_status function to show the current status*/
 get_page_status();
 
@@ -368,8 +387,6 @@ $("#clearPolygonBtn").click(function(e) {
  *
  */
 function showToolsPanel() {
-
-    hasTools = 1;
     if(isFreeze == 1) {
         if($("#freeze_remove").hasClass("hide")) {
             $("#freeze_select").addClass("hide");
@@ -381,13 +398,29 @@ function showToolsPanel() {
             $("#freeze_select").removeClass("hide");
         }
     }
-    if(isMaintained != 0) {
 
-        $("#point_remove").removeClass("hide");
-        $("#point_select").addClass("hide");
+    if(isMaintained != 0) {
+        $("#point_select").removeClass('hide');
+        $("#point_remove").removeClass('hide');
     } else {
-        $("#point_remove").addClass("hide");
-        $("#point_select").removeClass("hide");
+        $("#point_select").removeClass('hide');
+        $("#point_remove").addClass('hide');
+    }
+
+    if(tools_ruler != 0) {
+        $("#ruler_select").removeClass('hide');
+        $("#ruler_remove").removeClass('hide');
+    } else {
+        $("#ruler_select").removeClass('hide');
+        $("#ruler_remove").addClass('hide');
+    }
+
+    if(tools_line != 0) {
+        $("#line_select").removeClass('hide');
+        $("#line_remove").removeClass('hide');
+    } else {
+        $("#line_select").removeClass('hide');
+        $("#line_remove").addClass('hide');
     }
 
     /*Hide Tools Button*/
@@ -403,10 +436,9 @@ function showToolsPanel() {
     get_page_status();
 }
 
-function removetoolsPanel() {    
-
-    hasTools = 0;
-
+function removetoolsPanel() {
+pointAdd= -1;
+is_line_active= 0;
     /*Hide Tools Button*/
     $("#showToolsBtn").removeClass("hide");
 
@@ -451,13 +483,15 @@ function removetoolsPanel() {
         }
     }
 
-    if(isMaintained != 0) {
-        $("#point_remove").removeClass("hide");
-        $("#point_select").addClass("hide");
-    } else {
-        $("#point_remove").addClass("hide");
-        $("#point_select").removeClass("hide");
-    }
+    // if(isMaintained != 0) {
+    //     $("#point_remove").removeClass("hide");
+    //     $("#point_select").addClass("hide");
+    // } else {
+    //     $("#point_remove").addClass("hide");
+    //     $("#point_select").removeClass("hide");
+    // }
+
+    google.maps.event.clearListeners(mapInstance,'click');
 
     // networkMapInstance.clearToolsParams_gmap();
 
@@ -477,17 +511,17 @@ function removetoolsPanel() {
 
     if($("#ruler_remove").hasClass("hide")) {
 
-        $("#ruler_select").addClass("hide");
+        // $("#ruler_select").addClass("hide");
         $("#ruler_remove").removeClass("hide");
     }
-
+    google.maps.event.clearListeners(mapInstance, 'click');
     networkMapInstance.addRulerTool_gmap();
  });
 
  $("#line_select").click(function(e) {
     is_line_active= 1;
     $(this).next().removeClass('hide');
-    $(this).addClass('hide');
+    // $(this).addClass('hide');
     networkMapInstance.createLineTool_gmap();
  });
 
@@ -495,6 +529,8 @@ function removetoolsPanel() {
     is_line_active= 0;
     $(this).prev().removeClass('hide');
     $(this).addClass('hide');
+    google.maps.event.clearListeners(mapInstance, 'click');
+    networkMapInstance.clearLineTool_gmap();
  });
 
  /**
@@ -507,7 +543,7 @@ $("#ruler_remove").click(function(e) {
         $("#ruler_select").removeClass("hide");
         $("#ruler_remove").addClass("hide");
     }
-
+    google.maps.event.clearListeners(mapInstance, 'click');
     networkMapInstance.clearToolsParams_gmap();
 });
 
@@ -519,7 +555,7 @@ $("#ruler_remove").click(function(e) {
  $("#point_select").click(function(e) {
 pointAdd= 1;
     if($("#point_remove").hasClass("hide")) {
-        $("#point_select").addClass("hide");
+        // $("#point_select").addClass("hide");
         $("#point_remove").removeClass("hide");
     }
 
@@ -537,7 +573,7 @@ $("#point_remove").click(function(e) {
         $("#point_remove").addClass("hide");
     }
 
-    networkMapInstance.clearPointTool_gmap();
+    networkMapInstance.clearPointsTool_gmap();
 });
 
 /**
@@ -581,26 +617,45 @@ $("#freeze_remove").click(function(e) {
  * This function get the current status & show it on gmap/google eartg page.
  */
 
-function get_page_status() {
+function clearTools_gmap() {
+    google.maps.event.clearListeners(mapInstance,'click');
+    networkMapInstance.clearRulerTool_gmap();
+    networkMapInstance.clearLineTool_gmap();
+    is_line_active = 0;
+    bootbox.confirm("Do you want to reset Maintenance Points too?", function(result) {
+        if(result) {
+            pointAdd= -1;            
+            hasTools = 0;
+            networkMapInstance.clearPointsTool_gmap();
+            $("#showToolsBtn").addClass("btn-info");
+            $("#showToolsBtn").removeClass("btn-warning");
+        }
+        get_page_status();
+    });
+    
+}
 
+function get_page_status() {
     var status_txt = "";
 
-    if(hasAdvFilter == 0 && hasSelectDevice == 0 && hasTools == 0) {
-        status_txt = "Default";
-    } else if(hasAdvFilter == 0 && hasSelectDevice == 0 && hasTools == 1) {
-        status_txt = "Gmap Tools Applied";
-    } else if(hasAdvFilter == 0 && hasSelectDevice == 1 && hasTools == 0) {
-        status_txt = "Select Devices Applied";
-    } else if(hasAdvFilter == 0 && hasSelectDevice == 1 && hasTools == 1) {
-        status_txt = "Select Devices Applied<br/>Gmap Tools Applied";
-    } else if(hasAdvFilter == 1 && hasSelectDevice == 0 && hasTools == 0) {
-        status_txt = "Advance Filters Applied";
-    } else if(hasAdvFilter == 1 && hasSelectDevice == 0 && hasTools == 1) {
-        status_txt = "Advance Filters Applied<br/>Gmap Tools Applied";
-    } else if(hasAdvFilter == 1 && hasSelectDevice == 1 && hasTools == 0) {
-        status_txt = "Advance Filters Applied<br/>Select Devices Applied";
-    } else if(hasAdvFilter == 1 && hasSelectDevice == 1 && hasTools == 1) {
-        status_txt = "Advance Filters Applied<br/>Select Devices Applied<br/>Gmap Tools Applied";
+    if(hasAdvFilter == 1) {
+        status_txt+= '<li>Advance Filters Applied</li>';
+    }
+
+    if(hasSelectDevice == 1) {
+        status_txt+= '<li>Select Devices Applied</li>';
+    }
+
+    if(hasTools == 1) {
+        if(isMaintained != 0 || tools_ruler != 0 || tools_line != 0) {
+            status_txt+= '<li>Gmap Tools Applied<button class="btn btn-sm btn-danger pull-right" onclick="clearTools_gmap()" style="padding: 2px 5px; margin: -3px;">Reset</button><li>';
+        } else {
+            status_txt = "<li>Gmap Tools Applied</li>";
+        }
+    }
+
+    if(status_txt == "") {
+        status_txt += "<li>Default</li>";    
     }
 
     $("#gis_status_txt").html(status_txt);

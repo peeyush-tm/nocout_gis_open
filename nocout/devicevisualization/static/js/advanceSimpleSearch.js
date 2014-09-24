@@ -37,16 +37,14 @@ function advanceSearchMainClass() {
     this.searchedCircuitLines= [];
 
     this.showNotification= function() {
-        if(!$("span#gis_search_status_txt").length) {
-            $("<br /><span id='gis_search_status_txt'>"+this.constants.statusText+"</span><button class='btn btn-sm btn-danger pull-right' style='padding:2px 5px;margin:-3px;' onclick='resetAdvanceSearch();'>Reset</button>").insertAfter("#gis_status_txt");
+        if(!$("li#gis_search_status_txt").length) {
+            $("#gis_status_txt").append("<li id='gis_search_status_txt'>"+this.constants.statusText+" <button class='btn btn-sm btn-danger pull-right' style='padding:2px 5px;margin:-3px;' onclick='resetAdvanceSearch();'>Reset</button></li>");
         }
     }
 
     this.hideNotification= function() {
-        if($("span#gis_search_status_txt").length) {
-            $("span#gis_search_status_txt").prev().remove();
-            $("span#gis_search_status_txt").next().remove();
-            $("span#gis_search_status_txt").remove();
+        if($("li#gis_search_status_txt").length) {
+            $("li#gis_search_status_txt").remove();
         }
     }
 

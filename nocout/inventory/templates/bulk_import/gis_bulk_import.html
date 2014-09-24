@@ -351,6 +351,11 @@
                 // changing content of table header
                 $("#excel_table_header_bottom").empty().html(header);
 
+                // reset bs sheet select menu
+                $("#s2id_id_bs_sheet").find(".select2-chosen").text('Select');
+                $("#id_bs_sheet").prop('selectedIndex',0);
+
+                // reset ptp sheet select menu
                 $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
                 $("#id_ptp_sheet").prop('selectedIndex', 0);
             }
@@ -415,6 +420,11 @@
                 // changing content of table header
                 $("#excel_table_header_bottom").empty().html(header);
 
+                // reset ss sheet select menu
+                $("#s2id_id_ss_sheet").find(".select2-chosen").text('Select');
+                $("#id_ss_sheet").prop('selectedIndex',0);
+
+                // reset ptp sheet select menu
                 $("#s2id_id_ptp_sheet").find(".select2-chosen").text('Select');
                 $("#id_ptp_sheet").prop('selectedIndex', 0);
             }
@@ -480,9 +490,12 @@
                 // changing content of table header
                 $("#excel_table_header_bottom").empty().html(header);
 
+                // reset bs sheet select menu
                 $("#s2id_id_bs_sheet").find(".select2-chosen").text('Select');
-                $("#s2id_id_ss_sheet").find(".select2-chosen").text('Select');
                 $("#id_bs_sheet").prop('selectedIndex',0);
+
+                // reset ss sheet select menu
+                $("#s2id_id_ss_sheet").find(".select2-chosen").text('Select');
                 $("#id_ss_sheet").prop('selectedIndex',0);
             }
         });

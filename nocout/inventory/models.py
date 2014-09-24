@@ -1,5 +1,5 @@
 import time
-import datetime
+from datetime import datetime
 from django.contrib.auth.models import User
 from django.db import models
 from service.models import Service, ServiceDataSource
@@ -10,6 +10,7 @@ from organization.models import Organization
 from django.utils.safestring import mark_safe
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
+from django.utils.translation import ugettext_lazy
 
 
 # inventory model --> mapper of user_group & device groups
@@ -218,8 +219,8 @@ class IconSettings(models.Model):
     # function to modify name and path of uploaded file
     def uploaded_file_name(instance, filename):
         timestamp = time.time()
-        full_time = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
-        year_month_date = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
+        full_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
+        year_month_date = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
 
         # modified filename
         filename = "{}_{}".format(full_time, filename)
@@ -278,17 +279,14 @@ class ThresholdConfiguration(models.Model):
     range3_start = models.CharField('Range3 Start', max_length=20, null=True, blank=True)
     range3_end = models.CharField('Range3 End', max_length=20, null=True, blank=True)
 
-
     range4_start = models.CharField('Range4 Start', max_length=20, null=True, blank=True)
     range4_end = models.CharField('Range4 End', max_length=20, null=True, blank=True)
 
     range5_start = models.CharField('Range5 Start', max_length=20, null=True, blank=True)
     range5_end = models.CharField('Range5 End', max_length=20, null=True, blank=True)
 
-
     range6_start = models.CharField('Range6 Start', max_length=20, null=True, blank=True)
     range6_end = models.CharField('Range6 End', max_length=20, null=True, blank=True)
-
 
     range7_start = models.CharField('Range7 Start', max_length=20, null=True, blank=True)
     range7_end = models.CharField('Range7 End', max_length=20, null=True, blank=True)
@@ -321,4 +319,31 @@ class ThematicSettings(models.Model):
 
     def __unicode__(self):
         return self.name
+
+
+class GISInventoryBulkImport(models.Model):
+    original_filename = models.CharField('Inventory', max_length=250, null=True, blank=True)
+    valid_filename = models.CharField('Valid', max_length=250, null=True, blank=True)
+    invalid_filename = models.CharField('Invalid', max_length=250, null=True, blank=True)
+    status = models.IntegerField('Status', null=True, blank=True)
+    sheet_name = models.CharField('Sheet Name', max_length=100, null=True, blank=True)
+    technology = models.CharField('Technology', max_length=40, null=True, blank=True)
+    upload_status = models.IntegerField('Upload Status', null=True, blank=True)
+    description = models.TextField('Description', null=True, blank=True)
+    uploaded_by = models.CharField('Uploaded By', max_length=100, null=True, blank=True)
+    added_on = models.DateTimeField('Added On', null=True, blank=True)
+    modified_on = models.DateTimeField('Modified On', null=True, blank=True)
+    
+    def save(self, *args, **kwargs):
+        """ On save, update timestamps """
+        if not self.id:
+            self.added_on = datetime.now()
+        self.modified_on = datetime.now()
+        return super(GISInventoryBulkImport, self).save(*args, **kwargs)
+
+    def __unicode__(self):
+        """
+        Device Ping Configuration object presentation
+        """
+        return self.original_filename
 
