@@ -53,6 +53,7 @@ var base_url = "",
 	circleArray = [],
 	servicesData = {},
 	isPollingActive = 0,
+	pollableDevices = [],
 	/*Variables used in fresnel zone calculation*/
 	isDialogOpen = true,
 	bts1_name = "",
@@ -864,6 +865,8 @@ function devicePlottingClass_gmap() {
 						deviceExtraInfo 	: sector_array[j].info,
 						deviceInfo 			: sector_array[j].device_info,
 						sectorName  		: sector_array[j].sector_configured_on,
+						device_name  		: sector_array[j].sector_configured_on,
+						name  				: bs_ss_devices[i].name,
 						sector_lat  		: startEndObj["startLat"],
 						sector_lon  		: startEndObj["startLon"],
 						zIndex 				: 200,
@@ -877,8 +880,10 @@ function devicePlottingClass_gmap() {
                 var sect_height = sector_array[j].antenna_height;
 
 				/*Create Sector Marker*/
-
 				var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
+
+				/*Push sector marker to pollableDevices array*/
+				pollableDevices.push(sector_Marker)
 
 				if(sectorMarkerConfiguredOn.indexOf(sector_array[j].sector_configured_on) == -1) {
 					sector_MarkersArray.push(sector_Marker);
@@ -967,6 +972,9 @@ function devicePlottingClass_gmap() {
 
 			    	/*Add parent markers to the OverlappingMarkerSpiderfier*/
 				    oms_ss.addMarker(ss_marker);
+
+				    /*Push SS marker to pollableDevices array*/
+					pollableDevices.push(ss_marker)
 
 				    /*Push All SS Lat & Lon*/
 		    	    ssLatArray.push(ss_marker_obj.data.lat);
@@ -2178,6 +2186,7 @@ function devicePlottingClass_gmap() {
 
             masterMarkersObj = [];
             slaveMarkersObj = [];
+            pollableDevices = [];
 
             // showRequiredSectorMarker(filteredData);
 
@@ -2411,32 +2420,39 @@ function devicePlottingClass_gmap() {
 
 							currentPolygon = e.overlay;
 							currentPolygon.type = e.type;
-							var allSS = [];
-							
+							var allSS = pollableDevices;
 							allSSIds = [];
-
-							$.grep(main_devices_data_gmaps, function(bs) {
-								
-								$.grep(bs.data.param.sector, function(sector) {
-
-									$.grep(sector.sub_station, function(ss) {
-										allSS.push(ss);
-									});
-								});
-							});
 
 							var selected_polling_technology = $("#polling_tech option:selected").text();
 
+							/*
+							$.grep(main_devices_data_gmaps, function(bs) {
+								$.grep(bs.data.param.sector, function(sector) {
+									$.grep(sector.sub_station, function(ss) {
+										if($.trim(ss.data.technology) == $.trim(selected_polling_technology)) {
+											allSS.push(ss);
+										}
+									});
+								});
+							});
+							*/
+
 							for(var k=0;k<allSS.length;k++) {
 									
-								var point = new google.maps.LatLng(allSS[k].data.lat,allSS[k].data.lon);
+								var point = new google.maps.LatLng(allSS[k].ptLat,allSS[k].ptLon);
 
 								if (google.maps.geometry.poly.containsLocation(point, polygon)) {
 
-									if($.trim(allSS[k].data.technology) == $.trim(selected_polling_technology)) {
-
-										allSSIds.push(allSS[k].device_name);
-										polygonSelectedDevices.push(allSS[k]);
+									if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
+										if($.trim(selected_polling_technology.toLowerCase()) == "ptp" || $.trim(selected_polling_technology.toLowerCase()) == "p2p") {
+											allSSIds.push(allSS[k].device_name);
+											polygonSelectedDevices.push(allSS[k]);
+										} else {
+											if($.trim(allSS[k].pointType) == 'sub_station') {
+												allSSIds.push(allSS[k].device_name);
+												polygonSelectedDevices.push(allSS[k]);
+											}
+										}
 									}
 								}
 							}
