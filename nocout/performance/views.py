@@ -835,12 +835,30 @@ class Inventory_Device_Service_Data_Source(View):
             'data': {
                 'meta': {},
                 'objects': {
-                    'network_perf_tab': [],
-                    'service_status_tab': [],
-                    'inventory_status_tab': [],
-                    'service_perf_tab': [],
-                    'availability_tab': [],
-                    'topology_tab': []
+                    'network_perf_tab': {
+                        "info" : [],
+                        "isActive" : 1
+                    },
+                    'service_status_tab': {
+                        "info" : [],
+                        "isActive" : 0
+                    },
+                    'inventory_status_tab': {
+                        "info" : [],
+                        "isActive" : 0
+                    },
+                    'service_perf_tab': {
+                        "info" : [],
+                        "isActive" : 0
+                    },
+                    'availability_tab': {
+                        "info" : [],
+                        "isActive" : 0
+                    },
+                    'topology_tab': {
+                        "info" : [],
+                        "isActive" : 0
+                    }
                 }
             }
         }
@@ -853,7 +871,7 @@ class Inventory_Device_Service_Data_Source(View):
         # TODO:to remove this code as the services are getting multi added with their port.
         inventory_device_service_name = list(set(inventory_device_service_name))
 
-        result['data']['objects']['network_perf_tab'].append(
+        result['data']['objects']['network_perf_tab']["info"].append(
             {
                 'name': "rta",
                 'title': "Latency",
@@ -861,7 +879,7 @@ class Inventory_Device_Service_Data_Source(View):
                 'active': 0,
                 'service_type_tab': 'network_perf_tab'
             })
-        result['data']['objects']['network_perf_tab'].append(
+        result['data']['objects']['network_perf_tab']["info"].append(
             {
                 'name': "pl",
                 'title': "Packet Drop",
@@ -874,7 +892,7 @@ class Inventory_Device_Service_Data_Source(View):
             if '_status' in service_name:
                 # service_data_sources = Service.objects.get(name=service_name).service_data_sources.all()
                 # for service_data_source in service_data_sources:
-                result['data']['objects']['service_status_tab'].append(
+                result['data']['objects']['service_status_tab']["info"].append(
                     {
                         'name': service_data_source,
                         'title': Service.objects.get(name=service_name).alias.upper() +
@@ -889,7 +907,7 @@ class Inventory_Device_Service_Data_Source(View):
             elif '_invent' in service_name:
                 # service_data_sources = Service.objects.get(name=service_name).service_data_sources.all()
                 # for service_data_source in service_data_sources:
-                result['data']['objects']['inventory_status_tab'].append(
+                result['data']['objects']['inventory_status_tab']["info"].append(
                     {
                         'name': service_data_source,
                         'title': Service.objects.get(name=service_name).alias.upper() +
@@ -903,7 +921,7 @@ class Inventory_Device_Service_Data_Source(View):
             else:
                 # service_data_sources = Service.objects.get(name=service_name).service_data_sources.all()
                 # for service_data_source in service_data_sources:
-                result['data']['objects']['service_perf_tab'].append(
+                result['data']['objects']['service_perf_tab']["info"].append(
                     {
                         'name': service_data_source,
                         'title': Service.objects.get(name=service_name).alias.upper() +
@@ -915,7 +933,7 @@ class Inventory_Device_Service_Data_Source(View):
                         'active': 0,
                     })
 
-        result['data']['objects']['availability_tab'].append(
+        result['data']['objects']['availability_tab']["info"].append(
         {
             'name': 'availability',
             'title': 'Availability',
@@ -924,7 +942,7 @@ class Inventory_Device_Service_Data_Source(View):
             'active': 0,
         })
 
-        result['data']['objects']['topology_tab'].append(
+        result['data']['objects']['topology_tab']["info"].append(
         {
             'name': 'topology',
             'title': 'Topology',
