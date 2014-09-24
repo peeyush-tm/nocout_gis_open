@@ -5,10 +5,11 @@ from django.template import RequestContext
 import logging
 from django.utils.decorators import method_decorator
 from django.views.generic import View
-from device.models import Device, DeviceFrequency
-from inventory.models import ThematicSettings
+from device.models import Device, DeviceFrequency, DeviceTechnology
+from inventory.models import ThematicSettings, UserThematicSettings
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, PerformanceStatus, PerformanceInventory, \
     PerformanceNetwork, PerformanceService
+from user_profile.models import UserProfile
 from django.views.decorators.csrf import csrf_exempt
 import re, ast
 logger=logging.getLogger(__name__)
@@ -102,7 +103,13 @@ class Gis_Map_Performance_Data(View):
             freeze_time= self.request.GET.get('freeze_time','0')
             try:
                 device= Device.objects.get(device_name= device_name, is_added_to_nms=1, is_deleted=0)
-                thematic_settings= ThematicSettings.objects.get(user_profile= self.request.user)
+                device_technology = DeviceTechnology.objecs.get(id=device.device_technology)
+                user_obj = UserProfile.objects.get(id= self.request.user)
+
+                uts = UserThematicSettings.objects.get(user_profile=user_obj,
+                                                       thematic_technology=device_technology)
+
+                thematic_settings= uts.thematic_template
                 threshold_template=thematic_settings.threshold_template
                 live_polling_template= threshold_template.live_polling_template
 

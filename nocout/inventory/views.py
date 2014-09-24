@@ -24,11 +24,12 @@ from device_group.models import DeviceGroup
 from nocout.settings import GISADMIN, NOCOUT_USER
 from nocout.utils.util import DictDiffer
 from models import Inventory, DeviceTechnology, IconSettings, LivePollingSettings, ThresholdConfiguration, \
-    ThematicSettings, GISInventoryBulkImport
+    ThematicSettings, GISInventoryBulkImport, UserThematicSettings
 from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
     ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm
 from organization.models import Organization
 from user_group.models import UserGroup
+from user_profile.models import UserProfile
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
 from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm, CircuitForm
 from device.models import Country, State, City
@@ -2628,11 +2629,20 @@ class Update_User_Thematic_Setting(View):
         user_profile_id = self.request.user.id
         if thematic_setting_id:
 
-            old_entries=ThematicSettings.objects.filter(user_profile__in= [user_profile_id])
-            for entries in old_entries:
-                entries.user_profile.remove(self.request.user)
 
-            ThematicSettings.objects.get(id= int(thematic_setting_id)).user_profile.add(user_profile_id)
+            ts_obj = ThematicSettings.objects.get(id= int(thematic_setting_id))
+            user_obj = UserProfile.objects.get(id= user_profile_id)
+            tech_obj = ts_obj.threshold_template.live_polling_template.technology
+
+            to_delete = UserThematicSettings.objects.filter(user_profile=user_obj, thematic_technology=tech_obj)
+            if len(to_delete):
+                to_delete.delete()
+
+            uts = UserThematicSettings(user_profile= user_obj,
+                                       thematic_template=ts_obj,
+                                       thematic_technology=tech_obj
+            )
+            uts.save()
             self.result['success']=1
             self.result['message']='Thematic Setting Bind to User Successfully'
             self.result['data']['objects']['username']=self.request.user.userprofile.username
