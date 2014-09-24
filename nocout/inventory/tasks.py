@@ -704,7 +704,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
 
             # 'qos_bw' validation (must be numeric)
             try:
-                if not isinstance(qos_bw, int) or not isinstance(qos_bw, float):
+                if not (isinstance(qos_bw, int) or isinstance(qos_bw, float)):
                     errors += 'QOS (BW) must be a number.\n'
                 else:
                     errors += 'QOS (BW) must not be empty.\n'
@@ -721,11 +721,8 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
 
             # 'antenna gain' validation (must be a number)
             try:
-                if antenna_gain:
-                    if isinstance(antenna_gain, int) or isinstance(antenna_gain, float):
-                        pass
-                    else:
-                        errors += 'Antenna Gain must be a number.\n'
+                if not (isinstance(antenna_gain, int) or isinstance(antenna_gain, float)):
+                    errors += 'Antenna Gain must be a number.\n'
             except Exception as e:
                 pass
 
@@ -1117,7 +1114,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
 
                 # 'ss cable length' validation (must be upto 2 decimal places)
                 try:
-                    if not isinstance(ss_cable_length, int) or not isinstance(ss_cable_length, float):
+                    if not (isinstance(ss_cable_length, int) or isinstance(ss_cable_length, float)):
                         errors += 'SS Cable Length must be a number.\n'
                     else:
                         errors += 'SS Cable Length must not be empty.\n'

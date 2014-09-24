@@ -3069,6 +3069,10 @@ class GISInventoryBulkImportUpdate(UpdateView):
     form_class = GISInventoryBulkImportEditForm
     success_url = reverse_lazy('gis_inventory_bulk_import_list')
 
+    
+class BulkUploadValidData(View):
+    pass
+
 
 
 
