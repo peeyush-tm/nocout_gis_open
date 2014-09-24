@@ -1019,7 +1019,7 @@ class ThematicSettingsForm(forms.ModelForm):
 
 #*********************************** Bulk Import ***************************************
 class GISInventoryBulkImportForm(forms.Form):
-    IMPORT_FILE_TYPES = ['.xlsx', '.xls']
+    IMPORT_FILE_TYPES = ['.xls']
     # SHEET_CHOICES = [('', 'Select')] + [(str(id), str(id)) for id in range(50)]
     SHEET_CHOICES = (
         ("", "Select"),
@@ -1055,7 +1055,7 @@ class GISInventoryBulkImportForm(forms.Form):
         input_excel = self.cleaned_data['file_upload']
         extension = os.path.splitext(input_excel.name)[1]
         if not (extension in GISInventoryBulkImportForm.IMPORT_FILE_TYPES):
-            raise forms.ValidationError( u'%s is not a valid excel file. Please make sure your input file is an excel file.' % extension )
+            raise forms.ValidationError( u'%s is not the supported file. Please make sure your input file is an excel(.xls) file.' % extension )
         else:
             return input_excel
 
