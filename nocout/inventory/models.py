@@ -328,6 +328,7 @@ class GISInventoryBulkImport(models.Model):
     status = models.IntegerField('Status', null=True, blank=True)
     sheet_name = models.CharField('Sheet Name', max_length=100, null=True, blank=True)
     technology = models.CharField('Technology', max_length=40, null=True, blank=True)
+    upload_status = models.IntegerField('Upload Status', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
     uploaded_by = models.CharField('Uploaded By', max_length=100, null=True, blank=True)
     added_on = models.DateTimeField('Added On', null=True, blank=True)
