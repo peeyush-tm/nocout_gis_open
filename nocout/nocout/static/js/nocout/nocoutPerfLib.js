@@ -184,6 +184,16 @@ $.urlParam = function(name){
 
                     for(var i= 0; i<device_services_tab.length; i++) {
                         
+                        var tab_id = device_services_tab[i].split("_tab")[0];
+
+                        if($("#"+device_services_tab[i]).hasClass("active")) {
+                            $("#"+device_services_tab[i]).removeClass("active");
+                        }
+
+                        if($("#"+tab_id).parent("li").hasClass("active")) {
+                            $("#"+tab_id).parent("li").removeClass("active")
+                        }
+
                         device_services = result.data.objects[device_services_tab[i]].info;
                         var tabs_with_data = "";
                         var service_tabs = '<div class="col-md-3"><ul class="nav nav-tabs">';
@@ -194,7 +204,9 @@ $.urlParam = function(name){
                         var is_first_tab = 0;
                         
                         if(result.data.objects[device_services_tab[i]].isActive == 1) {
-                            is_first_tab = 1; 
+                            is_first_tab = 1;                            
+                            $("#"+tab_id).parent("li").addClass("active");
+                            $("#"+device_services_tab[i]).addClass("active");
                         }
                         var count = 0;
                         $.each(device_services, function(key, value) {
@@ -215,11 +227,10 @@ $.urlParam = function(name){
                         service_tabs_data += '</div>';
                         tabs_with_data = service_tabs +" "+service_tabs_data;
 
-                            $("#"+device_services_tab[i]+" .inner_tab_container .panel-body .tabs-left").html(tabs_with_data);
-                            /*Call getServiceData function to fetch the data for currently active service*/                            
-                        }
+                        $("#"+device_services_tab[i]+" .inner_tab_container .panel-body .tabs-left").html(tabs_with_data);                        
+                    }
 
-                    /*Load data of first tab*/
+                    /*Call getServiceData function to fetch the data for currently active service*/
                     perf_that.getServiceData(active_tab_url, active_tab_id, device_id);
 
                     /*Bind click event on tabs*/
@@ -298,7 +309,7 @@ $.urlParam = function(name){
                     if (result.data.objects.table_data_header != undefined) {
 
                         if(result.data.objects.table_data_header.length > 0) {
-                            
+
                             if($("#other_perf_table").length > 0) {
                                 $("#other_perf_table").remove();
                             }
@@ -314,7 +325,6 @@ $.urlParam = function(name){
                             /*Table header creation end*/
 
                             /*Table data creation start*/
-
                             for(var i=0;i<result.data.objects.table_data.length;i++) {
                                 table_string += '<tr>';
                                 table_string += '<td>'+result.data.objects.table_data[i].date+'</td>';
@@ -323,9 +333,11 @@ $.urlParam = function(name){
                                 table_string += '</tr>';
                             }
                             /*Table data creation end*/
+
                             table_string += '</tbody></table>';
 
                             $('#'+service_id+'_chart').html(table_string);
+                            /*Initialize datatable*/
                             $("#other_perf_table").DataTable({
                                 bPaginate: true,
                                 sPaginationType: "full_numbers"
@@ -339,9 +351,6 @@ $.urlParam = function(name){
                             chart: {
                                 zoomType: 'x',
                                 type: single_service_data.type
-    //                            events:{
-    //                                load: Highcharts.drawTable //@TODO: here in we need to draw canvas table with data table data
-    //                            }
                             },
                             title: {
                                 text: single_service_data.name
