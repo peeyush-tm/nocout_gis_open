@@ -279,17 +279,14 @@ class ThresholdConfiguration(models.Model):
     range3_start = models.CharField('Range3 Start', max_length=20, null=True, blank=True)
     range3_end = models.CharField('Range3 End', max_length=20, null=True, blank=True)
 
-
     range4_start = models.CharField('Range4 Start', max_length=20, null=True, blank=True)
     range4_end = models.CharField('Range4 End', max_length=20, null=True, blank=True)
 
     range5_start = models.CharField('Range5 Start', max_length=20, null=True, blank=True)
     range5_end = models.CharField('Range5 End', max_length=20, null=True, blank=True)
 
-
     range6_start = models.CharField('Range6 Start', max_length=20, null=True, blank=True)
     range6_end = models.CharField('Range6 End', max_length=20, null=True, blank=True)
-
 
     range7_start = models.CharField('Range7 Start', max_length=20, null=True, blank=True)
     range7_end = models.CharField('Range7 End', max_length=20, null=True, blank=True)
