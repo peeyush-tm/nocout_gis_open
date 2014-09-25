@@ -146,7 +146,7 @@ function prepare_oms_object(oms_instance) {
 			map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image,zIndex: 500});
 			map_points_array.push(map_point);
 			map_point_count ++;
-			$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/',secure : true});
+			$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/', secure : true});
 			isMaintained = JSON.stringify(map_points_lat_lng_array);
 
 			return ;
@@ -952,15 +952,16 @@ function devicePlottingClass_gmap() {
 				    /*Create SS Marker*/
 				    var ss_marker = new google.maps.Marker(ss_marker_object);
 
+
 				    google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
 
-					    if(ss_marker.hasPerf == 1) {
+					    if(this.hasPerf == 1) {
 					    	
-					    	var freq = ss_marker.perf_data_obj.frequency ? ss_marker.perf_data_obj.frequency : "-";
-					    	var pl = ss_marker.perf_data_obj.pl ? ss_marker.perf_data_obj.pl : "-";
-					    	var perf_val = ss_marker.perf_data_obj.performance_value ? ss_marker.perf_data_obj.performance_value : "-";
+					    	var freq = this.perf_data_obj.frequency ? this.perf_data_obj.frequency : "-";
+					    	var pl = this.perf_data_obj.pl ? this.perf_data_obj.pl : "-";
+					    	var perf_val = this.perf_data_obj.performance_value ? this.perf_data_obj.performance_value : "-";
 
-					    	var info_html = '<table class="table table-hover"><tr><td>Frequency</td><td>'+freq+'</td></tr><tr><td>Packet Loss</td><td>'+pl+'</td></tr><tr><td>'+ss_marker.perf_data_obj.performance_paramter+'</td><td>'+perf_val+'</td></tr></table>';
+					    	var info_html = '<table class="table table-hover"><tr><td>Frequency</td><td>'+freq+'</td></tr><tr><td>Packet Loss</td><td>'+pl+'</td></tr><tr><td>'+this.perf_data_obj.performance_paramter+'</td><td>'+perf_val+'</td></tr></table>';
 					    	/*Set the content for infowindow*/
 							infowindow.setContent(info_html);
 							/*Shift the window little up*/
@@ -2853,7 +2854,7 @@ function devicePlottingClass_gmap() {
     	isCreated= 0;
 
     	//Reset Cookie
-    	$.cookie('tools_ruler', 0, {path: '/',secure : true});
+    	$.cookie('tools_ruler', 0, {path: '/', secure : true});
 
     	tools_ruler = $.cookie("tools_ruler");
 
@@ -2981,7 +2982,7 @@ function devicePlottingClass_gmap() {
     	is_bs_clicked= 0;
 
     	//Reset Cookie
-    	$.cookie('tools_line', 0, {path: '/',secure : true});
+    	$.cookie('tools_line', 0, {path: '/', secure : true});
 
     	tools_line = $.cookie("tools_line");
 	}
@@ -3082,7 +3083,7 @@ function devicePlottingClass_gmap() {
 
     	map_point_count= 0;
 
-    	$.cookie("isMaintained", 0, {path: '/',secure : true});
+    	$.cookie("isMaintained", 0, {path: '/', secure : true});
 
     	isMaintained = $.cookie("isMaintained");
     }
@@ -3138,7 +3139,7 @@ function devicePlottingClass_gmap() {
 
 				map_point_count ++;
 
-				$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/',secure : true});
+				$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/', secure : true});
 
 				isMaintained = $.cookie("isMaintained");
 
@@ -3193,10 +3194,10 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 1;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/',secure : true});
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure : true});
 
 	 	freezedAt = (new Date()).getTime();
-	 	$.cookie("freezedAt", freezedAt, {path: '/',secure : true});
+	 	$.cookie("freezedAt", freezedAt, {path: '/', secure : true});
 
 	 	/*Set Live Polling flag*/
 	 	// isPollingActive = 1;
@@ -3212,10 +3213,10 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 0;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/',secure : true});
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure : true});
 
 	 	freezedAt = 0;
-	 	$.cookie("freezedAt", freezedAt, {path: '/',secure : true});
+	 	$.cookie("freezedAt", freezedAt, {path: '/', secure : true});
 
 	 	/*Set Live Polling flag*/
 	 	// isPollingActive = 0;
