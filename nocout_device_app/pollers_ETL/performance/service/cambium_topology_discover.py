@@ -46,14 +46,22 @@ def topology_discovery_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	matching_criteria = {}
 	db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
 	service = "cambium_topology_discover"
+
 	for host in hostlist:
-		query_string = "GET services\nColumns: service_state plugin_output host_address\nFilter: " + \
-		"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (service,host[0])
+		query_string = "GET services\nColumns: service_state plugin_output host_address\n" + \
+		"Filter: service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (service,host[0])
 		query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
+	
+		
 		try:
 			if query_output[0][1]:
 				plugin_output = str(query_output[0][1].split('- ')[1])
 				plugin_output =	[mac for mac in plugin_output.split(' ')]
+				ap_sector_id = plugin_output[1]
+				ap_mac= plugin_output[0]
+				ss_ip_mac = filter(lambda x: '/' in x,plugin_output)
+				ss_ip= map(lambda x: x.split('/')[0],ss_ip_mac)
+				ss_mac = map(lambda x: x.split('/')[1],ss_ip_mac)
 				service_state = (query_output[0][0])
 				if service_state == 0:
 					service_state = "OK"
@@ -71,9 +79,9 @@ def topology_discovery_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 			continue
 		current_time = int(time.time())
 		topology_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host[0]),
-						service_name=service,current_value=plugin_output,min_value=0,max_value=0,avg_value=0,
-						data_source=ds,severity=service_state,site_name=site,warning_threshold=0,
-						critical_threshold=0,ip_address=host_ip)
+				service_name=service,sector_id=ap_sector_id,mac_address=ap_mac,
+				connected_device_ip=ss_ip,
+				connected_device_mac=ss_mac,data_source=ds,site_name=site,ip_address=host_ip)
 		matching_criteria.update({'device_name':str(host[0]),'service_name':service,'site_name':site})
 		mongo_module.mongo_db_update(db,matching_criteria,topology_dict,"topology")
 		#mongo_module.mongo_db_insert(db,topology_dict,"inventory_services")
