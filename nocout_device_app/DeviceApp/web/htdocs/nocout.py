@@ -470,7 +470,7 @@ def editservice():
                     "error_message": "cmd_params " + pprint.pformat(e)
                 })
 
-	if payload.get('service').strip().lower() != 'ping':
+	if 'ping' not in payload.get('service').strip().lower():
 		serv_params = None
 		if payload.get('serv_params'):
 		    try:

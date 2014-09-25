@@ -62,7 +62,7 @@ def getCustomerAlertDetail(request):
     :return Http Response Object::
 
     """
-    customer_ptp_block_table_header = [
+    datatable_headers = [
         {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
         {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
@@ -87,7 +87,7 @@ def getCustomerAlertDetail(request):
          'bSortable': False},
         ]
 
-    context = {'customer_ptp_block_table_header': json.dumps(customer_ptp_block_table_header)}
+    context = {'datatable_headers': json.dumps(datatable_headers)}
     return render(request, 'alert_center/customer_alert_details_list.html', context)
 
 
@@ -1757,6 +1757,7 @@ def organization_customer_devices(organizations, technology = None):
         else:
             organization_customer_devices = Device.objects.filter(
                 is_added_to_nms= 1,
+                substation__isnull=False,
                 is_deleted= 0,
                 organization__in= organizations,
                 device_technology= technology
@@ -1799,6 +1800,7 @@ def organization_network_devices(organizations, technology = None):
             organization_network_devices = Device.objects.filter(
                                             Q(device_technology = int(technology),
                                             is_added_to_nms=1,
+                                            sector_configured_on__isnull = False,
                                             is_deleted=0,
                                             organization__in= organizations
             ))

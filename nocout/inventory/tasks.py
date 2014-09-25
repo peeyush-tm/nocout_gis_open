@@ -7,6 +7,8 @@ import re
 import xlwt
 import datetime
 
+from nocout.settings import MEDIA_ROOT
+
 # logger = logging.getLogger(__name__)
 
 from celery.utils.log import get_task_logger
@@ -1246,18 +1248,18 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
             pass
 
         # if directory for valid excel sheets didn't exist than create one
-        if not os.path.exists('media/uploaded/inventory_files/valid'):
-            os.makedirs('media/uploaded/inventory_files/valid')
+        if not os.path.exists(MEDIA_ROOT + 'inventory_files/valid'):
+            os.makedirs(MEDIA_ROOT + 'inventory_files/valid')
 
         # if directory for invalid excel sheets didn't exist than create one
-        if not os.path.exists('media/uploaded/inventory_files/invalid'):
-            os.makedirs('media/uploaded/inventory_files/invalid')
-        wb_valid.save('media/uploaded/inventory_files/valid/{}_valid_{}.xls'.format(full_time, filename))
-        wb_invalid.save('media/uploaded/inventory_files/invalid/{}_invalid_{}.xls'.format(full_time, filename))
+        if not os.path.exists(MEDIA_ROOT + 'inventory_files/invalid'):
+            os.makedirs(MEDIA_ROOT + 'inventory_files/invalid')
+        wb_valid.save(MEDIA_ROOT + 'inventory_files/valid/{}_valid_{}.xls'.format(full_time, filename))
+        wb_invalid.save(MEDIA_ROOT + 'inventory_files/invalid/{}_invalid_{}.xls'.format(full_time, filename))
         gis_bulk_obj = GISInventoryBulkImport.objects.get(pk=gis_obj_id)
         try:
-            gis_bulk_obj.valid_filename = 'media/uploaded/inventory_files/valid/{}_valid_{}.xls'.format(full_time, filename)
-            gis_bulk_obj.invalid_filename = 'media/uploaded/inventory_files/invalid/{}_invalid_{}.xls'.format(full_time, filename)
+            gis_bulk_obj.valid_filename =  '/media/inventory_files/valid/{}_valid_{}.xls'.format(full_time, filename)
+            gis_bulk_obj.invalid_filename = '/media/inventory_files/invalid/{}_invalid_{}.xls'.format(full_time, filename)
         except Exception as e:
             logger.exception(e.message)
         gis_bulk_obj.status = 1
@@ -1268,4 +1270,3 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
         gis_bulk_obj.status = 2
         gis_bulk_obj.save()
         logger.exception(e.message)
-
