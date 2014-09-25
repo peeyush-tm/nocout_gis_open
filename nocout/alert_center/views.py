@@ -1799,6 +1799,7 @@ def organization_network_devices(organizations, technology = None):
             organization_network_devices = Device.objects.filter(
                                             Q(device_technology = int(technology),
                                             is_added_to_nms=1,
+                                            sector_configured_on__isnull = False,
                                             is_deleted=0,
                                             organization__in= organizations
             ))
