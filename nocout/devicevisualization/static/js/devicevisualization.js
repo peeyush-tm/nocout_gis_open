@@ -33,7 +33,7 @@ tools_line = $.cookie("tools_line");
 
 isPollingActive = 0;
 
-if(isFreeze == 1 || isMaintained != 0 || tools_ruler != 0 || tools_line != 0) {
+if(isFreeze == 1 || (isMaintained && isMaintained != 0) || (tools_ruler && tools_ruler != 0) || (tools_line && tools_line != 0)) {
     $("#showToolsBtn").removeClass("btn-info");
     $("#showToolsBtn").addClass("btn-warning");
 } else {
@@ -41,26 +41,9 @@ if(isFreeze == 1 || isMaintained != 0 || tools_ruler != 0 || tools_line != 0) {
     $("#showToolsBtn").removeClass("btn-warning");
 }
 
-if(tools_ruler != 0) {
-    $("#ruler_select").removeClass('hide');
-    $("#ruler_remove").removeClass('hide');
-}
-
-if(tools_line != 0) {
-    $("#line_select").removeClass('hide');
-    $("#line_remove").removeClass('hide');
-}
-
-if(isMaintained != 0) {
-    $("#point_select").removeClass('hide');
-    $("#point_remove").removeClass('hide');
-}
 
 google.maps.event.clearListeners(mapInstance,'click');
 
-pointAdd= -1;
-
-is_line_active = 0;
 /*Call get_page_status function to show the current status*/
 get_page_status();
 
@@ -382,258 +365,6 @@ $("#clearPolygonBtn").click(function(e) {
 });
 
 
-/**
- * This function shows tools panel to google map
- *
- */
-function showToolsPanel() {
-    if(isFreeze == 1) {
-        if($("#freeze_remove").hasClass("hide")) {
-            $("#freeze_select").addClass("hide");
-            $("#freeze_remove").removeClass("hide");
-        }
-    } else {
-        if($("#freeze_select").hasClass("hide")) {
-            $("#freeze_remove").addClass("hide");
-            $("#freeze_select").removeClass("hide");
-        }
-    }
-
-    if(isMaintained != 0) {
-        $("#point_select").removeClass('hide');
-        $("#point_remove").removeClass('hide');
-    } else {
-        $("#point_select").removeClass('hide');
-        $("#point_remove").addClass('hide');
-    }
-
-    if(tools_ruler != 0) {
-        $("#ruler_select").removeClass('hide');
-        $("#ruler_remove").removeClass('hide');
-    } else {
-        $("#ruler_select").removeClass('hide');
-        $("#ruler_remove").addClass('hide');
-    }
-
-    if(tools_line != 0) {
-        $("#line_select").removeClass('hide');
-        $("#line_remove").removeClass('hide');
-    } else {
-        $("#line_select").removeClass('hide');
-        $("#line_remove").addClass('hide');
-    }
-
-    /*Hide Tools Button*/
-    $("#showToolsBtn").addClass("hide");
-
-    /*Show Remove Button*/
-    $("#removeToolsBtn").removeClass("hide");
-
-    /*Show Tools Panel*/
-    $("#toolsContainerBlock").removeClass("hide");
-
-    /*Call get_page_status function to show the current status*/
-    get_page_status();
-}
-
-function removetoolsPanel() {
-pointAdd= -1;
-is_line_active= 0;
-    /*Hide Tools Button*/
-    $("#showToolsBtn").removeClass("hide");
-
-    if(isFreeze == 1 || isMaintained != 0  || tools_ruler != 0 || tools_line != 0) {
-        $("#showToolsBtn").removeClass("btn-info");
-        $("#showToolsBtn").addClass("btn-warning");
-    } else {
-        $("#showToolsBtn").addClass("btn-info");
-        $("#showToolsBtn").removeClass("btn-warning");
-    }
-
-    /*Show Remove Button*/
-    $("#removeToolsBtn").addClass("hide");
-
-    /*Show Tools Panel*/
-    $("#toolsContainerBlock").addClass("hide");
-
-    if($("#ruler_select").hasClass("hide")) {
-        $("#ruler_remove").addClass("hide");
-        $("#ruler_select").removeClass("hide");
-    }
-
-    if($("#point_select").hasClass("hide")) {
-        $("#point_remove").addClass("hide");
-        $("#point_select").removeClass("hide");
-    }
-
-    if($("#line_select").hasClass("hide")) {
-        $("#line_remove").addClass("hide");
-        $("#line_select").removeClass("hide");
-    }
-
-    if(isFreeze == 1) {
-        if($("#freeze_remove").hasClass("hide")) {
-            $("#freeze_select").addClass("hide");
-            $("#freeze_remove").removeClass("hide");
-        }
-    } else {
-        if($("#freeze_select").hasClass("hide")) {
-            $("#freeze_remove").addClass("hide");
-            $("#freeze_select").removeClass("hide");
-        }
-    }
-
-    // if(isMaintained != 0) {
-    //     $("#point_remove").removeClass("hide");
-    //     $("#point_select").addClass("hide");
-    // } else {
-    //     $("#point_remove").addClass("hide");
-    //     $("#point_select").removeClass("hide");
-    // }
-
-    google.maps.event.clearListeners(mapInstance,'click');
-
-    // networkMapInstance.clearToolsParams_gmap();
-
-    // networkMapInstance.clearPointTool_gmap();
-
-    /*Call get_page_status function to show the current status*/
-    get_page_status();
-}
-
-/**
- * This event trigger when clicked on "Ruler" button
- * @event click
- */
- $("#ruler_select").click(function(e) {
-
-    networkMapInstance.clearToolsParams_gmap();
-
-    if($("#ruler_remove").hasClass("hide")) {
-
-        // $("#ruler_select").addClass("hide");
-        $("#ruler_remove").removeClass("hide");
-    }
-    google.maps.event.clearListeners(mapInstance, 'click');
-    networkMapInstance.addRulerTool_gmap();
- });
-
- $("#line_select").click(function(e) {
-    is_line_active= 1;
-    $(this).next().removeClass('hide');
-    // $(this).addClass('hide');
-    networkMapInstance.createLineTool_gmap();
- });
-
-  $("#line_remove").click(function(e) {
-    is_line_active= 0;
-    $(this).prev().removeClass('hide');
-    $(this).addClass('hide');
-    google.maps.event.clearListeners(mapInstance, 'click');
-    networkMapInstance.clearLineTool_gmap();
- });
-
- /**
-  * This event unbind ruler click event & show the Ruler button again
-  * @event click
-  */
-$("#ruler_remove").click(function(e) {    
-
-    if(!($("#ruler_remove").hasClass("hide"))) {
-        $("#ruler_select").removeClass("hide");
-        $("#ruler_remove").addClass("hide");
-    }
-    google.maps.event.clearListeners(mapInstance, 'click');
-    networkMapInstance.clearToolsParams_gmap();
-});
-
-
-/**
- * This event trigger when clicked on "Ruler" button
- * @event click
- */
- $("#point_select").click(function(e) {
-pointAdd= 1;
-    if($("#point_remove").hasClass("hide")) {
-        // $("#point_select").addClass("hide");
-        $("#point_remove").removeClass("hide");
-    }
-
-    networkMapInstance.addPointTool_gmap();
- });
-
- /**
-  * This event unbind ruler click event & show the Ruler button again
-  * @event click
-  */
-$("#point_remove").click(function(e) {
-    pointAdd= -1;
-    if(!($("#point_remove").hasClass("hide"))) {
-        $("#point_select").removeClass("hide");
-        $("#point_remove").addClass("hide");
-    }
-
-    networkMapInstance.clearPointsTool_gmap();
-});
-
-/**
- * This event trigger when clicked on "Ruler" button
- * @event click
- */
- $("#freeze_select").click(function(e) {
-
-    if($("#freeze_remove").hasClass("hide")) {
-
-        $("#freeze_select").addClass("hide");
-        $("#freeze_remove").removeClass("hide");
-        $("#freeze_remove").show();
-
-    }
-    $("#freeze_remove").removeClass("hide");
-
-    // $.cookie('isFreezeSelected', true);
-
-    networkMapInstance.freezeDevices_gmap();
- });
-
- /**
-  * This event unbind ruler click event & show the Ruler button again
-  * @event click
-  */
-$("#freeze_remove").click(function(e) {
-
-    if(!($("#freeze_remove").hasClass("hide"))) {
-        $("#freeze_select").removeClass("hide");
-        $("#freeze_remove").addClass("hide");
-    }
-    $("#freeze_select").removeClass("hide");
-
-    // $.cookie('isFreezeSelected', false);
-
-    networkMapInstance.unfreezeDevices_gmap();
-});
-
-/**
- * This function get the current status & show it on gmap/google eartg page.
- */
-
-function clearTools_gmap() {
-    google.maps.event.clearListeners(mapInstance,'click');
-    networkMapInstance.clearRulerTool_gmap();
-    networkMapInstance.clearLineTool_gmap();
-    is_line_active = 0;
-    bootbox.confirm("Do you want to reset Maintenance Points too?", function(result) {
-        if(result) {
-            pointAdd= -1;            
-            hasTools = 0;
-            networkMapInstance.clearPointsTool_gmap();
-            $("#showToolsBtn").addClass("btn-info");
-            $("#showToolsBtn").removeClass("btn-warning");
-        }
-        get_page_status();
-    });
-    
-}
 
 function get_page_status() {
     var status_txt = "";
@@ -647,11 +378,13 @@ function get_page_status() {
     }
 
     if(hasTools == 1) {
-        if(isMaintained != 0 || tools_ruler != 0 || tools_line != 0) {
+        if(isFreeze == 1 || (isMaintained && isMaintained != 0) || (tools_ruler && tools_ruler != 0) || (tools_line && tools_line != 0)) {
             status_txt+= '<li>Gmap Tools Applied<button class="btn btn-sm btn-danger pull-right" onclick="clearTools_gmap()" style="padding: 2px 5px; margin: -3px;">Reset</button><li>';
-        } else {
-            status_txt = "<li>Gmap Tools Applied</li>";
         }
+    }
+
+    if($("ul#gis_status_txt li#gis_search_status_txt").length) {
+        status_txt+= $("ul#gis_status_txt li#gis_search_status_txt")[0].outerHTML;
     }
 
     if(status_txt == "") {
@@ -878,4 +611,213 @@ if (!Array.prototype.indexOf) {
     }
     return -1;
   };
+}
+
+
+/**
+ * This function shows tools panel to google map
+ *
+ */
+function showToolsPanel() {
+    if(isFreeze == 1) {
+        $("#freeze_select").addClass("hide");
+        $("#freeze_remove").removeClass("hide");
+    } else {
+        $("#freeze_remove").addClass("hide");
+        $("#freeze_select").removeClass("hide");
+    }
+
+    if(isMaintained && isMaintained != 0) {
+        $("#point_select").removeClass("hide");
+        $("#point_remove").removeClass("hide");
+    } else {
+        $("#point_remove").addClass("hide");
+        $("#point_select").removeClass("hide");
+    }
+
+    if(tools_ruler && tools_ruler != 0) {
+        $("#ruler_select").addClass("hide");
+        $("#ruler_remove").removeClass("hide");
+    } else {
+        $("#ruler_select").removeClass("hide");
+        $("#ruler_remove").addClass("hide");
+    }
+
+    if(tools_line && tools_line != 0) {
+        $("#line_select").addClass("hide");
+        $("#line_remove").removeClass("hide");
+    } else {
+        $("#line_remove").addClass("hide");
+        $("#line_select").removeClass("hide");
+    }
+
+    $("#showToolsBtn").addClass("hide");
+
+    $("#removeToolsBtn").removeClass("hide");
+
+    $("#toolsContainerBlock").removeClass("hide");
+
+    google.maps.event.clearListeners(mapInstance, 'click');
+}
+
+function removetoolsPanel() {
+    pointAdd= -1;
+    is_line_active= -1;
+    is_ruler_active= -1;
+
+    google.maps.event.clearListeners(mapInstance, 'click');
+
+    $("#showToolsBtn").removeClass("hide");
+
+    if(isFreeze == 1 || (isMaintained && isMaintained != 0) || (tools_ruler && tools_ruler != 0) || (tools_line && tools_line != 0)) {
+        $("#showToolsBtn").removeClass("btn-info").addClass("btn-warning");
+    } else {
+        $("#showToolsBtn").removeClass("btn-warning").addClass("btn-info");
+    }
+
+    $("#removeToolsBtn").addClass("hide");
+
+    $("#toolsContainerBlock").addClass("hide");
+
+    get_page_status();
+}
+
+$("#ruler_select").click(function(e) {
+    pointAdd= -1;
+    is_ruler_active= 1;
+    is_line_active= -1;
+
+    google.maps.event.clearListeners(mapInstance, 'click');
+
+    networkMapInstance.clearRulerTool_gmap();
+
+    $(this).addClass("hide");
+    $("#ruler_remove").removeClass("hide");
+
+    networkMapInstance.addRulerTool_gmap();
+});
+
+$("#ruler_remove").click(function(e) {
+    pointAdd= -1;
+    is_line_active= -1;
+    is_ruler_active= -1;
+
+    google.maps.event.clearListeners(mapInstance, 'click');
+
+    $(this).addClass("hide");
+    $("#ruler_select").removeClass("hide");
+
+    networkMapInstance.clearRulerTool_gmap();
+});
+
+$("#line_select").click(function(e) {
+    pointAdd= -1;
+    is_line_active= 1;
+    is_ruler_active= -1;
+
+    networkMapInstance.clearLineTool_gmap();
+
+    google.maps.event.clearListeners(mapInstance, 'click');
+
+    $(this).addClass("hide");
+    $("#line_remove").removeClass("hide");
+
+    networkMapInstance.createLineTool_gmap();
+});
+
+$("#line_remove").click(function(e) {
+    pointAdd= -1;
+    is_line_active= -1;
+    is_ruler_active= -1;
+
+    google.maps.event.clearListeners(mapInstance, 'click');
+
+    $(this).addClass("hide");
+    $("#line_select").removeClass("hide");
+
+    networkMapInstance.clearLineTool_gmap();
+});
+
+$("#point_select").click(function(e) {
+    pointAdd= 1;
+    is_line_active= -1;
+    is_ruler_active= -1;
+
+    google.maps.event.clearListeners(mapInstance, 'click');
+
+    $("#point_remove").removeClass("hide");
+
+    networkMapInstance.addPointTool_gmap();    
+});
+
+$("#point_remove").click(function(e) {
+    pointAdd= -1;
+    is_line_active= -1;
+    is_ruler_active= -1;
+
+    google.maps.event.clearListeners(mapInstance, 'click');
+
+    $(this).addClass("hide");
+
+    networkMapInstance.clearPointsTool_gmap();
+});
+
+
+/**
+ * This event trigger when clicked on "Ruler" button
+ * @event click
+ */
+ $("#freeze_select").click(function(e) {
+
+    if($("#freeze_remove").hasClass("hide")) {
+
+        $("#freeze_select").addClass("hide");
+        $("#freeze_remove").removeClass("hide");
+        $("#freeze_remove").show();
+
+    }
+    $("#freeze_remove").removeClass("hide");
+
+    // $.cookie('isFreezeSelected', true);
+
+    networkMapInstance.freezeDevices_gmap();
+ });
+
+ /**
+  * This event unbind ruler click event & show the Ruler button again
+  * @event click
+  */
+$("#freeze_remove").click(function(e) {
+
+    if(!($("#freeze_remove").hasClass("hide"))) {
+        $("#freeze_select").removeClass("hide");
+        $("#freeze_remove").addClass("hide");
+    }
+    $("#freeze_select").removeClass("hide");
+
+    // $.cookie('isFreezeSelected', false);
+
+    networkMapInstance.unfreezeDevices_gmap();
+});
+
+/**
+ * This function get the current status & show it on gmap/google eartg page.
+ */
+
+function clearTools_gmap() {
+    google.maps.event.clearListeners(mapInstance,'click');
+    networkMapInstance.clearRulerTool_gmap();
+    networkMapInstance.clearLineTool_gmap();
+    is_line_active = 0;
+    bootbox.confirm("Do you want to reset Maintenance Points too?", function(result) {
+        if(result) {
+            pointAdd= -1;            
+            hasTools = 0;
+            networkMapInstance.clearPointsTool_gmap();
+            $("#showToolsBtn").addClass("btn-info");
+            $("#showToolsBtn").removeClass("btn-warning");
+        }
+        get_page_status();
+    });
+    
 }
