@@ -478,6 +478,7 @@ class Get_Perfomance(View):
     def get(self, request, page_type="no_page", device_id=0):
 
         device = Device.objects.get(id=device_id)
+        device_technology = DeviceTechnology.objects.get(id=device.device_technology).name
         realdevice = device
 
         """
@@ -598,6 +599,7 @@ class Get_Perfomance(View):
 
         page_data = {
             'page_title': page_type.capitalize(),
+            'device_technology' : device_technology,
             'device': device,
             'realdevice': realdevice,
             'get_devices_url': 'performance/get_inventory_devices/' + page_type,
