@@ -145,7 +145,7 @@ function prepare_oms_object(oms_instance) {
 			map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image,zIndex: 500});
 			map_points_array.push(map_point);
 			map_point_count ++;
-			$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/', secure: true});
+			$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/',secure : true});
 			isMaintained = JSON.stringify(map_points_lat_lng_array);
 
 			return ;
@@ -997,6 +997,9 @@ function devicePlottingClass_gmap() {
 					var ss_info = {},
 						base_info = {};
 
+					startEndObj["nearEndLat"] = bs_ss_devices[i].data.lat;
+					startEndObj["nearEndLon"] = bs_ss_devices[i].data.lon;
+
 				    startEndObj["endLat"] = ss_marker_obj.data.lat;
 		    		startEndObj["endLon"] = ss_marker_obj.data.lon;
 
@@ -1145,6 +1148,8 @@ function devicePlottingClass_gmap() {
 			ss_height 		: sect_height,
 			sector_lat 		: startEndObj.sectorLat,
 			sector_lon 		: startEndObj.sectorLon,
+			nearLat 		: startEndObj.nearEndLat,
+			nearLon 		: startEndObj.nearEndLon,
 			sectorName 	    : sector_name,
 			ssName 		    : ss_name,
 			bsName 			: bs_name,
@@ -1432,7 +1437,7 @@ function devicePlottingClass_gmap() {
 
 			var isBSLeft = 0;
 
-			if(+(contentObject.bs_lon) < +(contentObject.ss_lon)) {
+			if(+(contentObject.nearLon) < +(contentObject.ss_lon)) {
 				isBSLeft = 1;
 			}
 
@@ -1447,12 +1452,12 @@ function devicePlottingClass_gmap() {
 
 			var sector_ss_name = JSON.stringify(sector_ss_name_obj);
 
-			if(+(contentObject.bs_lon) < +(contentObject.ss_lon)) {
+			if(+(contentObject.nearLon) < +(contentObject.ss_lon)) {
 				/*Concat infowindow content*/
-				windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.bs_lat+","+contentObject.bs_lon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
+				windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
 			} else {
 				/*Concat infowindow content*/
-				windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_lat+","+contentObject.bs_lon+","+contentObject.ss_height+","+contentObject.bs_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
+				windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.nearLat+","+contentObject.nearLon+","+contentObject.ss_height+","+contentObject.bs_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
 			}
 
 		} else if (clickedType == 'sector_Marker') {
@@ -2776,7 +2781,8 @@ function devicePlottingClass_gmap() {
 
     
 
-    this.calculateDistance= function(array) {
+    this.calculateDistance = function(array) {
+
     	var latLon1 = new google.maps.LatLng(array[0].getPosition().lat(), array[0].getPosition().lng()),
     		latLon2 = new google.maps.LatLng(array[1].getPosition().lat(), array[1].getPosition().lng());
 
@@ -2847,7 +2853,7 @@ function devicePlottingClass_gmap() {
     	isCreated= 0;
 
     	//Reset Cookie
-    	$.cookie('tools_ruler', 0, {path: '/', secure: true});
+    	$.cookie('tools_ruler', 0, {path: '/',secure : true});
 
     	tools_ruler = $.cookie("tools_ruler");
 
@@ -2918,9 +2924,11 @@ function devicePlottingClass_gmap() {
 					"endLon" : ruler_array[1].getPosition().lng(),
 					"distance": distanceObject.distance,
 					"lat3": distanceObject.lat,
-					"lon3": distanceObject.lon
+					"lon3": distanceObject.lon,
+					"nearEndLat" : ruler_array[0].getPosition().lat(),
+					"nearEndLon" : ruler_array[0].getPosition().lng(),
 				};
-
+				
 				var ruler_line = gmap_self.createLink_gmaps(latLonObj);
 
 				tools_rule_array.push(ruler_line);
@@ -2971,7 +2979,7 @@ function devicePlottingClass_gmap() {
     	is_bs_clicked= 0;
 
     	//Reset Cookie
-    	$.cookie('tools_line', 0, {path: '/', secure: true});
+    	$.cookie('tools_line', 0, {path: '/',secure : true});
 
     	tools_line = $.cookie("tools_line");
 	}
@@ -3034,7 +3042,9 @@ function devicePlottingClass_gmap() {
 					"endLon" : tools_line_marker_array[1].getPosition().lng(),
 					"distance": distanceObject.distance,
 					"lat3": distanceObject.lat,
-					"lon3": distanceObject.lon
+					"lon3": distanceObject.lon,
+					"nearEndLat" : tools_line_marker_array[0].getPosition().lat(),
+					"nearEndLon" : tools_line_marker_array[0].getPosition().lng()
 				};
 
 				var ruler_line = gmap_self.createLink_gmaps(latLonObj);
@@ -3070,7 +3080,7 @@ function devicePlottingClass_gmap() {
 
     	map_point_count= 0;
 
-    	$.cookie("isMaintained", 0, {path: '/', secure: true});
+    	$.cookie("isMaintained", 0, {path: '/',secure : true});
 
     	isMaintained = $.cookie("isMaintained");
     }
@@ -3126,7 +3136,7 @@ function devicePlottingClass_gmap() {
 
 				map_point_count ++;
 
-				$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/', secure: true});
+				$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/',secure : true});
 
 				isMaintained = $.cookie("isMaintained");
 
@@ -3181,10 +3191,10 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 1;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure: true});
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/',secure : true});
 
 	 	freezedAt = (new Date()).getTime();
-	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
+	 	$.cookie("freezedAt", freezedAt, {path: '/',secure : true});
 
 	 	/*Set Live Polling flag*/
 	 	// isPollingActive = 1;
@@ -3200,10 +3210,10 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 0;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure: true});
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/',secure : true});
 
 	 	freezedAt = 0;
-	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
+	 	$.cookie("freezedAt", freezedAt, {path: '/',secure : true});
 
 	 	/*Set Live Polling flag*/
 	 	// isPollingActive = 0;
