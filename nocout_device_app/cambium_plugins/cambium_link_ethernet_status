@@ -63,13 +63,13 @@ def check_cambium_link_ethernet_status(item, _no_params, info):
         if info:
             status_list = []
             infotext = ""
-            link_state = info[index][1]
-            state = if_statename(str(link_state))
-            if state == None:
-		state = "unknown"
-            status_list.append(("link_state", state))
+            link_state = info[0][0]
+            link_state = if_statename(str(link_state))
+            if link_state == None:
+		link_state = "unknown"
+            status_list.append(("link_state", link_state))
             state = 0
-            infotext += "link_state %s " % (status)
+            infotext += "link_state %s " % (link_state)
 
     except ValueError:
         infotext = "type_mismatch_value"
