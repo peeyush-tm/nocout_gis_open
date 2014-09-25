@@ -371,9 +371,10 @@
                 }
             }
 
-
             /*Show SIA tab only for network devices*/
-            if(page_type_val != 'network') {
+            var device_technology = '{{ device_technology }}';
+
+            if(page_type_val != 'network' || (device_technology.toLowerCase() == 'ptp' || device_technology.toLowerCase() == 'p2p')) {
                 if(!$("#sia").hasClass("hide")) {
                     $("#sia").addClass("hide");
                 }
