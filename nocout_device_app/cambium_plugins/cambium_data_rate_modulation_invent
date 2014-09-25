@@ -55,7 +55,6 @@ def check_cambium_data_rate_modulation_invent(item, _no_params, info):
 		data_rate = data_rate.strip()
 		data_rate = data_rate.split(' ')[-1]
             	infotext = "%s" % (data_rate)
-		break
     except ValueError:
         infotext = "type_mismatch_value"
     except:

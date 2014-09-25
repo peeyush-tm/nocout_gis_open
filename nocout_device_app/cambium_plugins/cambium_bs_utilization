@@ -1,16 +1,15 @@
 #!/usr/bin/python
 import time
-import binascii
 """
-Poller script which runs on ss and calculates the downlink utilization for the ss from the connected BS
+Poller script which runs on ss and calculates the ul utilization of the ss connected from BS.
 
-Poller script determines the downlink utilization for the connected ss from BS
+Poller script determines the uplink utilization of the ss.
 poller script takes the snmp value of OID .1.3.6.1.4.1.161.19.3.1.4.1.21 from snmp agent of device at specific interval.
-downlink utilization information is sent to device application 
+uplink utilization information is sent to device application 
 
 """
 # ##################################################################
-# Function : check_cambium_dl_utilization
+# Function : check_cambium_bs_utilization
 #
 #  Parameters: info(SNMP output) ,params(parameters to check the service state) 
 #
@@ -18,9 +17,9 @@ downlink utilization information is sent to device application
 ##################################################################
 
 
-def check_cambium_dl_utilization(item, _no_params, info):
+def check_cambium_bs_utilization(item, _no_params, info):
     """
-        Check_cambium_dl_utilization function calcaulates the downlink utilization for the connected ss from bs
+        Check_cambium_bs_utilization function calcaulates the total utilization
 
         Args:
             item (str) Specific item on SNMP output on which we want to filter results
@@ -40,7 +39,7 @@ def check_cambium_dl_utilization(item, _no_params, info):
 
             performance_data  (list):
                     performance data
-                    Example: cambium_dl_utilization=-76;-50;-80;;;
+                    Example: cambium_bs_utilization=-76;-50;-80;;;
             Raises:
                 ValueError ,Exception
     """
@@ -51,20 +50,19 @@ def check_cambium_dl_utilization(item, _no_params, info):
     wrapped =False
     try:
         if info:
-	    status_list = []
-	    if info[0][0]:
-		dl_utilization = info[0][0]
+		status_list = []
+		utilization = info[0][0]
 		this_time = int(time.time())
 		try:
-			timedif, rate = get_counter("cambium_dl_utilization", this_time, saveint(dl_utilization))
-			rate =(rate*8)/(1024*1024)
-                except MKCounterWrapped:
-                       	wrapped=True
-                status_list.append(("dl_utilization","%f" % (rate)))
-		infotext = "Downlink utilization %s " % (rate)
+			timedif, rate = get_counter("cambium_bs_utilization", this_time, saveint(utilization))
+			rate = (rate*8)/(1024*1024)
+		except MKCounterWrapped:
+			wrapped=True
+		status_list.append(("utilization",rate))
+		infotext = "Uplink utilization for interface %s: %s " % (item,rate)
 		state= 0
 	else:
-	    infotext = "No interface present"
+		infotext = "No interface present"
 	    
     except ValueError:
         infotext = "type_mismatch_value"
@@ -76,13 +74,13 @@ def check_cambium_dl_utilization(item, _no_params, info):
     return (state, infotext, status_list)
 
 
-check_info["cambium_dl_utilization"] = {
-    'check_function': check_cambium_dl_utilization,
-    'service_description': 'cambium_dl_utilization',
+check_info["cambium_bs_utilization"] = {
+    'check_function': check_cambium_bs_utilization,
+    'service_description': 'cambium_bs_utilization',
     'has_perfdata': True,
 }
 
 #######################################################################
 #	SNMP OID
 #######################################################################
-snmp_info["cambium_dl_utilization"] = ( ".1.3.6.1.2.1.2.2.1", ["16.1"] )
+snmp_info["cambium_bs_utilization"] = ( ".1.3.6.1.2.1.2.2.1", ["16.1"] )
