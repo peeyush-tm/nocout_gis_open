@@ -61,20 +61,19 @@ def check_cambium_qos_invent(item, _no_params, info):
 			qos_list.append((qos_string(str(index+1)),info[0][index]))
             	state = 0
 		for ds,value in qos_list:
-            		infotext += "[%s]%s" % (ds,value)
+            		infotext += "%s=%s " % (ds,value)
 
     except ValueError:
         infotext = "type_mismatch_value"
     except:
         infotext = "unknown_value"
 
-    return (state, infotext, qos_list)
+    return (state, infotext)
 
 
 check_info["cambium_qos_invent"] = {
     'check_function': check_cambium_qos_invent,
     'service_description': 'cambium_qos_invent',
-    'has_perfdata': True,
 }
 
 #####################################################################

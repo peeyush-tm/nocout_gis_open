@@ -46,12 +46,24 @@ def check_cambium_topology_discover(item, params, info):
         if info:
 	    infotext = ""
 	    for i in range(len(info)):
-                connected_bs_mac = info[i][0]
-		a=binascii.b2a_hex(connected_bs_mac)
+		
+		if i == 0:
+			ap_ip = info[i][1]
+			ap_mac = info[i][0]
+			a=binascii.b2a_hex(ap_mac)
+			n= 2
+                	ap_mac=(':').join([a[j:j+2] for j in range(0, len(a), n)])
+			ap_color_code = int(info[i][2])
+			infotext += "%s %s:%s " %(ap_mac,ap_ip,ap_color_code)
+		else:
+			connected_ss_mac = info[i][3]
+			connected_ss_ip = info[i][4]
+			a=binascii.b2a_hex(connected_ss_mac)
+                	n = 2
+                	connected_ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
+                	infotext += "%s/%s " % (connected_ss_ip,connected_ss_mac)
+			
         	state = 0
-                n = 2
-                connected_bs_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])		
-                infotext += "%s " % connected_bs_mac
     except:
         infotext = "unknow"
     return (state, infotext)
@@ -66,4 +78,4 @@ check_info["cambium_topology_discover"] = {
 #SNMP OID value for poller script
 ################################################################
 
-snmp_info["cambium_topology_discover"] = ( ".1.3.6.1.4.1.161.19.3.1.4", ["1.3"] )
+snmp_info["cambium_topology_discover"] = ( ".1.3.6.1", ["2.1.2.2.1.6.1","4.1.161.19.3.3.1.13.0", "4.1.161.19.3.3.2.2.0", "4.1.161.19.3.1.4.1.3", "4.1.161.19.3.1.4.1.69"] )
