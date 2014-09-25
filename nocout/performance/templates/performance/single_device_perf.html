@@ -338,26 +338,56 @@
     <script type="text/javascript">
         /*Global Variables*/
         var perfInstance = "",
-                current_device = "";
+            current_device = "";
 
         var desired_url_string = "https";
-        if (window.location.protocol == "https:") {
-            desired_url_string = "https://";
-        }
+        // if (window.location.protocol == "https:") {
+        //     desired_url_string = "https://";
+        // }
 
-        if (window.location.protocol == "https:") {
-            //window.location.href = "https:" + window.location.href.substring(window.location.protocol.length);
-            window.location.origin = "https:" + window.location.origin.substring(window.location.protocol.length);
-        }
+        // if (window.location.protocol == "https:") {
+        //     if(window.location.origin) {
+        //         window.location.origin = "https:" + window.location.origin.substring(window.location.protocol.length);
+        //     }            
+        // }
 
 
         $(document).ready(function (e) {
 
             var url_array = window.location.href.split("/"),
-                page_type_val = "";
+                page_type_val = "",
+                base_url = "";
+
+            /*Set the base url of application for ajax calls*/
+            if (window.location.origin) {
+                base_url = window.location.origin;
+            } else {
+                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
+            }
+
             for(var i=0;i<url_array.length;i++) {
                 if(url_array[i].indexOf("_live") > -1) {
                     page_type_val = url_array[i].split("_")[0];
+                }
+            }
+
+
+            /*Show SIA tab only for network devices*/
+            if(page_type_val != 'network') {
+                if(!$("#sia").hasClass("hide")) {
+                    $("#sia").addClass("hide");
+                }
+
+                if(!$("#sia_tab").hasClass("hide")) {
+                    $("#sia_tab").addClass("hide");
+                }
+            } else {
+                if($("#sia").hasClass("hide")) {
+                    $("#sia").removeClass("hide");
+                }
+
+                if($("#sia_tab").hasClass("hide")) {
+                    $("#sia_tab").removeClass("hide");
                 }
             }
 
@@ -466,13 +496,6 @@
                     }
                 }
             });
-            var base_url = "";
-            /*Set the base url of application for ajax calls*/
-            if (window.location.origin) {
-                base_url = window.location.origin;
-            } else {
-                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
-            }
 
 
             /*Hide Status Container*/
