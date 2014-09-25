@@ -26,7 +26,7 @@ urlpatterns = patterns('',
 
     url(r'^detail/network_detail/$', views.getNetworkAlertDetail),
 
-    url(r'^detail/network_detail_listing_table$', views.GetNetworkAlertDetail.as_view(), name='Network_PTP_Block_Table'),
+    url(r'^detail/network_detail_listing_table$', views.GetNetworkAlertDetail.as_view(), name='NetworkAlertDetails'),
 
     url(r'^(?P<page_type>\w+)/device/(?P<device_id>\w+)/service_tab/(?P<service_name>\w+)/$',
         views.SingleDeviceAlertDetails.as_view(),
