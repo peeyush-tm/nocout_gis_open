@@ -42,6 +42,7 @@ var base_url = "",
 	polygon = "",
 	is_line_active = 0,
 	is_bs_clicked = 0,
+	is_ruler_active= -1,
 	line_pt_array =[],
 	pointsArray = [],
 	currentPolygon = {},
@@ -2825,7 +2826,6 @@ function devicePlottingClass_gmap() {
     Here we clear All The Variables and Point related to Rulers in tools
      */
     this.clearRulerTool_gmap= function() {
-    	// google.maps.event.clearListeners(mapInstance, 'click');
     	//Remove Ruler markers
     	for(var i=0;i<ruler_array.length;i++) {
     		ruler_array[i].setMap(null);
@@ -2853,6 +2853,8 @@ function devicePlottingClass_gmap() {
 
     	//reset ruler point count
     	ruler_pt_count = 0;
+
+    	is_ruler_active = -1;
     }
 
     /**
