@@ -122,23 +122,20 @@ def build_data(doc):
 	configs = config_module.parse_config_obj()
         for config, options in configs.items():
 		machine_name = options.get('machine')
-	for entry in doc.get('current_value'): 
+	for i in range(len(doc.get('connected_device_ip'))): 
         	t = (
         	doc.get('device_name'),
         	doc.get('service_name'),
         	machine_name,
         	doc.get('site_name'),
         	doc.get('data_source'),
-		entry,
-        	doc.get('min_value'),
-        	doc.get('max_value'),
-       	 	doc.get('avg_value'),
-        	doc.get('warning_threshold'),
-        	doc.get('critical_threshold'),
         	doc.get('sys_timestamp'),
         	doc.get('check_timestamp'),
         	doc.get('ip_address'),
-        	doc.get('severity')
+		doc.get('sector_id'),
+		doc.get('mac_address'),
+		doc.get('connected_device_ip')[i],
+		doc.get('connected_device_mac')[i]
         	)
 		values_list.append(t)
 		t = ()
@@ -156,7 +153,6 @@ def insert_data(table, data_values, **kwargs):
 	"""
 	insert_dict = {'0':[],'1':[]}
 	db = utility_module.mysql_conn(configs=kwargs.get('configs'))
-	print data_values
 	for i in range(len(data_values)):
 		query = "SELECT * FROM %s " % table +\
                 	"WHERE `device_name`='%s' AND `site_name`='%s' AND `service_name`='%s'" %(str(data_values[i][0]),data_values[i][3],data_values[i][1])
@@ -184,10 +180,8 @@ def insert_data(table, data_values, **kwargs):
 	if len(insert_dict['1']):		
 		query = "INSERT INTO `%s`" % table
  		query+= """(device_name, service_name, machine_name, 
-            	site_name, data_source, current_value, min_value, 
-            	max_value, avg_value, warning_threshold, 
-            	critical_threshold, sys_timestamp, check_timestamp,ip_address,severity) 
-           	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s,%s)
+            	site_name, data_source, sys_timestamp, check_timestamp,ip_address,sector_id,mac_address,connected_device_ip,connected_device_mac) 
+           	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		"""
     		cursor = db.cursor()
     		try:
@@ -199,10 +193,8 @@ def insert_data(table, data_values, **kwargs):
 	if len(insert_dict['0']):		
 		query = "INSERT INTO `%s`" % table
  		query+= """(device_name, service_name, machine_name, 
-            	site_name, data_source, current_value, min_value, 
-            	max_value, avg_value, warning_threshold, 
-            	critical_threshold, sys_timestamp, check_timestamp,ip_address,severity) 
-           	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s ,%s,%s)
+            	site_name, data_source,sys_timestamp, check_timestamp,ip_address,sector_id,mac_address,connected_device_ip,connected_device_mac) 
+           	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		"""
     		cursor = db.cursor()
     		try:

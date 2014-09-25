@@ -44,7 +44,6 @@ def check_cambium_sync_state_invent(item, _no_params, info):
                             ValueError ,Exception
     """
     state = 3
-    sync_text = None
     infotext = "unknown_value"
     try:
         if info:

@@ -25,7 +25,6 @@ def inventory_cambium_ul_rssi(info):
 		n = 2
 		entry[0]=(':').join([a[i:i+2] for i in range(0, len(a), n)])
 		print entry
-		break
 	return []
 
 def check_cambium_ul_rssi(item, params, info):
