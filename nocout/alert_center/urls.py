@@ -22,7 +22,7 @@ urlpatterns = patterns('',
     # url(r'^customer/packet_drop/$', views.CustomerPacketDropList.as_view()),
     url(r'^detail/customer_detail/$', views.getCustomerAlertDetail),
 
-    url(r'^detail/customer_detail_listing_table/', views.GetCustomerAlertDetail.as_view(), name='Customer_PTP_Block_Table'),
+    url(r'^detail/customer_detail_listing_table/', views.GetCustomerAlertDetail.as_view(), name='CustomerAlertDetails'),
 
     url(r'^detail/network_detail/$', views.getNetworkAlertDetail),
 
