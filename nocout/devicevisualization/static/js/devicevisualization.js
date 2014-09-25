@@ -17,11 +17,11 @@ if(window.location.origin) {
 
 /*Set cookies if not exist*/
 if(!$.cookie("isFreezeSelected")) {
-    $.cookie("isFreezeSelected", 0, {path: '/', secure: true});
+    $.cookie("isFreezeSelected", 0, {path: '/', secure : true});
 }
 
 if(!$.cookie("freezedAt")) {
-    $.cookie("freezedAt", 0, {path: '/', secure: true});
+    $.cookie("freezedAt", 0, {path: '/', secure : true});
 }
 
 /*Save cookie value to variable*/
