@@ -1432,22 +1432,22 @@ function devicePlottingClass_gmap() {
 
 			var isBSLeft = 0;
 
-			if(+(contentObject.bs_lon) > +(contentObject.ss_lon)) {
+			if(+(contentObject.bs_lon) < +(contentObject.ss_lon)) {
 				isBSLeft = 1;
 			}
 
 			var sector_ss_name_obj = {
-				sector_Alias: contentObject.bs_info[0].value,
-				sector_name : contentObject.sectorName,
-				ss_name : contentObject.ssName,
-				ss_customerName: contentObject.ss_info[17].value,
-				ss_circuitId: contentObject.ss_info[3].value,
+				sector_Alias: contentObject.bs_info ? contentObject.bs_info[0].value : " ",
+				sector_name : contentObject.sectorName ? contentObject.sectorName : " ",
+				ss_name : contentObject.ssName ? contentObject.ssName : " ",
+				ss_customerName: contentObject.ss_info.length >= 18 ? contentObject.ss_info[17].value : " ",
+				ss_circuitId: contentObject.ss_info.length >= 4 ? contentObject.ss_info[3].value : " ",
 				isBSLeft : isBSLeft
 			};
 
 			var sector_ss_name = JSON.stringify(sector_ss_name_obj);
 
-			if(+(contentObject.bs_lon) > +(contentObject.ss_lon)) {
+			if(+(contentObject.bs_lon) < +(contentObject.ss_lon)) {
 				/*Concat infowindow content*/
 				windowContent += "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i> BS-SS</h4></div><div class='box-body'>"+infoTable+"<div class='clearfix'></div><div class='pull-right'><button class='btn btn-info' id='more_less_btn' onClick='gmap_self.show_hide_info();'>More</button></div><div class='clearfix'></div><ul class='list-unstyled list-inline'><li><button class='btn btn-sm btn-info' onClick='gmap_self.claculateFresnelZone("+contentObject.bs_lat+","+contentObject.bs_lon+","+contentObject.ss_lat+","+contentObject.ss_lon+","+contentObject.bs_height+","+contentObject.ss_height+","+sector_ss_name+");'>Fresnel Zone</button></li></ul></div></div></div>";
 			} else {
