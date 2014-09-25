@@ -128,10 +128,12 @@ def build_data(doc):
 	    machine_name = options.get('machine')
     local_time_epoch = utility_module.get_epoch_time(doc.get('local_timestamp'))
     # Advancing loca_timestamp/sys_timestamp to next 5 mins time frame
-    local_time_epoch += 300
 
     for entry in doc.get('data'):
+	if not entry:
+		continue
 	check_time_epoch = utility_module.get_epoch_time(entry.get('time'))
+    	local_time_epoch += 300
         t = (
             #uuid,
             doc.get('host'),
