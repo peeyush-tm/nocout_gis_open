@@ -76,8 +76,8 @@ interface_oriented_services = [
 		'cambium_ul_rssi',
 		'cambium_ul_jitter',
 		'cambium_ul_regcount',
-		'cambium_regcount',
-		'cambium_reregcount',
+		'cambium_reg_count',
+		'cambium_rereg_count',
 		'cambium_ss_connected_bs_ip_invent'
 		]
 
