@@ -72,6 +72,15 @@ g_service_vars = {
     "snmp_communities": []
 }
 
+interface_oriented_services = [
+		'cambium_ul_rssi',
+		'cambium_ul_jitter',
+		'cambium_ul_regcount',
+		'cambium_regcount',
+		'cambium_reregcount',
+		'cambium_ss_connected_bs_ip_invent'
+		]
+
 logger = nocout_log()
 
 
@@ -120,7 +129,8 @@ def addhost():
         "site": html.var("site"),
         "agent_tag": html.var("agent_tag"),
 	"ping_levels": html.var('ping_levels'),
-	"parent_device_name": html.var('parent_device_name')
+	"parent_device_name": html.var('parent_device_name'),
+	"mac": html.var('mac').lower()
     }
     # Save the host info into mongodb configuration collection
 #    add_host_to_mongo_conf(
@@ -202,14 +212,12 @@ def addservice():
     device_name = None
     service = html.var('service_name').strip().lower()
     # Check for interfaces in HTTP request
-    if service == 'cambium_ul_rssi' or service == 'cambium_ul_jitter':
-	    if html.var('interface'):
-		    interface = html.var('interface').lower()
-		    # Get BS device name
-		    device_name = get_parent(host=html.var('device_name'), db=False)
+    if service in interface_oriented_services:
+	    # Get BS device name
+            interface, device_name = get_parent(host=html.var('device_name'), db=False)
 		    # Add the MAC addr of SS device into mongodb
 		#    add_host_to_mongo_conf(
-		#		    host=html.var('device_name'),
+		#interfacehost=html.var('device_name'),
 		#		    interface=interface
 		#		    )
     else:
@@ -345,7 +353,8 @@ def edithost():
         "attr_ipaddress": html.var("ip_address"),
         "site": html.var("site"),
         "agent_tag": html.var("agent_tag"),
-	"parent_device_name": html.var('parent_device_name')
+	"parent_device_name": html.var('parent_device_name'),
+	"mac": html.var('mac')
     }
     # Save the host info into mongodb configuration collection
 #    add_host_to_mongo_conf(
@@ -402,11 +411,11 @@ def editservice():
     device_name = None
     service = html.var('service_name').strip().lower()
     # Check for interfaces in HTTP request
-    if service == 'cambium_ul_rssi' or service == 'cambium_ul_jitter':
-	    if html.var('interface'):
-		    interface = html.var('interface').lower()
+    if service in interface_oriented_services:
+	#    if html.var('interface'):
+	#	    interface = html.var('interface').lower()
 		    # Get BS device name from mongo conf
-		    device_name = get_parent(host=html.var('device_name'), db=False)
+		    interface, device_name = get_parent(host=html.var('device_name'), db=False)
     else:
 	    device_name = html.var('device_name')
     if not device_name:
@@ -540,21 +549,27 @@ def deletehost():
     }
     interface = None
     device_name = None
-    # Check for interfaces in HTTP request
-    if html.var('interface'):
-		    # Get BS device
-		    device_name = get_parent(host=html.var('device_name'), db=False)
-		    if html.var('interface'):
-			    interface = html.var('interface')
-    else:
-	    device_name = html.var('device_name')
+#    # Check for interfaces in HTTP request
+#    if html.var('interface'):
+#		    # Get BS device
+#		    device_name = get_parent(host=html.var('device_name'), db=False)
+#		    if html.var('interface'):
+#			    interface = html.var('interface')
+#    else:
+#	    device_name = html.var('device_name')
     payload = {
         "host": html.var("device_name")
     }
+    device_name = payload.get('host')
     load_file(hosts_file)
-    new_host = nocout_find_host(device_name)
+    new_host = nocout_find_host(payload.get('host'))
 
     if not new_host:
+	# Get parent
+	mac, parent = get_parent(host=payload.get('host'), db=False)
+	if parent:
+		interface = mac
+		device_name = parent
         delete_host_rules(hostname=device_name, interface=interface)
         flag = write_new_host_rules()
         if not flag:
@@ -603,11 +618,11 @@ def deleteservice():
     device_name = None
     service = html.var('service_name').strip().lower()
     # Check for interfaces in HTTP request
-    if service == 'cambium_ul_rssi' or service == 'cambium_ul_jitter':
+    if service in interface_oriented_services:
 		    # Get BS device name from mongo conf
-		    device_name = get_parent(host=html.var('device_name'), db=False)
-		    if html.var('interface'):
-			    interface = html.var('interface')
+		    interface, device_name = get_parent(host=html.var('device_name'), db=False)
+		#    if html.var('interface'):
+		#	    interface = html.var('interface')
     else:
 	    device_name = html.var('device_name')
     if not device_name:
@@ -665,6 +680,7 @@ def add_host_to_mongo_conf(**values):
 
 def get_parent(host=None, db=True):
 	bs = None
+	device_mac = None
 	if db:
 		if host:
 			try:
@@ -680,15 +696,17 @@ def get_parent(host=None, db=True):
 	else:
 		if host:
 			load_file(hosts_file)
-			# Filter out the host's old config
 			# Filter the required row
-			host_row = filter(lambda e: host in e, g_host_vars['all_hosts'])
+			host_row = filter(lambda e: re.match(host, e), g_host_vars['all_hosts'])
 			try:
-				bs = host_row[0].split('|')[1]
+				device_mac = host_row[0].split('|')[1]
+				# Varify ip
+				if re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', host_row[0].split('|')[2]):
+					bs = host_row[0].split('|')[2]
 			except AttributeError, e:
 				logger.error('Could not find BS name' + pprint.pformat(e))
 
-	return str(bs)
+	return str(device_mac), str(bs)
 
 
 def set_ping_levels(host, ping_levels):
@@ -1055,12 +1073,16 @@ def nocout_add_host_attributes(host_attrs):
     global host_tags
     # Filter out the host's old config
     g_host_vars['all_hosts'] = filter(lambda t: not re.match(host_attrs.get('host'), t), g_host_vars['all_hosts'])
-    host_entry = "%s|wan|prod|%s|site:%s|wato|//" % (
-    host_attrs.get('host'), host_tags.get(html.var('agent_tag'), 'snmp'), host_attrs.get('site'))
-    # Insert the ip of the parent device, as an auxiliary tag for the host
+    logger.debug('all_hosts: ' + pprint.pformat(g_host_vars['all_hosts']))
+
+    host_entry = "%s|%s|wan|prod|%s|site:%s|wato|//" % (
+    host_attrs.get('host'), host_attrs.get('mac'), host_tags.get(html.var('agent_tag'), 'snmp'), host_attrs.get('site'))
+    # Find all the occurences for sub-string '|'
+    all_indexes = [i for i in range(len(host_entry)) if host_entry.startswith('|', i)]
+    # Insert the name of the parent device, as an auxiliary tag for the host, after the second occurence of '|'
     if host_attrs.get('parent_device_name'):
-	    host_entry = host_entry[:(host_entry.find('|') + 1)] + str(host_attrs.get('parent_device_name')) + \
-			    '|' + host_entry[(host_entry.find('|') + 1):]
+	    host_entry = host_entry[:(all_indexes[1] + 1)] + str(host_attrs.get('parent_device_name')) + \
+			    '|' + host_entry[(all_indexes[1] + 1):]
 
     g_host_vars['all_hosts'].append(host_entry)
 
@@ -1095,10 +1117,8 @@ def nocout_find_host(host):
     }
     try:
         execfile(hosts_file, local_host_vars, local_host_vars)
-        for entry in local_host_vars['all_hosts']:
-            if host in entry:
-                new_host = False
-                break
+	if filter(lambda t: re.match(host, t), local_host_vars['all_hosts']):
+		new_host = False
     except IOError, e:
         pass
 
