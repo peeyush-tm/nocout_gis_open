@@ -120,7 +120,7 @@ function GisPerformance() {
 			}, 60000);
 			return;
 		}
-
+		
 		//Ajax Request
 		$.ajax({
 			url:  '/network_maps/performance_data/?freeze_time='+freezedAt,
@@ -168,6 +168,7 @@ function GisPerformance() {
 		}
 		//Fetch BS Gmap marker from markersMasterObj
 		var bsGmapMarker= markersMasterObj['BSNamae'][bsname];
+		
 		//If Marker is found
 		if(bsGmapMarker) {
 			//Update BS name in DATA
@@ -184,7 +185,7 @@ function GisPerformance() {
 					"sub_station": []
 				};
 				//Loop through all the SubStations in Device
-				for(var j=0; j< bsGmapMarker["child_ss"][i]["sub_station"].length; j++) {
+				for(var j=0; j<bsGmapMarker["child_ss"][i]["sub_station"].length; j++) {
 					//Store sub_station_name, sub_station_id, and empty performance data for the substation
 					var deviceSsJson= {
 						"device_name": bsGmapMarker["child_ss"][i]["sub_station"][j]["device_name"],
@@ -192,7 +193,7 @@ function GisPerformance() {
 						"performance_data": {"frequency": "","pl": "","color": "","performance_parameter": "","performance_value": "","performance_icon": ""}
 					}
 					//Push it in sub_station array of deviceSectorJSon
-					deviceSectorJSon["sub_station"].push(deviceSsJson);
+					deviceSectorJSon["sub_station"].push(deviceSsJson);	
 				}
 				//Push DATA sector to the deviceSectorJSon created.
 				initialdata["param"]["sector"].push(deviceSectorJSon);
@@ -211,6 +212,7 @@ function GisPerformance() {
 	this.updateMap= function() {
 		//Step no. 1 => Find BS Station First
 		var gisData= this.gisData;
+
 		//Get BS Gmap Marker
 		var bsMarkerObject= markersMasterObj['BSNamae'][gisData.basestation_name];
 		//Step no. 2 ==> Loop through all the SS in the BS
@@ -220,6 +222,7 @@ function GisPerformance() {
 				var perf_obj = {};
 				//Loop through sub_station of devices
 				for(var j=0; j< bsMarkerObject['child_ss'][i]['sub_station'].length; j++) {
+
 					//Step no. 3 ===> Fetch PerformanceValue for various key from GisData JSon
 					var lineColor= this.calculatePerformanceValue("color", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
 					//Fetch googlePolyline from markersMasterObj;
@@ -258,9 +261,9 @@ function GisPerformance() {
 					perf_obj["performance_value"] = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
 					perf_obj["frequency"] = this.calculatePerformanceValue("frequency", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
 					perf_obj["pl"] = this.calculatePerformanceValue("pl", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-
 					subStationMarker.hasPerf = 1;
 					subStationMarker.perf_data_obj = perf_obj;
+				
 
 					//If substation icon is present
 					if(subStationIcon) {
@@ -288,7 +291,7 @@ function GisPerformance() {
 				}
 			}
 		}catch(exception) {
-			// console.log(exception);
+			//Pass
 		}
 	}
 
@@ -313,13 +316,30 @@ function GisPerformance() {
 	Else, we return Defualt Value from sectir configuration
 	 */
 	this.calculatePerformanceValue= function(key, device, ssName) {
-		var gisData= this.gisData;
+		var gisData = this.gisData;
+
+		// var perf_sector_array = gisData["param"]["sector"];
+
+		// for(var i=0;i<perf_sector_array.length;i++) {
+
+		// 	if(perf_sector_array[i].device_name && ($.trim(perf_sector_array[i].device_name) == device)) {
+		// 		var perf_substation_array = perf_sector_array[i].sub_station;
+
+		// 		for(var j=0;j<perf_substation_array.length;j++) {
+
+		// 			if(perf_substation_array[j].device_name && ($.trim(perf_substation_array[j].device_name) == ssName)) {
+		// 				return perf_substation_array[j].performance_data[key];
+		// 			}
+		// 		}
+		// 	}
+		// }
+
 		//Loop through GIS Sector Data
 		for(var i=0; i< gisData["param"]["sector"].length; i++) {
 			//If Gis Sector Name=== device
 			if(gisData["param"]["sector"][i] && gisData["param"]["sector"][i]["device_name"]=== device) {
 				//Loop inside device Sub Stations
-				for(var j=0; j< gisData["param"]["sector"][i]["sub_station"].length; i++) {
+				for(var j=0; j< gisData["param"]["sector"][i]["sub_station"].length; j++) {
 					//If SubStation name=== devinceName passed
 					if(gisData["param"]["sector"][i]["sub_station"][j]["device_name"]=== ssName) {
 						//Check if value is defined in SubStation
@@ -334,6 +354,6 @@ function GisPerformance() {
 				}
 			}
 		}
-		return ;
+		return "";
 	}
 }

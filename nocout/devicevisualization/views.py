@@ -220,6 +220,11 @@ class Gis_Map_Performance_Data(View):
                                 range_number=''.join(re.findall("[0-9]", data.keys()[0]))
                                 exec 'range_start=threshold_template.range'+str(range_number)+ '_start'
                                 exec 'range_end=threshold_template.range'+str(range_number)+ '_end'
+                                ##known bug: the complete range should be checked and not just the values
+                                ##between two ranges for example : range 1 = 0,2
+                                ##range 2 = 3,5
+                                ## value should be checked if it in in range 1
+                                ## value should be checked if between range 2 (that is 3,5)
                                 if (float(range_start)) <= float(corrected_device_performance_value) <= (float(range_end)):
                                     performance_icon= data.values()[0]
                             except Exception as e:

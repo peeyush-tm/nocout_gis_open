@@ -62,7 +62,7 @@ def getCustomerAlertDetail(request):
     :return Http Response Object::
 
     """
-    customer_ptp_block_table_header = [
+    datatable_headers = [
         {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
         {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
@@ -87,7 +87,7 @@ def getCustomerAlertDetail(request):
          'bSortable': False},
         ]
 
-    context = {'customer_ptp_block_table_header': json.dumps(customer_ptp_block_table_header)}
+    context = {'datatable_headers': json.dumps(datatable_headers)}
     return render(request, 'alert_center/customer_alert_details_list.html', context)
 
 
@@ -269,7 +269,7 @@ def getNetworkAlertDetail(request):
     :params request object:
     :return Http Response Object:
     """
-    network_ptp_block_table_header = [
+    datatable_headers = [
         {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
         {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
@@ -289,7 +289,7 @@ def getNetworkAlertDetail(request):
         {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
         ]
 
-    context = {'network_ptp_block_table_header': json.dumps(network_ptp_block_table_header)}
+    context = {'datatable_headers': json.dumps(datatable_headers)}
     return render(request, 'alert_center/network_alert_details_list.html', context)
 
 
@@ -351,22 +351,26 @@ class GetNetworkAlertDetail(BaseDatatableView):
         sector_configured_on_devices = []
 
         if tab_id:
-
-            if tab_id == "ptp_backhaul":
+            device_list = []
+            if tab_id == "P2P":
                 technology = int(P2P.ID)
                 #need to add device with Circuit Type as : Backhaul
                 # (@TODO: make this a dropdown menu item and must for the user)
                 #INVALID :::: for technology = PTP and Circuit Type as Backhaul get the Device BH Configured On ::: INVALID
                 #VALID :::: confusion HERE. What we want is that CIRCUIT TYPE BACKHAUL's both SS and BS elements should
                 #be visible on network alert center ::: VALID
+            elif tab_id == "WiMAX":
+                technology = int(WiMAX.ID)
+            elif tab_id == "PMP":
+                technology = int(PMP.ID)
+            else:
+                return []
 
-                device_list = organization_network_devices(organizations, technology=technology)
-                sector_configured_on_devices = [
+            device_list = organization_network_devices(organizations, technology=technology)
+            sector_configured_on_devices = [
                                 {'device_name': device.device_name, 'machine__name': device.machine.name}
                                 for device in device_list
-                ]
-            else:
-                return sector_configured_on_devices
+            ]
         else:
             return []
 
@@ -1757,6 +1761,7 @@ def organization_customer_devices(organizations, technology = None):
         else:
             organization_customer_devices = Device.objects.filter(
                 is_added_to_nms= 1,
+                substation__isnull=False,
                 is_deleted= 0,
                 organization__in= organizations,
                 device_technology= technology
@@ -1799,6 +1804,7 @@ def organization_network_devices(organizations, technology = None):
             organization_network_devices = Device.objects.filter(
                                             Q(device_technology = int(technology),
                                             is_added_to_nms=1,
+                                            sector_configured_on__isnull = False,
                                             is_deleted=0,
                                             organization__in= organizations
             ))
