@@ -75,9 +75,8 @@ g_service_vars = {
 interface_oriented_services = [
 		'cambium_ul_rssi',
 		'cambium_ul_jitter',
-		'cambium_ul_regcount',
-		'cambium_regcount',
-		'cambium_reregcount',
+		'cambium_reg_count',
+		'cambium_rereg_count',
 		'cambium_ss_connected_bs_ip_invent'
 		]
 
@@ -469,9 +468,9 @@ def editservice():
                         t = ()
                         t += (int(thresholds.get('warning')),)
                         t += (int(thresholds.get('critical')),)
-		# Add device interfaces as check items, if passed in HTTP request
-                check_tuple = ([device_name], payload.get('service'), payload.get('interface'), t)
-                g_service_vars['checks'].append(check_tuple)
+			# Add device interfaces as check items, if passed in HTTP request
+			check_tuple = ([device_name], payload.get('service'), payload.get('interface'), t)
+			g_service_vars['checks'].append(check_tuple)
             except Exception, e:
                 response.update({
                     "success": 0,
