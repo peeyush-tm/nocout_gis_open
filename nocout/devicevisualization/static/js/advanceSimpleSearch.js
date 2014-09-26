@@ -120,16 +120,9 @@ function advanceSearchMainClass() {
                         for(j=0; j< currentItem["values"].length; j++) {
                             if(currentItem["key"]=== "sector_configured_on") {
                                 var s= currentItem["values"][j]["value"];
-                                s= s.substring(s.lastIndexOf("(")+1,s.lastIndexOf(")"));
                                 formElement+= '<option value="'+s+'">'+s+'</option>';
                             } else {
                                 formElement+= '<option value="'+currentItem["values"][j].value+'">'+currentItem["values"][j].value+'</option>';
-                            }
-                        }
-                        if(currentItem["key"]=== "sector_configured_on") {
-                            var a= markersMasterObj['SS'];
-                            for(var key in a) {
-                                formElement += '<option value="'+a[key]['dataset'][12]['value']+'">'+a[key]['dataset'][12]['value']+'</option>';
                             }
                         }
                         formElement+= "</select>";
@@ -214,38 +207,49 @@ function advanceSearchMainClass() {
 
             //check for name first
             var searchedNames= selectedInputs["BS Name"];
+            var isNamePresent= false;
             if(searchedNames.length && searchedNames.indexOf(deviceJson["name"]) === -1) {
                 return false;
             }
 
+            isNamePresent= true;
+
             //check for Ip next
             var searchedIps = selectedInputs["IP"];
             var isSearchedIpPresent= false;
-            var isSubStationIpPresent= false;
+
+            var isSsWasSearched= false, isBsWasSearched= false;
+
             if(searchedIps.length) {
                 var deviceSectorConfiguredOn= deviceJson["sector_configured_on_devices"].split(" ");
-                var deviceIps = deviceSectorConfiguredOn.map(function(sectorConfigured) {
-                    if(sectorConfigured) {
-                        return sectorConfigured.substring(sectorConfigured.lastIndexOf("(")+1,sectorConfigured.lastIndexOf(")"));
-                    }
-                });
-
-                var common = $.grep(deviceIps, function(element) {
+                var common = $.grep(deviceSectorConfiguredOn, function(element) {
                     return $.inArray(element, searchedIps ) !== -1;
                 });
                 if(common.length) {
-                    isSearchedIpPresent= true;
-                }
-                for(var count0= 0; count0< searchedIps.length; count0++) {
-                    for(var count= 0; count< deviceJson["data"]["param"]["sector"].length; count++) {
-                        if(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]) {
-                            if(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["substation_device_ip_address"]== searchedIps[count0]) {
-                                extendBound(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lat"], deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lon"]);
-                                search_self.applyIconToSearchedResult(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lat"], deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lon"]);
-                                isSearchedIpPresent= true;
-                            }    
+
+                    for(var c=0; c< common.length; c++) {
+                        var ip= common[c];
+                        for(var d=0; d< deviceJson["data"]["param"]["sector"].length; d++) {
+                            var currentSector= deviceJson["data"]["param"]["sector"][d];
+                            if(currentSector["sector_configured_on"]== ip) {
+                                if(!isBsWasSearched) {
+                                    isBsWasSearched= true;
+                                }
+                                isSearchedIpPresent= true;            
+                            }
+
+                            for(var e=0; e< currentSector["sub_station"].length; e++) {
+                                var currentSs= currentSector["sub_station"][e];
+                                if(currentSs["data"]["substation_device_ip_address"]== ip) {
+                                    isSearchedIpPresent= true;
+                                    if(!isSsWasSearched) {
+                                        isSsWasSearched= true;
+                                    }
+                                    extendBound(currentSs["data"]["lat"], currentSs["data"]["lon"]);
+                                    search_self.applyIconToSearchedResult(currentSs["data"]["lat"], currentSs["data"]["lon"],search_self.constants.search_ss_icon);
+                                }
+                            }
                         }
-                        
                     }
                 }
                 if(!isSearchedIpPresent) {
@@ -265,16 +269,22 @@ function advanceSearchMainClass() {
                 });
 
                 if(common.length) {
-                    for(var count0= 0; count0< common.length; count0++) {
-                        for(var count=0; count< deviceJson["data"]["param"]["sector"].length; count++) {
-                            if(deviceJson["data"]["param"]["sector"][count]["circuit_id"]== common[count0]) {
-                                extendBound(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lat"], deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lon"]);
-                                search_self.applyIconToSearchedResult(deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lat"], deviceJson["data"]["param"]["sector"][count]["sub_station"][0]["data"]["lon"],search_self.constants.search_ss_icon);
-                                isCircuitIdPresent= true;
+                    for(var c=0; c< common.length; c++) {
+                        var circuidId= common[c];
+                        for(var d=0; d< deviceJson["data"]["param"]["sector"].length; d++) {
+                            var currentSector= deviceJson["data"]["param"]["sector"][d];
+                            for(var e=0; e< currentSector["sub_station"].length; e++) {
+                                var currentSs= currentSector["sub_station"][e];
+                                if($.trim(currentSs["data"]["param"]["sub_station"][1]["value"])=== circuidId) {
+                                    extendBound(currentSs["data"]["lat"], currentSs["data"]["lon"]);
+                                    search_self.applyIconToSearchedResult(currentSs["data"]["lat"], currentSs["data"]["lon"],search_self.constants.search_ss_icon);
+                                    isCircuitIdPresent= true;
+                                }
                             }
-                        }        
+                        }
                     }
                 }
+
                 if(!isCircuitIdPresent) {
                     return false;
                 }
@@ -284,6 +294,10 @@ function advanceSearchMainClass() {
             var searchedCity= selectedInputs["BS City"];
             if(searchedCity.length && searchedCity.indexOf(deviceJson["data"]["city"]) === -1) {
                 return false;
+            }
+
+            if(isSsWasSearched && !(searchedCircuitIds.length && isCircuitIdPresent) && !(searchedNames.length && isNamePresent) && !isBsWasSearched) {
+                return 'onlySSFound';
             }
 
             return isValid;
@@ -303,9 +317,15 @@ function advanceSearchMainClass() {
         var searchedStations= [];
         for(var i=0; i< devicesInMap.length; i++) {
             if(checkIfValid(devicesInMap[i])) {
+
                 searchedStations.push(devicesInMap[i]);
                 bounds.extend(new google.maps.LatLng(devicesInMap[i]['data']['lat'], devicesInMap[i]['data']['lon']));
-                this.applyIconToSearchedResult(devicesInMap[i]['data']['lat'], devicesInMap[i]['data']['lon']);
+                if(checkIfValid(devicesInMap[i])=== 'onlySSFound') {
+
+                } else {
+                    this.applyIconToSearchedResult(devicesInMap[i]['data']['lat'], devicesInMap[i]['data']['lon']);
+                    
+                }
             }
 
             if(ipStationFound) {
