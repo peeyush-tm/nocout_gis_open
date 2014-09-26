@@ -146,7 +146,7 @@ function prepare_oms_object(oms_instance) {
 			map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image,zIndex: 500});
 			map_points_array.push(map_point);
 			map_point_count ++;
-			$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/', secure: true});
+			$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/'});
 
 			isMaintained = JSON.stringify(map_points_lat_lng_array);
 
@@ -2855,7 +2855,7 @@ function devicePlottingClass_gmap() {
     	isCreated= 0;
 
     	//Reset Cookie
-    	$.cookie('tools_ruler', 0, {path: '/', secure: true});
+    	$.cookie('tools_ruler', 0, {path: '/'});
 
 
     	tools_ruler = $.cookie("tools_ruler");
@@ -2883,7 +2883,7 @@ function devicePlottingClass_gmap() {
     			var current_line =  gmap_self.createLink_gmaps(ruler_Obj);
     			tools_rule_array.push(current_line);
 
-    			$.cookie('tools_ruler',JSON.stringify(ruler_Obj),{path : '/'});
+    			$.cookie('tools_ruler',JSON.stringify(ruler_Obj),{path : '/', secure : true});
 
     			tools_ruler = $.cookie("tools_ruler");
 
@@ -2938,7 +2938,7 @@ function devicePlottingClass_gmap() {
 
 				tools_rule_array.push(ruler_line);
 
-				$.cookie('tools_ruler',JSON.stringify(latLonObj),{path : '/'});
+				$.cookie('tools_ruler',JSON.stringify(latLonObj),{path : '/', secure : true});
 
 				tools_ruler = $.cookie("tools_ruler");
 
@@ -2984,7 +2984,7 @@ function devicePlottingClass_gmap() {
     	is_bs_clicked= 0;
 
     	//Reset Cookie
-    	$.cookie('tools_line', 0, {path: '/', secure: true});
+    	$.cookie('tools_line', 0, {path: '/'});
 
 
     	tools_line = $.cookie("tools_line");
@@ -3004,7 +3004,7 @@ function devicePlottingClass_gmap() {
     			var current_line =  gmap_self.createLink_gmaps(line_obj);
     			tools_line_array.push(current_line);
 
-    			$.cookie('tools_line',JSON.stringify(line_obj),{path : '/'});
+    			$.cookie('tools_line',JSON.stringify(line_obj),{path : '/', secure : true});
 
     			tools_line = $.cookie("tools_line");
 
@@ -3057,7 +3057,7 @@ function devicePlottingClass_gmap() {
 
 				tools_line_array.push(ruler_line);
 
-				$.cookie('tools_line',JSON.stringify(latLonObj),{path : '/'});
+				$.cookie('tools_line',JSON.stringify(latLonObj),{path : '/', secure : true});
 
 				tools_line = $.cookie("tools_line");
 
@@ -3086,7 +3086,7 @@ function devicePlottingClass_gmap() {
 
     	map_point_count= 0;
 
-    	$.cookie("isMaintained", 0, {path: '/', secure: true});
+    	$.cookie("isMaintained", 0, {path: '/'});
 
 
     	isMaintained = $.cookie("isMaintained");
@@ -3143,7 +3143,7 @@ function devicePlottingClass_gmap() {
 
 				map_point_count ++;
 
-				$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/', secure: true});
+				$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/'});
 
 
 				isMaintained = $.cookie("isMaintained");
@@ -3182,7 +3182,7 @@ function devicePlottingClass_gmap() {
 			distance_label.setMap(null);
 		}
 
-		$.cookie('tools_ruler',0,{path : '/'});
+		$.cookie('tools_ruler',0,{path : '/', secure : true});
 
         if (map_point_count == 0){
             /*Remove click listener from google maps*/
@@ -3199,10 +3199,10 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 1;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure: true});
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/'});
 
 	 	freezedAt = (new Date()).getTime();
-	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
+	 	$.cookie("freezedAt", freezedAt, {path: '/'});
 
 
 	 	/*Set Live Polling flag*/
@@ -3219,10 +3219,10 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 0;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/', secure: true});
+	 	$.cookie("isFreezeSelected", isFreeze, {path: '/'});
 
 	 	freezedAt = 0;
-	 	$.cookie("freezedAt", freezedAt, {path: '/', secure: true});
+	 	$.cookie("freezedAt", freezedAt, {path: '/'});
 
 
 	 	/*Set Live Polling flag*/
