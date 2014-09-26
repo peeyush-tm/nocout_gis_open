@@ -355,7 +355,7 @@ def prepare_result(base_station_id):
                                                          }]
         base_station_info['sector_ss_vendor']+= DeviceVendor.objects.get(id=sector.sector_configured_on.device_vendor).name +', '
         base_station_info['sector_ss_technology']+= DeviceTechnology.objects.get(id=sector.sector_configured_on.device_technology).name +', '
-        base_station_info['sector_configured_on_devices']+= sector.sector_configured_on.device_name +'('+ sector.sector_configured_on.ip_address +')' + ', '
+        base_station_info['sector_configured_on_devices']+= sector.sector_configured_on.device_name + ', '
 
 
         for circuit in circuits:
@@ -572,6 +572,7 @@ def prepare_result(base_station_id):
             base_station_info['data']['param']['sector'][-1]['circuit_id']= circuit.circuit_id
             base_station_info['sector_ss_vendor']+= DeviceVendor.objects.get(id=substation.device.device_vendor).name +', '
             base_station_info['sector_ss_technology']+= DeviceTechnology.objects.get(id=substation.device.device_technology).name +', '
+            base_station_info['sector_configured_on_devices']+= substation_device.ip_address + ', '
             base_station_info['circuit_ids']+= circuit.circuit_id +', '
 
     # Additional Information required to filter the data in the gis maps
