@@ -120,10 +120,10 @@ function GisPerformance() {
 			}, 60000);
 			return;
 		}
-		
+
 		//Ajax Request
 		$.ajax({
-			url:  '/network_maps/performance_data/?freeze_time='+freezedAt,
+			url:  base_url+'/network_maps/performance_data/?freeze_time='+freezedAt,
 			data: JSON.stringify(getBsRequestData),
 			type : 'POST',
 			dataType : 'json',
@@ -219,7 +219,6 @@ function GisPerformance() {
 		try {
 			//Loop through devices
 			for(var i=0; i< bsMarkerObject['child_ss'].length; i++) {
-				var perf_obj = {};
 				//Loop through sub_station of devices
 				for(var j=0; j< bsMarkerObject['child_ss'][i]['sub_station'].length; j++) {
 
@@ -238,13 +237,14 @@ function GisPerformance() {
 						var sectorPoly= markersMasterObj['Poly'][bsMarkerObject['child_ss'][i]['sub_station'][j]['device_name']];
 						//If both sector Poly and line Color is defined
 						if(sectorPoly && lineColor) {
-							perf_obj["performance_paramter"] = this.calculatePerformanceValue("performance_paramter", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-							perf_obj["performance_value"] = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-							perf_obj["frequency"] = this.calculatePerformanceValue("frequency", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-							perf_obj["pl"] = this.calculatePerformanceValue("pl", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+							var sector_perf_obj = {};
+							sector_perf_obj["performance_paramter"] = this.calculatePerformanceValue("performance_paramter", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+							sector_perf_obj["performance_value"] = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+							sector_perf_obj["frequency"] = this.calculatePerformanceValue("frequency", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+							sector_perf_obj["pl"] = this.calculatePerformanceValue("pl", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
 							//Update color for Sector POly.
 							sectorPoly.hasPerf = 1;
-							sectorPoly.perf_data_obj = perf_obj;
+							sectorPoly.perf_data_obj = sector_perf_obj;
 							sectorPoly.setOptions({fillColor: lineColor});
 						}
 					}
@@ -257,12 +257,14 @@ function GisPerformance() {
 					//Get subStation Marker
 					var subStationMarker= markersMasterObj['SSNamae'][subStationName];
 
-					perf_obj["performance_paramter"] = this.calculatePerformanceValue("performance_paramter", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-					perf_obj["performance_value"] = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-					perf_obj["frequency"] = this.calculatePerformanceValue("frequency", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-					perf_obj["pl"] = this.calculatePerformanceValue("pl", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+					var ss_perf_obj = {};
+
+					ss_perf_obj["performance_paramter"] = this.calculatePerformanceValue("performance_paramter", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+					ss_perf_obj["performance_value"] = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+					ss_perf_obj["frequency"] = this.calculatePerformanceValue("frequency", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+					ss_perf_obj["pl"] = this.calculatePerformanceValue("pl", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
 					subStationMarker.hasPerf = 1;
-					subStationMarker.perf_data_obj = perf_obj;
+					subStationMarker.perf_data_obj = ss_perf_obj;
 				
 
 					//If substation icon is present
