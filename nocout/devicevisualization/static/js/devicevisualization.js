@@ -37,7 +37,7 @@ tools_line = $.cookie("tools_line");
 
 isPollingActive = 0;
 
-if(isFreeze == 1 || (isMaintained && isMaintained != 0) || (tools_ruler && tools_ruler != 0) || (tools_line && tools_line != 0)) {
+if(isFreeze == 1 || (isMaintained && isMaintained != 0) || (tools_ruler && tools_ruler != 0) || (tools_line && tools_line != 0) || ($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true')) {
     $("#showToolsBtn").removeClass("btn-info");
     $("#showToolsBtn").addClass("btn-warning");
 } else {
@@ -45,6 +45,13 @@ if(isFreeze == 1 || (isMaintained && isMaintained != 0) || (tools_ruler && tools
     $("#showToolsBtn").removeClass("btn-warning");
 }
 
+if($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true') {
+    $("#show_hide_label")[0].checked= true;
+} else {
+    $("#show_hide_label")[0].checked= false;
+}
+
+//$.cookie("isLabelChecked", 1, {path: '/', secure : true});
 
 google.maps.event.clearListeners(mapInstance,'click');
 
@@ -673,7 +680,7 @@ function removetoolsPanel() {
 
     $("#showToolsBtn").removeClass("hide");
 
-    if(isFreeze == 1 || (isMaintained && isMaintained != 0) || (tools_ruler && tools_ruler != 0) || (tools_line && tools_line != 0)) {
+    if(isFreeze == 1 || (isMaintained && isMaintained != 0) || (tools_ruler && tools_ruler != 0) || (tools_line && tools_line != 0) || ($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true')) {
         $("#showToolsBtn").removeClass("btn-info").addClass("btn-warning");
     } else {
         $("#showToolsBtn").removeClass("btn-warning").addClass("btn-info");
@@ -822,6 +829,17 @@ function clearTools_gmap() {
             $("#showToolsBtn").removeClass("btn-warning");
         }
         get_page_status();
-    });
-    
+    });   
 }
+
+
+/**
+ * This event show/hide perf param label from SS markers
+ */
+
+$("#show_hide_label").click(function(e) {
+    $.cookie("isLabelChecked", e.currentTarget.checked, {path: '/', secure : true});
+    for(var x=0;x<labelsArray.length;x++) {
+        labelsArray[x].setVisible(e.currentTarget.checked);
+    }
+});
