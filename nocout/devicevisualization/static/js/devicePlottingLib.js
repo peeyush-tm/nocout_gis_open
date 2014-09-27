@@ -3519,6 +3519,7 @@ function devicePlottingClass_gmap() {
 		sectorArray = [];
 		circleArray = [];
 		ssLinkArray = [];
+		labelsArray = [];
 		sector_MarkersArray = [];
 		sectorMarkersMasterObj = {};
 		sectorMarkerConfiguredOn = [];
