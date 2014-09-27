@@ -64,7 +64,7 @@ def getCustomerAlertDetail(request):
     """
     datatable_headers = [
         {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
-        {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
+        {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'device_type', 'sTitle': 'Device type', 'sWidth': 'null', 'sClass': 'hidden-xs',
         'bSortable': True},
@@ -271,7 +271,7 @@ def getNetworkAlertDetail(request):
     """
     datatable_headers = [
         {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
-        {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
+        {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
         'bSortable': True},
@@ -490,7 +490,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                                 'device_name': data["device_name"],
                                 'device_type': device_type,
                                 'severity': data['severity'],
-                                #'ip_address': data["ip_address"],
+                                'ip_address': data["ip_address"],
                                 'base_station': basestation_objects.name if basestation_objects else "N/A",
                                 'circuit_id': circuit_object.circuit_id if circuit_object else "N/A",
                                 'sector_id': sector_objects.sector_id if sector_objects else "N/A",
@@ -531,7 +531,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                                         'device_name': data["device_name"],
                                         'device_type': device_type,
                                         'severity': data['severity'],
-                                        #'ip_address': data["ip_address"],
+                                        'ip_address': data["ip_address"],
                                         'base_station': basestation_objects.name if basestation_objects else "N/A",
                                         'circuit_id': circuit_object.circuit_id if circuit_object else "N/A",
                                         'sector_id': sector_objects.sector_id if sector_objects else "N/A",
@@ -636,13 +636,11 @@ class AlertCenterNetworkListing(ListView):
 
         datatable_headers = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
-            {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
+            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': True},
             # {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'null', 'sClass': 'hidden-xs',
             #  'bSortable': True},
             {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': True},
             # {'mData': 'sub_station', 'sTitle': 'Sub Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
             #  'bSortable': True},
             {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -861,8 +859,7 @@ class CustomerAlertList(ListView):
         data_source=self.kwargs.get('data_source','')
         datatable_headers = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
-            {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
+            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': True},
             # {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'null', 'sClass': 'hidden-xs',
             #  'bSortable': True},
             {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -957,6 +954,7 @@ class CustomerAlertListingTable(BaseDatatableView):
 
         required_data_columns = ["id",
                                  "data_source",
+                                 "ip_address",
                                  "device_name",
                                  "severity",
                                  "current_value",
@@ -1395,7 +1393,7 @@ def common_get_performance_data(model=EventNetwork,
     :return:
     """
     if not columns:
-        columns = ["id", "service_name", "device_name", "data_source", "severity", "current_value", "sys_timestamp",
+        columns = ["id", "service_name", "ip_address", "device_name", "data_source", "severity", "current_value", "sys_timestamp",
                    "description"]
 
     query = prepare_query(table_name=table_name,
@@ -1650,7 +1648,7 @@ def prepare_alert_results(device_list, performance_data):
                         'device_name': data["device_name"],
                         'device_type': device_type,
                         'severity': data['severity'],
-                        #'ip_address': data["ip_address"],
+                        'ip_address': data["ip_address"],
                         'base_station': basestation_objects.name if basestation_objects else "N/A",
                         'circuit_id': circuit_object.circuit_id if circuit_objects else "N/A",
                         'sector_id': sector_objects.sector_id if sector_objects else "N/A",
@@ -1692,7 +1690,7 @@ def prepare_alert_results(device_list, performance_data):
                             'device_name': data["device_name"],
                             'device_type': device_type,
                             'severity': data['severity'],
-                            #'ip_address': data["ip_address"],
+                            'ip_address': data["ip_address"],
                             'base_station': basestation_objects.name if basestation_objects else "N/A",
                             'circuit_id': circuit_object.circuit_id if circuit_objects else "N/A",
                             'sector_id': sector_objects.sector_id if sector_objects else "N/A",
