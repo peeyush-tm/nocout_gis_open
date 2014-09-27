@@ -43,7 +43,7 @@ class StateGeoInfo(models.Model):
 class DeviceFrequency(models.Model):
     value = models.CharField(max_length=50, help_text="MHz")
     color_hex_value = models.CharField(max_length=100)
-    frequency_radius = models.FloatField(verbose_name="Frequency Radius", default=0, help_text="mtr")
+    frequency_radius = models.FloatField(verbose_name="Frequency Radius", default=0, help_text="Km")
 
     def __unicode__(self):
         return self.value

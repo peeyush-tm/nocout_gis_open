@@ -218,10 +218,13 @@ def prepare_result(base_station_id):
         #         'vendor':','.join(base_station.bs_technology.device_vendors.values_list('name', flat=True)),
 
         base_station_info['data']['param']['sector'] += [{
-                                                             "color": sector.frequency.color_hex_value if hasattr(
-                                                                 sector,
-                                                                 'frequency') and sector.frequency else 'rgba(74,72,94,0.58)',
-                                                             'radius': sector.cell_radius if sector.cell_radius else 0,
+                                                             "color": sector.frequency.color_hex_value
+                                                                    if (sector.frequency and sector.frequency.color_hex_value)
+                                                                    else 'rgba(74,72,94,0.58)',
+                                                             'radius': sector.frequency.frequency_radius
+                                                                    if (sector.frequency and sector.frequency.frequency_radius)
+                                                                    else 0,
+                                                             #sector.cell_radius if sector.cell_radius else 0,
                                                              'azimuth_angle': sector.antenna.azimuth_angle if sector.antenna else 0,
                                                              'beam_width': sector.antenna.beam_width if sector.antenna else 0,
                                                              # "markerUrl": tech_marker_url_master(sector.bs_technology.name) if sector.bs_technology else "static/img/marker/icon2_small.png",

@@ -826,7 +826,7 @@ function devicePlottingClass_gmap() {
 					startLat = "";
 
 				/*If radius is greater than 4 Kms then set it to 4.*/
-				if((sectorRadius <= 4) && (sectorRadius != null) && (sectorRadius > 0)) {
+				if(/*(sectorRadius <= 4) && */(sectorRadius != null) && (sectorRadius > 0)) {
 					rad = sectorRadius;
 				}
 
