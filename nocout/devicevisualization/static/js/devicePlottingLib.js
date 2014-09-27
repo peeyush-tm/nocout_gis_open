@@ -30,6 +30,7 @@ var base_url = "",
 	slaveMarkersObj = [],
 	pathLineArray = [],
 	counter = -999,
+	labelsArray = [],
 	totalCalls = 1,
 	clusterIcon = "",
 	appliedFilterObj_gmaps = {},
@@ -494,7 +495,7 @@ function devicePlottingClass_gmap() {
             prepare_oms_object(oms_ss);
 
 			/*Create a instance of google map info window*/
-			infowindow = new google.maps.InfoWindow();
+			infowindow = new google.maps.InfoWindow({zIndex:800});
 		} else {
 			$.gritter.add({
 	            // (string | mandatory) the heading of the notification
@@ -956,22 +957,22 @@ function devicePlottingClass_gmap() {
 
 				    google.maps.event.addListener(ss_marker, 'mouseover', function(e) {
 
-					    if(this.hasPerf == 1) {
+					  //   if(this.hasPerf == 1) {
 					    	
-					    	var freq = this.perf_data_obj.frequency ? this.perf_data_obj.frequency : "-";
-					    	var pl = this.perf_data_obj.pl ? this.perf_data_obj.pl : "-";
-					    	var perf_val = this.perf_data_obj.performance_value ? this.perf_data_obj.performance_value : "-";
+					  //   	var freq = this.perf_data_obj.frequency ? this.perf_data_obj.frequency : "-";
+					  //   	var pl = this.perf_data_obj.pl ? this.perf_data_obj.pl : "-";
+					  //   	var perf_val = this.perf_data_obj.performance_value ? this.perf_data_obj.performance_value : "-";
 
-					    	var info_html = '<table class="table table-hover"><tr><td>Frequency</td><td>'+freq+'</td></tr><tr><td>Packet Loss</td><td>'+pl+'</td></tr><tr><td>'+this.perf_data_obj.performance_paramter+'</td><td>'+perf_val+'</td></tr></table>';
-					    	/*Set the content for infowindow*/
-							infowindow.setContent(info_html);
-							/*Shift the window little up*/
-							infowindow.setOptions({pixelOffset: new google.maps.Size(0, -20), window_type : "hover"});
-							/*Set The Position for InfoWindow*/
-							infowindow.setPosition(new google.maps.LatLng(e.latLng.lat(),e.latLng.lng()));
-							/*Open the info window*/
-							infowindow.open(mapInstance);
-					    }
+					  //   	var info_html = '<table class="table table-hover"><tr><td>Frequency</td><td>'+freq+'</td></tr><tr><td>Packet Loss</td><td>'+pl+'</td></tr><tr><td>'+this.perf_data_obj.performance_paramter+'</td><td>'+perf_val+'</td></tr></table>';
+					  //   	/*Set the content for infowindow*/
+							// infowindow.setContent(info_html);
+							// /*Shift the window little up*/
+							// infowindow.setOptions({pixelOffset: new google.maps.Size(0, -20), window_type : "hover"});
+							// /*Set The Position for InfoWindow*/
+							// infowindow.setPosition(new google.maps.LatLng(e.latLng.lat(),e.latLng.lng()));
+							// /*Open the info window*/
+							// infowindow.open(mapInstance);
+					  //   }
 					});
 
 					// google.maps.event.addListener(ss_marker, 'mouseout', function() {
@@ -2883,7 +2884,7 @@ function devicePlottingClass_gmap() {
     			var current_line =  gmap_self.createLink_gmaps(ruler_Obj);
     			tools_rule_array.push(current_line);
 
-    			$.cookie('tools_ruler',JSON.stringify(ruler_Obj),{path : '/', secure : true});
+    			$.cookie('tools_ruler',JSON.stringify(ruler_Obj),{path: '/', secure : true});
 
     			tools_ruler = $.cookie("tools_ruler");
 
@@ -2938,7 +2939,7 @@ function devicePlottingClass_gmap() {
 
 				tools_rule_array.push(ruler_line);
 
-				$.cookie('tools_ruler',JSON.stringify(latLonObj),{path : '/', secure : true});
+				$.cookie('tools_ruler',JSON.stringify(latLonObj),{path: '/', secure : true});
 
 				tools_ruler = $.cookie("tools_ruler");
 
@@ -3004,7 +3005,7 @@ function devicePlottingClass_gmap() {
     			var current_line =  gmap_self.createLink_gmaps(line_obj);
     			tools_line_array.push(current_line);
 
-    			$.cookie('tools_line',JSON.stringify(line_obj),{path : '/', secure : true});
+    			$.cookie('tools_line',JSON.stringify(line_obj),{path: '/', secure : true});
 
     			tools_line = $.cookie("tools_line");
 
@@ -3057,7 +3058,7 @@ function devicePlottingClass_gmap() {
 
 				tools_line_array.push(ruler_line);
 
-				$.cookie('tools_line',JSON.stringify(latLonObj),{path : '/', secure : true});
+				$.cookie('tools_line',JSON.stringify(latLonObj),{path: '/', secure : true});
 
 				tools_line = $.cookie("tools_line");
 
@@ -3182,7 +3183,7 @@ function devicePlottingClass_gmap() {
 			distance_label.setMap(null);
 		}
 
-		$.cookie('tools_ruler',0,{path : '/', secure : true});
+		$.cookie('tools_ruler',0,{path: '/', secure : true});
 
         if (map_point_count == 0){
             /*Remove click listener from google maps*/
@@ -3518,6 +3519,7 @@ function devicePlottingClass_gmap() {
 		sectorArray = [];
 		circleArray = [];
 		ssLinkArray = [];
+		labelsArray = [];
 		sector_MarkersArray = [];
 		sectorMarkersMasterObj = {};
 		sectorMarkerConfiguredOn = [];
