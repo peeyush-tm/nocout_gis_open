@@ -2335,13 +2335,20 @@ class ThematicSettingsList(ListView):
             {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'null'},
             {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'null'},]
 
-        user_id = self.request.user.id
+        # user_id = self.request.user.id
 
         #if user is superadmin or gisadmin
-        if user_id in [NOCOUT_USER.ID, GISADMIN.ID]:
+        if self.request.user.is_superuser:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
+
+        is_global = False
+        if 'admin' in self.request.path:
+            is_global = True
+
+        context['is_global'] = json.dumps(is_global)
+
         return context
 
 
@@ -2373,20 +2380,21 @@ class ThematicSettingsListingTable(BaseDatatableView):
 
         return qs
 
-    def get_initial_queryset(self, technology="no"):
+    def get_initial_queryset(self, technology="P2P"):
         """
         Preparing  Initial Queryset for the for rendering the data table.
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        if self.request.user.id in [NOCOUT_USER.ID, GISADMIN.ID]:
-            # return ThematicSettings.objects.values(*self.columns + ['id'])
-            return ThematicSettings.objects.filter(threshold_template__in=ThresholdConfiguration.objects.filter(live_polling_template__id__in=LivePollingSettings.objects.filter(technology__name=technology).values('id')).values('id')).values(*self.columns + ['id'])
+        is_global = 1
+        if self.request.GET.get('admin'):
+            is_global = 0
 
-        else:
-            # return ThematicSettings.objects.filter(is_global=True).values(*self.columns + ['id'])
-            return ThematicSettings.objects.filter(threshold_template__in=ThresholdConfiguration.objects.filter(live_polling_template__id__in=LivePollingSettings.objects.filter(technology__name=technology).values('id')).values('id')).filter(is_global=True).values(*self.columns + ['id'])
+        return ThematicSettings.objects.filter(
+        threshold_template__in=ThresholdConfiguration.objects.filter(
+            live_polling_template__id__in=LivePollingSettings.objects.filter(
+                technology__name=technology).values('id')).values('id')).filter(is_global=is_global).values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
