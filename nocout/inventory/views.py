@@ -2138,7 +2138,7 @@ class ThresholdConfigurationList(ListView):
             ]
         user_id = self.request.user.id
         #if user is superadmin or gisadmin
-        if user_id in [1,2]:
+        if self.request.user.is_superuser:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
