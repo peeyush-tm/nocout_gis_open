@@ -261,7 +261,7 @@ def after_update_ports(request, option, selected=[]):
 
     """
     dajax = Dajax()
-    
+
     # selected type
     device_type = DeviceType.objects.get(pk=int(option))
 
@@ -471,7 +471,7 @@ def device_soft_delete_form(request, value):
         for cd in device_descendant:
             child_device_descendants.append(cd)
 
-    result['data']['objects']['childs'] = []    
+    result['data']['objects']['childs'] = []
     # future device parent is needs to find out only if our device is
     # associated with any other device i.e if child_devices.count() > 0
     if child_devices.count() > 0:
@@ -832,31 +832,31 @@ def add_device_to_nms_core(request, device_id, ping_data):
             agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
         except Exception as e:
             logger.info(e.message)
-	device_data = {'device_name': str(device.device_name),
-		'device_alias': str(device.device_alias),
-		'ip_address': str(device.ip_address),
-		'agent_tag': str(agent_tag),
-		'site': str(device.site_instance.name),
-		'mode': 'addhost',
-		'ping_levels': ping_levels,
-		'parent_device_name': None,
-		'mac': str(device.mac_address)}
+        device_data = {'device_name': str(device.device_name),
+                       'device_alias': str(device.device_alias),
+                       'ip_address': str(device.ip_address),
+                       'agent_tag': str(agent_tag),
+                       'site': str(device.site_instance.name),
+                       'mode': 'addhost',
+                       'ping_levels': ping_levels,
+                       'parent_device_name': None,
+                       'mac': str(device.mac_address)}
 
         device_tech = DeviceTechnology.objects.filter(id=device.device_technology)
         if device_tech and (str(device_tech[0].name).lower() == 'pmp' or str(device_tech[0].name.lower() == 'wimax')):
-		# Check if the is SS
-		ss_queryset = SubStation.objects.filter(device_id=device.id)
-		if ss_queryset:
-			# Check whether the BS present
-	                bs_queryset = Topology.objects.filter(connected_device_mac=device.mac_address) 
-			if bs_queryset:
-				# Send in the BS also
-				device_data.update({
-					'parent_device_name': bs_queryset[0].device_name
-					})
-			else:
-                                result['message'] = "<i class=\"fa fa-check red-dot\"></i>Could not find BS for this SS in the topology"
-				return json.dumps({'result': result})
+            # Check if the is SS
+            ss_queryset = SubStation.objects.filter(device_id=device.id)
+            if ss_queryset:
+                # Check whether the BS present
+                bs_queryset = Topology.objects.filter(connected_device_mac=device.mac_address)
+                if bs_queryset:
+                    # Send in the BS also
+                    device_data.update({
+                    'parent_device_name': bs_queryset[0].device_name
+                    })
+                else:
+                    result['message'] = "<i class=\"fa fa-check red-dot\"></i>Could not find BS for this SS in the topology"
+                    return json.dumps({'result': result})
 
         # site to which configuration needs to be pushed
         master_site = SiteInstance.objects.get(name='master_UA')
@@ -951,24 +951,24 @@ def edit_device_in_nms_core(request, device_id):
                        'agent_tag': agent_tag,
                        'site': device.site_instance.name,
                        'mode': 'edithost',
-		       'parent_device_name': None,
-		       'mac': device.mac_address}
+                       'parent_device_name': None,
+                       'mac': device.mac_address}
 
         device_tech = DeviceTechnology.objects.filter(id=device.device_technology)
         if device_tech and (str(device_tech[0].name).lower() == 'pmp' or str(device_tech[0].name.lower() == 'wimax')):
-		# Check if the is SS
-		ss_queryset = SubStation.objects.filter(device_id=device.id)
-		if ss_queryset:
-			# Check whether the BS present
-	                bs_queryset = Topology.objects.filter(connected_device_mac=device.mac_address) 
-			if bs_queryset:
-				# Send in the BS also
-				device_data.update({
-					'parent_device_name': bs_queryset[0].device_name
-					})
-			else:
-                                result['message'] = "<i class=\"fa fa-check red-dot\"></i>Could not find BS for this SS in the topology"
-				return json.dumps({'result': result})
+            # Check if the is SS
+            ss_queryset = SubStation.objects.filter(device_id=device.id)
+            if ss_queryset:
+                # Check whether the BS present
+                bs_queryset = Topology.objects.filter(connected_device_mac=device.mac_address)
+                if bs_queryset:
+                    # Send in the BS also
+                    device_data.update({
+                    'parent_device_name': bs_queryset[0].device_name
+                    })
+                else:
+                    result['message'] = "<i class=\"fa fa-check red-dot\"></i>Could not find BS for this SS in the topology"
+                    return json.dumps({'result': result})
         # site to which configuration needs to be pushed
         master_site = SiteInstance.objects.get(name='master_UA')
 
