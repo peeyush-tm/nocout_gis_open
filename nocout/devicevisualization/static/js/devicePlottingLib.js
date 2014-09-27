@@ -147,7 +147,7 @@ function prepare_oms_object(oms_instance) {
 			map_point = new google.maps.Marker({position: e.latLng, map: mapInstance, icon: image,zIndex: 500});
 			map_points_array.push(map_point);
 			map_point_count ++;
-			$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/'});
+			$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {{path: '/', secure : true}});
 
 			isMaintained = JSON.stringify(map_points_lat_lng_array);
 
@@ -162,10 +162,12 @@ function prepare_oms_object(oms_instance) {
 
 		var sectorMarker,
 			sectorMarkerOms;
+		
 		if(marker.pointType === "base_station") {
 			//if marker is not spiderfied, stop event and add sector markers here and in oms
 			if(!marker.isMarkerSpiderfied) {
 				// clearPreviousSectorMarkers();
+				console.log(sectorMarkersMasterObj[marker.name]);
 				var sectorMarkersAtThePoint = sectorMarkersMasterObj[marker.name];
 				if(sectorMarkersAtThePoint && sectorMarkersAtThePoint.length) {
 					for(var j=0; j< sectorMarkersAtThePoint.length; j++) {
@@ -840,7 +842,7 @@ function devicePlottingClass_gmap() {
 
 					if($.trim(sector_array[j].technology) != "PTP" && $.trim(sector_array[j].technology) != "P2P") {
 						/*Plot sector on map with the retrived points*/
-						gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child);
+						gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child,$.trim(sector_array[j].technology));
 
 						startEndObj["startLat"] = pointsArray[halfPt].lat;
 						startEndObj["startLon"] = pointsArray[halfPt].lon;
@@ -857,63 +859,63 @@ function devicePlottingClass_gmap() {
 						startEndObj["sectorLon"] = bs_ss_devices[i].data.lon;
 					}
 				});
+
+				if($.trim(sector_array[j].technology) == "PTP" || $.trim(sector_array[j].technology) == "P2P") {
+
+					if(deviceIDArray.indexOf(sector_array[j]['device_info'][1]['value']) === -1) {
 					
-				if(deviceIDArray.indexOf(sector_array[j]['device_info'][1]['value']) === -1) {
+						var perf_obj = {
+							"performance_paramter" : "N/A",
+							"performance_value" : "N/A",
+							"frequency" : "N/A",
+							"pl" : "N/A"
+						};
+
+						var sectors_Markers_Obj = {
+							position 		 	: new google.maps.LatLng(lat, lon),
+							ptLat 			 	: bs_ss_devices[i].data.lat,
+							ptLon 			 	: bs_ss_devices[i].data.lon,
+							icon 			 	: new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
+							oldIcon 		 	: new google.maps.MarkerImage(base_url+"/"+sector_array[j].markerUrl,null,null,null,new google.maps.Size(32,37)),
+							clusterIcon 	 	: new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
+							pointType 		 	: 'sector_Marker',
+							technology 		 	: sector_array[j].technology,
+							vendor 				: sector_array[j].vendor,
+							deviceExtraInfo 	: sector_array[j].info,
+							deviceInfo 			: sector_array[j].device_info,
+							sectorName  		: sector_array[j].sector_configured_on,
+							device_name  		: sector_array[j].sector_configured_on,
+							name  				: bs_ss_devices[i].name,
+							sector_lat  		: startEndObj["startLat"],
+							sector_lon  		: startEndObj["startLon"],
+							zIndex 				: 200,
+							optimized 			: false,
+							hasPerf  			: 0,
+							perf_data_obj  		: perf_obj,
+	                        antenna_height 		: sector_array[j].antenna_height
+	                    }
+	                }
+
+	                var sect_height = sector_array[j].antenna_height;
+
+					/*Create Sector Marker*/
+					var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
+
+					if(sectorMarkerConfiguredOn.indexOf(sector_array[j].sector_configured_on) == -1) {
+						sector_MarkersArray.push(sector_Marker);
+						sectorMarkerConfiguredOn.push(sector_array[j].sector_configured_on);
+						if(sectorMarkersMasterObj[bs_ss_devices[i].name]) {
+							sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
+						} else {
+							sectorMarkersMasterObj[bs_ss_devices[i].name]= [];
+							sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
+						}	
+					}
+
+					/*End of Create Sector Marker*/
 					
-					var perf_obj = {
-						"performance_paramter" : "N/A",
-						"performance_value" : "N/A",
-						"frequency" : "N/A",
-						"pl" : "N/A"
-					};
-
-					var sectors_Markers_Obj = {
-						position 		 	: new google.maps.LatLng(lat, lon),
-						ptLat 			 	: bs_ss_devices[i].data.lat,
-						ptLon 			 	: bs_ss_devices[i].data.lon,
-						icon 			 	: new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
-						oldIcon 		 	: new google.maps.MarkerImage(base_url+"/"+sector_array[j].markerUrl,null,null,null,new google.maps.Size(32,37)),
-						clusterIcon 	 	: new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,null),
-						pointType 		 	: 'sector_Marker',
-						technology 		 	: sector_array[j].technology,
-						vendor 				: sector_array[j].vendor,
-						deviceExtraInfo 	: sector_array[j].info,
-						deviceInfo 			: sector_array[j].device_info,
-						sectorName  		: sector_array[j].sector_configured_on,
-						device_name  		: sector_array[j].sector_configured_on,
-						name  				: bs_ss_devices[i].name,
-						sector_lat  		: startEndObj["startLat"],
-						sector_lon  		: startEndObj["startLon"],
-						zIndex 				: 200,
-						optimized 			: false,
-						hasPerf  			: 0,
-						perf_data_obj  		: perf_obj,
-                        antenna_height 		: sector_array[j].antenna_height
-                    }
-                }
-
-                var sect_height = sector_array[j].antenna_height;
-
-				/*Create Sector Marker*/
-				var sector_Marker = new google.maps.Marker(sectors_Markers_Obj);
-
-				/*Push sector marker to pollableDevices array*/
-				// pollableDevices.push(sector_Marker)
-
-				if(sectorMarkerConfiguredOn.indexOf(sector_array[j].sector_configured_on) == -1) {
-					sector_MarkersArray.push(sector_Marker);
-					sectorMarkerConfiguredOn.push(sector_array[j].sector_configured_on);
-					if(sectorMarkersMasterObj[bs_ss_devices[i].name]) {
-						sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
-					} else {
-						sectorMarkersMasterObj[bs_ss_devices[i].name]= [];
-						sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
-					}	
+					deviceIDArray.push(sector_array[j]['device_info'][1]['value']);
 				}
-
-				/*End of Create Sector Marker*/
-				
-				deviceIDArray.push(sector_array[j]['device_info'][1]['value']);
 
 				/*Plot Sub-Station*/
 				for(var k=0;k<sector_child.length;k++) {
@@ -1311,8 +1313,9 @@ function devicePlottingClass_gmap() {
 	 * @param sectorInfo {JSON Object Array}, It contains the information about the sector which are shown in info window.
 	 * @param bgColor {String}, It contains the RGBA format color code for sector.
 	 * @param sector_child [JSON object Array], It contains the connected SS data.
+	 * @param technology {String}, It contains the technology of sector device.
 	 */
-	this.plotSector_gmap = function(lat,lon,pointsArray,sectorInfo,bgColor,sector_child) {
+	this.plotSector_gmap = function(lat,lon,pointsArray,sectorInfo,bgColor,sector_child,technology) {
 		var polyPathArray = [];
 		
 		var halfPt = Math.floor(pointsArray.length / (+2));
@@ -1325,17 +1328,25 @@ function devicePlottingClass_gmap() {
 			polyPathArray.push(pt);
 		}
 
+		var sColor = "#000000",
+			sWidth = 1;
+
+		if(technology.toLowerCase() == 'pmp') {
+			sColor = '#FFFFFF';
+			sWidth = 2;
+		}
+
 		var poly = new google.maps.Polygon({
 			map 		     : mapInstance,
 			path 		     : polyPathArray,
 			ptLat 		     : lat,
 			ptLon 		     : lon,
-			strokeColor      : "#111111",
+			strokeColor      : sColor,
 			fillColor 	     : bgColor,
 			pointType	     : "sector",
-			strokeOpacity    : 0.8,
-			fillOpacity 	 : 0.4,
-			strokeWeight     : 1,
+			strokeOpacity    : 1,
+			fillOpacity 	 : 0.5,
+			strokeWeight     : sWidth,
 			dataset 	     : sectorInfo,
 			startLat 	     : startLat,
 			startLon 	     : startLon,
@@ -2145,6 +2156,11 @@ function devicePlottingClass_gmap() {
 		});
 	};
 
+	// this.removeExtraPerformanceBoxes= function() {
+	// 	var axe= labelsArray;
+	// 	console.log(axe);
+	// }
+
 	/**
 	 * This function filters bs-ss object as per the applied filters
 	 * @method applyFilter_gmaps
@@ -2219,6 +2235,8 @@ function devicePlottingClass_gmap() {
             data_for_filters = filteredData;
             /*Populate the map with the filtered markers*/
             gmap_self.plotDevices_gmap(filteredData,"base_station");
+
+            // gmap_self.removeExtraPerformanceBoxes();
             /*Resetting filter data to Empty.*/
             filteredData=[]
         }
@@ -2856,7 +2874,7 @@ function devicePlottingClass_gmap() {
     	isCreated= 0;
 
     	//Reset Cookie
-    	$.cookie('tools_ruler', 0, {path: '/'});
+    	$.cookie('tools_ruler', 0, {{{path: '/', secure : true}, secure : true}});
 
 
     	tools_ruler = $.cookie("tools_ruler");
@@ -2884,7 +2902,7 @@ function devicePlottingClass_gmap() {
     			var current_line =  gmap_self.createLink_gmaps(ruler_Obj);
     			tools_rule_array.push(current_line);
 
-    			$.cookie('tools_ruler',JSON.stringify(ruler_Obj),{path: '/', secure : true});
+    			$.cookie('tools_ruler',JSON.stringify(ruler_Obj),{{{path: '/', secure : true}, secure : true}});
 
     			tools_ruler = $.cookie("tools_ruler");
 
@@ -2939,7 +2957,7 @@ function devicePlottingClass_gmap() {
 
 				tools_rule_array.push(ruler_line);
 
-				$.cookie('tools_ruler',JSON.stringify(latLonObj),{path: '/', secure : true});
+				$.cookie('tools_ruler',JSON.stringify(latLonObj),{{{path: '/', secure : true}, secure : true}});
 
 				tools_ruler = $.cookie("tools_ruler");
 
@@ -2985,7 +3003,7 @@ function devicePlottingClass_gmap() {
     	is_bs_clicked= 0;
 
     	//Reset Cookie
-    	$.cookie('tools_line', 0, {path: '/'});
+    	$.cookie('tools_line', 0, {{{path: '/', secure : true}, secure : true}});
 
 
     	tools_line = $.cookie("tools_line");
@@ -3005,7 +3023,7 @@ function devicePlottingClass_gmap() {
     			var current_line =  gmap_self.createLink_gmaps(line_obj);
     			tools_line_array.push(current_line);
 
-    			$.cookie('tools_line',JSON.stringify(line_obj),{path: '/', secure : true});
+    			$.cookie('tools_line',JSON.stringify(line_obj),{{{path: '/', secure : true}, secure : true}});
 
     			tools_line = $.cookie("tools_line");
 
@@ -3058,7 +3076,7 @@ function devicePlottingClass_gmap() {
 
 				tools_line_array.push(ruler_line);
 
-				$.cookie('tools_line',JSON.stringify(latLonObj),{path: '/', secure : true});
+				$.cookie('tools_line',JSON.stringify(latLonObj),{{path: '/', secure : true}});
 
 				tools_line = $.cookie("tools_line");
 
@@ -3087,7 +3105,7 @@ function devicePlottingClass_gmap() {
 
     	map_point_count= 0;
 
-    	$.cookie("isMaintained", 0, {path: '/'});
+    	$.cookie("isMaintained", 0, {{path: '/', secure : true}});
 
 
     	isMaintained = $.cookie("isMaintained");
@@ -3144,7 +3162,7 @@ function devicePlottingClass_gmap() {
 
 				map_point_count ++;
 
-				$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {path: '/'});
+				$.cookie("isMaintained", JSON.stringify(map_points_lat_lng_array), {{path: '/', secure : true}});
 
 
 				isMaintained = $.cookie("isMaintained");
@@ -3183,7 +3201,7 @@ function devicePlottingClass_gmap() {
 			distance_label.setMap(null);
 		}
 
-		$.cookie('tools_ruler',0,{path: '/', secure : true});
+		$.cookie('tools_ruler',0,{{path: '/', secure : true}});
 
         if (map_point_count == 0){
             /*Remove click listener from google maps*/
@@ -3200,10 +3218,10 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 1;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/'});
+	 	$.cookie("isFreezeSelected", isFreeze, {{path: '/', secure : true}});
 
 	 	freezedAt = (new Date()).getTime();
-	 	$.cookie("freezedAt", freezedAt, {path: '/'});
+	 	$.cookie("freezedAt", freezedAt, {{path: '/', secure : true}});
 
 
 	 	/*Set Live Polling flag*/
@@ -3220,10 +3238,10 @@ function devicePlottingClass_gmap() {
 
 	 	/*Enable freeze flag*/
 	 	isFreeze = 0;
-	 	$.cookie("isFreezeSelected", isFreeze, {path: '/'});
+	 	$.cookie("isFreezeSelected", isFreeze, {{path: '/', secure : true}});
 
 	 	freezedAt = 0;
-	 	$.cookie("freezedAt", freezedAt, {path: '/'});
+	 	$.cookie("freezedAt", freezedAt, {{path: '/', secure : true}});
 
 
 	 	/*Set Live Polling flag*/
