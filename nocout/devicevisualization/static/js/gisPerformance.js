@@ -133,8 +133,11 @@ function GisPerformance() {
 				if(data) {
 					//Store data in gisData
 					gisPerformance_this.gisData= data;
-					//Update Map with the data
-					gisPerformance_this.updateMap();
+
+					if(recallPerf != "") {
+						//Update Map with the data
+						gisPerformance_this.updateMap();
+					}
 				}
 				//After 2 seconds timeout
 				recallPerf = setTimeout(function() {
