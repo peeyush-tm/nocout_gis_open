@@ -227,8 +227,6 @@ function advanceSearchClass() {
 				}
 				/*If data not fetched*/
 				else {
-
-					// console.log(result.message);
 					$.gritter.add({
 			            // (string | mandatory) the heading of the notification
 			            title: 'Advance Filters - No Records',
@@ -245,7 +243,6 @@ function advanceSearchClass() {
 			/*If there is a problem in calling server*/
 			error : function(err) {
 				$("#"+buttonId).button("complete");
-				// console.log(err.statusText);
 				$.gritter.add({
 		            // (string | mandatory) the heading of the notification
 		            title: 'Advance Filters - Error',
@@ -661,6 +658,7 @@ function advanceSearchClass() {
 		if($("#removeFilterBtn").hasClass("hide")) {
 			$("#removeFilterBtn").removeClass("hide");
 		}
+
         searchString=JSON.parse(searchString);
 
         if (search_type=='direct'){
@@ -670,8 +668,8 @@ function advanceSearchClass() {
             loop2:
                     for(var j= 0;main_devices_data_gmaps.length>j;j++){
 
-                        if (searchString[i]== main_devices_data_gmaps[j].id){
-                        result_plot_devices.push(main_devices_data_gmaps[j])
+                        if (searchString[i]== main_devices_data_gmaps[j].id) {
+                        	result_plot_devices.push(main_devices_data_gmaps[j])
                         break loop2
                         }
                     }
@@ -817,7 +815,6 @@ function advanceSearchClass() {
 //			},
 //			error : function(err) {
 //
-//				// console.log(err.statusText);
 //				$.gritter.add({
 //		            // (string | mandatory) the heading of the notification
 //		            title: 'Advance Filters - Error',
@@ -866,6 +863,10 @@ function advanceSearchClass() {
 //            for( var a=0; a<result_plot_devices.length; a++){
 			data_for_filters = result_plot_devices;
             gmapInstance.plotDevices_gmap(result_plot_devices,"base_station");
+
+            /*Filter Line & label array as per filtered data*/
+            gmapInstance.getFilteredLineLabel(data_for_filters);
+
             // addSubSectorMarkersToOms(result_plot_devices);
             //Intilaizing value to Null
             result_plot_devices=[];

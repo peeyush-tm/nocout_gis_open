@@ -120,9 +120,9 @@
                 <li class="hide">Show Connected SS <input type="checkbox" name="showAllSS" id="showAllSS"
                                                           onclick="networkMapInstance.plotAllDevice_gmap()"
                                                           style="vertical-align: text-top;" checked="checked"/></li>
-                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
+                <!-- <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
                                                    onclick="networkMapInstance.showConnectionLines_gmap()"
-                                                   style="vertical-align: text-top;" checked="checked"/></li>
+                                                   style="vertical-align: text-top;" checked="checked"/></li> -->
             </ul>
             <div class="divide-20"></div>
         </div>
@@ -154,6 +154,9 @@
                 <li>
                     <input type="checkbox" name="show_hide_label" id="show_hide_label" checked=""> Show Labels
                 </li>
+                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
+                                                   onclick="networkMapInstance.showConnectionLines_gmap()"
+                                                   style="vertical-align: text-top;" checked="checked"/></li>
                 <li class="fright">
                     <form action="#" class="form-horizontal">
                         <div class="form-group">

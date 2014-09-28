@@ -245,7 +245,7 @@ $("#cancelAdvSearchBtn").click(function(e) {
 });
 
 function resetAdvanceSearch() {
-    $("#resetSearchForm").trigger('click');    
+    $("#resetSearchForm").trigger('click');
 }
 
 $("#resetSearchForm").click(function(e) {
@@ -323,9 +323,9 @@ function removeAdvFilters() {
 /*Trigers when "Create Polygon" button is clicked*/
 $("#createPolygonBtn").click(function(e) {
 
-    if($("#selectDeviceContainerBlock").hasClass("hide")) {
-        $("#selectDeviceContainerBlock").removeClass("hide");
-    }
+    // if($("#selectDeviceContainerBlock").hasClass("hide")) {
+    //     $("#selectDeviceContainerBlock").removeClass("hide");
+    // }
 
     // $("#createPolygonBtn").button("loading");
     // $("#advFilterBtn").button("loading");
@@ -364,9 +364,9 @@ $("#polling_tech").change(function(e) {
 /*triggers when clear selection button is clicked*/
 $("#clearPolygonBtn").click(function(e) {
 
-    if(!($("#selectDeviceContainerBlock").hasClass("hide"))) {
-        $("#selectDeviceContainerBlock").addClass("hide");
-    }
+    // if(!($("#selectDeviceContainerBlock").hasClass("hide"))) {
+    //     $("#selectDeviceContainerBlock").addClass("hide");
+    // }
 
     networkMapInstance.clearPolygon();
     hasSelectDevice = 0;
@@ -839,7 +839,16 @@ function clearTools_gmap() {
 
 $("#show_hide_label").click(function(e) {
     $.cookie("isLabelChecked", e.currentTarget.checked, {path: '/', secure : true});
+
+    for(var x=0;x<labelsArray_filtered.length;x++) {
+        labelsArray_filtered[x].setVisible(e.currentTarget.checked);
+    }
+
     for(var x=0;x<labelsArray.length;x++) {
-        labelsArray[x].setVisible(e.currentTarget.checked);
+        if(labelsArray[x].moveListener_) {
+            if(labelsArray[x].moveListener_.cb && labelsArray[x].moveListener_.cb.map != null) {
+                labelsArray[x].setVisible(e.currentTarget.checked);
+            }
+        }
     }
 });

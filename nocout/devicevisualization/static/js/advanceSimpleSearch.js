@@ -1,5 +1,6 @@
-var ipStationFound= 0;
-var ipStation= [];
+var ipStationFound= 0,
+    ipStation= [],
+    searchMarkers_global = [];
 
 /*Get The Root URL*/
 var base_url;
@@ -65,6 +66,7 @@ function advanceSearchMainClass() {
         searchMarker = new google.maps.Marker({position: new google.maps.LatLng(lat, long), zIndex: 999});
         //push marker in the previouslySearchedMarkersList array
         this.searchMarkers.push(searchMarker);
+        searchMarkers_global.push(searchMarker);
 
         //IF NOT FILTER APPLIED IS IN CITY OR STATE, THEN WE WILL NOT CHANGE ANY ICONS
         searchedInputs= this.getInputArray();
