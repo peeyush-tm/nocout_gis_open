@@ -13,6 +13,12 @@ from celery.utils.log import get_task_logger
 
 logger = get_task_logger(__name__)
 
+
+@task
+def ptp_inventory_uploader():
+    pass
+
+
 @task()
 def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_list, full_time, filename):
     valid_rows_dicts = []
@@ -250,9 +256,9 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
             pmp_list = [1, 2]
             circuit_types_list = ['BH', 'Customer']
             converter_types_list = ['RICI', 'PINE']
-            azimuth_angles_list = range(0, 361)               # 0.......360
-            building_height_list = range(0, 100)              # 0.......99
-            tower_height_list = range(0, 100)                 # 0.......99
+            azimuth_angles_list = range(0, 361)                 # 0.......360
+            building_height_list = range(0, 100)                # 0.......99
+            tower_height_list = range(0, 100)                   # 0.......99
             antenna_height_list = range(0, 100)                 # 0.......99
             yes_or_no = ['Yes', 'No', 'Y', 'N']
             lens_or_reflectors_list = ['Lens', 'Reflector']
@@ -1268,4 +1274,10 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
         gis_bulk_obj.status = 2
         gis_bulk_obj.save()
         logger.exception(e.message)
+
+
+def bulk_upload_ptp_inventory():
+    pass
+
+
 

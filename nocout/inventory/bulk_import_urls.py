@@ -13,4 +13,6 @@ urlpatterns = patterns('',
                            name='gis_inventory_bulk_import_delete'),
                        url(r'^edit/(?P<pk>\d+)$', views.GISInventoryBulkImportUpdate.as_view(),
                            name='gis_inventory_bulk_import_edit'),
+                       url(r'^bulk_upload_valid_data/(?P<pk>\d+)$', views.BulkUploadValidData.as_view(),
+                           name='BulkUploadValidData'),
 )

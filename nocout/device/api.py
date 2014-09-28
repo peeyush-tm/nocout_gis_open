@@ -21,7 +21,6 @@ logger=logging.getLogger(__name__)
 
 class DeviceStatsApi(View):
 
-
     def get(self, request):
 
         self.result = {
