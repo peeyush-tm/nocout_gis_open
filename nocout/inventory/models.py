@@ -320,6 +320,7 @@ class ThematicSettings(models.Model):
     def __unicode__(self):
         return self.name
 
+
 #user Profile based thematic settings
 class UserThematicSettings(models.Model):
     """
@@ -328,7 +329,6 @@ class UserThematicSettings(models.Model):
     user_profile = models.ForeignKey(UserProfile)
     thematic_template = models.ForeignKey(ThematicSettings)
     thematic_technology = models.ForeignKey(DeviceTechnology, null=True)
-
 
 
 class GISInventoryBulkImport(models.Model):
