@@ -310,6 +310,7 @@ class FetchLPDataApi(View):
 
         result['data']['value'] = []
         result['data']['icon'] = []
+
         try:
             for dv, svc, ds in zip(devices, services, datasources):
                 lp_data = dict()
