@@ -37,22 +37,23 @@ $(".nav-tabs li a").click(function (e,isFirst) {
 		div_id = e.currentTarget.href.split("#")[1],
 		table_id = $("#"+div_id).find("table")[0].id,
 		ajax_url = e.currentTarget.attributes.data_url.value,
-		grid_headers = JSON.parse(e.currentTarget.attributes.data_header.value),
-		isTableExists = $.fn.dataTableSettings;
+		grid_headers = JSON.parse(e.currentTarget.attributes.data_header.value);
+		// isTableExists = $.fn.dataTableSettings;
 
 	/*Check that the table is created before or not*/
-	for ( var i=0, iLen=isTableExists.length ; i<iLen ; i++ ) {
+	// for ( var i=0, iLen=isTableExists.length ; i<iLen ; i++ ) {
 
-		if ( isTableExists[i].nTable.id == table_id ){
+	// 	if (isTableExists[i] && (isTableExists[i].nTable.id == table_id)) {
 
-			if(last_clicked_tab != e.currentTarget.id || second_condition) {
+	// 		if(last_clicked_tab != e.currentTarget.id || second_condition) {
 
-				/*Clear the data from existing table*/
-				$("#"+table_id).html("");
-				destroy = true;
-			}
-		}
-	}
+	// 			/*Clear the data from existing table*/
+	// 			$("#"+table_id).DataTable().fnDestroy();
+	// 			// $("#"+table_id).html("");
+	// 			destroy = true;
+	// 		}
+	// 	}
+	// }
 	
 	if(last_clicked_tab != e.currentTarget.id || second_condition) {
 
