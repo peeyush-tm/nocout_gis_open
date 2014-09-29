@@ -166,7 +166,7 @@ def prepare_result(base_station_id):
                         'name':'bs_switch',
                         'title':'BS Switch',
                         'show':1,
-                        'value': base_station.bs_switch
+                        'value': base_station.bs_switch.ip_address
                                 if (base_station and base_station.bs_switch and base_station.bs_switch.ip_address)
                                 else 'N/A'
                     }
