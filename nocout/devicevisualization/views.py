@@ -324,7 +324,7 @@ class Gis_Map_Performance_Data(View):
                         'data_source','current_value','sys_timestamp'
                     ).using(alias=device_machine_name)
 
-                    device_status_info = NetworkStatus.objects.filter(device_name=device_name).values(
+                    device_network_info = NetworkStatus.objects.filter(device_name=device_name).values(
                         'data_source','current_value','sys_timestamp'
                     ).using(alias=device_machine_name)
 
@@ -350,6 +350,16 @@ class Gis_Map_Performance_Data(View):
                         perf_info = {
                                 "name": perf['data_source'],
                                 "title": " ".join(perf['data_source'].split("_")).title(),
+                                "show": 1,
+                                "value": perf['current_value'],
+                            }
+
+                        device_info.append(perf_info)
+
+                    for perf in device_network_info:
+                        perf_info = {
+                                "name": perf['data_source'],
+                                "title": "Latency" if ("rta" in perf['data_source'].lower()) else "Packet Loss",
                                 "show": 1,
                                 "value": perf['current_value'],
                             }
