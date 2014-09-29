@@ -1265,8 +1265,8 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
         wb_invalid.save(MEDIA_ROOT + 'inventory_files/invalid/{}_invalid_{}.xls'.format(full_time, filename))
         gis_bulk_obj = GISInventoryBulkImport.objects.get(pk=gis_obj_id)
         try:
-            gis_bulk_obj.valid_filename = '/media/inventory_files/valid/{}_valid_{}.xls'.format(full_time, filename)
-            gis_bulk_obj.invalid_filename = '/media/inventory_files/invalid/{}_invalid_{}.xls'.format(full_time, filename)
+            gis_bulk_obj.valid_filename = 'inventory_files/valid/{}_valid_{}.xls'.format(full_time, filename)
+            gis_bulk_obj.invalid_filename = 'inventory_files/invalid/{}_invalid_{}.xls'.format(full_time, filename)
         except Exception as e:
             logger.info(e.message)
         gis_bulk_obj.status = 1
@@ -1298,7 +1298,7 @@ def bulk_upload_ptp_inventory(gis_id, organization):
     except Exception as e:
         logger.info(e.message)
 
-    book = xlrd.open_workbook(gis_bu_obj.valid_filename)
+    book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.invalid_filename)
     sheet = book.sheet_by_index(0)
 
     keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
@@ -1710,7 +1710,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization):
     except Exception as e:
         logger.info(e.message)
 
-    book = xlrd.open_workbook(gis_bu_obj.valid_filename)
+    book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.invalid_filename)
     sheet = book.sheet_by_index(0)
 
     keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
@@ -2013,7 +2013,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization):
             }
 
             # sector object
-        sector = create_sector(sector_data)
+            sector = create_sector(sector_data)
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 2
         gis_obj.save()
@@ -2042,7 +2042,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization):
     except Exception as e:
         logger.info(e.message)
 
-    book = xlrd.open_workbook(gis_bu_obj.valid_filename)
+    book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.invalid_filename)
     sheet = book.sheet_by_index(0)
 
     keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
@@ -2167,7 +2167,6 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization):
             # ------------------------------- Circuit -------------------------------
             # sanitize circuit name
             name = name_sanitizer(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
-            print "************************* circuit name: ", name
 
             # validate date of acceptance
             if 'Date Of Acceptance' in row.keys():
@@ -2177,7 +2176,6 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization):
 
             # circuit data
             alias = row['Circuit ID'] if 'Circuit ID' in row.keys() else ""
-            print "********************** alias: ", alias
             circuit_data = {
                 'name': name,
                 'alias': alias,
@@ -2192,7 +2190,6 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization):
                 'description': 'Circuit created on {}.'.format(full_time)
             }
 
-            print "********************************* circuit_data - ", circuit_data
             # circuit object
             circuit = ""
             if name and alias:

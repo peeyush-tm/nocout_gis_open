@@ -756,7 +756,8 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
         #Fetching the data for the device w.r.t to their machine.
         for machine, machine_device_list in machine_dict.items():
-
+            device_list = list()
+            performance_data = list()
             performance_data = raw_prepare_result(performance_data=performance_data,
                                                   machine=machine,
                                                   table_name=search_table,

@@ -22,7 +22,7 @@ from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.db.models import Q
 from device_group.models import DeviceGroup
-from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT
+from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL
 from nocout.utils.util import DictDiffer
 from models import Inventory, DeviceTechnology, IconSettings, LivePollingSettings, ThresholdConfiguration, \
     ThematicSettings, GISInventoryBulkImport, UserThematicSettings
@@ -2681,8 +2681,7 @@ class GISInventoryBulkImportView(FormView):
             os.makedirs(MEDIA_ROOT + 'inventory_files/original')
 
         filepath = MEDIA_ROOT + 'inventory_files/original/{}_{}'.format(full_time, uploaded_file.name)
-        relative_filepath = '/media/inventory_files/original/{}_{}'.format(full_time, uploaded_file.name)
-
+        relative_filepath = 'inventory_files/original/{}_{}'.format(full_time, uploaded_file.name)
         # used in checking headers of excel sheet
         # dictionary containing all 'pts bs' fields
         ptp_bs_fields = ['City', 'State', 'Circuit ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
@@ -3046,12 +3045,12 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
 
                 # show icon instead of url in data tables view
                 try:
-                    dct.update(original_filename='<a href="{0}"><img src="{1}" style="float:left; display:block; height:25px; width:25px;">'.format(dct.pop('original_filename'), excel_light_green))
+                    dct.update(original_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(MEDIA_URL, dct.pop('original_filename'), excel_light_green))
                 except Exception as e:
                     logger.info(e.message)
                 try:
                     if dct.get('status') == "Success":
-                        dct.update(valid_filename='<a href="{0}"><img src="{1}" style="float:left; display:block; height:25px; width:25px;">'.format(dct.pop('valid_filename'), excel_green))
+                        dct.update(valid_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(MEDIA_URL, dct.pop('valid_filename'), excel_green))
                     else:
                         dct.update(valid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(excel_grey))
                 except Exception as e:
@@ -3059,7 +3058,7 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
 
                 try:
                     if dct.get('status') == "Success":
-                        dct.update(invalid_filename='<a href="{0}"><img src="{1}" style="float:left; display:block; height:25px; width:25px;">'.format(dct.pop('invalid_filename'), excel_red))
+                        dct.update(invalid_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(MEDIA_URL, dct.pop('invalid_filename'), excel_red))
                     else:
                         dct.update(invalid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(excel_grey))
                 except Exception as e:
@@ -3132,7 +3131,7 @@ class GISInventoryBulkImportDelete(DeleteView):
     success_url = reverse_lazy('gis_inventory_bulk_import_list')
 
     def delete(self, request, *args, **kwargs):
-        file_name = lambda x : MEDIA_ROOT.join(x.split("/media"))
+        file_name = lambda x: MEDIA_ROOT + x
         # bulk import object
         bi_obj = self.get_object()
 
@@ -3157,7 +3156,6 @@ class GISInventoryBulkImportDelete(DeleteView):
         # delete entry from database
         bi_obj.delete()
         return HttpResponseRedirect(GISInventoryBulkImportDelete.success_url)
-
 
 
 class GISInventoryBulkImportUpdate(UpdateView):
