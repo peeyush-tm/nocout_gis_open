@@ -89,7 +89,7 @@ class Gis_Map_Performance_Data(View):
                     substations= sector['sub_station']
                     for substation in substations:
                         substation['performance_data']= self.get_device_performance(substation['device_name'])
-
+                #logger.debug(request_data)
                 return HttpResponse(json.dumps(request_data))
 
             return HttpResponse(json.dumps({'result':'No Performance Data'}))
@@ -148,6 +148,8 @@ class Gis_Map_Performance_Data(View):
                                                                              order_by('-sys_timestamp')[:1]
                         if len(device_frequency):
                             device_frequency = device_frequency[0].current_value
+                        else:
+                            device_frequency = ''
 
                     else:
                         device_frequency= InventoryStatus.objects.filter(device_name= device_name,
@@ -156,6 +158,8 @@ class Gis_Map_Performance_Data(View):
                                                                         .order_by('-sys_timestamp')[:1]
                         if len(device_frequency):
                             device_frequency = device_frequency[0].current_value
+                        else:
+                            device_frequency = ''
 
                 except Exception as e:
                     logger.info(device)
@@ -173,6 +177,8 @@ class Gis_Map_Performance_Data(View):
                                                                      order_by('-sys_timestamp')[:1]
                         if len(device_pl):
                             device_pl = device_pl[0].current_value
+                        else:
+                            device_pl = ''
                     else:
                         device_pl= NetworkStatus.objects.filter(device_name= device_name,
                                                                 service_name= 'ping',
@@ -181,6 +187,8 @@ class Gis_Map_Performance_Data(View):
                                                                 order_by('-sys_timestamp')[:1]
                         if len(device_pl):
                             device_pl = device_pl[0].current_value
+                        else:
+                            device_pl = ''
 
                 except Exception as e:
                     logger.info(device)
@@ -257,7 +265,8 @@ class Gis_Map_Performance_Data(View):
                                                                                order_by('-sys_timestamp')[:1]
                         if len(device_performance_value):
                             device_performance_value = device_performance_value[0].current_value
-
+                        else:
+                            device_performance_value = ''
                     else:
 
                         device_performance_value= ServiceStatus.objects.filter(device_name= device_name,
@@ -267,6 +276,8 @@ class Gis_Map_Performance_Data(View):
                                                                                .order_by('-sys_timestamp')[:1]
                         if len(device_performance_value):
                             device_performance_value = device_performance_value[0].current_value
+                        else:
+                            device_performance_value = ''
 
                 except Exception as e:
                     device_performance_value=''
@@ -275,7 +286,7 @@ class Gis_Map_Performance_Data(View):
                     pass
 
                 performance_icon=''
-                if len(device_performance_value):
+                if len(str(device_performance_value)):
                     corrected_device_performance_value = ast.literal_eval(str(device_performance_value))
                     icon_settings_json_string= thematic_settings.icon_settings if thematic_settings.icon_settings!='NULL' else None
                     if icon_settings_json_string:
@@ -359,6 +370,7 @@ class Gis_Map_Performance_Data(View):
                     'device_info' : device_info,
                     'sector_info' : sector_info
                 })
+                #logger.info(performance_data)
             except Exception as e:
                 logger.info(device)
                 logger.info(e.message, exc_info=True)
