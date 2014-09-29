@@ -219,7 +219,7 @@ function GisPerformance() {
         var gisData = this.gisData;
         //Get BS Gmap Marker
         var bsMarkerObject = markersMasterObj['BSNamae'][gisData.basestation_name];
-        var condition= true;
+        var condition= false;
         //Step no. 2 ==> Loop through all the SS in the BS
         try {
             //Loop through devices
