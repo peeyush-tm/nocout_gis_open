@@ -107,6 +107,14 @@ class Gis_Map_Performance_Data(View):
                 'performance_paramter':"",
                 'performance_value':device_performance_value,
                 'performance_icon': "",
+                'device_info' : [
+                    {
+                        "name": "",
+                        "title": "",
+                        "show": 0,
+                        "value": ""
+                     },
+                ],
             }
             try:
                 device= Device.objects.get(device_name= device_name, is_added_to_nms=1, is_deleted=0)
@@ -238,6 +246,28 @@ class Gis_Map_Performance_Data(View):
                                 logger.exception(e.message)
                                 continue
 
+                device_info = []
+                try:
+                    #to update the info window with all the services
+                    device_performance_info = ServiceStatus.objects.filter(device_name=device_name).values(
+                        'data_source','current_value','sys_timestamp'
+                    ).using(alias=device_machine_name)
+
+                    for perf in device_performance_info:
+                        perf_info = [
+                            {
+                                "name": perf['data_source'],
+                                "title": " ".join(perf['data_source'].split("_")).title(),
+                                "show": 1,
+                                "value": perf['current_value'],
+                            },
+                        ]
+                        device_info.append(perf_info)
+
+                except Exception as e:
+                    logger.exception(e.message)
+                    pass
+
                 performance_data= {
                     'frequency':device_frequency,
                     'pl':device_pl,
@@ -247,6 +277,7 @@ class Gis_Map_Performance_Data(View):
                     'performance_icon':"media/"+str(performance_icon)
                                         if "uploaded" in str(performance_icon)
                                         else ("static/img/" + str(performance_icon) if len(str(performance_icon)) else ""),
+                    'device_info' : device_info
                 }
             except Exception as e:
                 logger.info(e.message, exc_info=True)
