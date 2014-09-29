@@ -2885,11 +2885,11 @@ class BulkUploadValidData(View):
 
             if 'sheetname' in kwargs:
                 if kwargs['sheetname'] == 'PTP':
-                    result = bulk_upload_ptp_inventory.delay(kwargs['id'], organization)
+                    result = bulk_upload_ptp_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
                 elif kwargs['sheetname'] == 'PMP BS':
-                    result = bulk_upload_pmp_bs_inventory.delay(kwargs['id'], organization)
+                    result = bulk_upload_pmp_bs_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
                 elif kwargs['sheetname'] == 'PMP SM':
-                    result = bulk_upload_pmp_sm_inventory.delay(kwargs['id'], organization)
+                    result = bulk_upload_pmp_sm_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
                 else:
                     result = ""
         except Exception as e:
@@ -3067,7 +3067,7 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
                 # show user full name in uploded by field
                 try:
                     if dct.get('uploaded_by'):
-                        user = User.objects.get(pk=2)
+                        user = User.objects.get(username=dct.get('uploaded_by'))
                         dct.update(uploaded_by='{} {}'.format(user.first_name, user.last_name))
                 except Exception as e:
                     logger.info(e.message)
@@ -3081,7 +3081,8 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
                 sheet_names_list = ['PTP', 'PMP BS', 'PMP SM']
                 if dct.get('sheet_name'):
                     if dct.get('sheet_name') in sheet_names_list:
-                        dct.update(bulk_upload_actions='<a href="/bulk_import/bulk_upload_valid_data/{}/{}" class="bulk_import_link"><i class="fa fa-upload text-dark"></i></a>'.format(dct.get('id'), dct.get('sheet_name')))
+                        dct.update(bulk_upload_actions='<a href="/bulk_import/bulk_upload_valid_data/valid/{0}/{1}" class="bulk_import_link" title="Upload Valid Inventory"><i class="fa fa-upload text-success"></i></a>\
+                                                        <a href="/bulk_import/bulk_upload_valid_data/invalid/{0}/{1}" class="bulk_import_link" title="Upload Invalid Inventory"><i class="fa fa-upload text-danger"></i></a>'.format(dct.get('id'), dct.get('sheet_name')))
                     else:
                         dct.update(bulk_upload_actions='')
             except Exception as e:

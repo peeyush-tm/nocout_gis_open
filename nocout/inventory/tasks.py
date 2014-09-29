@@ -1280,7 +1280,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
 
 
 @task()
-def bulk_upload_ptp_inventory(gis_id, organization):
+def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
     # gis bulk upload id
     gis_id = gis_id
 
@@ -1298,7 +1298,14 @@ def bulk_upload_ptp_inventory(gis_id, organization):
     except Exception as e:
         logger.info(e.message)
 
-    book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.invalid_filename)
+    # get valid or invalid sheet based upon sheettype
+    if sheettype == 'valid':
+        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.valid_filename)
+    elif sheettype == 'invalid':
+        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.invalid_filename)
+    else:
+        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.valid_filename)
+
     sheet = book.sheet_by_index(0)
 
     keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
@@ -1692,7 +1699,7 @@ def bulk_upload_ptp_inventory(gis_id, organization):
 
 
 @task()
-def bulk_upload_pmp_bs_inventory(gis_id, organization):
+def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
     # gis bulk upload id
     gis_id = gis_id
 
@@ -1710,7 +1717,14 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization):
     except Exception as e:
         logger.info(e.message)
 
-    book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.invalid_filename)
+    # get valid or invalid sheet based upon sheettype
+    if sheettype == 'valid':
+        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.valid_filename)
+    elif sheettype == 'invalid':
+        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.invalid_filename)
+    else:
+        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.valid_filename)
+
     sheet = book.sheet_by_index(0)
 
     keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
@@ -2024,7 +2038,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization):
 
 
 @task()
-def bulk_upload_pmp_sm_inventory(gis_id, organization):
+def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
     # gis bulk upload id
     gis_id = gis_id
 
@@ -2042,7 +2056,14 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization):
     except Exception as e:
         logger.info(e.message)
 
-    book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.invalid_filename)
+    # get valid or invalid sheet based upon sheettype
+    if sheettype == 'valid':
+        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.valid_filename)
+    elif sheettype == 'invalid':
+        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.invalid_filename)
+    else:
+        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.invalid_filename)
+
     sheet = book.sheet_by_index(0)
 
     keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
@@ -4467,7 +4488,10 @@ def get_ptp_machine_and_site(ip):
         ip (unicode): u'10.1.231.179'
 
     Returns:
-        machine (class 'machine.models.Machine'): <Machine: default>
+        machine (dict): {
+                            'machine': "",
+                            'site': ""
+                        }
 
     """
 
