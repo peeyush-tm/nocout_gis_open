@@ -100,6 +100,12 @@ class Gis_Map_Performance_Data(View):
             device_pl = ''
             device_link_color=None
             freeze_time= self.request.GET.get('freeze_time','0')
+            sector_info = {
+                    'azimuth_angle': "",
+                    'beam_width': "",
+                    'radius': "",
+                    'frequency':device_frequency
+                }
             performance_data= {
                 'frequency':device_frequency,
                 'pl':device_pl,
@@ -115,12 +121,7 @@ class Gis_Map_Performance_Data(View):
                         "value": ""
                      },
                 ],
-                'sector_info' : {
-                    'azimuth_angle': "",
-                    'beam_width': "",
-                    'radius': "",
-                    'frequency':device_frequency
-                }
+                'sector_info' : sector_info
             }
             try:
                 device= Device.objects.get(device_name= device_name, is_added_to_nms=1, is_deleted=0)
@@ -209,7 +210,7 @@ class Gis_Map_Performance_Data(View):
                                     and
                                     device_frequency_object.frequency_radius
                                 ) else 0
-                                performance_data['sector_info'] = {
+                                sector_info = {
                                     'azimuth_angle': azimuth_angle,
                                     'beam_width': beam_width,
                                     'radius': radius,
@@ -335,7 +336,8 @@ class Gis_Map_Performance_Data(View):
                     'performance_icon':"media/"+str(performance_icon)
                                         if "uploaded" in str(performance_icon)
                                         else ("static/img/" + str(performance_icon) if len(str(performance_icon)) else ""),
-                    'device_info' : device_info
+                    'device_info' : device_info,
+                    'sector_info' : sector_info
                 }
             except Exception as e:
                 logger.info(e.message, exc_info=True)
