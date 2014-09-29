@@ -18,6 +18,7 @@ from nocout_live import nocout_log
 
 hosts_file = root_dir + "hosts.mk"
 rules_file = root_dir + "rules.mk"
+default_checks_file = root_dir + "nocout_default_checks.py"
 
 nocout_replication_paths = [
     ( "dir",  "check_mk",   root_dir ),
@@ -72,6 +73,17 @@ g_service_vars = {
     "snmp_communities": []
 }
 
+g_default_check_vars = {
+		"checks": [],
+		"snmp_ports": [],
+		"snmp_communities": [],
+		"extra_service_conf": {
+			"retry_check_interval": [],
+			"max_check_attempts": [],
+			"normal_check_interval": []
+			}
+		}
+
 interface_oriented_services = [
 		'cambium_ul_rssi',
 		'cambium_ul_jitter',
@@ -121,6 +133,9 @@ def addhost():
         "error_code": None,
         "error_message": None
     }
+    mac = None
+    if html.var('mac'):
+	    mac = html.var('mac').lower()
     payload = {
         "host": html.var("device_name"),
         "attr_alias": html.var("device_alias"),
@@ -129,7 +144,8 @@ def addhost():
         "agent_tag": html.var("agent_tag"),
 	"ping_levels": html.var('ping_levels'),
 	"parent_device_name": html.var('parent_device_name'),
-	"mac": html.var('mac').lower()
+	"mac": mac,
+	"device_type": html.var('device_type')
     }
     # Save the host info into mongodb configuration collection
 #    add_host_to_mongo_conf(
@@ -157,6 +173,7 @@ def addhost():
 
     give_permissions(hosts_file)
     load_file(hosts_file)
+    add_default_checks(default_checks_file)
 
     if len(g_host_vars['all_hosts']) > 1000:
         response.update({
@@ -370,7 +387,7 @@ def edithost():
         #    if payload.get('host') in v:
         #        g_host_vars['all_hosts'].pop(i)
 
-        nocout_add_host_attributes(payload)
+        nocout_add_host_attributes(payload, host_edit=True)
 
         flag = save_host(hosts_file)
         if not flag:
@@ -604,6 +621,8 @@ def deletehost():
 
 
 def deleteservice():
+    logger.debug('[-- deleteservice --]')
+    global g_service_vars
     response = {
         "success": 1,
         "device_name": html.var('device_name'),
@@ -643,6 +662,13 @@ def deleteservice():
 		    interface=payload.get('interface'),
 		    flag=True
 		    )
+    # Get the devicetype tag for this service
+    devicetype_tag = filter(lambda e: payload.get('service') in e[2], g_service_vars['checks'])
+    if devicetype_tag:
+	    devicetype_tag = devicetype_tag[0][0]
+    # Delete that device type tag from hosts.mk, if exists
+    delete_devicetype_tag(hostname=payload.get('host'), devicetype_tag=devicetype_tag)
+    logger.debug('delete_devicetype_tag done')
     flag = write_new_host_rules()
     if not flag:
         response.update({
@@ -651,8 +677,43 @@ def deleteservice():
                 "error_code": None,
                 "error_message": "rules.mk is locked or some other message"
         })
+    logger.debug('[-- deleteservice finish --]')
         
     return response
+
+
+def add_default_checks(checks_file):
+	global g_default_check_vars
+	global g_service_vars
+	g_default_check_vars = {
+			"checks": [],
+			"snmp_ports": [],
+			"snmp_communities": [],
+			"extra_service_conf": {
+				"retry_check_interval": [],
+				"max_check_attempts": [],
+				"normal_check_interval": []
+				}
+			}
+	try:
+		execfile(checks_file, g_default_check_vars, g_default_check_vars)
+		del g_default_check_vars['__builtins__']
+	except IOError, e:
+		logger.error('Could not open default checks file: ' + pprint.pformat(e))
+		return
+	default_checks = g_default_check_vars['default_checks']
+	checks = g_service_vars['checks']
+	try:
+		if not filter(lambda t: default_checks[0][0][0] in t[0], checks):
+			g_service_vars['checks'] = default_checks + checks
+			g_service_vars['snmp_ports'] = g_default_check_vars['default_snmp_ports'] + g_service_vars['snmp_ports']
+			g_service_vars['snmp_communities'] = g_default_check_vars['default_snmp_communities'] + g_service_vars['snmp_communities']
+			n_c_i = g_default_check_vars['default_extra_service_conf']['normal_check_interval']
+			g_service_vars['extra_service_conf']['normal_check_interval'] = n_c_i + g_service_vars['extra_service_conf']['normal_check_interval']
+			# Write the new rules to disk
+			write_new_host_rules()
+	except IndexError, e:
+		logger.error('Error in default_checks: ' + pprint.pformat(e))
 
 
 def add_host_to_mongo_conf(**values):
@@ -1068,20 +1129,25 @@ def save_service(host, service_name, host_tag, service_tuple, serv_params, ping_
         raise OSError(e)
     
 
-def nocout_add_host_attributes(host_attrs):
+def nocout_add_host_attributes(host_attrs, host_edit=False):
     global host_tags
+    if host_edit:
+	    old_entry = filter(lambda t: re.match(host_attrs.get('host'), t), g_host_vars['all_hosts'])
+	    host_attrs.update({
+		    'device_type': old_entry[0].split('|')[1]
+		    })
     # Filter out the host's old config
     g_host_vars['all_hosts'] = filter(lambda t: not re.match(host_attrs.get('host'), t), g_host_vars['all_hosts'])
     logger.debug('all_hosts: ' + pprint.pformat(g_host_vars['all_hosts']))
 
-    host_entry = "%s|%s|wan|prod|%s|site:%s|wato|//" % (
-    host_attrs.get('host'), host_attrs.get('mac'), host_tags.get(html.var('agent_tag'), 'snmp'), host_attrs.get('site'))
+    host_entry = "%s|%s|%s|wan|prod|%s|site:%s|wato|//" % (
+    host_attrs.get('host'), host_attrs.get('device_type'), host_attrs.get('mac'), host_tags.get(html.var('agent_tag'), 'snmp'), host_attrs.get('site'))
     # Find all the occurences for sub-string '|'
     all_indexes = [i for i in range(len(host_entry)) if host_entry.startswith('|', i)]
-    # Insert the name of the parent device, as an auxiliary tag for the host, after the second occurence of '|'
+    # Insert the name of the parent device, as an auxiliary tag for the host, after the third occurence of '|'
     if host_attrs.get('parent_device_name'):
-	    host_entry = host_entry[:(all_indexes[1] + 1)] + str(host_attrs.get('parent_device_name')) + \
-			    '|' + host_entry[(all_indexes[1] + 1):]
+	    host_entry = host_entry[:(all_indexes[2] + 1)] + str(host_attrs.get('parent_device_name')) + \
+			    '|' + host_entry[(all_indexes[2] + 1):]
 
     g_host_vars['all_hosts'].append(host_entry)
 
@@ -1097,6 +1163,32 @@ def nocout_add_host_attributes(host_attrs):
             'tag_agent': host_tags.get(html.var('agent_tag'))
         }
     })
+
+
+def delete_devicetype_tag(hostname=None, devicetype_tag=None):
+    local_host_vars = {
+        "FOLDER_PATH": "",
+        "ALL_HOSTS": ALL_HOSTS, # [ '@all' ]
+        "all_hosts": [],
+        "clusters": {},
+        "ipaddresses": {},
+        "extra_host_conf": { "alias" : [] },
+        "extra_service_conf": { "_WATO" : [] },
+        "host_attributes": {},
+        "host_contactgroups": [],
+        "_lock": False,
+    }
+    try:
+        execfile(hosts_file, local_host_vars, local_host_vars)
+	desired_host_row = filter(lambda t: re.match(hostname, t), local_host_vars['all_hosts'])
+	if desired_host_row:
+		remaining_hosts = filter(lambda t: not re.match(hostname, t), local_host_vars['all_hosts'])
+		for tag in devicetype_tag:
+			desired_host_row[0].replace(tag, '')
+		remaining_hosts.extend(desired_host_row)
+		save_host(hosts_file)
+    except IOError, e:
+	    logger.error('Could not read hosts.mk for delete devicetype tag: ' + pprint.pformat(e))
 
 
 def nocout_find_host(host):
