@@ -266,6 +266,8 @@ function GisPerformance() {
                     ss_perf_obj["frequency"] = this.calculatePerformanceValue("frequency", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
                     ss_perf_obj["pl"] = this.calculatePerformanceValue("pl", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
 
+                    var polled_info = this.calculatePerformanceValue("device_info", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+
                     subStationMarker.hasPerf = 1;
 
                     var existing_index = -1;
@@ -288,7 +290,7 @@ function GisPerformance() {
                     }
 
                     var perf_infobox = new InfoBox({
-                        content: ss_perf_obj["performance_paramter"] + " - " + ss_perf_obj["performance_value"],
+                        content: ss_perf_obj["performance_paramter"] + "<br/>" + ss_perf_obj["performance_value"],
                         boxStyle: {
                             border: "1px solid black",
                             background: "white",
@@ -311,7 +313,7 @@ function GisPerformance() {
 
                     labelsArray.push(perf_infobox);
 
-                    // subStationMarker.perf_data_obj = ss_perf_obj;
+                    subStationMarker["poll_info"] = polled_info;
 
 
                     //If substation icon is present
@@ -335,6 +337,7 @@ function GisPerformance() {
                        if (deviceObject["performance_data"]["performance_icon"]) {
                            //Update oldIcon for the device to the Given Icon
                            deviceMarkers[i].oldIcon = (createGoogleMarker(base_url + '/' + deviceObject["performance_data"]["performance_icon"], deviceMarkers[i]));
+                           deviceMarkers[i].poll_info = deviceObject["performance_data"]["device_info"];
                        }
                    }
                }
