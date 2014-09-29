@@ -1099,4 +1099,4 @@ class GISInventoryBulkImportEditForm(forms.ModelForm):
         Meta Information
         """
         model = GISInventoryBulkImport
-        exclude = ['status', 'uploaded_by', 'added_on', 'modified_on']
+        exclude = ['status', 'uploaded_by', 'added_on', 'modified_on', 'upload_status']
