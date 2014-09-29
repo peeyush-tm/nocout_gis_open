@@ -324,6 +324,9 @@ class Gis_Map_Performance_Data(View):
                         'data_source','current_value','sys_timestamp'
                     ).using(alias=device_machine_name)
 
+                    device_status_info = NetworkStatus.objects.filter(device_name=device_name).values(
+                        'data_source','current_value','sys_timestamp'
+                    ).using(alias=device_machine_name)
 
                     for perf in device_performance_info:
                         perf_info = {
