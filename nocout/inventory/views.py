@@ -22,15 +22,16 @@ from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.db.models import Q
 from device_group.models import DeviceGroup
-from nocout.settings import GISADMIN, NOCOUT_USER
+from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT
 from nocout.utils.util import DictDiffer
 from models import Inventory, DeviceTechnology, IconSettings, LivePollingSettings, ThresholdConfiguration, \
-    ThematicSettings, GISInventoryBulkImport
+    ThematicSettings, GISInventoryBulkImport, UserThematicSettings
 from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
     ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm
 from organization.models import Organization
 from site_instance.models import SiteInstance
 from user_group.models import UserGroup
+from user_profile.models import UserProfile
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
 from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm, CircuitForm
 from device.models import Country, State, City, Device
@@ -2141,7 +2142,7 @@ class ThresholdConfigurationList(ListView):
             ]
         user_id = self.request.user.id
         #if user is superadmin or gisadmin
-        if user_id in [1,2]:
+        if self.request.user.is_superuser:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -2338,13 +2339,20 @@ class ThematicSettingsList(ListView):
             {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'null'},
             {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'null'},]
 
-        user_id = self.request.user.id
+        # user_id = self.request.user.id
 
         #if user is superadmin or gisadmin
-        if user_id in [NOCOUT_USER.ID, GISADMIN.ID]:
+        if self.request.user.is_superuser:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
+
+        is_global = False
+        if 'admin' in self.request.path:
+            is_global = True
+
+        context['is_global'] = json.dumps(is_global)
+
         return context
 
 
@@ -2376,20 +2384,21 @@ class ThematicSettingsListingTable(BaseDatatableView):
 
         return qs
 
-    def get_initial_queryset(self, technology="no"):
+    def get_initial_queryset(self, technology="P2P"):
         """
         Preparing  Initial Queryset for the for rendering the data table.
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        if self.request.user.id in [NOCOUT_USER.ID, GISADMIN.ID]:
-            # return ThematicSettings.objects.values(*self.columns + ['id'])
-            return ThematicSettings.objects.filter(threshold_template__in=ThresholdConfiguration.objects.filter(live_polling_template__id__in=LivePollingSettings.objects.filter(technology__name=technology).values('id')).values('id')).values(*self.columns + ['id'])
+        is_global = 1
+        if self.request.GET.get('admin'):
+            is_global = 0
 
-        else:
-            # return ThematicSettings.objects.filter(is_global=True).values(*self.columns + ['id'])
-            return ThematicSettings.objects.filter(threshold_template__in=ThresholdConfiguration.objects.filter(live_polling_template__id__in=LivePollingSettings.objects.filter(technology__name=technology).values('id')).values('id')).filter(is_global=True).values(*self.columns + ['id'])
+        return ThematicSettings.objects.filter(
+        threshold_template__in=ThresholdConfiguration.objects.filter(
+            live_polling_template__id__in=LivePollingSettings.objects.filter(
+                technology__name=technology).values('id')).values('id')).filter(is_global=is_global).values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
         """
@@ -2632,11 +2641,20 @@ class Update_User_Thematic_Setting(View):
         user_profile_id = self.request.user.id
         if thematic_setting_id:
 
-            old_entries=ThematicSettings.objects.filter(user_profile__in= [user_profile_id])
-            for entries in old_entries:
-                entries.user_profile.remove(self.request.user)
 
-            ThematicSettings.objects.get(id= int(thematic_setting_id)).user_profile.add(user_profile_id)
+            ts_obj = ThematicSettings.objects.get(id= int(thematic_setting_id))
+            user_obj = UserProfile.objects.get(id= user_profile_id)
+            tech_obj = ts_obj.threshold_template.live_polling_template.technology
+
+            to_delete = UserThematicSettings.objects.filter(user_profile=user_obj, thematic_technology=tech_obj)
+            if len(to_delete):
+                to_delete.delete()
+
+            uts = UserThematicSettings(user_profile= user_obj,
+                                       thematic_template=ts_obj,
+                                       thematic_technology=tech_obj
+            )
+            uts.save()
             self.result['success']=1
             self.result['message']='Thematic Setting Bind to User Successfully'
             self.result['data']['objects']['username']=self.request.user.userprofile.username
@@ -2659,10 +2677,11 @@ class GISInventoryBulkImportView(FormView):
         full_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
 
         # if directory for uploaded excel sheets didn't exist than create one
-        if not os.path.exists('media/uploaded/inventory_files/original'):
-            os.makedirs('media/uploaded/inventory_files/original')
+        if not os.path.exists(MEDIA_ROOT + 'inventory_files/original'):
+            os.makedirs(MEDIA_ROOT + 'inventory_files/original')
 
-        filepath = 'media/uploaded/inventory_files/original/{}_{}'.format(full_time, uploaded_file.name)
+        filepath = MEDIA_ROOT + 'inventory_files/original/{}_{}'.format(full_time, uploaded_file.name)
+        relative_filepath = '/media/inventory_files/original/{}_{}'.format(full_time, uploaded_file.name)
 
         # used in checking headers of excel sheet
         # dictionary containing all 'pts bs' fields
@@ -2784,7 +2803,7 @@ class GISInventoryBulkImportView(FormView):
             destination.close()
             #xlsave(book, filepath)
             gis_bulk_obj = GISInventoryBulkImport()
-            gis_bulk_obj.original_filename = filepath
+            gis_bulk_obj.original_filename = relative_filepath
             gis_bulk_obj.status = 0
             gis_bulk_obj.sheet_name = sheet_name
             gis_bulk_obj.technology = technology
@@ -3027,12 +3046,12 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
 
                 # show icon instead of url in data tables view
                 try:
-                    dct.update(original_filename='<a href="/{0}"><img src="{1}" style="float:left; display:block; height:25px; width:25px;">'.format(dct.pop('original_filename'), excel_light_green))
+                    dct.update(original_filename='<a href="{0}"><img src="{1}" style="float:left; display:block; height:25px; width:25px;">'.format(dct.pop('original_filename'), excel_light_green))
                 except Exception as e:
                     logger.info(e.message)
                 try:
                     if dct.get('status') == "Success":
-                        dct.update(valid_filename='<a href="/{0}"><img src="{1}" style="float:left; display:block; height:25px; width:25px;">'.format(dct.pop('valid_filename'), excel_green))
+                        dct.update(valid_filename='<a href="{0}"><img src="{1}" style="float:left; display:block; height:25px; width:25px;">'.format(dct.pop('valid_filename'), excel_green))
                     else:
                         dct.update(valid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(excel_grey))
                 except Exception as e:
@@ -3040,7 +3059,7 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
 
                 try:
                     if dct.get('status') == "Success":
-                        dct.update(invalid_filename='<a href="/{0}"><img src="{1}" style="float:left; display:block; height:25px; width:25px;">'.format(dct.pop('invalid_filename'), excel_red))
+                        dct.update(invalid_filename='<a href="{0}"><img src="{1}" style="float:left; display:block; height:25px; width:25px;">'.format(dct.pop('invalid_filename'), excel_red))
                     else:
                         dct.update(invalid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(excel_grey))
                 except Exception as e:
@@ -3113,30 +3132,32 @@ class GISInventoryBulkImportDelete(DeleteView):
     success_url = reverse_lazy('gis_inventory_bulk_import_list')
 
     def delete(self, request, *args, **kwargs):
+        file_name = lambda x : MEDIA_ROOT.join(x.split("/media"))
         # bulk import object
         bi_obj = self.get_object()
 
         # remove original file if it exists
         try:
-            os.remove(bi_obj.original_filename)
+            os.remove(file_name(bi_obj.original_filename))
         except Exception as e:
             logger.info(e.message)
 
         # remove valid rows file if it exists
         try:
-            os.remove(bi_obj.valid_filename)
+            os.remove(file_name(bi_obj.valid_filename))
         except Exception as e:
             logger.info(e.message)
 
         # remove invalid rows file if it exists
         try:
-            os.remove(bi_obj.invalid_filename)
+            os.remove(file_name(bi_obj.invalid_filename))
         except Exception as e:
             logger.info(e.message)
 
         # delete entry from database
         bi_obj.delete()
         return HttpResponseRedirect(GISInventoryBulkImportDelete.success_url)
+
 
 
 class GISInventoryBulkImportUpdate(UpdateView):

@@ -218,10 +218,13 @@ def prepare_result(base_station_id):
         #         'vendor':','.join(base_station.bs_technology.device_vendors.values_list('name', flat=True)),
 
         base_station_info['data']['param']['sector'] += [{
-                                                             "color": sector.frequency.color_hex_value if hasattr(
-                                                                 sector,
-                                                                 'frequency') and sector.frequency else 'rgba(74,72,94,0.58)',
-                                                             'radius': sector.cell_radius if sector.cell_radius else 0,
+                                                             "color": sector.frequency.color_hex_value
+                                                                    if (sector.frequency and sector.frequency.color_hex_value)
+                                                                    else 'rgba(74,72,94,0.58)',
+                                                             'radius': sector.frequency.frequency_radius
+                                                                    if (sector.frequency and sector.frequency.frequency_radius)
+                                                                    else 0,
+                                                             #sector.cell_radius if sector.cell_radius else 0,
                                                              'azimuth_angle': sector.antenna.azimuth_angle if sector.antenna else 0,
                                                              'beam_width': sector.antenna.beam_width if sector.antenna else 0,
                                                              # "markerUrl": tech_marker_url_master(sector.bs_technology.name) if sector.bs_technology else "static/img/marker/icon2_small.png",
@@ -355,7 +358,7 @@ def prepare_result(base_station_id):
                                                          }]
         base_station_info['sector_ss_vendor']+= DeviceVendor.objects.get(id=sector.sector_configured_on.device_vendor).name +', '
         base_station_info['sector_ss_technology']+= DeviceTechnology.objects.get(id=sector.sector_configured_on.device_technology).name +', '
-        base_station_info['sector_configured_on_devices']+= sector.sector_configured_on.device_name +'('+ sector.sector_configured_on.ip_address +')' + ', '
+        base_station_info['sector_configured_on_devices']+= sector.sector_configured_on.device_name + ', '
 
 
         for circuit in circuits:
@@ -572,6 +575,7 @@ def prepare_result(base_station_id):
             base_station_info['data']['param']['sector'][-1]['circuit_id']= circuit.circuit_id
             base_station_info['sector_ss_vendor']+= DeviceVendor.objects.get(id=substation.device.device_vendor).name +', '
             base_station_info['sector_ss_technology']+= DeviceTechnology.objects.get(id=substation.device.device_technology).name +', '
+            base_station_info['sector_configured_on_devices']+= substation_device.ip_address + ', '
             base_station_info['circuit_ids']+= circuit.circuit_id +', '
 
     # Additional Information required to filter the data in the gis maps

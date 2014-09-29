@@ -21,7 +21,7 @@ utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/util
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
-def build_export(site, host, ip, services, mongo_host, mongo_db, mongo_port):
+def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 	"""
 	Function name: build_export  (function export data from the rrdtool (which stores the period data) for all services for particular host
 	and stores them in mongodb in particular structure)
@@ -33,7 +33,6 @@ def build_export(site, host, ip, services, mongo_host, mongo_db, mongo_port):
         Raises:
 	     Exception: IOError 
 	"""
-        print services
 	_folder = '/omd/sites/%s/var/pnp4nagios/perfdata/%s/' % (site,host)
 	xml_file_list = []
 	#tmp_service =service
@@ -44,6 +43,14 @@ def build_export(site, host, ip, services, mongo_host, mongo_db, mongo_port):
 	ds_index =None
 	file_paths = []
 	temp_dict = {}
+	interface_oriented_services = [
+			'cambium_ul_rssi',
+			'cambium_ul_jitter',
+			'cambium_ul_regcount',
+			'cambium_regcount',
+			'cambium_reregcount',
+			'cambium_ss_connected_bs_ip_invent'
+			]
 	data_dict = {
 		"host": str(host),
 		"service": None,
@@ -76,21 +83,11 @@ def build_export(site, host, ip, services, mongo_host, mongo_db, mongo_port):
 	for perf_file in os.listdir(_folder):
 		if perf_file.endswith(".xml"):
 			xml_file_list.append(perf_file)
-        # Append the ping service
-        services.append('_HOST_')
 	# Extracts the services data for each host from rrdtool
-	for xml_file in services:
-        	interface = None
-		service_name = xml_file
-                if 'cambium' in xml_file and ':' in xml_file:
-                        data_dict['service'] = xml_file.split(' ')[0]
-                        interface = xml_file.split(' ')[1]
-                        status_dict['service'] = xml_file.split(' ')[0]
-			xml_file = xml_file.replace(' ', '_').replace(':', '_')
-                else:
-                	data_dict['service'] = xml_file
-                	status_dict['service'] = xml_file
-                xml_file = xml_file + '.xml'
+	for xml_file in xml_file_list:
+                replaced_host = str(host)
+                replaced_ip = str(ip)
+		interface = None
 		try:
 			tree = ET.parse(_folder + xml_file)
 			root = tree.getroot()
@@ -103,14 +100,26 @@ def build_export(site, host, ip, services, mongo_host, mongo_db, mongo_port):
 			data_dict['service'] = 'ping'
 			status_dict['service'] = 'ping'
 			serv_disc = 'ping'
+			service_for_livestatus = serv_disc 
 		else:
-			serv_disc = data_dict['service']
+			if serv_disc[:-18] in interface_oriented_services:
+				data_dict['service'] = serv_disc[:-18]
+                        	interface = serv_disc[-17:]
+                                interface = interface.replace('_', ':')
+				service_for_livestatus = root.find("NAGIOS_DISP_SERVICEDESC").text.strip()
+                                print "interface", interface
+                        	status_dict['service'] = serv_disc[:-18]
+				serv_disc = serv_disc[:-18]
+			else:
+				data_dict['service'] = serv_disc
+				status_dict['service'] = serv_disc
+				service_for_livestatus = serv_disc 
 
 		if serv_disc.endswith('_status') or serv_disc == 'Check_MK':
 			continue
 		# Extracts the performance data from the rrdtool for services
 		try:
-			if serv_disc == 'ping':
+			if service_for_livestatus == 'ping':
 				query_string = "GET services\nColumns: host_state\nFilter: host_name = %s\nOutputFormat: json\n" % (host)
 				query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
 				if query_output:
@@ -123,11 +132,11 @@ def build_export(site, host, ip, services, mongo_host, mongo_db, mongo_port):
 					service_state= "UNKNOWN"
 					
 			else:
-				print xml_file
 				query_string = "GET services\nColumns: service_state\nFilter: " + \
-				"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (service_name, host)
+				"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (service_for_livestatus,host)
 				query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
-				print query_output
+                                print 'query string', query_string
+   				print 'query out', query_output
 				if query_output:
 					service_state = (query_output[0][0])
 					if service_state == 0:
@@ -194,8 +203,14 @@ def build_export(site, host, ip, services, mongo_host, mongo_db, mongo_port):
 						continue
 					data_dict.get('data').append(temp_dict)
 			if interface:
-				data_dict['interface'] = interface
-				status_dict['interface'] = interface
+				# Write code for extracting the SS ip and SS host_name from mac and store
+				ss_device = get_ss(host=replaced_host, interface=interface)
+                                data_dict['host'] = ss_device
+                                data_dict['ip_address'] = ss_device
+                                status_dict['host'] = ss_device
+                                status_dict['ip_address'] = ss_device
+                                replaced_host = ss_device
+                                replaced_ip = ss_device
 			data_dict['meta'] = threshold_values.get(ds_index)
 			# dictionariers to hold values for the service status tables
 			status_dict.get('data').append(temp_dict)	
@@ -215,9 +230,9 @@ def build_export(site, host, ip, services, mongo_host, mongo_db, mongo_port):
 		#status = insert_data(data_dict)
 
 			data_dict = {
-					"host": str(host),
+					"host": replaced_host,
 					"service": serv_disc,
-					"ip_address": str(ip),
+					"ip_address": replaced_ip,
 					"data": [],
 					"meta": None,
 					"severity": None,
@@ -225,9 +240,9 @@ def build_export(site, host, ip, services, mongo_host, mongo_db, mongo_port):
 			}
 			matching_criteria = {}
 			status_dict = {
-					"host": str(host),
+					"host": replaced_host,
 					"service": serv_disc,
-					"ip_address": str(ip),
+					"ip_address": replaced_ip,
 					"data": [],
 					"meta": None,
 					"severity": None,
@@ -236,6 +251,44 @@ def build_export(site, host, ip, services, mongo_host, mongo_db, mongo_port):
 	
 		params = []
 		file_paths = []
+
+
+def get_ss(host=None, interface=None):
+        print 'host', host
+        print 'interface', interface
+	ss_device = None
+	global nocout_site_name
+        l_host_vars = {
+		    "FOLDER_PATH": "",
+		    "ALL_HOSTS": '', # [ '@all' ]
+		    "all_hosts": [],
+		    "clusters": {},
+		    "ipaddresses": {},
+		    "extra_host_conf": { "alias" : [] },
+		    "extra_service_conf": { "_WATO" : [] },
+		    "host_attributes": {},
+		    "host_contactgroups": [],
+		    "_lock": False,
+	}
+	# path to hosts file
+	hosts_file = '/omd/sites/%s/etc/check_mk/conf.d/wato/hosts.mk' % nocout_site_name
+        print 'hosts_file', hosts_file
+	try:
+		execfile(hosts_file, l_host_vars, l_host_vars)
+		del l_host_vars['__builtins__']
+                print 'all_hosts'
+                print l_host_vars['all_hosts']
+		host_row = filter(lambda t: re.match(interface, t.split('|')[1]) \
+				and re.match(host, t.split('|')[2]), l_host_vars['all_hosts'])
+                print "-- host_row --"
+                print host_row
+		ss_device = host_row[0].split('|')[0]
+                print "-- ss_device --"
+                print ss_device
+	except Exception, e:
+		raise Exception, e
+
+	return ss_device
 
 
 def split_service_interface(serv_disc):
@@ -482,7 +535,7 @@ def rrd_migration_main(site,host,services,ip, mongo_host, mongo_db, mongo_port):
 	Raise
 	    Exception : None
 	"""
-	build_export(site, host, ip, services, mongo_host, mongo_db, mongo_port)
+	build_export(site, host, ip, mongo_host, mongo_db, mongo_port)
         #for service in services[0]:
 
 """if __name__ == '__main__':

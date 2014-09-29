@@ -5,10 +5,11 @@ from django.template import RequestContext
 import logging
 from django.utils.decorators import method_decorator
 from django.views.generic import View
-from device.models import Device, DeviceFrequency
-from inventory.models import ThematicSettings
+from device.models import Device, DeviceFrequency, DeviceTechnology
+from inventory.models import ThematicSettings, UserThematicSettings
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, PerformanceStatus, PerformanceInventory, \
     PerformanceNetwork, PerformanceService
+from user_profile.models import UserProfile
 from django.views.decorators.csrf import csrf_exempt
 import re, ast
 logger=logging.getLogger(__name__)
@@ -102,7 +103,13 @@ class Gis_Map_Performance_Data(View):
             freeze_time= self.request.GET.get('freeze_time','0')
             try:
                 device= Device.objects.get(device_name= device_name, is_added_to_nms=1, is_deleted=0)
-                thematic_settings= ThematicSettings.objects.get(user_profile= self.request.user)
+                device_technology = DeviceTechnology.objects.get(id=device.device_technology)
+                user_obj = UserProfile.objects.get(id= self.request.user.id)
+
+                uts = UserThematicSettings.objects.get(user_profile=user_obj,
+                                                       thematic_technology=device_technology)
+
+                thematic_settings= uts.thematic_template
                 threshold_template=thematic_settings.threshold_template
                 live_polling_template= threshold_template.live_polling_template
 
@@ -213,6 +220,11 @@ class Gis_Map_Performance_Data(View):
                                 range_number=''.join(re.findall("[0-9]", data.keys()[0]))
                                 exec 'range_start=threshold_template.range'+str(range_number)+ '_start'
                                 exec 'range_end=threshold_template.range'+str(range_number)+ '_end'
+                                ##known bug: the complete range should be checked and not just the values
+                                ##between two ranges for example : range 1 = 0,2
+                                ##range 2 = 3,5
+                                ## value should be checked if it in in range 1
+                                ## value should be checked if between range 2 (that is 3,5)
                                 if (float(range_start)) <= float(corrected_device_performance_value) <= (float(range_end)):
                                     performance_icon= data.values()[0]
                             except Exception as e:

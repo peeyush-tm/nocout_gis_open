@@ -81,7 +81,9 @@
                 </div>
             </div>
         </div>
-        <div class="hide" id="ajax_spinner" align="center"></div>
+        <div id="page_content_div">
+        	<div class="hide" id="ajax_spinner" align="center"></div>
+        </div>        
     </section>
     <!--/LOGIN -->
   </section>
@@ -107,11 +109,12 @@
 
       $(document).ready(function(e) {
         /*Set cookies for devicevisualization app*/
-        $.cookie("isFreezeSelected", 0, {path: '/', secure: true});
-        $.cookie("freezedAt", 0, {path: '/', secure: true});
-        $.cookie("isMaintained", 0, {path: '/', secure: true});
-        $.cookie("tools_ruler", 0, {path: '/', secure: true});
-        $.cookie("tools_line", 0, {path: '/', secure: true});
+        $.cookie("isFreezeSelected", 0, {path: '/', secure : true});
+        $.cookie("freezedAt", 0, {path: '/', secure : true});
+        $.cookie("isMaintained", 0, {path: '/', secure : true});
+        $.cookie("tools_ruler", 0, {path: '/', secure : true});
+        $.cookie("tools_line", 0, {path: '/', secure : true});
+        $.cookie("isLabelChecked", true, {path: '/', secure : true});
       });
 
       /*Triggers when login form is submitted*/

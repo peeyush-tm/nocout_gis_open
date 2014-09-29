@@ -185,7 +185,7 @@ INSTALLED_APPS = (
     'corsheaders',
     'actstream',
     'activity_stream',
-    'jsonify'
+    'jsonify',
     'djcelery'
 )
 
@@ -340,3 +340,12 @@ PING_PL_CRITICAL = 100
 
 PRIVATE_IPS_PREFIX = ('10.', '172.', '192.', )
 GIS_MAP_MAX_DEVICE_LIMIT=10
+
+
+###################################################################################################################
+
+DEVICE_APPLICATION = {
+    'default': {
+        'NAME': 'master_UA',  # Or path to database file if using sqlite3.
+    }
+}

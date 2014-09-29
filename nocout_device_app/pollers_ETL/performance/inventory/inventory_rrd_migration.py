@@ -75,10 +75,32 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 					continue
 				ds=service.split('_')[1:-1]
 				ds = ('_').join(ds)
+				if 'frequency' in ds:
+					ds= 'frequency'
 			except:
 				continue
 			current_time = int(time.time())
-			invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host[0]),
+			if service == "cambium_qos_invent":
+				qos_plugin_output = plugin_output.split(' ')
+				qos_ds = map(lambda x: x.split("=")[0],qos_plugin_output)
+				qos_value_list = map(lambda x: x.split("=")[1],qos_plugin_output)
+
+				for index in range(len(qos_ds)):
+					if qos_value_list[index]:
+						invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host[0]),
+						service_name=service,current_value=qos_value_list[index],min_value=0,max_value=0,avg_value=0,
+						data_source=qos_ds[index],severity=service_state,site_name=site,warning_threshold=0,
+						critical_threshold=0,ip_address=host_ip)
+						
+						matching_criteria.update({'device_name':str(host[0]),'service_name':service,
+						'site_name':site,'data_source':qos_ds[index]})
+						
+						mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
+						mongo_module.mongo_db_insert(db,invent_service_dict,"inventory_services")
+						matching_criteria ={}
+						invent_service_dict = {}
+			else:
+				invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=str(host[0]),
 						service_name=service,current_value=plugin_output,min_value=0,max_value=0,avg_value=0,
 						data_source=ds,severity=service_state,site_name=site,warning_threshold=0,
 						critical_threshold=0,ip_address=host_ip)

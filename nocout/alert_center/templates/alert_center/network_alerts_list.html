@@ -53,6 +53,8 @@
     </div>
 {% endblock %}
 {% block jquery %}
+<!-- Library to load tab content on tab click-->
+<script type="text/javascript" src={% static "js/nocout/openTabContentLib.js" %}></script>
 <script type="text/javascript">
     var dataTableInstance = "";
     /*This is a temporary code which is replace when data for data table is provided*/
@@ -138,7 +140,7 @@
 
             var location_array = window.location.href.split("#");
 
-            if(location_array.length == 1) {
+            if((location_array.length > 1 && location_array[1] == "") || (location_array.length == 1)) {
 
                 /*Trigger click event on active tab to load its data*/
                 $("#network_ptp_tab").trigger('click',true);

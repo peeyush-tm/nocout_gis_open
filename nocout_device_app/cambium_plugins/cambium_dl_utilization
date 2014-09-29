@@ -44,7 +44,6 @@ def check_cambium_dl_utilization(item, _no_params, info):
             Raises:
                 ValueError ,Exception
     """
-    warn, crit = params
     state = 3
     infotext = "unknown_value"
     status_list = [] 
@@ -53,22 +52,17 @@ def check_cambium_dl_utilization(item, _no_params, info):
     try:
         if info:
 	    status_list = []
-	    for entry in info:
-                a=binascii.b2a_hex(entry[0])
-                n = 2
-                entry[0]=(':').join([a[i:i+2] for i in range(0, len(a), n)])
-		if item in entry:
-			dl_utilization = entry[1]
-			this_time = int(time.time())
-			try:
-                        	timedif, rate = get_counter("cambium_dl_utilization.%s" % (item), this_time, saveint(dl_utilization))
-				rate =(rate*8)/(1024*1024)
-                	except MKCounterWrapped:
-                        	wrapped=True
-                	status_list.append(("dl_utilization","%f" % (rate)))
-			infotext = "Downlink utilization for interface %s: %s " % (item,rate)
-			state= 0
-			break
+	    if info[0][0]:
+		dl_utilization = info[0][0]
+		this_time = int(time.time())
+		try:
+			timedif, rate = get_counter("cambium_dl_utilization", this_time, saveint(dl_utilization))
+			rate =(rate*8)/(1024*1024)
+                except MKCounterWrapped:
+                       	wrapped=True
+                status_list.append(("dl_utilization","%f" % (rate)))
+		infotext = "Downlink utilization %s " % (rate)
+		state= 0
 	else:
 	    infotext = "No interface present"
 	    
@@ -91,4 +85,4 @@ check_info["cambium_dl_utilization"] = {
 #######################################################################
 #	SNMP OID
 #######################################################################
-snmp_info["cambium_dl_utilization"] = ( ".1.3.6.1.4.1.161.19.3.1.4.1", ["3","13"] )
+snmp_info["cambium_dl_utilization"] = ( ".1.3.6.1.2.1.2.2.1", ["16.1"] )

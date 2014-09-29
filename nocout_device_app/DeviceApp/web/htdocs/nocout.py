@@ -7,7 +7,8 @@ monitoring core.
 """
 
 from wato import *
-import json
+import pymongo
+from pymongo import Connection
 import pprint
 import os
 import ast
@@ -71,6 +72,14 @@ g_service_vars = {
     "snmp_communities": []
 }
 
+interface_oriented_services = [
+		'cambium_ul_rssi',
+		'cambium_ul_jitter',
+		'cambium_reg_count',
+		'cambium_rereg_count',
+		'cambium_ss_connected_bs_ip_invent'
+		]
+
 logger = nocout_log()
 
 
@@ -118,8 +127,16 @@ def addhost():
         "attr_ipaddress": html.var("ip_address"),
         "site": html.var("site"),
         "agent_tag": html.var("agent_tag"),
-	"ping_levels": html.var('ping_levels')
+	"ping_levels": html.var('ping_levels'),
+	"parent_device_name": html.var('parent_device_name'),
+	"mac": html.var('mac').lower()
     }
+    # Save the host info into mongodb configuration collection
+#    add_host_to_mongo_conf(
+#		    host=payload.get('host'),
+#		    ip=payload.get('attr_ipaddress'),
+#		    parent_device_name=payload.get('parent_device_name')
+#		    )
     try:
 	    ping_levels = ast.literal_eval(payload.get('ping_levels'))
 	    logger.debug('ping_levels: '  + pprint.pformat(ping_levels))
@@ -128,15 +145,15 @@ def addhost():
     # Set rules for the ping service
     set_ping_levels(payload.get('host'), ping_levels)
     logger.debug('payload : ' + pprint.pformat(payload))
-    for key, attr in payload.items():
-        if not attr:
-            response.update({
-                "success": 0,
-                "message": None,
-                "error_code": 2,
-                "error_message": payload.get('host') + " " + key + " is missing"
-            })
-            return response
+    #for key, attr in payload.items():
+    #    if not attr:
+    #        response.update({
+    #            "success": 0,
+    #            "message": None,
+    #            "error_code": 2,
+    #            "error_message": payload.get('host') + " " + key + " is missing"
+    #        })
+    #        return response
 
     give_permissions(hosts_file)
     load_file(hosts_file)
@@ -189,14 +206,33 @@ def addservice():
         "error_code": None,
         "error_message": None
     }
-    interfaces = None
+    interface = None
+    # Device name on which check would be added
+    device_name = None
+    service = html.var('service_name').strip().lower()
     # Check for interfaces in HTTP request
-    if html.var('interfaces'):
-	    interfaces = ast.literal_eval(html.var('interfaces'))
+    if service in interface_oriented_services:
+	    # Get BS device name
+            interface, device_name = get_parent(host=html.var('device_name'), db=False)
+		    # Add the MAC addr of SS device into mongodb
+		#    add_host_to_mongo_conf(
+		#interfacehost=html.var('device_name'),
+		#		    interface=interface
+		#		    )
+    else:
+	    device_name = html.var('device_name')
+    if not device_name:
+			response.update({
+				'success': 0,
+				'message': 'Service not added',
+				'error_message': 'Could not find BS for this SS'
+				}
+				)
+			return response
     payload = {
         "host": html.var("device_name"),
-        "service": html.var("service_name"),
-	"interfaces": interfaces,
+        "service": html.var("service_name").strip().lower(),
+	"interface": interface,
         "serv_params": html.var('serv_params'),
         "cmd_params": html.var('cmd_params'),
         "agent_tag": html.var('agent_tag'),
@@ -207,7 +243,11 @@ def addservice():
 
     if not new_host:
         # First delete all the existing entries for (host, service) pair
-        delete_host_rules(hostname=payload.get('host'), servicename=payload.get('service'), interfaces=payload.get('interfaces'))
+        delete_host_rules(
+			hostname=device_name,
+			servicename=payload.get('service'),
+			interface=payload.get('interface')
+			)
         cmd_params = None
         t = ()
         if payload.get('cmd_params'):
@@ -222,13 +262,8 @@ def addservice():
                     else:
                         t = None
 		# Add device interfaces as check items, if passed in HTTP request
-		if payload.get('interfaces'):
-			for interface in payload.get('interfaces'):
-                                check_tuple = ([payload.get('host')], payload.get('service'), interface, t)
-                                g_service_vars['checks'].append(check_tuple)
-		else:
-                        check_tuple = ([payload.get('host')], payload.get('service'), None, t)
-                        g_service_vars['checks'].append(check_tuple)
+		check_tuple = ([device_name], payload.get('service'), payload.get('interface'), t)
+		g_service_vars['checks'].append(check_tuple)
             except Exception, e:
 		logger.error('Error in cmd_params : ' + pprint.pformat(e))
                 response.update({
@@ -251,7 +286,7 @@ def addservice():
                 })
                 return response
             for param, val in serv_params.items():
-                t = (val, [], [payload.get('host')], payload.get('service'))
+                t = (val, [], [device_name], payload.get('service'))
                 g_service_vars['extra_service_conf'][param].append(t)
                 t = ()
 
@@ -265,21 +300,21 @@ def addservice():
 
         snmp_port_tuple = None
         if payload.get('snmp_port'):
-            snmp_port_tuple = (int(payload.get('snmp_port')), [], [payload.get('host')])
-            g_service_vars['snmp_ports'].append(snmp_port_tuple)
+		snmp_port_tuple = (int(payload.get('snmp_port')), [], [device_name])
+		g_service_vars['snmp_ports'].append(snmp_port_tuple)
         
         snmp_community = None
         if payload.get('snmp_community'):
             snmp_community_list = ast.literal_eval(payload.get('snmp_community'))
             if snmp_community_list.get('version') == 'v1':
-                snmp_community = (snmp_community_list.get('read_community'), [], [payload.get('host')])
+                snmp_community = (snmp_community_list.get('read_community'), [], [device_name])
             elif snmp_community_list.get('version') == 'v2':
-                snmp_community = (snmp_community_list.get('read_community'), [], [payload.get('host')])
+                snmp_community = (snmp_community_list.get('read_community'), [], [device_name])
             elif snmp_community_list.get('version') == 'v3':
                 snmp_community = ((snmp_community_list.get('security_level'),snmp_community_list.get('auth_protocol'),
                     snmp_community_list.get('security_name'),snmp_community_list.get('auth_password'),
                     snmp_community_list.get('private_phase'),snmp_community_list.get('private_passphase')),
-                    [payload.get('host')])
+                    [device_name])
             g_service_vars['snmp_communities'].append(snmp_community)
 
         flag = write_new_host_rules()
@@ -316,15 +351,24 @@ def edithost():
         "attr_alias": html.var("device_alias"),
         "attr_ipaddress": html.var("ip_address"),
         "site": html.var("site"),
-        "agent_tag": html.var("agent_tag")
+        "agent_tag": html.var("agent_tag"),
+	"parent_device_name": html.var('parent_device_name'),
+	"mac": html.var('mac')
     }
+    # Save the host info into mongodb configuration collection
+#    add_host_to_mongo_conf(
+#		    host=payload.get('host'),
+#		    ip=payload.get('attr_ipaddress'),
+#		    parent_device_name=payload.get('parent_device_name')
+#		    )
+
     logger.debug('payload: ' + pprint.pformat(payload))
     load_file(hosts_file)
     new_host = nocout_find_host(payload.get('host'))
     if not new_host:
-        for i, v in enumerate(g_host_vars['all_hosts']):
-            if payload.get('host') in v:
-                g_host_vars['all_hosts'].pop(i)
+        #for i, v in enumerate(g_host_vars['all_hosts']):
+        #    if payload.get('host') in v:
+        #        g_host_vars['all_hosts'].pop(i)
 
         nocout_add_host_attributes(payload)
 
@@ -361,14 +405,30 @@ def editservice():
         "error_code": None,
         "error_message": None
     }
-    interfaces = None
-    # Check for interfaces
-    if html.var('interfaces'):
-	    interfaces = ast.literal_eval(html.var('interfaces'))
+    interface = None
+    # Device name on which check would be added
+    device_name = None
+    service = html.var('service_name').strip().lower()
+    # Check for interfaces in HTTP request
+    if service in interface_oriented_services:
+	#    if html.var('interface'):
+	#	    interface = html.var('interface').lower()
+		    # Get BS device name from mongo conf
+		    interface, device_name = get_parent(host=html.var('device_name'), db=False)
+    else:
+	    device_name = html.var('device_name')
+    if not device_name:
+			response.update({
+				'success': 0,
+				'message': 'Service not edited',
+				'error_message': 'Could not find BS for this SS'
+				}
+				)
+			return response
     payload = {
         "host": html.var("device_name"),
         "service": html.var("service_name"),
-	"interfaces": interfaces,
+	"interface": interface,
         "serv_params": html.var('serv_params'),
         "cmd_params": html.var('cmd_params'),
         "agent_tag": html.var('agent_tag'),
@@ -379,7 +439,11 @@ def editservice():
     
     if not new_host:
         #First delete the existing extries for the service
-        delete_host_rules(hostname=payload.get('host'), servicename=payload.get('service'), interfaces=payload.get('interfaces'))
+        delete_host_rules(
+			hostname=device_name,
+			servicename=payload.get('service'),
+			interface=payload.get('interface')
+			)
         cmd_params = None
         t = ()
         ping_level = ()
@@ -404,14 +468,9 @@ def editservice():
                         t = ()
                         t += (int(thresholds.get('warning')),)
                         t += (int(thresholds.get('critical')),)
-		# Add device interfaces as check items, if passed in HTTP request
-		if payload.get('interfaces'):
-			for interface in payload.get('interfaces'):
-                                check_tuple = ([payload.get('host')], payload.get('service'), interface, t)
-                                g_service_vars['checks'].append(check_tuple)
-		else:
-                        check_tuple = ([payload.get('host')], payload.get('service'), None, t)
-                        g_service_vars['checks'].append(check_tuple)
+			# Add device interfaces as check items, if passed in HTTP request
+			check_tuple = ([device_name], payload.get('service'), payload.get('interface'), t)
+			g_service_vars['checks'].append(check_tuple)
             except Exception, e:
                 response.update({
                     "success": 0,
@@ -419,7 +478,7 @@ def editservice():
                     "error_message": "cmd_params " + pprint.pformat(e)
                 })
 
-	if payload.get('service').strip().lower() != 'ping':
+	if 'ping' not in payload.get('service').strip().lower():
 		serv_params = None
 		if payload.get('serv_params'):
 		    try:
@@ -434,27 +493,27 @@ def editservice():
 			logger.error('Error in serv_params : ' + pprint.pformat(e))
 			return response
 		    for param, val in serv_params.items():
-			t = (val, [], [payload.get('host')], payload.get('service'))
+			t = (val, [], [device_name], payload.get('service'))
 			g_service_vars['extra_service_conf'][param].append(t)
 			t = ()
 
         snmp_port_tuple = None
         if payload.get('snmp_port'):
-            snmp_port_tuple = (int(payload.get('snmp_port')), [], [payload.get('host')])
+            snmp_port_tuple = (int(payload.get('snmp_port')), [], [device_name])
             g_service_vars['snmp_ports'].append(snmp_port_tuple)
         
         snmp_community = None
         if payload.get('snmp_community'):
             snmp_community_list = ast.literal_eval(payload.get('snmp_community'))
             if snmp_community_list.get('version') == 'v1':
-                snmp_community = (snmp_community_list.get('read_community'), [], [payload.get('host')])
+                snmp_community = (snmp_community_list.get('read_community'), [], [device_name])
             elif snmp_community_list.get('version') == 'v2':
-                snmp_community = (snmp_community_list.get('read_community'), [], [payload.get('host')])
+                snmp_community = (snmp_community_list.get('read_community'), [], [device_name])
             elif snmp_community_list.get('version') == 'v3':
                 snmp_community = ((snmp_community_list.get('security_level'),snmp_community_list.get('auth_protocol'),
                     snmp_community_list.get('security_name'),snmp_community_list.get('auth_password'),
                     snmp_community_list.get('private_phase'),snmp_community_list.get('private_passphase')),
-                    [payload.get('host')])
+                    [device_name])
             g_service_vars['snmp_communities'].append(snmp_community)
 
         flag = write_new_host_rules()
@@ -478,6 +537,7 @@ def editservice():
 
 
 def deletehost():
+    logger.debug('[-- deletehost --]')
     global g_host_vars
     response = {
         "success": 1,
@@ -486,14 +546,30 @@ def deletehost():
         "error_code": None,
         "error_message": None
     }
+    interface = None
+    device_name = None
+#    # Check for interfaces in HTTP request
+#    if html.var('interface'):
+#		    # Get BS device
+#		    device_name = get_parent(host=html.var('device_name'), db=False)
+#		    if html.var('interface'):
+#			    interface = html.var('interface')
+#    else:
+#	    device_name = html.var('device_name')
     payload = {
         "host": html.var("device_name")
     }
+    device_name = payload.get('host')
     load_file(hosts_file)
     new_host = nocout_find_host(payload.get('host'))
 
     if not new_host:
-        delete_host_rules(hostname=payload.get('host'), servicename=None)
+	# Get parent
+	mac, parent = get_parent(host=payload.get('host'), db=False)
+	if parent:
+		interface = mac
+		device_name = parent
+        delete_host_rules(hostname=device_name, interface=interface)
         flag = write_new_host_rules()
         if not flag:
             response.update({
@@ -504,7 +580,7 @@ def deletehost():
             })
             return response
 
-        g_host_vars['all_hosts'] = filter(lambda t: payload.get('host') not in t, g_host_vars['all_hosts'])
+        g_host_vars['all_hosts'] = filter(lambda t: not re.match(payload.get('host'), t), g_host_vars['all_hosts'])
         del g_host_vars['host_attributes'][payload.get('host')]
         del g_host_vars['ipaddresses'][payload.get('host')]
 
@@ -522,6 +598,7 @@ def deletehost():
             "success": 0,
             "message": payload.get('host') + " is not added yet"
         })
+    logger.debug('[-- deletehost finish --]')
     
     return response
 
@@ -535,18 +612,35 @@ def deleteservice():
         "error_code": None,
         "error_message": None
     }
-    interfaces = None
-    if html.var('interfaces'):
-	    interfaces = ast.literal_eval(html.var('interfaces'))
+    interface = None
+    # Device name from which check would be deleted
+    device_name = None
+    service = html.var('service_name').strip().lower()
+    # Check for interfaces in HTTP request
+    if service in interface_oriented_services:
+		    # Get BS device name from mongo conf
+		    interface, device_name = get_parent(host=html.var('device_name'), db=False)
+		#    if html.var('interface'):
+		#	    interface = html.var('interface')
+    else:
+	    device_name = html.var('device_name')
+    if not device_name:
+			response.update({
+				'success': 0,
+				'message': 'Service could not be deleted',
+				'error_message': 'Could not find BS for this SS'
+				}
+				)
+			return response
     payload = {
         "host": html.var("device_name"),
         "service": html.var("service_name"),
-	"interfaces": interfaces
+	"interface": interface
     }
     delete_host_rules(
-		    hostname=payload.get('host'),
+		    hostname=device_name,
 		    servicename=payload.get('service'),
-		    interfaces=payload.get('interfaces'),
+		    interface=payload.get('interface'),
 		    flag=True
 		    )
     flag = write_new_host_rules()
@@ -559,6 +653,59 @@ def deleteservice():
         })
         
     return response
+
+
+def add_host_to_mongo_conf(**values):
+	device_conf = {
+			'host': values.get('host'),
+			'ip': values.get('ip'),
+			'interface': values.get('interface'),
+			'parent_device_name': values.get('parent_device_name')
+			}
+	device_conf = dict(filter(lambda t: t[1], device_conf.items()))
+	# Mongodb conn object
+	try:
+		conn = Connection(host='localhost', port=27017)
+		db = conn['nocout']
+		# Keep the latest host info
+		db.device_conf.update(
+				{ 'host': device_conf.get('host')},
+				{'$set': device_conf},
+				True
+				)
+	except pymongo.errors.PyMongoError, e:
+		logger.error('Could not save the device conf into mongodb' + pprint.pformat(e))
+
+
+def get_parent(host=None, db=True):
+	bs = None
+	device_mac = None
+	if db:
+		if host:
+			try:
+				conn = Connection(host='localhost', port=27017)
+				db = conn['nocout']
+				cur = db.device_conf.find({'host': host}, {'parent_device_name': 1, '_id': 0})
+				for row in cur:
+					logger.debug('Mongodb output: ' + pprint.pformat(row))
+					bs = row
+				bs = bs.get('parent_device_name')
+			except pymongo.errors.PyMongoError, e:
+				logger.error('Could not find BS name: ' + pprint.pformat(e))
+	else:
+		if host:
+			load_file(hosts_file)
+			# Filter the required row
+			host_row = filter(lambda e: re.match(host, e), g_host_vars['all_hosts'])
+			try:
+				device_mac = host_row[0].split('|')[1]
+				# Varify ip
+				if re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', host_row[0].split('|')[2]):
+					bs = host_row[0].split('|')[2]
+			except AttributeError, e:
+				logger.error('Could not find BS name' + pprint.pformat(e))
+
+	return str(device_mac), str(bs)
 
 
 def set_ping_levels(host, ping_levels):
@@ -610,7 +757,7 @@ def set_ping_levels(host, ping_levels):
 		g_service_vars['ping_levels'].append(ping_rule_set)
 	write_new_host_rules()
 
-def delete_host_rules(hostname=None, servicename=None, interfaces=None, flag=False):
+def delete_host_rules(hostname=None, servicename=None, interface=None, flag=False):
     global g_service_vars
     g_service_vars = {
         "only_hosts": None,
@@ -640,23 +787,25 @@ def delete_host_rules(hostname=None, servicename=None, interfaces=None, flag=Fal
     if hostname is None:
         return
     if not servicename:
-        g_service_vars['ping_levels'] = filter(lambda t: hostname not in t[2], g_service_vars['ping_levels'])
-        g_service_vars['checks'] = filter(lambda t: hostname not in t[0], g_service_vars['checks'])
+	if interface:
+		g_service_vars['checks'] = map(lambda x: x, ifilterfalse(lambda t: hostname in t[0] and interface in t[2], g_service_vars['checks']))
+	else:
+                g_service_vars['ping_levels'] = filter(lambda t: hostname not in t[2], g_service_vars['ping_levels'])
+		g_service_vars['checks'] = filter(lambda t: hostname not in t[0], g_service_vars['checks'])
 
-        for serv_param, param_vals in g_service_vars['extra_service_conf'].items():
-            g_service_vars['extra_service_conf'][serv_param] = filter(lambda t: hostname not in t[2], param_vals)
+		for serv_param, param_vals in g_service_vars['extra_service_conf'].items():
+		    g_service_vars['extra_service_conf'][serv_param] = filter(lambda t: hostname not in t[2], param_vals)
 
-        g_service_vars['snmp_ports'] = filter(lambda t: hostname not in t[2], g_service_vars['snmp_ports'])
-        g_service_vars['snmp_communities'] = filter(lambda t: hostname not in t[-1], g_service_vars['snmp_communities'])
+		g_service_vars['snmp_ports'] = filter(lambda t: hostname not in t[2], g_service_vars['snmp_ports'])
+		g_service_vars['snmp_communities'] = filter(lambda t: hostname not in t[-1], g_service_vars['snmp_communities'])
 
-        for check, check_vals in g_service_vars['static_checks'].items():
-            g_service_vars['static_checks'][check] = filter(lambda t: hostname not in t[2], check_vals)
+		for check, check_vals in g_service_vars['static_checks'].items():
+		    g_service_vars['static_checks'][check] = filter(lambda t: hostname not in t[2], check_vals)
     else:
         if servicename.strip().lower() == 'ping':
             g_service_vars['ping_levels'] = filter(lambda t: hostname not in t[2], g_service_vars['ping_levels'])
             return
-        if interfaces:
-            for interface in interfaces:
+        if interface:
                 iter_func = ifilterfalse(lambda t: hostname in t[0] and servicename in t[1] and interface in t[2], g_service_vars['checks'])
                 g_service_vars['checks'] = map(lambda x: x, iter_func)
         else:
@@ -921,8 +1070,19 @@ def save_service(host, service_name, host_tag, service_tuple, serv_params, ping_
 
 def nocout_add_host_attributes(host_attrs):
     global host_tags
-    host_entry = "%s|wan|prod|%s|site:%s|wato|//" % (
-    host_attrs.get('host'), host_tags.get(html.var('agent_tag'), 'snmp'), host_attrs.get('site'))
+    # Filter out the host's old config
+    g_host_vars['all_hosts'] = filter(lambda t: not re.match(host_attrs.get('host'), t), g_host_vars['all_hosts'])
+    logger.debug('all_hosts: ' + pprint.pformat(g_host_vars['all_hosts']))
+
+    host_entry = "%s|%s|wan|prod|%s|site:%s|wato|//" % (
+    host_attrs.get('host'), host_attrs.get('mac'), host_tags.get(html.var('agent_tag'), 'snmp'), host_attrs.get('site'))
+    # Find all the occurences for sub-string '|'
+    all_indexes = [i for i in range(len(host_entry)) if host_entry.startswith('|', i)]
+    # Insert the name of the parent device, as an auxiliary tag for the host, after the second occurence of '|'
+    if host_attrs.get('parent_device_name'):
+	    host_entry = host_entry[:(all_indexes[1] + 1)] + str(host_attrs.get('parent_device_name')) + \
+			    '|' + host_entry[(all_indexes[1] + 1):]
+
     g_host_vars['all_hosts'].append(host_entry)
 
     g_host_vars['ipaddresses'].update({
@@ -934,7 +1094,7 @@ def nocout_add_host_attributes(host_attrs):
             'contactgroups': (True, ['all']),
             'ipaddress': host_attrs.get('attr_ipaddress'),
             'site': host_attrs.get('site'),
-            'tag_agent': host_attrs.get(html.var('agent_tag'))
+            'tag_agent': host_tags.get(html.var('agent_tag'))
         }
     })
 
@@ -956,10 +1116,8 @@ def nocout_find_host(host):
     }
     try:
         execfile(hosts_file, local_host_vars, local_host_vars)
-        for entry in local_host_vars['all_hosts']:
-            if host in entry:
-                new_host = False
-                break
+	if filter(lambda t: re.match(host, t), local_host_vars['all_hosts']):
+		new_host = False
     except IOError, e:
         pass
 

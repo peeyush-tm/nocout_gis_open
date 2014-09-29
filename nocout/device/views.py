@@ -3251,7 +3251,8 @@ class DeviceFrequencyListing(ListView):
         context = super(DeviceFrequencyListing, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'value', 'sTitle': 'Value', 'sWidth': 'null', },
-            {'mData': 'color_hex_value', 'sTitle': 'Hex Value', 'sWidth': 'null', }
+            {'mData': 'color_hex_value', 'sTitle': 'Hex Value', 'sWidth': 'null', },
+            {'mData': 'frequency_radius', 'sTitle': 'Frequency Radius (Km)', 'sWidth': 'null', }
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
@@ -3265,8 +3266,8 @@ class DeviceFrequencyListingTable(BaseDatatableView):
     Render JQuery datatables for listing of device frequencies
     """
     model = DeviceFrequency
-    columns = ['value', 'color_hex_value']
-    order_columns = ['value', 'color_hex_value']
+    columns = ['value', 'color_hex_value', 'frequency_radius']
+    order_columns = ['value', 'color_hex_value', 'frequency_radius']
 
     def filter_queryset(self, qs):
         """
@@ -3302,11 +3303,18 @@ class DeviceFrequencyListingTable(BaseDatatableView):
         for dct in qs:
             if "color_hex_value" in dct:
                 dct.update(value = dct["value"] + " MHz")
+
                 dct.update(
                     color_hex_value="<div style='float:left; display:block; height:20px; width:20px; background:{0}'>"
                                     "</div>" \
                                     "<span style='margin-left: 5px;'>{0}</span>".
                     format(dct["color_hex_value"]))
+
+                dct.update(frequency_radius = "N/A"
+                            if not dct['frequency_radius']
+                            else dct['frequency_radius']
+                )
+
             dct.update(actions='<a href="/frequency/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/frequency/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs

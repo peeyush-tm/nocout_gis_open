@@ -106,8 +106,11 @@
                         <ul class="nav nav-tabs" style="top:-44px;float:left;padding-left:15px;margin-right:0px;">
                             <li><a href="#errors_tab" id="errors" data-toggle="tab"><span class="hidden-inline-mobile">Errors</span></a></li>
                             <li><a href="#sia_tab" id="sia" data-toggle="tab"><span class="hidden-inline-mobile">SIA</span></a></li>
-                            <li><a href="#topology_tab" id="topology" data-toggle="tab"><span class="hidden-inline-mobile">Topology</span></a></li>
+
+{#                            <li><a href="#topology_tab" id="topology" data-toggle="tab"><span class="hidden-inline-mobile">Topology</span></a></li>#}
+
                             <li><a href="#availability_tab" id="availability" data-toggle="tab"><span class="hidden-inline-mobile">Availability</span></a></li>
+
                             <li><a href="#inventory_status_tab" id="inventory_status" data-toggle="tab"><span class="hidden-inline-mobile">Inventory Status</span></a></li>
                             <li><a href="#service_status_tab" id="service_status" data-toggle="tab"><span class="hidden-inline-mobile">Service Status</span></a></li>
                             <li><a href="#service_perf_tab" id="service_perf" data-toggle="tab"><span class="hidden-inline-mobile">Service Performance</span></a></li>
@@ -164,15 +167,15 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="tab-pane" id="topology_tab">
-                                <div class="panel panel-default inner_tab_container">
-                                    <div class="panel-body">
-                                        <div class="tabbable tabs-left">
-
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+{#                            <div class="tab-pane" id="topology_tab">#}
+{#                                <div class="panel panel-default inner_tab_container">#}
+{#                                    <div class="panel-body">#}
+{#                                        <div class="tabbable tabs-left">#}
+{##}
+{#                                        </div>#}
+{#                                    </div>#}
+{#                                </div>#}
+{#                            </div>#}
                             <div class="tab-pane" id="sia_tab">
                                 <div class="panel panel-default">
                                     <div class="panel-body" style="overflow-x: auto;">
@@ -335,26 +338,57 @@
     <script type="text/javascript">
         /*Global Variables*/
         var perfInstance = "",
-                current_device = "";
+            current_device = "";
 
         var desired_url_string = "https";
-        if (window.location.protocol == "https:") {
-            desired_url_string = "https://";
-        }
+        // if (window.location.protocol == "https:") {
+        //     desired_url_string = "https://";
+        // }
 
-        if (window.location.protocol == "https:") {
-            //window.location.href = "https:" + window.location.href.substring(window.location.protocol.length);
-            window.location.origin = "https:" + window.location.origin.substring(window.location.protocol.length);
-        }
+        // if (window.location.protocol == "https:") {
+        //     if(window.location.origin) {
+        //         window.location.origin = "https:" + window.location.origin.substring(window.location.protocol.length);
+        //     }            
+        // }
 
 
         $(document).ready(function (e) {
 
             var url_array = window.location.href.split("/"),
-                page_type_val = "";
+                page_type_val = "",
+                base_url = "";
+
+            /*Set the base url of application for ajax calls*/
+            if (window.location.origin) {
+                base_url = window.location.origin;
+            } else {
+                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
+            }
+
             for(var i=0;i<url_array.length;i++) {
                 if(url_array[i].indexOf("_live") > -1) {
                     page_type_val = url_array[i].split("_")[0];
+                }
+            }
+
+            /*Show SIA tab only for network devices*/
+            var device_technology = '{{ device_technology }}';
+
+            if(page_type_val != 'network' || (device_technology.toLowerCase() == 'ptp' || device_technology.toLowerCase() == 'p2p')) {
+                if(!$("#sia").hasClass("hide")) {
+                    $("#sia").addClass("hide");
+                }
+
+                if(!$("#sia_tab").hasClass("hide")) {
+                    $("#sia_tab").addClass("hide");
+                }
+            } else {
+                if($("#sia").hasClass("hide")) {
+                    $("#sia").removeClass("hide");
+                }
+
+                if($("#sia_tab").hasClass("hide")) {
+                    $("#sia_tab").removeClass("hide");
                 }
             }
 
@@ -463,13 +497,6 @@
                     }
                 }
             });
-            var base_url = "";
-            /*Set the base url of application for ajax calls*/
-            if (window.location.origin) {
-                base_url = window.location.origin;
-            } else {
-                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
-            }
 
 
             /*Hide Status Container*/
@@ -528,10 +555,11 @@
             fetchFirstTabContent(e);
         });
 
-        /*Load first inner tab of topology*/
-        $("#topology").click(function (e) {
-            fetchFirstTabContent(e);
-        });
+
+        /*Load first inner tab of inventory status*/
+{#        $("#topology").click(function (e) {#}
+{#            fetchFirstTabContent(e);#}
+{#        });#}
 
         /**
          * This function load the first inner tab content when the tab is opened.

@@ -10,6 +10,8 @@ from dajaxice.decorators import dajaxice_register
 from device.models import Device, DeviceTechnology, DeviceVendor, DeviceModel, DeviceType, \
     DeviceTypeFieldsValue, Country, State
 from service.models import Service, ServiceParameters, DeviceServiceConfiguration, DevicePingConfiguration
+from inventory.models import SubStation
+from performance.models import Topology
 from site_instance.models import SiteInstance
 from django.conf import settings
 
@@ -259,7 +261,7 @@ def after_update_ports(request, option, selected=[]):
 
     """
     dajax = Dajax()
-    
+
     # selected type
     device_type = DeviceType.objects.get(pk=int(option))
 
@@ -469,7 +471,7 @@ def device_soft_delete_form(request, value):
         for cd in device_descendant:
             child_device_descendants.append(cd)
 
-    result['data']['objects']['childs'] = []    
+    result['data']['objects']['childs'] = []
     # future device parent is needs to find out only if our device is
     # associated with any other device i.e if child_devices.count() > 0
     if child_devices.count() > 0:
@@ -830,17 +832,49 @@ def add_device_to_nms_core(request, device_id, ping_data):
             agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
         except Exception as e:
             logger.info(e.message)
-
         device_data = {'device_name': str(device.device_name),
                        'device_alias': str(device.device_alias),
                        'ip_address': str(device.ip_address),
                        'agent_tag': str(agent_tag),
                        'site': str(device.site_instance.name),
                        'mode': 'addhost',
-                       'ping_levels': ping_levels}
+                       'ping_levels': ping_levels,
+                       'parent_device_name': None,
+                       'mac': str(device.mac_address)}
+
+        device_tech = DeviceTechnology.objects.filter(id=device.device_technology)
+        if device_tech and (str(device_tech[0].name).lower() == 'pmp' or str(device_tech[0].name.lower() == 'wimax')):
+            # Check if the is SS
+            # ss_queryset = SubStation.objects.filter(device_id=device.id)
+            # if ss_queryset:
+            #     # Check whether the BS present
+            #     bs_queryset = Topology.objects.filter(connected_device_mac=device.mac_address)
+            #     if bs_queryset:
+            #         # Send in the BS also
+            #         device_data.update({
+            #         'parent_device_name': bs_queryset[0].device_name
+            #         })
+            #     else:
+            #         result['message'] = "<i class=\"fa fa-check red-dot\"></i>Could not find BS for this SS in the topology"
+            #         return json.dumps({'result': result})
+
+            #check if the device is SS
+            if device.substation_set.exists():
+                try:
+                    substation = device.substation_set.get()
+                    #check for the circuit
+                    if substation.circuit_set.exists():
+                        circuit = substation.circuit_set.get()
+                        sector = circuit.sector
+                        parent_device = sector.sector_configured_on
+                        device_data.update({
+                            'parent_device_name': parent_device.device_name
+                        })
+                except Exception as e:
+                    logger.exception(e.message)
 
         # site to which configuration needs to be pushed
-        master_site = SiteInstance.objects.get(name='master_UA')
+        master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
         # url for nocout.py
         # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
         # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
@@ -931,10 +965,27 @@ def edit_device_in_nms_core(request, device_id):
                        'ip_address': device.ip_address,
                        'agent_tag': agent_tag,
                        'site': device.site_instance.name,
-                       'mode': 'edithost'}
+                       'mode': 'edithost',
+                       'parent_device_name': None,
+                       'mac': device.mac_address}
 
+        device_tech = DeviceTechnology.objects.filter(id=device.device_technology)
+        if device_tech and (str(device_tech[0].name).lower() == 'pmp' or str(device_tech[0].name.lower() == 'wimax')):
+            # Check if the is SS
+            ss_queryset = SubStation.objects.filter(device_id=device.id)
+            if ss_queryset:
+                # Check whether the BS present
+                bs_queryset = Topology.objects.filter(connected_device_mac=device.mac_address)
+                if bs_queryset:
+                    # Send in the BS also
+                    device_data.update({
+                    'parent_device_name': bs_queryset[0].device_name
+                    })
+                else:
+                    result['message'] = "<i class=\"fa fa-check red-dot\"></i>Could not find BS for this SS in the topology"
+                    return json.dumps({'result': result})
         # site to which configuration needs to be pushed
-        master_site = SiteInstance.objects.get(name='master_UA')
+        master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
 
         # url for nocout.py
         # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
@@ -1000,7 +1051,7 @@ def delete_device_from_nms_core(request, device_id):
             logger.info("Device has no device type.")
         device_data = {'mode': 'deletehost', 'device_name': device.device_name,}
         # site to which configuration needs to be pushed
-        master_site = SiteInstance.objects.get(name='master_UA')
+        master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
         # url for nocout.py
         # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
         # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
@@ -1060,7 +1111,7 @@ def sync_device_with_nms_core(request, device_id):
     # get device
     device = Device.objects.get(pk=device_id)
     # site to which configuration needs to be pushed
-    master_site = SiteInstance.objects.get(name='master_UA')
+    master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
     # url for nocout.py
     # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
     # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
@@ -1304,7 +1355,7 @@ def edit_single_service(request, dsc_id, svc_temp_id, data_sources):
             service_data['agent_tag'] = str(dsc.agent_tag) if eval(dsc.agent_tag) is not None else "snmp"
 
             # master site on which service needs to be added
-            master_site = SiteInstance.objects.get(name='master_UA')
+            master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
             # url for nocout.py
             # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
             # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
@@ -1469,7 +1520,7 @@ def delete_single_service(request, device_name, service_name):
             'service_name': str(service_name)
         }
 
-        master_site = SiteInstance.objects.get(name='master_UA')
+        master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
         # url for nocout.py
         # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
         # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
@@ -1558,33 +1609,33 @@ def edit_service_form(request, value):
     try:
         master_site_name = ""
         try:
-            master_site_name = SiteInstance.objects.get(name='master_UA').name
+            master_site_name = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME']).name
             result['data']['objects']['master_site'] = master_site_name
         except:
             logger.info("Master site doesn't exist.")
         if device.is_added_to_nms == 1:
-            if master_site_name == "master_UA":
-                # fetching all services from 'service device configuration' table
-                dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name)
+            # if master_site_name == "master_UA":
+            # fetching all services from 'service device configuration' table
+            dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name)
 
-                # services those are already running for this device
-                services = []
-                for svc in dsc:
-                    services.append(svc.service_name)
+            # services those are already running for this device
+            services = []
+            for svc in dsc:
+                services.append(svc.service_name)
 
-                # extracting unique set of services form 'services' list
-                monitored_services = set(services)
+            # extracting unique set of services form 'services' list
+            monitored_services = set(services)
 
-                result['data']['objects']['services'] = []
-                for svc in monitored_services:
-                    service = Service.objects.get(name=svc)
-                    svc_dict = dict()
-                    svc_dict['key'] = service.id
-                    svc_dict['value'] = service.alias
-                    result['data']['objects']['services'].append(svc_dict)
-            else:
-                result['message'] = "Master site doesn't exist. <br />\
-                                     Please first create master site with name 'master_UA'."
+            result['data']['objects']['services'] = []
+            for svc in monitored_services:
+                service = Service.objects.get(name=svc)
+                svc_dict = dict()
+                svc_dict['key'] = service.id
+                svc_dict['value'] = service.alias
+                result['data']['objects']['services'].append(svc_dict)
+            # else:
+            #     result['message'] = "Master site doesn't exist. <br />\
+            #                          Please first create master site with name 'master_UA'."
         else:
             result['message'] = "First add device in nms core."
     except:
@@ -1887,7 +1938,7 @@ def edit_services(request, svc_data, svc_ping=""):
             }
 
             # master site on which service needs to be added
-            master_site = SiteInstance.objects.get(name='master_UA')
+            master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
 
             # url for nocout.py
             # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
@@ -2003,7 +2054,7 @@ def edit_services(request, svc_data, svc_ping=""):
             # payload data for post request
             service_data = result['data']['objects']
             # master site on which service needs to be added
-            master_site = SiteInstance.objects.get(name='master_UA')
+            master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
             # url for nocout.py
             # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
             # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
@@ -2177,33 +2228,33 @@ def delete_service_form(request, value):
     try:
         master_site_name = ""
         try:
-            master_site_name = SiteInstance.objects.get(name='master_UA').name
+            master_site_name = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME']).name
             result['data']['objects']['master_site'] = master_site_name
         except:
             logger.info("Master site doesn't exist.")
         if device.is_added_to_nms == 1:
-            if master_site_name == "master_UA":
-                # fetching all services from 'service device configuration' table
-                dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name)
+            # if master_site_name == "master_UA":
+            # fetching all services from 'service device configuration' table
+            dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name)
 
-                # services those are already running for this device
-                services = []
-                for svc in dsc:
-                    services.append(svc.service_name)
+            # services those are already running for this device
+            services = []
+            for svc in dsc:
+                services.append(svc.service_name)
 
-                # extracting unique set of services form 'services' list
-                monitored_services = set(services)
+            # extracting unique set of services form 'services' list
+            monitored_services = set(services)
 
-                result['data']['objects']['services'] = []
-                for svc in monitored_services:
-                    service = Service.objects.get(name=svc)
-                    svc_dict = dict()
-                    svc_dict['key'] = service.id
-                    svc_dict['value'] = service.alias
-                    result['data']['objects']['services'].append(svc_dict)
-            else:
-                result['message'] = "Master site doesn't exist. <br />\
-                                     Please first create master site with name 'master_UA'."
+            result['data']['objects']['services'] = []
+            for svc in monitored_services:
+                service = Service.objects.get(name=svc)
+                svc_dict = dict()
+                svc_dict['key'] = service.id
+                svc_dict['value'] = service.alias
+                result['data']['objects']['services'].append(svc_dict)
+            # else:
+            #     result['message'] = "Master site doesn't exist. <br />\
+            #                          Please first create master site with name 'master_UA'."
         else:
             result['message'] = "First add device in nms core."
     except:
@@ -2274,7 +2325,7 @@ def delete_services(request, service_data):
                 'service_name': str(service.name)
             }
 
-            master_site = SiteInstance.objects.get(name='master_UA')
+            master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
             # url for nocout.py
             # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
             # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
@@ -2424,46 +2475,46 @@ def add_service_form(request, value):
     try:
         master_site_name = ""
         try:
-            master_site_name = SiteInstance.objects.get(name='master_UA').name
+            master_site_name = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME']).name
             result['data']['objects']['master_site'] = master_site_name
         except Exception as e:
             logger.info(e.message)
 
         if device.is_added_to_nms == 1:
-            if master_site_name == "master_UA":
-                # fetching all services from 'service device configuration' table
-                dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name)
-                device_type = DeviceType.objects.get(id=device.device_type)
+            # if master_site_name == "master_UA":
+            # fetching all services from 'service device configuration' table
+            dsc = DeviceServiceConfiguration.objects.filter(device_name=device.device_name)
+            device_type = DeviceType.objects.get(id=device.device_type)
 
-                # complete no. of services associated with this device
-                complete_services = []
-                for svc in device_type.service.all():
-                    complete_services.append(svc.name)
+            # complete no. of services associated with this device
+            complete_services = []
+            for svc in device_type.service.all():
+                complete_services.append(svc.name)
 
-                # services those are already running for this device
-                services = []
-                for svc in dsc:
-                    services.append(svc.service_name)
+            # services those are already running for this device
+            services = []
+            for svc in dsc:
+                services.append(svc.service_name)
 
-                # services those are already running for this device
-                already_added_services = []
-                for svc in dsc:
-                    already_added_services.append(svc.service_name)
+            # services those are already running for this device
+            already_added_services = []
+            for svc in dsc:
+                already_added_services.append(svc.service_name)
 
-                # services those are not currently running but associated with that device
-                services = set(complete_services) - set(already_added_services)
+            # services those are not currently running but associated with that device
+            services = set(complete_services) - set(already_added_services)
 
-                result['data']['objects']['services'] = []
-                for svc in services:
-                    service = Service.objects.get(name=svc)
-                    svc_dict = dict()
-                    svc_dict['key'] = service.id
-                    svc_dict['value'] = service.alias
-                    result['data']['objects']['services'].append(svc_dict)
+            result['data']['objects']['services'] = []
+            for svc in services:
+                service = Service.objects.get(name=svc)
+                svc_dict = dict()
+                svc_dict['key'] = service.id
+                svc_dict['value'] = service.alias
+                result['data']['objects']['services'].append(svc_dict)
 
-            else:
-                result['message'] = "Master site doesn't exist. <br />\
-                                     Please first create master site with name 'master_UA'."
+            # else:
+            #     result['message'] = "Master site doesn't exist. <br />\
+            #                          Please first create master site with name 'master_UA'."
         else:
             result['message'] = "First add device in nms core."
     except:
@@ -2712,7 +2763,7 @@ def add_services(request, svc_data):
             # payload data for post request
             service_data = result['data']['objects']
             # master site on which service needs to be added
-            master_site = SiteInstance.objects.get(name='master_UA')
+            master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
             # url for nocout.py
             # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
             # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'

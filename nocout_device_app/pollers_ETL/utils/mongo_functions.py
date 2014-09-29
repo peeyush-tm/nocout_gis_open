@@ -118,7 +118,7 @@ def mongo_db_update(db,matching_criteria,event_dict,flag):
 			elif flag == "status_services":
 				db.device_status_services_status.update(matching_criteria,event_dict,upsert=True)
 			elif flag == "topology":
-				db.cambium_topology_data.update(macthing_criteria,event_dict,upsert=True)
+				db.cambium_topology_data.update(matching_criteria,event_dict,upsert=True)
                 	return success
 		except Exception, ReferenceError:
         		print "Mongodb updation failed"

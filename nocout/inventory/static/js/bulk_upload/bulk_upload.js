@@ -4,7 +4,6 @@ function bulk_upload_inventory_form(technology, sheetname, uploaded_by, current_
     bulk_upload_inventory += '<div class=""><div class="box border red"><div class="box-title"><h4><i class="fa fa-table"></i>Bulk Upload</h4></div>';
     bulk_upload_inventory += '<div class="box-body"><table class="table">';
     bulk_upload_inventory += '<thead><tr><th>Technology</th><th>Sheetname</th><th>Uploaded By</th><th>Current Status</th></tr></thead>';
-    bulk_upload_inventory += '<tbody>';
     bulk_upload_inventory += '<tr>';
     bulk_upload_inventory += '<td contenteditable="true" id="packets">'+technology+'</td>';
     bulk_upload_inventory += '<td contenteditable="true" id="timeout">'+sheetname+'</td>';

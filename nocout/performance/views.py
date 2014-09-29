@@ -24,15 +24,15 @@ import logging
 log = logging.getLogger(__name__)
 
 SERVICE_DATA_SOURCE = {
-    "uas": {"type": "area", "valuesuffix": "seconds", "valuetext": "Seconds", "formula": None},
-    "rssi": {"type": "column", "valuesuffix": "dB", "valuetext": "dB", "formula": None},
-    "uptime": {"type": "line", "valuesuffix": " seconds", "valuetext": "up since (timeticks)", "formula": None},
-    "rta": {"type": "area", "valuesuffix": "ms", "valuetext": "ms", "formula": None},
-    "pl": {"type": "column", "valuesuffix": "%", "valuetext": "Percentage (%)", "formula": None},
-    "service_throughput": {"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
-    "management_port_on_odu": {"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
-    "radio_interface": {"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
-    "availability": {"type": "column", "valuesuffix": " %", "valuetext": " %", "formula": None},
+    "uas": {"display_name": "UAS", "type": "area", "valuesuffix": "seconds", "valuetext": "Seconds", "formula": None},
+    "rssi": {"display_name": "RSSI", "type": "column", "valuesuffix": "dB", "valuetext": "dB", "formula": None},
+    "uptime": {"display_name": "UPTIME", "type": "line", "valuesuffix": " seconds", "valuetext": "up since (timeticks)", "formula": None},
+    "rta": {"display_name": "Latency","type": "area", "valuesuffix": "ms", "valuetext": "ms", "formula": None},
+    "pl": {"display_name": "Packet Drop", "type": "column", "valuesuffix": "%", "valuetext": "Percentage (%)", "formula": None},
+    "service_throughput": {"display_name": "Service throughput", "type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
+    "management_port_on_odu": {"display_name": "Management Port on ODU", "type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
+    "radio_interface": {"display_name": "Radio Interface" ,"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
+    "availability": {"display_name": "Availability", "type": "column", "valuesuffix": " %", "valuetext": " %", "formula": None},
     }
 
 SERVICES = {
@@ -478,6 +478,7 @@ class Get_Perfomance(View):
     def get(self, request, page_type="no_page", device_id=0):
 
         device = Device.objects.get(id=device_id)
+        device_technology = DeviceTechnology.objects.get(id=device.device_technology).name
         realdevice = device
 
         """
@@ -598,6 +599,7 @@ class Get_Perfomance(View):
 
         page_data = {
             'page_title': page_type.capitalize(),
+            'device_technology' : device_technology,
             'device': device,
             'realdevice': realdevice,
             'get_devices_url': 'performance/get_inventory_devices/' + page_type,
@@ -1029,8 +1031,8 @@ class Get_Service_Type_Performance_Data(View):
                 end_date = format(datetime.datetime.now(), 'U')
                 start_date = format(datetime.datetime.now() + datetime.timedelta(weeks=-1), 'U')
             performance_data = Topology.objects.filter(device_name=inventory_device_name,
-                                                                 service_name=service_name,
-                                                                 data_source=service_data_source_type,
+                                                                 # service_name=service_name,
+                                                                 data_source='topology',#service_data_source_type,
                                                                  sys_timestamp__gte=start_date,
                                                                  sys_timestamp__lte=end_date).using(
                                                                  alias=inventory_device_machine_name)
@@ -1171,7 +1173,7 @@ class Get_Service_Type_Performance_Data(View):
         self.result[
             'message'] = 'Device Performance Data Fetched Successfully To Plot Table.' if result_data else 'No Record Found.'
         self.result['data']['objects']['table_data'] = result_data
-        self.result['data']['objects']['table_data_header'] = ['Date', 'Time', 'Value']
+        self.result['data']['objects']['table_data_header'] = ['date', 'time', 'value']
         return self.result
 
     def get_topology_result(self, performance_data):
@@ -1195,7 +1197,7 @@ class Get_Service_Type_Performance_Data(View):
                         'connected_device_ip': data.connected_device_ip,
                         'connected_device_mac': data.connected_device_mac,
                         'date': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%d/%B/%Y"),
-                        'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%I:%M %p"),
+                        'time': datetime.datetime.fromtimestamp(float(data.sys_timestamp)).strftime("%I:%M %p")
                     })
         self.result['success'] = 1
         self.result['message'] = 'Device Data Fetched Successfully.' if result_data else 'No Record Found.'
@@ -1224,6 +1226,11 @@ class Get_Service_Type_Performance_Data(View):
                     continue
                 else:
                     aggregate_data[temp_time] = data.sys_timestamp
+                    self.result['data']['objects']['display_name'] = \
+                        SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["display_name"]\
+                            if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
+                            else str(data.data_source).upper()
+
                     self.result['data']['objects']['type'] = \
                         SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["type"]\
                             if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
@@ -1286,7 +1293,7 @@ class Get_Service_Type_Performance_Data(View):
                             }
 
                         data_list.append(formatter_data_point)
-                        chart_data = [{'name': str(data.data_source).upper(),
+                        chart_data = [{'name': self.result['data']['objects']['display_name'],
                                      'data': data_list,
                                      'type': self.result['data']['objects']['type'],
                                      'valuesuffix': self.result['data']['objects']['valuesuffix'],
@@ -1339,13 +1346,13 @@ class Get_Service_Type_Performance_Data(View):
                         data_list.append(formatter_data_point)
                         warn_data_list.append(formatter_data_point_down)
 
-                        chart_data = [{'name': str(data.data_source).upper(),
+                        chart_data = [{'name': 'Availability',
                                      'data': data_list,
                                      'type': self.result['data']['objects']['type'],
                                      'valuesuffix': self.result['data']['objects']['valuesuffix'],
                                      'valuetext': self.result['data']['objects']['valuetext']
                         },
-                                      {'name': 'UnAvailability'.upper(),
+                                      {'name': 'UnAvailability',
                                      'color': '#FF193B',
                                      'data': warn_data_list,
                                      'type': 'column',

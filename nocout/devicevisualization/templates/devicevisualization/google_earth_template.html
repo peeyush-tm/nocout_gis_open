@@ -25,7 +25,7 @@
         <div class="btn-group">
             <ul class="list-unstyled list-inline gis_page_setting">
                 <li class="alert alert-block alert-info">
-                    <b>Status</b><br/> <span id="gis_status_txt"></span>
+                    <b>Status</b><br/> <ul id="gis_status_txt"></ul>
                 </li>
                 <li><button type="button" id="advSearchBtn" class="btn btn-info" data-complete-text="<i class='fa fa-filter'></i> Advance Search"
                             data-loading-text="Please Wait..." onclick="showAdvSearch();" title="Click to Advance Search">
@@ -56,10 +56,10 @@
                         <li>
                             <button type="button" id="showToolsBtn" class="btn btn-info" onclick="showToolsPanel();" data-complete-text="<i class='fa fa-cog'></i> Tools"
                             data-loading-text="Please Wait...">
-                                <i class='fa fa-cog'></i> Tools
+                                <i class='fa fa-cog'></i> Show Tools
                             </button>
                             <button type="button" id="removeToolsBtn" class="btn btn-danger hide" onclick="removetoolsPanel();">
-                                <i class='fa fa-times'></i> Remove Tools
+                                <i class='fa fa-times'></i> Hide Tools
                             </button>
                         </li>
                     {% endif %}
@@ -120,9 +120,9 @@
                 <li class="hide">Show Connected SS <input type="checkbox" name="showAllSS" id="showAllSS"
                                                           onclick="networkMapInstance.plotAllDevice_gmap()"
                                                           style="vertical-align: text-top;" checked="checked"/></li>
-                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
+                <!-- <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
                                                    onclick="networkMapInstance.showConnectionLines_gmap()"
-                                                   style="vertical-align: text-top;" checked="checked"/></li>
+                                                   style="vertical-align: text-top;" checked="checked"/></li> -->
             </ul>
             <div class="divide-20"></div>
         </div>
@@ -133,21 +133,27 @@
             <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Gmap Tools</h4>
             <ul class="list-unstyled list-inline">
                 <li>
-                    <button type="button" id="ruler_select" class="btn btn-info">Ruler</button>
+                    <button type="button" id="ruler_select" class="btn btn-info">Select Ruler</button>
                     <button type="button" id="ruler_remove" class="btn btn-danger hide">Remove Ruler</button>
                 </li>
                 <li>
                     <button type="button" id="point_select" class="btn btn-info">Add Point</button>
-                    <button type="button" id="point_remove" class="btn btn-danger hide">Remove Point</button>
+                    <button type="button" id="point_remove" class="btn btn-danger hide">Remove Points</button>
                 </li>
                 <li>
-                    <button type="button" id="line_select" class="btn btn-info">Add Line</button>
+                    <button type="button" id="line_select" class="btn btn-info">Select Line</button>
                     <button type="button" id="line_remove" class="btn btn-danger hide">Remove Line</button>
                 </li>
                 <li>
                     <button type="button" id="freeze_select" class="btn btn-info">Freeze</button>
                     <button type="button" id="freeze_remove" class="btn btn-danger hide">Un-Freeze</button>
                 </li>
+                <li>
+                    <input type="checkbox" name="show_hide_label" id="show_hide_label" checked=""> Show Labels
+                </li>
+                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
+                                                   onclick="networkMapInstance.showConnectionLines_gmap()"
+                                                   style="vertical-align: text-top;" checked="checked"/></li>
                 <li>
                     <button type="button" class="btn btn-info">Export Data</button>
                 </li>

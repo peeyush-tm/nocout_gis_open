@@ -11,7 +11,7 @@ from django.utils.safestring import mark_safe
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 from django.utils.translation import ugettext_lazy
-
+from user_profile.models import UserProfile
 
 # inventory model --> mapper of user_group & device groups
 class Inventory(models.Model):
@@ -309,16 +309,26 @@ class ThematicSettings(models.Model):
     """
     ThematicSettings Model Columns Declaration.
     """
-    from user_profile.models import UserProfile
+
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
     threshold_template = models.ForeignKey(ThresholdConfiguration)
     icon_settings =models.TextField(default='NULL')
-    user_profile = models.ManyToManyField(UserProfile)
+    user_profile = models.ManyToManyField(UserProfile, through="UserThematicSettings")
     is_global = models.BooleanField('Global Setting',default=False)
 
     def __unicode__(self):
         return self.name
+
+#user Profile based thematic settings
+class UserThematicSettings(models.Model):
+    """
+    user based thematic settings
+    """
+    user_profile = models.ForeignKey(UserProfile)
+    thematic_template = models.ForeignKey(ThematicSettings)
+    thematic_technology = models.ForeignKey(DeviceTechnology, null=True)
+
 
 
 class GISInventoryBulkImport(models.Model):
