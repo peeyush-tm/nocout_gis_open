@@ -323,21 +323,21 @@ function GisPerformance() {
                     }
                 }
 
-//                //Get Device Markers for the BS.
-//                var deviceMarkers = sectorMarkersMasterObj[String(gisData.basestation_name)];
-//                //Loop through all the devices
-//                for (var k = 0; k < deviceMarkers.length; k++) {
-//                    if (deviceMarkers[i]) {
-//                        //Get the Device Name from the Performance Data
-//                        var deviceObject = this.findObjectbyDeviceName(deviceMarkers[i]["deviceInfo"][0]["value"]);
-//                        //If Icon for the device is provided in performance data
-//                        if (deviceObject["performance_data"]["performance_icon"]) {
-//                            //Update oldIcon for the device to the Given Icon
-//                            deviceMarkers[i].oldIcon = (createGoogleMarker(base_url + '/' + deviceObject["performance_data"]["performance_icon"], deviceMarkers[i]));
-//                        }
-//                    }
-//
-//                }
+               //Get Device Markers for the BS.
+
+               var deviceMarkers = sectorMarkersMasterObj[String(gisData.basestation_name)] ? sectorMarkersMasterObj[String(gisData.basestation_name)] : [];
+               //Loop through all the devices
+               for (var k = 0; k < deviceMarkers.length; k++) {
+                   if (deviceMarkers[i]) {
+                       //Get the Device Name from the Performance Data
+                       var deviceObject = this.findObjectbyDeviceName(deviceMarkers[i]["deviceInfo"][0]["value"]);
+                       //If Icon for the device is provided in performance data
+                       if (deviceObject["performance_data"]["performance_icon"]) {
+                           //Update oldIcon for the device to the Given Icon
+                           deviceMarkers[i].oldIcon = (createGoogleMarker(base_url + '/' + deviceObject["performance_data"]["performance_icon"], deviceMarkers[i]));
+                       }
+                   }
+               }
             }
         } catch (exception) {
             //Pass
