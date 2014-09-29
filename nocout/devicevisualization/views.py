@@ -275,7 +275,7 @@ class Gis_Map_Performance_Data(View):
                     pass
 
                 performance_icon=''
-                if len(str(device_performance_value)):
+                if len(device_performance_value):
                     corrected_device_performance_value = ast.literal_eval(str(device_performance_value))
                     icon_settings_json_string= thematic_settings.icon_settings if thematic_settings.icon_settings!='NULL' else None
                     if icon_settings_json_string:
