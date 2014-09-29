@@ -263,36 +263,31 @@ class Gis_Map_Performance_Data(View):
 
 
                     for perf in device_performance_info:
-                        perf_info = [
-                            {
+                        perf_info = {
                                 "name": perf['data_source'],
                                 "title": " ".join(perf['data_source'].split("_")).title(),
                                 "show": 1,
                                 "value": perf['current_value'],
-                            },
-                        ]
+                            }
                         device_info.append(perf_info)
 
                     for perf in device_inventory_info:
-                        perf_info = [
-                            {
+                        perf_info = {
                                 "name": perf['data_source'],
                                 "title": " ".join(perf['data_source'].split("_")).title(),
                                 "show": 1,
                                 "value": perf['current_value'],
-                            },
-                        ]
+                            }
                         device_info.append(perf_info)
 
                     for perf in device_status_info:
-                        perf_info = [
-                            {
+                        perf_info = {
                                 "name": perf['data_source'],
                                 "title": " ".join(perf['data_source'].split("_")).title(),
                                 "show": 1,
                                 "value": perf['current_value'],
-                            },
-                        ]
+                            }
+
                         device_info.append(perf_info)
 
                 except Exception as e:
