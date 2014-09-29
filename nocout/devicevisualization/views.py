@@ -8,7 +8,7 @@ from django.views.generic import View
 from device.models import Device, DeviceFrequency, DeviceTechnology
 from inventory.models import ThematicSettings, UserThematicSettings
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, PerformanceStatus, PerformanceInventory, \
-    PerformanceNetwork, PerformanceService
+    PerformanceNetwork, PerformanceService, Status
 from user_profile.models import UserProfile
 from django.views.decorators.csrf import csrf_exempt
 import re, ast
@@ -95,12 +95,27 @@ class Gis_Map_Performance_Data(View):
             return HttpResponse(json.dumps({'result':'No Performance Data'}))
 
         def get_device_performance(self, device_name):
-            performance_data={}
             device_performance_value = ''
             device_frequency = ''
             device_pl = ''
             device_link_color=None
             freeze_time= self.request.GET.get('freeze_time','0')
+            performance_data= {
+                'frequency':device_frequency,
+                'pl':device_pl,
+                'color':device_link_color,
+                'performance_paramter':"",
+                'performance_value':device_performance_value,
+                'performance_icon': "",
+                'device_info' : [
+                    {
+                        "name": "",
+                        "title": "",
+                        "show": 0,
+                        "value": ""
+                     },
+                ],
+            }
             try:
                 device= Device.objects.get(device_name= device_name, is_added_to_nms=1, is_deleted=0)
                 device_technology = DeviceTechnology.objects.get(id=device.device_technology)
@@ -231,6 +246,53 @@ class Gis_Map_Performance_Data(View):
                                 logger.exception(e.message)
                                 continue
 
+                device_info = []
+                try:
+                    #to update the info window with all the services
+                    device_performance_info = ServiceStatus.objects.filter(device_name=device_name).values(
+                        'data_source','current_value','sys_timestamp'
+                    ).using(alias=device_machine_name)
+
+                    device_inventory_info = InventoryStatus.objects.filter(device_name=device_name).values(
+                        'data_source','current_value','sys_timestamp'
+                    ).using(alias=device_machine_name)
+
+                    device_status_info = Status.objects.filter(device_name=device_name).values(
+                        'data_source','current_value','sys_timestamp'
+                    ).using(alias=device_machine_name)
+
+
+                    for perf in device_performance_info:
+                        perf_info = {
+                                "name": perf['data_source'],
+                                "title": " ".join(perf['data_source'].split("_")).title(),
+                                "show": 1,
+                                "value": perf['current_value'],
+                            }
+                        device_info.append(perf_info)
+
+                    for perf in device_inventory_info:
+                        perf_info = {
+                                "name": perf['data_source'],
+                                "title": " ".join(perf['data_source'].split("_")).title(),
+                                "show": 1,
+                                "value": perf['current_value'],
+                            }
+                        device_info.append(perf_info)
+
+                    for perf in device_status_info:
+                        perf_info = {
+                                "name": perf['data_source'],
+                                "title": " ".join(perf['data_source'].split("_")).title(),
+                                "show": 1,
+                                "value": perf['current_value'],
+                            }
+
+                        device_info.append(perf_info)
+
+                except Exception as e:
+                    logger.exception(e.message)
+                    pass
 
                 performance_data= {
                     'frequency':device_frequency,
@@ -241,8 +303,8 @@ class Gis_Map_Performance_Data(View):
                     'performance_icon':"media/"+str(performance_icon)
                                         if "uploaded" in str(performance_icon)
                                         else ("static/img/" + str(performance_icon) if len(str(performance_icon)) else ""),
+                    'device_info' : device_info
                 }
-                logger.debug(performance_data)
             except Exception as e:
                 logger.info(e.message, exc_info=True)
                 pass
