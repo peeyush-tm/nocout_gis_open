@@ -24,15 +24,15 @@ import logging
 log = logging.getLogger(__name__)
 
 SERVICE_DATA_SOURCE = {
-    "uas": {"type": "area", "valuesuffix": "seconds", "valuetext": "Seconds", "formula": None},
-    "rssi": {"type": "column", "valuesuffix": "dB", "valuetext": "dB", "formula": None},
-    "uptime": {"type": "line", "valuesuffix": " seconds", "valuetext": "up since (timeticks)", "formula": None},
-    "rta": {"type": "area", "valuesuffix": "ms", "valuetext": "ms", "formula": None},
-    "pl": {"type": "column", "valuesuffix": "%", "valuetext": "Percentage (%)", "formula": None},
-    "service_throughput": {"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
-    "management_port_on_odu": {"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
-    "radio_interface": {"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
-    "availability": {"type": "column", "valuesuffix": " %", "valuetext": " %", "formula": None},
+    "uas": {"display_name": "UAS", "type": "area", "valuesuffix": "seconds", "valuetext": "Seconds", "formula": None},
+    "rssi": {"display_name": "RSSI", "type": "column", "valuesuffix": "dB", "valuetext": "dB", "formula": None},
+    "uptime": {"display_name": "UPTIME", "type": "line", "valuesuffix": " seconds", "valuetext": "up since (timeticks)", "formula": None},
+    "rta": {"display_name": "Latency","type": "area", "valuesuffix": "ms", "valuetext": "ms", "formula": None},
+    "pl": {"display_name": "Packet Drop", "type": "column", "valuesuffix": "%", "valuetext": "Percentage (%)", "formula": None},
+    "service_throughput": {"display_name": "Service throughput", "type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
+    "management_port_on_odu": {"display_name": "Management Port on ODU", "type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
+    "radio_interface": {"display_name": "Radio Interface" ,"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
+    "availability": {"display_name": "Availability", "type": "column", "valuesuffix": " %", "valuetext": " %", "formula": None},
     }
 
 SERVICES = {
@@ -1226,6 +1226,11 @@ class Get_Service_Type_Performance_Data(View):
                     continue
                 else:
                     aggregate_data[temp_time] = data.sys_timestamp
+                    self.result['data']['objects']['display_name'] = \
+                        SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["display_name"]\
+                            if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
+                            else str(data.data_source).upper()
+
                     self.result['data']['objects']['type'] = \
                         SERVICE_DATA_SOURCE[str(data.data_source).strip().lower()]["type"]\
                             if str(data.data_source).strip().lower() in SERVICE_DATA_SOURCE \
@@ -1288,7 +1293,7 @@ class Get_Service_Type_Performance_Data(View):
                             }
 
                         data_list.append(formatter_data_point)
-                        chart_data = [{'name': str(data.data_source).upper(),
+                        chart_data = [{'name': self.result['data']['objects']['display_name'],
                                      'data': data_list,
                                      'type': self.result['data']['objects']['type'],
                                      'valuesuffix': self.result['data']['objects']['valuesuffix'],
@@ -1341,13 +1346,13 @@ class Get_Service_Type_Performance_Data(View):
                         data_list.append(formatter_data_point)
                         warn_data_list.append(formatter_data_point_down)
 
-                        chart_data = [{'name': str(data.data_source).upper(),
+                        chart_data = [{'name': 'Availability',
                                      'data': data_list,
                                      'type': self.result['data']['objects']['type'],
                                      'valuesuffix': self.result['data']['objects']['valuesuffix'],
                                      'valuetext': self.result['data']['objects']['valuetext']
                         },
-                                      {'name': 'UnAvailability'.upper(),
+                                      {'name': 'UnAvailability',
                                      'color': '#FF193B',
                                      'data': warn_data_list,
                                      'type': 'column',

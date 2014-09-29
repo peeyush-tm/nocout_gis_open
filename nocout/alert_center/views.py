@@ -64,7 +64,7 @@ def getCustomerAlertDetail(request):
     """
     datatable_headers = [
         {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
-        {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
+        {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'device_type', 'sTitle': 'Device type', 'sWidth': 'null', 'sClass': 'hidden-xs',
         'bSortable': True},
@@ -83,6 +83,7 @@ def getCustomerAlertDetail(request):
         {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
+        {'mData': 'customer_name', 'sTitle': 'Customer Name', 'sWidth': 'null', 'bSortable': True},
         {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': False},
         ]
@@ -97,9 +98,9 @@ class GetCustomerAlertDetail(BaseDatatableView):
     """
     model = EventNetwork
     columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
-               'current_value', 'sys_timestamp', 'description']
+               'current_value', 'sys_timestamp', 'description', 'customer_name']
     order_columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
-                     'current_value', 'sys_timestamp', 'description']
+                     'current_value', 'sys_timestamp', 'description', 'customer_name']
 
     def filter_queryset(self, qs):
         """
@@ -271,7 +272,7 @@ def getNetworkAlertDetail(request):
     """
     datatable_headers = [
         {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
-        {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
+        {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'device_type', 'sTitle': 'Device Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
         'bSortable': True},
@@ -490,7 +491,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                                 'device_name': data["device_name"],
                                 'device_type': device_type,
                                 'severity': data['severity'],
-                                #'ip_address': data["ip_address"],
+                                'ip_address': data["ip_address"],
                                 'base_station': basestation_objects.name if basestation_objects else "N/A",
                                 'circuit_id': circuit_object.circuit_id if circuit_object else "N/A",
                                 'sector_id': sector_objects.sector_id if sector_objects else "N/A",
@@ -531,7 +532,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                                         'device_name': data["device_name"],
                                         'device_type': device_type,
                                         'severity': data['severity'],
-                                        #'ip_address': data["ip_address"],
+                                        'ip_address': data["ip_address"],
                                         'base_station': basestation_objects.name if basestation_objects else "N/A",
                                         'circuit_id': circuit_object.circuit_id if circuit_object else "N/A",
                                         'sector_id': sector_objects.sector_id if sector_objects else "N/A",
@@ -628,21 +629,19 @@ class AlertCenterNetworkListing(ListView):
         """
         context = super(AlertCenterNetworkListing, self).get_context_data(**kwargs)
         data_source=self.kwargs.get('data_source','')
-        data_source_title = data_source.title() \
-                            if data_source in ["latency", "packet_drop"] \
-                            else ("value".title() if data_source in ["service"] else "packet drop".title())
+        data_source_title = "Latency Average (ms) " \
+                            if data_source in ["latency"] \
+                            else ("value".title() if data_source in ["service"] else "packet drop (%)".title())
 
         data_tab = self.request.GET.get('data_tab','P2P')
 
         datatable_headers = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
-            {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
+            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': True},
             # {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'null', 'sClass': 'hidden-xs',
             #  'bSortable': True},
             {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': True},
             # {'mData': 'sub_station', 'sTitle': 'Sub Station', 'sWidth': 'null', 'sClass': 'hidden-xs',
             #  'bSortable': True},
             {'mData': 'city', 'sTitle': 'City', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -861,8 +860,7 @@ class CustomerAlertList(ListView):
         data_source=self.kwargs.get('data_source','')
         datatable_headers = [
             {'mData': 'severity', 'sTitle': '', 'sWidth': '40px', 'bSortable': True},
-            {'mData': 'device_name', 'sTitle': 'Device Name', 'sWidth': 'null', 'sClass': 'hidden-xs',
-             'bSortable': True},
+            {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'null', 'sClass': 'hidden-xs', 'bSortable': True},
             # {'mData': 'device_technology', 'sTitle': 'Tech', 'sWidth': 'null', 'sClass': 'hidden-xs',
             #  'bSortable': True},
             {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'null', 'sClass': 'hidden-xs',
@@ -880,12 +878,13 @@ class CustomerAlertList(ListView):
              'bSortable': True},
             {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True},
-            {'mData': 'current_value', 'sTitle': 'Packet Drop %', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'current_value', 'sTitle': 'Packet Drop (%)', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True }
              if data_source.lower() in ['down','packet_drop'] else
-            {'mData': 'current_value', 'sTitle': 'Latency Average(ms)', 'sWidth': 'null', 'sClass': 'hidden-xs',
+            {'mData': 'current_value', 'sTitle': 'Latency Average (ms) ', 'sWidth': 'null', 'sClass': 'hidden-xs',
              'bSortable': True },
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'null', 'bSortable': True},
+            {'mData': 'customer_name', 'sTitle': 'Customer Name', 'sWidth': 'null', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'null', 'bSortable': True},
             ]
 
@@ -904,9 +903,9 @@ class CustomerAlertListingTable(BaseDatatableView):
     """
     model = EventNetwork
     columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
-               'current_value', 'sys_timestamp', 'description']
+               'current_value', 'sys_timestamp', 'description', 'customer_name']
     order_columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
-                     'current_value', 'sys_timestamp', 'description']
+                     'current_value', 'sys_timestamp', 'description', 'customer_name']
 
     def filter_queryset(self, qs):
         """
@@ -957,6 +956,7 @@ class CustomerAlertListingTable(BaseDatatableView):
 
         required_data_columns = ["id",
                                  "data_source",
+                                 "ip_address",
                                  "device_name",
                                  "severity",
                                  "current_value",
@@ -1395,7 +1395,7 @@ def common_get_performance_data(model=EventNetwork,
     :return:
     """
     if not columns:
-        columns = ["id", "service_name", "device_name", "data_source", "severity", "current_value", "sys_timestamp",
+        columns = ["id", "service_name", "ip_address", "device_name", "data_source", "severity", "current_value", "sys_timestamp",
                    "description"]
 
     query = prepare_query(table_name=table_name,
@@ -1616,6 +1616,7 @@ def prepare_alert_results(device_list, performance_data):
         circuit_objects = None
         basestation_objects = None
         sector_objects = None
+        customer_objects = None
 
         try:
             city_objects = City.objects.prefetch_related('state').get(id=device_object.city)
@@ -1636,6 +1637,8 @@ def prepare_alert_results(device_list, performance_data):
                         circuit_object = circuit_objects[0]
                         sector_objects = circuit_object.sector
                         basestation_objects = sector_objects.base_station
+                        customer_objects = circuit_object.customer
+
                 except Exception as e:
                     #database is in correct
                     # we either have multiple circuits present on the same device. that is same
@@ -1650,12 +1653,13 @@ def prepare_alert_results(device_list, performance_data):
                         'device_name': data["device_name"],
                         'device_type': device_type,
                         'severity': data['severity'],
-                        #'ip_address': data["ip_address"],
+                        'ip_address': data["ip_address"],
                         'base_station': basestation_objects.name if basestation_objects else "N/A",
                         'circuit_id': circuit_object.circuit_id if circuit_objects else "N/A",
                         'sector_id': sector_objects.sector_id if sector_objects else "N/A",
                         'city': city_objects.city_name if city_objects else "N/A",
                         'state': state_object.state_name if state_object else "N/A",
+                        'customer_name': customer_objects.alias if customer_objects else "N/A",
                         'data_source_name': data["data_source"],
                         'current_value': data["current_value"],
                         'max_value': data["max_value"],
@@ -1677,6 +1681,7 @@ def prepare_alert_results(device_list, performance_data):
                     if len(circuit_objects):
                         circuit_object = circuit_objects[0]
                         try:
+                            customer_objects = circuit_object.customer
                             sector_objects = circuit_object.sector
                             basestation_objects = sector_objects.base_station
                         except Exception as e:
@@ -1692,12 +1697,13 @@ def prepare_alert_results(device_list, performance_data):
                             'device_name': data["device_name"],
                             'device_type': device_type,
                             'severity': data['severity'],
-                            #'ip_address': data["ip_address"],
+                            'ip_address': data["ip_address"],
                             'base_station': basestation_objects.name if basestation_objects else "N/A",
                             'circuit_id': circuit_object.circuit_id if circuit_objects else "N/A",
                             'sector_id': sector_objects.sector_id if sector_objects else "N/A",
                             'city': city_objects.city_name if city_objects else "N/A",
                             'state': state_object.state_name if state_object else "N/A",
+                            'customer_name': customer_objects.alias if customer_objects else "N/A",
                             'data_source_name': data["data_source"],
                             'current_value': data["current_value"],
                             'max_value': data["max_value"],

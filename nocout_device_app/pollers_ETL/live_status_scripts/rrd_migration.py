@@ -9,6 +9,7 @@ This script collects and stores data for all services running on all configured 
 from nocout_site_name import *
 import os
 import demjson,json
+from pprint import pformat
 import re
 from datetime import datetime, timedelta
 from xml.etree import ElementTree as ET
@@ -21,6 +22,8 @@ utility_module = imp.load_source('utility_functions', '/omd/sites/%s/nocout/util
 mongo_module = imp.load_source('mongo_functions', '/omd/sites/%s/nocout/utils/mongo_functions.py' % nocout_site_name)
 config_module = imp.load_source('configparser', '/omd/sites/%s/nocout/configparser.py' % nocout_site_name)
 
+# Logger would write all activities to rrd_migration.log file
+
 def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 	"""
 	Function name: build_export  (function export data from the rrdtool (which stores the period data) for all services for particular host
@@ -31,7 +34,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
                 mongo_db (mongo db connection),mongo_port(port for mongodb)
 	Return : None
         Raises:
-	     Exception: IOError 
+	    Exception: None
 	"""
 	_folder = '/omd/sites/%s/var/pnp4nagios/perfdata/%s/' % (site,host)
 	xml_file_list = []
@@ -46,9 +49,8 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 	interface_oriented_services = [
 			'cambium_ul_rssi',
 			'cambium_ul_jitter',
-			'cambium_ul_regcount',
-			'cambium_regcount',
-			'cambium_reregcount',
+			'cambium_reg_count',
+			'cambium_rereg_count',
 			'cambium_ss_connected_bs_ip_invent'
 			]
 	data_dict = {
@@ -107,7 +109,6 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
                         	interface = serv_disc[-17:]
                                 interface = interface.replace('_', ':')
 				service_for_livestatus = root.find("NAGIOS_DISP_SERVICEDESC").text.strip()
-                                print "interface", interface
                         	status_dict['service'] = serv_disc[:-18]
 				serv_disc = serv_disc[:-18]
 			else:
@@ -120,7 +121,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		# Extracts the performance data from the rrdtool for services
 		try:
 			if service_for_livestatus == 'ping':
-				query_string = "GET services\nColumns: host_state\nFilter: host_name = %s\nOutputFormat: json\n" % (host)
+				query_string = "GET hosts\nColumns: host_state last_check host_perf_data\nFilter: host_name = %s\nOutputFormat: json\n" % (host)
 				query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
 				if query_output:
 					service_state = (query_output[0][0])
@@ -128,15 +129,15 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 						service_state = "up"
 					elif service_state == 1:
 						service_state = "down"
+					perf_out = query_output[0][2]
+					last_check = query_output[0][1]
 				else:
 					service_state= "UNKNOWN"
 					
 			else:
-				query_string = "GET services\nColumns: service_state\nFilter: " + \
+				query_string = "GET services\nColumns: service_state last_check service_perf_data\nFilter: " + \
 				"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (service_for_livestatus,host)
 				query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
-                                print 'query string', query_string
-   				print 'query out', query_output
 				if query_output:
 					service_state = (query_output[0][0])
 					if service_state == 0:
@@ -147,61 +148,84 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 						service_state = "CRITICAL"
 					elif service_state == 3:
 						service_state = "UNKNOWN"
+					perf_out = query_output[0][2]
+					last_check = query_output[0][1]
 				else:
 					service_state = "UNKNOWN"
 		except:
 			service_state= "UNKNOWN"
-		
+	
+			#cur = db.device_service_status.find({"host":host,"service":serv_disc}).sort("_id",-1).limit(1)
 		threshold_values = get_threshold(perf_data)
+		print "...............perf_data........."
+		print perf_out
+		data_values_dict = get_threshold(perf_out)
 		for ds in root.findall('DATASOURCE'):
 			params.append(ds.find('NAME').text)
 			file_paths.append(ds.find('RRDFILE').text)
 		for i, path in enumerate(file_paths):
 			if params[file_paths.index(path)] == 'rtmin' or params[file_paths.index(path)] == 'rtmax':
 				continue
-			m = -5
 			ds_index = params[file_paths.index(path)]
 			if i == 0:
-	    			# Data will be exported from last inserted entry in mongodb uptill current time
+				# Data will be exported from last inserted entry in mongodb uptill current time
 				start_time = mongo_module.get_latest_entry(db_type='mongodb', db=db, table_name=None,
-								host=host, serv=data_dict['service'], ds=ds_index)
-			data_series = do_export(site, host, path, ds_index, start_time, data_dict['service'])
-                        if len(data_series) == 0:
-                            continue
+				host=replaced_host, serv=data_dict['service'], ds=ds_index)
+			
 			data_dict.update({
-				"check_time": data_series.get('check_time'),
-				"local_timestamp": data_series.get('local_timestamp'),
-				"site": data_series.get('site')
-				})
+				"check_time": datetime.fromtimestamp(last_check),
+				"local_timestamp": pivot_timestamp_fwd(datetime.fromtimestamp(last_check)),
+				"site":site
+			})
 			
 			status_dict.update({
-				"check_time": data_series.get('check_time'),
-				"local_timestamp": data_series.get('local_timestamp'),
-				"site": data_series.get('site')
-				})
+				"check_time": datetime.fromtimestamp(last_check),
+				"local_timestamp": pivot_timestamp_fwd(datetime.fromtimestamp(last_check)),
+				"site": site
+			})
 			data_dict['ds'] = ds_index
 
-			status_dict['ds'] = ds_index
-			ds_values = data_series['data'][:-1]
-			start_time = mongo_module.get_latest_entry(db_type='mongodb', db=db, table_name=None,
-                                                                host=host, serv=data_dict['service'], ds=ds_index)
-			for d in ds_values:
-				if d[-1] is not None:
-					m += 5
+                        status_dict['ds'] = ds_index
+			try:
+				print data_values_dict,host,serv_disc
+				if  perf_out and data_values_dict.get(ds_index).get('cur'):
+					if ds_index == 'pl':
+						data_value= data_values_dict.get(ds_index).get('cur').strip('%')
+					else:
+						data_value =  data_values_dict.get(ds_index).get('cur')
 					temp_dict = dict(
-						time=data_series.get('check_time') + timedelta(minutes=m),
-						value=d[-1]
+							time = pivot_timestamp_fwd(datetime.fromtimestamp(last_check)),
+							value = eval(data_value)
 					)
-					# forcing to not add deuplicate entry in mongo db. currenltly suppose at time 45.00 50.00 data comes in
-					# in one iteration then in second iteration 50.00 55.00 data comes .So Not adding second iteration
-					# 50.00 data again.
 					if ds_index == 'rta':
-						temp_dict.update({"min_value":d[-3],"max_value":d[-2]}) 
-					if start_time == temp_dict.get('time'):
-						data_dict.update({"local_timestamp":temp_dict.get('time')+timedelta(minutes=5),
-						"check_time":temp_dict.get('time')+ timedelta(minutes=5)})
-						continue
+						if data_values_dict.get('rtmin').get('cur'):
+							min_value = eval(data_values_dict.get('rtmin').get('cur'))
+						else:
+							min_value = None
+						if data_values_dict.get('rtmax').get('cur'):
+							max_value = eval(data_values_dict.get('rtmax').get('cur'))
+						else:
+							max_value = None
+						temp_dict.update({"min_value": min_value,
+						"max_value":max_value})
 					data_dict.get('data').append(temp_dict)
+					status_dict.get('data').append(temp_dict)	
+				else:
+					print "Error in collecting performance data from the Live query"
+					print replaced_host
+					status = collect_data_from_rrd(db,site,path,host,replaced_host,data_dict['service'],ds_index,
+						 start_time,data_dict,status_dict)
+					print data_dict
+					if status == 1:
+						continue
+			except:
+				print "error in collecting performance data from the Live query"
+				print replaced_host
+				status= collect_data_from_rrd(db,site,path,host,replaced_host,data_dict['service'],ds_index,
+					start_time,data_dict,status_dict) 
+				print data_dict
+				if status == 1:
+					continue
 			if interface:
 				# Write code for extracting the SS ip and SS host_name from mac and store
 				ss_device = get_ss(host=replaced_host, interface=interface)
@@ -213,13 +237,12 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
                                 replaced_ip = ss_device
 			data_dict['meta'] = threshold_values.get(ds_index)
 			# dictionariers to hold values for the service status tables
-			status_dict.get('data').append(temp_dict)	
 			status_dict['meta'] = threshold_values.get(ds_index)
-			status_dict.update({"local_timestamp":temp_dict.get('time'),"check_time":temp_dict.get('time')})
+			#status_dict.update({"local_timestamp":temp_dict.get('time'),"check_time":temp_dict.get('time')})
 			
 			data_dict['severity'] = service_state
 			status_dict['severity'] = service_state
-			matching_criteria.update({'host':str(host),'service':data_dict['service'],'site':site,'ds':ds_index})
+			matching_criteria.update({'host':replaced_host,'service':data_dict['service'],'site':site,'ds':ds_index})
 			if xml_file == '_HOST_.xml':
 				mongo_module.mongo_db_update(db,matching_criteria,status_dict,"network_perf_data")
 				mongo_module.mongo_db_insert(db,data_dict,"network_perf_data")
@@ -254,8 +277,6 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 
 
 def get_ss(host=None, interface=None):
-        print 'host', host
-        print 'interface', interface
 	ss_device = None
 	global nocout_site_name
         l_host_vars = {
@@ -272,19 +293,12 @@ def get_ss(host=None, interface=None):
 	}
 	# path to hosts file
 	hosts_file = '/omd/sites/%s/etc/check_mk/conf.d/wato/hosts.mk' % nocout_site_name
-        print 'hosts_file', hosts_file
 	try:
 		execfile(hosts_file, l_host_vars, l_host_vars)
 		del l_host_vars['__builtins__']
-                print 'all_hosts'
-                print l_host_vars['all_hosts']
 		host_row = filter(lambda t: re.match(interface, t.split('|')[1]) \
 				and re.match(host, t.split('|')[2]), l_host_vars['all_hosts'])
-                print "-- host_row --"
-                print host_row
 		ss_device = host_row[0].split('|')[0]
-                print "-- ss_device --"
-                print ss_device
 	except Exception, e:
 		raise Exception, e
 
@@ -327,7 +341,7 @@ def do_export(site, host, file_name,data_source, start_time, serv):
     if start_time is None:
         start_time = end_time - timedelta(minutes=6)
     else:
-	start_time = start_time - timedelta(minutes=1)
+	start_time = start_time + timedelta(minutes=1)
 
     #end_time = datetime.now() - timedelta(minutes=10)
     #start_time = end_time - timedelta(minutes=5)
@@ -339,8 +353,9 @@ def do_export(site, host, file_name,data_source, start_time, serv):
     #start_epoch -= 19800
     #end_epoch -= 19800
 
-    print start_epoch,end_epoch
     # Command for rrdtool data extraction
+    if start_time > end_time:
+	return
     cmd = '/omd/sites/%s/bin/rrdtool xport --json --daemon unix:/omd/sites/%s/tmp/run/rrdcached.sock -s %s -e %s --step 300 '\
         %(site,site, str(start_epoch), str(end_epoch))
     RRAs = ['MIN','MAX','AVERAGE']
@@ -431,7 +446,28 @@ def pivot_timestamp(timestamp):
     """
     t_stmp = timestamp + timedelta(minutes=-(timestamp.minute % 5))
 
+  
     return t_stmp
+
+def pivot_timestamp_fwd(timestamp):
+    """
+    Function_name : pivot_timestamp (function for pivoting the time to 5 minutes interval)
+
+    Args: timestamp
+
+    Kwargs: None
+    return:
+           t_stmp (pivoted time stamp)
+    Exception:
+           None
+    """
+    t_stmp = timestamp + timedelta(minutes=-(timestamp.minute % 5))
+    if (timestamp.minute %5) != 0:
+    	t_stmp = t_stmp + timedelta(minutes=5)
+
+  
+    return t_stmp
+
 
 
 def db_port(site_name=None):
@@ -536,9 +572,68 @@ def rrd_migration_main(site,host,services,ip, mongo_host, mongo_db, mongo_port):
 	    Exception : None
 	"""
 	build_export(site, host, ip, mongo_host, mongo_db, mongo_port)
-        #for service in services[0]:
 
 """if __name__ == '__main__':
     build_export('BT','AM-400','PING')
 """
 
+
+def collect_data_from_rrd(db,site,path,host,replaced_host,service,ds_index,start_time,data_dict,status_dict):
+
+	service_data_type = {
+		"radwin_rssi" : int,
+		"radwin_uas"  : int,
+		"radwin_uptime": int,
+		"radwin_service_throughput" : float,
+		"radwin_dl_utilization": int,
+		"radwin_ul_utilization" : int
+	}
+
+	m = -5
+	data_series = do_export(site, host, path, ds_index, start_time, service)
+	if data_series is None:
+		return 1
+	data_dict.update({
+		"check_time": data_series.get('check_time'),
+		"local_timestamp": data_series.get('local_timestamp'),
+		"site": data_series.get('site')
+        })
+	status_dict.update({
+		"check_time": data_series.get('check_time'),
+		"local_timestamp": data_series.get('local_timestamp'),
+		"site": data_series.get('site')
+        })
+ 
+	data_dict['ds'] = ds_index
+
+	status_dict['ds'] = ds_index
+			
+	ds_values = data_series['data'][:-1]
+
+	start_time = mongo_module.get_latest_entry(db_type='mongodb', db=db, table_name=None,
+                                                                host=replaced_host, serv=data_dict['service'], ds=ds_index)
+	temp_dict = {}
+	for d in ds_values:
+		if d[-1] is not None:
+			m += 5
+			if service in service_data_type:
+				d_type = service_data_type[service]
+			else:
+				d_type = float
+					
+			temp_dict = dict(
+					time=data_series.get('check_time') + timedelta(minutes=m),
+						value=d_type(d[-1]))
+			# forcing to not add deuplicate entry in mongo db. currenltly suppose at time 45.00 50.00 data comes in
+			# in one iteration then in second iteration 50.00 55.00 data comes .So Not adding second iteration
+			# 50.00 data again.
+			if ds_index == 'rta':
+				temp_dict.update({"min_value":d[-3],"max_value":d[-2]}) 
+			if start_time == temp_dict.get('time'):
+				data_dict.update({"local_timestamp":temp_dict.get('time')+timedelta(minutes=5),
+				"check_time":temp_dict.get('time')+ timedelta(minutes=5)})
+				continue
+			data_dict.get('data').append(temp_dict)
+	if len(temp_dict):
+		status_dict.get('data').append(temp_dict)
+		status_dict.update({"local_timestamp":temp_dict.get('time'),"check_time":temp_dict.get('time')})
