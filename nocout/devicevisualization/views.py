@@ -95,12 +95,19 @@ class Gis_Map_Performance_Data(View):
             return HttpResponse(json.dumps({'result':'No Performance Data'}))
 
         def get_device_performance(self, device_name):
-            performance_data={}
             device_performance_value = ''
             device_frequency = ''
             device_pl = ''
             device_link_color=None
             freeze_time= self.request.GET.get('freeze_time','0')
+            performance_data= {
+                'frequency':device_frequency,
+                'pl':device_pl,
+                'color':device_link_color,
+                'performance_paramter':"",
+                'performance_value':device_performance_value,
+                'performance_icon': "",
+            }
             try:
                 device= Device.objects.get(device_name= device_name, is_added_to_nms=1, is_deleted=0)
                 device_technology = DeviceTechnology.objects.get(id=device.device_technology)
@@ -231,7 +238,6 @@ class Gis_Map_Performance_Data(View):
                                 logger.exception(e.message)
                                 continue
 
-
                 performance_data= {
                     'frequency':device_frequency,
                     'pl':device_pl,
@@ -242,7 +248,6 @@ class Gis_Map_Performance_Data(View):
                                         if "uploaded" in str(performance_icon)
                                         else ("static/img/" + str(performance_icon) if len(str(performance_icon)) else ""),
                 }
-                logger.debug(performance_data)
             except Exception as e:
                 logger.info(e.message, exc_info=True)
                 pass
