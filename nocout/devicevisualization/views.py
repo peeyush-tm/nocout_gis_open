@@ -8,7 +8,7 @@ from django.views.generic import View
 from device.models import Device, DeviceFrequency, DeviceTechnology
 from inventory.models import ThematicSettings, UserThematicSettings
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, PerformanceStatus, PerformanceInventory, \
-    PerformanceNetwork, PerformanceService
+    PerformanceNetwork, PerformanceService, Status
 from user_profile.models import UserProfile
 from django.views.decorators.csrf import csrf_exempt
 import re, ast
@@ -253,7 +253,38 @@ class Gis_Map_Performance_Data(View):
                         'data_source','current_value','sys_timestamp'
                     ).using(alias=device_machine_name)
 
+                    device_inventory_info = InventoryStatus.objects.filter(device_name=device_name).values(
+                        'data_source','current_value','sys_timestamp'
+                    ).using(alias=device_machine_name)
+
+                    device_status_info = Status.objects.filter(device_name=device_name).values(
+                        'data_source','current_value','sys_timestamp'
+                    ).using(alias=device_machine_name)
+
+
                     for perf in device_performance_info:
+                        perf_info = [
+                            {
+                                "name": perf['data_source'],
+                                "title": " ".join(perf['data_source'].split("_")).title(),
+                                "show": 1,
+                                "value": perf['current_value'],
+                            },
+                        ]
+                        device_info.append(perf_info)
+
+                    for perf in device_inventory_info:
+                        perf_info = [
+                            {
+                                "name": perf['data_source'],
+                                "title": " ".join(perf['data_source'].split("_")).title(),
+                                "show": 1,
+                                "value": perf['current_value'],
+                            },
+                        ]
+                        device_info.append(perf_info)
+
+                    for perf in device_status_info:
                         perf_info = [
                             {
                                 "name": perf['data_source'],
