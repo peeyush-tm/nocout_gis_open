@@ -154,6 +154,7 @@ class Gis_Map_Performance_Data(View):
                                                                         .order_by('-sys_timestamp')[:1]\
                                                                         .get().current_value
                 except Exception as e:
+                    logger.info(device)
                     logger.info(e.message)
                     device_frequency=''
                     pass
@@ -175,6 +176,7 @@ class Gis_Map_Performance_Data(View):
                                                                 order_by('-sys_timestamp')[:1].\
                                                                 get().current_value
                 except Exception as e:
+                    logger.info(device)
                     logger.info(e.message)
                     device_pl=''
                     pass
@@ -188,6 +190,7 @@ class Gis_Map_Performance_Data(View):
                             if int(chek_dev_freq) > 10:
                                 corrected_dev_freq = chek_dev_freq
                         except Exception as e:
+                            logger.info(device)
                             logger.exception("Frequency is Empty : %s" %(e.message))
 
                         device_frequency_object = DeviceFrequency.objects.get(value__icontains=str(corrected_dev_freq))
@@ -228,7 +231,7 @@ class Gis_Map_Performance_Data(View):
 
                     else:
                         device_link_color=''
-
+                    logger.info(device)
                     logger.info(e.message)
                     pass
 
@@ -252,6 +255,7 @@ class Gis_Map_Performance_Data(View):
                                                                                .get().current_value
 
                 except Exception as e:
+                    logger.info(device)
                     device_performance_value=''
                     logger.info(e.message)
                     pass
@@ -276,6 +280,7 @@ class Gis_Map_Performance_Data(View):
                                 if (float(range_start)) <= float(corrected_device_performance_value) <= (float(range_end)):
                                     performance_icon= data.values()[0]
                             except Exception as e:
+                                logger.info(device)
                                 logger.exception(e.message)
                                 continue
 
@@ -324,6 +329,7 @@ class Gis_Map_Performance_Data(View):
                         device_info.append(perf_info)
 
                 except Exception as e:
+                    logger.info(device)
                     logger.exception(e.message)
                     pass
 
@@ -340,6 +346,7 @@ class Gis_Map_Performance_Data(View):
                     'sector_info' : sector_info
                 }
             except Exception as e:
+                logger.info(device)
                 logger.info(e.message, exc_info=True)
                 pass
             return performance_data
