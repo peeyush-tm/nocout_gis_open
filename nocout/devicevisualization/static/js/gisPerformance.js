@@ -132,9 +132,10 @@ function GisPerformance() {
 				//If data is there
 				if(data) {
 					//Store data in gisData
-					gisPerformance_this.gisData= data;
-
-					if(recallPerf != "") {
+					gisPerformance_this.gisData = data;
+					var current_bs_list = getMarkerInCurrentBound();
+					/*Check that the bsname is present in current bounds or not*/
+					if(current_bs_list.indexOf(data.basestation_name) >= 0) {
 						//Update Map with the data
 						gisPerformance_this.updateMap();
 					}
