@@ -161,6 +161,14 @@ def prepare_result(base_station_id):
                         'title':'BS Type',
                         'show':1,
                         'value': base_station.bs_type if base_station.bs_type else 'N/A'
+                    },
+                    {
+                        'name':'bs_switch',
+                        'title':'BS Switch',
+                        'show':1,
+                        'value': base_station.bs_switch
+                                if (base_station and base_station.bs_switch and base_station.bs_switch.ip_address)
+                                else 'N/A'
                     }
                 ],
                 'backhual': [
@@ -193,6 +201,28 @@ def prepare_result(base_station_id):
                         'title': 'BH Connectivity',
                         'show': 1,
                         'value': backhaul.bh_connectivity if backhaul else 'N/A'
+                    },
+                    {
+                        'name': 'aggregation_switch',
+                        'title': 'Aggregation Switch',
+                        'show': 1,
+                        'value': backhaul.aggregator.ip_address
+                                if (backhaul and  backhaul.aggregator)
+                                else 'N/A'
+                    },
+                    {
+                        'name': 'aggregation_port',
+                        'title': 'Aggregation Port',
+                        'show': 1,
+                        'value': str(backhaul.aggregator_port_name) + "/" + str(backhaul.aggregator_port)
+                                if (backhaul and  backhaul.aggregator_port_name and backhaul.aggregator_port)
+                                else 'N/A'
+                    },
+                    {
+                        'name': 'bs_converter_ip',
+                        'title': 'BS Converter IP',
+                        'show': 1,
+                        'value': str(backhaul.bh_switch.ip_address) if (backhaul and backhaul.bh_switch) else 'N/A'
                     },
                     ]}
 
