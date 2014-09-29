@@ -213,12 +213,12 @@ class Gis_Map_Performance_Data(View):
                                     and
                                     device_frequency_object.frequency_radius
                                 ) else 0
-                                sector_info = {
+                                performance_data.update({
                                     'azimuth_angle': azimuth_angle,
                                     'beam_width': beam_width,
                                     'radius': radius,
                                     'frequency':device_frequency
-                            }
+                                })
 
 
                     if len(device_pl) and int(ast.literal_eval(device_pl))==100:
@@ -333,7 +333,7 @@ class Gis_Map_Performance_Data(View):
                     logger.exception(e.message)
                     pass
 
-                performance_data= {
+                performance_data.update({
                     'frequency':device_frequency,
                     'pl':device_pl,
                     'color':device_link_color,
@@ -344,7 +344,7 @@ class Gis_Map_Performance_Data(View):
                                         else ("static/img/" + str(performance_icon) if len(str(performance_icon)) else ""),
                     'device_info' : device_info,
                     'sector_info' : sector_info
-                }
+                })
             except Exception as e:
                 logger.info(device)
                 logger.info(e.message, exc_info=True)
