@@ -316,6 +316,7 @@ function GisPerformance() {
 	Else, we return Defualt Value from sectir configuration
 	 */
 	this.calculatePerformanceValue= function(key, device, ssName) {
+		console.log(device, ssName);
 		var gisData = this.gisData;
 
 		// var perf_sector_array = gisData["param"]["sector"];
