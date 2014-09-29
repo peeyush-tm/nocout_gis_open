@@ -145,14 +145,18 @@ class Gis_Map_Performance_Data(View):
                                                                              data_source= 'frequency',
                                                                              sys_timestamp__lte= int(freeze_time)/1000).\
                                                                              using(alias= device_machine_name).\
-                                                                             order_by('-sys_timestamp')[:1].\
-                                                                             get().current_value
+                                                                             order_by('-sys_timestamp')[:1]
+                        if len(device_frequency):
+                            device_frequency = device_frequency[0].current_value
+
                     else:
                         device_frequency= InventoryStatus.objects.filter(device_name= device_name,
                                                                          data_source= 'frequency').\
                                                                          using(alias= device_machine_name)\
-                                                                        .order_by('-sys_timestamp')[:1]\
-                                                                        .get().current_value
+                                                                        .order_by('-sys_timestamp')[:1]
+                        if len(device_frequency):
+                            device_frequency = device_frequency[0].current_value
+
                 except Exception as e:
                     logger.info(device)
                     logger.info(e.message)
@@ -166,15 +170,18 @@ class Gis_Map_Performance_Data(View):
                                                                      data_source= 'pl',
                                                                      sys_timestamp__lte= int(freeze_time)/1000).\
                                                                      using(alias= device_machine_name).\
-                                                                     order_by('-sys_timestamp')[:1].\
-                                                                     get().current_value
+                                                                     order_by('-sys_timestamp')[:1]
+                        if len(device_pl):
+                            device_pl = device_pl[0].current_value
                     else:
                         device_pl= NetworkStatus.objects.filter(device_name= device_name,
                                                                 service_name= 'ping',
                                                                 data_source= 'pl').\
                                                                 using(alias= device_machine_name).\
-                                                                order_by('-sys_timestamp')[:1].\
-                                                                get().current_value
+                                                                order_by('-sys_timestamp')[:1]
+                        if len(device_pl):
+                            device_pl = device_pl[0].current_value
+
                 except Exception as e:
                     logger.info(device)
                     logger.info(e.message)
@@ -193,9 +200,13 @@ class Gis_Map_Performance_Data(View):
                             logger.info(device)
                             logger.exception("Frequency is Empty : %s" %(e.message))
 
-                        device_frequency_object = DeviceFrequency.objects.get(value__icontains=str(corrected_dev_freq))
+                        device_frequency_objects = DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq))
                         device_frequency_color= DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq)).\
                                                                                values_list('color_hex_value', flat=True)
+
+                        device_frequency_object = None
+                        if len(device_frequency_objects):
+                            device_frequency_object = device_frequency_objects[0]
 
                         if len(device_frequency_color):
                             device_link_color= device_frequency_color[0]
@@ -242,8 +253,9 @@ class Gis_Map_Performance_Data(View):
                                                                                data_source= device_service_data_source,
                                                                                sys_timestamp__lte= int(freeze_time)/1000).\
                                                                                using(alias=device_machine_name).\
-                                                                               order_by('-sys_timestamp')[:1].\
-                                                                               get().current_value
+                                                                               order_by('-sys_timestamp')[:1]
+                        if len(device_performance_value):
+                            device_performance_value = device_performance_value[0].current_value
 
                     else:
 
@@ -251,8 +263,9 @@ class Gis_Map_Performance_Data(View):
                                                                                service_name= device_service_name,
                                                                                data_source= device_service_data_source)\
                                                                                .using(alias=device_machine_name)\
-                                                                               .order_by('-sys_timestamp')[:1]\
-                                                                               .get().current_value
+                                                                               .order_by('-sys_timestamp')[:1]
+                        if len(device_performance_value):
+                            device_performance_value = device_performance_value[0].current_value
 
                 except Exception as e:
                     logger.info(device)
