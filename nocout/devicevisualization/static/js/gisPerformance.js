@@ -1,4 +1,5 @@
 var recallPerf = "";
+var x = 0;
 /*
  This function creates a google marker with a new URL and take all other values from previous defined marker setting else set to null
  */
@@ -218,23 +219,27 @@ function GisPerformance() {
         var gisData = this.gisData;
         //Get BS Gmap Marker
         var bsMarkerObject = markersMasterObj['BSNamae'][gisData.basestation_name];
+        var condition= true;
         //Step no. 2 ==> Loop through all the SS in the BS
         try {
             //Loop through devices
             for (var i = 0; i < bsMarkerObject['child_ss'].length; i++) {
+            	condition= true;
+            	var polyPointsArray;
                 //Loop through sub_station of devices
                 for (var j = 0; j < bsMarkerObject['child_ss'][i]['sub_station'].length; j++) {
+                	var halfPt;
                     //Step no. 3 ===> Fetch PerformanceValue for various key from GisData JSon
                     var lineColor = this.calculatePerformanceValue("color", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
                     //Fetch googlePolyline from markersMasterObj;
                     var googlePolyLine = markersMasterObj['LinesName'][String(bsMarkerObject["name"]) + bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]];
                     // //Update Polyline content.
-                    if (googlePolyLine && lineColor) {
+                    if(googlePolyLine && lineColor) {
                         googlePolyLine.setOptions({strokeColor: lineColor});
                     }
 
                     //If technology is WiMAX and PMP
-                    if (bsMarkerObject['child_ss'][i]["technology"] === "WiMAX" || bsMarkerObject['child_ss'][i]["technology"] === "PMP") {
+                    if ($.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) === "wimax" || $.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) === "pmp") {
                         //Get sector Polyline
                         var sectorPoly = markersMasterObj['Poly'][bsMarkerObject['child_ss'][i]['sub_station'][j]['device_name']];
                         //If both sector Poly and line Color is defined
@@ -245,6 +250,29 @@ function GisPerformance() {
                             sector_perf_obj["frequency"] = this.calculatePerformanceValue("frequency", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
                             sector_perf_obj["pl"] = this.calculatePerformanceValue("pl", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
                             //Update color for Sector POly.
+                            if(condition) {
+	                        	var new_radius = this.calculatePerformanceValue("radius", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]) ? this.calculatePerformanceValue("radius", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]) : 5;
+	                            var azimuth = this.calculatePerformanceValue("azimuth", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]) ? this.calculatePerformanceValue("azimuth", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]) : Math.floor(Math.random() * (180 - 90 + 1)) + 90;
+	                            var beam_width = this.calculatePerformanceValue("beam_width", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]) ? this.calculatePerformanceValue("beam_width", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]) : Math.floor(Math.random() * (30 - 20 + 1)) + 20;
+	                            var polarisation = this.calculatePerformanceValue("polarisation", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]) ? this.calculatePerformanceValue("polarisation", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]) : 'horizontal';
+	                            
+	                            networkMapInstance.createSectorData(+(sectorPoly.ptLat),+(sectorPoly.ptLon),new_radius,azimuth,beam_width,polarisation,function(pointsArray) {
+	                            	halfPt = Math.floor(pointsArray.length / (+2));
+	                            	polyPointsArray = pointsArray;
+	                            	var polyPathArray = [];
+	                            	for(var i=0;i<pointsArray.length;i++) {
+										var pt = new google.maps.LatLng(pointsArray[i].lat,pointsArray[i].lon);
+										polyPathArray.push(pt);
+									}
+									
+									sectorPoly.setPath(polyPathArray);
+	                            });
+                            	condition= false;
+                            }
+
+                            var new_line_path = [new google.maps.LatLng(polyPointsArray[halfPt].lat,polyPointsArray[halfPt].lon),new google.maps.LatLng(googlePolyLine.ss_lat,googlePolyLine.ss_lon)]
+									googlePolyLine.setPath(new_line_path);
+
                             sectorPoly.hasPerf = 1;
                             sectorPoly.perf_data_obj = sector_perf_obj;
                             sectorPoly.setOptions({fillColor: lineColor});
