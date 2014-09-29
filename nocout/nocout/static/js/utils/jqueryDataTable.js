@@ -34,6 +34,7 @@ function ourDataTableWidget()
 	    
         $("#"+tableId).DataTable({
             bAutoWidth: false,
+            bDestroy : true,
             bPaginate: true,
             bProcessing : true,
             bServerSide: true,
