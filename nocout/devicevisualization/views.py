@@ -115,9 +115,16 @@ class Gis_Map_Performance_Data(View):
                         "value": ""
                      },
                 ],
+                'sector_info' : {
+                    'azimuth_angle': "",
+                    'beam_width': "",
+                    'radius': "",
+                    'frequency':device_frequency
+                }
             }
             try:
                 device= Device.objects.get(device_name= device_name, is_added_to_nms=1, is_deleted=0)
+
                 device_technology = DeviceTechnology.objects.get(id=device.device_technology)
                 user_obj = UserProfile.objects.get(id= self.request.user.id)
 
@@ -148,6 +155,27 @@ class Gis_Map_Performance_Data(View):
                     logger.info(e.message)
                     device_frequency=''
                     pass
+
+
+                if device.sector_configured_on.exists():
+                    ##device is sector device
+                    device_sector_objects = device.sector_configured_on.filter()
+                    if len(device_sector_objects):
+                        sector = device_sector_objects[0]
+                        antenna = sector.antenna
+                        azimuth_angle = sector.antenna.azimuth_angle if antenna else 'N/A'
+                        beam_width = sector.antenna.beam_width if antenna else 'N/A'
+                        radius = device_frequency.frequency_radius if (
+                            device_frequency
+                            and
+                            device_frequency.frequency_radius
+                        ) else 0
+                        performance_data['sector_info'] = {
+                            'azimuth_angle': azimuth_angle,
+                            'beam_width': beam_width,
+                            'radius': radius,
+                            'frequency':device_frequency
+                        }
 
                 try:
                     if int(freeze_time):
