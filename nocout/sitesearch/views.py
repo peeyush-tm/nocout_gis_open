@@ -398,14 +398,6 @@ def prepare_result(base_station_id):
                                                 'value': substation.name if substation.name else 'N/A'
                                             },
                                             {
-                                                'name': 'planned_frequency',
-                                                'title': 'Planned Frequency',
-                                                'show': 1,
-                                                'value':sector.frequency.value
-                                                    if (sector.frequency and sector.frequency.value)
-                                                    else 'N/A',
-                                            },
-                                            {
                                                 'name': 'cktid',
                                                 'title': 'Circuit ID',
                                                 'show': 1,
@@ -531,6 +523,14 @@ def prepare_result(base_station_id):
                                                 'show': 1,
                                                  'value': substation.circuit_set.values_list('dl_rssi_during_acceptance', flat=True)[0] \
                                                     if substation.circuit_set.values_list('dl_rssi_during_acceptance', flat=True)[0] else 'N/A'
+                                            },
+                                            {
+                                                'name': 'planned_frequency',
+                                                'title': 'Planned Frequency',
+                                                'show': 1,
+                                                'value':sector.frequency.value
+                                                    if (sector.frequency and sector.frequency.value)
+                                                    else 'N/A',
                                             }
                                         ],
                                         }
