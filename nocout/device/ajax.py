@@ -828,6 +828,8 @@ def add_device_to_nms_core(request, device_id, ping_data):
     if device.host_state != "Disable":
         # get 'agent_tag' from DeviceType model
         agent_tag = ""
+        device_type_name = ""
+
         try:
             device_type_object = DeviceType.objects.get(id=device.device_type)
             agent_tag = device_type_object.agent_tag
