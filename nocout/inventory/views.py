@@ -4,6 +4,7 @@ from operator import itemgetter
 import time
 from datetime import datetime
 from django.contrib.auth.models import User
+from machine.models import Machine
 import os
 from os.path import basename
 from django.views.generic.base import View
@@ -28,17 +29,20 @@ from models import Inventory, DeviceTechnology, IconSettings, LivePollingSetting
 from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
     ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm
 from organization.models import Organization
+from site_instance.models import SiteInstance
 from user_group.models import UserGroup
 from user_profile.models import UserProfile
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
 from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm, CircuitForm
-from device.models import Country, State, City
+from device.models import Country, State, City, Device
 from django.contrib.staticfiles.templatetags.staticfiles import static
+from user_profile.models import UserProfile
 import xlrd
+import xlwt
 import logging
 from django.template import RequestContext
-from tasks import validate_gis_inventory_excel_sheet
-import xlwt
+from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory, \
+    bulk_upload_pmp_bs_inventory
 
 logger = logging.getLogger(__name__)
 
@@ -2862,6 +2866,39 @@ class ExcelWriterRowByRow(View):
         return response
 
 
+class BulkUploadValidData(View):
+    def get(self, request, *args, **kwargs):
+        # user organization
+        organization = ''
+
+        try:
+            # user organization id
+            organization_id = UserProfile.objects.get(username=self.request.user).organization.id
+            organization = Organization.objects.get(pk=organization_id)
+
+            # update data import status in GISInventoryBulkImport model
+            try:
+                gis_obj = GISInventoryBulkImport.objects.get(pk=kwargs['id'])
+                gis_obj.upload_status = 1
+                gis_obj.save()
+            except Exception as e:
+                logger.info(e.message)
+
+            if 'sheetname' in kwargs:
+                if kwargs['sheetname'] == 'PTP':
+                    result = bulk_upload_ptp_inventory.delay(kwargs['id'], organization)
+                elif kwargs['sheetname'] == 'PMP BS':
+                    result = bulk_upload_pmp_bs_inventory.delay(kwargs['id'], organization)
+                elif kwargs['sheetname'] == 'PMP SM':
+                    result = bulk_upload_pmp_sm_inventory.delay(kwargs['id'], organization)
+                else:
+                    result = ""
+        except Exception as e:
+            logger.info("Current User Organization:", e.message)
+
+        return HttpResponseRedirect('/bulk_import/')
+
+
 class GISInventoryBulkImportList(ListView):
     """
     Generic Class based View to List the GISInventoryBulkImports.
@@ -2883,6 +2920,7 @@ class GISInventoryBulkImportList(ListView):
             {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'null', },
             {'mData': 'sheet_name', 'sTitle': 'Sheet Name', 'sWidth': 'null', },
             {'mData': 'technology', 'sTitle': 'Technology', 'sWidth': 'null', },
+            {'mData': 'upload_status', 'sTitle': 'Upload Status', 'sWidth': 'null', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', },
             {'mData': 'uploaded_by', 'sTitle': 'Uploaded By', 'sWidth': 'null', },
             {'mData': 'added_on', 'sTitle': 'Added On', 'sWidth': 'null', },
@@ -2890,6 +2928,7 @@ class GISInventoryBulkImportList(ListView):
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            datatable_headers.append({'mData':'bulk_upload_actions', 'sTitle':'Inventory Upload', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -2900,8 +2939,8 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
 
     """
     model = GISInventoryBulkImport
-    columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'description', 'uploaded_by', 'added_on', 'modified_on']
-    order_columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'description', 'uploaded_by', 'added_on', 'modified_on']
+    columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
+    order_columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
 
     def filter_queryset(self, qs):
         """
@@ -2949,7 +2988,7 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
                 excel_light_green = static("img/ms-office-icons/excel_2013_light_green.png")
                 # excel_blue = static("img/ms-office-icons/excel_2013_blue.png")
 
-                # show 'Success', 'Pending' and 'Failed' in status
+                # show 'Success', 'Pending' and 'Failed' in upload status
                 try:
                     if not dct.get('status'):
                         dct.update(status='Pending')
@@ -2974,12 +3013,42 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
                 except Exception as e:
                     logger.info(e.message)
 
+                # show 'Not Yet', 'Pending', 'Success', 'Failed' in import status
+                try:
+                    if not dct.get('upload_status'):
+                        dct.update(upload_status='Not Yet')
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('upload_status') == 0:
+                        dct.update(upload_status='Not Yet')
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('upload_status') == 1:
+                        dct.update(upload_status='Pending')
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('upload_status') == 2:
+                        dct.update(upload_status='Success')
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('upload_status') == 3:
+                        dct.update(upload_status='Failed')
+                except Exception as e:
+                    logger.info(e.message)
+
                 # show icon instead of url in data tables view
                 try:
                     dct.update(original_filename='<a href="{0}"><img src="{1}" style="float:left; display:block; height:25px; width:25px;">'.format(dct.pop('original_filename'), excel_light_green))
                 except Exception as e:
                     logger.info(e.message)
-                print "********************************** dct.get('status') - ", dct.get('status')
                 try:
                     if dct.get('status') == "Success":
                         dct.update(valid_filename='<a href="{0}"><img src="{1}" style="float:left; display:block; height:25px; width:25px;">'.format(dct.pop('valid_filename'), excel_green))
@@ -3006,8 +3075,18 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
 
             except Exception as e:
                 logger.info(e)
+
             dct.update(actions='<a href="/bulk_import/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                                <a href="/bulk_import/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                                <a href="/bulk_import/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id')))
+            try:
+                sheet_names_list = ['PTP', 'PMP BS', 'PMP SM']
+                if dct.get('sheet_name'):
+                    if dct.get('sheet_name') in sheet_names_list:
+                        dct.update(bulk_upload_actions='<a href="/bulk_import/bulk_upload_valid_data/{}/{}" class="bulk_import_link"><i class="fa fa-upload text-dark"></i></a>'.format(dct.get('id'), dct.get('sheet_name')))
+                    else:
+                        dct.update(bulk_upload_actions='')
+            except Exception as e:
+                logger.info()
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -3089,11 +3168,6 @@ class GISInventoryBulkImportUpdate(UpdateView):
     model = GISInventoryBulkImport
     form_class = GISInventoryBulkImportEditForm
     success_url = reverse_lazy('gis_inventory_bulk_import_list')
-
-
-class BulkUploadValidData(View):
-    def get(self, request):
-        pass
 
 
 
