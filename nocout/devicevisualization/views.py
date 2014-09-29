@@ -247,6 +247,7 @@ class Gis_Map_Performance_Data(View):
                     pass
 
                 try:
+                    device_performance_value=''
                     if int(freeze_time):
                         device_performance_value= PerformanceService.objects.filter(device_name= device_name,
                                                                                service_name= device_service_name,
@@ -268,8 +269,8 @@ class Gis_Map_Performance_Data(View):
                             device_performance_value = device_performance_value[0].current_value
 
                 except Exception as e:
-                    logger.info(device)
                     device_performance_value=''
+                    logger.info(device)
                     logger.info(e.message)
                     pass
 
