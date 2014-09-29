@@ -150,32 +150,12 @@ class Gis_Map_Performance_Data(View):
                         device_frequency= InventoryStatus.objects.filter(device_name= device_name,
                                                                          data_source= 'frequency').\
                                                                          using(alias= device_machine_name)\
+                                                                        .order_by('-sys_timestamp')[:1]\
                                                                         .get().current_value
                 except Exception as e:
                     logger.info(e.message)
                     device_frequency=''
                     pass
-
-
-                if device.sector_configured_on.exists():
-                    ##device is sector device
-                    device_sector_objects = device.sector_configured_on.filter()
-                    if len(device_sector_objects):
-                        sector = device_sector_objects[0]
-                        antenna = sector.antenna
-                        azimuth_angle = sector.antenna.azimuth_angle if antenna else 'N/A'
-                        beam_width = sector.antenna.beam_width if antenna else 'N/A'
-                        radius = device_frequency.frequency_radius if (
-                            device_frequency
-                            and
-                            device_frequency.frequency_radius
-                        ) else 0
-                        performance_data['sector_info'] = {
-                            'azimuth_angle': azimuth_angle,
-                            'beam_width': beam_width,
-                            'radius': radius,
-                            'frequency':device_frequency
-                        }
 
                 try:
                     if int(freeze_time):
@@ -191,6 +171,7 @@ class Gis_Map_Performance_Data(View):
                                                                 service_name= 'ping',
                                                                 data_source= 'pl').\
                                                                 using(alias= device_machine_name).\
+                                                                order_by('-sys_timestamp')[:1].\
                                                                 get().current_value
                 except Exception as e:
                     logger.info(e.message)
@@ -208,11 +189,33 @@ class Gis_Map_Performance_Data(View):
                         except Exception as e:
                             logger.exception("Frequency is Empty : %s" %(e.message))
 
-                        device_frequency_color= DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq)).\
+                        device_frequency_object = DeviceFrequency.objects.get(value__icontains=str(corrected_dev_freq))
+                        device_frequency_color= DeviceFrequency.objects.get(value__icontains=str(corrected_dev_freq)).\
                                                                                values_list('color_hex_value', flat=True)
 
                         if len(device_frequency_color):
                             device_link_color= device_frequency_color[0]
+
+                        if device.sector_configured_on.exists():
+                            ##device is sector device
+                            device_sector_objects = device.sector_configured_on.filter()
+                            if len(device_sector_objects):
+                                sector = device_sector_objects[0]
+                                antenna = sector.antenna
+                                azimuth_angle = sector.antenna.azimuth_angle if antenna else 'N/A'
+                                beam_width = sector.antenna.beam_width if antenna else 'N/A'
+                                radius = device_frequency_object.frequency_radius if (
+                                    device_frequency_object
+                                    and
+                                    device_frequency_object.frequency_radius
+                                ) else 0
+                                performance_data['sector_info'] = {
+                                    'azimuth_angle': azimuth_angle,
+                                    'beam_width': beam_width,
+                                    'radius': radius,
+                                    'frequency':device_frequency
+                            }
+
 
                     if len(device_pl) and int(ast.literal_eval(device_pl))==100:
                         device_link_color='rgb(0,0,0)'
@@ -244,6 +247,7 @@ class Gis_Map_Performance_Data(View):
                                                                                service_name= device_service_name,
                                                                                data_source= device_service_data_source)\
                                                                                .using(alias=device_machine_name)\
+                                                                               .order_by('-sys_timestamp')[:1]\
                                                                                .get().current_value
 
                 except Exception as e:
