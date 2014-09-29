@@ -190,7 +190,7 @@ class Gis_Map_Performance_Data(View):
                             logger.exception("Frequency is Empty : %s" %(e.message))
 
                         device_frequency_object = DeviceFrequency.objects.get(value__icontains=str(corrected_dev_freq))
-                        device_frequency_color= DeviceFrequency.objects.get(value__icontains=str(corrected_dev_freq)).\
+                        device_frequency_color= DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq)).\
                                                                                values_list('color_hex_value', flat=True)
 
                         if len(device_frequency_color):
