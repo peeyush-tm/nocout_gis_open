@@ -1338,6 +1338,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
             basestation = ""
             sector = ""
             customer = ""
+            circuit = ""
 
             try:
                 # ----------------------------- Base Station Device ---------------------------
@@ -1808,6 +1809,16 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
     try:
         for row in complete_d:
+            # initialize variables
+            base_station = ""
+            bs_switch = ""
+            aggregation_switch = ""
+            bs_converter = ""
+            pop_converter = ""
+            backhaul = ""
+            basestation = ""
+            sector = ""
+
             try:
                 # ----------------------------- Base Station Device ---------------------------
                 # get machine
@@ -2181,6 +2192,14 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
 
     try:
         for row in complete_d:
+            # initialize variables
+            # initialize variables
+            sub_station = ""
+            substation_antenna = ""
+            sector = ""
+            customer = ""
+            circuit = ""
+
             try:
                 # ----------------------------- Sub Station Device ---------------------------
                 # get machine
@@ -2221,22 +2240,6 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                 sub_station = create_device(sub_station_data)
             except Exception as e:
                 sub_station = ""
-
-            try:
-                # ------------------------------- Sub Station Antenna -------------------------------
-                # sub station antenna data
-                substation_antenna_data = {
-                    'ip': row['SS IP'] if 'SS IP' in row.keys() else "",
-                    'antenna_type': row['Antenna Type'] if 'SS Antenna Type' in row.keys() else "",
-                    'height': row['Antenna Height'] if 'Antenna Height' in row.keys() else "",
-                    'polarization': row['Polarization'] if 'Polarization' in row.keys() else "",
-                    'mount_type': row['SS Antenna Mount Type'] if 'SS Antenna Mount Type' in row.keys() else "",
-                    'description': 'Sector Antenna created on {}.'.format(full_time)
-                }
-                # sub station antenna object
-                substation_antenna = create_antenna(substation_antenna_data)
-            except Exception as e:
-                substation_antenna = ""
 
             try:
                 # ------------------------------- Sub Station Antenna -------------------------------
