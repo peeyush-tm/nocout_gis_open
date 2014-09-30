@@ -1535,7 +1535,8 @@ class CircuitListingTable(BaseDatatableView):
         :return qs:
 
         """
-        sSearch = self.request.GET.get('sSearch', None)
+        sSearch = unicode(self.request.GET.get('sSearch', None))
+        print "***************************************** sSearch - ", 
         if sSearch:
             result_list=list()
             for dictionary in qs:
