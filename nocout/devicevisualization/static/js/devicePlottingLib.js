@@ -842,7 +842,7 @@ function devicePlottingClass_gmap() {
 
 					if($.trim(sector_array[j].technology) != "PTP" && $.trim(sector_array[j].technology) != "P2P") {
 						/*Plot sector on map with the retrived points*/
-						gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child,$.trim(sector_array[j].technology));
+						gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child,$.trim(sector_array[j].technology),orientation);
 
 						startEndObj["startLat"] = pointsArray[halfPt].lat;
 						startEndObj["startLon"] = pointsArray[halfPt].lon;
@@ -1315,8 +1315,9 @@ function devicePlottingClass_gmap() {
 	 * @param bgColor {String}, It contains the RGBA format color code for sector.
 	 * @param sector_child [JSON object Array], It contains the connected SS data.
 	 * @param technology {String}, It contains the technology of sector device.
+	 * @param polarisation {String}, It contains the polarisation(horizontal or vertical) of sector device.
 	 */
-	this.plotSector_gmap = function(lat,lon,pointsArray,sectorInfo,bgColor,sector_child,technology) {
+	this.plotSector_gmap = function(lat,lon,pointsArray,sectorInfo,bgColor,sector_child,technology,polarisation) {
 		var polyPathArray = [];
 		
 		var halfPt = Math.floor(pointsArray.length / (+2));
@@ -1353,6 +1354,7 @@ function devicePlottingClass_gmap() {
 			startLon 	     : startLon,
 			bhInfo 			 : [],
 			child_ss 	     : sector_child,
+			polarisation 	 : polarisation,
 			original_sectors : sector_child,
 			zIndex 			 : 180,
 			geodesic		 : true
