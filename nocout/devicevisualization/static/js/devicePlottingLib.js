@@ -1360,8 +1360,10 @@ function devicePlottingClass_gmap() {
         /*Push polygon to an array*/
 		sectorArray.push(poly);
         poly.setMap(mapInstance);
-		if(sector_child.length) {
-			markersMasterObj['Poly'][sector_child[0]["device_name"]]= poly;
+		if(sector_child) {
+			for(var i=0;i<sector_child.length;i++) {
+				markersMasterObj['Poly'][sector_child[i]["device_name"]]= poly;
+			}			
 		}
         
 

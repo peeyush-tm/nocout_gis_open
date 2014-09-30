@@ -89,7 +89,7 @@ class Gis_Map_Performance_Data(View):
                     substations= sector['sub_station']
                     for substation in substations:
                         substation['performance_data']= self.get_device_performance(substation['device_name'])
-
+                #logger.debug(request_data)
                 return HttpResponse(json.dumps(request_data))
 
             return HttpResponse(json.dumps({'result':'No Performance Data'}))
@@ -100,6 +100,12 @@ class Gis_Map_Performance_Data(View):
             device_pl = ''
             device_link_color=None
             freeze_time= self.request.GET.get('freeze_time','0')
+            sector_info = {
+                    'azimuth_angle': "",
+                    'beam_width': "",
+                    'radius': "",
+                    'frequency':device_frequency
+                }
             performance_data= {
                 'frequency':device_frequency,
                 'pl':device_pl,
@@ -115,9 +121,11 @@ class Gis_Map_Performance_Data(View):
                         "value": ""
                      },
                 ],
+                'sector_info' : sector_info
             }
             try:
                 device= Device.objects.get(device_name= device_name, is_added_to_nms=1, is_deleted=0)
+
                 device_technology = DeviceTechnology.objects.get(id=device.device_technology)
                 user_obj = UserProfile.objects.get(id= self.request.user.id)
 
@@ -137,14 +145,24 @@ class Gis_Map_Performance_Data(View):
                                                                              data_source= 'frequency',
                                                                              sys_timestamp__lte= int(freeze_time)/1000).\
                                                                              using(alias= device_machine_name).\
-                                                                             order_by('-sys_timestamp')[:1].\
-                                                                             get().current_value
+                                                                             order_by('-sys_timestamp')[:1]
+                        if len(device_frequency):
+                            device_frequency = device_frequency[0].current_value
+                        else:
+                            device_frequency = ''
+
                     else:
                         device_frequency= InventoryStatus.objects.filter(device_name= device_name,
                                                                          data_source= 'frequency').\
                                                                          using(alias= device_machine_name)\
-                                                                        .get().current_value
+                                                                        .order_by('-sys_timestamp')[:1]
+                        if len(device_frequency):
+                            device_frequency = device_frequency[0].current_value
+                        else:
+                            device_frequency = ''
+
                 except Exception as e:
+                    logger.info(device)
                     logger.info(e.message)
                     device_frequency=''
                     pass
@@ -156,15 +174,24 @@ class Gis_Map_Performance_Data(View):
                                                                      data_source= 'pl',
                                                                      sys_timestamp__lte= int(freeze_time)/1000).\
                                                                      using(alias= device_machine_name).\
-                                                                     order_by('-sys_timestamp')[:1].\
-                                                                     get().current_value
+                                                                     order_by('-sys_timestamp')[:1]
+                        if len(device_pl):
+                            device_pl = device_pl[0].current_value
+                        else:
+                            device_pl = ''
                     else:
                         device_pl= NetworkStatus.objects.filter(device_name= device_name,
                                                                 service_name= 'ping',
                                                                 data_source= 'pl').\
                                                                 using(alias= device_machine_name).\
-                                                                get().current_value
+                                                                order_by('-sys_timestamp')[:1]
+                        if len(device_pl):
+                            device_pl = device_pl[0].current_value
+                        else:
+                            device_pl = ''
+
                 except Exception as e:
+                    logger.info(device)
                     logger.info(e.message)
                     device_pl=''
                     pass
@@ -178,13 +205,40 @@ class Gis_Map_Performance_Data(View):
                             if int(chek_dev_freq) > 10:
                                 corrected_dev_freq = chek_dev_freq
                         except Exception as e:
+                            logger.info(device)
                             logger.exception("Frequency is Empty : %s" %(e.message))
 
+                        device_frequency_objects = DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq))
                         device_frequency_color= DeviceFrequency.objects.filter(value__icontains=str(corrected_dev_freq)).\
                                                                                values_list('color_hex_value', flat=True)
 
+                        device_frequency_object = None
+                        if len(device_frequency_objects):
+                            device_frequency_object = device_frequency_objects[0]
+
                         if len(device_frequency_color):
                             device_link_color= device_frequency_color[0]
+
+                        if device.sector_configured_on.exists():
+                            ##device is sector device
+                            device_sector_objects = device.sector_configured_on.filter()
+                            if len(device_sector_objects):
+                                sector = device_sector_objects[0]
+                                antenna = sector.antenna
+                                azimuth_angle = sector.antenna.azimuth_angle if antenna else 'N/A'
+                                beam_width = sector.antenna.beam_width if antenna else 'N/A'
+                                radius = device_frequency_object.frequency_radius if (
+                                    device_frequency_object
+                                    and
+                                    device_frequency_object.frequency_radius
+                                ) else 0
+                                performance_data.update({
+                                    'azimuth_angle': azimuth_angle,
+                                    'beam_width': beam_width,
+                                    'radius': radius,
+                                    'frequency':device_frequency
+                                })
+
 
                     if len(device_pl) and int(ast.literal_eval(device_pl))==100:
                         device_link_color='rgb(0,0,0)'
@@ -196,30 +250,38 @@ class Gis_Map_Performance_Data(View):
 
                     else:
                         device_link_color=''
-
+                    logger.info(device)
                     logger.info(e.message)
                     pass
 
                 try:
+                    device_performance_value=''
                     if int(freeze_time):
                         device_performance_value= PerformanceService.objects.filter(device_name= device_name,
                                                                                service_name= device_service_name,
                                                                                data_source= device_service_data_source,
                                                                                sys_timestamp__lte= int(freeze_time)/1000).\
                                                                                using(alias=device_machine_name).\
-                                                                               order_by('-sys_timestamp')[:1].\
-                                                                               get().current_value
-
+                                                                               order_by('-sys_timestamp')[:1]
+                        if len(device_performance_value):
+                            device_performance_value = device_performance_value[0].current_value
+                        else:
+                            device_performance_value = ''
                     else:
 
                         device_performance_value= ServiceStatus.objects.filter(device_name= device_name,
                                                                                service_name= device_service_name,
                                                                                data_source= device_service_data_source)\
                                                                                .using(alias=device_machine_name)\
-                                                                               .get().current_value
+                                                                               .order_by('-sys_timestamp')[:1]
+                        if len(device_performance_value):
+                            device_performance_value = device_performance_value[0].current_value
+                        else:
+                            device_performance_value = ''
 
                 except Exception as e:
                     device_performance_value=''
+                    logger.info(device)
                     logger.info(e.message)
                     pass
 
@@ -243,6 +305,7 @@ class Gis_Map_Performance_Data(View):
                                 if (float(range_start)) <= float(corrected_device_performance_value) <= (float(range_end)):
                                     performance_icon= data.values()[0]
                             except Exception as e:
+                                logger.info(device)
                                 logger.exception(e.message)
                                 continue
 
@@ -261,6 +324,9 @@ class Gis_Map_Performance_Data(View):
                         'data_source','current_value','sys_timestamp'
                     ).using(alias=device_machine_name)
 
+                    device_network_info = NetworkStatus.objects.filter(device_name=device_name).values(
+                        'data_source','current_value','sys_timestamp'
+                    ).using(alias=device_machine_name)
 
                     for perf in device_performance_info:
                         perf_info = {
@@ -290,11 +356,22 @@ class Gis_Map_Performance_Data(View):
 
                         device_info.append(perf_info)
 
+                    for perf in device_network_info:
+                        perf_info = {
+                                "name": perf['data_source'],
+                                "title": "Latency" if ("rta" in perf['data_source'].lower()) else "Packet Loss",
+                                "show": 1,
+                                "value": perf['current_value'],
+                            }
+
+                        device_info.append(perf_info)
+
                 except Exception as e:
+                    logger.info(device)
                     logger.exception(e.message)
                     pass
 
-                performance_data= {
+                performance_data.update({
                     'frequency':device_frequency,
                     'pl':device_pl,
                     'color':device_link_color,
@@ -303,9 +380,12 @@ class Gis_Map_Performance_Data(View):
                     'performance_icon':"media/"+str(performance_icon)
                                         if "uploaded" in str(performance_icon)
                                         else ("static/img/" + str(performance_icon) if len(str(performance_icon)) else ""),
-                    'device_info' : device_info
-                }
+                    'device_info' : device_info,
+                    'sector_info' : sector_info
+                })
+                #logger.info(performance_data)
             except Exception as e:
+                logger.info(device)
                 logger.info(e.message, exc_info=True)
                 pass
             return performance_data
