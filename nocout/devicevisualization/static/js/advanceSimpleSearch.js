@@ -223,7 +223,7 @@ function advanceSearchMainClass() {
             var isSsWasSearched= false, isBsWasSearched= false;
 
             if(searchedIps.length) {
-                var deviceSectorConfiguredOn= deviceJson["sector_configured_on_devices"].split(" ");
+                var deviceSectorConfiguredOn= deviceJson["sector_configured_on_devices"].split("|");
                 var common = $.grep(deviceSectorConfiguredOn, function(element) {
                     return $.inArray(element, searchedIps ) !== -1;
                 });
@@ -264,7 +264,7 @@ function advanceSearchMainClass() {
             var searchedCircuitIds= selectedInputs["Circuit Id"];
             var isCircuitIdPresent= false;
             if(searchedCircuitIds.length) {
-                var deviceCircuidIds= deviceJson["circuit_ids"].split(" ");
+                var deviceCircuidIds= deviceJson["circuit_ids"].split("|");
 
                 var common = $.grep(deviceCircuidIds, function(element) {
                     return $.inArray(element, searchedCircuitIds ) !== -1;
