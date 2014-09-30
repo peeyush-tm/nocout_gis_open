@@ -3687,12 +3687,12 @@ function prepare_data_for_filter(){
         {
             for (i=0; i< main_devices_data_gmaps.length; i++)
             {
-                filter_data_sector_ss_technology_value= main_devices_data_gmaps[i].sector_ss_technology.split(' ').filter(function (n) { return n != ""})
+                filter_data_sector_ss_technology_value= main_devices_data_gmaps[i].sector_ss_technology.split('|').filter(function (n) { return n != ""})
                 filter_data_sector_ss_technology_collection.push({ 'id': main_devices_data_gmaps[i].id ,
                         'value':filter_data_sector_ss_technology_value });
 
 
-                filter_data_sector_ss_vendor_value= main_devices_data_gmaps[i].sector_ss_vendor.split(' ').filter(function (n) { return n != ""})
+                filter_data_sector_ss_vendor_value= main_devices_data_gmaps[i].sector_ss_vendor.split('|').filter(function (n) { return n != ""})
                 filter_data_sector_ss_vendor_collection.push({ 'id':main_devices_data_gmaps[i].id,
                                                       'value':filter_data_sector_ss_vendor_value });
 
@@ -3767,13 +3767,13 @@ function getDataForAdvanceSearch() {
 
     		filter_data_bs_name_collection.push({ 'id':[main_devices_data_gmaps[i].id], 'value':main_devices_data_gmaps[i].name });
 
-    		filter_data_sector_configured_on_value= main_devices_data_gmaps[i].sector_configured_on_devices.split(' ').filter(function (n) { return n != ""});
+    		filter_data_sector_configured_on_value= main_devices_data_gmaps[i].sector_configured_on_devices.split('|').filter(function (n) { return n != ""});
 
     		for (var k=0;k<filter_data_sector_configured_on_value.length;k++) {
     			filter_data_sector_configured_on_collection.push({ 'id':[main_devices_data_gmaps[i].id], 'value':filter_data_sector_configured_on_value[k] });
     		}
 
-    		filter_data_sector_circuit_ids_values= main_devices_data_gmaps[i].circuit_ids.split(' ').filter(function (n) { return n != ""});
+    		filter_data_sector_circuit_ids_values= main_devices_data_gmaps[i].circuit_ids.split('|').filter(function (n) { return n != ""});
 
     		for (var k=0;k<filter_data_sector_circuit_ids_values.length;k++){
     			filter_data_sector_circuit_ids_collection.push({ 'id':[main_devices_data_gmaps[i].id], 'value':filter_data_sector_circuit_ids_values[k] });
