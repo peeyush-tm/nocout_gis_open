@@ -385,7 +385,6 @@ class Gis_Map_Performance_Data(View):
                 })
                 #logger.info(performance_data)
             except Exception as e:
-                logger.info(device)
                 logger.info(e.message, exc_info=True)
                 pass
             return performance_data
