@@ -4660,7 +4660,7 @@ def get_city(state=None, city_name=None):
     :return:
     """
     if state and city_name:
-        city_objects = City.objects.filter(city_name__icontains=city_name, state__in=state)
+        city_objects = City.objects.filter(city_name__icontains=city_name, state__in=[state])
         if len(city_objects):
             return city_objects[0].id
     return None
