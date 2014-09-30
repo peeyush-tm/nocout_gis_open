@@ -14,6 +14,12 @@
                     "performance_value": "some x value",
                     "performance_icon": "caution.png"
                 },
+                "sector_information": {
+                    "radius": 6,
+                    "azimuth": 180,
+                    "beam_width": 90,
+                    "polarisation": "horizontal"    
+                },
                 "sub_station": [
                     {
                         "device_name": "10.171.135.13",
@@ -40,6 +46,12 @@
                     "performance_value": "some x value",
                     "performance_icon": "caution.png"
                 },
+                "sector_information": {
+                    "radius": 4,
+                    "azimuth": 270,
+                    "beam_width": 130,
+                    "polarisation": "vertical"    
+                },
                 "sub_station": [
                     {
                         "device_name": "10.171.133.11",
@@ -65,6 +77,12 @@
                     "performance_parameter": "some x parameter",
                     "performance_value": "some x value",
                     "performance_icon": "caution.png"
+                },
+                "sector_information": {
+                    "radius": 9,
+                    "azimuth": 0,
+                    "beam_width": 50,
+                    "polarisation": "horizontal"    
                 },
                 "sub_station": [
                     {

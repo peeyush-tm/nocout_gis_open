@@ -161,6 +161,14 @@ def prepare_result(base_station_id):
                         'title':'BS Type',
                         'show':1,
                         'value': base_station.bs_type if base_station.bs_type else 'N/A'
+                    },
+                    {
+                        'name':'bs_switch',
+                        'title':'BS Switch',
+                        'show':1,
+                        'value': base_station.bs_switch.ip_address
+                                if (base_station and base_station.bs_switch and base_station.bs_switch.ip_address)
+                                else 'N/A'
                     }
                 ],
                 'backhual': [
@@ -193,6 +201,28 @@ def prepare_result(base_station_id):
                         'title': 'BH Connectivity',
                         'show': 1,
                         'value': backhaul.bh_connectivity if backhaul else 'N/A'
+                    },
+                    {
+                        'name': 'aggregation_switch',
+                        'title': 'Aggregation Switch',
+                        'show': 1,
+                        'value': backhaul.aggregator.ip_address
+                                if (backhaul and  backhaul.aggregator)
+                                else 'N/A'
+                    },
+                    {
+                        'name': 'aggregation_port',
+                        'title': 'Aggregation Port',
+                        'show': 1,
+                        'value': str(backhaul.aggregator_port_name) + "/" + str(backhaul.aggregator_port)
+                                if (backhaul and  backhaul.aggregator_port_name and backhaul.aggregator_port)
+                                else 'N/A'
+                    },
+                    {
+                        'name': 'bs_converter_ip',
+                        'title': 'BS Converter IP',
+                        'show': 1,
+                        'value': str(backhaul.bh_switch.ip_address) if (backhaul and backhaul.bh_switch) else 'N/A'
                     },
                     ]}
 
@@ -251,110 +281,118 @@ def prepare_result(base_station_id):
                                                                  }
 
                                                              ],
-                                                             'info': [{
-                                                                          'name': 'sector_name',
-                                                                          'title': 'Sector Name',
-                                                                          'show': 1,
-                                                                          'value': sector.name
-                                                                      },
-                                                                      {
-                                                                          'name': 'type_of_bs',
-                                                                          'title': 'Type of BS',
-                                                                          'show': 1,
-                                                                          'value': base_station.bs_type \
-                                                                              if base_station.bs_type else 'N/A'
-                                                                      },
-                                                                      {
-                                                                          'name': 'building_height',
-                                                                          'title': 'Building Height',
-                                                                          'show': 1,
-                                                                          'value': base_station.building_height \
-                                                                              if base_station.building_height else 'N/A'
-                                                                      },
-                                                                      {
-                                                                          'name': 'site_name',
-                                                                          'title': 'Site Name',
-                                                                          'show': 1,
-                                                                          'value': base_station.bs_site_id  if base_station.bs_site_id else 'N/A'
-                                                                      },
-                                                                      {
-                                                                          'name': 'site_type',
-                                                                          'title': 'Site Type',
-                                                                          'show': 1,
-                                                                          'value': base_station.bs_site_type \
-                                                                              if base_station.bs_site_type else 'N/A'
-                                                                      },
-                                                                      {
-                                                                          'name': 'address',
-                                                                          'title': 'Address',
-                                                                          'show': 1,
-                                                                          'value': base_station.address \
-                                                                              if base_station.address else 'N/A'
-                                                                      },
-                                                                      {
-                                                                          'name': 'type_of_gps',
-                                                                          'title': 'Type of GPS',
-                                                                          'show': 1,
-                                                                          'value': base_station.gps_type \
-                                                                              if base_station.gps_type else 'N/A'
-                                                                      },
-                                                                      {
-                                                                          'name': 'tower_height',
-                                                                          'title': 'Tower Height',
-                                                                          'show': 1,
-                                                                          'value': base_station.tower_height if base_station.tower_height else 'N/A'
-                                                                      },
-                                                                      {
-                                                                          'name': 'type_of_antenna',
-                                                                          'title': 'Antenna Type',
-                                                                          'show': 1,
-                                                                          'value': sector.antenna.mount_type if sector.antenna else 'N/A'
-                                                                      },
-                                                                      {
-                                                                          'name': 'antenna_tilt',
-                                                                          'title': 'Antenna Tilt',
-                                                                          'show': 1,
-                                                                          'value': sector.antenna.tilt if sector.antenna else 'N/A'
-                                                                      },
-                                                                      {
-                                                                          'name': 'antenna_height',
-                                                                          'title': 'Antenna Height',
-                                                                          'show': 1,
-                                                                          'value': sector.antenna.height if sector.antenna else 'N/A'
-                                                                      },
-                                                                      {
-                                                                          'name': 'antenna_bw',
-                                                                          'title': 'Antenna Beam Width',
-                                                                          'show': 1,
-                                                                          'value': sector.antenna.beam_width if sector.antenna else 'N/A'
-                                                                      },
-                                                                      {
-                                                                          'name': 'antenna_azimuth',
-                                                                          'title': 'Antenna Azimuth Angle',
-                                                                          'show': 1,
-                                                                          'value': sector.antenna.azimuth_angle if sector.antenna else 'N/A'
-                                                                      },
-                                                                      {
-                                                                          'name': 'antenna_splitter_installed',
-                                                                          'title': 'Installation of Splitter',
-                                                                          'show': 1,
-                                                                          'value': sector.antenna.splitter_installed if sector.antenna else 'N/A'
-                                                                      },
-                                                                      {
-                                                                          'name': 'city',
-                                                                          'title': 'City',
-                                                                          'show': 1,
-                                                                          'value': bs_city_name
-                                                                      },
-                                                                      {
-                                                                          'name': 'state',
-                                                                          'title': 'State',
-                                                                          'show': 1,
-                                                                          'value': bs_state_name
-                                                                      },
-                                                                      ],
-                                                             'sub_station': []
-
+                                                             'info': [
+                                                                    {
+                                                                      'name': 'sector_name',
+                                                                      'title': 'Sector Name',
+                                                                      'show': 1,
+                                                                      'value': sector.name
+                                                                    },
+                                                                    {
+                                                                        'name': 'planned_frequency',
+                                                                        'title': 'Planned Frequency',
+                                                                        'show': 1,
+                                                                        'value':sector.frequency.value
+                                                                            if (sector.frequency and sector.frequency.value)
+                                                                            else 'N/A',
+                                                                    },
+                                                                    {
+                                                                      'name': 'type_of_bs',
+                                                                      'title': 'Type of BS',
+                                                                      'show': 1,
+                                                                      'value': base_station.bs_type \
+                                                                          if base_station.bs_type else 'N/A'
+                                                                    },
+                                                                    {
+                                                                      'name': 'building_height',
+                                                                      'title': 'Building Height',
+                                                                      'show': 1,
+                                                                      'value': base_station.building_height \
+                                                                          if base_station.building_height else 'N/A'
+                                                                    },
+                                                                    {
+                                                                      'name': 'site_name',
+                                                                      'title': 'Site Name',
+                                                                      'show': 1,
+                                                                      'value': base_station.bs_site_id  if base_station.bs_site_id else 'N/A'
+                                                                    },
+                                                                    {
+                                                                      'name': 'site_type',
+                                                                      'title': 'Site Type',
+                                                                      'show': 1,
+                                                                      'value': base_station.bs_site_type \
+                                                                          if base_station.bs_site_type else 'N/A'
+                                                                    },
+                                                                    {
+                                                                      'name': 'address',
+                                                                      'title': 'Address',
+                                                                      'show': 1,
+                                                                      'value': base_station.address \
+                                                                          if base_station.address else 'N/A'
+                                                                    },
+                                                                    {
+                                                                      'name': 'type_of_gps',
+                                                                      'title': 'Type of GPS',
+                                                                      'show': 1,
+                                                                      'value': base_station.gps_type \
+                                                                          if base_station.gps_type else 'N/A'
+                                                                    },
+                                                                    {
+                                                                      'name': 'tower_height',
+                                                                      'title': 'Tower Height',
+                                                                      'show': 1,
+                                                                      'value': base_station.tower_height if base_station.tower_height else 'N/A'
+                                                                    },
+                                                                    {
+                                                                      'name': 'type_of_antenna',
+                                                                      'title': 'Antenna Type',
+                                                                      'show': 1,
+                                                                      'value': sector.antenna.mount_type if sector.antenna else 'N/A'
+                                                                    },
+                                                                    {
+                                                                      'name': 'antenna_tilt',
+                                                                      'title': 'Antenna Tilt',
+                                                                      'show': 1,
+                                                                      'value': sector.antenna.tilt if sector.antenna else 'N/A'
+                                                                    },
+                                                                    {
+                                                                      'name': 'antenna_height',
+                                                                      'title': 'Antenna Height',
+                                                                      'show': 1,
+                                                                      'value': sector.antenna.height if sector.antenna else 'N/A'
+                                                                    },
+                                                                    {
+                                                                      'name': 'antenna_bw',
+                                                                      'title': 'Antenna Beam Width',
+                                                                      'show': 1,
+                                                                      'value': sector.antenna.beam_width if sector.antenna else 'N/A'
+                                                                    },
+                                                                    {
+                                                                      'name': 'antenna_azimuth',
+                                                                      'title': 'Antenna Azimuth Angle',
+                                                                      'show': 1,
+                                                                      'value': sector.antenna.azimuth_angle if sector.antenna else 'N/A'
+                                                                    },
+                                                                    {
+                                                                      'name': 'antenna_splitter_installed',
+                                                                      'title': 'Installation of Splitter',
+                                                                      'show': 1,
+                                                                      'value': sector.antenna.splitter_installed if sector.antenna else 'N/A'
+                                                                    },
+                                                                    {
+                                                                      'name': 'city',
+                                                                      'title': 'City',
+                                                                      'show': 1,
+                                                                      'value': bs_city_name
+                                                                    },
+                                                                    {
+                                                                        'name': 'state',
+                                                                        'title': 'State',
+                                                                        'show': 1,
+                                                                        'value': bs_state_name
+                                                                    },
+                                                            ],
+                                                            'sub_station': []
                                                          }]
         base_station_info['sector_ss_vendor']+= DeviceVendor.objects.get(id=sector.sector_configured_on.device_vendor).name +', '
         base_station_info['sector_ss_technology']+= DeviceTechnology.objects.get(id=sector.sector_configured_on.device_technology).name +', '
@@ -515,6 +553,14 @@ def prepare_result(base_station_id):
                                                 'show': 1,
                                                  'value': substation.circuit_set.values_list('dl_rssi_during_acceptance', flat=True)[0] \
                                                     if substation.circuit_set.values_list('dl_rssi_during_acceptance', flat=True)[0] else 'N/A'
+                                            },
+                                            {
+                                                'name': 'planned_frequency',
+                                                'title': 'Planned Frequency',
+                                                'show': 1,
+                                                'value':sector.frequency.value
+                                                    if (sector.frequency and sector.frequency.value)
+                                                    else 'N/A',
                                             }
                                         ],
                                         }

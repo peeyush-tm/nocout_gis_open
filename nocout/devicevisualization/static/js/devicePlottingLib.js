@@ -883,6 +883,7 @@ function devicePlottingClass_gmap() {
 							vendor 				: sector_array[j].vendor,
 							deviceExtraInfo 	: sector_array[j].info,
 							deviceInfo 			: sector_array[j].device_info,
+							poll_info 			: [],
 							sectorName  		: sector_array[j].sector_configured_on,
 							device_name  		: sector_array[j].sector_configured_on,
 							name  				: bs_ss_devices[i].name,
@@ -942,6 +943,7 @@ function devicePlottingClass_gmap() {
 				    	pointType	     : 	"sub_station",
 				    	dataset 	     : 	ss_marker_obj.data.param.sub_station,
 				    	bhInfo 			 : 	[],
+				    	poll_info 		 : [],
 				    	antenna_height   : 	ss_marker_obj.data.antenna_height,
 				    	name 		 	 : 	ss_marker_obj.name,
 				    	bs_name 		 :  bs_ss_devices[i].name,
@@ -1358,8 +1360,10 @@ function devicePlottingClass_gmap() {
         /*Push polygon to an array*/
 		sectorArray.push(poly);
         poly.setMap(mapInstance);
-		if(sector_child.length) {
-			markersMasterObj['Poly'][sector_child[0]["device_name"]]= poly;
+		if(sector_child) {
+			for(var i=0;i<sector_child.length;i++) {
+				markersMasterObj['Poly'][sector_child[i]["device_name"]]= poly;
+			}			
 		}
         
 
@@ -1484,9 +1488,19 @@ function devicePlottingClass_gmap() {
 			}
 			infoTable += "<tr><td>Technology</td><td>"+contentObject.technology+"</td></tr>";
 			infoTable += "<tr><td>Vendor</td><td>"+contentObject.vendor+"</td></tr>";
+			
 			for(var i=0; i< contentObject['deviceExtraInfo'].length; i++) {
 				if(contentObject['deviceExtraInfo'][i].show) {
 					infoTable += "<tr><td>"+contentObject['deviceExtraInfo'][i]['title']+"</td><td>"+contentObject['deviceExtraInfo'][i]['value']+"</td></tr>";		
+				}
+			}
+
+			if(contentObject['poll_info']) {
+				/*Poll Parameter Info*/
+				for(var i=0; i< contentObject['poll_info'].length; i++) {
+					if(contentObject['poll_info'][i].show) {
+						infoTable += "<tr><td>"+contentObject['poll_info'][i]['title']+"</td><td>"+contentObject['poll_info'][i]['value']+"</td></tr>";
+					}
 				}
 			}
 
@@ -1504,10 +1518,20 @@ function devicePlottingClass_gmap() {
 			} else {
 				startPtInfo = contentObject.dataset;	
 			}
+			
 			for(var i=0;i<startPtInfo.length;i++) {
 
 				if(startPtInfo[i].show == 1) {
 					infoTable += "<tr><td>"+startPtInfo[i].title+"</td><td>"+startPtInfo[i].value+"</td></tr>";
+				}
+			}
+
+			if(contentObject['poll_info']) {
+				/*Poll Parameter Info*/
+				for(var i=0; i< contentObject['poll_info'].length; i++) {
+					if(contentObject['poll_info'][i].show) {
+						infoTable += "<tr><td>"+contentObject['poll_info'][i]['title']+"</td><td>"+contentObject['poll_info'][i]['value']+"</td></tr>";
+					}
 				}
 			}
 

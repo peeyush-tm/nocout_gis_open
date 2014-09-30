@@ -828,8 +828,12 @@ def add_device_to_nms_core(request, device_id, ping_data):
     if device.host_state != "Disable":
         # get 'agent_tag' from DeviceType model
         agent_tag = ""
+        device_type_name = ""
+
         try:
-            agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
+            device_type_object = DeviceType.objects.get(id=device.device_type)
+            agent_tag = device_type_object.agent_tag
+            device_type_name = device_type_object.name
         except Exception as e:
             logger.info(e.message)
         device_data = {'device_name': str(device.device_name),
@@ -840,7 +844,9 @@ def add_device_to_nms_core(request, device_id, ping_data):
                        'mode': 'addhost',
                        'ping_levels': ping_levels,
                        'parent_device_name': None,
-                       'mac': str(device.mac_address)}
+                       'mac': str(device.mac_address),
+                       'device_type' : device_type_name
+                       }
 
         device_tech = DeviceTechnology.objects.filter(id=device.device_technology)
         if device_tech and (str(device_tech[0].name).lower() == 'pmp' or str(device_tech[0].name.lower() == 'wimax')):

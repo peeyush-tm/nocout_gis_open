@@ -195,7 +195,7 @@ class Circuit(models.Model):
     alias = models.CharField('Alias', max_length=250)
     circuit_type = models.CharField('Type', max_length=250, null=True, blank=True)
     circuit_id = models.CharField('Circuit ID', max_length=250)
-    sector = models.ForeignKey(Sector)
+    sector = models.ForeignKey(Sector, null=True, blank=True)
     customer = models.ForeignKey(Customer)
     sub_station = models.ForeignKey(SubStation)
     qos_bandwidth = models.FloatField('QOS(BW)', null=True, blank=True, help_text='(kbps) Enter a number.')
@@ -320,6 +320,7 @@ class ThematicSettings(models.Model):
     def __unicode__(self):
         return self.name
 
+
 #user Profile based thematic settings
 class UserThematicSettings(models.Model):
     """
@@ -328,7 +329,6 @@ class UserThematicSettings(models.Model):
     user_profile = models.ForeignKey(UserProfile)
     thematic_template = models.ForeignKey(ThematicSettings)
     thematic_technology = models.ForeignKey(DeviceTechnology, null=True)
-
 
 
 class GISInventoryBulkImport(models.Model):

@@ -29,7 +29,7 @@
 {#            </div>#}
         </div>
 
-        <div id="tableContainer" class="box-body">
+        <div id="tableContainer" class="box-body" style="overflow: auto;">
             <table cellpadding="0" cellspacing="0" border="0"
                    class="datatable table table-striped table-bordered table-hover" id="GISInventoryBulkImportListingTable">
                 <thead></thead>
@@ -53,6 +53,16 @@
             /*Call createDataTable function of ourDataTableWidget class*/
             var destroy=false;
             dataTableInstance.createDataTable("GISInventoryBulkImportListingTable", gridHeadersObj, ajax_url, destroy);
+        });
+        $(document).on("click", ".bulk_import_link", function(e) {
+            var link = $(this).attr("href"); // "get" the intended link in a var
+            console.log(link);
+            e.preventDefault();
+            bootbox.confirm("Are you sure?", function(result) {
+                if (result) {
+                    document.location.href = link;  // if result, "set" the document location
+                }
+            });
         });
 
     </script>
