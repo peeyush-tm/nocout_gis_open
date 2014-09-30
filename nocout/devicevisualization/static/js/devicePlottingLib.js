@@ -842,7 +842,7 @@ function devicePlottingClass_gmap() {
 
 					if($.trim(sector_array[j].technology) != "PTP" && $.trim(sector_array[j].technology) != "P2P") {
 						/*Plot sector on map with the retrived points*/
-						gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child,$.trim(sector_array[j].technology));
+						gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child,$.trim(sector_array[j].technology),orientation);
 
 						startEndObj["startLat"] = pointsArray[halfPt].lat;
 						startEndObj["startLon"] = pointsArray[halfPt].lon;
@@ -1315,8 +1315,9 @@ function devicePlottingClass_gmap() {
 	 * @param bgColor {String}, It contains the RGBA format color code for sector.
 	 * @param sector_child [JSON object Array], It contains the connected SS data.
 	 * @param technology {String}, It contains the technology of sector device.
+	 * @param polarisation {String}, It contains the polarisation(horizontal or vertical) of sector device.
 	 */
-	this.plotSector_gmap = function(lat,lon,pointsArray,sectorInfo,bgColor,sector_child,technology) {
+	this.plotSector_gmap = function(lat,lon,pointsArray,sectorInfo,bgColor,sector_child,technology,polarisation) {
 		var polyPathArray = [];
 		
 		var halfPt = Math.floor(pointsArray.length / (+2));
@@ -1353,6 +1354,7 @@ function devicePlottingClass_gmap() {
 			startLon 	     : startLon,
 			bhInfo 			 : [],
 			child_ss 	     : sector_child,
+			polarisation 	 : polarisation,
 			original_sectors : sector_child,
 			zIndex 			 : 180,
 			geodesic		 : true
@@ -3687,12 +3689,12 @@ function prepare_data_for_filter(){
         {
             for (i=0; i< main_devices_data_gmaps.length; i++)
             {
-                filter_data_sector_ss_technology_value= main_devices_data_gmaps[i].sector_ss_technology.split(' ').filter(function (n) { return n != ""})
+                filter_data_sector_ss_technology_value= main_devices_data_gmaps[i].sector_ss_technology.split('|').filter(function (n) { return n != ""})
                 filter_data_sector_ss_technology_collection.push({ 'id': main_devices_data_gmaps[i].id ,
                         'value':filter_data_sector_ss_technology_value });
 
 
-                filter_data_sector_ss_vendor_value= main_devices_data_gmaps[i].sector_ss_vendor.split(' ').filter(function (n) { return n != ""})
+                filter_data_sector_ss_vendor_value= main_devices_data_gmaps[i].sector_ss_vendor.split('|').filter(function (n) { return n != ""})
                 filter_data_sector_ss_vendor_collection.push({ 'id':main_devices_data_gmaps[i].id,
                                                       'value':filter_data_sector_ss_vendor_value });
 
@@ -3767,13 +3769,13 @@ function getDataForAdvanceSearch() {
 
     		filter_data_bs_name_collection.push({ 'id':[main_devices_data_gmaps[i].id], 'value':main_devices_data_gmaps[i].name });
 
-    		filter_data_sector_configured_on_value= main_devices_data_gmaps[i].sector_configured_on_devices.split(' ').filter(function (n) { return n != ""});
+    		filter_data_sector_configured_on_value= main_devices_data_gmaps[i].sector_configured_on_devices.split('|').filter(function (n) { return n != ""});
 
     		for (var k=0;k<filter_data_sector_configured_on_value.length;k++) {
     			filter_data_sector_configured_on_collection.push({ 'id':[main_devices_data_gmaps[i].id], 'value':filter_data_sector_configured_on_value[k] });
     		}
 
-    		filter_data_sector_circuit_ids_values= main_devices_data_gmaps[i].circuit_ids.split(' ').filter(function (n) { return n != ""});
+    		filter_data_sector_circuit_ids_values= main_devices_data_gmaps[i].circuit_ids.split('|').filter(function (n) { return n != ""});
 
     		for (var k=0;k<filter_data_sector_circuit_ids_values.length;k++){
     			filter_data_sector_circuit_ids_collection.push({ 'id':[main_devices_data_gmaps[i].id], 'value':filter_data_sector_circuit_ids_values[k] });

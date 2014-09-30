@@ -630,9 +630,9 @@ def prepare_result(base_station_id):
     base_station_sector_configured_on= base_station_info['sector_configured_on_devices'].split(', ')
     base_station_circuit_ids= base_station_info['circuit_ids'].split(', ')
 
-    base_station_info['sector_ss_vendor']= " ".join(sorted(set(base_station_sector_ss_vendor), key=base_station_sector_ss_vendor.index))
-    base_station_info['sector_ss_technology']= " ".join(sorted(set(base_station_sector_ss_technology), key=base_station_sector_ss_technology.index))
-    base_station_info['sector_configured_on_devices']= " ".join(sorted(set(base_station_sector_configured_on), key=base_station_sector_configured_on.index))
-    base_station_info['circuit_ids']= " ".join(sorted(set(base_station_circuit_ids), key=base_station_circuit_ids.index))
+    base_station_info['sector_ss_vendor']= "|".join(sorted(set(base_station_sector_ss_vendor), key=base_station_sector_ss_vendor.index))
+    base_station_info['sector_ss_technology']= "|".join(sorted(set(base_station_sector_ss_technology), key=base_station_sector_ss_technology.index))
+    base_station_info['sector_configured_on_devices']= "|".join(sorted(set(base_station_sector_configured_on), key=base_station_sector_configured_on.index))
+    base_station_info['circuit_ids']= "|".join(sorted(set(base_station_circuit_ids), key=base_station_circuit_ids.index))
 
     return base_station_info
