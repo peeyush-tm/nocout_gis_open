@@ -1506,7 +1506,7 @@ class CircuitList(ListView):
             {'mData': 'sector__name', 'sTitle': 'Sector', 'sWidth': 'null', },
             {'mData': 'customer__name', 'sTitle': 'Customer', 'sWidth': 'null', 'sClass': 'hidden-xs'},
             {'mData': 'sub_station__name', 'sTitle': 'Sub Station', 'sWidth': 'null', },
-            {'mData': 'date_of_acceptance', 'sTitle': 'Date of Acceptance', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            # {'mData': 'date_of_acceptance', 'sTitle': 'Date of Acceptance', 'sWidth': 'null', 'sClass': 'hidden-xs','bSearchable':False},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null',  'sClass': 'hidden-xs'},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
@@ -1524,9 +1524,9 @@ class CircuitListingTable(BaseDatatableView):
     """
     model = Circuit
     columns = ['name', 'alias', 'circuit_id','sector__base_station__name', 'sector__name', 'customer__name',
-               'sub_station__name', 'date_of_acceptance', 'description']
+               'sub_station__name', 'description']
     order_columns = ['name', 'alias', 'circuit_id','sector__base_station__name', 'sector__name', 'customer__name',
-                     'sub_station__name', 'date_of_acceptance', 'description']
+                     'sub_station__name', 'description']
 
     def filter_queryset(self, qs):
         """
@@ -1565,8 +1565,8 @@ class CircuitListingTable(BaseDatatableView):
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             dct.update(actions='<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')),
-                       date_of_acceptance=dct['date_of_acceptance'].strftime("%Y-%m-%d") if dct['date_of_acceptance'] != "" else "")
+                <a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                       # date_of_acceptance=dct['date_of_acceptance'].strftime("%Y-%m-%d") if dct['date_of_acceptance'] != "" else "")
 
         return qs
 
