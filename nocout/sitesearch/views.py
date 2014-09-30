@@ -161,6 +161,14 @@ def prepare_result(base_station_id):
                         'title':'BS Type',
                         'show':1,
                         'value': base_station.bs_type if base_station.bs_type else 'N/A'
+                    },
+                    {
+                        'name':'bs_switch',
+                        'title':'BS Switch',
+                        'show':1,
+                        'value': base_station.bs_switch.ip_address
+                                if (base_station and base_station.bs_switch and base_station.bs_switch.ip_address)
+                                else 'N/A'
                     }
                 ],
                 'backhual': [
@@ -193,6 +201,28 @@ def prepare_result(base_station_id):
                         'title': 'BH Connectivity',
                         'show': 1,
                         'value': backhaul.bh_connectivity if backhaul else 'N/A'
+                    },
+                    {
+                        'name': 'aggregation_switch',
+                        'title': 'Aggregation Switch',
+                        'show': 1,
+                        'value': backhaul.aggregator.ip_address
+                                if (backhaul and  backhaul.aggregator)
+                                else 'N/A'
+                    },
+                    {
+                        'name': 'aggregation_port',
+                        'title': 'Aggregation Port',
+                        'show': 1,
+                        'value': str(backhaul.aggregator_port_name) + "/" + str(backhaul.aggregator_port)
+                                if (backhaul and  backhaul.aggregator_port_name and backhaul.aggregator_port)
+                                else 'N/A'
+                    },
+                    {
+                        'name': 'bs_converter_ip',
+                        'title': 'BS Converter IP',
+                        'show': 1,
+                        'value': str(backhaul.bh_switch.ip_address) if (backhaul and backhaul.bh_switch) else 'N/A'
                     },
                     ]}
 
@@ -398,14 +428,6 @@ def prepare_result(base_station_id):
                                                 'value': substation.name if substation.name else 'N/A'
                                             },
                                             {
-                                                'name': 'planned_frequency',
-                                                'title': 'Planned Frequency',
-                                                'show': 1,
-                                                'value':sector.frequency.value
-                                                    if (sector.frequency and sector.frequency.value)
-                                                    else 'N/A',
-                                            },
-                                            {
                                                 'name': 'cktid',
                                                 'title': 'Circuit ID',
                                                 'show': 1,
@@ -531,6 +553,14 @@ def prepare_result(base_station_id):
                                                 'show': 1,
                                                  'value': substation.circuit_set.values_list('dl_rssi_during_acceptance', flat=True)[0] \
                                                     if substation.circuit_set.values_list('dl_rssi_during_acceptance', flat=True)[0] else 'N/A'
+                                            },
+                                            {
+                                                'name': 'planned_frequency',
+                                                'title': 'Planned Frequency',
+                                                'show': 1,
+                                                'value':sector.frequency.value
+                                                    if (sector.frequency and sector.frequency.value)
+                                                    else 'N/A',
                                             }
                                         ],
                                         }
@@ -600,9 +630,9 @@ def prepare_result(base_station_id):
     base_station_sector_configured_on= base_station_info['sector_configured_on_devices'].split(', ')
     base_station_circuit_ids= base_station_info['circuit_ids'].split(', ')
 
-    base_station_info['sector_ss_vendor']= " ".join(sorted(set(base_station_sector_ss_vendor), key=base_station_sector_ss_vendor.index))
-    base_station_info['sector_ss_technology']= " ".join(sorted(set(base_station_sector_ss_technology), key=base_station_sector_ss_technology.index))
-    base_station_info['sector_configured_on_devices']= " ".join(sorted(set(base_station_sector_configured_on), key=base_station_sector_configured_on.index))
-    base_station_info['circuit_ids']= " ".join(sorted(set(base_station_circuit_ids), key=base_station_circuit_ids.index))
+    base_station_info['sector_ss_vendor']= "|".join(sorted(set(base_station_sector_ss_vendor), key=base_station_sector_ss_vendor.index))
+    base_station_info['sector_ss_technology']= "|".join(sorted(set(base_station_sector_ss_technology), key=base_station_sector_ss_technology.index))
+    base_station_info['sector_configured_on_devices']= "|".join(sorted(set(base_station_sector_configured_on), key=base_station_sector_configured_on.index))
+    base_station_info['circuit_ids']= "|".join(sorted(set(base_station_circuit_ids), key=base_station_circuit_ids.index))
 
     return base_station_info
