@@ -321,32 +321,30 @@ function GisPerformance() {
                     if (!$("#show_hide_label")[0].checked) {
                         visible_flag = true;
                     }
-                    if((ss_perf_obj["performance_paramter"] && $.trim(ss_perf_obj["performance_paramter"])) && (ss_perf_obj["performance_value"] && $.trim(ss_perf_obj["performance_value"]))) {
-                        var perf_infobox = new InfoBox({
-                            content: ss_perf_obj["performance_paramter"] + "<br/>" + ss_perf_obj["performance_value"],
-                            boxStyle: {
-                                border: "1px solid black",
-                                background: "white",
-                                textAlign: "center",
-                                fontSize: "9pt",
-                                color: "black",
-                                maxWidth: '180px',
-                                width: '100px'
-                            },
-                            disableAutoPan: true,
-                            position: new google.maps.LatLng(subStationMarker.ptLat, subStationMarker.ptLon),
-                            closeBoxURL: "",
-                            isHidden: visible_flag,
-                            // visible : visible_flag,
-                            enableEventPropagation: true,
-                            zIndex: 80
-                        });
 
+                    if((ss_perf_obj["performance_value"] && $.trim(ss_perf_obj["performance_value"]))) {
+	                    var perf_infobox = new InfoBox({
+	                        content: ss_perf_obj["performance_value"],
+	                        boxStyle: {
+	                            border: "1px solid black",
+	                            background: "white",
+	                            textAlign: "center",
+	                            fontSize: "9pt",
+	                            color: "black",
+	                            padding: '2px 6px'
+	                        },
+	                        disableAutoPan: true,
+	                        position: new google.maps.LatLng(subStationMarker.ptLat, subStationMarker.ptLon),
+	                        closeBoxURL: "",
+	                        isHidden: visible_flag,
+	                        // visible : visible_flag,
+	                        enableEventPropagation: true,
+	                        zIndex: 80
+	                    });
 
-                        perf_infobox.open(mapInstance, subStationMarker);
+	                    perf_infobox.open(mapInstance, subStationMarker);
 
-                        labelsArray.push(perf_infobox);
-                        
+	                    labelsArray.push(perf_infobox);
                     }
 
                     subStationMarker["poll_info"] = polled_info;

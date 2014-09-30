@@ -32,8 +32,8 @@ function FullScreenControl(map) {
 	var newStyle = document.createElement('style');
 	newStyle.setAttribute('type', 'text/css');
 	newStyle.setAttribute('media', 'print');
-	newStyle.appendChild(document.createTextNode('.fullScreen { display: none;}'));
-	head.appendChild(newStyle);
+	try{newStyle.appendChild(document.createTextNode('.fullScreen { display: none;}'));}catch(err){}
+	try{head.appendChild(newStyle);}catch(err){}	
 	
 	var fullScreen = false;
 	var interval;
