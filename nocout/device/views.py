@@ -21,7 +21,7 @@ from organization.models import Organization
 from service.models import Service
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.conf import settings  #Importing settings for logger
+from django.conf import settings                                      # Importing settings for logger
 from site_instance.models import SiteInstance
 from inventory.models import Backhaul, SubStation, Sector
 from django.contrib.staticfiles.templatetags.staticfiles import static
