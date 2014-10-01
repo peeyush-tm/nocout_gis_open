@@ -26,12 +26,12 @@ class SiteInstanceList(ListView):
         """
         context=super(SiteInstanceList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',                  'sTitle' : 'Name',                  'sWidth':'null',},
-            {'mData':'alias',                 'sTitle' : 'Alias',                 'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'machine__name',         'sTitle' : 'Machine',               'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'live_status_tcp_port',  'sTitle' : 'Live Status TCP Port',  'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'web_service_port',      'sTitle' : 'Web Service Port',      'sWidth':'null',},
-            {'mData':'username',              'sTitle' : 'Username',              'sWidth':'null',},
+            {'mData':'name',                  'sTitle' : 'Name',                  'sWidth':'auto',},
+            {'mData':'alias',                 'sTitle' : 'Alias',                 'sWidth':'auto','sClass':'hidden-xs'},
+            {'mData':'machine__name',         'sTitle' : 'Machine',               'sWidth':'auto','sClass':'hidden-xs'},
+            {'mData':'live_status_tcp_port',  'sTitle' : 'Live Status TCP Port',  'sWidth':'auto','sClass':'hidden-xs'},
+            {'mData':'web_service_port',      'sTitle' : 'Web Service Port',      'sWidth':'auto',},
+            {'mData':'username',              'sTitle' : 'Username',              'sWidth':'auto',},
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})

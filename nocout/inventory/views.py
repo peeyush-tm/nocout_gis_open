@@ -68,11 +68,11 @@ class InventoryListing(ListView):
         """
         context = super(InventoryListing, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'user_group__name', 'sTitle': 'User Group', 'sWidth': 'null', },
-            {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'null', },
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', },]
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'user_group__name', 'sTitle': 'User Group', 'sWidth': 'auto', },
+            {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', },]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
@@ -282,11 +282,11 @@ class AntennaList(ListView):
         """
         context = super(AntennaList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'height', 'sTitle': 'Height', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'polarization', 'sTitle': 'Polarization', 'sWidth': 'null', },
-            {'mData': 'tilt', 'sTitle': 'Tilt', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'height', 'sTitle': 'Height', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'polarization', 'sTitle': 'Polarization', 'sWidth': 'auto', },
+            {'mData': 'tilt', 'sTitle': 'Tilt', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'beam_width', 'sTitle': 'Beam Width', 'sWidth': '10%', },
             {'mData': 'azimuth_angle', 'sTitle': 'Azimuth Angle', 'sWidth': '10%', }, ]
 
@@ -482,15 +482,15 @@ class BaseStationList(ListView):
         """
         context = super(BaseStationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'null', },
-            {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'null', },
-            {'mData': 'bs_switch__device_name', 'sTitle': 'BS Switch', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'backhaul__name', 'sTitle': 'Backhaul', 'sWidth': 'null', },
-            {'mData': 'bs_type', 'sTitle': 'BS Type', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'null', },
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
+            {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
+            {'mData': 'bs_switch__device_name', 'sTitle': 'BS Switch', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'backhaul__name', 'sTitle': 'Backhaul', 'sWidth': 'auto', },
+            {'mData': 'bs_type', 'sTitle': 'BS Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
@@ -681,16 +681,16 @@ class BackhaulList(ListView):
         """
         context = super(BackhaulList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'bh_configured_on__device_name', 'sTitle': 'Backhaul Configured On', 'sWidth': 'null', },
-            {'mData': 'bh_port', 'sTitle': 'Backhaul Port', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'bh_type', 'sTitle': 'Backhaul Type', 'sWidth': 'null', },
-            {'mData': 'pop__device_name', 'sTitle': 'POP', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'pop_port', 'sTitle': 'POP Port', 'sWidth': 'null', },
-            {'mData': 'bh_connectivity', 'sTitle': 'Connectivity', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'bh_circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null', },
-            {'mData': 'bh_capacity', 'sTitle': 'Capacity', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'bh_configured_on__device_name', 'sTitle': 'Backhaul Configured On', 'sWidth': 'auto', },
+            {'mData': 'bh_port', 'sTitle': 'Backhaul Port', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'bh_type', 'sTitle': 'Backhaul Type', 'sWidth': 'auto', },
+            {'mData': 'pop__device_name', 'sTitle': 'POP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'pop_port', 'sTitle': 'POP Port', 'sWidth': 'auto', },
+            {'mData': 'bh_connectivity', 'sTitle': 'Connectivity', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'bh_circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', },
+            {'mData': 'bh_capacity', 'sTitle': 'Capacity', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             ]
 
         #if the user role is Admin or operator then the action column will appear on the datatable
@@ -887,16 +887,16 @@ class SectorList(ListView):
         """
         context = super(SectorList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'null', },
-            {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'sector_configured_on__device_name', 'sTitle': 'Sector Configured On', 'sWidth': 'null', },
-            {'mData': 'sector_configured_on_port__name', 'sTitle': 'Sector Configured On Port', 'sWidth': 'null',
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
+            {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'sector_configured_on__device_name', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
+            {'mData': 'sector_configured_on_port__name', 'sTitle': 'Sector Configured On Port', 'sWidth': 'auto',
              'sClass': 'hidden-xs'},
-            {'mData': 'antenna__name', 'sTitle': 'Antenna', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'mrc', 'sTitle': 'MRC', 'sWidth': 'null', },
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__name', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'mrc', 'sTitle': 'MRC', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             ]
 
         #if the user role is Admin or operator then the action column will appear on the datatable
@@ -1091,10 +1091,10 @@ class CustomerList(ListView):
     def get_context_data(self, **kwargs):
         context = super(CustomerList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'null', 'sClass': 'hidden-xs','bSortable': False},
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', 'bSortable': False},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'bSortable': False},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
@@ -1289,18 +1289,18 @@ class SubStationList(ListView):
         """
         context = super(SubStationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'device__device_name', 'sTitle': 'Device', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'antenna__name', 'sTitle': 'Antenna', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'null', },
-            {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'null', },
-            {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'null', 'bSortable': False},
-            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs','bSortable': False},
-            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'null', 'bSortable': False},
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'device__device_name', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__name', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', },
+            {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
+            {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
             ]
 
         #if the user role is Admin or operator then the action column will appear on the datatable
@@ -1499,15 +1499,15 @@ class CircuitList(ListView):
         """
         context = super(CircuitList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null'},
-            {'mData': 'sector__base_station__name', 'sTitle': 'Base Station', 'sWidth': 'null'},
-            {'mData': 'sector__name', 'sTitle': 'Sector', 'sWidth': 'null', },
-            {'mData': 'customer__name', 'sTitle': 'Customer', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'sub_station__name', 'sTitle': 'Sub Station', 'sWidth': 'null', },
-            {'mData': 'date_of_acceptance', 'sTitle': 'Date of Acceptance', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null',  'sClass': 'hidden-xs'},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
+            {'mData': 'sector__base_station__name', 'sTitle': 'Base Station', 'sWidth': 'auto'},
+            {'mData': 'sector__name', 'sTitle': 'Sector', 'sWidth': 'auto', },
+            {'mData': 'customer__name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'sub_station__name', 'sTitle': 'Sub Station', 'sWidth': 'auto', },
+            {'mData': 'date_of_acceptance', 'sTitle': 'Date of Acceptance', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto',  'sClass': 'hidden-xs'},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
@@ -1737,9 +1737,9 @@ class IconSettingsList(ListView):
         """
         context = super(IconSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name',             'sTitle': 'Name',               'sWidth': 'null'},
-            {'mData': 'alias',            'sTitle': 'Alias',              'sWidth': 'null'},
-            {'mData': 'upload_image',     'sTitle': 'Image',       'sWidth': 'null'},
+            {'mData': 'name',             'sTitle': 'Name',               'sWidth': 'auto'},
+            {'mData': 'alias',            'sTitle': 'Alias',              'sWidth': 'auto'},
+            {'mData': 'upload_image',     'sTitle': 'Image',       'sWidth': 'auto'},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
@@ -1940,11 +1940,11 @@ class LivePollingSettingsList(ListView):
         """
         context = super(LivePollingSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name',                    'sTitle': 'Name',              'sWidth': 'null'},
-            {'mData': 'alias',                   'sTitle': 'Alias',             'sWidth': 'null'},
-            {'mData': 'technology__alias',       'sTitle': 'Technology',        'sWidth': 'null'},
-            {'mData': 'service__alias',          'sTitle': 'Service',           'sWidth': 'null'},
-            {'mData': 'data_source__alias',      'sTitle': 'Data Source',       'sWidth': 'null'},
+            {'mData': 'name',                    'sTitle': 'Name',              'sWidth': 'auto'},
+            {'mData': 'alias',                   'sTitle': 'Alias',             'sWidth': 'auto'},
+            {'mData': 'technology__alias',       'sTitle': 'Technology',        'sWidth': 'auto'},
+            {'mData': 'service__alias',          'sTitle': 'Service',           'sWidth': 'auto'},
+            {'mData': 'data_source__alias',      'sTitle': 'Data Source',       'sWidth': 'auto'},
             ]
         user_id = self.request.user.id
         #if user is superadmin or gisadmin
@@ -2138,9 +2138,9 @@ class ThresholdConfigurationList(ListView):
         """
         context = super(ThresholdConfigurationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name',                           'sTitle': 'Name',                   'sWidth': 'null'},
-            {'mData': 'alias',                          'sTitle': 'Alias',                  'sWidth': 'null'},
-            {'mData': 'live_polling_template__alias',   'sTitle': 'Live Polling Template',  'sWidth': 'null'},
+            {'mData': 'name',                           'sTitle': 'Name',                   'sWidth': 'auto'},
+            {'mData': 'alias',                          'sTitle': 'Alias',                  'sWidth': 'auto'},
+            {'mData': 'live_polling_template__alias',   'sTitle': 'Live Polling Template',  'sWidth': 'auto'},
             ]
         user_id = self.request.user.id
         #if user is superadmin or gisadmin
@@ -2335,11 +2335,11 @@ class ThematicSettingsList(ListView):
         """
         context = super(ThematicSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name',                    'sTitle': 'Name',                      'sWidth': 'null'},
-            {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'null'},
-            {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'null'},
-            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'null'},
-            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'null'},]
+            {'mData': 'name',                    'sTitle': 'Name',                      'sWidth': 'auto'},
+            {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'auto'},
+            {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'auto'},
+            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto'},
+            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'auto'},]
 
         # user_id = self.request.user.id
 
@@ -2915,17 +2915,17 @@ class GISInventoryBulkImportList(ListView):
         """
         context = super(GISInventoryBulkImportList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'original_filename', 'sTitle': 'Inventory Sheet', 'sWidth': 'null', },
-            {'mData': 'valid_filename', 'sTitle': 'Valid Sheet', 'sWidth': 'null', },
-            {'mData': 'invalid_filename', 'sTitle': 'Invalid Sheet', 'sWidth': 'null', },
-            {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'null', },
-            {'mData': 'sheet_name', 'sTitle': 'Sheet Name', 'sWidth': 'null', },
-            {'mData': 'technology', 'sTitle': 'Technology', 'sWidth': 'null', },
-            {'mData': 'upload_status', 'sTitle': 'Upload Status', 'sWidth': 'null', },
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', },
-            {'mData': 'uploaded_by', 'sTitle': 'Uploaded By', 'sWidth': 'null', },
-            {'mData': 'added_on', 'sTitle': 'Added On', 'sWidth': 'null', },
-            {'mData': 'modified_on', 'sTitle': 'Modified On', 'sWidth': 'null', },
+            {'mData': 'original_filename', 'sTitle': 'Inventory Sheet', 'sWidth': 'auto', },
+            {'mData': 'valid_filename', 'sTitle': 'Valid Sheet', 'sWidth': 'auto', },
+            {'mData': 'invalid_filename', 'sTitle': 'Invalid Sheet', 'sWidth': 'auto', },
+            {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto', },
+            {'mData': 'sheet_name', 'sTitle': 'Sheet Name', 'sWidth': 'auto', },
+            {'mData': 'technology', 'sTitle': 'Technology', 'sWidth': 'auto', },
+            {'mData': 'upload_status', 'sTitle': 'Upload Status', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', },
+            {'mData': 'uploaded_by', 'sTitle': 'Uploaded By', 'sWidth': 'auto', },
+            {'mData': 'added_on', 'sTitle': 'Added On', 'sWidth': 'auto', },
+            {'mData': 'modified_on', 'sTitle': 'Modified On', 'sWidth': 'auto', },
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})

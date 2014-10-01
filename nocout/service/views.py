@@ -37,11 +37,11 @@ class ServiceList(ListView):
         """
         context = super(ServiceList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'parameters__parameter_description', 'sTitle': 'Default Parameters', 'sWidth': 'null', },
-            {'mData': 'service_data_sources__alias', 'sTitle': 'Data Sources', 'sWidth': 'null', },
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'parameters__parameter_description', 'sTitle': 'Default Parameters', 'sWidth': 'auto', },
+            {'mData': 'service_data_sources__alias', 'sTitle': 'Data Sources', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
@@ -265,12 +265,12 @@ class ServiceParametersList(ListView):
         """
         context = super(ServiceParametersList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'parameter_description', 'sTitle': 'Parameter Description', 'sWidth': 'null', },
-            {'mData': 'protocol__name', 'sTitle': 'Protocol', 'sWidth': 'null', },
-            {'mData': 'normal_check_interval', 'sTitle': 'Normal Check Intervals', 'sWidth': 'null',
+            {'mData': 'parameter_description', 'sTitle': 'Parameter Description', 'sWidth': 'auto', },
+            {'mData': 'protocol__name', 'sTitle': 'Protocol', 'sWidth': 'auto', },
+            {'mData': 'normal_check_interval', 'sTitle': 'Normal Check Intervals', 'sWidth': 'auto',
              'sClass': 'hidden-xs'},
-            {'mData': 'retry_check_interval', 'sTitle': 'Retry Check Intervals', 'sWidth': 'null', },
-            {'mData': 'max_check_attempts', 'sTitle': 'Max Check Attempts', 'sWidth': 'null', },
+            {'mData': 'retry_check_interval', 'sTitle': 'Retry Check Intervals', 'sWidth': 'auto', },
+            {'mData': 'max_check_attempts', 'sTitle': 'Max Check Attempts', 'sWidth': 'auto', },
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
@@ -474,10 +474,10 @@ class ServiceDataSourceList(ListView):
         """
         context = super(ServiceDataSourceList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'warning', 'sTitle': 'Warning', 'sWidth': 'null', },
-            {'mData': 'critical', 'sTitle': 'Critical', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'warning', 'sTitle': 'Warning', 'sWidth': 'auto', },
+            {'mData': 'critical', 'sTitle': 'Critical', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
@@ -673,18 +673,18 @@ class ProtocolList(ListView):
         """
         context = super(ProtocolList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'protocol_name', 'sTitle': 'Protocol Name', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'port', 'sTitle': 'Port', 'sWidth': 'null', },
-            {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'read_community', 'sTitle': 'Read Community', 'sWidth': 'null', },
-            {'mData': 'write_community', 'sTitle': 'Write Community', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'auth_password', 'sTitle': 'Auth Password', 'sWidth': 'null', },
-            {'mData': 'auth_protocol', 'sTitle': 'Auth Protocol', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'security_name', 'sTitle': 'Security Name', 'sWidth': 'null', },
-            {'mData': 'security_level', 'sTitle': 'Security Level', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'private_phase', 'sTitle': 'Private Phase', 'sWidth': 'null', },
-            {'mData': 'private_pass_phase', 'sTitle': 'Private Pass Phase', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'protocol_name', 'sTitle': 'Protocol Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'port', 'sTitle': 'Port', 'sWidth': 'auto', },
+            {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'read_community', 'sTitle': 'Read Community', 'sWidth': 'auto', },
+            {'mData': 'write_community', 'sTitle': 'Write Community', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'auth_password', 'sTitle': 'Auth Password', 'sWidth': 'auto', },
+            {'mData': 'auth_protocol', 'sTitle': 'Auth Protocol', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'security_name', 'sTitle': 'Security Name', 'sWidth': 'auto', },
+            {'mData': 'security_level', 'sTitle': 'Security Level', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'private_phase', 'sTitle': 'Private Phase', 'sWidth': 'auto', },
+            {'mData': 'private_pass_phase', 'sTitle': 'Private Pass Phase', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})

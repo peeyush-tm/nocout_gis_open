@@ -29,11 +29,11 @@ class MachineList(ListView):
         """
         context=super(MachineList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',                     'sTitle' : 'Name',                 'sWidth':'null',},
-            {'mData':'alias',                    'sTitle' : 'Alias',                'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'machine_ip',               'sTitle' : 'Machine IP',           'sWidth':'null',},
-            {'mData':'agent_port',               'sTitle' : 'Agent Port',           'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'description',              'sTitle' : 'Description',          'sWidth':'null',}
+            {'mData':'name',                     'sTitle' : 'Name',                 'sWidth':'auto',},
+            {'mData':'alias',                    'sTitle' : 'Alias',                'sWidth':'auto','sClass':'hidden-xs'},
+            {'mData':'machine_ip',               'sTitle' : 'Machine IP',           'sWidth':'auto',},
+            {'mData':'agent_port',               'sTitle' : 'Agent Port',           'sWidth':'auto','sClass':'hidden-xs'},
+            {'mData':'description',              'sTitle' : 'Description',          'sWidth':'auto',}
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
