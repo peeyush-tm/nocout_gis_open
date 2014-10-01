@@ -30,10 +30,10 @@ class DeviceGroupList(ListView):
         """
         context=super(DeviceGroupList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData':'name',                   'sTitle' : 'Name',              'sWidth':'null',},
-            {'mData':'alias',                  'sTitle' : 'Alias',             'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'parent__name',           'sTitle' : 'Parent ',           'sWidth':'null',},
-            {'mData':'organization__name',     'sTitle' : 'Organization',      'sWidth':'null',},]
+            {'mData':'name',                   'sTitle' : 'Name',              'sWidth':'auto',},
+            {'mData':'alias',                  'sTitle' : 'Alias',             'sWidth':'auto','sClass':'hidden-xs'},
+            {'mData':'parent__name',           'sTitle' : 'Parent ',           'sWidth':'auto',},
+            {'mData':'organization__name',     'sTitle' : 'Organization',      'sWidth':'auto',},]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
