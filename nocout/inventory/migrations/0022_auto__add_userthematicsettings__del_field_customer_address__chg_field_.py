@@ -9,44 +9,44 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         # Adding model 'UserThematicSettings'
-        db.create_table(u'inventory_userthematicsettings', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('user_profile', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['user_profile.UserProfile'])),
-            ('thematic_template', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.ThematicSettings'])),
-            ('thematic_technology', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device.DeviceTechnology'], null=True)),
-        ))
-        db.send_create_signal(u'inventory', ['UserThematicSettings'])
+        # db.create_table(u'inventory_userthematicsettings', (
+        #     (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+        #     ('user_profile', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['user_profile.UserProfile'])),
+        #     ('thematic_template', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.ThematicSettings'])),
+        #     ('thematic_technology', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['device.DeviceTechnology'], null=True)),
+        # ))
+        # db.send_create_signal(u'inventory', ['UserThematicSettings'])
 
         # Deleting field 'Customer.address'
-        db.delete_column(u'inventory_customer', 'address')
+        # db.delete_column(u'inventory_customer', 'address')
 
 
         # Changing field 'Circuit.sector'
         db.alter_column(u'inventory_circuit', 'sector_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['inventory.Sector'], null=True))
         # Removing M2M table for field user_profile on 'ThematicSettings'
-        db.delete_table(db.shorten_name(u'inventory_thematicsettings_user_profile'))
+        # db.delete_table(db.shorten_name(u'inventory_thematicsettings_user_profile'))
 
 
     def backwards(self, orm):
         # Deleting model 'UserThematicSettings'
-        db.delete_table(u'inventory_userthematicsettings')
+        # db.delete_table(u'inventory_userthematicsettings')
 
         # Adding field 'Customer.address'
-        db.add_column(u'inventory_customer', 'address',
-                      self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True),
-                      keep_default=False)
+        # db.add_column(u'inventory_customer', 'address',
+        #               self.gf('django.db.models.fields.CharField')(max_length=250, null=True, blank=True),
+        #               keep_default=False)
 
 
         # Changing field 'Circuit.sector'
         db.alter_column(u'inventory_circuit', 'sector_id', self.gf('django.db.models.fields.related.ForeignKey')(default=1, to=orm['inventory.Sector']))
         # Adding M2M table for field user_profile on 'ThematicSettings'
-        m2m_table_name = db.shorten_name(u'inventory_thematicsettings_user_profile')
-        db.create_table(m2m_table_name, (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('thematicsettings', models.ForeignKey(orm[u'inventory.thematicsettings'], null=False)),
-            ('userprofile', models.ForeignKey(orm[u'user_profile.userprofile'], null=False))
-        ))
-        db.create_unique(m2m_table_name, ['thematicsettings_id', 'userprofile_id'])
+        # m2m_table_name = db.shorten_name(u'inventory_thematicsettings_user_profile')
+        # db.create_table(m2m_table_name, (
+        #     ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+        #     ('thematicsettings', models.ForeignKey(orm[u'inventory.thematicsettings'], null=False)),
+        #     ('userprofile', models.ForeignKey(orm[u'user_profile.userprofile'], null=False))
+        # ))
+        # db.create_unique(m2m_table_name, ['thematicsettings_id', 'userprofile_id'])
 
 
     models = {
