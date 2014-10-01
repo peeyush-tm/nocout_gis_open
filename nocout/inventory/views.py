@@ -1507,8 +1507,8 @@ class CircuitList(ListView):
             {'mData': 'customer__name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'sub_station__name', 'sTitle': 'Sub Station', 'sWidth': 'auto', },
             {'mData': 'date_of_acceptance', 'sTitle': 'Date of Acceptance', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto',  'sClass': 'hidden-xs'},
-            ]
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto',  'sClass': 'hidden-xs'}
+        ]
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
         if 'admin' in user_role or 'operator' in user_role:
@@ -1529,23 +1529,97 @@ class CircuitListingTable(BaseDatatableView):
                      'sub_station__name', 'date_of_acceptance', 'description']
 
     def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-        :param qs:
-        :return qs:
+        """ Filter datatable as per requested value
+
+        Args:
+            self (class 'inventory.views.CircuitListingTable'): <inventory.views.CircuitListingTable object>
+            qs (class 'django.db.models.query.ValuesQuerySet'):
+                                                [
+                                                    {
+                                                        'name': u'091pond030008938479',
+                                                        'customer__name': u'roots_corporation_ltd',
+                                                        'date_of_acceptance': None,
+                                                        'circuit_id': u'091POND030008938479',
+                                                        'alias': u'091POND030008938479',
+                                                        'sector__name': u'115.111.183.115',
+                                                        'sub_station__name': u'091pond030008938479',
+                                                        'sector__base_station__name': u'mission_street__ttsl',
+                                                        'id': 13136L,
+                                                        'description': u'Circuitcreatedon30-Sep-2014at18: 19: 28.'
+                                                    },
+                                                    {
+                                                        'name': u'091newd623009151684',
+                                                        'customer__name': u'usha_international_limited',
+                                                        'date_of_acceptance': None,
+                                                        'circuit_id': u'091NEWD623009151684',
+                                                        'alias': u'091NEWD623009151684',
+                                                        'sector__name': u'10.75.164.19',
+                                                        'sub_station__name': u'091newd623009151684',
+                                                        'sector__base_station__name': u'alipur_ii',
+                                                        'id': 13137L,
+                                                        'description': u'Circuitcreatedon30-Sep-2014at18: 19: 28.'
+                                                    },
+                                                    {
+                                                        'name': u'091prak623008993022',
+                                                        'customer__name': u'itc_limited',
+                                                        'date_of_acceptance': None,
+                                                        'circuit_id': u'091PRAK623008993022',
+                                                        'alias': u'091PRAK623008993022',
+                                                        'sector__name': None,
+                                                        'sub_station__name': u'091prak623008993022',
+                                                        'sector__base_station__name': None,
+                                                        'id': 13138L,
+                                                        'description': u'Circuitcreatedon30-Sep-2014at18: 19: 28.'
+                                                    },
+                                                    {
+                                                        'name': u'091hyde623009000750',
+                                                        'customer__name': u'nufuture_digital__india__limited',
+                                                        'date_of_acceptance': None,
+                                                        'circuit_id': u'091HYDE623009000750',
+                                                        'alias': u'091HYDE623009000750',
+                                                        'sector__name': u'172.25.117.187',
+                                                        'sub_station__name': u'091hyde623009000750',
+                                                        'sector__base_station__name': u'fern_hills',
+                                                        'id': 13139L,
+                                                        'description': u'Circuitcreatedon30-Sep-2014at18: 19: 28.'
+                                                    }
+                                                ]
+        Returns:
+            qs (class 'django.db.models.query.ValuesQuerySet'):
+                                                            [
+                                                                {
+                                                                    'name': u'091agra623006651037',
+                                                                    'customer__name': u'fortis_health_management',
+                                                                    'date_of_acceptance': None,
+                                                                    'circuit_id': u'091AGRA623006651037',
+                                                                    'alias': u'091AGRA623006651037',
+                                                                    'sector__name': None,
+                                                                    'sub_station__name': u'091agra623006651037',
+                                                                    'sector__base_station__name': None,
+                                                                    'id': 15013L,
+                                                                    'description': u'Circuitcreatedon30-Sep-2014at18: 19: 28.'
+                                                                }
+                                                            ]
 
         """
+
         sSearch = self.request.GET.get('sSearch', None)
+
+        # self.columns is a list of columns e.g. ['name', 'alias', 'circuit_id', 'sector__base_station__name',
+        # 'sector__name', 'customer__name', 'sub_station__name', 'date_of_acceptance', 'description']
+
         if sSearch:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
+                # avoid search on 'date_of_acceptance'
+                if column == 'date_of_acceptance':
+                    continue
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
             exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
-
         return qs
 
     def get_initial_queryset(self):
