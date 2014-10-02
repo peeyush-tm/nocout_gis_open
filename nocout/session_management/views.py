@@ -28,10 +28,10 @@ class UserStatusList(ListView):
         """
         context = super(UserStatusList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'username', 'sTitle': 'Username', 'sWidth': 'null', },
-            {'mData': 'full_name', 'sTitle': 'Full Name', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'role__role_name', 'sTitle': 'Role', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'logged_in_status', 'sTitle': 'Logged in', 'sWidth': 'null','bSortable': False },]
+            {'mData': 'username', 'sTitle': 'Username', 'sWidth': 'auto', },
+            {'mData': 'full_name', 'sTitle': 'Full Name', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'role__role_name', 'sTitle': 'Role', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'logged_in_status', 'sTitle': 'Logged in', 'sWidth': 'auto','bSortable': False },]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):

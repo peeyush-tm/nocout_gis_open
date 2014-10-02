@@ -42,7 +42,6 @@ function googleEarthClass() {
 	 * @param pluginInstance {Object}, It is the JSON object returned from google earth create instance function on successful creation of google earth.
 	 */
 	this.earthInitCallback = function(pluginInstance) {
-		console.log(pluginInstance);
 		// var mapTypeId = myMap.getMapTypeId();
 		// myMapObject.setMapTypeId(google.maps.MapTypeId.SATELLITE);
 
@@ -90,15 +89,21 @@ function googleEarthClass() {
 	 */
 	this.getDevicesData_earth = function() {
 
-		var get_param_filter = [];
+		var get_param_filter = "";
 		/*If any advance filters are applied then pass the advance filer with API call else pass blank array*/
 		if(appliedAdvFilter.length > 0) {
-			get_param_filter = appliedAdvFilter;
+			get_param_filter = JSON.stringify(appliedAdvFilter);
 		} else {
-			get_param_filter = [];
+			get_param_filter = "";
 		}
 
+		//display advance search, filter etc button when call is going on.
+		disableAdvanceButton();
+
 		if(counter > 0 || counter == -999) {
+
+			/*Ajax call not completed yet*/
+			isCallCompleted = 0;
 
 			/*Show The loading Icon*/
 			$("#loadingIcon").show();
@@ -106,143 +111,185 @@ function googleEarthClass() {
 			/*Disable the refresh button*/
 			$("#resetFilters").button("loading");
 
+			/*To Enable The Cross Domain Request*/
+			$.support.cors = true;
+
 			/*Ajax call to the API*/
 			$.ajax({
-				url : base_url+"/"+"device/stats/?filters="+JSON.stringify(get_param_filter),
+				url : base_url+"/"+"device/stats/?total_count="+devicesCount+"&page_number="+hitCounter,
 				// url : base_url+"/"+"static/new_format.json",
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
 				success : function(result) {
-					
+
 					if(result.success == 1) {
 
 						if(result.data.objects != null) {
 
 							hitCounter = hitCounter + 1;
+							/*First call case*/
+							if(devicesObject.data == undefined) {
 
-							if(result.data.objects.children.length > 0) {
+								/*Save the result json to the global variable for global access*/
+								devicesObject = result;
+								/*This will update if any filer is applied*/
+								devices_gmaps = devicesObject.data.objects.children;
 
-								/*First call case*/
-								if(devicesObject_earth.data == undefined) {
+							} else {
 
-									/*Save the result json to the global variable for global access*/
-									devicesObject_earth = result;
-									/*This will update if any filer is applied*/
-									devices_earth = devicesObject_earth.data.objects.children;
-									/*This will changes only when data re-fetched*/
-									main_devices_data_earth = devicesObject_earth.data.objects.children;
-								} else {
+								devices_gmaps = devices_gmaps.concat(result.data.objects.children);
+							}
 
-									devices_earth = devices_earth.concat(result.data.objects.children);
+							main_devices_data_gmaps = devices_gmaps;
+							data_for_filters = devices_gmaps;
+
+							if(devicesObject.data.objects.children.length > 0) {
+
+								/*Update the device count with the received data*/
+								if(devicesCount == 0) {
+									devicesCount = devicesObject.data.meta.total_count;
 								}
 
 								/*Update the device count with the received data*/
-								devicesCount = devicesObject_earth.data.meta.total_count;
-
-								/*Update the device count with the received data*/
-								showLimit = devicesObject_earth.data.meta.limit;
+								if(devicesObject.data.meta.limit != undefined) {
+									showLimit = devicesObject.data.meta.limit;
+								} else {
+									showLimit = 1;
+								}
 
 								if(counter == -999) {
-									counter = Math.round(devicesCount/showLimit);
+
+									counter = Math.floor(devicesCount / showLimit);
+								}
+
+								if(result.data.objects.data.unspiderfy_icon != "" && result.data.objects.data.unspiderfy_icon != undefined) {
+									clusterIcon = base_url+"/static/img/icons/bs.png";
+								} else {
+									clusterIcon = base_url+"/static/img/icons/bs.png";
 								}
 
 								/*Check that any advance filter is applied or not*/
 								if(appliedAdvFilter.length <= 0) {
 
 									/*applied basic filters count*/
-									var appliedFilterLength_earth = Object.keys(appliedFilterObj_earth).length;
+									var appliedFilterLength_gmaps = Object.keys(appliedFilterObj_gmaps).length;
 
 									/*Check that any basic filter is applied or not*/
-									if(appliedFilterLength_earth > 0) {
+									if(appliedFilterLength_gmaps > 0) {
 										/*If any filter is applied then plot the fetch data as per the filters*/
-										earth_self.applyFilter_earth(appliedFilterObj_earth);
+										earth_self.applyFilter_gmaps(appliedFilterObj_gmaps);
 									} else {
-										/*Call the plotDevices_earth to show the markers on the map*/
-										earth_self.plotDevices_earth(devices_earth,"base_station");
+									
+										/*Call the plotDevices_gmap to show the markers on the map*/
+										earth_self.plotDevices_earth(result.data.objects.children,"base_station");
+										
 									}
-								}
 
-								/*Hide The loading Icon*/
+								} else {
+                                    /*Call the plotDevices_gmap to show the markers on the map*/
+									earth_self.plotDevices_earth(result.data.objects.children,"base_station");
+                                }
+
+                                /*Decrement the counter*/
+								counter = counter - 1;
+
+								/*Call the function after 3 sec. for lazyloading*/
+								setTimeout(function() {
+									earth_self.getDevicesData_earth();
+								},10);
+								
+							} else {
+								isCallCompleted = 1;
+								earth_self.plotDevices_earth([],"base_station");
+
+								disableAdvanceButton('no');
+
+								/*Recall the server after particular timeout if system is not freezed*/
+						        /*Hide The loading Icon*/
 								$("#loadingIcon").hide();
 
 								/*Enable the refresh button*/
 								$("#resetFilters").button("complete");
 
-								/*Call the function after 3 sec.*/
-								setTimeout(function() {
-										
-									earth_self.getDevicesData_earth();
-								},3000);
-
-							} else {
-								$.gritter.add({
-						            // (string | mandatory) the heading of the notification
-						            title: 'Googole Earth - No Data',
-						            // (string | mandatory) the text inside the notification
-						            text: 'No Devices Found',
-						            // (bool | optional) if you want it to fade out on its own or just sit there
-						            sticky: true
-						        });
-							}
-
-							/*Decrement the counter*/
-							counter = counter - 1;
+								setTimeout(function(e){
+									earth_self.recallServer_earth();
+								},21600000);
+							}							
 
 						} else {
+							
+							isCallCompleted = 1;
+							disableAdvanceButton('no');
+							earth_self.plotDevices_earth([],"base_station");
 
-							setTimeout(function(e) {
-								earth_self.recallServer_earth();
-							},20000);
+							get_page_status();
 							/*Hide The loading Icon*/
 							$("#loadingIcon").hide();
 
 							/*Enable the refresh button*/
 							$("#resetFilters").button("complete");
+
+							setTimeout(function(e){
+								earth_self.recallServer_earth();
+							},21600000);
 						}
 
 					} else {
 
-						$.gritter.add({
-				            // (string | mandatory) the heading of the notification
-				            title: 'Google Earth - Server Error',
-				            // (string | mandatory) the text inside the notification
-				            text: devicesObject_earth.message,
-				            // (bool | optional) if you want it to fade out on its own or just sit there
-				            sticky: true
-				        });
+						isCallCompleted = 1;
+						disableAdvanceButton('no');
+						earth_self.plotDevices_earth([],"base_station");
 
-						/*Hide The loading Icon*/
-						$("#loadingIcon").hide();
+						get_page_status();
+						disableAdvanceButton('no, enable it.');
 
-						/*Enable the refresh button*/
-						$("#resetFilters").button("complete");
-
+						/*Recall the server after particular timeout if system is not freezed*/
 						setTimeout(function(e) {
 							earth_self.recallServer_earth();
-						},20000);
+						},21600000);
 
 					}
 
 				},
-				error : function(err) {
-					// console.log(err);
+				/*If data not fetched*/
+				error : function(err) {					
+
 					$.gritter.add({
 			            // (string | mandatory) the heading of the notification
-			            title: 'Google Earth - Server Error',
+			            title: 'GIS - Server Error',
 			            // (string | mandatory) the text inside the notification
 			            text: err.statusText,
 			            // (bool | optional) if you want it to fade out on its own or just sit there
-			            sticky: true
+			            sticky: false
 			        });
+
+			        disableAdvanceButton('no');
+					/*Hide The loading Icon*/
+					$("#loadingIcon").hide();
+
+					/*Enable the refresh button*/
+					$("#resetFilters").button("complete");
+					/*Recall the server after particular timeout if system is not freezed*/
+					setTimeout(function(e){
+						earth_self.recallServer_earth();
+					},21600000);
 				}
 			});
 		} else {
-			/*Hide The loading Icon*/
-			$("#loadingIcon").hide();
 
-			/*Enable the refresh button*/
-			$("#resetFilters").button("complete");
+			/*Ajax call not completed yet*/
+			isCallCompleted = 1;
+			disableAdvanceButton('no');
+			gmap_self.plotDevices_gmap([],"base_station");
+
+			disableAdvanceButton('no, enable it.');
+			get_page_status();
+
+			/*Recall the server after particular timeout if system is not freezed*/
+			setTimeout(function(e){
+				earth_self.recallServer_earth();
+			},21600000);
 		}
 	};
 

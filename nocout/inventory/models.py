@@ -151,7 +151,7 @@ class Customer(models.Model):
     """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
-    address = models.CharField('Address', max_length=250, null=True, blank=True)
+    address = models.TextField('Address', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
@@ -179,7 +179,7 @@ class SubStation(models.Model):
     country = models.IntegerField('Country', null=True, blank=True)
     state = models.IntegerField('State', null=True, blank=True)
     city = models.IntegerField('City', null=True, blank=True)
-    address = models.CharField('Address', max_length=250, null=True, blank=True)
+    address = models.TextField('Address', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):

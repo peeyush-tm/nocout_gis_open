@@ -6,7 +6,8 @@ var mapPageType = "",
     freezedAt = 0,
     isMaintained= "",
     tools_ruler= "",
-    tools_line = "";
+    tools_line = ""
+    base_url = "";
 
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
@@ -52,8 +53,9 @@ if($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true') {
 }
 
 //$.cookie("isLabelChecked", 1, {path: '/', secure : true});
-
-google.maps.event.clearListeners(mapInstance,'click');
+if(google.maps) {
+    google.maps.event.clearListeners(mapInstance,'click');
+}
 
 /*Call get_page_status function to show the current status*/
 get_page_status();
