@@ -426,6 +426,23 @@ def editservice():
     # Device name on which check would be added
     device_name = None
     service = html.var('service_name').strip().lower()
+    t = ()
+    # Check for edit service templates
+    if html.var('edit_servicetemplate'):
+	    logger.debug('cmd_params: ' + pprint.pformat(html.var('cmd_params')))
+            for param, thresholds in ast.literal_eval(html.var('cmd_params')).items():
+                    t = ()
+                    t += (int(thresholds.get('warning')),)
+                    t += (int(thresholds.get('critical')),)
+	    delete_host_rules(servicename=html.var('service_name'),
+			    thresholds=t)
+	    logger.debug('thresholds:' + pprint.pformat(thresholds))
+	    write_new_host_rules()
+	    response.update({
+		    'success': 1,
+		    'message': 'Service template edited successfully'
+		    })
+	    return response
     # Check for interfaces in HTTP request
     if service in interface_oriented_services:
 	#    if html.var('interface'):
@@ -462,7 +479,7 @@ def editservice():
 			interface=payload.get('interface')
 			)
         cmd_params = None
-        t = ()
+        #t = ()
         ping_level = ()
         ping_attributes = {}
         if payload.get('cmd_params'):
@@ -818,7 +835,7 @@ def set_ping_levels(host, ping_levels):
 		g_service_vars['ping_levels'].append(ping_rule_set)
 	write_new_host_rules()
 
-def delete_host_rules(hostname=None, servicename=None, interface=None, flag=False):
+def delete_host_rules(hostname=None, servicename=None, interface=None, flag=False, thresholds=None):
     global g_service_vars
     g_service_vars = {
         "only_hosts": None,
@@ -844,6 +861,22 @@ def delete_host_rules(hostname=None, servicename=None, interface=None, flag=Fals
 	    del g_service_vars['__builtins__']
     except OSError, e:
 	    logger.error('Could not open rules file: ' + pprint.pformat(e))
+
+    # Thresholds would be passed in order to bulk edit the service template
+    if thresholds:
+	    filtered_services = filter(lambda t: servicename.lower() == t[2] or \
+			    servicename.lower() == t[1], g_service_vars['checks'])
+	    g_service_vars['checks'] = map(lambda x: x, ifilterfalse(lambda t: servicename.lower() \
+			    == t[1] or servicename.lower() == t[2], g_service_vars['checks'])) 
+	    logger.debug('filtered_service: ' + pprint.pformat(filtered_services))
+	    if filtered_services:
+		    for service in filtered_services:
+			    new_service_tuple = ()
+			    new_service_tuple += service[:len(service)-1]
+			    logger.debug('thresholds: ' + pprint.pformat(thresholds))
+			    new_service_tuple += (thresholds,)
+			    logger.debug('new_service_tuple: ' + pprint.pformat(new_service_tuple))
+			    g_service_vars['checks'].append(new_service_tuple)
 
     if hostname is None:
         return

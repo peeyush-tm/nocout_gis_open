@@ -3,6 +3,7 @@ import requests
 from ast import literal_eval
 import pprint
 from datetime import datetime
+import json
 import time
 
 
@@ -31,7 +32,8 @@ def main():
 		on
 		dt.id = d.device_type
 		where
-		t.name != '' and dt.name != '' and dt.name != 'Default' and s.name != '';
+		d.is_added_to_nms = 0 and d.is_deleted = 0 and t.name != '' and dt.name != '' and
+		dt.name != 'Default' and s.name != '';
 	"""
 
         db = mysql_conn()
@@ -41,6 +43,113 @@ def main():
 	cur.close()
 
 	return data
+
+
+def edit_service_query():
+	query =  """
+		select 
+                d.device_name
+                from 
+                device_device d 
+                left join 
+                site_instance_siteinstance s 
+                on 
+                d.site_instance_id=s.id and d.machine_id = s.machine_id 
+                left join 
+                device_devicetechnology t
+                on 
+                t.id = d.device_technology and t.name = 'P2P'
+                left join device_devicetype dt
+                on
+                dt.id = d.device_type
+                where
+                d.is_monitored_on_nms = 2 and t.name != '' and dt.name != '' and
+                dt.name != 'Default' and s.name != '';
+        """
+ 
+        db = mysql_conn()
+	cur = db.cursor()
+	cur.execute(query)
+	data = cur.fetchall()
+	print "Edit data"
+	print data
+	cur.close()
+
+	return data
+			
+
+def edit_services(hostlist):
+	query= """
+	select * from service_deviceserviceconfiguration where device_name IN
+	"""
+	query += " %s " % pprint.pformat(hostlist)
+	query += "and is_edited = 2;"
+	db = mysql_conn()
+        cur = db.cursor()
+        cur.execute(query)
+        data = cur.fetchall()
+	print "edited services"
+        print data
+        cur.close()
+ 
+
+def edit_service_template():
+	query = """
+		select 
+		s.name, sd.name, sd.warning,sd.critical 
+		from 
+		service_service_service_data_sources sds
+		left join 
+		service_service s 
+		on 
+		s.id=sds.service_id
+		left join 
+		service_servicedatasource sd 
+		on 
+		sd.id = sds.servicedatasource_id
+		where sd.warning != "" and sd.critical != "" and sd.is_edited =1;
+	"""
+	payload = {'mode': 'editservice'}
+	db = mysql_conn()
+        cur = db.cursor()
+        cur.execute(query)
+        data = cur.fetchall()
+        print "edited service template"
+        print data
+	url  = 'http://omdadmin:omd@localhost/master_UA/check_mk/nocout.py'
+	for e in data:
+		payload['service_name'] = e[0]
+		payload['cmd_params'] = json.dumps({e[1]: {'warning': int(e[2]), 'critical': int(e[3])}})
+		payload['edit_servicetemplate'] = 1
+		print 'payload'
+		print payload
+		try:
+		        response = send_to_deviceapp(payload, url=url)
+			print 'response'
+			print response
+			# Update table service_servicedatasource
+			query = """
+				UPDATE service_servicedatasource
+				SET
+				is_edited = 0
+				WHERE
+			"""
+			query += " name = '%s'" % e[1]
+			print query
+			cur.execute(query)
+			# Update table service_deviceserviceconfiguration
+			query = """
+				UPDATE service_deviceserviceconfiguration
+				SET"""
+			query += " warning = %s, critical = %s" % (e[2], e[3])
+			query += " WHERE service_name = '%s'" % e[0]
+			print query
+
+			cur.execute(query)
+			db.commit()
+		except Exception, e:
+			print 'Error : ' + pprint.pformat(e)
+        cur.close()
 
 
 def mysql_conn():
@@ -58,7 +167,7 @@ def add_hosts(data):
 	for i, p in enumerate(data):
 		payload = dict(zip(keys, p))
 		payload.update({
-			"site": "pardeep_slave_1",
+			"site": "nt2",
 			"agent_tag": "snmp-v1|snmp",
 			"mode": "addhost",
 			"ping_levels": "{'rta': (800, 1300), 'loss': (70, 100), 'timeout': 10, 'packets': 6}"
@@ -135,7 +244,7 @@ def get_service_data_sources(services):
 	return service_datasource_mapping, serv_servparam_mapping
 
 
-def insert_data(config):
+def insert_data(config, table=None, keys= []):
 	db = mysql_conn()
 	cur = db.cursor()
 	table = 'service_deviceserviceconfiguration'
@@ -155,19 +264,78 @@ def insert_data(config):
 	db.commit()
 	cur.close()
 
+def edit_flags_device_device(device_list,flag1=None,flag2=None,flag3=None):
+
+	db = mysql_conn()
+        cur = db.cursor()
+	if not device_list:
+		return 
+
+	try:
+		if flag1:
+			print device_list
+			print len(device_list)
+			query = """
+				update device_device set is_added_to_nms = 1 where device_name IN
+				"""
+			query += " %s " % pprint.pformat(tuple(device_list))
+        		cur.execute(query)
+			db.commit()
+
+		if flag2:
+			query = """
+				update device_device set is_monitored_on_nms = 1 where device_name IN
+				"""
+			query += " %s " % pprint.pformat(tuple(device_list))
+		
+        		cur.execute(query)
+			db.commit()
+		if flag3:
+			query = """
+				update device_device set is_deleted = 1 where device_name IN
+				"""
+			query += " %s " % pprint.pformat(tuple(device_list))
+		
+        		cur.execute(query)
+			db.commit()
+		cur.close()
+	except Exception, e:
+		print 'Flag insertion error: ' + pprint.pformat(e)	
 
 if __name__ == '__main__':
-	#global g_services
+	global g_services
+	device_config_keys = ['device_name', 'service_name', 'agent_tag', 'port',
+			'data_source', 'version', 'read_community', 'svc_template', 'normal_check_interval',
+			'retry_check_interval', 'max_check_attempts', 'warning',
+			'critical', 'added_on', 'modified_on', 'is_added']
 	t1 = time.time()
 	added_devices = []
 	device_service_conf = []
+
+
+	# code commented for the single service edit
+	"""
+	data1 = edit_service_query()
+	t=[]
+	for device in data1:
+		t.append(device[0])
+	edit_services_host  = tuple(t)
+	edit_services(edit_services_host)
+	"""		
 	data = main()
+	# Find the fresh devices (with is_added_to_nms is zero)
 	added_devices = add_hosts(data)
 	service_data_sources, service_parameters = get_service_data_sources(g_services)
-	print '\nservice_data_sources'
-	print service_data_sources
-	print '\nservice_parameters'
-	print service_parameters
+	# Update is_added_to_nms and is_monitored_on_nms in the device_device flag
+	edit_flags_device_device(added_devices,flag1 = "is_added_to_nms",flag2= "is_monitored_on_nms",flag3=None)
+	print '\n added devices'
+	print added_devices
+	#print '\nservice_data_sources'
+	#print service_data_sources
+	#print '\nservice_parameters'
+	#print service_parameters
+
+
 	# Insert the device's config info into db
 	for d in added_devices:
 		for s in g_services:
@@ -184,8 +352,10 @@ if __name__ == '__main__':
 	print '\nNo of entries'
 	print len(device_service_conf)
 	time.sleep(1)
-	insert_data(device_service_conf)
+	insert_data(device_service_conf, table = 'service_deviceserviceconfiguration',
+			keys = device_config_keys)
+	# Bulk service edit
+	edit_service_template()
 	print '\nTotal time taken'
 	print time.time() - t1 
-
 
