@@ -97,7 +97,7 @@ class BaseStation(models.Model):
     bs_site_id = models.CharField('BS Site ID', max_length=250, null=True, blank=True)
     bs_site_type = models.CharField('BS Site Type', max_length=100, null=True, blank=True)
     bs_switch = models.ForeignKey(Device, null=True, blank=True, related_name='bs_switch')
-    backhaul = models.ForeignKey(Backhaul)
+    backhaul = models.ForeignKey(Backhaul, null=True, blank=True, related_name='backhaul', on_delete=models.SET_NULL, default=None)
     bs_type = models.CharField('BS Type', max_length=40, null=True, blank=True)
     bh_bso = models.CharField('BH BSO', max_length=40, null=True, blank=True)
     hssu_used = models.CharField('HSSU Used', max_length=40, null=True, blank=True)

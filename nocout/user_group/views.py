@@ -30,10 +30,10 @@ class UserGroupList(ListView):
         """
         context=super(UserGroupList, self).get_context_data(**kwargs)
         datatable_headers=[
-            {'mData':'name',                   'sTitle' : 'Name',                  'sWidth':'null',},
-            {'mData':'alias',                  'sTitle' : 'Alias',                 'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'organization__name',     'sTitle' : 'Organization',          'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'users__first_name',      'sTitle' : 'Users',                 'sWidth':'null','sClass':'hidden-xs','bSortable': False},]
+            {'mData':'name',                   'sTitle' : 'Name',                  'sWidth':'auto',},
+            {'mData':'alias',                  'sTitle' : 'Alias',                 'sWidth':'auto','sClass':'hidden-xs'},
+            {'mData':'organization__name',     'sTitle' : 'Organization',          'sWidth':'auto','sClass':'hidden-xs'},
+            {'mData':'users__first_name',      'sTitle' : 'Users',                 'sWidth':'auto','sClass':'hidden-xs','bSortable': False},]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):

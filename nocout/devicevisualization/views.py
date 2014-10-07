@@ -43,6 +43,16 @@ def load_google_earth(request, device_name = "default_device_name"):
     return render_to_response('devicevisualization/google_earth_template.html',
                                 template_data, 
                                 context_instance=RequestContext(request))
+
+def load_earth(request):
+    """
+    Returns the Context Variable for google earth.
+    """
+    template_data = {}
+                    
+    return render_to_response('devicevisualization/locate_devices_earth.html',
+                                template_data, 
+                                context_instance=RequestContext(request))    
     
 def get_url(req, method):
     """
