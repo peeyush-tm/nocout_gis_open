@@ -3,7 +3,7 @@
     <li>Network Maps</li>
     <li>Google Earth</li>
 {% endblock %}
-{% block content_title %}Google Maps{% endblock %}
+{% block content_title %}Google Earth{% endblock %}
 {% block content_description %} {% endblock %}
 {% load staticfiles %}
 {% block css %}
@@ -154,7 +154,7 @@
                     <input type="checkbox" name="show_hide_label" id="show_hide_label" checked=""> Show Labels
                 </li>
                 <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
-                                                   onclick="networkMapInstance.showConnectionLines_gmap()"
+                                                   onclick="earth_instance.showConnectionLines_earth()"
                                                    style="vertical-align: text-top;" checked="checked"/></li>
                 <li class="fright">
                     <form action="#" class="form-horizontal">
@@ -233,9 +233,10 @@
             <!--Google Earth Container Start-->
             <div id="google_earth_container"></div>
             <!--Google Earth Container End-->
-            
+
         <!--SideInfo Panel Start-->
-        <div id="sideInfoContainer" class="sideInfoContainer col-md-4 col-md-offset-8 hide">
+        <div id="sideInfoContainer" class="sideInfoContainer shim_block col-md-4 col-md-offset-8 hide">
+            <iframe allowTransparency="true" style="position:absolute; top:0px; bottom:0px; right:0px; width:100%; min-height:200px; z-index:100;"></iframe>
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <h3 class="panel-title">
@@ -261,13 +262,15 @@
                     </div>
                 </div>
             </div>
-        <!--SideInfo Panel End-->
+            <!--SideInfo Panel End-->
         </div>
     </div>
 
 
     <!-- Google Earth Library-->
     <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <!-- Libray for google earth custom features-->
+    <script type="text/javascript" src={% static "js/extensions-0.2.1.pack.js" %}></script>
     <!-- Script Library for COokies -->
     <script type="text/javascript" src={% static "js/jQuery-Cookie/src/jquery.cookie.js" %}></script>
     <!--This library is used for marker clustering-->
@@ -289,7 +292,7 @@
     <script src={% static "js/flot/jquery.flot.min.js" %}></script>
     <script type="text/javascript">
 
-        var mapsLibInstance = "",
+        var networkMapInstance = "",
             earth_instance = "",
             advJustSearch= "";
 
@@ -304,7 +307,7 @@
             earth_instance = new googleEarthClass();
 
             /*Create a instance of gmap_devicePlottingLib*/
-            mapsLibInstance = new devicePlottingClass_gmap();
+            networkMapInstance = new devicePlottingClass_gmap();
 
             /*Create a instance of advanceSearchClass*/
             advSearch = new advanceSearchClass();
@@ -316,7 +319,7 @@
             earth_instance.createGoogleEarth('google_earth_container');
 
             /*Call getBasicFilters funtion to fetch & populate basic filters dropdown*/
-            mapsLibInstance.getBasicFilters();
+            networkMapInstance.getBasicFilters();
         });
     </script>
 {% endblock %}
