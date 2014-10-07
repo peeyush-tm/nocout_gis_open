@@ -62,25 +62,25 @@ def prepare_basestation(base_station, bs_city_name, bs_state_name):
         base_station_info = [
             {
                 'name': 'name',
-                'title': 'Name',
-                'show': 1,
+                'title': 'Base-Station Name',
+                'show': 0,
                 'value': base_station.name if base_station.name else 'N/A'
             },
             {
                 'name': 'alias',
-                'title': 'Alias',
+                'title': 'Base-Station Name',
                 'show': 1,
                 'value': base_station.alias if base_station.name else 'N/A'
             },
             {
                 'name': 'bs_site_id',
-                'title': 'Site Name',
+                'title': 'BS Site Name',
                 'show': 1,
                 'value': base_station.bs_site_id if base_station.bs_site_id else 'N/A'
             },
             {
                 'name': 'bs_site_type',
-                'title': 'Site Type',
+                'title': 'BS Site Type',
                 'show': 1,
                 'value': base_station.bs_site_type if base_station.bs_site_type else 'N/A'
             },
@@ -107,12 +107,6 @@ def prepare_basestation(base_station, bs_city_name, bs_state_name):
                 'title': 'State',
                 'show': 1,
                 'value': bs_state_name
-            },
-            {
-                'name': 'tower_height',
-                'title': 'Tower Height',
-                'show': 1,
-                'value': base_station.tower_height if base_station.tower_height else 'N/A'
             },
             {
                 'name': 'bs_address',
@@ -310,53 +304,6 @@ def prepare_result(base_station_id):
                         else 'N/A',
                 },
                 {
-                  'name': 'type_of_bs',
-                  'title': 'Type of BS',
-                  'show': 1,
-                  'value': base_station.bs_type \
-                      if base_station.bs_type else 'N/A'
-                },
-                {
-                  'name': 'building_height',
-                  'title': 'Building Height',
-                  'show': 1,
-                  'value': base_station.building_height \
-                      if base_station.building_height else 'N/A'
-                },
-                {
-                  'name': 'site_name',
-                  'title': 'Site Name',
-                  'show': 1,
-                  'value': base_station.bs_site_id  if base_station.bs_site_id else 'N/A'
-                },
-                {
-                  'name': 'site_type',
-                  'title': 'Site Type',
-                  'show': 1,
-                  'value': base_station.bs_site_type \
-                      if base_station.bs_site_type else 'N/A'
-                },
-                {
-                  'name': 'address',
-                  'title': 'Address',
-                  'show': 1,
-                  'value': base_station.address \
-                      if base_station.address else 'N/A'
-                },
-                {
-                  'name': 'type_of_gps',
-                  'title': 'Type of GPS',
-                  'show': 1,
-                  'value': base_station.gps_type \
-                      if base_station.gps_type else 'N/A'
-                },
-                {
-                  'name': 'tower_height',
-                  'title': 'Tower Height',
-                  'show': 1,
-                  'value': base_station.tower_height if base_station.tower_height else 'N/A'
-                },
-                {
                   'name': 'type_of_antenna',
                   'title': 'Antenna Type',
                   'show': 1,
@@ -391,20 +338,8 @@ def prepare_result(base_station_id):
                   'title': 'Installation of Splitter',
                   'show': 1,
                   'value': sector.antenna.splitter_installed if sector.antenna else 'N/A'
-                },
-                {
-                  'name': 'city',
-                  'title': 'City',
-                  'show': 1,
-                  'value': bs_city_name
-                },
-                {
-                    'name': 'state',
-                    'title': 'State',
-                    'show': 1,
-                    'value': bs_state_name
-                },
-            ],
+                }
+            ] + prepare_basestation(base_station, bs_city_name, bs_state_name),
             'sub_station': []
         }]
         base_station_info['sector_ss_vendor']+= DeviceVendor.objects.get(id=sector.sector_configured_on.device_vendor).name +', '
