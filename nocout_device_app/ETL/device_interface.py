@@ -3,6 +3,7 @@ import requests
 from ast import literal_eval
 import pprint
 from datetime import datetime
+import urllib
 import json
 import time
 
@@ -158,26 +159,47 @@ def mysql_conn():
 	return db
 
 
+def extract_service_snmp_parameters(device_type):
+	snmp_parameter = None
+	if device_type:
+		query = """
+			select agent_tag from device_devicetype where name =
+			"""
+		query += " '%s' " % (device_type)
+
+		db = mysql_conn()
+        	cur = db.cursor()
+        	cur.execute(query)
+        	snmp_parameter = cur.fetchall()
+	
+	return snmp_parameter
+
 def add_hosts(data):
 	# Devices which are successfully added
 	added_devices = []
 	keys = ['device_name', 'device_alias', 'ip_address', 'site', 'device_type']
 	payload = {}
+	response = {}
 	url = 'http://omdadmin:omd@localhost/master_UA/check_mk/nocout.py'
 	for i, p in enumerate(data):
+		snmp_tag = extract_service_snmp_parameters(p[4])
+		snmp_tag = snmp_tag[0][0]
+		print 'snmp_tag'
+		print snmp_tag
+		if not snmp_tag:
+			snmp_tag = "snmp-v1|snmp"
 		payload = dict(zip(keys, p))
 		payload.update({
-			"site": "nt2",
-			"agent_tag": "snmp-v1|snmp",
-			"mode": "addhost",
-			"ping_levels": "{'rta': (800, 1300), 'loss': (70, 100), 'timeout': 10, 'packets': 6}"
+			"agent_tag": snmp_tag,
+			"mode": "addhost"
 			})
 		try:
 		        response = literal_eval(send_to_deviceapp(payload, url=url))
 		except Exception, e:
 			print 'Bad response from DA: Host - ' + pprint.pformat(payload)
 		if response.get('success') == 1:
-			added_devices.append(payload.get('device_name'))
+			device = payload.get('device_name')
+			added_devices.append({device: snmp_tag})
 		response = {}
 	return added_devices
 
@@ -223,9 +245,12 @@ def get_service_data_sources(services):
         serv_param_ids = tuple(map(lambda t: int(t[2]), service_info))
 	serv_param_query = """
 		SELECT serv_param.id, serv_param.parameter_description, serv_param.normal_check_interval,
-		serv_param.retry_check_interval, serv_param.max_check_attempts
+		serv_param.retry_check_interval, serv_param.max_check_attempts ,sp.port,sp.version ,sp.read_community 
 		FROM
 		service_serviceparameters serv_param
+		LEFT JOIN
+		service_protocol sp
+		on serv_param.protocol_id = sp.id
 		WHERE
 		serv_param.id IN
 	"""
@@ -233,12 +258,15 @@ def get_service_data_sources(services):
 	cur.execute(serv_param_query)
 	serv_params = cur.fetchall()
 
+	#print "serv_params..."
+	#print serv_params
 	service_datasource_mapping = dict(zip(map(lambda t: t[1], service_info), map(lambda t: t[1], ds_data)))
 
 	serv_servparam_mapping = {}
 	for s in service_info:
 		serv_servparam_mapping[s[1]] = filter(lambda t: t[0] == int(s[2]), serv_params)
-	
+
+	#print serv_servparam_mapping	
 	cur.close()
 
 	return service_datasource_mapping, serv_servparam_mapping
@@ -264,6 +292,84 @@ def insert_data(config, table=None, keys= []):
 	db.commit()
 	cur.close()
 
+def delete_device_template():
+	query= 	"""
+		select 
+		d.device_name
+		from 
+		device_device d 
+		left join 
+		site_instance_siteinstance s 
+		on 
+		d.site_instance_id=s.id and d.machine_id = s.machine_id 
+		left join 
+		device_devicetechnology t
+		on 
+		t.id = d.device_technology and t.name = 'P2P'
+		left join device_devicetype dt
+		on
+		dt.id = d.device_type
+		where
+		d.is_deleted = 1 and t.name != '' and dt.name != '' and
+		dt.name != 'Default' and s.name != '';
+		"""
+	db = mysql_conn()
+	cur = db.cursor()
+	cur.execute(query)
+	device_list = cur.fetchall()
+	payload = {}
+	payload = {'mode': 'deletehost'}
+	url = 'http://omdadmin:omd@localhost/master_UA/check_mk/nocout.py'
+	for device in device_list:
+		payload.update({
+                        "device_name": device[0],
+                        })
+		try:
+                        response = literal_eval(send_to_deviceapp(payload, url=url))
+			print 'delete response'
+			print response
+                except Exception, e:
+                        print 'Bulk Host deletion error from DA:' + pprint.pformat(payload)
+	cur.close()
+
+	
+
+def delete_service_template():
+	query = """
+	        select device_name, group_concat(distinct service_name) from service_deviceserviceconfiguration 
+		where is_edited = 2
+		group by device_name;
+		"""
+
+	db = mysql_conn()
+	cur = db.cursor()
+	cur.execute(query)
+	device_list = cur.fetchall()
+	payload = {}
+	payload = {'mode':'deleteservice'}
+	url = 'http://omdadmin:omd@localhost/master_UA/check_mk/nocout.py'
+	for entry in device_list:
+		for serv in entry[1]:
+			payload.update({
+				"device_name": entry[0],
+				"service_name" : serv,
+				})
+		try:
+                        response = literal_eval(send_to_deviceapp(payload, url=url))
+                except Exception, e:
+                        print 'Bulk service deletion error from DA:' + pprint.pformat(payload)
+
+	query = """
+	Delete from service_deviceserviceconfiguration
+	where
+	is_edited = 2
+	"""
+        cur.execute(query)
+	db.commit()
+	cur.close()
+	db.close()
+
+	
 def edit_flags_device_device(device_list,flag1=None,flag2=None,flag3=None):
 
 	db = mysql_conn()
@@ -273,8 +379,6 @@ def edit_flags_device_device(device_list,flag1=None,flag2=None,flag3=None):
 
 	try:
 		if flag1:
-			print device_list
-			print len(device_list)
 			query = """
 				update device_device set is_added_to_nms = 1 where device_name IN
 				"""
@@ -302,6 +406,40 @@ def edit_flags_device_device(device_list,flag1=None,flag2=None,flag3=None):
 	except Exception, e:
 		print 'Flag insertion error: ' + pprint.pformat(e)	
 
+
+def set_ping_levels():
+	query = """
+	SELECT dt.name, dt.packets, dt.timeout, dt.rta_warning, dt.rta_critical,
+	dt.pl_warning, dt.pl_critical
+	FROM device_devicetype dt
+	WHERE
+	dt.name != 'Default'
+	"""
+	db = mysql_conn()
+	cur = db.cursor()
+	cur.execute(query)
+	data = cur.fetchall()
+	ping_levels_list = []
+	payload = {
+			'mode': 'set_ping_levels'
+			}
+	for d in data:
+		ping_levels = {
+			'device_type': d[0],
+			'rta': (int(d[3]), int(d[4])),
+			'loss': (int(d[5]), int(d[6])),
+			'timeout': int(d[2]),
+			'packets': int(d[1])
+		}
+		#ping_levels = json.dumps(ping_levels)
+		ping_levels_list.append(ping_levels)
+	#ping_levels_list = json.dumps(ping_levels_list)
+	payload.update({'ping_levels_list': ping_levels_list})
+	payload = urllib.urlencode(payload)
+	url  = 'http://omdadmin:omd@localhost/master_UA/check_mk/nocout.py'
+	response = send_to_deviceapp(payload, url)
+
+
 if __name__ == '__main__':
 	global g_services
 	device_config_keys = ['device_name', 'service_name', 'agent_tag', 'port',
@@ -322,14 +460,16 @@ if __name__ == '__main__':
 	edit_services_host  = tuple(t)
 	edit_services(edit_services_host)
 	"""		
+	# Add bulk ping levels based on device type tag
+	set_ping_levels()
 	data = main()
 	# Find the fresh devices (with is_added_to_nms is zero)
 	added_devices = add_hosts(data)
 	service_data_sources, service_parameters = get_service_data_sources(g_services)
 	# Update is_added_to_nms and is_monitored_on_nms in the device_device flag
-	edit_flags_device_device(added_devices,flag1 = "is_added_to_nms",flag2= "is_monitored_on_nms",flag3=None)
-	print '\n added devices'
-	print added_devices
+	edit_flags_device_device(sum(map(lambda t: t.keys() ,added_devices), []),flag1 = "is_added_to_nms",flag2= "is_monitored_on_nms",flag3=None)
+	#print '\n added devices'
+	#print added_devices
 	#print '\nservice_data_sources'
 	#print service_data_sources
 	#print '\nservice_parameters'
@@ -344,18 +484,22 @@ if __name__ == '__main__':
 			for ds in data_sources:
 				splitted_ds = ds.split('|')
 				this_time = (datetime.now()).strftime('%Y-%m-%d %H:%M:%S')
-				entry = (d, s, 'snmp', 161, splitted_ds[0], 'v1', 'public',
+				entry = (d.keys()[0], s, d.values()[0], s_param[5], splitted_ds[0], s_param[6], s_param[7],
 						s_param[1], s_param[2], s_param[3], s_param[4],
 						splitted_ds[1], splitted_ds[2], this_time, this_time, 1)
 				device_service_conf.append(entry)
 	
-	print '\nNo of entries'
-	print len(device_service_conf)
+	#print '\ndevice_service_conf'
+	#print device_service_conf[23:45]
 	time.sleep(1)
 	insert_data(device_service_conf, table = 'service_deviceserviceconfiguration',
 			keys = device_config_keys)
 	# Bulk service edit
 	edit_service_template()
+	# Bulk device delete	
+	delete_device_template()
+	#Bulk service delete
+	delete_service_template()
 	print '\nTotal time taken'
 	print time.time() - t1 
 
