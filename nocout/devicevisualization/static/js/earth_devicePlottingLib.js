@@ -1,17 +1,22 @@
 /*Global Variables*/
 var earth_self = "",
-	mapsLibInstance = "",
+	gexInstance = "",
+	networkMapInstance = "",
 	ge = "",
+	plotted_bs_earth = [],
+	plotted_sector_earth = [],
 	plotted_ss_earth = [],
-	plotterLinks_earth = [],
+	plottedLinks_earth = [],
 	devices_earth = [],
 	main_devices_data_earth = [],
+	data_for_filters_earth = [],
 	appliedFilterObj_earth = {},
 	devicesObject_earth = {},
 	hitCounter = 1,
 	showLimit = 0,
 	devicesCount = 0,
-	counter = -999;
+	counter = -999,
+	marker_count = 0;
 
 /**
  * This class is used to plot the BS & SS on the google earth & performs their functionality.
@@ -33,6 +38,16 @@ function googleEarthClass() {
 	 */
 	this.createGoogleEarth = function(domElement) {
 
+		//display advance search, filter etc button when call is going on.
+		disableAdvanceButton();
+
+		/*Show The loading Icon*/
+		$("#loadingIcon").show();
+
+		/*Disable the refresh button*/
+		$("#resetFilters").button("loading");
+
+
 		google.earth.createInstance(domElement, earth_self.earthInitCallback, earth_self.earthFailureCallback);
 	};
 
@@ -47,6 +62,10 @@ function googleEarthClass() {
 
 		ge = pluginInstance;
 		ge.getWindow().setVisibility(true);
+
+		/*Create Instance of google earth extension library*/
+		gexInstance = new GEarthExtensions(ge);
+		gexInstance.dom.clearFeatures();
 
 		/*Set current position of google earth to india*/
 		var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
@@ -72,7 +91,6 @@ function googleEarthClass() {
 	 * @param errorCode {Object}, It is the JSON object returned from google earth create instance function when google earth creation was not successful or failed.
 	 */
 	this.earthFailureCallback = function(errorCode) {
-		// console.log(errorCode);
 		$.gritter.add({
             // (string | mandatory) the heading of the notification
             title: 'Google Earth',
@@ -97,19 +115,10 @@ function googleEarthClass() {
 			get_param_filter = "";
 		}
 
-		//display advance search, filter etc button when call is going on.
-		disableAdvanceButton();
-
 		if(counter > 0 || counter == -999) {
 
 			/*Ajax call not completed yet*/
 			isCallCompleted = 0;
-
-			/*Show The loading Icon*/
-			$("#loadingIcon").show();
-
-			/*Disable the refresh button*/
-			$("#resetFilters").button("loading");
 
 			/*To Enable The Cross Domain Request*/
 			$.support.cors = true;
@@ -141,8 +150,8 @@ function googleEarthClass() {
 								devices_gmaps = devices_gmaps.concat(result.data.objects.children);
 							}
 
-							main_devices_data_gmaps = devices_gmaps;
-							data_for_filters = devices_gmaps;
+							main_devices_data_earth = devices_gmaps;
+							data_for_filters_earth = devices_gmaps;
 
 							if(devicesObject.data.objects.children.length > 0) {
 
@@ -161,12 +170,6 @@ function googleEarthClass() {
 								if(counter == -999) {
 
 									counter = Math.floor(devicesCount / showLimit);
-								}
-
-								if(result.data.objects.data.unspiderfy_icon != "" && result.data.objects.data.unspiderfy_icon != undefined) {
-									clusterIcon = base_url+"/static/img/icons/bs.png";
-								} else {
-									clusterIcon = base_url+"/static/img/icons/bs.png";
 								}
 
 								/*Check that any advance filter is applied or not*/
@@ -281,7 +284,7 @@ function googleEarthClass() {
 			/*Ajax call not completed yet*/
 			isCallCompleted = 1;
 			disableAdvanceButton('no');
-			gmap_self.plotDevices_gmap([],"base_station");
+			earth_self.plotDevices_earth([],"base_station");
 
 			disableAdvanceButton('no, enable it.');
 			get_page_status();
@@ -299,316 +302,228 @@ function googleEarthClass() {
      * @param devicesList {Object Array}, It is the devices object array
      * @uses gmap_devicePlottingLib
 	 */
-	this.plotDevices_earth = function(devicesList,station_type) {
-
-		var resultantMarkers = [];
-
-		if($.trim(station_type) == "base_station") {
-			resultantMarkers = devicesList;			
-		} else {			
-			resultantMarkers = devicesList.ssList;
-		}
+	this.plotDevices_earth = function(resultantMarkers,station_type) {
 
 		for(var i=0;i<resultantMarkers.length;i++) {
 
-			var window_name = "",
+			var window_name = "Base Station Info",
 				dev_technology = "",
 				sectorsDetail = [];
 
 			/*Create BS info window HTML string*/
 			var bs_infoTable = "<table class='table table-bordered'><tbody>";
 
-			/*True when we are plotting base station devices & their elements*/
-			if($.trim(station_type) == "base_station") {
+			/*Fetch BS information*/
+			for(var x=0;x<resultantMarkers[i].data.param.base_station.length;x++) {
 
-				/*Fetch BS information*/
-				for(var x=0;x<resultantMarkers[i].data.param.base_station.length;x++) {
-
-					if(resultantMarkers[i].data.param.base_station[x].show == 1) {
-						bs_infoTable += "<tr><td>"+resultantMarkers[i].data.param.base_station[x].title+"</td><td>"+resultantMarkers[i].data.param.base_station[x].value+"</td></tr>";
-					}
+				if(resultantMarkers[i].data.param.base_station[x].show == 1) {
+					bs_infoTable += "<tr><td>"+resultantMarkers[i].data.param.base_station[x].title+"</td><td>"+resultantMarkers[i].data.param.base_station[x].value+"</td></tr>";
 				}
-				/*Set lat-lon*/
-				bs_infoTable += "<tr><td>Lat, Long</td><td>"+resultantMarkers[i].data.lat+", "+resultantMarkers[i].data.lon+"</td></tr>";
-				
-				window_name = "Base Station Info";
-				/*Fetch Backhaul information*/
-				bs_infoTable += "<tr><td colspan='2'><b>Backhaul Info</b></td></tr>";
-				for(var y=0;y<resultantMarkers[i].data.param.backhual.length;y++) {
-
-					if(resultantMarkers[i].data.param.backhual[y].show == 1) {
-						bs_infoTable += "<tr><td>"+resultantMarkers[i].data.param.backhual[y].title+"</td><td>"+resultantMarkers[i].data.param.backhual[y].value+"</td></tr>";
-					}
-				}
-				/*Device Technology*/
-				dev_technology = resultantMarkers[i].data.technology;
-
-				/*Sectors*/
-				sectorsDetail = resultantMarkers[i].data.param.sector;
-
-			/*In case of sub station devices*/
-			} else {
-
-				window_name = "Sub Station Info";
-				dev_technology = devicesList.technology;
-
-				/*Fetch SS information*/
-				for(var x=0;x<resultantMarkers[i].data.param.sub_station.length;x++) {
-
-					if(resultantMarkers[i].data.param.sub_station[x].show == 1) {
-						bs_infoTable += "<tr><td>"+resultantMarkers[i].data.param.sub_station[x].title+"</td><td>"+resultantMarkers[i].data.param.sub_station[x].value+"</td></tr>";
-					}
-				}
-				/*Set lat-lon*/
-				bs_infoTable += "<tr><td>Lat, Long</td><td>"+resultantMarkers[i].data.lat+", "+resultantMarkers[i].data.lon+"</td></tr>";
 			}
+			/*Set lat-lon*/
+			bs_infoTable += "<tr><td>Lat, Long</td><td>"+resultantMarkers[i].data.lat+", "+resultantMarkers[i].data.lon+"</td></tr>";
+
+			/*Fetch Backhaul information*/
+			bs_infoTable += "<tr><td colspan='2'><b>Backhaul Info</b></td></tr>";
+			for(var y=0;y<resultantMarkers[i].data.param.backhual.length;y++) {
+
+				if(resultantMarkers[i].data.param.backhual[y].show == 1) {
+					bs_infoTable += "<tr><td>"+resultantMarkers[i].data.param.backhual[y].title+"</td><td>"+resultantMarkers[i].data.param.backhual[y].value+"</td></tr>";
+				}
+			}
+			/*Device Technology*/
+			dev_technology = resultantMarkers[i].data.technology;
+
+			/*Sectors*/
+			sectorsDetail = resultantMarkers[i].data.param.sector;
 
 			bs_infoTable += "</tbody></table>";
 
 			/*Final infowindow content string*/
 			var bs_windowContent = "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+window_name+"</h4></div><div class='box-body'><div class='' align='center'>"+bs_infoTable+"</div><div class='clearfix'></div></div></div></div>";
 
+			var bs_marker_icon = base_url+"/static/img/icons/bs.png";
+
 			// Create BS placemark.
-			var bs_placemark = ge.createPlacemark('');
-			// Define a custom icon.
-			var bs_icon = ge.createIcon('');
-			bs_icon.setHref(base_url+"/"+resultantMarkers[i].data.markerUrl);
-			var style = ge.createStyle(''); //create a new style
-			style.getIconStyle().setIcon(bs_icon); //apply the icon to the style
-			bs_placemark.setStyleSelector(style); //apply the style to the placemark			
-			
-			var infoObject = {};
-			infoObject["technology"] = dev_technology;
-			infoObject["device_type"] = station_type;
-			infoObject["startLat"] = resultantMarkers[i].data.lat;
-			infoObject["startLon"] = resultantMarkers[i].data.lon;
-			infoObject["bs_info"] = resultantMarkers[i].data.param.base_station;			
-			bs_placemark.setDescription(bs_windowContent+"<input type='hidden' value=' &-&-& "+JSON.stringify(infoObject)+" &-&-& '/><input type='hidden' name='sectorData' value=' -|-|-|- "+JSON.stringify(sectorsDetail)+" -|-|-|- '/>");
-			// Set the placemark's location.
-			var point = ge.createPoint('');
-			point.setLatitude(resultantMarkers[i].data.lat);
-			point.setLongitude(resultantMarkers[i].data.lon);
-			bs_placemark.setGeometry(point);
-			// Add the placemark to Earth.
-			ge.getFeatures().appendChild(bs_placemark);
+			var bs_marker = earth_self.makePlacemark(bs_marker_icon,resultantMarkers[i].data.lat,resultantMarkers[i].data.lon,'bs_'+resultantMarkers[i].id,bs_windowContent);
+			/*Push BS placemark to bs placemark array*/
+			plotted_bs_earth.push(bs_marker);
 
-			google.earth.addEventListener(bs_placemark, 'click', function(event) {
+			// google.earth.addEventListener(bs_placemark, 'click', function(event) {
 
-				var description = this.getDescription(),
-					infoObj = {};
+			// });
 
-				var infoObj = JSON.parse(description.split("&-&-&")[1]);
-				infoObj["sectorsDataset"] = JSON.parse(description.split("-|-|-|-")[1]);
+			var sectorsArray = resultantMarkers[i].data.param.sector;
 
-				if($.trim(infoObj.device_type) == "base_station") {
+    		// $.grep(sectorsArray,function(sector) { 
+			for(var j=0;j<sectorsArray.length;j++) {
 
-					/*Remove All SS from Google Earth*/
-					$.grep(plotted_ss_earth,function(ss) {
-						ge.getFeatures().removeChild(ss);
-					});
+				var lon = resultantMarkers[i].data.lon,
+					lat = resultantMarkers[i].data.lat,
+					rad = 4,
+					azimuth = sectorsArray[j].azimuth_angle,
+					beam_width = sectorsArray[j].beam_width,
+					sector_color = earth_self.makeRgbaObject(sectorsArray[j].color),
+					sectorInfo = sectorsArray[j].info,
+					childSS = JSON.stringify(sectorsArray[j].sub_station),
+					device_technology = $.trim(sectorsArray[j].technology),
+					orientation = $.trim(sectorsArray[j].orientation),
+					sectorRadius = (+sectorsArray[j].radius),
+					startEndObj = {};
 
-					/*Remove All Links from google earth*/
-					$.grep(plotterLinks_earth,function(links) {
-						ge.getFeatures().removeChild(links);
-					});
-
-					/*Reset SS & links array*/
-					plotted_ss_earth = [];
-					plotterLinks_earth = [];
-
-					earth_self.plotSubStation_earth(infoObj);
+				/*If radius is greater than 4 Kms then set it to 4.*/
+				if((sectorRadius != null) && (sectorRadius > 0)) {
+					rad = sector.radius;
 				}
-			});
-
-			/*True for base-stations*/
-			if(station_type == "base_station") {
-
-				/*In case of PMP & WIMAX*/
-				if($.trim(dev_technology) != "P2P" && $.trim(dev_technology) != "PTP") {
-		    		
-					var sectorsArray = resultantMarkers[i].data.param.sector;
-
-		    		$.grep(sectorsArray,function(sector) { 
-
-		    			var lat = resultantMarkers[i].data.lat;
-						var lon = resultantMarkers[i].data.lon;
-						var rad = 1;
-
-						/*If radius is greater than 4 Kms then set it to 4.*/
-						if(sector.radius > 4 || sector.radius == 0 || sector.radius == null) {
-							rad = 4;
-						} else {
-							rad = sector.radius;
-						}
-
-						var azimuth = sector.azimuth_angle;
-						var beam_width = sector.beam_width;
-						var sector_color = earth_self.makeRgbaObject(sector.color);
-						var sectorInfo = sector.info;
-						var childSS = JSON.stringify(sector.sub_station);
-						var device_technology = $.trim(resultantMarkers[i].data.technology);
-						var orientation = $.trim(sector.orientation);
-						
-						/*Call createSectorData function to get the points array to plot the sector on google earth.*/
-						mapsLibInstance.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
-							/*Plot sector on google earth with the retrived points*/
-							earth_self.plotSector_earth(lat,lon,pointsArray,sectorInfo,sector_color,childSS,device_technology);
-						});
-		    		});
-
-				/*In case of PTP*/
-				} else {
-
-					var has_ss = resultantMarkers[i].data.param.sector[0].sub_station.length;
-
-					if(has_ss > 0) {
-
-						var ssDataObj = resultantMarkers[i].data.param.sector[0].sub_station[0];
-						var ss_infoTable = "<table class='table table-bordered'><tbody>";
-						window_name = "Sub Station Info";
-						dev_technology = devicesList.technology;
-
-						/*Fetch SS information*/
-						for(var x=0;x<ssDataObj.data.param.sub_station.length;x++) {
-
-							if(ssDataObj.data.param.sub_station[x].show == 1) {
-								ss_infoTable += "<tr><td>"+ssDataObj.data.param.sub_station[x].title+"</td><td>"+ssDataObj.data.param.sub_station[x].value+"</td></tr>";
-							}
-						}
-						/*Set lat-lon*/
-						ss_infoTable += "<tr><td>Lat, Long</td><td>"+ssDataObj.data.lat+", "+ssDataObj.data.lon+"</td></tr>";
-						ss_infoTable += "</tbody></table>";
-
-						var ss_windowContent = "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+window_name+"</h4></div><div class='box-body'><div class='' align='center'>"+ss_infoTable+"</div><div class='clearfix'></div></div></div></div>";
-
-						// Create BS placemark.
-						var ss_placemark = ge.createPlacemark('');
-						// Define a custom icon.
-						var bs_icon = ge.createIcon('');
-						bs_icon.setHref(base_url+"/"+ssDataObj.data.markerUrl);
-						var style = ge.createStyle(''); //create a new style
-						style.getIconStyle().setIcon(bs_icon); //apply the icon to the style
-						ss_placemark.setStyleSelector(style); //apply the style to the placemark			
-						
-						var infoObject = {};
-						infoObject["technology"] = dev_technology;
-						infoObject["device_type"] = "Sub Station";
-						infoObject["startLat"] = ssDataObj.data.lat;
-						infoObject["startLon"] = ssDataObj.data.lon;
-						infoObject["bs_info"] = ssDataObj.data.param.base_station;			
-						ss_placemark.setDescription(ss_windowContent);
-						// Set the placemark's location.
-						var point = ge.createPoint('');
-						point.setLatitude(ssDataObj.data.lat);
-						point.setLongitude(ssDataObj.data.lon);
-						ss_placemark.setGeometry(point);
-						// Add the placemark to Earth.
-						ge.getFeatures().appendChild(ss_placemark);
-
-						/*Create link between bs & ss or sector & ss*/
-						if(ssDataObj.data.show_link == 1) {
-							var startEndObj = {};
-						
-							startEndObj["startLat"] = resultantMarkers[i].data.lat;
-							startEndObj["startLon"] = resultantMarkers[i].data.lon;
-
-							startEndObj["endLat"] = ssDataObj.data.lat;
-							startEndObj["endLon"] = ssDataObj.data.lon;
-
-							var linkColor = ssDataObj.data.link_color;
-							var bs_info = resultantMarkers[i].data.param.base_station;
-							var ss_info = ssDataObj.data.param.sub_station;
-
-							var linkLinePlacemark = earth_self.createLink_earth(startEndObj,linkColor,bs_info,ss_info);
-						}
-					}/*Has sub-station condition ends*/
-				}
-				/*end if for base_station case*/
-			} else {
-				/*Add plotted sub-stations to an array*/
-				plotted_ss_earth.push(bs_placemark);
-
-				/*Create link between bs & ss or sector & ss*/
-				if(resultantMarkers[i].data.show_link == 1) {
-
-					var startEndObj = {};
-					
-					startEndObj["startLat"] = devicesList.startLat;
-					startEndObj["startLon"] = devicesList.startLon;
-
-					startEndObj["endLat"] = resultantMarkers[i].data.lat;
-					startEndObj["endLon"] = resultantMarkers[i].data.lon;
-
-					var linkColor = resultantMarkers[i].data.link_color;
-					var bs_info = devicesList.info;
-					var ss_info = resultantMarkers[i].data.param.sub_station;
-
-					var linkLinePlacemark = earth_self.createLink_earth(startEndObj,linkColor,bs_info,ss_info);
-
-					/*Push the plotted line to link line array*/
-					plotterLinks_earth.push(linkLinePlacemark);
 				
-				}/*SHOW_LINK condition ends*/
+				/*Call createSectorData function to get the points array to plot the sector on google earth.*/
+				networkMapInstance.createSectorData(lat,lon,rad,azimuth,beam_width,orientation,function(pointsArray) {
+					
+					var halfPt = Math.floor(pointsArray.length / (+2));
 
-			}/*End of station_type condition else.*/
+					/*In case of PMP & WIMAX*/
+					if(device_technology.toLowerCase() != "p2p" && device_technology.toLowerCase() != "ptp") {
+						/*Plot sector on google earth with the retrived points*/
+						earth_self.plotSector_earth(lat,lon,pointsArray,sectorInfo,sector_color,childSS,device_technology);
 
+						startEndObj["startLat"] = pointsArray[halfPt].lat;
+						startEndObj["startLon"] = pointsArray[halfPt].lon;
+
+						startEndObj["sectorLat"] = pointsArray[halfPt].lat;
+						startEndObj["sectorLon"] = pointsArray[halfPt].lon;
+					} else {
+						startEndObj["startLat"] = lat;
+		    			startEndObj["startLon"] = lon;
+		    			
+		    			startEndObj["sectorLat"] = lat;
+						startEndObj["sectorLon"] = lon;
+					}
+				});
+
+				if($.trim(device_technology.toLowerCase()) == "ptp" || $.trim(device_technology.toLowerCase()) == "p2p") {
+
+					var sector_infoTable = "<table class='table table-bordered'><tbody>";
+					dev_technology = sectorsArray[j].technology;
+
+					/*Fetch Sector Device information*/
+					for(var x=0;x<sectorsArray[j].device_info.length;x++) {
+
+						if(sectorsArray[j].device_info[x].show == 1) {
+							sector_infoTable += "<tr><td>"+sectorsArray[j].device_info[x].title+"</td><td>"+sectorsArray[j].device_info[x].value+"</td></tr>";
+						}
+					}
+
+					/*Fetch Sector information*/
+					for(var x=0;x<sectorsArray[j].info.length;x++) {
+
+						if(sectorsArray[j].info[x].show == 1) {
+							sector_infoTable += "<tr><td>"+sectorsArray[j].info[x].title+"</td><td>"+sectorsArray[j].info[x].value+"</td></tr>";
+						}
+					}
+
+					/*Set lat-lon*/
+					sector_infoTable += "<tr><td>Lat, Long</td><td>"+lat+", "+lon+"</td></tr>";
+					sector_infoTable += "</tbody></table>";
+
+					var sector_windowContent = "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  Base Station Device</h4></div><div class='box-body'><div class='' align='center'>"+ss_infoTable+"</div><div class='clearfix'></div></div></div></div>";
+
+					var sectorMarkerIcon = base_url+"/"+sectorsArray[j].markerUrl;
+					
+					// Create Sector placemark.
+					var sector_marker = earth_self.makePlacemark(sectorMarkerIcon,resultantMarkers[i].data.lat,resultantMarkers[i].data.lon,sectorsArray[j].sector_configured_on+"_"+j,sector_windowContent);
+					/*Push Sector placemark to sector placemark array*/
+					plotted_sector_earth.push(sector_marker);
+				}
+
+				for(var k=0;k<sectorsArray[j].sub_station.length;k++) {
+					
+					var ssDataObj = sectorsArray[j].sub_station[k];
+					var ss_infoTable = "<table class='table table-bordered'><tbody>";
+					window_name = "Sub Station Info";
+					dev_technology = sectorsArray[j].technology;
+
+					/*Fetch SS information*/
+					for(var x=0;x<ssDataObj.data.param.sub_station.length;x++) {
+
+						if(ssDataObj.data.param.sub_station[x].show == 1) {
+							ss_infoTable += "<tr><td>"+ssDataObj.data.param.sub_station[x].title+"</td><td>"+ssDataObj.data.param.sub_station[x].value+"</td></tr>";
+						}
+					}
+					/*Set lat-lon*/
+					ss_infoTable += "<tr><td>Lat, Long</td><td>"+ssDataObj.data.lat+", "+ssDataObj.data.lon+"</td></tr>";
+					ss_infoTable += "</tbody></table>";
+
+					var ss_windowContent = "<div class='windowContainer'><div class='box border'><div class='box-title'><h4><i class='fa fa-map-marker'></i>  "+window_name+"</h4></div><div class='box-body'><div class='' align='center'>"+ss_infoTable+"</div><div class='clearfix'></div></div></div></div>";
+					
+					// var ssMarkerIcon = base_url+"/"+ssDataObj.markerUrl;
+					var ssMarkerIcon = base_url+"/"+ssDataObj.data.markerUrl;
+					// Create SS placemark.
+					var ss_marker = earth_self.makePlacemark(ssMarkerIcon,ssDataObj.data.lat,ssDataObj.data.lon,'ss_'+ssDataObj.id,ss_windowContent);
+					/*Push SS placemark to sector placemark array*/
+					plotted_ss_earth.push(ss_marker);
+
+					/*Create link between bs & ss or sector & ss*/
+					if(ssDataObj.data.show_link == 1) {
+						var startEndObj = {};
+					
+						startEndObj["startLat"] = resultantMarkers[i].data.lat;
+						startEndObj["startLon"] = resultantMarkers[i].data.lon;
+
+						startEndObj["endLat"] = ssDataObj.data.lat;
+						startEndObj["endLon"] = ssDataObj.data.lon;
+
+						var linkColor = ssDataObj.data.link_color;
+						var bs_info = resultantMarkers[i].data.param.base_station;
+						var ss_info = ssDataObj.data.param.sub_station;
+						var linkLinePlacemark = earth_self.createLink_earth(startEndObj,linkColor,bs_info,ss_info);
+						plottedLinks_earth.push(linkLinePlacemark);
+					}
+				}
+    		}
 		}/*End of devices list for loop.*/
 
-		/*Hide The loading Icon*/
-		$("#loadingIcon").hide();
+		if(isCallCompleted == 1) {
 
-		/*Enable the refresh button*/
-		$("#resetFilters").button("complete");
+			/*Hide The loading Icon*/
+			$("#loadingIcon").hide();
+
+			/*Enable the refresh button*/
+			$("#resetFilters").button("complete");
+		}
 	};
 
 	/**
-	 * This function plots all the sub-station in given sectors object array.
-	 * @method plotSubStation_earth.
-	 * @param stationSectorObject {Object} It contains sector object in which SS are present.
+	 * This function create a placemark on given lat lon
+	 * @method makePlacemark.
+	 * @param iconHref {String}, It contains the url of placemark icon.
+	 * @param latitude {Nuber}, It contains the lattitude point for placemark.
+	 * @param longitude {Nuber}, It contains the longitude point for placemark.
+	 * @param placemarkId {String}, It contains the unique id for placemark.
+	 * @param description {String}, It contains the content which shown on click of placemark.
 	 */
-	this.plotSubStation_earth = function(stationSectorObject) {
+	this.makePlacemark = function(iconHref, latitude, longitude, placemarkId, description) {
 
-		if($.trim(stationSectorObject.technology) != "PTP" && $.trim(stationSectorObject.technology) != "P2P") {
+		marker_count++;
 
-			var sector = stationSectorObject.sectorsDataset;
+		placemark = "";
+		placemark = ge.createPlacemark(placemarkId+"_"+marker_count);
+		placemark.setDescription(description);
 
-			for(var i=0;i<sector.length;i++) {
+		var icon = ge.createIcon('');
+		icon.setHref(iconHref);
+		
+		var style = ge.createStyle(''); //create a new style
+		style.getIconStyle().setIcon(icon); //apply the icon to the style
+		style.getIconStyle().setScale(0.7);
+		placemark.setStyleSelector(style); //apply the style to the placemark
 
-				var rad = 1;
+		var point = ge.createPoint('');
+		point.setLatitude(latitude);
+		point.setLongitude(longitude);
+		placemark.setGeometry(point);
+		ge.getFeatures().appendChild(placemark);
 
-				/*If radius is greater than 4 Kms then set it to 4.*/
-				if(sector[i].radius > 4 || sector[i].radius == 0 || sector[i].radius == null) {
-					rad = 4;
-				} else {
-					rad = sector[i].radius;
-				}
-
-				var azimuth = sector[i].azimuth_angle;
-				var beam_width = sector[i].beam_width;
-				var sector_color = earth_self.makeRgbaObject(sector[i].color);
-				var sectorInfo = sector[i].info;
-				var ssList = sector[i].sub_station;
-				var orientation = $.trim(sector[i].orientation);				
-				
-				/*Call createSectorData function to get the points array to plot the sector on google earth.*/
-				mapsLibInstance.createSectorData(stationSectorObject.startLat,stationSectorObject.startLon,rad,azimuth,beam_width,orientation,function(pointsArray) {
-					
-					var infoData = {};
-					infoData["technology"] = stationSectorObject.technology;
-					
-					var halfPt = Math.floor(pointsArray.length / (+2));
-					// Create object for Link Line Between Sector & SS
-					infoData["startLat"] = pointsArray[halfPt].lat;
-					infoData["startLon"] = pointsArray[halfPt].lon;
-					infoData["info"] = sectorInfo;
-					if(ssList.length > 0) {
-
-						infoData["ssList"] = ssList;
-						earth_self.plotDevices_earth(infoData,"sub_station");
-					}
-				});
-			}
-		}
+		return placemark;
 	};
 
 	/**
@@ -676,7 +591,7 @@ function googleEarthClass() {
 		// Create a style and set width and color of line
 		lineStringPlacemark.setStyleSelector(ge.createStyle(''));
 		var lineStyle = lineStringPlacemark.getStyleSelector().getLineStyle();					
-		lineStyle.setWidth(2);
+		lineStyle.setWidth(4);
 
 		/*Color for the link line*/
 		var link_color_obj = earth_self.makeRgbaObject(linkColor);
@@ -751,50 +666,122 @@ function googleEarthClass() {
 		sectorPolygonObj.setDescription(sector_windowContent+"<input type='hidden' name='technology' value=' &-&-& "+JSON.stringify(infoData)+" &-&-& '/><input type='hidden' name='sub_station_data' value=' -|-|-|- "+childSS+" -|-|-|- '/>");
 
 		var lineStyle = sectorPolygonObj.getStyleSelector().getLineStyle();
-		lineStyle.setWidth(1);
-		lineStyle.getColor().setA(200);
-		lineStyle.getColor().setB(102);
-		lineStyle.getColor().setG(101);
-		lineStyle.getColor().setR(99);
+
+		lineStyle.setWidth(2);
+		if(device_technology.toLowerCase() == 'wimax') {
+			lineStyle.getColor().setB(0);
+			lineStyle.getColor().setG(0);
+			lineStyle.getColor().setR(0);
+		} else {			
+			lineStyle.getColor().setB(255);
+			lineStyle.getColor().setG(255);
+			lineStyle.getColor().setR(255);
+		}
+		lineStyle.getColor().setA(600);
 
 		// Color can also be specified by individual color components.
 		var polyColor = sectorPolygonObj.getStyleSelector().getPolyStyle().getColor();
+		polyColor.setA(200);
 		polyColor.setR((+bgColor.r));
 		polyColor.setG((+bgColor.g));
 		polyColor.setB((+bgColor.b));
 
-		polyColor.setA(200);
 		// Add the placemark to Earth.
 		ge.getFeatures().appendChild(sectorPolygonObj);
 
 		google.earth.addEventListener(sectorPolygonObj, 'click', function(event) {
-			
-			var infoObject = {};
 
-			var description = this.getDescription();
-			var ssList = JSON.parse(description.split("-|-|-|-")[1]);
-
-			infoObject = JSON.parse(description.split('&-&-&')[1]);
-			infoObject["ssList"] = ssList;
-
-			if(ssList.length > 0) {
-				/*Remove All SS from Google Earth*/
-				$.grep(plotted_ss_earth,function(ss) {
-					ge.getFeatures().removeChild(ss);
-				});
-
-				/*Remove All Links from google earth*/
-				$.grep(plotterLinks_earth,function(links) {
-					ge.getFeatures().removeChild(links);
-				});
-
-				/*Reset SS & links array*/
-				plotted_ss_earth = [];
-				plotterLinks_earth = [];
-				earth_self.plotDevices_earth(infoObject,"sub_station");
-			}
 		});
 	};
+
+	/**
+	 * This function show/hide the connection line between BS & SS.
+	 * @method showConnectionLines_earth
+	 */
+	this.showConnectionLines_earth = function() {
+
+		var isLineChecked = $("#showConnLines:checked").length;
+
+		var existing_lines = ssLinkArray_filtered;
+
+		/*Unchecked case*/
+		if(isLineChecked == 0) {
+
+			for (var i = 0; i < plottedLinks_earth.length; i++) {
+				plottedLinks_earth[i].setVisibility(false);
+			}
+
+		} else {
+			for (var i = 0; i < plottedLinks_earth.length; i++) {
+				plottedLinks_earth[i].setVisibility(true);
+			}
+		}
+	};
+
+	/**
+     * This function initialize live polling
+     * @method fetchPollingTemplate_gmap
+     */
+    this.fetchPollingTemplate_gmap = function() {
+		
+    	var selected_technology = $("#polling_tech").val();
+
+    	/*Re-Initialize the polling*/
+    	networkMapInstance.initLivePolling();
+
+    	if(selected_technology != "") {
+    		
+    		$("#tech_send").button("loading");
+
+    		/*ajax call for services & datasource*/
+    		$.ajax({
+    			url : base_url+"/"+"device/ts_templates/?technology="+selected_technology,
+    			// url : base_url+"/"+"static/livePolling.json",
+    			success : function(results) {
+
+    				result = JSON.parse(results);
+    				
+    				if(result.success == 1) {
+    					/*Make live polling template select box*/
+    					var polling_templates = result.data.thematic_settings;
+    					var polling_select = "<select class='form-control' name='lp_template_select' id='lp_template_select'><option value=''>Select Template</option>";
+    					
+    					for(var i=0;i<polling_templates.length;i++) {
+    						polling_select += '<option value="'+polling_templates[i].id+'">'+polling_templates[i].value+'</option>'
+    					}
+
+    					polling_select += "</select>";
+
+    					$("#sideInfo .panel-body .col-md-12 .template_container").html(polling_select);
+
+    					if($("#fetch_polling").hasClass("hide")) {
+    						$("#fetch_polling").removeClass("hide");
+    					}
+
+    					$("#tech_send").button("complete");
+
+    					/*Code to draw polygon on click*/
+						var polyPlacemark = gexInstance.dom.addPolygonPlacemark([], {
+						    style: {
+						    	poly: {color: 'black', opacity: 0},
+						    	line: { width: 3, color: '#333333' }
+						    }
+					    });
+
+						gexInstance.edit.drawLineString(polyPlacemark.getGeometry().getOuterBoundary(),{finishCallback : function(e) {
+
+						}});
+
+						/*Polygon Drawing End*/
+    				}
+
+    			},
+    			error : function(err) {
+    				console.log(err.statusText);
+    			}
+			});
+		}
+	}
 
 	/**
 	 * This function make "r,g,b,a" color object from rgba color string
