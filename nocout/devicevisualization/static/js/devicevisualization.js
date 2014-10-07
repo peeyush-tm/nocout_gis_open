@@ -82,26 +82,29 @@ $("#state").change(function(e) {
 
     getPageType();
 
-    var state_id = $(this).val();
-    if (state_id != ""){
-        $("#city").children().show();
-        for (var j =0 ; j < city_options.length; j++){
-            $("#city").append(city_options[j]);
-        }
-        var city_obj = $("#city").children('option:not([state_id='+state_id+'])');
+    var state_name = $("#state option:selected").text(),
+        state_id = $("#state").val();
 
-        $("#city").prepend('<option value="">Select City</option>');
-        city_obj.each(function(){
-            city_options.push($(this));
-            $(this).remove();
+    /*Code to show the cities in city dropdown as per selected state*/
+    $("#city").val("");
+    /*Loop on city options*/
+    $("#city option").each(function(i, el) {
+        var state_name_in_city= $(el).attr('state_id');
+        if(state_name_in_city) {            
+            if(state_name_in_city.toLowerCase() == state_name.toLowerCase()) {
+                $(el).show();
+            } else {
+                $(el).hide();
+            }
+        }
+    });
+
+    if(state_id == "") {
+        $("#city option").each(function(i, el) {
+            $(el).show();
         });
     }
-    else{
-        $("#city").children().show();
-        for (var j =0 ; j < city_options.length; j++){
-            $("#city").append(city_options[j]);
-        }
-    }
+
     networkMapInstance.makeFiltersArray(mapPageType);
 });
 
@@ -109,9 +112,9 @@ $("#state").change(function(e) {
 $("#city").change(function(e) {
 
     getPageType();
-    if ( $(this).val() != ""){
-        var state_id = $("#city :selected").attr("state_id");
-        $("#state").val(state_id);
+    if ($(this).val() != ""){
+        var state_name = $("#city :selected").attr("state_id");
+        $("#state").val(state_name);
     }
     networkMapInstance.makeFiltersArray(mapPageType);
 });
@@ -129,29 +132,37 @@ $("#technology").change(function(e) {
     getPageType();
     var tech_id = $(this).val();
     var tech_value= $('#technology option:selected').text();
-    $("#vendor").val("");
 
-    // var vendorOptions= $("#vendor option");
-    $("#vendor option").each(function(i, el) {
-        var optionValue= $(el).attr('tech_id');
-        var tech_name= $(el).attr('tech_name');
-        //skip out default value
-        if(!optionValue) {
-        } else {
-            if(parseInt(optionValue, 10)== parseInt(tech_id, 10) && tech_name.toLowerCase()== tech_value.toLowerCase()) {
-                $(el).show();
-            } else {
-                $(el).hide();
-            }
-        }
-    });
-
+    // $("#vendor option").each(function(i, el) {
+    //     var tech_name= $(el).attr('tech_id');
+    //     //skip out default value
+    //     if(tech_value) {
+    //         if(tech_name) {
+    //             if(tech_name.toLowerCase()== tech_value.toLowerCase()) {
+    //                 $(el).show();
+    //             } else {
+    //                 $(el).hide();
+    //             }
+    //         }
+    //     }
+    // });
+    var vendor_array = [];
     if(tech_id == "") {
-        $("#vendor option").each(function(i, el) {
-            $(el).show();
-        });
+        // $("#vendor option").each(function(i, el) {
+        //     $(el).show();
+        // });
+        vendor_array = all_vendor_array;
+    } else {
+        vendor_array = tech_vendor_obj[$.trim(tech_value)];
     }
-    // $("#mySelect option[value=" + title + "]").hide();
+
+    var vendor_option = "<option value=''> Select Vendor</option>";
+    for(var i=0;i<vendor_array.length;i++) {
+        vendor_option += "<option value='"+ i+1 +"'> "+vendor_array[i]+"</option>";
+    }
+
+    $("#vendor").html(vendor_option);
+
     networkMapInstance.makeFiltersArray(mapPageType);
 });
 

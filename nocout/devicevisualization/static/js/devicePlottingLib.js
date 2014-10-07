@@ -1,6 +1,7 @@
 /*Global Variables*/
 var base_url = "",
 	mapInstance = "",
+	isFirstTime = 1,
 	gmap_self = "",
 	currentDomElement = "",
 	main_devices_data_gmaps = [],
@@ -10,6 +11,8 @@ var base_url = "",
 	pathConnector = "",
 	infowindow = "",	
 	devicesObject = {},
+	tech_vendor_obj = {};
+	all_vendor_array = [],
 	plottedSS = [],
 	metaData = {},
 	isCallCompleted = 0,
@@ -815,6 +818,17 @@ function devicePlottingClass_gmap() {
 			/*Plot Sector*/
 			for(var j=0;j<sector_array.length;j++) {
 
+				if(!tech_vendor_obj[sector_array[j].technology]) {
+					tech_vendor_obj[sector_array[j].technology] = [];
+				}
+				if(tech_vendor_obj[sector_array[j].technology].indexOf(sector_array[j].vendor) == -1) {
+					tech_vendor_obj[sector_array[j].technology].push(sector_array[j].vendor);
+				}				
+
+				if(all_vendor_array.indexOf(sector_array[j].vendor) == -1) {
+					all_vendor_array.push(sector_array[j].vendor); 
+				}				
+
 				var lat = bs_ss_devices[i].data.lat,
 					lon = bs_ss_devices[i].data.lon,
 					azimuth = sector_array[j].azimuth_angle,
@@ -1043,6 +1057,12 @@ function devicePlottingClass_gmap() {
 		}
 
 		if(isCallCompleted == 1) {
+
+			if(isFirstTime == 1) {
+				/*Load data for basic filters*/
+				var basic_filter_data = prepare_data_for_filter();
+				networkMapInstance.getBasicFilters(basic_filter_data);
+			}
 
 			/*Hide The loading Icon*/
 			$("#loadingIcon").hide();
@@ -2124,61 +2144,107 @@ function devicePlottingClass_gmap() {
 	 * This function fetch the basic filters from appropriate API & this populate the data to respective dropdowns
 	 * @method getBasicFilters
 	 */
-	this.getBasicFilters = function() {
+	this.getBasicFilters = function(filter_data) {
 
-		var filtersData = {};
-		/*Ajax call for filters data*/
-		$.ajax({
-			url : base_url+"/"+"device/filter/",
-			// url : "../../static/filter_data.json",
-			success : function(result) {				
-				filtersData = JSON.parse(result);
-
-				var techData = filtersData.data.objects.technology.data;
-				var vendorData = filtersData.data.objects.vendor.data;
-				var cityData = filtersData.data.objects.city.data;
-				var stateData = filtersData.data.objects.state.data;
-
-				/*Populate technology dropdown*/
-				var techOptions = "<option value=''>Select Technology</option>";
-				$.grep(techData,function(tech) {
-					techOptions += "<option value='"+tech.id+"'>"+tech.value.toUpperCase()+"</option>";
-				});
-				$("#technology").html(techOptions);
-				$("#polling_tech").html(techOptions);
-
-				/*Populate Vendor dropdown*/
-				var vendorOptions = "<option value=''>Select Vendor</option>";
-				$.grep(vendorData,function(vendor) {
-					vendorOptions += "<option value='"+vendor.id+"' tech_id='"+vendor.tech_id+"' tech_name='"+vendor.tech_name+"'>"+vendor.value.toUpperCase()+"</option>";
-				});
-				$("#vendor").html(vendorOptions);
-
-				/*Populate City dropdown*/
-				var cityOptions = "<option value=''>Select City</option>";
-				$.grep(cityData,function(city) {
-					cityOptions += "<option state_id='"+city.state_id+"' state_name='"+city.state_name+"' value='"+city.id+"'>"+city.value.toUpperCase()+"</option>";
-				});
-				$("#city").html(cityOptions);
-
-				/*Populate State dropdown*/
-				var stateOptions = "<option value=''>Select State</option>";
-				$.grep(stateData,function(state) {
-					stateOptions += "<option value='"+state.id+"'>"+state.value.toUpperCase()+"</option>";
-				});
-				$("#state").html(stateOptions);
-			},
-			error : function(err) {
-				$.gritter.add({
-		            // (string | mandatory) the heading of the notification
-		            title: 'Basic Filters - Server Error',
-		            // (string | mandatory) the text inside the notification
-		            text: err.statusText,
-		            // (bool | optional) if you want it to fade out on its own or just sit there
-		            sticky: false
-		        });
+		/*Populate City State Data*/
+		for(var i=0;i<filter_data.length;i++) {
+			var current_filter = filter_data[i];
+			if(current_filter.key != 'technology' && current_filter.key != 'vendor') {				
+				var option_html = "<option value=''>Select "+current_filter.title+"</option>";
+				var inner_id = "";
+				if(current_filter.key == 'vendor') {
+					inner_id = "tech_id";
+				} else if(current_filter.key == 'city') {
+					inner_id = "state_id";
+				}
+				for(var j=0;j<current_filter.values.length;j++) {
+					if(inner_id) {
+						option_html += "<option value='"+$.trim(current_filter.values[j].value)+"' "+inner_id+"='"+current_filter.values[j].parent_name+"' >"+current_filter.values[j].value.toUpperCase()+"</option>";
+					} else {
+						option_html += "<option value='"+$.trim(current_filter.values[j].value)+"' >"+current_filter.values[j].value.toUpperCase()+"</option>";
+					}
+				}
+				$("#"+current_filter.key).html(option_html);
 			}
-		});
+		}
+
+		/*Populate Technology & Vendor*/
+		var technology_array = Object.keys(tech_vendor_obj);
+
+		var tech_option = "";
+		tech_option = "<option value=''>Select Technology</option>";
+
+		for(var i=0;i<technology_array.length;i++) {
+			tech_option += "<option value='"+i+1+"'>"+technology_array[i]+"</option>";
+		}
+
+		$("#technology").html(tech_option);
+
+		var vendor_option = "";
+		vendor_option = "<option value=''>Select Vendor</option>";
+
+		for(var i=0;i<all_vendor_array.length;i++) {
+			vendor_option += "<option value='"+i+1+"'>"+all_vendor_array[i]+"</option>";
+		}
+
+		$("#vendor").html(vendor_option);
+
+		/*Reset the flag*/
+		isFirstTime = 0;
+
+		// var filtersData = {};
+		// /*Ajax call for filters data*/
+		// $.ajax({
+		// 	url : base_url+"/"+"device/filter/",
+		// 	// url : "../../static/filter_data.json",
+		// 	success : function(result) {				
+		// 		filtersData = JSON.parse(result);
+
+		// 		var techData = filtersData.data.objects.technology.data;
+		// 		var vendorData = filtersData.data.objects.vendor.data;
+		// 		var cityData = filtersData.data.objects.city.data;
+		// 		var stateData = filtersData.data.objects.state.data;
+
+		// 		/*Populate technology dropdown*/
+		// 		var techOptions = "<option value=''>Select Technology</option>";
+		// 		$.grep(techData,function(tech) {
+		// 			techOptions += "<option value='"+tech.id+"'>"+tech.value.toUpperCase()+"</option>";
+		// 		});
+		// 		$("#technology").html(techOptions);
+		// 		$("#polling_tech").html(techOptions);
+
+		// 		/*Populate Vendor dropdown*/
+		// 		var vendorOptions = "<option value=''>Select Vendor</option>";
+		// 		$.grep(vendorData,function(vendor) {
+		// 			vendorOptions += "<option value='"+vendor.id+"' tech_id='"+vendor.tech_id+"' tech_name='"+vendor.tech_name+"'>"+vendor.value.toUpperCase()+"</option>";
+		// 		});
+		// 		$("#vendor").html(vendorOptions);
+
+		// 		/*Populate City dropdown*/
+		// 		var cityOptions = "<option value=''>Select City</option>";
+		// 		$.grep(cityData,function(city) {
+		// 			cityOptions += "<option state_id='"+city.state_id+"' state_name='"+city.state_name+"' value='"+city.id+"'>"+city.value.toUpperCase()+"</option>";
+		// 		});
+		// 		$("#city").html(cityOptions);
+
+		// 		/*Populate State dropdown*/
+		// 		var stateOptions = "<option value=''>Select State</option>";
+		// 		$.grep(stateData,function(state) {
+		// 			stateOptions += "<option value='"+state.id+"'>"+state.value.toUpperCase()+"</option>";
+		// 		});
+		// 		$("#state").html(stateOptions);
+		// 	},
+		// 	error : function(err) {
+		// 		$.gritter.add({
+		//             // (string | mandatory) the heading of the notification
+		//             title: 'Basic Filters - Server Error',
+		//             // (string | mandatory) the text inside the notification
+		//             text: err.statusText,
+		//             // (bool | optional) if you want it to fade out on its own or just sit there
+		//             sticky: false
+		//         });
+		// 	}
+		// });
 	};
 
 	/**
@@ -2360,7 +2426,6 @@ function devicePlottingClass_gmap() {
 
         /*Get The Length Of Filter Array*/
         var filtersLength = Object.keys(appliedFilterObj_gmaps).length;
-
         /*If any filter is applied then filter the data*/
         if(filtersLength > 0) {
 
@@ -3648,7 +3713,7 @@ function devicePlottingClass_gmap() {
 }
 
 
-function prepare_data_for_filter(){
+function prepare_data_for_filter() {
 
     var filter_data_bs_city_collection=[];
         filter_data_bs_state_collection=[];
@@ -3662,36 +3727,69 @@ function prepare_data_for_filter(){
 		current_data = main_devices_data_gmaps;
 	}
 
-    if ( current_data.length >0 )
-        {
-            for (i=0; i< current_data.length; i++)
-            {
-                filter_data_sector_ss_technology_value= current_data[i].sector_ss_technology.split('|').filter(function (n) { return n != ""})
-                filter_data_sector_ss_technology_collection.push({ 'id': current_data[i].id ,
-                        'value':filter_data_sector_ss_technology_value });
+    if (current_data.length > 0) {
+    		var city_array = [],
+    			state_array = [];
+            for (i=0; i< current_data.length; i++) {
 
+            	/*removing the devices which do not have the states and city entered.*/
+            	if(state_array.indexOf(current_data[i].data.state) == -1 && current_data[i].data.state != 'N/A') {
 
-                filter_data_sector_ss_vendor_value= current_data[i].sector_ss_vendor.split('|').filter(function (n) { return n != ""})
-                filter_data_sector_ss_vendor_collection.push({ 'id':current_data[i].id,
-                                                      'value':filter_data_sector_ss_vendor_value });
+            		filter_data_bs_state_collection.push({ 'id': current_data[i].id, 'value': current_data[i].data.state });
+            		state_array.push(current_data[i].data.state);
 
+            	}
 
-                /*removing the devices which do not have the states and city entered.*/
-                if (current_data[i].data.state != 'N/A'){
-                    filter_data_bs_state_collection.push({ 'id': current_data[i].id,
-                            'value': current_data[i].data.state });
-                }
+            	if(city_array.indexOf(current_data[i].data.city) == -1 && current_data[i].data.city != 'N/A') {
 
-                if (current_data[i].data.city != 'N/A'){
-                    filter_data_bs_city_collection.push({ 'id': current_data[i].id,
-                            'value': current_data[i].data.city });
-                }
+            		filter_data_bs_city_collection.push({ 'id': current_data[i].id, 'value': current_data[i].data.city, 'parent_name' : current_data[i].data.state });
+            		city_array.push(current_data[i].data.city);
+
+            	}
+
+				/*Sector Devices Array*/
+				var sector_device = current_data[i].data.param.sector;
+
+				/*Reset technology & vendor Array*/
+				filter_data_sector_ss_technology_value = [];
+				filter_data_sector_ss_vendor_value = [];
+				tech_for_vendor = []
+
+				for(var j=0;j<sector_device.length;j++) {
+					
+					if(filter_data_sector_ss_technology_value.indexOf(sector_device[j].technology) == -1) {
+						filter_data_sector_ss_technology_value.push(sector_device[j].technology);
+					}
+
+					if(filter_data_sector_ss_vendor_value.indexOf(sector_device[j].vendor) == -1) {
+						filter_data_sector_ss_vendor_value.push(sector_device[j].vendor);
+						tech_for_vendor.push(sector_device[j].technology);
+					}
+				}
+
+				filter_data_sector_ss_technology_collection.push({ 'id': current_data[i].id , 'value':filter_data_sector_ss_technology_value });
+
+				filter_data_sector_ss_vendor_collection.push({ 'id':current_data[i].id, 'value':filter_data_sector_ss_vendor_value , 'parent_name' : tech_for_vendor});
             }
 
-            filter_data_bs_state_collection= unique_values_field_and_with_base_station_ids(filter_data_bs_state_collection);
-            filter_data_bs_city_collection= unique_values_field_and_with_base_station_ids(filter_data_bs_city_collection);
+            // filter_data_bs_state_collection= unique_values_field_and_with_base_station_ids(filter_data_bs_state_collection);
+            // filter_data_bs_city_collection= unique_values_field_and_with_base_station_ids(filter_data_bs_city_collection);
             filter_data_sector_ss_technology_collection= unique_values_field_and_with_base_station_ids(filter_data_sector_ss_technology_collection,'technology');
-            filter_data_sector_ss_vendor_collection= unique_values_field_and_with_base_station_ids(filter_data_sector_ss_vendor_collection,'vendor');
+            // var old_all_vendor_array = filter_data_sector_ss_vendor_collection;
+            filter_data_sector_ss_vendor_collection = unique_values_field_and_with_base_station_ids(filter_data_sector_ss_vendor_collection,'vendor');
+            
+            /*Loop to add parent name i.e. technology*/
+          //   for(var j=0;j<filter_data_sector_ss_vendor_collection.length;j++) {
+        		// var id_array = filter_data_sector_ss_vendor_collection[j].id;	            
+        		// var parent = [];
+	        	// for(var i=0;i<old_vendor_array.length;i++) {
+          //   		if(id_array.indexOf(old_vendor_array[i].id) > - 1) {
+          //   			parent = old_vendor_array[i].parent_name;
+          //   		}
+
+          //   	}
+          //   	filter_data_sector_ss_vendor_collection[j]["parent_name"] = parent;
+          //   }
 
             var filter_data=[
                 {
@@ -3826,51 +3924,45 @@ function unique_values_field_and_with_base_station_ids(filter_data_collection, t
                 unique_names[filter_data_collection[i].value]=true
             }
         }
-
     } else {
         for (var i=0;i< filter_data_collection.length; i++)
         {
             unique_names[filter_data_collection[i].value]=true
         }
-
     }
-    unique_names= Object.keys(unique_names);
 
+    unique_names= Object.keys(unique_names);
     /*All the devices_ids w.r.t to the mappers*/
     var result_bs_collection=[];
-    for (var i=0;i< unique_names.length; i++)
-        {
-            var unique_device_ids=[];
+    for (var i=0;i< unique_names.length; i++) {
 
-            for(var j=0;j< filter_data_collection.length; j++)
-            {
+            var unique_device_ids=[],
+            	parent_name = [];
 
-                if (type=='technology' || type=='vendor'){
+            for(var j=0;j< filter_data_collection.length; j++) {
 
-                    if (filter_data_collection[j].value.length>1)
-                    {
-                       for(var k=0;k< filter_data_collection[j].value.length; k++)
-                       {
-                          if(unique_names[i]== filter_data_collection[j].value[k])
-                          {
+                if (type=='technology' || type=='vendor') {
+                    if (filter_data_collection[j].value.length>1) {
+
+                       for(var k=0;k< filter_data_collection[j].value.length; k++) {
+
+                          if(unique_names[i]== filter_data_collection[j].value[k]) {
                             unique_device_ids.push(filter_data_collection[j].id)
                           }
-                       }
+                       }                       
                     }
-                    else{
-                        if(unique_names[i]== filter_data_collection[j].value[0])
-                        {
+                    else {
+                        if(unique_names[i]== filter_data_collection[j].value[0]) {
                             unique_device_ids.push(filter_data_collection[j].id)
                         }
                     }
                 } else {
-                        if (unique_names[i]== filter_data_collection[j].value)
-                        {
+                        if (unique_names[i]== filter_data_collection[j].value) {
                             unique_device_ids.push(filter_data_collection[j].id)
                         }
                 }
-            }
-        result_bs_collection.push({'id':unique_device_ids, 'value': unique_names[i] });
+            }            
+        result_bs_collection.push({'id':unique_device_ids, 'value': unique_names[i]});
         }
     return result_bs_collection
 }
