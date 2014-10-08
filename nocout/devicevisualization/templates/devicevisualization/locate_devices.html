@@ -265,8 +265,6 @@
         </div>
     </div>
 
-
-    <script type="text/javascript" src={% static "js/underscorejs/underscore.js" %}></script>
     <!-- Google Map Library-->
     <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
     <!--This library is used to draw label on google maps-->
@@ -338,7 +336,7 @@
                 }
             }
             /*Call getBasicFilters funtion to fetch & populate basic filters dropdown*/
-            networkMapInstance.getBasicFilters();
+            // networkMapInstance.getBasicFilters();
         });
     </script>
 {% endblock %}

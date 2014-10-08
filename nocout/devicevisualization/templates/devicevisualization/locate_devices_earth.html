@@ -1,0 +1,337 @@
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+    <li>Network Maps</li>
+    <li>Google Earth</li>
+{% endblock %}
+{% block content_title %}Google Earth{% endblock %}
+{% block content_description %} {% endblock %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
+    <!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css"
+          href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
+    <style>
+        select option[disabled] {
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block page_setting_block %}
+    <!-- GIS Page  -->
+    <span class="date-range pull-right">
+        <div class="btn-group">
+            <ul class="list-unstyled list-inline gis_page_setting">
+                <li class="alert alert-block alert-info">
+                    <b>Status</b><br/> <ul id="gis_status_txt" class="list-unstyled "></ul>
+                </li>
+                <li><button type="button" id="advSearchBtn" class="btn btn-info" data-complete-text="<i class='fa fa-filter'></i> Advance Search"
+                            data-loading-text="Please Wait..." onclick="showAdvSearch();" title="Click to Advance Search">
+                    <i class="fa fa-filter"></i>Advance Search
+                </button></li>
+                <li>
+                    <button type="button" id="advFilterBtn" class="btn btn-info" onclick="showAdvFilters();"
+                            data-complete-text="<i class='fa fa-filter'></i> Advance Filters"
+                            data-loading-text="Please Wait...">
+                        <i class='fa fa-filter'></i> Advance Filters
+                    </button>
+                    <button type="button" id="removeFilterBtn" class="btn btn-danger hide" onclick="removeAdvFilters();"
+                            style="margin-left:10px;" title="Click to Advance Filter">
+                        <i class='fa fa-times'></i> Remove Filters
+                    </button>
+                </li>
+                <li>
+                    <button type="button" class="btn btn-info" id="createPolygonBtn"
+                            data-complete-text="<i class='fa fa-location-arrow'></i> Select Devices"
+                            data-loading-text="Please Wait..."><i class="fa fa-location-arrow"></i> Select Devices
+                    </button>
+                    <button type="button" class="btn btn-xs btn-danger hide" id="clearPolygonBtn"><i class="fa fa-times"></i> Clear
+                        Selection
+                    </button>
+                </li>
+                {% for group in user.groups.all %}
+                    {% if group.name == 'group_admin' or group.name == 'group_operator' %}
+                        <li>
+                            <button type="button" id="showToolsBtn" class="btn btn-info" onclick="showToolsPanel();" data-complete-text="<i class='fa fa-cog'></i> Tools"
+                            data-loading-text="Please Wait...">
+                                <i class='fa fa-cog'></i> Show Tools
+                            </button>
+                            <button type="button" id="removeToolsBtn" class="btn btn-danger hide" onclick="removetoolsPanel();">
+                                <i class='fa fa-times'></i> Hide Tools
+                            </button>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+        <div style="position: fixed; display: block; bottom:0; right: 20px; z-index:999;background: #fff;width: auto;padding: 10px;" id="cursor_lat_long">
+        </div>
+    </span>
+    <!-- /DATE RANGE PICKER -->
+{% endblock %}
+
+{% block content %}
+
+    <div class="col-md-12">
+
+        <!-- Advance Search Division -->
+        <div id="advSearchContainerBlock" class="hide">
+            <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Advance Search</h4>
+
+            <div id="advSearchFormContainer" class="col-md-8 col-md-offset-2"></div>
+            <div class="clearfix"></div>
+
+            <div class="col-md-8 col-md-offset-2">
+                <button type="button" class="pull-right btn btn-danger" style="margin-left:10px;" id="cancelAdvSearchBtn">Cancel
+                </button>
+                <button type="button" class="pull-right btn btn-danger" id="resetSearchForm" style="margin-left:10px;">
+                        <i class="fa fa-times"></i> Reset Search
+                    </button>
+                <button type="button" class="pull-right btn btn-success" id="setAdvSearchBtn">Search</button>
+            </div>
+            <div class="clearfix"></div>
+            <div class="divide-20"></div>
+        </div>
+        <!-- End of Advance Search Division -->
+
+        <!-- Advance Filters Content Start-->
+        <div id="advFilterContainerBlock" class="hide">
+            <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Advance Filters</h4>
+
+            <div id="advFilterFormContainer" class="col-md-8 col-md-offset-2"></div>
+            <div class="clearfix"></div>
+
+            <div class="col-md-8 col-md-offset-2">
+                <button type="button" class="pull-right btn btn-danger" style="margin-left:10px;" id="cancelAdvFilterBtn">Cancel
+                </button>
+                <button type="button" class="pull-right btn btn-success" id="setAdvFilterBtn">Filter</button>
+            </div>
+            <div class="clearfix"></div>
+            <div class="divide-20"></div>
+        </div>
+        <!-- Advance Filters Content End-->
+
+        <!-- Select Device Content Start-->
+        <div id="selectDeviceContainerBlock" class="hide">
+            <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Select Devices</h4>
+            <ul class="list-unstyled list-inline">
+                <li class="hide">Show Connected SS <input type="checkbox" name="showAllSS" id="showAllSS"
+                                                          onclick="networkMapInstance.plotAllDevice_gmap()"
+                                                          style="vertical-align: text-top;" checked="checked"/></li>
+                <!-- <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
+                                                   onclick="networkMapInstance.showConnectionLines_gmap()"
+                                                   style="vertical-align: text-top;" checked="checked"/></li> -->
+            </ul>
+            <div class="divide-20"></div>
+        </div>
+        <!-- Select Device Content End-->
+
+        <!-- Tools Content Start-->
+        <div id="toolsContainerBlock" class="hide">
+            <h4 style="margin-top:0px;"><i class="fa fa-arrow-circle-o-right"> </i> Gmap Tools</h4>
+            <ul class="list-unstyled list-inline">
+                <li>
+                    <button type="button" id="ruler_select" class="btn btn-info">Select Ruler</button>
+                    <button type="button" id="ruler_remove" class="btn btn-danger hide">Remove Ruler</button>
+                </li>
+                <li>
+                    <button type="button" id="point_select" class="btn btn-info">Add Point</button>
+                    <button type="button" id="point_remove" class="btn btn-danger hide">Remove Points</button>
+                </li>
+                <li>
+                    <button type="button" id="line_select" class="btn btn-info">Select Line</button>
+                    <button type="button" id="line_remove" class="btn btn-danger hide">Remove Line</button>
+                </li>
+                <li>
+                    <button type="button" id="freeze_select" class="btn btn-info">Freeze</button>
+                    <button type="button" id="freeze_remove" class="btn btn-danger hide">Un-Freeze</button>
+                </li>
+                <li>
+                    <button type="button" class="btn btn-info">Export Data</button>
+                </li>
+                <li>
+                    <input type="checkbox" name="show_hide_label" id="show_hide_label" checked=""> Show Labels
+                </li>
+                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
+                                                   onclick="earth_instance.showConnectionLines_earth()"
+                                                   style="vertical-align: text-top;" checked="checked"/></li>
+                <li class="fright">
+                    <form action="#" class="form-horizontal">
+                        <div class="form-group">
+                            <label class="control-label">Icon Size: </label>
+                            <select id="icon_Size_Select_In_Tools" class="form-control">
+                                <option value="small">Small</option>
+                                <option value="medium" selected="1">Medium</option>
+                                <option value="large">Large</option>
+                            </select>
+                        </div>
+                    </form>
+                </li>
+            </ul>
+            <div class="divide-10"></div>
+        </div>
+        <!-- Tools Content End-->
+        <div class="clearfix"></div>
+    </div>
+
+    <div class='box border lite mapContainerBlock'>
+        <div class='box-title'>
+            <!--Filters Block Start-->
+            <div class="row">
+                <div class="col-md-12">
+                    <ul class="list-unstyled list-inline">
+                        <li>
+                            <input type="text" name="google_loc_search" id="google_loc_search" class="form-control col-xs-1" style="width:278px;"
+                                   placeholder="Location Search">
+                        </li>
+                        <li>
+                            <input type="text" name="lat_lon_search" onkeypress="return isLatLon(event);" id="lat_lon_search" class="form-control col-xs-1" style="width:175px;"
+                                   placeholder="Lattitude,Longitude">
+                        </li>
+                        <li>
+                            <!--technology Filter-->
+                            <select name="technology" id="technology" class="form-control col-xs-1 input-sm" style="width: 150px;">
+                                <option value="">Select Technology</option>
+                            </select>
+                        </li>
+                        <li>
+                            <!--vendor Filter-->
+                            <select name="vendor" id="vendor" class="form-control col-xs-1 input-sm" style="width: 150px;">
+                                <option value="">Select Vendor</option>
+                            </select>
+                        </li>
+                        <li>
+                            <!--State Filter-->
+                            <select name="state" id="state" class="form-control col-xs-1 input-sm" style="width: 150px;">
+                                <option value="">Select State</option>
+                            </select>
+                        </li>
+                        <li>
+                            <!--City Filter-->
+                            <select name="city" id="city" class="form-control col-xs-1 input-sm" style="width: 150px;">
+                                <option value="">Select City</option>
+                            </select>
+                        </li>
+                        <li>
+                            <!--Reset Button-->
+                            <button type="button" class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters"
+                                    data-complete-text="<i class='fa fa-refresh'></i> Reset"
+                                    data-loading-text="Please Wait...">
+                                <i class="fa fa-refresh">&nbsp;</i> Reset
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <!--Filters Block End-->
+            <div class="clearfix"></div>
+        </div>
+
+        <div class='box-body' style="position:relative">
+
+            <!--Google Earth Container Start-->
+            <div id="google_earth_container"></div>
+            <!--Google Earth Container End-->
+
+        <!--SideInfo Panel Start-->
+        <div id="sideInfoContainer" class="sideInfoContainer shim_block col-md-4 col-md-offset-8 hide">
+            <iframe allowTransparency="true" style="position:absolute; top:0px; bottom:0px; right:0px; width:100%; min-height:200px; z-index:100;"></iframe>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#sideInfo">Selected Devices</a> <!-- <i class="fa fa-spinner fa fa-spin"> </i> -->
+                    </h3>
+                </div>
+                <div id="sideInfo" class="panel-collapse in">
+                    <div class="panel-body">
+                        <div class="col-md-12">
+                            <select name="polling_tech" id="polling_tech" class="form-control">
+                                <option value="">Select Technology</option>
+                            </select>
+                            <div class="divide-10"></div>
+                            <button type="button" class="btn btn-primary" data-complete-text="Send" data-loading-text="Please Wait..." id="tech_send">Send</button>
+                            <div class="divide-20 clearfix"></div>
+                            <div class="template_container"></div>
+                            <div class="divide-10"></div>
+                            <button type="button" class="btn btn-primary hide" data-complete-text="Poll Now" data-loading-text="Please Wait..." id="fetch_polling">Poll Now <i class='fa fa-spinner fa fa-spin hide' id='fetch_spinner'>&nbsp;</i></button>
+                            <div class="divide-20 clearfix"></div>
+                            <div class="devices_container"></div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--SideInfo Panel End-->
+        </div>
+    </div>
+
+
+    <!-- Google Earth Library-->
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <!-- Libray for google earth custom features-->
+    <script type="text/javascript" src={% static "js/extensions-0.2.1.pack.js" %}></script>
+    <!-- Script Library for COokies -->
+    <script type="text/javascript" src={% static "js/jQuery-Cookie/src/jquery.cookie.js" %}></script>
+    <!--This library is used for marker clustering-->
+    <!-- Our Library to plot the devices on google earth & performs functionality accordingly-->
+    <script type="text/javascript" src={% static "js/earth_devicePlottingLib.js" %}></script>
+    <!-- Our Library to get the performance of devices-->
+    <script type="text/javascript" src={% static "js/gisPerformance.js" %}></script>
+    <!-- Our Library to plot the devices on map & performs functionality accordingly-->
+    <script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
+    <!-- Our Library to plot the devices on map or earth & performs functionality accordingly-->
+    <script type="text/javascript" src={% static "js/advanceSearchLib.js" %}></script>
+    <!-- Our Library to implement search functionality on gmap & earth-->
+    <script type="text/javascript" src={% static "js/advanceSimpleSearch.js" %}></script>
+    <!-- SPARKLINES -->
+    <script type="text/javascript" src={% static "js/sparklines/jquery.sparkline.min.js" %}></script>
+    <!-- Custon Script for this template-->
+    <script type="text/javascript" src={% static "js/devicevisualization.js" %}></script>
+    <!--Flot Chart Library for Fresnel zone-->
+    <script src={% static "js/flot/jquery.flot.min.js" %}></script>
+    <script type="text/javascript">
+
+        var networkMapInstance = "",
+            earth_instance = "",
+            advJustSearch= "";
+
+        google.load("earth", "1");
+
+        $(document).ready(function (e) {
+
+            /*Show page controls page*/
+            $("#headerToggleBtn").trigger('click');
+
+            /*Create a instance of googleEarthClass*/
+            earth_instance = new googleEarthClass();
+
+            /*Create a instance of gmap_devicePlottingLib*/
+            networkMapInstance = new devicePlottingClass_gmap();
+
+            /*Create a instance of advanceSearchClass*/
+            advSearch = new advanceSearchClass();
+
+            /*Create a instance of advanceSimpleSearchClass*/
+            advJustSearch= new advanceSearchMainClass();
+
+            /*Call 'createGoogleEarth' function to draw google earth on spicified domElement*/
+            earth_instance.createGoogleEarth('google_earth_container');
+
+            /*Call getBasicFilters funtion to fetch & populate basic filters dropdown*/
+            networkMapInstance.getBasicFilters();
+        });
+    </script>
+{% endblock %}
+
+{% block load_js %}
+    <!-- /JAVASCRIPTS -->
+
+    <script>
+        jQuery(document).ready(function () {
+
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+        });
+    </script>
+{% endblock %}
