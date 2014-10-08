@@ -3704,13 +3704,21 @@ function devicePlottingClass_gmap() {
         			}
 
         			/*Loop For Marker Labels*/
-        			for(var x=0;x<labelsArray.length;x++) {
-						if(labelsArray[x].moveListener_) {
-							if(($.trim(labelsArray[x].moveListener_.cb.name) == ssName) && ($.trim(labelsArray[x].moveListener_.cb.bs_name) == bsName)) {
-								filtered_label.push(labelsArray[x]);
-							}
-						}
-					}
+        			for (var x = 0; x < labelsArray.length; x++) {
+                        var move_listener_obj = labelsArray[x].moveListener_;
+                        if (move_listener_obj) {
+                            var keys_array = Object.keys(move_listener_obj);
+                            for(var z=0;z<keys_array.length;z++) {
+                                if(typeof move_listener_obj[keys_array[z]] === 'object') {
+                                   if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
+                                        if (($.trim(move_listener_obj[keys_array[z]]["name"]) == ssName) && ($.trim(move_listener_obj[keys_array[z]]["bs_name"]) == bsName)) {
+                                            filtered_label.push(labelsArray[x]);
+                                        }
+                                   }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
