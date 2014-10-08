@@ -34,14 +34,14 @@ class UserList(ListView):
         """
         context=super(UserList, self).get_context_data(**kwargs)
         datatable_headers=[
-            {'mData':'username',           'sTitle' : 'Username',     'sWidth':'null',},
-            {'mData':'full_name',          'sTitle' : 'Full Name',    'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'email',              'sTitle' : 'Email',        'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'organization__name', 'sTitle' : 'Organization', 'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'role__role_name',    'sTitle' : 'Role',         'sWidth':'null','sClass':'hidden-xs'},
+            {'mData':'username',           'sTitle' : 'Username',     'sWidth':'auto',},
+            {'mData':'full_name',          'sTitle' : 'Full Name',    'sWidth':'auto','sClass':'hidden-xs'},
+            {'mData':'email',              'sTitle' : 'Email',        'sWidth':'auto','sClass':'hidden-xs'},
+            {'mData':'organization__name', 'sTitle' : 'Organization', 'sWidth':'auto','sClass':'hidden-xs'},
+            {'mData':'role__role_name',    'sTitle' : 'Role',         'sWidth':'auto','sClass':'hidden-xs'},
             {'mData':'manager_name',       'sTitle' : 'Manager',      'sWidth':'10%' ,'sClass':'hidden-xs'},
-            {'mData':'phone_number',       'sTitle' : 'Phone Number', 'sWidth':'null','sClass':'hidden-xs'},
-            {'mData':'last_login',         'sTitle' : 'Last Login',   'sWidth':'null','sClass':'hidden-xs'},]
+            {'mData':'phone_number',       'sTitle' : 'Phone Number', 'sWidth':'auto','sClass':'hidden-xs'},
+            {'mData':'last_login',         'sTitle' : 'Last Login',   'sWidth':'auto','sClass':'hidden-xs'},]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):

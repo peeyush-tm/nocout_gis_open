@@ -97,7 +97,7 @@ class BaseStation(models.Model):
     bs_site_id = models.CharField('BS Site ID', max_length=250, null=True, blank=True)
     bs_site_type = models.CharField('BS Site Type', max_length=100, null=True, blank=True)
     bs_switch = models.ForeignKey(Device, null=True, blank=True, related_name='bs_switch')
-    backhaul = models.ForeignKey(Backhaul)
+    backhaul = models.ForeignKey(Backhaul, null=True, blank=True, related_name='backhaul', on_delete=models.SET_NULL, default=None)
     bs_type = models.CharField('BS Type', max_length=40, null=True, blank=True)
     bh_bso = models.CharField('BH BSO', max_length=40, null=True, blank=True)
     hssu_used = models.CharField('HSSU Used', max_length=40, null=True, blank=True)
@@ -151,7 +151,7 @@ class Customer(models.Model):
     """
     name = models.CharField('Name', max_length=250, unique=True)
     alias = models.CharField('Alias', max_length=250)
-    address = models.CharField('Address', max_length=250, null=True, blank=True)
+    address = models.TextField('Address', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
@@ -179,7 +179,7 @@ class SubStation(models.Model):
     country = models.IntegerField('Country', null=True, blank=True)
     state = models.IntegerField('State', null=True, blank=True)
     city = models.IntegerField('City', null=True, blank=True)
-    address = models.CharField('Address', max_length=250, null=True, blank=True)
+    address = models.TextField('Address', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
@@ -195,7 +195,7 @@ class Circuit(models.Model):
     alias = models.CharField('Alias', max_length=250)
     circuit_type = models.CharField('Type', max_length=250, null=True, blank=True)
     circuit_id = models.CharField('Circuit ID', max_length=250)
-    sector = models.ForeignKey(Sector)
+    sector = models.ForeignKey(Sector, null=True, blank=True)
     customer = models.ForeignKey(Customer)
     sub_station = models.ForeignKey(SubStation)
     qos_bandwidth = models.FloatField('QOS(BW)', null=True, blank=True, help_text='(kbps) Enter a number.')
@@ -320,6 +320,7 @@ class ThematicSettings(models.Model):
     def __unicode__(self):
         return self.name
 
+
 #user Profile based thematic settings
 class UserThematicSettings(models.Model):
     """
@@ -328,7 +329,6 @@ class UserThematicSettings(models.Model):
     user_profile = models.ForeignKey(UserProfile)
     thematic_template = models.ForeignKey(ThematicSettings)
     thematic_technology = models.ForeignKey(DeviceTechnology, null=True)
-
 
 
 class GISInventoryBulkImport(models.Model):

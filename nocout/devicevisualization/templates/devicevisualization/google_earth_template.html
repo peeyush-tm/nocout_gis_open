@@ -25,7 +25,7 @@
         <div class="btn-group">
             <ul class="list-unstyled list-inline gis_page_setting">
                 <li class="alert alert-block alert-info">
-                    <b>Status</b><br/> <ul id="gis_status_txt"></ul>
+                    <b>Status</b><br/> <span id="gis_status_txt"></span>
                 </li>
                 <li><button type="button" id="advSearchBtn" class="btn btn-info" data-complete-text="<i class='fa fa-filter'></i> Advance Search"
                             data-loading-text="Please Wait..." onclick="showAdvSearch();" title="Click to Advance Search">
@@ -120,9 +120,9 @@
                 <li class="hide">Show Connected SS <input type="checkbox" name="showAllSS" id="showAllSS"
                                                           onclick="networkMapInstance.plotAllDevice_gmap()"
                                                           style="vertical-align: text-top;" checked="checked"/></li>
-                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
+               <!--  <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
                                                    onclick="networkMapInstance.showConnectionLines_gmap()"
-                                                   style="vertical-align: text-top;" checked="checked"/></li>
+                                                   style="vertical-align: text-top;" checked="checked"/></li> -->
             </ul>
             <div class="divide-20"></div>
         </div>
@@ -149,11 +149,14 @@
                     <button type="button" id="freeze_remove" class="btn btn-danger hide">Un-Freeze</button>
                 </li>
                 <li>
-                    <input type="checkbox" name="show_hide_label" id="show_hide_label" checked=""> Show Labels
-                </li>
-                <li>
                     <button type="button" class="btn btn-info">Export Data</button>
                 </li>
+                <li>
+                    <input type="checkbox" name="show_hide_label" id="show_hide_label" checked=""> Show Labels
+                </li>
+                <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
+                                                   onclick="networkMapInstance.showConnectionLines_gmap()"
+                                                   style="vertical-align: text-top;" checked="checked"/></li>
                 <li class="fright">
                     <form action="#" class="form-horizontal">
                         <div class="form-group">

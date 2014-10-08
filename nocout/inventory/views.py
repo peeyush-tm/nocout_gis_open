@@ -4,6 +4,7 @@ from operator import itemgetter
 import time
 from datetime import datetime
 from django.contrib.auth.models import User
+from machine.models import Machine
 import os
 from os.path import basename
 from django.views.generic.base import View
@@ -21,24 +22,27 @@ from django.core.urlresolvers import reverse_lazy
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.db.models import Q
 from device_group.models import DeviceGroup
-from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT
+from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL
 from nocout.utils.util import DictDiffer
 from models import Inventory, DeviceTechnology, IconSettings, LivePollingSettings, ThresholdConfiguration, \
     ThematicSettings, GISInventoryBulkImport, UserThematicSettings
 from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
     ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm
 from organization.models import Organization
+from site_instance.models import SiteInstance
 from user_group.models import UserGroup
 from user_profile.models import UserProfile
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
 from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm, CircuitForm
-from device.models import Country, State, City
+from device.models import Country, State, City, Device
 from django.contrib.staticfiles.templatetags.staticfiles import static
+from user_profile.models import UserProfile
 import xlrd
+import xlwt
 import logging
 from django.template import RequestContext
-from tasks import validate_gis_inventory_excel_sheet
-import xlwt
+from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory, \
+    bulk_upload_pmp_bs_inventory
 
 logger = logging.getLogger(__name__)
 
@@ -64,11 +68,11 @@ class InventoryListing(ListView):
         """
         context = super(InventoryListing, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'user_group__name', 'sTitle': 'User Group', 'sWidth': 'null', },
-            {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'null', },
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', },]
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'user_group__name', 'sTitle': 'User Group', 'sWidth': 'auto', },
+            {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', },]
 
         #if the user role is Admin then the action column will appear on the datatable
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
@@ -278,11 +282,11 @@ class AntennaList(ListView):
         """
         context = super(AntennaList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'height', 'sTitle': 'Height', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'polarization', 'sTitle': 'Polarization', 'sWidth': 'null', },
-            {'mData': 'tilt', 'sTitle': 'Tilt', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'height', 'sTitle': 'Height', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'polarization', 'sTitle': 'Polarization', 'sWidth': 'auto', },
+            {'mData': 'tilt', 'sTitle': 'Tilt', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'beam_width', 'sTitle': 'Beam Width', 'sWidth': '10%', },
             {'mData': 'azimuth_angle', 'sTitle': 'Azimuth Angle', 'sWidth': '10%', }, ]
 
@@ -478,15 +482,15 @@ class BaseStationList(ListView):
         """
         context = super(BaseStationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'null', },
-            {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'null', },
-            {'mData': 'bs_switch__device_name', 'sTitle': 'BS Switch', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'backhaul__name', 'sTitle': 'Backhaul', 'sWidth': 'null', },
-            {'mData': 'bs_type', 'sTitle': 'BS Type', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'null', },
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
+            {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
+            {'mData': 'bs_switch__device_name', 'sTitle': 'BS Switch', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'backhaul__name', 'sTitle': 'Backhaul', 'sWidth': 'auto', },
+            {'mData': 'bs_type', 'sTitle': 'BS Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
@@ -677,16 +681,16 @@ class BackhaulList(ListView):
         """
         context = super(BackhaulList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'bh_configured_on__device_name', 'sTitle': 'Backhaul Configured On', 'sWidth': 'null', },
-            {'mData': 'bh_port', 'sTitle': 'Backhaul Port', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'bh_type', 'sTitle': 'Backhaul Type', 'sWidth': 'null', },
-            {'mData': 'pop__device_name', 'sTitle': 'POP', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'pop_port', 'sTitle': 'POP Port', 'sWidth': 'null', },
-            {'mData': 'bh_connectivity', 'sTitle': 'Connectivity', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'bh_circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null', },
-            {'mData': 'bh_capacity', 'sTitle': 'Capacity', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'bh_configured_on__device_name', 'sTitle': 'Backhaul Configured On', 'sWidth': 'auto', },
+            {'mData': 'bh_port', 'sTitle': 'Backhaul Port', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'bh_type', 'sTitle': 'Backhaul Type', 'sWidth': 'auto', },
+            {'mData': 'pop__device_name', 'sTitle': 'POP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'pop_port', 'sTitle': 'POP Port', 'sWidth': 'auto', },
+            {'mData': 'bh_connectivity', 'sTitle': 'Connectivity', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'bh_circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', },
+            {'mData': 'bh_capacity', 'sTitle': 'Capacity', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             ]
 
         #if the user role is Admin or operator then the action column will appear on the datatable
@@ -883,16 +887,16 @@ class SectorList(ListView):
         """
         context = super(SectorList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'null', },
-            {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'sector_configured_on__device_name', 'sTitle': 'Sector Configured On', 'sWidth': 'null', },
-            {'mData': 'sector_configured_on_port__name', 'sTitle': 'Sector Configured On Port', 'sWidth': 'null',
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
+            {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'sector_configured_on__device_name', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
+            {'mData': 'sector_configured_on_port__name', 'sTitle': 'Sector Configured On Port', 'sWidth': 'auto',
              'sClass': 'hidden-xs'},
-            {'mData': 'antenna__name', 'sTitle': 'Antenna', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'mrc', 'sTitle': 'MRC', 'sWidth': 'null', },
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__name', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'mrc', 'sTitle': 'MRC', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             ]
 
         #if the user role is Admin or operator then the action column will appear on the datatable
@@ -1087,10 +1091,10 @@ class CustomerList(ListView):
     def get_context_data(self, **kwargs):
         context = super(CustomerList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'null', 'sClass': 'hidden-xs','bSortable': False},
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', 'bSortable': False},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'bSortable': False},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
@@ -1285,18 +1289,18 @@ class SubStationList(ListView):
         """
         context = super(SubStationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'device__device_name', 'sTitle': 'Device', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'antenna__name', 'sTitle': 'Antenna', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'null', },
-            {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'null', },
-            {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'null', 'bSortable': False},
-            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'null', 'sClass': 'hidden-xs','bSortable': False},
-            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'null', 'bSortable': False},
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'device__device_name', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__name', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', },
+            {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
+            {'mData': 'tower_height', 'sTitle': 'Tower Height', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'city__name', 'sTitle': 'City', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
+            {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'bSortable': False},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
             ]
 
         #if the user role is Admin or operator then the action column will appear on the datatable
@@ -1495,16 +1499,16 @@ class CircuitList(ListView):
         """
         context = super(CircuitList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'null', },
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'null', },
-            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'null'},
-            {'mData': 'sector__base_station__name', 'sTitle': 'Base Station', 'sWidth': 'null'},
-            {'mData': 'sector__name', 'sTitle': 'Sector', 'sWidth': 'null', },
-            {'mData': 'customer__name', 'sTitle': 'Customer', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'sub_station__name', 'sTitle': 'Sub Station', 'sWidth': 'null', },
-            {'mData': 'date_of_acceptance', 'sTitle': 'Date of Acceptance', 'sWidth': 'null', 'sClass': 'hidden-xs'},
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null',  'sClass': 'hidden-xs'},
-            ]
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
+            {'mData': 'sector__base_station__name', 'sTitle': 'Base Station', 'sWidth': 'auto'},
+            {'mData': 'sector__name', 'sTitle': 'Sector', 'sWidth': 'auto', },
+            {'mData': 'customer__name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'sub_station__name', 'sTitle': 'Sub Station', 'sWidth': 'auto', },
+            {'mData': 'date_of_acceptance', 'sTitle': 'Date of Acceptance', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto',  'sClass': 'hidden-xs'}
+        ]
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
         if 'admin' in user_role or 'operator' in user_role:
@@ -1525,21 +1529,97 @@ class CircuitListingTable(BaseDatatableView):
                      'sub_station__name', 'date_of_acceptance', 'description']
 
     def filter_queryset(self, qs):
-        """
-        The filtering of the queryset with respect to the search keyword entered.
-        :param qs:
-        :return qs:
+        """ Filter datatable as per requested value
+
+        Args:
+            self (class 'inventory.views.CircuitListingTable'): <inventory.views.CircuitListingTable object>
+            qs (class 'django.db.models.query.ValuesQuerySet'):
+                                                [
+                                                    {
+                                                        'name': u'091pond030008938479',
+                                                        'customer__name': u'roots_corporation_ltd',
+                                                        'date_of_acceptance': None,
+                                                        'circuit_id': u'091POND030008938479',
+                                                        'alias': u'091POND030008938479',
+                                                        'sector__name': u'115.111.183.115',
+                                                        'sub_station__name': u'091pond030008938479',
+                                                        'sector__base_station__name': u'mission_street__ttsl',
+                                                        'id': 13136L,
+                                                        'description': u'Circuitcreatedon30-Sep-2014at18: 19: 28.'
+                                                    },
+                                                    {
+                                                        'name': u'091newd623009151684',
+                                                        'customer__name': u'usha_international_limited',
+                                                        'date_of_acceptance': None,
+                                                        'circuit_id': u'091NEWD623009151684',
+                                                        'alias': u'091NEWD623009151684',
+                                                        'sector__name': u'10.75.164.19',
+                                                        'sub_station__name': u'091newd623009151684',
+                                                        'sector__base_station__name': u'alipur_ii',
+                                                        'id': 13137L,
+                                                        'description': u'Circuitcreatedon30-Sep-2014at18: 19: 28.'
+                                                    },
+                                                    {
+                                                        'name': u'091prak623008993022',
+                                                        'customer__name': u'itc_limited',
+                                                        'date_of_acceptance': None,
+                                                        'circuit_id': u'091PRAK623008993022',
+                                                        'alias': u'091PRAK623008993022',
+                                                        'sector__name': None,
+                                                        'sub_station__name': u'091prak623008993022',
+                                                        'sector__base_station__name': None,
+                                                        'id': 13138L,
+                                                        'description': u'Circuitcreatedon30-Sep-2014at18: 19: 28.'
+                                                    },
+                                                    {
+                                                        'name': u'091hyde623009000750',
+                                                        'customer__name': u'nufuture_digital__india__limited',
+                                                        'date_of_acceptance': None,
+                                                        'circuit_id': u'091HYDE623009000750',
+                                                        'alias': u'091HYDE623009000750',
+                                                        'sector__name': u'172.25.117.187',
+                                                        'sub_station__name': u'091hyde623009000750',
+                                                        'sector__base_station__name': u'fern_hills',
+                                                        'id': 13139L,
+                                                        'description': u'Circuitcreatedon30-Sep-2014at18: 19: 28.'
+                                                    }
+                                                ]
+        Returns:
+            qs (class 'django.db.models.query.ValuesQuerySet'):
+                                                            [
+                                                                {
+                                                                    'name': u'091agra623006651037',
+                                                                    'customer__name': u'fortis_health_management',
+                                                                    'date_of_acceptance': None,
+                                                                    'circuit_id': u'091AGRA623006651037',
+                                                                    'alias': u'091AGRA623006651037',
+                                                                    'sector__name': None,
+                                                                    'sub_station__name': u'091agra623006651037',
+                                                                    'sector__base_station__name': None,
+                                                                    'id': 15013L,
+                                                                    'description': u'Circuitcreatedon30-Sep-2014at18: 19: 28.'
+                                                                }
+                                                            ]
 
         """
+
         sSearch = self.request.GET.get('sSearch', None)
+
+        # self.columns is a list of columns e.g. ['name', 'alias', 'circuit_id', 'sector__base_station__name',
+        # 'sector__name', 'customer__name', 'sub_station__name', 'date_of_acceptance', 'description']
+
         if sSearch:
-            result_list=list()
-            for dictionary in qs:
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        break
-            return result_list
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            for column in self.columns[:-1]:
+                # avoid search on 'date_of_acceptance'
+                if column == 'date_of_acceptance':
+                    continue
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            exec exec_query
         return qs
 
     def get_initial_queryset(self):
@@ -1731,9 +1811,9 @@ class IconSettingsList(ListView):
         """
         context = super(IconSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name',             'sTitle': 'Name',               'sWidth': 'null'},
-            {'mData': 'alias',            'sTitle': 'Alias',              'sWidth': 'null'},
-            {'mData': 'upload_image',     'sTitle': 'Image',       'sWidth': 'null'},
+            {'mData': 'name',             'sTitle': 'Name',               'sWidth': 'auto'},
+            {'mData': 'alias',            'sTitle': 'Alias',              'sWidth': 'auto'},
+            {'mData': 'upload_image',     'sTitle': 'Image',       'sWidth': 'auto'},
             ]
         #if the user role is Admin or operator then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
@@ -1934,11 +2014,11 @@ class LivePollingSettingsList(ListView):
         """
         context = super(LivePollingSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name',                    'sTitle': 'Name',              'sWidth': 'null'},
-            {'mData': 'alias',                   'sTitle': 'Alias',             'sWidth': 'null'},
-            {'mData': 'technology__alias',       'sTitle': 'Technology',        'sWidth': 'null'},
-            {'mData': 'service__alias',          'sTitle': 'Service',           'sWidth': 'null'},
-            {'mData': 'data_source__alias',      'sTitle': 'Data Source',       'sWidth': 'null'},
+            {'mData': 'name',                    'sTitle': 'Name',              'sWidth': 'auto'},
+            {'mData': 'alias',                   'sTitle': 'Alias',             'sWidth': 'auto'},
+            {'mData': 'technology__alias',       'sTitle': 'Technology',        'sWidth': 'auto'},
+            {'mData': 'service__alias',          'sTitle': 'Service',           'sWidth': 'auto'},
+            {'mData': 'data_source__alias',      'sTitle': 'Data Source',       'sWidth': 'auto'},
             ]
         user_id = self.request.user.id
         #if user is superadmin or gisadmin
@@ -2132,9 +2212,9 @@ class ThresholdConfigurationList(ListView):
         """
         context = super(ThresholdConfigurationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name',                           'sTitle': 'Name',                   'sWidth': 'null'},
-            {'mData': 'alias',                          'sTitle': 'Alias',                  'sWidth': 'null'},
-            {'mData': 'live_polling_template__alias',   'sTitle': 'Live Polling Template',  'sWidth': 'null'},
+            {'mData': 'name',                           'sTitle': 'Name',                   'sWidth': 'auto'},
+            {'mData': 'alias',                          'sTitle': 'Alias',                  'sWidth': 'auto'},
+            {'mData': 'live_polling_template__alias',   'sTitle': 'Live Polling Template',  'sWidth': 'auto'},
             ]
         user_id = self.request.user.id
         #if user is superadmin or gisadmin
@@ -2329,11 +2409,11 @@ class ThematicSettingsList(ListView):
         """
         context = super(ThematicSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name',                    'sTitle': 'Name',                      'sWidth': 'null'},
-            {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'null'},
-            {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'null'},
-            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'null'},
-            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'null'},]
+            {'mData': 'name',                    'sTitle': 'Name',                      'sWidth': 'auto'},
+            {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'auto'},
+            {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'auto'},
+            {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto'},
+            {'mData': 'user_selection',          'sTitle': 'Setting Selection',         'sWidth': 'auto'},]
 
         # user_id = self.request.user.id
 
@@ -2677,8 +2757,7 @@ class GISInventoryBulkImportView(FormView):
             os.makedirs(MEDIA_ROOT + 'inventory_files/original')
 
         filepath = MEDIA_ROOT + 'inventory_files/original/{}_{}'.format(full_time, uploaded_file.name)
-        relative_filepath = '/media/inventory_files/original/{}_{}'.format(full_time, uploaded_file.name)
-
+        relative_filepath = 'inventory_files/original/{}_{}'.format(full_time, uploaded_file.name)
         # used in checking headers of excel sheet
         # dictionary containing all 'pts bs' fields
         ptp_bs_fields = ['City', 'State', 'Circuit ID', 'Circuit Type', 'Customer Name', 'BS Address', 'BS Name',
@@ -2862,6 +2941,39 @@ class ExcelWriterRowByRow(View):
         return response
 
 
+class BulkUploadValidData(View):
+    def get(self, request, *args, **kwargs):
+        # user organization
+        organization = ''
+
+        try:
+            # user organization id
+            organization_id = UserProfile.objects.get(username=self.request.user).organization.id
+            organization = Organization.objects.get(pk=organization_id)
+
+            # update data import status in GISInventoryBulkImport model
+            try:
+                gis_obj = GISInventoryBulkImport.objects.get(pk=kwargs['id'])
+                gis_obj.upload_status = 1
+                gis_obj.save()
+            except Exception as e:
+                logger.info(e.message)
+
+            if 'sheetname' in kwargs:
+                if kwargs['sheetname'] == 'PTP':
+                    result = bulk_upload_ptp_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
+                elif kwargs['sheetname'] == 'PMP BS':
+                    result = bulk_upload_pmp_bs_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
+                elif kwargs['sheetname'] == 'PMP SM':
+                    result = bulk_upload_pmp_sm_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
+                else:
+                    result = ""
+        except Exception as e:
+            logger.info("Current User Organization:", e.message)
+
+        return HttpResponseRedirect('/bulk_import/')
+
+
 class GISInventoryBulkImportList(ListView):
     """
     Generic Class based View to List the GISInventoryBulkImports.
@@ -2877,19 +2989,21 @@ class GISInventoryBulkImportList(ListView):
         """
         context = super(GISInventoryBulkImportList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'original_filename', 'sTitle': 'Inventory Sheet', 'sWidth': 'null', },
-            {'mData': 'valid_filename', 'sTitle': 'Valid Sheet', 'sWidth': 'null', },
-            {'mData': 'invalid_filename', 'sTitle': 'Invalid Sheet', 'sWidth': 'null', },
-            {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'null', },
-            {'mData': 'sheet_name', 'sTitle': 'Sheet Name', 'sWidth': 'null', },
-            {'mData': 'technology', 'sTitle': 'Technology', 'sWidth': 'null', },
-            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'null', },
-            {'mData': 'uploaded_by', 'sTitle': 'Uploaded By', 'sWidth': 'null', },
-            {'mData': 'added_on', 'sTitle': 'Added On', 'sWidth': 'null', },
-            {'mData': 'modified_on', 'sTitle': 'Modified On', 'sWidth': 'null', },
+            {'mData': 'original_filename', 'sTitle': 'Inventory Sheet', 'sWidth': 'auto', },
+            {'mData': 'valid_filename', 'sTitle': 'Valid Sheet', 'sWidth': 'auto', },
+            {'mData': 'invalid_filename', 'sTitle': 'Invalid Sheet', 'sWidth': 'auto', },
+            {'mData': 'status', 'sTitle': 'Status', 'sWidth': 'auto', },
+            {'mData': 'sheet_name', 'sTitle': 'Sheet Name', 'sWidth': 'auto', },
+            {'mData': 'technology', 'sTitle': 'Technology', 'sWidth': 'auto', },
+            {'mData': 'upload_status', 'sTitle': 'Upload Status', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', },
+            {'mData': 'uploaded_by', 'sTitle': 'Uploaded By', 'sWidth': 'auto', },
+            {'mData': 'added_on', 'sTitle': 'Added On', 'sWidth': 'auto', },
+            {'mData': 'modified_on', 'sTitle': 'Modified On', 'sWidth': 'auto', },
         ]
         if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
+            datatable_headers.append({'mData':'bulk_upload_actions', 'sTitle':'Inventory Upload', 'sWidth':'5%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
 
@@ -2900,8 +3014,8 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
 
     """
     model = GISInventoryBulkImport
-    columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'description', 'uploaded_by', 'added_on', 'modified_on']
-    order_columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'description', 'uploaded_by', 'added_on', 'modified_on']
+    columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
+    order_columns = ['original_filename', 'valid_filename', 'invalid_filename', 'status', 'sheet_name', 'technology', 'upload_status', 'description', 'uploaded_by', 'added_on', 'modified_on']
 
     def filter_queryset(self, qs):
         """
@@ -2949,7 +3063,7 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
                 excel_light_green = static("img/ms-office-icons/excel_2013_light_green.png")
                 # excel_blue = static("img/ms-office-icons/excel_2013_blue.png")
 
-                # show 'Success', 'Pending' and 'Failed' in status
+                # show 'Success', 'Pending' and 'Failed' in upload status
                 try:
                     if not dct.get('status'):
                         dct.update(status='Pending')
@@ -2974,15 +3088,45 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
                 except Exception as e:
                     logger.info(e.message)
 
-                # show icon instead of url in data tables view
+                # show 'Not Yet', 'Pending', 'Success', 'Failed' in import status
                 try:
-                    dct.update(original_filename='<a href="{0}"><img src="{1}" style="float:left; display:block; height:25px; width:25px;">'.format(dct.pop('original_filename'), excel_light_green))
+                    if not dct.get('upload_status'):
+                        dct.update(upload_status='Not Yet')
                 except Exception as e:
                     logger.info(e.message)
-                print "********************************** dct.get('status') - ", dct.get('status')
+
+                try:
+                    if dct.get('upload_status') == 0:
+                        dct.update(upload_status='Not Yet')
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('upload_status') == 1:
+                        dct.update(upload_status='Pending')
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('upload_status') == 2:
+                        dct.update(upload_status='Success')
+                except Exception as e:
+                    logger.info(e.message)
+
+                try:
+                    if dct.get('upload_status') == 3:
+                        dct.update(upload_status='Failed')
+                except Exception as e:
+                    logger.info(e.message)
+
+                # show icon instead of url in data tables view
+                try:
+                    dct.update(original_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(MEDIA_URL, dct.pop('original_filename'), excel_light_green))
+                except Exception as e:
+                    logger.info(e.message)
                 try:
                     if dct.get('status') == "Success":
-                        dct.update(valid_filename='<a href="{0}"><img src="{1}" style="float:left; display:block; height:25px; width:25px;">'.format(dct.pop('valid_filename'), excel_green))
+                        dct.update(valid_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(MEDIA_URL, dct.pop('valid_filename'), excel_green))
                     else:
                         dct.update(valid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(excel_grey))
                 except Exception as e:
@@ -2990,7 +3134,7 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
 
                 try:
                     if dct.get('status') == "Success":
-                        dct.update(invalid_filename='<a href="{0}"><img src="{1}" style="float:left; display:block; height:25px; width:25px;">'.format(dct.pop('invalid_filename'), excel_red))
+                        dct.update(invalid_filename='<a href="{}{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(MEDIA_URL, dct.pop('invalid_filename'), excel_red))
                     else:
                         dct.update(invalid_filename='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(excel_grey))
                 except Exception as e:
@@ -2999,15 +3143,26 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
                 # show user full name in uploded by field
                 try:
                     if dct.get('uploaded_by'):
-                        user = User.objects.get(pk=2)
+                        user = User.objects.get(username=dct.get('uploaded_by'))
                         dct.update(uploaded_by='{} {}'.format(user.first_name, user.last_name))
                 except Exception as e:
                     logger.info(e.message)
 
             except Exception as e:
                 logger.info(e)
+
             dct.update(actions='<a href="/bulk_import/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                                <a href="/bulk_import/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                                <a href="/bulk_import/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id')))
+            try:
+                sheet_names_list = ['PTP', 'PMP BS', 'PMP SM']
+                if dct.get('sheet_name'):
+                    if dct.get('sheet_name') in sheet_names_list:
+                        dct.update(bulk_upload_actions='<a href="/bulk_import/bulk_upload_valid_data/valid/{0}/{1}" class="bulk_import_link" title="Upload Valid Inventory"><i class="fa fa-upload text-success"></i></a>\
+                                                        <a href="/bulk_import/bulk_upload_valid_data/invalid/{0}/{1}" class="bulk_import_link" title="Upload Invalid Inventory"><i class="fa fa-upload text-danger"></i></a>'.format(dct.get('id'), dct.get('sheet_name')))
+                    else:
+                        dct.update(bulk_upload_actions='')
+            except Exception as e:
+                logger.info()
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -3053,7 +3208,7 @@ class GISInventoryBulkImportDelete(DeleteView):
     success_url = reverse_lazy('gis_inventory_bulk_import_list')
 
     def delete(self, request, *args, **kwargs):
-        file_name = lambda x : MEDIA_ROOT.join(x.split("/media"))
+        file_name = lambda x: MEDIA_ROOT + x
         # bulk import object
         bi_obj = self.get_object()
 
@@ -3080,7 +3235,6 @@ class GISInventoryBulkImportDelete(DeleteView):
         return HttpResponseRedirect(GISInventoryBulkImportDelete.success_url)
 
 
-
 class GISInventoryBulkImportUpdate(UpdateView):
     """
     Class based view to update GISInventoryBulkImport .
@@ -3089,11 +3243,6 @@ class GISInventoryBulkImportUpdate(UpdateView):
     model = GISInventoryBulkImport
     form_class = GISInventoryBulkImportEditForm
     success_url = reverse_lazy('gis_inventory_bulk_import_list')
-
-
-class BulkUploadValidData(View):
-    def get(self, request):
-        pass
 
 
 

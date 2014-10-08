@@ -59,7 +59,13 @@
         <!-- DAJAX -->
         <script src={% static "dajax/jquery.dajax.core.js" %}></script>
 
-        <!-- STYLESHEETS --><!--[if lt IE 9]><script src={% static "js/flot/excanvas.min.js" %}></script><script src={% static "js/html5/html5.js" %}></script><script src={% static "js/media-ie/css3-mediaqueries.js" %}></script><![endif]-->
+        <!--[if lte IE 9]>
+            <link rel="stylesheet" type="text/css" href={% static "css/ie.css" %}>
+            <script src={% static "js/flot/excanvas.min.js" %}></script>
+            <script src={% static "js/html5/html5.js" %}></script>
+            <script src={% static "js/media-ie/css3-mediaqueries.js" %}></script>
+        <![endif]-->
+        
 
         {% dajaxice_js_import %}
         {% block css %}{% endblock %}

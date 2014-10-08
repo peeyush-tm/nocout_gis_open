@@ -2,21 +2,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
-    <meta http-equiv="X-Frame-Options" content="sameorigin">
     <meta charset="utf-8"/>
-    <title> Wireless1 </title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no"/>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
     <meta name="description" content=""/>
     <meta name="author" content="Teramatrix"/>
-    <!-- STYLESHEETS -->
-    <!--[if lt IE 9]>
-    <script src="js/flot/excanvas.min.js"></script>
-    <script src={% static "html5/html5.js" %}></script>
-    <script src={% static "media-ie/css3-mediaqueries.js" %}></script>
-    <![endif]-->
-    <!-- CLOUD ADMIN STYLE-->
-    <link rel="stylesheet" type="text/css" href={% static "css/cloud-admin.css" %} />
+    <meta http-equiv="X-Frame-Options" content="sameorigin">
+    <!-- For IE Compatibility -->
+    <meta http-equiv="X-UA-Compatible" content="IE=10" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no"/>
+    <title> Wireless1 </title>
+    <link rel="stylesheet" type="text/css" href={% static "css/cloud-admin.css" %}>
+    <link rel="stylesheet" type="text/css" href={% static "css/themes/default.css" %} id="skin-switcher">
+    <link rel="stylesheet" type="text/css" href={% static "css/responsive.css" %}>
     <!-- FONT AWESOME STYLE-->
     <link href={% static "font-awesome/css/font-awesome.min.css" %} rel="stylesheet" />
     <!-- ANIMATE -->
@@ -27,6 +24,12 @@
     <link rel="stylesheet" type="text/css" href={% static "js/gritter/css/jquery.gritter.css" %} />
     <!--JQUERY-->
     <script src={% static "js/jquery/jquery-1.11.1.min.js" %}></script>
+    <!--[if lte IE 9]>
+        <link rel="stylesheet" type="text/css" href={% static "css/ie.css" %}>
+        <script src={% static "js/flot/excanvas.min.js" %}></script>
+        <script src={% static "js/html5/html5.js" %}></script>
+        <script src={% static "js/media-ie/css3-mediaqueries.js" %}></script>
+    <![endif]-->
 </head>
 
 
@@ -35,7 +38,7 @@
 {% include "session_security/all.html" %}
 <!-- session_security -->
 <!-- PAGE -->
-<section id="page">
+<section>
     <!-- HEADER -->
     <header>
         <!-- NAV-BAR -->
@@ -104,10 +107,15 @@
   <script type="text/javascript" src={% static "js/nocout/nocoutSpinnerLib.js" %}></script>
   <!-- Script Library for COokies -->
   <script type="text/javascript" src={% static "js/jQuery-Cookie/src/jquery.cookie.js" %}></script>
+  <!-- UNIFORM -->
+  <script type="text/javascript" src={% static "js/uniform/jquery.uniform.min.js" %}></script>
+  <!-- CUSTOM SCRIPT -->
+  <script src={% static "js/script.js" %}></script>
 
   <script type="text/javascript">
 
       $(document).ready(function(e) {
+
         /*Set cookies for devicevisualization app*/
         $.cookie("isFreezeSelected", 0, {path: '/', secure : true});
         $.cookie("freezedAt", 0, {path: '/', secure : true});

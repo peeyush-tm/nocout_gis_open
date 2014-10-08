@@ -227,8 +227,6 @@ function advanceSearchClass() {
 				}
 				/*If data not fetched*/
 				else {
-
-					// console.log(result.message);
 					$.gritter.add({
 			            // (string | mandatory) the heading of the notification
 			            title: 'Advance Filters - No Records',
@@ -245,7 +243,6 @@ function advanceSearchClass() {
 			/*If there is a problem in calling server*/
 			error : function(err) {
 				$("#"+buttonId).button("complete");
-				// console.log(err.statusText);
 				$.gritter.add({
 		            // (string | mandatory) the heading of the notification
 		            title: 'Advance Filters - Error',
@@ -661,6 +658,15 @@ function advanceSearchClass() {
 		if($("#removeFilterBtn").hasClass("hide")) {
 			$("#removeFilterBtn").removeClass("hide");
 		}
+
+		var current_data_array = [];
+
+		if(window.location.pathname.indexOf("earth") > -1) {
+			current_data_array = main_devices_data_earth;
+		} else {
+			current_data_array = main_devices_data_gmaps;
+		}
+
         searchString=JSON.parse(searchString);
 
         if (search_type=='direct'){
@@ -668,10 +674,10 @@ function advanceSearchClass() {
             loop1:
                 for(var i= 0;searchString.length>i;i++){
             loop2:
-                    for(var j= 0;main_devices_data_gmaps.length>j;j++){
+                    for(var j= 0;current_data_array.length>j;j++){
 
-                        if (searchString[i]== main_devices_data_gmaps[j].id){
-                        result_plot_devices.push(main_devices_data_gmaps[j])
+                        if (searchString[i]== current_data_array[j].id) {
+                        	result_plot_devices.push(current_data_array[j])
                         break loop2
                         }
                     }
@@ -690,29 +696,29 @@ function advanceSearchClass() {
             for (var i=0; i<searchString.length; i++)
             {
             loop2:
-                for(var j= 0;main_devices_data_gmaps.length>j;j++)
+                for(var j= 0;current_data_array.length>j;j++)
                 {
-                    if (searchString[i]== main_devices_data_gmaps[j].id)
+                    if (searchString[i]== current_data_array[j].id)
                     {
-                        /*Deep Copy of the main_devices_data_gmaps*/
-                        var result_plot_data= $.extend( true, {}, main_devices_data_gmaps[j] );
+                        /*Deep Copy of the current_data_array*/
+                        var result_plot_data= $.extend( true, {}, current_data_array[j] );
                         result_plot_data.data.param.sector=[];
                     loop3:
-                        for(var k=0; k<main_devices_data_gmaps[j].data.param.sector.length;k++)
+                        for(var k=0; k<current_data_array[j].data.param.sector.length;k++)
                         {
-                            technology_check_condition= technology_choice.length>0 ? technology_choice.indexOf(main_devices_data_gmaps[j].data.param.sector[k].technology)>=0 : true;
+                            technology_check_condition= technology_choice.length>0 ? technology_choice.indexOf(current_data_array[j].data.param.sector[k].technology)>=0 : true;
                             /*If vendor choice exist then check in the sector, if the vendor_choice is null then make it true by default to check the technology condition.*/
-                            vendor_check_condition= vendor_choice.length>0 ? vendor_choice.indexOf(main_devices_data_gmaps[j].data.param.sector[k].vendor)>=0 : true;
+                            vendor_check_condition= vendor_choice.length>0 ? vendor_choice.indexOf(current_data_array[j].data.param.sector[k].vendor)>=0 : true;
 
                             /*And the condition when technology_check_condition and vendor_check_condition will become true and their
                             length is also zero.Then they will not appear in the depth search. */
 
                             /*Condition to check both the technology and vendor are present in the sector.*/
                             if( technology_check_condition && vendor_check_condition)
-        //                      || sector_configured_on_choice.indexOf(main_devices_data_gmaps[i].data.param.sector[j].sector_configured_on) >=0
-        //                      || circuit_ids_choice.indexOf(main_devices_data_gmaps[i].data.param.sector[j].circuit_id) >=0)
+        //                      || sector_configured_on_choice.indexOf(current_data_array[i].data.param.sector[j].sector_configured_on) >=0
+        //                      || circuit_ids_choice.indexOf(current_data_array[i].data.param.sector[j].circuit_id) >=0)
                             {
-                                result_plot_data.data.param.sector= result_plot_data.data.param.sector.concat(main_devices_data_gmaps[j].data.param.sector[k])
+                                result_plot_data.data.param.sector= result_plot_data.data.param.sector.concat(current_data_array[j].data.param.sector[k])
                             }
                         }
                         /*If any relevant sector according to search condition is found then appending (BS with Sector-SS) to the result.*/
@@ -817,7 +823,6 @@ function advanceSearchClass() {
 //			},
 //			error : function(err) {
 //
-//				// console.log(err.statusText);
 //				$.gritter.add({
 //		            // (string | mandatory) the heading of the notification
 //		            title: 'Advance Filters - Error',
@@ -845,32 +850,45 @@ function advanceSearchClass() {
 	 * @method removeFilters
 	 */
 
-    this.result_plotting= function(){
-                    /*Create a instance of networkMapClass*/
-            gmapInstance = new devicePlottingClass_gmap();
+    this.result_plotting= function() {
+        
+        if(window.location.pathname.indexOf("earth") > -1) {
 
-            /*Reset markers, polyline & filters*/
-            gmapInstance.clearGmapElements();
+        	/*Save filtered data in global variable*/
+			data_for_filters_earth = result_plot_devices;
 
-            /*Reset Global Variables & Filters*/
-            gmapInstance.resetVariables_gmap();
+        	/*Clear all the elements from google earth*/
+	        earth_instance.clearEarthElements();
 
-            /*If cluster icon exist then save it to global variable else make the global variable blank*/
-//            if(result.data.objects.data.unspiderfy_icon == undefined) {
-//                clusterIcon = "";
-//            } else {
-//                clusterIcon = base_url+"/"+result.data.objects.data.unspiderfy_icon;
-//            }
+	        /*Reset Global Variables & Filters*/
+	        earth_instance.resetVariables_earth();
 
-            /*Call the make network to create the BS-SS network on the google map*/
-//            for( var a=0; a<result_plot_devices.length; a++){
+	        /*create the BS-SS network on the google earth*/
+	        earth_instance.plotDevices_earth(data_for_filters_earth,"base_station");
+
+        } else {
+
+	        /*Create a instance of networkMapClass*/
+	        gmapInstance = new devicePlottingClass_gmap();
+
+	        /*Reset markers, polyline & filters*/
+	        gmapInstance.clearGmapElements();
+
+	        /*Reset Global Variables & Filters*/
+	        gmapInstance.resetVariables_gmap();
+
+	    	/*Save filtered data in global variable*/
 			data_for_filters = result_plot_devices;
-            gmapInstance.plotDevices_gmap(result_plot_devices,"base_station");
-            // addSubSectorMarkersToOms(result_plot_devices);
-            //Intilaizing value to Null
-            result_plot_devices=[];
 
+			/*Call plotDevices_gmap to plot filtered devices on google map*/
+	        gmapInstance.plotDevices_gmap(result_plot_devices,"base_station");
 
+	        /*Filter Line & label array as per filtered data*/
+	        gmapInstance.getFilteredLineLabel(data_for_filters);
+        }
+
+        //Intilaizing value to Null
+        result_plot_devices=[];
     }
 
 
