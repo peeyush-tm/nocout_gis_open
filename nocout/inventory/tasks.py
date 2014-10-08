@@ -1654,6 +1654,16 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 # base station data
                 # sanitize bs name
                 name = special_chars_name_sanitizer(row['BS Name'] if 'BS Name' in row.keys() else "")
+
+                try:
+                    if all(k in row for k in ("City", "State")):
+                        # concatinate city and state in bs name
+                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
+                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
+                except Exception as e:
+                    logger.info(e.message)
+
+                print "************************** bs name - ", name
                 alias = row['BS Name'] if 'BS Name' in row.keys() else ""
                 basestation_data = {
                     'name': name,
@@ -1739,6 +1749,14 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 # sanitize customer name
                 name = special_chars_name_sanitizer(row['SS Customer Name'] if 'SS Customer Name' in row.keys() else "")
                 alias = row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""
+
+                try:
+                    if 'SS Circuit ID' in row.keys():
+                        # concatinate city and state in bs name
+                        name = "{}_{}".format(name, special_chars_name_sanitizer(row['SS Circuit ID']))
+                except Exception as e:
+                    logger.info(e.message)
+
                 customer_data = {
                     'name': name,
                     'alias': alias,
@@ -1749,6 +1767,8 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 # customer object
                 customer = ""
                 if name:
+
+
                     customer = create_customer(customer_data)
             except Exception as e:
                 customer = ""
@@ -2180,6 +2200,15 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 # base station data
                 # sanitize bs name
                 name = special_chars_name_sanitizer(row['BS Name'] if 'BS Name' in row.keys() else "")
+
+                try:
+                    if all(k in row for k in ("City", "State")):
+                        # concatinate city and state in bs name
+                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
+                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
+                except Exception as e:
+                    logger.info(e.message)
+
                 alias = row['BS Name'] if 'BS Name' in row.keys() else ""
                 basestation_data = {
                     'name': name,
@@ -2265,6 +2294,14 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 # sanitize customer name
                 name = special_chars_name_sanitizer(row['SS Customer Name'] if 'SS Customer Name' in row.keys() else "")
                 alias = row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""
+
+                try:
+                    if 'SS Circuit ID' in row.keys():
+                        # concatinate city and state in bs name
+                        name = "{}_{}".format(name, special_chars_name_sanitizer(row['SS Circuit ID']))
+                except Exception as e:
+                    logger.info(e.message)
+
                 customer_data = {
                     'name': name,
                     'alias': alias,
@@ -5317,10 +5354,10 @@ def ip_sanitizer(name):
     """ Check and clean ip address
 
     Args:
-        name (unicode): u'Maniyar Complex'
+        name (unicode): u'192.168.1.1'
 
     Returns:
-        name (str): 'maniyar_complex'
+        name (str): '192.168.1.1'
 
     """
     name = name
