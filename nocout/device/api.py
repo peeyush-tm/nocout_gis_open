@@ -516,10 +516,10 @@ class FetchThresholdConfigurationApi(View):
         result['data']['threshold_templates'] = list()
 
         # converting 'json' into python object
-        technology_name = int(self.request.GET.get('technology', None))
+        technology_id = int(self.request.GET.get('technology', None))
 
         # technology object
-        technology = DeviceTechnology.objects.get(name=technology_name)
+        technology = DeviceTechnology.objects.get(pk=technology_id)
 
         # get live polling settings corresponding to the technology
         lps = ""
