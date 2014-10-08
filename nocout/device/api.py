@@ -516,10 +516,10 @@ class FetchThresholdConfigurationApi(View):
         result['data']['threshold_templates'] = list()
 
         # converting 'json' into python object
-        technology_id = int(self.request.GET.get('technology', None))
+        technology_name = int(self.request.GET.get('technology', None))
 
         # technology object
-        technology = DeviceTechnology.objects.get(pk=technology_id)
+        technology = DeviceTechnology.objects.get(name=technology_name)
 
         # get live polling settings corresponding to the technology
         lps = ""
@@ -532,13 +532,11 @@ class FetchThresholdConfigurationApi(View):
             tc_temp = dict()
             for lp in lps:
                 threshold_configurations = ThresholdConfiguration.objects.filter(live_polling_template=lp)
-                print "******************************* threshold_configurations - ", threshold_configurations
                 if threshold_configurations:
                     for tc in threshold_configurations:
                         tc_temp = dict()
                         tc_temp['id'] = tc.id
                         tc_temp['value'] = tc.alias
-                        print "********************************* tc_temp - ", tc_temp
                         result['data']['threshold_templates'].append(tc_temp)
             result['message'] = "Successfully fetched threshold configurations."
             result['success'] = 1
@@ -710,11 +708,9 @@ class BulkFetchLPDataApi(View):
 
         # selected thematic setting
         ts = ThematicSettings.objects.get(pk=ts_template_id)
-        print "***************************** ts.threshold_template.id - ", ts.threshold_template.id
 
         # getting live polling template
         lp_template_id = ThresholdConfiguration.objects.get(pk=ts.threshold_template.id).live_polling_template.id
-        print "********************************** lp_template_id - ", lp_template_id
 
         # getting service and data source form live polling settings
         try:
@@ -857,7 +853,6 @@ class BulkFetchLPDataApi(View):
                                 try:
                                     if (float(tc.range1_start)) <= (float(value)) <= (float(tc.range1_end)):
                                         icon_settings = eval(ts.icon_settings)
-                                        print "************************** icon_settings - ", icon_settings
                                         for icon_setting in icon_settings:
                                             if 'icon_settings1' in icon_setting.keys():
                                                 image_partial = str(icon_setting['icon_settings1'])
