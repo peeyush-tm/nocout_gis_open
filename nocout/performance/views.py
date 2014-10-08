@@ -272,7 +272,7 @@ class LivePerformanceListing(BaseDatatableView):
                             if len(circuit):
                                 circuit_obj = circuit[0]
                                 circuit_id = circuit_obj.circuit_id
-                                sector_id = circuit_obj.sector.sector_id
+                                sector_id = circuit_obj.sector.sector_id if circuit_obj.sector else "N/A"
                                 bs_name = circuit_obj.sector.base_station.alias
 
             elif page_type in ["backhaul", "other"]:
