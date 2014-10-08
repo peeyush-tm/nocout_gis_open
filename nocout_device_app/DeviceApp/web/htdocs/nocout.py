@@ -11,14 +11,22 @@ import pymongo
 from pymongo import Connection
 import pprint
 import os
+import sys
 import ast
 from itertools import ifilterfalse
 from nocout_live import nocout_log
+
+sys.path.insert(0, '/omd/sites/master_UA/nocout')
+try:
+	from device_interface import *
+except ImportError:
+	logger.debug('Device interface script not imported')
 
 
 hosts_file = root_dir + "hosts.mk"
 rules_file = root_dir + "rules.mk"
 default_checks_file = root_dir + "nocout_default_checks.py"
+nocout_sync_pid_file = defaults.tmp_dir + "nocout_sync.pid"
 
 nocout_replication_paths = [
     ( "dir",  "check_mk",   root_dir ),
@@ -117,6 +125,8 @@ def main():
         response = deletehost()
     elif action == 'deleteservice':
         response = deleteservice()
+    elif action == 'set_ping_levels':
+	    response = set_bulk_ping_levels()
     elif action == 'sync':
         response = sync()
 
@@ -134,6 +144,7 @@ def addhost():
         "error_message": None
     }
     mac = None
+    ping_levels = None
     if html.var('mac'):
 	    mac = html.var('mac').lower()
     payload = {
@@ -154,8 +165,9 @@ def addhost():
 #		    parent_device_name=payload.get('parent_device_name')
 #		    )
     try:
-	    ping_levels = ast.literal_eval(payload.get('ping_levels'))
-	    logger.debug('ping_levels: '  + pprint.pformat(ping_levels))
+	    if payload.get('ping_levels'):
+	            ping_levels = ast.literal_eval(payload.get('ping_levels'))
+	            logger.debug('ping_levels: '  + pprint.pformat(ping_levels))
     except Exception, e:
 	    logger.exception('ping levels: ' + pprint.pformat(e))
     # Set rules for the ping service
@@ -426,6 +438,23 @@ def editservice():
     # Device name on which check would be added
     device_name = None
     service = html.var('service_name').strip().lower()
+    t = ()
+    # Check for edit service templates
+    if html.var('edit_servicetemplate'):
+	    logger.debug('cmd_params: ' + pprint.pformat(html.var('cmd_params')))
+            for param, thresholds in ast.literal_eval(html.var('cmd_params')).items():
+                    t = ()
+                    t += (int(thresholds.get('warning')),)
+                    t += (int(thresholds.get('critical')),)
+	    delete_host_rules(servicename=html.var('service_name'),
+			    thresholds=t)
+	    logger.debug('thresholds:' + pprint.pformat(thresholds))
+	    write_new_host_rules()
+	    response.update({
+		    'success': 1,
+		    'message': 'Service template edited successfully'
+		    })
+	    return response
     # Check for interfaces in HTTP request
     if service in interface_oriented_services:
 	#    if html.var('interface'):
@@ -462,7 +491,7 @@ def editservice():
 			interface=payload.get('interface')
 			)
         cmd_params = None
-        t = ()
+        #t = ()
         ping_level = ()
         ping_attributes = {}
         if payload.get('cmd_params'):
@@ -565,6 +594,7 @@ def deletehost():
     }
     interface = None
     device_name = None
+    parent = None
 #    # Check for interfaces in HTTP request
 #    if html.var('interface'):
 #		    # Get BS device
@@ -584,8 +614,8 @@ def deletehost():
 	# Get parent
 	mac, parent = get_parent(host=payload.get('host'), db=False)
 	if parent:
-		interface = mac
-		device_name = parent
+	    interface = mac
+	    device_name = parent
         delete_host_rules(hostname=device_name, interface=interface)
         flag = write_new_host_rules()
         if not flag:
@@ -759,17 +789,17 @@ def get_parent(host=None, db=True):
 			# Filter the required row
 			host_row = filter(lambda e: re.match(host, e), g_host_vars['all_hosts'])
 			try:
-				device_mac = host_row[0].split('|')[1]
+				device_mac = str(host_row[0].split('|')[2])
 				# Varify ip
-				if re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', host_row[0].split('|')[2]):
-					bs = host_row[0].split('|')[2]
+				if re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', host_row[0].split('|')[3]):
+					bs = str(host_row[0].split('|')[3])
 			except AttributeError, e:
 				logger.error('Could not find BS name' + pprint.pformat(e))
 
-	return str(device_mac), str(bs)
+	return device_mac, bs
 
 
-def set_ping_levels(host, ping_levels):
+def set_ping_levels(host, ping_levels=None):
 	global g_service_vars
 	# Load rules file
 	g_service_vars = {
@@ -818,7 +848,59 @@ def set_ping_levels(host, ping_levels):
 		g_service_vars['ping_levels'].append(ping_rule_set)
 	write_new_host_rules()
 
-def delete_host_rules(hostname=None, servicename=None, interface=None, flag=False):
+
+
+def set_bulk_ping_levels(ping_levels_list=[]):
+	global g_service_vars
+	# Load rules file
+	g_service_vars = {
+    	"only_hosts": None,
+    	"ALL_HOSTS": [],
+    	"host_contactgroups": [],
+    	"bulkwalk_hosts": [],
+    	"extra_host_conf": {},
+    	"extra_service_conf": {
+            "retry_check_interval": [],
+            "max_check_attempts": [],
+            "normal_check_interval": []
+    	   },
+        "static_checks": {},
+        "ping_levels": [],
+        "checks": [],
+        "snmp_ports": [],
+        "snmp_communities": []
+    	}
+	new_ping_levels = []
+	ping_levels_list = ast.literal_eval((html.var('ping_levels_list')))
+	logger.debug('ping_levels_list :' + pprint.pformat(ping_levels_list))
+	try:
+                os.open(rules_file, os.O_RDWR|os.O_CREAT)
+                execfile(rules_file, g_service_vars, g_service_vars)
+                del g_service_vars['__builtins__']
+	except OSError, e:
+		logger.error('Could not open rules file: ' + pprint.pformat(e))
+        
+	if ping_levels_list:
+		device_types = set(map(lambda x: x.get('device_type'), ping_levels_list))
+		old_ping_levels = g_service_vars['ping_levels']
+		# Delete previous ping levels having same device type tags with them
+		for dt in device_types:
+			old_ping_levels = filter(lambda x: dt not in x[2], old_ping_levels)
+		logger.debug('old_ping_levels: ' + pprint.pformat(old_ping_levels))
+		for p_l in ping_levels_list:
+			new_ping_levels.append(({
+				'loss': p_l.get('loss', (80, 100)),
+				'rta': p_l.get('rta', (1300, 1500)),
+				'packets': p_l.get('packets', 6),
+				'timeout': p_l.get('timeout', 10)
+				}, ['wan'], [p_l.get('device_type')], {}))
+		logger.debug('new_ping_levels: ' + pprint.pformat(new_ping_levels))
+		g_service_vars['ping_levels'] = new_ping_levels + old_ping_levels
+
+		write_new_host_rules()
+
+
+def delete_host_rules(hostname=None, servicename=None, interface=None, flag=False, thresholds=None):
     global g_service_vars
     g_service_vars = {
         "only_hosts": None,
@@ -844,6 +926,22 @@ def delete_host_rules(hostname=None, servicename=None, interface=None, flag=Fals
 	    del g_service_vars['__builtins__']
     except OSError, e:
 	    logger.error('Could not open rules file: ' + pprint.pformat(e))
+
+    # Thresholds would be passed in order to bulk edit the service template
+    if thresholds:
+	    filtered_services = filter(lambda t: servicename.lower() == t[2] or \
+			    servicename.lower() == t[1], g_service_vars['checks'])
+	    g_service_vars['checks'] = map(lambda x: x, ifilterfalse(lambda t: servicename.lower() \
+			    == t[1] or servicename.lower() == t[2], g_service_vars['checks'])) 
+	    logger.debug('filtered_service: ' + pprint.pformat(filtered_services))
+	    if filtered_services:
+		    for service in filtered_services:
+			    new_service_tuple = ()
+			    new_service_tuple += service[:len(service)-1]
+			    logger.debug('thresholds: ' + pprint.pformat(thresholds))
+			    new_service_tuple += (thresholds,)
+			    logger.debug('new_service_tuple: ' + pprint.pformat(new_service_tuple))
+			    g_service_vars['checks'].append(new_service_tuple)
 
     if hostname is None:
         return
@@ -883,6 +981,7 @@ def delete_host_rules(hostname=None, servicename=None, interface=None, flag=Fals
 
 
 def write_new_host_rules():
+    logger.debug('Writing new host rules')
     global g_service_vars
     open(rules_file, 'w').close()
     try:
@@ -918,6 +1017,13 @@ def write_new_host_rules():
 
 def sync():
     logger.debug('[-- sync --]')
+    # Set flag for sync in mysql db
+    toggle_sync_flag()
+    # First read all the new configs from db and write to rules.mk and hosts.mk
+    try:
+            sync_device_conf_db = entry()
+    except Exception, e:
+	    logger.debug('Error in device_interface script: ' + pprint.pformat(e))
     sites_affected = []
     response = {
         "success": 1,
@@ -928,9 +1034,9 @@ def sync():
 
     # Create backup for the hosts and rules file
     if os.path.exists(hosts_file):
-        os.system('rsync -a %s /opt/omd/sites/%s/nocout/' % (hosts_file, defaults.omd_site))
+        os.system('rsync -a %s /omd/sites/%s/nocout/' % (hosts_file, defaults.omd_site))
     if os.path.exists(rules_file):
-        os.system('rsync -a %s /opt/omd/sites/%s/nocout/' % (rules_file, defaults.omd_site))
+        os.system('rsync -a %s /omd/sites/%s/nocout/' % (rules_file, defaults.omd_site))
 
     nocout_create_sync_snapshot()
     nocout_sites = nocout_distributed_sites()
@@ -951,8 +1057,8 @@ def sync():
             "message": "Config pushed to " + ','.join(sites_affected)
         })
     else:
-        if os.path.exists('/opt/omd/sites/%s/nocout/rules.mk' % defaults.omd_site):
-            os.system('cp /opt/omd/sites/%s/nocout/rules.mk %s' % (defaults.omd_site, rules_file))
+        if os.path.exists('/omd/sites/%s/nocout/rules.mk' % defaults.omd_site):
+            os.system('cp /omd/sites/%s/nocout/rules.mk %s' % (defaults.omd_site, rules_file))
             for site, attrs in nocout_sites.items():
                 response_text = nocout_synchronize_site(site, attrs, True)
             response.update({
@@ -965,7 +1071,31 @@ def sync():
                 "success": 0
             })
     logger.debug('[-- sync finish --]')
+    # Reset the sync flag in mysql db
+    toggle_sync_flag(mode=False)
     return response
+
+
+def toggle_sync_flag(mode=True):
+	try:
+	        db = mysql.connector.connect(
+			    user='root',
+			    password='root',
+			    host='localhost',
+			    db='nocout_dev_27_08_14')
+	except Exception, e:
+		logger.debug('Sync flag not set:' + pprint.pformat(e))
+		return 
+	cur = db.cursor()
+	query = 'UPDATE service_sync_flag SET '
+	if mode:
+		query += 'mode = 1'
+	else:
+		query += 'mode = 0'
+	cur.execute(query)
+	db.commit()
+	cur.close()
+	db.close()
 
 
 def nocout_synchronize_site(site, site_attrs, restart):
@@ -1138,7 +1268,6 @@ def nocout_add_host_attributes(host_attrs, host_edit=False):
 		    })
     # Filter out the host's old config
     g_host_vars['all_hosts'] = filter(lambda t: not re.match(host_attrs.get('host'), t), g_host_vars['all_hosts'])
-    logger.debug('all_hosts: ' + pprint.pformat(g_host_vars['all_hosts']))
 
     host_entry = "%s|%s|%s|wan|prod|%s|site:%s|wato|//" % (
     host_attrs.get('host'), host_attrs.get('device_type'), host_attrs.get('mac'), host_tags.get(html.var('agent_tag'), 'snmp'), host_attrs.get('site'))

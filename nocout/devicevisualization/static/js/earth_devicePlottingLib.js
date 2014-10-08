@@ -169,7 +169,7 @@ function googleEarthClass() {
 
 								if(counter == -999) {
 
-									counter = Math.floor(devicesCount / showLimit);
+									counter = Math.ceil(devicesCount / showLimit);
 								}
 
 								/*Check that any advance filter is applied or not*/
