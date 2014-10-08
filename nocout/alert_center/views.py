@@ -385,6 +385,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                                  "data_source",
                                  "severity",
                                  "current_value",
+                                 "max_value",
                                  "sys_timestamp",
                                  "description"
                                 ]
