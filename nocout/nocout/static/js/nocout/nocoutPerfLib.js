@@ -394,8 +394,7 @@ function nocoutPerfLib() {
 				for (var j = 0; j < pointArray[i].data.length; j++) {
 					$('#' + service_id + '_chart').highcharts().series[i].addPoint(pointArray[i].data[j], false, false, false);
 				}
-			}
-			$('#' + service_id + '_chart').highcharts().redraw();
+			}			
 		}
 
 		function createDataTableForChart(table_id, headers) {
@@ -513,10 +512,11 @@ function nocoutPerfLib() {
 							sendAjax(getTomorrowDate(ajax_start_date), ajax_end_date);
 						}, 200);
 					} else {
-						hideSpinner();
+						$('#' + service_id + '_chart').highcharts().redraw();
 						if (chart_instance == "" && $("#other_perf_table").length == 0) {
 							$('#' + service_id + '_chart').html(result.message);
 						}
+						hideSpinner();
 					}
 				}
 			})
