@@ -46,6 +46,7 @@ def check_cambium_ss_connected_bs_mac_invent(item, _no_params, info):
             if info[0][0]:
                 connected_bs_mac = info[0][0]
                 state = 0
+		connected_bs_mac =connected_bs_mac.replace('-',':')
                 infotext = "%s" % connected_bs_mac
     except:
         infotext = "unknown_value"
