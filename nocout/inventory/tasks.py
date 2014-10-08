@@ -1888,14 +1888,22 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
             try:
                 # ----------------------------- Base Station Device ---------------------------
                 # get machine and site
-                result = get_ptp_machine_and_site(row['IP'] if 'IP' in row.keys() else "")
-                name = special_chars_name_sanitizer(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
                 machine = ""
                 site = ""
-                if 'machine' in result.keys():
-                    machine = result['machine']
-                if 'site' in result.keys():
-                    site = result['site']
+
+                # get machine
+                try:
+                    machine = Machine.objects.get(name='ospf5')
+                except Exception as e:
+                    logger.info(e.message)
+
+                # get site
+                try:
+                    site = SiteInstance.objects.get(name='ospf5_slave_1')
+                except Exception as e:
+                    logger.info(e.message)
+
+                name = special_chars_name_sanitizer(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
 
                 if 'IP' in row.keys():
                     if ip_sanitizer(row['IP']):
@@ -1931,14 +1939,22 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
             try:
                 # ----------------------------- Sub Station Device ---------------------------
                 # get machine and site
-                result = get_ptp_machine_and_site(row['IP'])
-                name = special_chars_name_sanitizer(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
                 machine = ""
                 site = ""
-                if 'machine' in result.keys():
-                    machine = result['machine']
-                if 'site' in result.keys():
-                    site = result['site']
+
+                # get machine
+                try:
+                    machine = Machine.objects.get(name='ospf5')
+                except Exception as e:
+                    logger.info(e.message)
+
+                # get site
+                try:
+                    site = SiteInstance.objects.get(name='ospf5_slave_1')
+                except Exception as e:
+                    logger.info(e.message)
+
+                name = special_chars_name_sanitizer(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
 
                 if ip_sanitizer(row['SS IP']):
                     # sub station data
@@ -1971,13 +1987,20 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
             try:
                 # ------------------------------ Create BS Switch -----------------------------
                 # get machine and site
-                result = get_ptp_machine_and_site(row['IP'])
                 machine = ""
                 site = ""
-                if 'machine' in result.keys():
-                    machine = result['machine']
-                if 'site' in result.keys():
-                    site = result['site']
+
+                # get machine
+                try:
+                    machine = Machine.objects.get(name='ospf5')
+                except Exception as e:
+                    logger.info(e.message)
+
+                # get site
+                try:
+                    site = SiteInstance.objects.get(name='ospf5_slave_1')
+                except Exception as e:
+                    logger.info(e.message)
 
                 if ip_sanitizer(row['BS Switch IP']):
                     # bs switch data
@@ -2009,13 +2032,20 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
             try:
                 # --------------------------- Aggregation Switch IP ---------------------------
                 # get machine and site
-                result = get_ptp_machine_and_site(row['IP'])
                 machine = ""
                 site = ""
-                if 'machine' in result.keys():
-                    machine = result['machine']
-                if 'site' in result.keys():
-                    site = result['site']
+
+                # get machine
+                try:
+                    machine = Machine.objects.get(name='ospf5')
+                except Exception as e:
+                    logger.info(e.message)
+
+                # get site
+                try:
+                    site = SiteInstance.objects.get(name='ospf5_slave_1')
+                except Exception as e:
+                    logger.info(e.message)
 
                 if ip_sanitizer(row['Aggregation Switch']):
                     # aggregation switch data
@@ -2047,13 +2077,20 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
             try:
                 # -------------------------------- BS Converter IP ---------------------------
                 # get machine and site
-                result = get_ptp_machine_and_site(row['IP'])
                 machine = ""
                 site = ""
-                if 'machine' in result.keys():
-                    machine = result['machine']
-                if 'site' in result.keys():
-                    site = result['site']
+
+                # get machine
+                try:
+                    machine = Machine.objects.get(name='ospf5')
+                except Exception as e:
+                    logger.info(e.message)
+
+                # get site
+                try:
+                    site = SiteInstance.objects.get(name='ospf5_slave_1')
+                except Exception as e:
+                    logger.info(e.message)
 
                 if ip_sanitizer(row['BS Converter IP']):
                     # bs converter data
@@ -2085,13 +2122,20 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
             try:
                 # -------------------------------- POP Converter IP ---------------------------
                 # get machine and site
-                result = get_ptp_machine_and_site(row['IP'])
                 machine = ""
                 site = ""
-                if 'machine' in result.keys():
-                    machine = result['machine']
-                if 'site' in result.keys():
-                    site = result['site']
+
+                # get machine
+                try:
+                    machine = Machine.objects.get(name='ospf5')
+                except Exception as e:
+                    logger.info(e.message)
+
+                # get site
+                try:
+                    site = SiteInstance.objects.get(name='ospf5_slave_1')
+                except Exception as e:
+                    logger.info(e.message)
 
                 if ip_sanitizer(row['POP Converter IP']):
                     # pop converter data
