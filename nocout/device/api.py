@@ -52,11 +52,14 @@ class DeviceStatsApi(View):
                 if base_stations_and_sector_configured_on_devices:
                     #if the total count key is not in the meta objects then run the query
                     total_count=self.request.GET.get('total_count')
+
                     if not int(total_count):
                         total_count= Sector.objects.filter(sector_configured_on__id__in= \
                                                            organization.device_set.values_list('id', flat=True))\
                                                            .values_list( 'base_station').annotate(dcount=Count('base_station')).count()
                         self.result['data']['meta']['total_count']= total_count
+                        print "********total_count************"
+                        print total_count
 
                     else:
                         #Otherthan first request the total_count will be echoed back and then can be placed in the result.
