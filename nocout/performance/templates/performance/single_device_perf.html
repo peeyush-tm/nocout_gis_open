@@ -567,6 +567,7 @@
         function fetchFirstTabContent(e) {
             var tab_id = e.currentTarget.attributes.href.value.split("#")[1];
             var li_count = $("#" + tab_id + " .inner_tab_container .col-md-3 ul li").length;
+            console.log(li_count);
             if (li_count > 0) {
                 $("#" + tab_id + " .inner_tab_container .col-md-3 ul li:first-child a").trigger('click');
             }
