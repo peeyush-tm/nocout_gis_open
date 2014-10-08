@@ -1340,6 +1340,12 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
             customer = ""
             circuit = ""
 
+            # if bs ip and ss ip are same in inventory then skip it's insertion in database
+            if all(k in row for k in ("IP", "SS IP")):
+                if ip_sanitizer(row['IP']) == ip_sanitizer(row['SS IP']):
+                    print "************************************ Sampe IP rows - ", row['IP'], row['SS IP']
+                    continue
+
             try:
                 # ----------------------------- Base Station Device ---------------------------
                 # get machine and site
@@ -1351,27 +1357,30 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 if 'site' in result.keys():
                     site = result['site']
 
-                # base station data
-                base_station_data = {
-                    'device_name': row['IP'] if 'IP' in row.keys() else "",
-                    'organization': organization,
-                    'machine': machine,
-                    'site': site,
-                    'device_technology': 2,
-                    'device_vendor': 2,
-                    'device_model': 2,
-                    'device_type': 3,
-                    'ip': row['IP'] if 'IP' in row.keys() else "",
-                    'mac': row['MAC'] if 'MAC' in row.keys() else "",
-                    'state': row['State'] if 'State' in row.keys() else "",
-                    'city': row['City'] if 'City' in row.keys() else "",
-                    'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
-                    'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
-                    'address': row['BS Address'] if 'BS Address' in row.keys() else "",
-                    'description': 'Base Station created on {}.'.format(full_time)
-                }
-                # base station object
-                base_station = create_device(base_station_data)
+                if ip_sanitizer(row['IP']):
+                    # base station data
+                    base_station_data = {
+                        'device_name': row['IP'] if 'IP' in row.keys() else "",
+                        'organization': organization,
+                        'machine': machine,
+                        'site': site,
+                        'device_technology': 2,
+                        'device_vendor': 2,
+                        'device_model': 2,
+                        'device_type': 3,
+                        'ip': row['IP'] if 'IP' in row.keys() else "",
+                        'mac': row['MAC'] if 'MAC' in row.keys() else "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                        'description': 'Base Station created on {}.'.format(full_time)
+                    }
+                    # base station object
+                    base_station = create_device(base_station_data)
+                else:
+                    base_station = ""
             except Exception as e:
                 base_station = ""
 
@@ -1386,27 +1395,30 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 if 'site' in result.keys():
                     site = result['site']
 
-                # sub station data
-                sub_station_data = {
-                    'device_name': row['SS IP'] if 'SS IP' in row.keys() else "",
-                    'organization': organization,
-                    'machine': machine,
-                    'site': site,
-                    'device_technology': 2,
-                    'device_vendor': 2,
-                    'device_model': 2,
-                    'device_type': 2,
-                    'ip': row['SS IP'] if 'SS IP' in row.keys() else "",
-                    'mac': row['SS MAC'] if 'SS MAC' in row.keys() else "",
-                    'state': row['SS State'] if 'SS State' in row.keys() else "",
-                    'city': row['SS City'] if 'SS City' in row.keys() else "",
-                    'latitude': row['SS Latitude'] if 'SS Latitude' in row.keys() else "",
-                    'longitude': row['SS Longitude'] if 'SS Longitude' in row.keys() else "",
-                    'address': row['SS Customer Address'] if 'SS Customer Address' in row.keys() else "",
-                    'description': 'Sub Station created on {}.'.format(full_time)
-                }
-                # sub station object
-                sub_station = create_device(sub_station_data)
+                if ip_sanitizer(row['SS IP']):
+                    # sub station data
+                    sub_station_data = {
+                        'device_name': row['SS IP'] if 'SS IP' in row.keys() else "",
+                        'organization': organization,
+                        'machine': machine,
+                        'site': site,
+                        'device_technology': 2,
+                        'device_vendor': 2,
+                        'device_model': 2,
+                        'device_type': 2,
+                        'ip': row['SS IP'] if 'SS IP' in row.keys() else "",
+                        'mac': row['SS MAC'] if 'SS MAC' in row.keys() else "",
+                        'state': row['SS State'] if 'SS State' in row.keys() else "",
+                        'city': row['SS City'] if 'SS City' in row.keys() else "",
+                        'latitude': row['SS Latitude'] if 'SS Latitude' in row.keys() else "",
+                        'longitude': row['SS Longitude'] if 'SS Longitude' in row.keys() else "",
+                        'address': row['SS Customer Address'] if 'SS Customer Address' in row.keys() else "",
+                        'description': 'Sub Station created on {}.'.format(full_time)
+                    }
+                    # sub station object
+                    sub_station = create_device(sub_station_data)
+                else:
+                    sub_station = ""
             except Exception as e:
                 sub_station = ""
 
@@ -1421,27 +1433,30 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 if 'site' in result.keys():
                     site = result['site']
 
-                # bs switch data
-                bs_switch_data = {
-                    'device_name': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
-                    'organization': organization,
-                    'machine': machine,
-                    'site': site,
-                    'device_technology': 7,
-                    'device_vendor': 9,
-                    'device_model': 12,
-                    'device_type': 12,
-                    'ip': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
-                    'mac': "",
-                    'state': row['State'] if 'State' in row.keys() else "",
-                    'city': row['City'] if 'City' in row.keys() else "",
-                    'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
-                    'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
-                    'address': row['BS Address'] if 'BS Address' in row.keys() else "",
-                    'description': 'BS Switch created on {}.'.format(full_time)
-                }
-                # bs switch object
-                bs_switch = create_device(bs_switch_data)
+                if ip_sanitizer(row['BS Switch IP']):
+                    # bs switch data
+                    bs_switch_data = {
+                        'device_name': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
+                        'organization': organization,
+                        'machine': machine,
+                        'site': site,
+                        'device_technology': 7,
+                        'device_vendor': 9,
+                        'device_model': 12,
+                        'device_type': 12,
+                        'ip': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
+                        'mac': "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                        'description': 'BS Switch created on {}.'.format(full_time)
+                    }
+                    # bs switch object
+                    bs_switch = create_device(bs_switch_data)
+                else:
+                    bs_switch = ""
             except Exception as e:
                 bs_switch = ""
 
@@ -1456,27 +1471,30 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 if 'site' in result.keys():
                     site = result['site']
 
-                # aggregation switch data
-                aggregation_switch_data = {
-                    'device_name': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
-                    'organization': organization,
-                    'machine': machine,
-                    'site': site,
-                    'device_technology': 7,
-                    'device_vendor': 9,
-                    'device_model': 12,
-                    'device_type': 12,
-                    'ip': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
-                    'mac': "",
-                    'state': row['State'] if 'State' in row.keys() else "",
-                    'city': row['City'] if 'City' in row.keys() else "",
-                    'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
-                    'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
-                    'address': row['BS Address'] if 'BS Address' in row.keys() else "",
-                    'description': 'Aggregation Switch created on {}.'.format(full_time)
-                }
-                # aggregation switch object
-                aggregation_switch = create_device(aggregation_switch_data)
+                if ip_sanitizer(row['Aggregation Switch']):
+                    # aggregation switch data
+                    aggregation_switch_data = {
+                        'device_name': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
+                        'organization': organization,
+                        'machine': machine,
+                        'site': site,
+                        'device_technology': 7,
+                        'device_vendor': 9,
+                        'device_model': 12,
+                        'device_type': 12,
+                        'ip': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
+                        'mac': "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                        'description': 'Aggregation Switch created on {}.'.format(full_time)
+                    }
+                    # aggregation switch object
+                    aggregation_switch = create_device(aggregation_switch_data)
+                else:
+                    aggregation_switch = ""
             except Exception as e:
                 aggregation_switch = ""
 
@@ -1491,27 +1509,30 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 if 'site' in result.keys():
                     site = result['site']
 
-                # bs converter data
-                bs_converter_data = {
-                    'device_name': row['BS Converter IP'] if 'BS Converter IP' in row.keys() else "",
-                    'organization': organization,
-                    'machine': machine,
-                    'site': site,
-                    'device_technology': 8,
-                    'device_vendor': 8,
-                    'device_model': 10,
-                    'device_type': 13,
-                    'ip': row['BS Converter IP'] if 'BS Converter IP' in row.keys() else "",
-                    'mac': "",
-                    'state': row['State'] if 'State' in row.keys() else "",
-                    'city': row['City'] if 'City' in row.keys() else "",
-                    'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
-                    'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
-                    'address': row['BS Address'] if 'BS Address' in row.keys() else "",
-                    'description': 'BS Converter created on {}.'.format(full_time)
-                }
-                # bs converter object
-                bs_converter = create_device(bs_converter_data)
+                if ip_sanitizer(row['BS Converter IP']):
+                    # bs converter data
+                    bs_converter_data = {
+                        'device_name': row['BS Converter IP'] if 'BS Converter IP' in row.keys() else "",
+                        'organization': organization,
+                        'machine': machine,
+                        'site': site,
+                        'device_technology': 8,
+                        'device_vendor': 8,
+                        'device_model': 10,
+                        'device_type': 13,
+                        'ip': row['BS Converter IP'] if 'BS Converter IP' in row.keys() else "",
+                        'mac': "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                        'description': 'BS Converter created on {}.'.format(full_time)
+                    }
+                    # bs converter object
+                    bs_converter = create_device(bs_converter_data)
+                else:
+                    bs_converter = ""
             except Exception as e:
                 bs_converter = ""
 
@@ -1526,27 +1547,30 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 if 'site' in result.keys():
                     site = result['site']
 
-                # pop converter data
-                pop_converter_data = {
-                    'device_name': row['POP Converter IP'] if 'POP Converter IP' in row.keys() else "",
-                    'organization': organization,
-                    'machine': machine,
-                    'site': site,
-                    'device_technology': 8,
-                    'device_vendor': 8,
-                    'device_model': 10,
-                    'device_type': 13,
-                    'ip': row['POP Converter IP'] if 'POP Converter IP' in row.keys() else "",
-                    'mac': "",
-                    'state': row['State'] if 'State' in row.keys() else "",
-                    'city': row['City'] if 'City' in row.keys() else "",
-                    'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
-                    'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
-                    'address': row['BS Address'] if 'BS Address' in row.keys() else "",
-                    'description': 'POP Converter created on {}.'.format(full_time)
-                }
-                # pop converter object
-                pop_converter = create_device(pop_converter_data)
+                if ip_sanitizer(row['POP Converter IP']):
+                    # pop converter data
+                    pop_converter_data = {
+                        'device_name': row['POP Converter IP'] if 'POP Converter IP' in row.keys() else "",
+                        'organization': organization,
+                        'machine': machine,
+                        'site': site,
+                        'device_technology': 8,
+                        'device_vendor': 8,
+                        'device_model': 10,
+                        'device_type': 13,
+                        'ip': row['POP Converter IP'] if 'POP Converter IP' in row.keys() else "",
+                        'mac': "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                        'description': 'POP Converter created on {}.'.format(full_time)
+                    }
+                    # pop converter object
+                    pop_converter = create_device(pop_converter_data)
+                else:
+                    pop_converter = ""
             except Exception as e:
                 pop_converter = ""
 
@@ -1590,32 +1614,38 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 except Exception as e:
                     logger.info(e.message)
 
-                # backhaul data
-                backhaul_data = {
-                    'ip': row['BH Configured On Switch/Converter'] if 'BH Configured On Switch/Converter' in row.keys() else "",
-                    'bh_configured_on': bh_configured_on,
-                    'bh_port_name': row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else "",
-                    'bh_port': 0,
-                    'bh_type': row['Backhaul Type'] if 'Backhaul Type' in row.keys() else "",
-                    'bh_switch': bs_converter,
-                    'pop': pop_converter,
-                    'aggregator': aggregation_switch,
-                    'aggregator_port_name': row['Aggregation Switch Port'] if 'Aggregation Switch Port' in row.keys() else "",
-                    'aggregator_port': 0,
-                    'pe_hostname': row['PE Hostname'] if 'PE Hostname' in row.keys() else "",
-                    'pe_ip': row['PE IP'] if 'PE IP' in row.keys() else "",
-                    'bh_connectivity': row['BH Offnet/Onnet'] if 'BH Offnet/Onnet' in row.keys() else "",
-                    'bh_circuit_id': row['BH Circuit ID'] if 'BH Circuit ID' in row.keys() else "",
-                    'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
-                    'ttsl_circuit_id': row['BSO Circuit ID'] if 'BSO Circuit ID' in row.keys() else "",
-                    'description': 'Backhaul created on {}.'.format(full_time)
-                }
+                if 'BH Configured On Switch/Converter' in row.keys():
+                    if ip_sanitizer(row['BH Configured On Switch/Converter']):
+                        # backhaul data
+                        backhaul_data = {
+                            'ip': row['BH Configured On Switch/Converter'] if 'BH Configured On Switch/Converter' in row.keys() else "",
+                            'bh_configured_on': bh_configured_on,
+                            'bh_port_name': row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else "",
+                            'bh_port': 0,
+                            'bh_type': row['Backhaul Type'] if 'Backhaul Type' in row.keys() else "",
+                            'bh_switch': bs_converter,
+                            'pop': pop_converter,
+                            'aggregator': aggregation_switch,
+                            'aggregator_port_name': row['Aggregation Switch Port'] if 'Aggregation Switch Port' in row.keys() else "",
+                            'aggregator_port': 0,
+                            'pe_hostname': row['PE Hostname'] if 'PE Hostname' in row.keys() else "",
+                            'pe_ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'bh_connectivity': row['BH Offnet/Onnet'] if 'BH Offnet/Onnet' in row.keys() else "",
+                            'bh_circuit_id': row['BH Circuit ID'] if 'BH Circuit ID' in row.keys() else "",
+                            'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
+                            'ttsl_circuit_id': row['BSO Circuit ID'] if 'BSO Circuit ID' in row.keys() else "",
+                            'description': 'Backhaul created on {}.'.format(full_time)
+                        }
 
-                # backhaul object
-                backhaul = ""
-                if row['BH Configured On Switch/Converter']:
-                    if row['BH Configured On Switch/Converter'] not in ['NA', 'na', 'N/A', 'n/a']:
-                        backhaul = create_backhaul(backhaul_data)
+                        # backhaul object
+                        backhaul = ""
+                        if row['BH Configured On Switch/Converter']:
+                            if row['BH Configured On Switch/Converter'] not in ['NA', 'na', 'N/A', 'n/a']:
+                                backhaul = create_backhaul(backhaul_data)
+                    else:
+                        backhaul = ""
+                else:
+                    backhaul = ""
             except Exception as e:
                 backhaul = ""
 
@@ -1623,7 +1653,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Base Station -------------------------------
                 # base station data
                 # sanitize bs name
-                name = name_sanitizer(row['BS Name'] if 'BS Name' in row.keys() else "")
+                name = special_chars_name_sanitizer(row['BS Name'] if 'BS Name' in row.keys() else "")
                 alias = row['BS Name'] if 'BS Name' in row.keys() else ""
                 basestation_data = {
                     'name': name,
@@ -1651,19 +1681,24 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
 
             try:
                 # ---------------------------------- Sector ---------------------------------
-                # sector data
-                sector_data = {
-                    'name': row['IP'] if 'IP' in row.keys() else "",
-                    'alias': row['IP'] if 'IP' in row.keys() else "",
-                    'base_station': basestation,
-                    'bs_technology': 2,
-                    'sector_configured_on': base_station,
-                    'antenna': sector_antenna,
-                    'description': 'Sector created on {}.'.format(full_time)
-                }
-
-                # sector object
-                sector = create_sector(sector_data)
+                if 'IP' in row.keys():
+                    if ip_sanitizer(row['IP']):
+                        # sector data
+                        sector_data = {
+                            'name': row['IP'] if 'IP' in row.keys() else "",
+                            'alias': row['IP'] if 'IP' in row.keys() else "",
+                            'base_station': basestation,
+                            'bs_technology': 2,
+                            'sector_configured_on': base_station,
+                            'antenna': sector_antenna,
+                            'description': 'Sector created on {}.'.format(full_time)
+                        }
+                        # sector object
+                        sector = create_sector(sector_data)
+                    else:
+                        sector = ""
+                else:
+                    sector = ""
             except Exception as e:
                 sector = ""
 
@@ -1671,7 +1706,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Sub Station -------------------------------
                 # sub station data
                 # sanitize bs name
-                name = name_sanitizer(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+                name = special_chars_name_sanitizer(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
                 alias = row['SS IP'] if 'SS IP' in row.keys() else ""
                 substation_data = {
                     'name': name,
@@ -1702,7 +1737,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Customer -------------------------------
                 # customer data
                 # sanitize customer name
-                name = name_sanitizer(row['SS Customer Name'] if 'SS Customer Name' in row.keys() else "")
+                name = special_chars_name_sanitizer(row['SS Customer Name'] if 'SS Customer Name' in row.keys() else "")
                 alias = row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""
                 customer_data = {
                     'name': name,
@@ -1721,7 +1756,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
             try:
                 # ------------------------------- Circuit -------------------------------
                 # sanitize circuit name
-                name = name_sanitizer(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+                name = special_chars_name_sanitizer(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
 
                 # validate date of acceptance
                 if 'SS Date Of Acceptance' in row.keys():
@@ -1735,6 +1770,539 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     'name': name,
                     'alias': alias,
                     'circuit_id': row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "",
+                    'circuit_type': 'Customer',
+                    'sector': sector,
+                    'customer': customer,
+                    'sub_station': substation,
+                    'qos_bandwidth': row['SS QOS (BW)'] if 'SS QOS (BW)' in row.keys() else "",
+                    'dl_rssi_during_acceptance': row['SS RSSI During Acceptance'] if 'SS RSSI During Acceptance' in row.keys() else "",
+                    'throughput_during_acceptance': row['SS Throughput During Acceptance'] if 'SS Throughput During Acceptance' in row.keys() else "",
+                    'date_of_acceptance': date_of_acceptance,
+                    'description': 'Circuit created on {}.'.format(full_time)
+                }
+                # circuit object
+                circuit = ""
+                if name and alias:
+                    circuit = create_circuit(circuit_data)
+            except Exception as e:
+                circuit = ""
+
+        # updating upload status in 'GISInventoryBulkImport' model
+        gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
+        gis_obj.upload_status = 2
+        gis_obj.save()
+    except Exception as e:
+        gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
+        gis_obj.upload_status = 3
+        gis_obj.save()
+
+
+@task()
+def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
+    # gis bulk upload id
+    gis_id = gis_id
+
+    # current user organization
+    organization = organization
+
+    # timestamp
+    timestamp = time.time()
+    full_time = datetime.datetime.fromtimestamp(timestamp).strftime('%d-%b-%Y at %H:%M:%S')
+
+    # get object for 'GISInventoryBulkImport' model
+    gis_bu_obj = ""
+    try:
+        gis_bu_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
+    except Exception as e:
+        logger.info(e.message)
+
+    # get valid or invalid sheet based upon sheettype
+    if sheettype == 'valid':
+        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.valid_filename)
+    elif sheettype == 'invalid':
+        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.invalid_filename)
+    else:
+        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.valid_filename)
+
+    sheet = book.sheet_by_index(0)
+
+    keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
+    complete_d = list()
+
+    # fetching excel rows values as list of key value pair dictionaries where keys are from first row of excel
+    # and values are form other remaining rows
+    for row_index in xrange(1, sheet.nrows):
+        d = dict()
+        for col_index in xrange(len(keys)):
+            if isinstance(sheet.cell(row_index, col_index).value, str):
+                d[keys[col_index].encode('utf-8').strip()] = unicode(sheet.cell(row_index, col_index).value).strip()
+            elif isinstance(sheet.cell(row_index, col_index).value, unicode):
+                d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value.strip()
+            else:
+                d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value
+
+        complete_d.append(d)
+
+    try:
+        for row in complete_d:
+            # initialize variables
+            base_station = ""
+            sub_station = ""
+            bs_switch = ""
+            aggregation_switch = ""
+            bs_converter = ""
+            pop_converter = ""
+            substation_antenna = ""
+            backhaul = ""
+            basestation = ""
+            sector = ""
+            customer = ""
+            circuit = ""
+
+            # if bs ip and ss ip are same in inventory then skip it's insertion in database
+            if all(k in row for k in ("IP", "SS IP")):
+                if ip_sanitizer(row['IP']) == ip_sanitizer(row['SS IP']):
+                    print "************************************ Sampe IP rows - ", row['IP'], row['SS IP']
+                    continue
+
+            try:
+                # ----------------------------- Base Station Device ---------------------------
+                # get machine and site
+                result = get_ptp_machine_and_site(row['IP'] if 'IP' in row.keys() else "")
+                name = special_chars_name_sanitizer(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
+                machine = ""
+                site = ""
+                if 'machine' in result.keys():
+                    machine = result['machine']
+                if 'site' in result.keys():
+                    site = result['site']
+
+                if 'IP' in row.keys():
+                    if ip_sanitizer(row['IP']):
+                        # base station data
+                        base_station_data = {
+                            'device_name': name,
+                            'device_alias': row['Circuit ID'] if 'Circuit ID' in row.keys() else "",
+                            'organization': organization,
+                            'machine': machine,
+                            'site': site,
+                            'device_technology': 2,
+                            'device_vendor': 2,
+                            'device_model': 2,
+                            'device_type': 3,
+                            'ip': row['IP'] if 'IP' in row.keys() else "",
+                            'mac': row['MAC'] if 'MAC' in row.keys() else "",
+                            'state': row['State'] if 'State' in row.keys() else "",
+                            'city': row['City'] if 'City' in row.keys() else "",
+                            'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                            'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                            'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                            'description': 'Base Station created on {}.'.format(full_time)
+                        }
+                        # base station object
+                        base_station = create_device(base_station_data)
+                    else:
+                        base_station = ""
+                else:
+                    base_station = ""
+            except Exception as e:
+                base_station = ""
+
+            try:
+                # ----------------------------- Sub Station Device ---------------------------
+                # get machine and site
+                result = get_ptp_machine_and_site(row['IP'])
+                name = special_chars_name_sanitizer(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+                machine = ""
+                site = ""
+                if 'machine' in result.keys():
+                    machine = result['machine']
+                if 'site' in result.keys():
+                    site = result['site']
+
+                if ip_sanitizer(row['SS IP']):
+                    # sub station data
+                    sub_station_data = {
+                        'device_name': name,
+                        'device_alias': row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "",
+                        'organization': organization,
+                        'machine': machine,
+                        'site': site,
+                        'device_technology': 2,
+                        'device_vendor': 2,
+                        'device_model': 2,
+                        'device_type': 2,
+                        'ip': row['SS IP'] if 'SS IP' in row.keys() else "",
+                        'mac': row['SS MAC'] if 'SS MAC' in row.keys() else "",
+                        'state': row['SS State'] if 'SS State' in row.keys() else "",
+                        'city': row['SS City'] if 'SS City' in row.keys() else "",
+                        'latitude': row['SS Latitude'] if 'SS Latitude' in row.keys() else "",
+                        'longitude': row['SS Longitude'] if 'SS Longitude' in row.keys() else "",
+                        'address': row['SS Customer Address'] if 'SS Customer Address' in row.keys() else "",
+                        'description': 'Sub Station created on {}.'.format(full_time)
+                    }
+                    # sub station object
+                    sub_station = create_device(sub_station_data)
+                else:
+                    sub_station = ""
+            except Exception as e:
+                sub_station = ""
+
+            try:
+                # ------------------------------ Create BS Switch -----------------------------
+                # get machine and site
+                result = get_ptp_machine_and_site(row['IP'])
+                machine = ""
+                site = ""
+                if 'machine' in result.keys():
+                    machine = result['machine']
+                if 'site' in result.keys():
+                    site = result['site']
+
+                if ip_sanitizer(row['BS Switch IP']):
+                    # bs switch data
+                    bs_switch_data = {
+                        'device_name': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
+                        'organization': organization,
+                        'machine': machine,
+                        'site': site,
+                        'device_technology': 7,
+                        'device_vendor': 9,
+                        'device_model': 12,
+                        'device_type': 12,
+                        'ip': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
+                        'mac': "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                        'description': 'BS Switch created on {}.'.format(full_time)
+                    }
+                    # bs switch object
+                    bs_switch = create_device(bs_switch_data)
+                else:
+                    bs_switch = ""
+            except Exception as e:
+                bs_switch = ""
+
+            try:
+                # --------------------------- Aggregation Switch IP ---------------------------
+                # get machine and site
+                result = get_ptp_machine_and_site(row['IP'])
+                machine = ""
+                site = ""
+                if 'machine' in result.keys():
+                    machine = result['machine']
+                if 'site' in result.keys():
+                    site = result['site']
+
+                if ip_sanitizer(row['Aggregation Switch']):
+                    # aggregation switch data
+                    aggregation_switch_data = {
+                        'device_name': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
+                        'organization': organization,
+                        'machine': machine,
+                        'site': site,
+                        'device_technology': 7,
+                        'device_vendor': 9,
+                        'device_model': 12,
+                        'device_type': 12,
+                        'ip': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
+                        'mac': "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                        'description': 'Aggregation Switch created on {}.'.format(full_time)
+                    }
+                    # aggregation switch object
+                    aggregation_switch = create_device(aggregation_switch_data)
+                else:
+                    aggregation_switch = ""
+            except Exception as e:
+                aggregation_switch = ""
+
+            try:
+                # -------------------------------- BS Converter IP ---------------------------
+                # get machine and site
+                result = get_ptp_machine_and_site(row['IP'])
+                machine = ""
+                site = ""
+                if 'machine' in result.keys():
+                    machine = result['machine']
+                if 'site' in result.keys():
+                    site = result['site']
+
+                if ip_sanitizer(row['BS Converter IP']):
+                    # bs converter data
+                    bs_converter_data = {
+                        'device_name': row['BS Converter IP'] if 'BS Converter IP' in row.keys() else "",
+                        'organization': organization,
+                        'machine': machine,
+                        'site': site,
+                        'device_technology': 8,
+                        'device_vendor': 8,
+                        'device_model': 10,
+                        'device_type': 13,
+                        'ip': row['BS Converter IP'] if 'BS Converter IP' in row.keys() else "",
+                        'mac': "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                        'description': 'BS Converter created on {}.'.format(full_time)
+                    }
+                    # bs converter object
+                    bs_converter = create_device(bs_converter_data)
+                else:
+                    bs_converter = ""
+            except Exception as e:
+                bs_converter = ""
+
+            try:
+                # -------------------------------- POP Converter IP ---------------------------
+                # get machine and site
+                result = get_ptp_machine_and_site(row['IP'])
+                machine = ""
+                site = ""
+                if 'machine' in result.keys():
+                    machine = result['machine']
+                if 'site' in result.keys():
+                    site = result['site']
+
+                if ip_sanitizer(row['POP Converter IP']):
+                    # pop converter data
+                    pop_converter_data = {
+                        'device_name': row['POP Converter IP'] if 'POP Converter IP' in row.keys() else "",
+                        'organization': organization,
+                        'machine': machine,
+                        'site': site,
+                        'device_technology': 8,
+                        'device_vendor': 8,
+                        'device_model': 10,
+                        'device_type': 13,
+                        'ip': row['POP Converter IP'] if 'POP Converter IP' in row.keys() else "",
+                        'mac': "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                        'description': 'POP Converter created on {}.'.format(full_time)
+                    }
+                    # pop converter object
+                    pop_converter = create_device(pop_converter_data)
+                else:
+                    pop_converter = ""
+            except Exception as e:
+                pop_converter = ""
+
+            try:
+                # ------------------------------- Sector Antenna -------------------------------
+                # sector antenna data
+                sector_antenna_data = {
+                    'ip': row['IP'] if 'IP' in row.keys() else "",
+                    'antenna_type': row['Antenna Type'] if 'Antenna Type' in row.keys() else "",
+                    'height': row['Antenna Height'] if 'Antenna Height' in row.keys() else "",
+                    'polarization': row['Polarization'] if 'Polarization' in row.keys() else "",
+                    'gain': row['Antenna Gain'] if 'Antenna Gain' in row.keys() else "",
+                    'mount_type': row['Antenna Mount Type'] if 'Antenna Mount Type' in row.keys() else "",
+                    'description': 'Sector Antenna created on {}.'.format(full_time)
+                }
+                # sector antenna object
+                sector_antenna = create_antenna(sector_antenna_data)
+
+                # ------------------------------- Sub Station Antenna -------------------------------
+                # sub station antenna data
+                substation_antenna_data = {
+                    'ip': row['SS IP'] if 'SS IP' in row.keys() else "",
+                    'antenna_type': row['SS Antenna Type'] if 'SS Antenna Type' in row.keys() else "",
+                    'height': row['SS Antenna Height'] if 'SS Antenna Height' in row.keys() else "",
+                    'polarization': row['SS Polarization'] if 'SS Polarization' in row.keys() else "",
+                    'gain': row['SS Antenna Gain'] if 'SS Antenna Gain' in row.keys() else "",
+                    'mount_type': row['SS Antenna Mount Type'] if 'SS Antenna Mount Type' in row.keys() else "",
+                    'description': 'Sector Antenna created on {}.'.format(full_time)
+                }
+                # sub station antenna object
+                substation_antenna = create_antenna(substation_antenna_data)
+            except Exception as e:
+                substation_antenna = ""
+
+            try:
+                # ------------------------------- Backhaul -------------------------------
+                # bh configured on
+                bh_configured_on = ""
+                try:
+                    bh_configured_on = Device.objects.get(device_name=row['BH Configured On Switch/Converter'])
+                except Exception as e:
+                    logger.info(e.message)
+
+                if 'BH Configured On Switch/Converter' in row.keys():
+                    if ip_sanitizer(row['BH Configured On Switch/Converter']):
+                        # backhaul data
+                        backhaul_data = {
+                            'ip': row['BH Configured On Switch/Converter'] if 'BH Configured On Switch/Converter' in row.keys() else "",
+                            'bh_configured_on': bh_configured_on,
+                            'bh_port_name': row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else "",
+                            'bh_port': 0,
+                            'bh_type': row['Backhaul Type'] if 'Backhaul Type' in row.keys() else "",
+                            'bh_switch': bs_converter,
+                            'pop': pop_converter,
+                            'aggregator': aggregation_switch,
+                            'aggregator_port_name': row['Aggregation Switch Port'] if 'Aggregation Switch Port' in row.keys() else "",
+                            'aggregator_port': 0,
+                            'pe_hostname': row['PE Hostname'] if 'PE Hostname' in row.keys() else "",
+                            'pe_ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                            'bh_connectivity': row['BH Offnet/Onnet'] if 'BH Offnet/Onnet' in row.keys() else "",
+                            'bh_circuit_id': row['BH Circuit ID'] if 'BH Circuit ID' in row.keys() else "",
+                            'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
+                            'ttsl_circuit_id': row['BSO Circuit ID'] if 'BSO Circuit ID' in row.keys() else "",
+                            'description': 'Backhaul created on {}.'.format(full_time)
+                        }
+
+                        # backhaul object
+                        backhaul = ""
+                        if row['BH Configured On Switch/Converter']:
+                            if row['BH Configured On Switch/Converter'] not in ['NA', 'na', 'N/A', 'n/a']:
+                                backhaul = create_backhaul(backhaul_data)
+                    else:
+                        backhaul = ""
+                else:
+                    backhaul = ""
+            except Exception as e:
+                backhaul = ""
+
+            try:
+                # ------------------------------- Base Station -------------------------------
+                # base station data
+                # sanitize bs name
+                name = special_chars_name_sanitizer(row['BS Name'] if 'BS Name' in row.keys() else "")
+                alias = row['BS Name'] if 'BS Name' in row.keys() else ""
+                basestation_data = {
+                    'name': name,
+                    'alias': alias,
+                    'bs_switch': bs_switch,
+                    'backhaul': backhaul,
+                    'bh_bso': row['BH BSO'] if 'BH BSO' in row.keys() else "",
+                    'hssu_used': row['HSSU Used'] if 'HSSU Used' in row.keys() else "",
+                    'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                    'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                    'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
+                    'tower_height': row['Tower/Pole Height'] if 'Tower/Pole Height' in row.keys() else "",
+                    'state': row['State'] if 'State' in row.keys() else "",
+                    'city': row['City'] if 'City' in row.keys() else "",
+                    'address': row['BS Address'] if 'BS Address' in row.keys() else "",
+                    'description': 'Base Station created on {}.'.format(full_time)
+                }
+
+                # base station object
+                basestation = ""
+                if name and alias:
+                    basestation = create_basestation(basestation_data)
+            except Exception as e:
+                basestation = ""
+
+            try:
+                # ---------------------------------- Sector ---------------------------------
+                if 'IP' in row.keys():
+                    if ip_sanitizer(row['IP']):
+                        # sector data
+                        sector_data = {
+                            'name': row['IP'] if 'IP' in row.keys() else "",
+                            'alias': row['IP'] if 'IP' in row.keys() else "",
+                            'base_station': basestation,
+                            'bs_technology': 2,
+                            'sector_configured_on': base_station,
+                            'antenna': sector_antenna,
+                            'description': 'Sector created on {}.'.format(full_time)
+                        }
+                        # sector object
+                        sector = create_sector(sector_data)
+                    else:
+                        sector = ""
+                else:
+                    sector = ""
+            except Exception as e:
+                sector = ""
+
+            try:
+                # ------------------------------- Sub Station -------------------------------
+                # sub station data
+                # sanitize bs name
+                name = special_chars_name_sanitizer(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+                alias = row['SS IP'] if 'SS IP' in row.keys() else ""
+                substation_data = {
+                    'name': name,
+                    'alias': alias,
+                    'device': sub_station,
+                    'antenna': substation_antenna,
+                    'building_height': row['SS Building Height'] if 'SS Building Height' in row.keys() else "",
+                    'tower_height': row['SS Tower/Pole Height'] if 'SS Tower/Pole Height' in row.keys() else "",
+                    'ethernet_extender': row['SS Ethernet Extender'] if 'SS Ethernet Extender' in row.keys() else "",
+                    'cable_length': row['SS Cable Length'] if 'SS Cable Length' in row.keys() else "",
+                    'longitude': row['SS Longitude'] if 'SS Longitude' in row.keys() else "",
+                    'latitude': row['SS Latitude'] if 'SS Latitude' in row.keys() else "",
+                    'mac_address': row['SS MAC'] if 'SS MAC' in row.keys() else "",
+                    'state': row['SS State'] if 'SS State' in row.keys() else "",
+                    'city': row['SS City'] if 'SS City' in row.keys() else "",
+                    'address': row['SS Customer Address'] if 'SS Customer Address' in row.keys() else "",
+                    'description': 'Sub Station created on {}.'.format(full_time)
+                }
+
+                # sub station object
+                substation = ""
+                if name and alias:
+                    substation = create_substation(substation_data)
+            except Exception as e:
+                substation = ""
+
+            try:
+                # ------------------------------- Customer -------------------------------
+                # customer data
+                # sanitize customer name
+                name = special_chars_name_sanitizer(row['SS Customer Name'] if 'SS Customer Name' in row.keys() else "")
+                alias = row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""
+                customer_data = {
+                    'name': name,
+                    'alias': alias,
+                    'address': row['SS Customer Address'] if 'SS Customer Address' in row.keys() else "",
+                    'description': 'SS Customer created on {}.'.format(full_time)
+                }
+
+                # customer object
+                customer = ""
+                if name:
+                    customer = create_customer(customer_data)
+            except Exception as e:
+                customer = ""
+
+            try:
+                # ------------------------------- Circuit -------------------------------
+                # sanitize circuit name
+                name = special_chars_name_sanitizer(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+
+                # validate date of acceptance
+                if 'SS Date Of Acceptance' in row.keys():
+                    date_of_acceptance = validate_date(row['SS Date Of Acceptance'])
+                else:
+                    date_of_acceptance = ""
+
+                # concatinating bs circuit id and ss circuit id
+                if all(k in row for k in ("Circuit ID", "SS Circuit ID")):
+                    circuit_id = "{}#{}".format(row['SS Circuit ID'], row['Circuit ID'])
+                else:
+                    circuit_id = row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else ""
+
+                # circuit data
+                alias = row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else ""
+                circuit_data = {
+                    'name': name,
+                    'alias': alias,
+                    'circuit_id': circuit_id,
+                    'circuit_type': 'Backhaul',
                     'sector': sector,
                     'customer': customer,
                     'sub_station': substation,
@@ -2081,7 +2649,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Base Station -------------------------------
                 # base station data
                 # sanitize bs name
-                name = name_sanitizer(row['BS Name'] if 'BS Name' in row.keys() else "")
+                name = special_chars_name_sanitizer(row['BS Name'] if 'BS Name' in row.keys() else "")
                 alias = row['BS Name'] if 'BS Name' in row.keys() else ""
                 basestation_data = {
                     'name': name,
@@ -2263,7 +2831,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Sub Station -------------------------------
                 # sub station data
                 # sanitize bs name
-                name = name_sanitizer(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
+                name = special_chars_name_sanitizer(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
                 alias = row['SS IP'] if 'SS IP' in row.keys() else ""
                 substation_data = {
                     'name': name,
@@ -2292,7 +2860,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Customer -------------------------------
                 # customer data
                 # sanitize customer name
-                name = name_sanitizer(row['Customer Name'] if 'Customer Name' in row.keys() else "")
+                name = special_chars_name_sanitizer(row['Customer Name'] if 'Customer Name' in row.keys() else "")
                 alias = row['Customer Name'] if 'Customer Name' in row.keys() else ""
                 customer_data = {
                     'name': name,
@@ -2311,7 +2879,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
             try:
                 # ------------------------------- Circuit -------------------------------
                 # sanitize circuit name
-                name = name_sanitizer(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
+                name = special_chars_name_sanitizer(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
 
                 # validate date of acceptance
                 if 'Date Of Acceptance' in row.keys():
@@ -2395,8 +2963,11 @@ def create_device(device_payload):
         device_name = device_payload['device_name'].encode('utf-8').strip() if device_payload['device_name'] else ""
     if 'organization' in device_payload.keys():
         organization = device_payload['organization'] if device_payload['organization'] else ""
-    if 'ip' in device_payload.keys():
-        device_alias = device_payload['ip'] if device_payload['ip'] else ""
+    if 'device_alias' in device_payload.keys():
+        device_alias = device_payload['device_alias'] if device_payload['device_alias'] else ""
+    else:
+        if 'ip' in device_payload.keys():
+            device_alias = device_payload['ip'] if device_payload['ip'] else ""
     if 'machine' in device_payload.keys():
         machine = device_payload['machine'] if device_payload['machine'] else ""
     if 'site' in device_payload.keys():
@@ -2473,7 +3044,7 @@ def create_device(device_payload):
                     try:
                         device.device_model = device_model
                     except Exception as e:
-                        logger.info("Device Vendor: ({} - {})".format(device_model, e.message))
+                        logger.info("Device Model: ({} - {})".format(device_model, e.message))
                 # device type
                 if device_type:
                     try:
@@ -2500,13 +3071,13 @@ def create_device(device_payload):
                 # host state
                 device.host_state = 'Enable'
                 # latitude
-                if latitude:
+                if latitude and isinstance(latitude, float):
                     try:
                         device.latitude = latitude
                     except Exception as e:
                         logger.info("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
-                if longitude:
+                if longitude and isinstance(longitude, float):
                     try:
                         device.longitude = longitude
                     except Exception as e:
@@ -2549,12 +3120,7 @@ def create_device(device_payload):
                     except Exception as e:
                         logger.info("Description: ({} - {})".format(description, e.message))
                 # saving device
-                try:
-                    device.save()
-                    return device
-                except Exception as e:
-                    logger.info("Device Object: ({} - {})".format(device_name, e.message))
-                    return ""
+                device.save()
             except Exception as e:
                 # ---------------------------- CREATING DEVICE -------------------------------
                 # device object
@@ -2630,13 +3196,13 @@ def create_device(device_payload):
                     except Exception as e:
                         logger.info("MAC Address: ({} - {})".format(mac_address, e.message))
                 # latitude
-                if latitude:
+                if latitude and isinstance(latitude, float):
                     try:
                         device.latitude = latitude
                     except Exception as e:
                         logger.info("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
-                if longitude:
+                if longitude and isinstance(longitude, float):
                     try:
                         device.longitude = longitude
                     except Exception as e:
@@ -2847,12 +3413,9 @@ def create_antenna(antenna_payload):
                         antenna.description = description
                     except Exception as e:
                         logger.info("Antenna Description: ({} - {})".format(description, e.message))
-                try:
-                    antenna.save()
-                    return antenna
-                except Exception as e:
-                    logger.info("Antenna Object: ({} - {})".format(name, e.message))
-                    return ""
+                # saving antenna
+                antenna.save()
+                return antenna
             except Exception as e:
                 # ---------------------------- CREATING ANTENNA -------------------------------
                 # create antenna if it doesn't exist in database
@@ -3176,12 +3739,9 @@ def create_backhaul(backhaul_payload):
                         backhaul.description = description
                     except Exception as e:
                         logger.info("Description: ({} - {})".format(description, e.message))
-                try:
-                    backhaul.save()
-                    return backhaul
-                except Exception as e:
-                    logger.info("Backhaul Object: ({} - {})".format(name, e.message))
-                    return ""
+                # saving backhaul
+                backhaul.save()
+                return backhaul
             except Exception as e:
                 # ---------------------------- CREATING BACKHAUL -------------------------------
                 # create backhaul if it doesn't exist in database
@@ -3535,12 +4095,9 @@ def create_basestation(basestation_payload):
                         basestation.description = description
                     except Exception as e:
                         logger.info("BS Description: ({} - {})".format(description, e.message))
-                try:
-                    basestation.save()
-                    return basestation
-                except Exception as e:
-                    logger.info("Backhaul Object: ({} - {})".format(name, e.message))
-                    return ""
+                # saving base station
+                basestation.save()
+                return basestation
             except Exception as e:
                 # ---------------------------- CREATING BASE STATION -------------------------------
                 # create basestation if it doesn't exist in database
@@ -3601,16 +4158,18 @@ def create_basestation(basestation_payload):
                         logger.info("HSSU Used: ({} - {})".format(hssu_used, e.message))
                 # latitude
                 if latitude:
-                    try:
-                        basestation.latitude = latitude
-                    except Exception as e:
-                        logger.info("Latitude: ({} - {})".format(latitude, e.message))
+                    if isinstance(latitude, int) or isinstance(latitude, float):
+                        try:
+                            basestation.latitude = latitude
+                        except Exception as e:
+                            logger.info("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
                 if longitude:
-                    try:
-                        basestation.longitude = longitude
-                    except Exception as e:
-                        logger.info("Longitude: ({} - {})".format(longitude, e.message))
+                    if isinstance(longitude, int) or isinstance(longitude, float):
+                        try:
+                            basestation.longitude = longitude
+                        except Exception as e:
+                            logger.info("Longitude: ({} - {})".format(longitude, e.message))
                 # infra provider
                 if infra_provider:
                     try:
@@ -3625,16 +4184,18 @@ def create_basestation(basestation_payload):
                         logger.info("GPS Type: ({} - {})".format(gps_type, e.message))
                 # building height
                 if building_height:
-                    try:
-                        basestation.building_height = building_height
-                    except Exception as e:
-                        logger.info("Building Height: ({} - {})".format(building_height, e.message))
+                    if isinstance(building_height, int) or isinstance(building_height, float):
+                        try:
+                            basestation.building_height = building_height
+                        except Exception as e:
+                            logger.info("Building Height: ({} - {})".format(building_height, e.message))
                 # tower height
                 if tower_height:
-                    try:
-                        basestation.tower_height = tower_height
-                    except Exception as e:
-                        logger.info("Tower Height: ({} - {})".format(tower_height, e.message))
+                    if isinstance(tower_height, int) or isinstance(tower_height, float):
+                        try:
+                            basestation.tower_height = tower_height
+                        except Exception as e:
+                            logger.info("Tower Height: ({} - {})".format(tower_height, e.message))
                 # country
                 basestation.country = 1
                 # state
@@ -3848,12 +4409,9 @@ def create_sector(sector_payload):
                         sector.description = description
                     except Exception as e:
                         logger.info("Sector Description: ({} - {})".format(description, e.message))
-                try:
-                    sector.save()
-                    return sector
-                except Exception as e:
-                    logger.info("Sector Object: ({} - {})".format(name, e.message))
-                    return ""
+                # saving sector
+                sector.save()
+                return sector
             except Exception as e:
                 # ---------------------------- CREATING BASE STATION -------------------------------
                 # create sector if it doesn't exist in database
@@ -4038,12 +4596,9 @@ def create_customer(customer_payload):
                         customer.description = description
                     except Exception as e:
                         logger.info("Customer Description: ({} - {})".format(description, e.message))
-                try:
-                    customer.save()
-                    return customer
-                except Exception as e:
-                    logger.info("Customer Object: ({} - {})".format(name, e.message))
-                    return ""
+                # saving customer
+                customer.save()
+                return customer
             except Exception as e:
                 # ---------------------------- CREATING CUSTOMER -------------------------------
                 # create sector if it doesn't exist in database
@@ -4278,12 +4833,9 @@ def create_substation(substation_payload):
                         substation.description = description
                     except Exception as e:
                         logger.info("Sub Station Sector Description: ({} - {})".format(description, e.message))
-                try:
-                    substation.save()
-                    return substation
-                except Exception as e:
-                    logger.info("Sub Station Sector Object: ({} - {})".format(name, e.message))
-                    return ""
+                # saving sub station
+                substation.save()
+                return substation
             except Exception as e:
                 # ---------------------------- CREATING BASE STATION -------------------------------
                 # create substation if it doesn't exist in database
@@ -4560,12 +5112,9 @@ def create_circuit(circuit_payload):
                         circuit.description = description
                     except Exception as e:
                         logger.info("Circuit Description: ({} - {})".format(description, e.message))
-                try:
-                    circuit.save()
-                    return circuit
-                except Exception as e:
-                    logger.info("Circuit Object: ({} - {})".format(name, e.message))
-                    return ""
+                # saving circuit
+                circuit.save()
+                return circuit
             except Exception as e:
                 # ---------------------------- CREATING CIRCUIT -------------------------------
                 # create circuit if it doesn't exist in database
@@ -4739,7 +5288,7 @@ def validate_date(date_string):
         return date_string
 
 
-def name_sanitizer(name):
+def special_chars_name_sanitizer(name):
     """ Clean and remove all special characters form string and replace them (special characters) from underscore
 
     Args:
@@ -4751,6 +5300,7 @@ def name_sanitizer(name):
     """
     # remove all non-word characters (everything except numbers and letters)
     if isinstance(name, int) or isinstance(name, float):
+        name = int(name)
         output = re.sub(r"[^\w\s+]", '_', str(name))
         # replace all runs of whitespace with a single underscore, convert to lower chars and then strip '_'
         output = re.sub(r"\s+", '_', output).lower().strip('_')
@@ -4761,6 +5311,34 @@ def name_sanitizer(name):
     else:
         output = ""
     return unicode(output)
+
+
+def ip_sanitizer(name):
+    """ Check and clean ip address
+
+    Args:
+        name (unicode): u'Maniyar Complex'
+
+    Returns:
+        name (str): 'maniyar_complex'
+
+    """
+    name = name
+    if isinstance(name, str):
+        name = name.strip()
+        try:
+            IP(name)
+        except Exception as e:
+            name = ""
+    elif isinstance(name, unicode):
+        name = name.encode('utf-8').strip()
+        try:
+            IP(name)
+        except Exception as e:
+            name = ""
+    else:
+        name = ""
+    return name
 
 
 def get_state(state=None):
