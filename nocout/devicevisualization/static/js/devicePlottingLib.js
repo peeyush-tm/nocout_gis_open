@@ -2400,22 +2400,22 @@ function devicePlottingClass_gmap() {
 
         if($("#technology").val().length > 0) {
         	// selectedTechnology = $("#technology option:selected").text();
-        	appliedFilterObj_gmaps["technology"] = $("#technology option:selected").text();
+        	appliedFilterObj_gmaps["technology"] = $.trim($("#technology option:selected").text());
         }
 
         if($("#vendor").val().length > 0) {
         	// selectedvendor = $("#vendor option:selected").text();
-        	appliedFilterObj_gmaps["vendor"] = $("#vendor option:selected").text();
+        	appliedFilterObj_gmaps["vendor"] = $.trim($("#vendor option:selected").text());
         }
 
         if($("#state").val().length > 0) {
-        	appliedFilterObj_gmaps["state"] = $("#state option:selected").text();
+        	appliedFilterObj_gmaps["state"] = $.trim($("#state option:selected").text());
         }
 
 
         try {
             if($("#city").val().length > 0) {
-            	appliedFilterObj_gmaps["city"] = $("#city option:selected").text();
+            	appliedFilterObj_gmaps["city"] = $.trim($("#city option:selected").text());
             }
         }
         catch(err) {
