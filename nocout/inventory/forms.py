@@ -1028,7 +1028,8 @@ class GISInventoryBulkImportForm(forms.Form):
         ("PMP BS", "Wimax BS"),
         ("PMP SM", "PMP SM"),
         ("Converter", "Converter"),
-        ("PTP", "PTP")
+        ("PTP", "PTP"),
+        ("PTP BH", "PTP BH")
     )
     file_upload = forms.FileField(label='Inventory Excel Sheet')
     bs_sheet = forms.ChoiceField(label='Wimax/PMP BS Sheet', choices=SHEET_CHOICES, required=False)
