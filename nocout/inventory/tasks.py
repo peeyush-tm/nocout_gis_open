@@ -3255,7 +3255,7 @@ def create_device(device_payload):
                     device.save()
                     return device
                 except Exception as e:
-                    logger.exception("Device Object: ({} - {})".format(device_name, e.message))
+                    logger.info("Device Object: ({} - {})".format(device_name, e.message))
                     return ""
 
 
@@ -3519,7 +3519,7 @@ def create_antenna(antenna_payload):
                     antenna.save()
                     return antenna
                 except Exception as e:
-                    logger.exception("Antenna Object: ({} - {})".format(name, e.message))
+                    logger.info("Antenna Object: ({} - {})".format(name, e.message))
                     return ""
 
 
@@ -3882,7 +3882,7 @@ def create_backhaul(backhaul_payload):
                     backhaul.save()
                     return backhaul
                 except Exception as e:
-                    logger.exception("Backhaul Object: ({} - {})".format(name, e.message))
+                    logger.info("Backhaul Object: ({} - {})".format(name, e.message))
                     return ""
 
 
@@ -4235,7 +4235,7 @@ def create_basestation(basestation_payload):
                     basestation.save()
                     return basestation
                 except Exception as e:
-                    logger.exception("Base Station Object: ({} - {})".format(name, e.message))
+                    logger.info("Base Station Object: ({} - {})".format(name, e.message))
                     return ""
 
 
@@ -4528,7 +4528,7 @@ def create_sector(sector_payload):
                     sector.save()
                     return sector
                 except Exception as e:
-                    logger.exception("Sector Object: ({} - {})".format(name, e.message))
+                    logger.info("Sector Object: ({} - {})".format(name, e.message))
                     return ""
 
 
@@ -4631,7 +4631,7 @@ def create_customer(customer_payload):
                     customer.save()
                     return customer
                 except Exception as e:
-                    logger.exception("Customer Object: ({} - {})".format(name, e.message))
+                    logger.info("Customer Object: ({} - {})".format(name, e.message))
                     return ""
 
 
@@ -4962,7 +4962,7 @@ def create_substation(substation_payload):
                     substation.save()
                     return substation
                 except Exception as e:
-                    logger.exception("Sub Station Object: ({} - {})".format(name, e.message))
+                    logger.info("Sub Station Object: ({} - {})".format(name, e.message))
                     return ""
 
 
@@ -5208,7 +5208,7 @@ def create_circuit(circuit_payload):
                     circuit.save()
                     return circuit
                 except Exception as e:
-                    logger.exception("Circuit Object: ({} - {})".format(name, e.message))
+                    logger.info("Circuit Object: ({} - {})".format(name, e.message))
                     return ""
 
 
