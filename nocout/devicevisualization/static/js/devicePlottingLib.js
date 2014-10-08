@@ -588,8 +588,7 @@ function devicePlottingClass_gmap() {
 								}
 
 								if(counter == -999) {
-
-									counter = Math.floor(devicesCount / showLimit);
+									counter = Math.ceil(devicesCount / showLimit);
 								}
 
 								if(result.data.objects.data.unspiderfy_icon != "" && result.data.objects.data.unspiderfy_icon != undefined) {
