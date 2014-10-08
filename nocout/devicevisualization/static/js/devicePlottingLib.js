@@ -418,7 +418,7 @@ function devicePlottingClass_gmap() {
             google.maps.event.addListener(mapInstance, 'idle', function() {
             	setTimeout(function() {
             		var bs_list = getMarkerInCurrentBound();
-	            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
+	            	if(bs_list.length > 0 && isCallCompleted == 1) {
 	            		if(recallPerf != "") {
 	            			clearTimeout(recallPerf);
 	            			recallPerf = "";
@@ -2178,6 +2178,7 @@ function devicePlottingClass_gmap() {
 		}
 
 		$("#technology").html(tech_option);
+		$("#polling_tech").html(tech_option);
 
 		var vendor_option = "";
 		vendor_option = "<option value=''>Select Vendor</option>";
@@ -2533,7 +2534,7 @@ function devicePlottingClass_gmap() {
 
     		/*ajax call for services & datasource*/
     		$.ajax({
-    			url : base_url+"/"+"device/ts_templates/?technology="+selected_technology,
+    			url : base_url+"/"+"device/ts_templates/?technology="+$.trim($("#polling_tech option:selected").text()),
     			// url : base_url+"/"+"static/livePolling.json",
     			success : function(results) {
 					
@@ -3335,7 +3336,14 @@ function devicePlottingClass_gmap() {
 	 	/*Set Live Polling flag*/
 	 	// isPollingActive = 1;
 	 	
-	 	gisPerformanceClass.stop();
+	 	var bs_list = getMarkerInCurrentBound();
+    	if(bs_list.length > 0 && isCallCompleted == 1) {
+    		if(recallPerf != "") {
+    			clearTimeout(recallPerf);
+    			recallPerf = "";
+    		}
+    		gisPerformanceClass.start(bs_list);
+    	}
 	 };
 
 	 /**
@@ -3355,7 +3363,14 @@ function devicePlottingClass_gmap() {
 	 	/*Set Live Polling flag*/
 	 	// isPollingActive = 0;
 
-	 	gisPerformanceClass.restart();
+	 	var bs_list = getMarkerInCurrentBound();
+    	if(bs_list.length > 0 && isCallCompleted == 1) {
+    		if(recallPerf != "") {
+    			clearTimeout(recallPerf);
+    			recallPerf = "";
+    		}
+    		gisPerformanceClass.start(bs_list);
+    	}
 
 	 	/*Recall the server*/
 	 	// gmap_self.recallServer_gmap();
