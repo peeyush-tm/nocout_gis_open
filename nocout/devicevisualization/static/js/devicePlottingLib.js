@@ -2178,7 +2178,7 @@ function devicePlottingClass_gmap() {
 		}
 
 		$("#technology").html(tech_option);
-		$("#polling_tech").html(tech_option);
+		// $("#polling_tech").html(tech_option);
 
 		var vendor_option = "";
 		vendor_option = "<option value=''>Select Vendor</option>";
@@ -2192,59 +2192,26 @@ function devicePlottingClass_gmap() {
 		/*Reset the flag*/
 		isFirstTime = 0;
 
-		// var filtersData = {};
-		// /*Ajax call for filters data*/
-		// $.ajax({
-		// 	url : base_url+"/"+"device/filter/",
-		// 	// url : "../../static/filter_data.json",
-		// 	success : function(result) {				
-		// 		filtersData = JSON.parse(result);
+		/*Ajax call for Live polling technology data*/
+		$.ajax({
+			url : base_url+"/"+"device/filter/",
+			// url : "../../static/filter_data.json",
+			success : function(result) {
+				var techData = JSON.parse(result).data.objects.technology.data;
 
-		// 		var techData = filtersData.data.objects.technology.data;
-		// 		var vendorData = filtersData.data.objects.vendor.data;
-		// 		var cityData = filtersData.data.objects.city.data;
-		// 		var stateData = filtersData.data.objects.state.data;
-
-		// 		/*Populate technology dropdown*/
-		// 		var techOptions = "<option value=''>Select Technology</option>";
-		// 		$.grep(techData,function(tech) {
-		// 			techOptions += "<option value='"+tech.id+"'>"+tech.value.toUpperCase()+"</option>";
-		// 		});
-		// 		$("#technology").html(techOptions);
-		// 		$("#polling_tech").html(techOptions);
-
-		// 		/*Populate Vendor dropdown*/
-		// 		var vendorOptions = "<option value=''>Select Vendor</option>";
-		// 		$.grep(vendorData,function(vendor) {
-		// 			vendorOptions += "<option value='"+vendor.id+"' tech_id='"+vendor.tech_id+"' tech_name='"+vendor.tech_name+"'>"+vendor.value.toUpperCase()+"</option>";
-		// 		});
-		// 		$("#vendor").html(vendorOptions);
-
-		// 		/*Populate City dropdown*/
-		// 		var cityOptions = "<option value=''>Select City</option>";
-		// 		$.grep(cityData,function(city) {
-		// 			cityOptions += "<option state_id='"+city.state_id+"' state_name='"+city.state_name+"' value='"+city.id+"'>"+city.value.toUpperCase()+"</option>";
-		// 		});
-		// 		$("#city").html(cityOptions);
-
-		// 		/*Populate State dropdown*/
-		// 		var stateOptions = "<option value=''>Select State</option>";
-		// 		$.grep(stateData,function(state) {
-		// 			stateOptions += "<option value='"+state.id+"'>"+state.value.toUpperCase()+"</option>";
-		// 		});
-		// 		$("#state").html(stateOptions);
-		// 	},
-		// 	error : function(err) {
-		// 		$.gritter.add({
-		//             // (string | mandatory) the heading of the notification
-		//             title: 'Basic Filters - Server Error',
-		//             // (string | mandatory) the text inside the notification
-		//             text: err.statusText,
-		//             // (bool | optional) if you want it to fade out on its own or just sit there
-		//             sticky: false
-		//         });
-		// 	}
-		// });
+				/*Populate technology dropdown*/
+				var techOptions = "<option value=''>Select Technology</option>";
+				$.grep(techData,function(tech) {
+					if(technology_array.indexOf(tech.value) >= 0) {
+						techOptions += "<option value='"+tech.id+"'>"+tech.value.toUpperCase()+"</option>";
+					}
+				});
+				$("#polling_tech").html(techOptions);
+			},
+			error : function(err) {
+				
+			}
+		});
 	};
 
 	/**
@@ -2534,7 +2501,7 @@ function devicePlottingClass_gmap() {
 
     		/*ajax call for services & datasource*/
     		$.ajax({
-    			url : base_url+"/"+"device/ts_templates/?technology="+$.trim($("#polling_tech option:selected").text()),
+    			url : base_url+"/"+"device/ts_templates/?technology="+$.trim(selected_technology),
     			// url : base_url+"/"+"static/livePolling.json",
     			success : function(results) {
 					
