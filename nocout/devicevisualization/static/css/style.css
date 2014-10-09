@@ -29,9 +29,8 @@
 
 .windowContainer
 {
-    min-width: 520px;
+    max-width: 500px;
     /*max-height: 300px;*/
-    min-height: 30px;
     /*overflow-y: auto;*/
     /*padding: 8px;
     border-radius: 10px;*/

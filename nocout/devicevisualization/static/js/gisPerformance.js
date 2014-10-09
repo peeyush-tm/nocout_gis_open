@@ -292,12 +292,12 @@ function GisPerformance() {
                     //Get subStation Marker
                     var subStationMarker = markersMasterObj['SSNamae'][subStationName];
 
-                    var ss_perf_obj = {};
+                    // var ss_perf_obj = {};
 
-                    ss_perf_obj["performance_paramter"] = this.calculatePerformanceValue("performance_paramter", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-                    ss_perf_obj["performance_value"] = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-                    ss_perf_obj["frequency"] = this.calculatePerformanceValue("frequency", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-                    ss_perf_obj["pl"] = this.calculatePerformanceValue("pl", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+                    // ss_perf_obj["performance_paramter"] = this.calculatePerformanceValue("performance_paramter", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+                    // ss_perf_obj["performance_value"] = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+                    // ss_perf_obj["frequency"] = this.calculatePerformanceValue("frequency", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+                    // ss_perf_obj["pl"] = this.calculatePerformanceValue("pl", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
 
                     var polled_info = this.calculatePerformanceValue("device_info", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
 
@@ -305,10 +305,18 @@ function GisPerformance() {
 
                     var existing_index = -1;
                     for (var x = 0; x < labelsArray.length; x++) {
-                        if (labelsArray[x].moveListener_) {
-                            if (($.trim(labelsArray[x].moveListener_.cb.name) == $.trim(subStationMarker.name)) && ($.trim(labelsArray[x].moveListener_.cb.bs_name) == $.trim(subStationMarker.bs_name))) {
-                                existing_index = x;
-                                labelsArray[x].close();
+                        var move_listener_obj = labelsArray[x].moveListener_;
+                        if (move_listener_obj) {
+                            var keys_array = Object.keys(move_listener_obj);
+                            for(var z=0;z<keys_array.length;z++) {
+                                if(typeof move_listener_obj[keys_array[z]] === 'object') {
+                                   if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
+                                        if (($.trim(move_listener_obj[keys_array[z]]["name"]) == $.trim(subStationMarker.name)) && ($.trim(move_listener_obj[keys_array[z]]["bs_name"]) == $.trim(subStationMarker.bs_name))) {
+                                            existing_index = x;
+                                            labelsArray[x].close();
+                                        }
+                                   }
+                                }
                             }
                         }
                     }
@@ -321,10 +329,11 @@ function GisPerformance() {
                     if (!$("#show_hide_label")[0].checked) {
                         visible_flag = true;
                     }
-
-                    if((ss_perf_obj["performance_value"] && $.trim(ss_perf_obj["performance_value"]))) {
+                    var perf_val = "";
+                    perf_val = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+                    if(perf_val && $.trim(perf_val)) {
 	                    var perf_infobox = new InfoBox({
-	                        content: ss_perf_obj["performance_value"],
+	                        content: perf_val,
 	                        boxStyle: {
 	                            border: "1px solid black",
 	                            background: "white",
@@ -339,7 +348,7 @@ function GisPerformance() {
 	                        isHidden: visible_flag,
 	                        // visible : visible_flag,
 	                        enableEventPropagation: true,
-	                        zIndex: 80
+	                        zIndex: 80,
 	                    });
 
 	                    perf_infobox.open(mapInstance, subStationMarker);
