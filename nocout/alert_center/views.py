@@ -278,9 +278,9 @@ def getNetworkAlertDetail(request):
         'bSortable': True},
         {'mData': 'base_station', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'base_station__city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+        {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
-        {'mData': 'base_station__state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+        {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
@@ -385,6 +385,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                                  "data_source",
                                  "severity",
                                  "current_value",
+                                 "max_value",
                                  "sys_timestamp",
                                  "description"
                                 ]
