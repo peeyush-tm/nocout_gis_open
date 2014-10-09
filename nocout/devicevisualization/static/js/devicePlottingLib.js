@@ -2253,10 +2253,10 @@ function devicePlottingClass_gmap() {
 		var current_data = [],
 			filteredData = [];
 
-		if(page_type && page_type == 'gmap') {
-			current_data = main_devices_data_gmaps
-		} else {
+		if(page_type && page_type == 'googleEarth') {
 			current_data = main_devices_data_earth;
+		} else {
+			current_data = main_devices_data_gmaps
 		}
 
         for(var i=0;i<current_data.length;i++) {
@@ -2296,7 +2296,9 @@ function devicePlottingClass_gmap() {
                 sticky: false
             });
 
-        	if(page_type && page_type == 'gmap') {
+        	if(page_type && page_type == 'googleEarth') {
+            	earth_instance.clearEarthElements();
+            } else {
 	        	/*Reset the markers, polyline & filters*/
 	            gmap_self.clearGmapElements();
 
@@ -2305,15 +2307,22 @@ function devicePlottingClass_gmap() {
 
 	            /*Filter Line & label array as per filtered data*/
 	            gmap_self.getFilteredLineLabel([]);
-            } else {
-            	earth_instance.clearEarthElements();
             }
 
         } else {
 
-        	if(page_type && page_type == 'gmap') {
+        	if(page_type && page_type == 'googleEarth') {
 
-	            /*Reset the markers, polyline & filters*/
+	            data_for_filters_earth = filteredData;
+
+            	isCallCompleted = 1;
+
+            	earth_instance.clearEarthElements();
+            	/*Populate the map with the filtered markers*/
+	            earth_instance.plotDevices_earth(filteredData,"base_station");
+
+            } else {
+            	/*Reset the markers, polyline & filters*/
 	            gmap_self.clearGmapElements();
 
 	            sector_MarkersArray = [];
@@ -2336,16 +2345,6 @@ function devicePlottingClass_gmap() {
 
 	            /*Filter Line & label array as per filtered data*/
 	            gmap_self.getFilteredLineLabel(filteredData);
-
-            } else {
-            	
-            	data_for_filters_earth = filteredData;
-
-            	isCallCompleted = 1;
-
-            	earth_instance.clearEarthElements();
-            	/*Populate the map with the filtered markers*/
-	            earth_instance.plotDevices_earth(filteredData,"base_station");
             }
 
             /*Resetting filter data to Empty.*/
@@ -2401,9 +2400,25 @@ function devicePlottingClass_gmap() {
         /*If no filter is applied the load all the devices*/
         else {
 
-        	if($.trim(mapPageType) == "gmap") {
+        	if($.trim(mapPageType) == "googleEarth") {
     			
-    			/*Reset markers & polyline*/
+    			/************************Google Earth Code***********************/
+
+        		/*Clear all the elements from google earth*/
+		        earth_instance.clearEarthElements();
+
+		        /*Reset Global Variables & Filters*/
+		        earth_instance.resetVariables_earth();
+
+		        /*Save updated data to global variable*/
+				data_for_filters_earth = main_devices_data_earth;
+
+		        /*create the BS-SS network on the google earth*/
+		        earth_instance.plotDevices_earth(main_devices_data_earth,"base_station");
+
+        	} else {
+
+        		/*Reset markers & polyline*/
 				gmap_self.clearGmapElements();
 
 				/*Reset Global Variables & Filters*/
@@ -2418,22 +2433,6 @@ function devicePlottingClass_gmap() {
 
 				/*create the BS-SS network on the google map*/
 	            gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
-
-        	} else {
-
-        		/************************Google Earth Code***********************/
-
-        		/*Clear all the elements from google earth*/
-		        earth_instance.clearEarthElements();
-
-		        /*Reset Global Variables & Filters*/
-		        earth_instance.resetVariables_earth();
-
-		        /*Save updated data to global variable*/
-				data_for_filters_earth = main_devices_data_earth;
-
-		        /*create the BS-SS network on the google earth*/
-		        earth_instance.plotDevices_earth(main_devices_data_earth,"base_station");
         	}
         }
     };
@@ -3710,7 +3709,7 @@ function prepare_data_for_filter() {
         filter_data_sector_ss_vendor_collection=[],
     	current_data = [];
 
-    if(window.location.pathname.indexOf("earth") > -1) {
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
 		current_data = main_devices_data_earth;
 	} else {
 		current_data = main_devices_data_gmaps;
@@ -3824,7 +3823,7 @@ function getDataForAdvanceSearch() {
 		filter_data_bs_city_collection=[],
 		current_data = [];
 
-	if(window.location.pathname.indexOf("earth") > -1) {
+	if(window.location.pathname.indexOf("googleEarth") > -1) {
 		current_data = main_devices_data_earth;
 	} else {
 		current_data = main_devices_data_gmaps;

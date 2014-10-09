@@ -66,8 +66,8 @@ get_page_status();
  */
 function getPageType() {
 
-    if(window.location.pathname.indexOf("earth") > -1) {
-        mapPageType = "earth";
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        mapPageType = "googleEarth";
         // networkMapInstance = mapsLibInstance;
     } else {
         mapPageType = "gmap";
@@ -186,7 +186,7 @@ $("#resetFilters").click(function(e) {
     
     isCallCompleted = 1;/*Remove this call if server call is started on click of reset button*/
 
-    if(window.location.pathname.indexOf("earth") > -1) {
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
 
         /***************GOOGLE EARTH CODE*******************/
         /*Clear all the elements from google earth*/
@@ -228,7 +228,7 @@ function showAdvSearch() {
 $("#setAdvSearchBtn").click(function(e) {
     showSpinner();
     advJustSearch.showNotification();
-    if(window.location.pathname.indexOf("earth") > -1) {
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
         advJustSearch.searchAndCenterData(data_for_filters_earth);
     } else {
         advJustSearch.searchAndCenterData(data_for_filters);
@@ -316,7 +316,7 @@ function removeAdvFilters() {
 
     advSearch.removeFilters();
 
-    if(window.location.pathname.indexOf("earth") > -1) {
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
         data_for_filters_earth = main_devices_data_earth;
     } else {
         data_for_filters = main_devices_data_gmaps;
@@ -333,7 +333,7 @@ $("#createPolygonBtn").click(function(e) {
     $("#resetFilters").button("loading");
     $("#showToolsBtn").removeAttr("disabled");
 
-    // if(window.location.pathname.indexOf("earth") > -1) {
+    // if(window.location.pathname.indexOf("googleEarth") > -1) {
     //     earth_instance.initPolling_earth();
     // }
 
@@ -672,7 +672,7 @@ function showToolsPanel() {
 
     $("#toolsContainerBlock").removeClass("hide");
 
-    if(window.location.pathname.indexOf("earth") > -1) {
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
 
     } else {
         google.maps.event.clearListeners(mapInstance, 'click');
@@ -684,7 +684,7 @@ function removetoolsPanel() {
     is_line_active= -1;
     is_ruler_active= -1;
 
-    if(window.location.pathname.indexOf("earth") > -1) {
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
 
     } else {
         google.maps.event.clearListeners(mapInstance, 'click');

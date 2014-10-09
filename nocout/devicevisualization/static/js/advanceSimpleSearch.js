@@ -53,7 +53,7 @@ function advanceSearchMainClass() {
     //We will remove all Setted Search Markers here in the Array from the map and then clear the Array.
     this.removeSearchMarkers= function() {
 
-        if(window.location.pathname.indexOf("earth") > -1) {
+        if(window.location.pathname.indexOf("googleEarth") > -1) {
 
             var children = ge.getFeatures().getChildNodes();
             for(var i=0;i<children.getLength();i++) { 
@@ -78,7 +78,7 @@ function advanceSearchMainClass() {
         var searchMarker, searchedInputs, isOnlyStateorCityIsApplied= false;
         search_marker_count++;
 
-        if(window.location.pathname.indexOf("earth") > -1) {
+        if(window.location.pathname.indexOf("googleEarth") > -1) {
             // Create BS placemark.
             var searchMarker = ge.createPlacemark('search_'+search_marker_count);
             // Define a custom icon.
@@ -355,14 +355,14 @@ function advanceSearchMainClass() {
         this.resetVariables();
 
         var bounds = "";
-        if(window.location.pathname.indexOf("earth") > -1) {
+        if(window.location.pathname.indexOf("googleEarth") > -1) {
             
         } else {
             bounds= new google.maps.LatLngBounds();
         }
 
         function extendBound(lat, lon) {
-            if(window.location.pathname.indexOf("earth") > -1) {
+            if(window.location.pathname.indexOf("googleEarth") > -1) {
 
                   var lookAt = ge.createLookAt('');
                   lookAt.setLatitude(lat);
@@ -384,7 +384,7 @@ function advanceSearchMainClass() {
 
                 searchedStations.push(devicesInMap[i]);
 
-                if(window.location.pathname.indexOf("earth") > -1) {
+                if(window.location.pathname.indexOf("googleEarth") > -1) {
 
                 } else {
                     bounds.extend(new google.maps.LatLng(devicesInMap[i]['data']['lat'], devicesInMap[i]['data']['lon']));
@@ -405,7 +405,7 @@ function advanceSearchMainClass() {
 
         if(this.searchedCircuitLines.length) {
             for(var i=0; i< this.searchedCircuitLines.length; i++) {
-                if(window.location.pathname.indexOf("earth") > -1) {
+                if(window.location.pathname.indexOf("googleEarth") > -1) {
 
                 } else {
                     bounds.extend(this.searchedCircuitLines[i]);
@@ -418,7 +418,7 @@ function advanceSearchMainClass() {
                 // this.searchedLinesByCircuitIDs= [];
                 this.removeSearchMarkers();
             }
-            if(window.location.pathname.indexOf("earth") > -1) {
+            if(window.location.pathname.indexOf("googleEarth") > -1) {
                 
             } else {
                 mapInstance.fitBounds(bounds);
