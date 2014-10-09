@@ -1,7 +1,7 @@
 /**
  * This library is used to show live performance of particular device & its functionality
  * @class nocout.perf.lib
- * @uses Highcharts
+ * @uses Hi
  * Coded By :- Yogender Purohit
  */
 
@@ -512,7 +512,9 @@ function nocoutPerfLib() {
 							sendAjax(getTomorrowDate(ajax_start_date), ajax_end_date);
 						}, 200);
 					} else {
-						$('#' + service_id + '_chart').highcharts().redraw();
+						if($('#' + service_id + '_chart').highcharts()) {
+							$('#' + service_id + '_chart').highcharts().redraw();
+						}
 						if (chart_instance == "" && $("#other_perf_table").length == 0) {
 							$('#' + service_id + '_chart').html(result.message);
 						}
