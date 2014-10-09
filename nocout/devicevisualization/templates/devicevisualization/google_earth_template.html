@@ -66,8 +66,6 @@
                 {% endfor %}
             </ul>
         </div>
-        <div style="position: fixed; display: block; bottom:0; right: 20px; z-index:999;background: #fff;width: auto;padding: 10px;" id="cursor_lat_long">
-        </div>
     </span>
     <!-- /DATE RANGE PICKER -->
 {% endblock %}
@@ -263,7 +261,10 @@
             </div>
         <!--SideInfo Panel End-->
         </div>
+        <div style="position: fixed; display: block; bottom:0; right: 20px; z-index:999;background: #fff;width: auto;padding: 10px;" id="cursor_lat_long">
+        </div>
     </div>
+</div>
 
     <!-- Google Map Library-->
     <script type="text/javascript"
@@ -338,7 +339,7 @@
                 }
             }
             /*Call getBasicFilters funtion to fetch & populate basic filters dropdown*/
-            networkMapInstance.getBasicFilters();
+            // networkMapInstance.getBasicFilters();
             /*
             $("#state").change(function(){
                 var state_id = $(this).val();
