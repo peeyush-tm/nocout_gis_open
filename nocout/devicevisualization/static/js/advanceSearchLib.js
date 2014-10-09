@@ -871,17 +871,21 @@ function advanceSearchClass() {
 	        /*Create a instance of networkMapClass*/
 	        gmapInstance = new devicePlottingClass_gmap();
 
-	        /*Reset markers, polyline & filters*/
-	        gmapInstance.clearGmapElements();
+	  //       /*Reset markers, polyline & filters*/
+	  //       gmapInstance.clearGmapElements();
 
-	        /*Reset Global Variables & Filters*/
-	        gmapInstance.resetVariables_gmap();
+	  //       /*Reset Global Variables & Filters*/
+	  //       gmapInstance.resetVariables_gmap();
 
-	    	/*Save filtered data in global variable*/
+			// /*Call plotDevices_gmap to plot filtered devices on google map*/
+	  //       gmapInstance.plotDevices_gmap(result_plot_devices,"base_station");
+
+
+
+	        /*Save filtered data in global variable*/
 			data_for_filters = result_plot_devices;
 
-			/*Call plotDevices_gmap to plot filtered devices on google map*/
-	        gmapInstance.plotDevices_gmap(result_plot_devices,"base_station");
+			gmapInstance.showHideMarkers_gmap(data_for_filters);
 
 	        /*Filter Line & label array as per filtered data*/
 	        gmapInstance.getFilteredLineLabel(data_for_filters);

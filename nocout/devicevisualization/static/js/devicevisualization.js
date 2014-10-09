@@ -204,16 +204,20 @@ $("#resetFilters").click(function(e) {
 
         /*Reset filter object variable*/
         appliedFilterObj_gmaps = {};
-
-        /*Reset markers, polyline & filters*/
-        networkMapInstance.clearGmapElements();
-
+        
         data_for_filters = main_devices_data_gmaps;
 
-        /*Reset Global Variables & Filters*/
-        networkMapInstance.resetVariables_gmap();            
-        /*Call the make network to create the BS-SS network on the google map*/
-        networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
+        // gmap_self.hide_all_elements_gmap();
+        gmap_self.show_all_elements_gmap();
+
+        // /*Reset markers, polyline & filters*/
+        // networkMapInstance.clearGmapElements();
+
+
+        // /*Reset Global Variables & Filters*/
+        // networkMapInstance.resetVariables_gmap();            
+        // /*Call the make network to create the BS-SS network on the google map*/
+        // networkMapInstance.plotDevices_gmap(main_devices_data_gmaps,"base_station");
     }
 });
 
