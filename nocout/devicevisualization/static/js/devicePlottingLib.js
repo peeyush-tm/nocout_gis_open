@@ -101,7 +101,12 @@ var base_url = "",
     zoomAfterRightClickComes= 10,
     fresnelData= {},
     markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}},
+    allMarkersObject_gmap= {'base_station': {}, 'path': {}, 'sub_station': {}, 'sector_device': {}, 'sector_polygon': {}},
     data_for_filters = [],
+    not_matching_data_gmap = [],
+    allMarkersArray_gmap = [],
+    filteredBsArray = [],
+    filteredSectorArray = [],
     pointAdd= -1,
     sector_MarkersArray= [],
     zoomAtWhichSectorMarkerAppears= 9,
@@ -796,6 +801,7 @@ function devicePlottingClass_gmap() {
 				bhInfo 			   : 	bs_ss_devices[i].data.param.backhual,
 				bs_name 		   : 	bs_ss_devices[i].name,
 				name 		 	   : 	bs_ss_devices[i].name,
+				filter_data 	   : 	{"bs_name" : bs_ss_devices[i].name},
 				antenna_height     : 	bs_ss_devices[i].data.antenna_height,
 				zIndex 			   : 	200,
 				optimized 		   : 	false,
@@ -833,7 +839,11 @@ function devicePlottingClass_gmap() {
 					azimuth = sector_array[j].azimuth_angle,
 					beam_width = sector_array[j].beam_width,
 					sector_color = sector_array[j].color,
-					sectorInfo = sector_array[j].info,
+					sectorInfo = {
+						"info" : sector_array[j].info,
+						"bs_name" : bs_ss_devices[i].name,
+						"sector_name" : sector_array[j].sector_configured_on
+					},
 					orientation = $.trim(sector_array[j].orientation),
 					sector_child = sector_array[j].sub_station,
 					rad = 4,
@@ -900,6 +910,7 @@ function devicePlottingClass_gmap() {
 							sectorName  		: sector_array[j].sector_configured_on,
 							device_name  		: sector_array[j].sector_configured_on,
 							name  				: bs_ss_devices[i].name,
+							filter_data 	    : {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on},
 							sector_lat  		: startEndObj["startLat"],
 							sector_lon  		: startEndObj["startLon"],
 							zIndex 				: 200,
@@ -917,6 +928,10 @@ function devicePlottingClass_gmap() {
 
 					if(sectorMarkerConfiguredOn.indexOf(sector_array[j].sector_configured_on) == -1) {
 						sector_MarkersArray.push(sector_Marker);
+						allMarkersArray_gmap.push(sector_Marker);
+						
+						allMarkersObject_gmap['sector_device']['sector_'+sector_array[j].sector_configured_on] = sector_Marker;
+
 						sectorMarkerConfiguredOn.push(sector_array[j].sector_configured_on);
 						if(sectorMarkersMasterObj[bs_ss_devices[i].name]) {
 							sectorMarkersMasterObj[bs_ss_devices[i].name].push(sector_Marker)
@@ -961,6 +976,7 @@ function devicePlottingClass_gmap() {
 				    	name 		 	 : 	ss_marker_obj.name,
 				    	bs_name 		 :  bs_ss_devices[i].name,
 				    	bs_sector_device :  sector_array[j].sector_configured_on,
+				    	filter_data 	 :  {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "ss_name" : ss_marker_obj.name},
 				    	device_name 	 : 	ss_marker_obj.device_name,
 				    	zIndex 			 : 	200,
 				    	hasPerf 		 :  0,
@@ -1005,6 +1021,10 @@ function devicePlottingClass_gmap() {
 				    /*Add the master marker to the global master markers array*/
 			    	masterMarkersObj.push(ss_marker);
 
+			    	allMarkersObject_gmap['sub_station']['ss_'+ss_marker_obj.name] = ss_marker;
+
+			    	allMarkersArray_gmap.push(ss_marker);
+
 			    	/*Add parent markers to the OverlappingMarkerSpiderfier*/
 				    oms_ss.addMarker(ss_marker);
 
@@ -1039,6 +1059,10 @@ function devicePlottingClass_gmap() {
 				    	var ss_link_line = gmap_self.createLink_gmaps(startEndObj,linkColor,base_info,ss_info,sect_height,sector_array[j].sector_configured_on,ss_marker_obj.name,bs_ss_devices[i].name);
 				    	ssLinkArray.push(ss_link_line);
 				    	ssLinkArray_filtered.push(ss_link_line);
+
+				    	allMarkersObject_gmap['path']['line_'+ss_marker_obj.name] = ss_link_line;
+
+				    	allMarkersArray_gmap.push(ss_link_line);
 	    			}
 
 				}
@@ -1046,6 +1070,10 @@ function devicePlottingClass_gmap() {
 
     		/*Add the master marker to the global master markers array*/
 	    	masterMarkersObj.push(bs_marker);
+
+	    	allMarkersObject_gmap['base_station']['bs_'+bs_ss_devices[i].name] = bs_marker;
+
+	    	allMarkersArray_gmap.push(bs_marker);
 
 	    	/*Add parent markers to the OverlappingMarkerSpiderfier*/
 		    oms.addMarker(bs_marker);
@@ -1174,6 +1202,7 @@ function devicePlottingClass_gmap() {
 			ss_height 		: sect_height,
 			sector_lat 		: startEndObj.sectorLat,
 			sector_lon 		: startEndObj.sectorLon,
+			filter_data 	: {"bs_name" : bs_name, "sector_name" : sector_name, "ss_name" : ss_name},
 			nearLat 		: startEndObj.nearEndLat,
 			nearLon 		: startEndObj.nearEndLon,
 			sectorName 	    : sector_name,
@@ -1368,9 +1397,10 @@ function devicePlottingClass_gmap() {
 			strokeOpacity    : 1,
 			fillOpacity 	 : 0.5,
 			strokeWeight     : sWidth,
-			dataset 	     : sectorInfo,
+			dataset 	     : sectorInfo.info,
 			startLat 	     : startLat,
 			startLon 	     : startLon,
+			filter_data 	 : {"bs_name" : sectorInfo.bs_name, "sector_name" : sectorInfo.sector_name},
 			bhInfo 			 : [],
 			child_ss 	     : sector_child,
 			polarisation 	 : polarisation,
@@ -1381,6 +1411,10 @@ function devicePlottingClass_gmap() {
         /*Push polygon to an array*/
 		sectorArray.push(poly);
         poly.setMap(mapInstance);
+        allMarkersArray_gmap.push(poly);
+
+        allMarkersObject_gmap['sector_polygon']['poly_'+sectorInfo.sector_name] = poly;
+
 		if(sector_child) {
 			for(var i=0;i<sector_child.length;i++) {
 				markersMasterObj['Poly'][sector_child[i]["device_name"]]= poly;
@@ -1404,7 +1438,7 @@ function devicePlottingClass_gmap() {
 			plottedSS = [];
 			pathLineArray = [];
 
-			gmap_self.plotDevices_gmap(this,"sub_station");
+			// gmap_self.plotDevices_gmap(this,"sub_station");
 
 			/*Call the function to create info window content*/
 			var content = gmap_self.makeWindowContent(poly);
@@ -2253,6 +2287,10 @@ function devicePlottingClass_gmap() {
 		var current_data = [],
 			filteredData = [];
 
+		/*Reset global variables*/
+		filteredBsArray = [];
+		filteredSectorArray = [];
+
 		if(page_type && page_type == 'googleEarth') {
 			current_data = main_devices_data_earth;
 		} else {
@@ -2275,11 +2313,16 @@ function devicePlottingClass_gmap() {
                     (filtersArray['state'] ? filtersArray['state'].toLowerCase() == current_data[i].data.state.toLowerCase(): true))
                 {
                 	bs_data.data.param.sector.push(sector);
+                	
+                	/*Add Filtered sector name to array*/
+                	filteredSectorArray.push(sector.sector_configured_on);
                 }
             }
 
             if ( bs_data.data.param.sector.length >0){
-                filteredData.push(bs_data)
+                filteredData.push(bs_data);
+                /*Add Filtered BS name to array*/
+                filteredBsArray.push(current_data[i].name);
             }
 
         }
@@ -2305,6 +2348,8 @@ function devicePlottingClass_gmap() {
 	            masterMarkersObj = [];
 	            slaveMarkersObj = [];
 
+	            gmap_self.hide_all_elements_gmap();
+
 	            /*Filter Line & label array as per filtered data*/
 	            gmap_self.getFilteredLineLabel([]);
             }
@@ -2322,26 +2367,31 @@ function devicePlottingClass_gmap() {
 	            earth_instance.plotDevices_earth(filteredData,"base_station");
 
             } else {
-            	/*Reset the markers, polyline & filters*/
-	            gmap_self.clearGmapElements();
+					
+				data_for_filters = filteredData;
 
-	            sector_MarkersArray = [];
-				sectorMarkersMasterObj = {};
-				sectorMarkerConfiguredOn = [];
+            	gmap_self.showHideMarkers_gmap(data_for_filters);
 
-	            masterMarkersObj = [];
-	            slaveMarkersObj = [];
-	            pollableDevices = [];
+    //         	/*Reset the markers, polyline & filters*/
+	   //          gmap_self.clearGmapElements();
 
-	            // showRequiredSectorMarker(filteredData);
+	   //          sector_MarkersArray = [];
+				// sectorMarkersMasterObj = {};
+				// sectorMarkerConfiguredOn = [];
 
-	            tempFilteredData= filteredData;
-	            isCallCompleted = 1;
+	   //          masterMarkersObj = [];
+	   //          slaveMarkersObj = [];
+	   //          pollableDevices = [];
 
-	            data_for_filters = filteredData;
+	   //          // showRequiredSectorMarker(filteredData);
+
+	   //          tempFilteredData= filteredData;
+	   //          isCallCompleted = 1;
+
+	   //          data_for_filters = filteredData;
 	            
-	            /*Populate the map with the filtered markers*/
-	            gmap_self.plotDevices_gmap(filteredData,"base_station");
+	   //          /*Populate the map with the filtered markers*/
+	   //          gmap_self.plotDevices_gmap(filteredData,"base_station");
 
 	            /*Filter Line & label array as per filtered data*/
 	            gmap_self.getFilteredLineLabel(filteredData);
@@ -2418,21 +2468,23 @@ function devicePlottingClass_gmap() {
 
         	} else {
 
-        		/*Reset markers & polyline*/
-				gmap_self.clearGmapElements();
+        		gmap_self.show_all_elements_gmap();
 
-				/*Reset Global Variables & Filters*/
-				gmap_self.resetVariables_gmap();
-
-				/*Save updated data to global variable*/
+        		/*Save updated data to global variable*/
 				data_for_filters = main_devices_data_gmaps;
 
 				gmap_self.getFilteredLineLabel(data_for_filters);
 
 				ssLinkArray_filtered = ssLinkArray;
 
-				/*create the BS-SS network on the google map*/
-	            gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
+    //     		/*Reset markers & polyline*/
+				// gmap_self.clearGmapElements();
+
+				// /*Reset Global Variables & Filters*/
+				// gmap_self.resetVariables_gmap();
+
+				// /*create the BS-SS network on the google map*/
+	   //          gmap_self.plotDevices_gmap(main_devices_data_gmaps,"base_station");
         	}
         }
     };
@@ -3412,6 +3464,112 @@ function devicePlottingClass_gmap() {
 		pathArray = [];
 		polygon = "";
 		pointsArray = [];
+	};
+
+	/**
+	 * This function hide all items from google map
+	 * @method hide_all_elements_gmap
+	 */
+	this.hide_all_elements_gmap = function() {
+		/*Clear all everything from map*/
+		$.grep(allMarkersArray_gmap,function(marker) {
+			marker.setMap(null);
+		});
+
+		/*Clear master marker cluster objects*/
+		if(masterClusterInstance != "") {
+			masterClusterInstance.clearMarkers();
+		}
+	}
+
+	/**
+	 * This function show all items from google map
+	 * @method show_all_elements_gmap
+	 */
+	this.show_all_elements_gmap = function() {
+
+		/*Clear all everything from map*/
+		$.grep(allMarkersArray_gmap,function(marker) {
+			marker.setMap(mapInstance);
+		});
+
+		/*Clear master marker cluster objects*/
+		if(masterClusterInstance != "") {
+			masterClusterInstance.clearMarkers();
+		}
+		/*Cluster options object*/
+        var clusterOptions = {gridSize: 70, maxZoom: 8};
+        /*Add the master markers to the cluster MarkerCluster object*/
+        masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
+
+        $("#resetFilters").button("complete");
+	}
+
+	/**
+	 * This function show marker which satisfied the filtered data condition
+	 * @method showHideMarkers_gmap
+	 * @param {Array} dataArray, It contains filtered data array
+	 */
+	this.showHideMarkers_gmap = function(dataArray) {
+		
+		var currently_plotted_bs_ss_markers = [];
+
+		if(dataArray && dataArray.length > 0) {
+			gmap_self.hide_all_elements_gmap();
+		}
+
+		for(var i=0;i<dataArray.length;i++) {
+			
+			var sectorsArray = dataArray[i].data.param.sector;
+			for(var j=0;j<sectorsArray.length;j++) {
+
+				/*Check that the current sector name is present in filtered data or not*/
+				var subStationsArray = sectorsArray[j].sub_station;
+
+				for(var k=0;k<subStationsArray.length;k++) {
+					/*BS, SS & Sectors from filtered data array*/
+					var ssName = subStationsArray[k].name ? $.trim(subStationsArray[k].name) : "",
+						sectorName = sectorsArray[j].sector_configured_on ? $.trim(sectorsArray[j].sector_configured_on) : "";
+						bsName = dataArray[i].name ? $.trim(dataArray[i].name) : "",
+						bs_marker = allMarkersObject_gmap['base_station']["bs_"+bsName],
+						ss_marker = allMarkersObject_gmap['sub_station']["ss_"+ssName],
+						path_marker = allMarkersObject_gmap['path']["line_"+ssName],
+						sector_device = allMarkersObject_gmap['sector_device']["sector_"+sectorName],
+						sector_polygon = allMarkersObject_gmap['sector_polygon']["poly_"+sectorName];
+
+					if(bs_marker) {
+						bs_marker.setMap(mapInstance);
+						currently_plotted_bs_ss_markers.push(bs_marker);
+					}
+
+					if(ss_marker) {
+						ss_marker.setMap(mapInstance);
+						currently_plotted_bs_ss_markers.push(ss_marker);
+					}
+
+					if(path_marker) {
+						path_marker.setMap(mapInstance);
+					}
+
+					if(sector_device) {
+						sector_device.setMap(mapInstance);
+					}
+
+					if(sector_polygon) {
+						sector_polygon.setMap(mapInstance);
+					}
+				}
+			}
+		}
+
+		/*Clear master marker cluster objects*/
+		if(masterClusterInstance != "") {
+			masterClusterInstance.clearMarkers();
+		}
+		/*Cluster options object*/
+        var clusterOptions = {gridSize: 70, maxZoom: 8};
+        /*Add the master markers to the cluster MarkerCluster object*/
+        masterClusterInstance = new MarkerClusterer(mapInstance, currently_plotted_bs_ss_markers, clusterOptions);
 	};
 	
     /**
