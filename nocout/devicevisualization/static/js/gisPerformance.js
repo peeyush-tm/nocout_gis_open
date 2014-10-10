@@ -114,11 +114,19 @@ function GisPerformance() {
         counter++;
         //If all calls has been done,
         if (counter > this.bsLength) {
-            //5 Minutes Timeout
+            //1 Minutes Timeout
             setTimeout(function () {
                 //Start Performance Again
-                if (this.bsNamesList && this.bsNamesList.length > 0) {
-                    gisPerformance_this.start(this.bsNamesList);
+                var bs_list = getMarkerInCurrentBound();
+                if(bs_list.length > 0 && isCallCompleted == 1) {
+                    if(recallPerf != "") {
+                        clearTimeout(recallPerf);
+                        recallPerf = "";
+                    }
+                    /*Reset global variable when all calls completed*/
+                    current_bs_list = [];
+                    /*Start calls*/
+                    gisPerformance_this.start(bs_list);
                 }
             }, 60000);
             return;
