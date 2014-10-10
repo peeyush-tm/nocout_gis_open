@@ -1090,7 +1090,7 @@ def delete_device_from_nms_core(request, device_id):
 
 
 @dajaxice_register(method='GET')
-def sync_device_with_nms_core(request, device_id):
+def sync_device_with_nms_core(request):
     """Sync devices configuration to nms core
 
     Args:
@@ -1115,7 +1115,7 @@ def sync_device_with_nms_core(request, device_id):
     result['data']['meta'] = ''
     device_data = {'mode': 'sync'}
     # get device
-    device = Device.objects.get(pk=device_id)
+    # device = Device.objects.get(pk=device_id)
     # site to which configuration needs to be pushed
     master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
     # url for nocout.py
