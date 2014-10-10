@@ -220,6 +220,7 @@ def prepare_result(base_station_object):
     base_station_info = {
         'id': base_station.id,
         'name': base_station.name,
+        'alias': base_station.name,
         'data': {
             'lat': base_station.latitude,
             'lon': base_station.longitude,
