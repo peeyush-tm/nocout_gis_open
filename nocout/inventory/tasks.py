@@ -3064,7 +3064,7 @@ def create_device(device_payload):
     if 'ip' in device_payload.keys():
         ip_address = device_payload['ip'] if device_payload['ip'] else ""
     if 'mac' in device_payload.keys():
-        mac_address = device_payload['mac'] if device_payload['mac'] else ""
+        mac_address = sanitize_mac_address(device_payload['mac']) if device_payload['mac'] else ""
     if 'state' in device_payload.keys():
         state = device_payload['state'] if device_payload['state'] else ""
     if 'city' in device_payload.keys():
@@ -4050,6 +4050,7 @@ def create_basestation(basestation_payload):
     if name:
         if name not in ['NA', 'na', 'N/A', 'n/a']:
             # ---------------------------- UPDATING BASE STATION -----------------------------
+            print "************************************ updating base station - ", name
             try:
                 # update basestation if it exists in database
                 basestation = BaseStation.objects.get(name=name)
@@ -4182,6 +4183,7 @@ def create_basestation(basestation_payload):
             except Exception as e:
                 # ---------------------------- CREATING BASE STATION -------------------------------
                 # create basestation if it doesn't exist in database
+                print "************************************ create base station - ", name
                 basestation = BaseStation()
                 # name
                 if name:
@@ -5446,3 +5448,12 @@ def get_city(state=None, city_name=None):
         if len(city_objects):
             return city_objects[0].id
     return None
+
+
+def sanitize_mac_address(mac=None):
+    mac = ''.join(e for e in mac if e.isalnum()).lower()
+    if len(mac) == 12:
+        mac = ':'.join(mac[i:i+2] for i in range(0, len(mac), 2))
+    else:
+        mac = ""
+

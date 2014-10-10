@@ -1,9 +1,11 @@
 from django.conf.urls import patterns, url
 from inventory import views
+from django.contrib.auth.decorators import permission_required
+
 
 urlpatterns = patterns('',
                        url(r'^$', views.GISInventoryBulkImportList.as_view(), name='gis_inventory_bulk_import_list'),
-                       url(r'^gis_inventory/$', views.GISInventoryBulkImportView.as_view(),
+                       url(r'^gis_inventory/$', permission_required('is_superuser')(views.GISInventoryBulkImportView.as_view()),
                            name='gis_inventory_bulk_import'),
                        url(r'^gis_inventory_validator/$', views.GISInventoryBulkImportView.as_view(),
                            name='gis_inventory_validator'),
