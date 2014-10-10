@@ -5456,4 +5456,5 @@ def sanitize_mac_address(mac=None):
         mac = ':'.join(mac[i:i+2] for i in range(0, len(mac), 2))
     else:
         mac = ""
+    return mac
 
