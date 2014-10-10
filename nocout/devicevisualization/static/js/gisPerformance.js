@@ -187,13 +187,10 @@ function GisPerformance() {
 
                 var deviceSectorJSon = {};
 
-                var sector_marker = allMarkersObject_gmap['sector_device']['sector_'+$.trim(bsGmapMarker["child_ss"][i].sector_configured_on)];
-                var sector_poly_marker = allMarkersObject_gmap['sector_polygon']['poly_'+$.trim(bsGmapMarker["child_ss"][i].sector_configured_on)];
-                var hasSector = 0;
+                var sector_marker = allMarkersObject_gmap['sector_device']['sector_'+$.trim(bsGmapMarker["child_ss"][i].sector_configured_on)],
+                    sector_poly_marker = allMarkersObject_gmap['sector_polygon']['poly_'+$.trim(bsGmapMarker["child_ss"][i].sector_configured_on)];
 
                 if((sector_marker && (sector_marker.map != null && sector_marker.map != "")) || (sector_poly_marker && (sector_poly_marker.map != null && sector_poly_marker.map != ""))) {
-                        
-                    hasSector = 1;
 
                     //Create deviceSectorJson with device_name, device_id, empty performance_data and sub_station array
                     deviceSectorJSon = {
@@ -202,12 +199,6 @@ function GisPerformance() {
                         "performance_data": {"frequency": "", "pl": "", "color": "", "performance_parameter": "", "performance_value": "", "performance_icon": ""},
                         "sub_station": []
                     };
-                } else {
-                    hasSector = 0;
-                }
-
-                if(hasSector === 1) {
-
                     //Loop through all the SubStations in Device
                     for (var j = 0; j < bsGmapMarker["child_ss"][i]["sub_station"].length; j++) {
                                             
@@ -227,7 +218,6 @@ function GisPerformance() {
                     //Push DATA sector to the deviceSectorJSon created.
                     initialdata["param"]["sector"].push(deviceSectorJSon);
                 }
-
             }
         }
         //Return initialData
@@ -256,14 +246,10 @@ function GisPerformance() {
                 //Loop through sub_station of devices
                 for (var j = 0; j < bsMarkerObject['child_ss'][i]['sub_station'].length; j++) {
 
-
-                    var sector_marker = allMarkersObject_gmap['sector_device']['sector_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on)];
-                    var sector_poly_marker = allMarkersObject_gmap['sector_polygon']['poly_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on)];
-                    var hasSector = 0;
+                    var sector_marker = allMarkersObject_gmap['sector_device']['sector_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on)],
+                        sector_poly_marker = allMarkersObject_gmap['sector_polygon']['poly_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on)];
 
                     if((sector_marker && (sector_marker.map != null && sector_marker.map != "")) || (sector_poly_marker && (sector_poly_marker.map != null && sector_poly_marker.map != ""))) {
-                        
-                        hasSector = 1;
 
                         var halfPt;
                         //Step no. 3 ===> Fetch PerformanceValue for various key from GisData JSon
@@ -392,24 +378,12 @@ function GisPerformance() {
 
                         //If substation icon is present
                         if (subStationIcon) {
-                            console.log("----------------------------------");
-                            console.log(subStationIcon);
-                            console.log(subStationMarker);
-                            console.log("----------------------------------");
                             //Update icon, oldIcon and clusterIcon for the SubStation Marker
-                            subStationMarker.setOptions({
-                                "icon" : createGoogleMarker(base_url + '/' + subStationIcon, subStationMarker),
-                            });
-                            console.log("----------------------------------");
-                            console.log(subStationMarker);
-                            console.log("----------------------------------");
-                            // subStationMarker.setIcon(createGoogleMarker(base_url + '/' + subStationIcon, subStationMarker));
-                            // subStationMarker.oldIcon = (createGoogleMarker(base_url + '/' + subStationIcon, subStationMarker));
-                            // subStationMarker.clusterIcon = (createGoogleMarker(base_url + '/' + subStationIcon, subStationMarker));
+                            subStationMarker.setIcon(createGoogleMarker(base_url + '/' + subStationIcon, subStationMarker));
+                            subStationMarker.oldIcon = (createGoogleMarker(base_url + '/' + subStationIcon, subStationMarker));
+                            subStationMarker.clusterIcon = (createGoogleMarker(base_url + '/' + subStationIcon, subStationMarker));
                         }
 
-                    } else {
-                        hasSector = 0;
                     }
                 }
 
@@ -432,7 +406,7 @@ function GisPerformance() {
             }
         } catch (exception) {
             //Pass
-            console.log(exception);
+            // console.log(exception);
         }
     }
 
