@@ -1,7 +1,7 @@
 import logging
 from inventory.models import BaseStation, Customer, Antenna
 from device.models import DeviceType, DeviceVendor, DeviceTechnology, City
-from random import randint
+from random import randint, uniform
 logger = logging.getLogger(__name__)
 
 def tech_marker_url(device_type, techno, ms=True):
@@ -200,9 +200,9 @@ def prepare_backhaul(backhaul):
         return []
 
 
-def prepare_result(base_station_id):
+def prepare_result(base_station_object):
 
-    base_station = BaseStation.objects.prefetch_related('sector', 'backhaul').filter(id=base_station_id)[0]
+    base_station = base_station_object
     #BaseStation.objects.get(id=base_station_id).prefetch_all()
     sectors = base_station.sector.filter(sector_configured_on__is_deleted = 0)
     backhaul = base_station.backhaul
@@ -220,6 +220,7 @@ def prepare_result(base_station_id):
     base_station_info = {
         'id': base_station.id,
         'name': base_station.name,
+        'alias': base_station.name,
         'data': {
             'lat': base_station.latitude,
             'lon': base_station.longitude,
@@ -260,7 +261,7 @@ def prepare_result(base_station_id):
                     else 'rgba(74,72,94,0.58)',
             'radius': sector.frequency.frequency_radius
                 if (sector.frequency and sector.frequency.frequency_radius)
-                else 0,
+                else uniform(0,3),
             #sector.cell_radius if sector.cell_radius else 0,
             'azimuth_angle': sector.antenna.azimuth_angle if sector.antenna else 0,
             'beam_width': sector.antenna.beam_width if sector.antenna else 0,
@@ -285,6 +286,12 @@ def prepare_result(base_station_id):
                  "title": "Device ID",
                  "show": 0,
                  "value": sector.sector_configured_on.id
+             },
+             {
+                 "name": "device_mac",
+                 "title": "Device MAC",
+                 "show": 0,
+                 "value": sector.sector_configured_on.mac_address
              }
 
             ],
@@ -450,7 +457,18 @@ def prepare_result(base_station_id):
                                 'title': 'SS IP',
                                 'show': 1,
                                 'value': substation_device.ip_address if substation_device.ip_address else 'N/A'
-
+                            },
+                            {
+                                'name': 'ss_mac',
+                                'title': 'SS MAC',
+                                'show': 0,
+                                'value': substation_device.mac_address if substation_device.mac_address else 'N/A'
+                            },
+                            {
+                                'name': 'ss_device_id',
+                                'title': 'SS Device ID',
+                                'show': 0,
+                                'value': substation_device.id if substation_device.id else 'N/A'
                             },
                             {
                                 'name': 'antenna_type',
@@ -541,7 +559,7 @@ def prepare_result(base_station_id):
                         'name': 'customer_name',
                         'title': 'Customer Name',
                         'show': 1,
-                        'value': Customer.objects.get(id= substation.circuit_set.values_list('customer_id', flat=True)[0]).name \
+                        'value': Customer.objects.get(id= substation.circuit_set.values_list('customer_id', flat=True)[0]).alias \
                             if substation.circuit_set.values_list('customer_id', flat=True)[0] else 'N/A'
                     },
                     {
