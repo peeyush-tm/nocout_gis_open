@@ -104,6 +104,14 @@ class Gis_Map_Performance_Data(View):
 
             return HttpResponse(json.dumps({'result':'No Performance Data'}))
 
+        def tech_info(self, device_technology):
+            """
+
+            :param device_technology: technology for the device
+            :return: the list of data sources to be checked
+            """
+            return []
+
         def get_device_performance(self, device_name):
             device_performance_value = ''
             device_frequency = ''
