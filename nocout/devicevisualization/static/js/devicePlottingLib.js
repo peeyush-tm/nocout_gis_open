@@ -11,7 +11,7 @@ var base_url = "",
 	pathConnector = "",
 	infowindow = "",	
 	devicesObject = {},
-	tech_vendor_obj = {};
+	tech_vendor_obj = {},
 	all_vendor_array = [],
 	plottedSS = [],
 	metaData = {},
@@ -179,9 +179,9 @@ function prepare_oms_object(oms_instance) {
 				var sectorMarkersAtThePoint = sectorMarkersMasterObj[marker.name];
 				if(sectorMarkersAtThePoint && sectorMarkersAtThePoint.length) {
 					for(var j=0; j< sectorMarkersAtThePoint.length; j++) {
-						sectorMarker= sectorMarkersAtThePoint[j].setMap(mapInstance);
+						sectorMarker = sectorMarkersAtThePoint[j].setMap(mapInstance);
 						sectorMarkersInMap.push(sectorMarker);
-						sectorMarkerOms= oms.addMarker(sectorMarkersAtThePoint[j]);
+						sectorMarkerOms = oms.addMarker(sectorMarkersAtThePoint[j]);
 						sectorOmsMarkers.push(sectorMarkerOms);
 					}
 				}
@@ -216,12 +216,13 @@ function prepare_oms_object(oms_instance) {
 		for(var i=0;i<e.length;i++) {
 			/*Change the icon of marker*/
 			e[i].setOptions({"icon":e[i].oldIcon});
+
 			for(var j=0;j<ssLinkArray.length;j++) {
+
 				var pt_type = $.trim(e[i].pointType);
 				if(pt_type == "sub_station") {
 					if($.trim(ssLinkArray[j].ssName) == $.trim(e[i].name)) {
 						var pathArray = [];
-
 						pathArray.push(new google.maps.LatLng(ssLinkArray[j].bs_lat,ssLinkArray[j].bs_lon));						
 						pathArray.push(new google.maps.LatLng(e[i].position.lat(),e[i].position.lng()));
 						ssLinkArray[j].setPath(pathArray);
@@ -281,7 +282,7 @@ function prepare_oms_object(oms_instance) {
         		} else if(pt_type == "base_station") {
         			if($.trim(ssLinkArray[j].bsName) == $.trim(e[i].name)) {
         				var pathArray = [];
-        				pathArray.push(new google.maps.LatLng(e[i].ptLat,e[i].ptLon));
+        				pathArray.push(new google.maps.LatLng(ssLinkArray[j].bs_lat,ssLinkArray[j].bs_lon));
         				pathArray.push(new google.maps.LatLng(ssLinkArray[j].ss_lat,ssLinkArray[j].ss_lon));
         				ssLinkArray[j].setPath(pathArray);
         			}
@@ -421,7 +422,8 @@ function devicePlottingClass_gmap() {
             // });
 
             google.maps.event.addListener(mapInstance, 'idle', function() {
-            	setTimeout(function() {
+
+        		setTimeout(function() {
             		var bs_list = getMarkerInCurrentBound();
 	            	if(bs_list.length > 0 && isCallCompleted == 1) {
 	            		if(recallPerf != "") {
@@ -828,11 +830,11 @@ function devicePlottingClass_gmap() {
 				}
 				if(tech_vendor_obj[sector_array[j].technology].indexOf(sector_array[j].vendor) == -1) {
 					tech_vendor_obj[sector_array[j].technology].push(sector_array[j].vendor);
-				}				
+				}
 
 				if(all_vendor_array.indexOf(sector_array[j].vendor) == -1) {
 					all_vendor_array.push(sector_array[j].vendor); 
-				}				
+				}
 
 				var lat = bs_ss_devices[i].data.lat,
 					lon = bs_ss_devices[i].data.lon,
@@ -2261,7 +2263,6 @@ function devicePlottingClass_gmap() {
 		for(var i=0; i< labelsArray.length; i++) {
 			labelsArray[i].hide();
 		}
-
 		for(var j=0; j< labelsArray_filtered.length; j++) {
 			labelsArray_filtered[j].show();
 		}
@@ -2372,6 +2373,9 @@ function devicePlottingClass_gmap() {
 
             	gmap_self.showHideMarkers_gmap(data_for_filters);
 
+            	/*Filter Line & label array as per filtered data*/
+	            gmap_self.getFilteredLineLabel(data_for_filters);
+
     //         	/*Reset the markers, polyline & filters*/
 	   //          gmap_self.clearGmapElements();
 
@@ -2387,14 +2391,9 @@ function devicePlottingClass_gmap() {
 
 	   //          tempFilteredData= filteredData;
 	   //          isCallCompleted = 1;
-
-	   //          data_for_filters = filteredData;
 	            
 	   //          /*Populate the map with the filtered markers*/
 	   //          gmap_self.plotDevices_gmap(filteredData,"base_station");
-
-	            /*Filter Line & label array as per filtered data*/
-	            gmap_self.getFilteredLineLabel(filteredData);
             }
 
             /*Resetting filter data to Empty.*/
@@ -3814,11 +3813,7 @@ function devicePlottingClass_gmap() {
                 for(var k=0;k<ss_data.length;k++) {
                 	var ssName = $.trim(ss_data[k].name),
                 		bsName = $.trim(filteredDataArray[i].name),
-            			sectorName = $.trim(sector.sector_configured_on),
-            			bsLat = +(filteredDataArray[i].data.lat),
-            			bsLon = +(filteredDataArray[i].data.lon),
-        				ssLat = +(ss_data[k].data.lat),
-        				ssLon = +(ss_data[k].data.lon);
+            			sectorName = $.trim(sector.sector_configured_on);
 
             		/*Loop For Connection Lines*/
         			for(var l=0;l<ssLinkArray.length;l++) {
@@ -3833,9 +3828,10 @@ function devicePlottingClass_gmap() {
                         if (move_listener_obj) {
                             var keys_array = Object.keys(move_listener_obj);
                             for(var z=0;z<keys_array.length;z++) {
-                                if(typeof move_listener_obj[keys_array[z]] === 'object') {
-                                   if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
-                                        if (($.trim(move_listener_obj[keys_array[z]]["name"]) == ssName) && ($.trim(move_listener_obj[keys_array[z]]["bs_name"]) == bsName)) {
+                            	var label_marker = move_listener_obj[keys_array[z]];
+                                if(typeof label_marker === 'object') {
+                                   if((label_marker && label_marker["name"]) && (label_marker && label_marker["bs_name"])) {
+                                        if (($.trim(label_marker.filter_data.ss_name) == ssName) && ($.trim(label_marker.filter_data.bs_name) == bsName) && ($.trim(label_marker.filter_data.sector_name) == sectorName) ) {
                                             filtered_label.push(labelsArray[x]);
                                         }
                                    }
@@ -4119,7 +4115,7 @@ function getMarkerInCurrentBound() {
         if(markersMasterObj['BS'].hasOwnProperty(key)) {
             var markerVisible = mapInstance.getBounds().contains(markersMasterObj['BS'][key].getPosition());
             if(markerVisible) {
-            	if(markersMasterObj['BS'][key].map != null) {
+            	if(markersMasterObj['BS'][key].map != null && markersMasterObj['BS'][key].map != "") {
             		bsMarkersInBound.push(markersMasterObj['BS'][key]['name']);
             	}                
             }

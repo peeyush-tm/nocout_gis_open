@@ -355,12 +355,20 @@ $("#createPolygonBtn").click(function(e) {
 
 $("#tech_send").click(function(e) {
 
-    networkMapInstance.fetchPollingTemplate_gmap();
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        earth_instance.fetchPollingTemplate_earth();
+    } else {
+        networkMapInstance.fetchPollingTemplate_gmap();
+    }
 });
 
 $("#fetch_polling").click(function(e) {
 
-    networkMapInstance.getDevicesPollingData();
+    if(window.location.pathname.indexOf("googleEarth") > -1) {
+        
+    } else {
+        networkMapInstance.getDevicesPollingData();
+    }
 });
 
 /*Change event on polling technology dropdown*/

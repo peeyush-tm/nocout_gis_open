@@ -82,7 +82,7 @@
          */
 
         function validateRangeForm() {
-	hide_error_messages()
+        	hide_error_messages()
 
             var error_obj = {},
                 range_bug_array = [],
@@ -183,7 +183,6 @@
         }
 
         function hide_error_messages() {
-            alert();
             $('.col-md-4.help_text').each(function(i, el) {
                 $(el).html('');
             })
