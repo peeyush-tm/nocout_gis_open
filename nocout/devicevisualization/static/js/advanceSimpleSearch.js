@@ -167,8 +167,10 @@ function advanceSearchMainClass() {
                         formElement+= '<select multiple class="multiSelectBox col-md-12" id="search_'+currentItem.key+'">';
                         for(j=0; j< currentItem["values"].length; j++) {
                             if(currentItem["key"]=== "sector_configured_on") {
-                                var s= currentItem["values"][j]["value"];
-                                formElement+= '<option value="'+s+'">'+s+'</option>';
+                                var sector_config_val = currentItem["values"][j]["value"];
+                                formElement+= '<option value="'+sector_config_val+'">'+sector_config_val+'</option>';
+                            } else if(currentItem["key"]=== "name") {
+                                formElement+= '<option value="'+currentItem["values"][j].value+'">'+currentItem["values"][j].alias+'</option>';
                             } else {
                                 formElement+= '<option value="'+currentItem["values"][j].value+'">'+currentItem["values"][j].value+'</option>';
                             }

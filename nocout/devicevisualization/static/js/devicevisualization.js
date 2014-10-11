@@ -1,4 +1,3 @@
-
 var mapPageType = "",
     hasAdvFilter = 0,
     hasSelectDevice = 0,
@@ -82,28 +81,22 @@ $("#state").change(function(e) {
 
     getPageType();
 
-    var state_name = $("#state option:selected").text(),
-        state_id = $("#state").val();
+    var state_id = $(this).val(),
+        state_name= $('#state option:selected').text();
 
-    /*Code to show the cities in city dropdown as per selected state*/
-    $("#city").val("");
-    /*Loop on city options*/
-    $("#city option").each(function(i, el) {
-        var state_name_in_city= $(el).attr('state_id');
-        if(state_name_in_city) {            
-            if(state_name_in_city.toLowerCase() == state_name.toLowerCase()) {
-                $(el).show();
-            } else {
-                $(el).hide();
-            }
-        }
-    });
-
+    var city_array = [];
     if(state_id == "") {
-        $("#city option").each(function(i, el) {
-            $(el).show();
-        });
+        city_array = all_cities_array;
+    } else {
+        city_array = state_city_obj[$.trim(state_name)];
     }
+
+    var city_option = "<option value=''> Select City</option>";
+    for(var i=0;i<city_array.length;i++) {
+        city_option += "<option value='"+ i+1 +"'> "+city_array[i]+"</option>";
+    }
+
+    $("#city").html(city_option);
 
     networkMapInstance.makeFiltersArray(mapPageType);
 });
@@ -112,10 +105,6 @@ $("#state").change(function(e) {
 $("#city").change(function(e) {
 
     getPageType();
-    if ($(this).val() != ""){
-        var state_name = $("#city :selected").attr("state_id");
-        $("#state").val(state_name);
-    }
     networkMapInstance.makeFiltersArray(mapPageType);
 });
 
@@ -130,27 +119,11 @@ $("#vendor").change(function(e) {
 $("#technology").change(function(e) {
 
     getPageType();
-    var tech_id = $(this).val();
-    var tech_value= $('#technology option:selected').text();
+    var tech_id = $(this).val(),
+        tech_value= $('#technology option:selected').text();
 
-    // $("#vendor option").each(function(i, el) {
-    //     var tech_name= $(el).attr('tech_id');
-    //     //skip out default value
-    //     if(tech_value) {
-    //         if(tech_name) {
-    //             if(tech_name.toLowerCase()== tech_value.toLowerCase()) {
-    //                 $(el).show();
-    //             } else {
-    //                 $(el).hide();
-    //             }
-    //         }
-    //     }
-    // });
     var vendor_array = [];
     if(tech_id == "") {
-        // $("#vendor option").each(function(i, el) {
-        //     $(el).show();
-        // });
         vendor_array = all_vendor_array;
     } else {
         vendor_array = tech_vendor_obj[$.trim(tech_value)];
@@ -377,12 +350,14 @@ $("#polling_tech").change(function(e) {
     networkMapInstance.initLivePolling();
 });
 
+/*When "Tabular View" button for polling widget clicked*/
+$("#polling_tabular_view").click(function(e) {
+
+    networkMapInstance.show_polling_datatable();
+});
+
 /*triggers when clear selection button is clicked*/
 $("#clearPolygonBtn").click(function(e) {
-
-    // if(!($("#selectDeviceContainerBlock").hasClass("hide"))) {
-    //     $("#selectDeviceContainerBlock").addClass("hide");
-    // }
 
     networkMapInstance.clearPolygon();
     hasSelectDevice = 0;

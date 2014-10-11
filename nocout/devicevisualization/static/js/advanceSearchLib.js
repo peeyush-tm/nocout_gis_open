@@ -426,77 +426,10 @@ function advanceSearchClass() {
                 $("#filter_"+lastSelectedValues[k].field).val(lastSelectedValues[k].value);
             }
         }
-    /*Hide the spinner*/
-    hideSpinner();
-
+	    /*Hide the spinner*/
+	    hideSpinner();
     };
 
-//    this.get_device_ids_by_choice_type= function(choice, type)
-//                        {
-//                            choice_type_device_ids_list=[];
-//                            var searchquery_data=[];
-////                                main_devices_data_gmaps;
-//                            for (var q=0;q<searchquery_data.length; q++)
-//                                {
-//                                    /*If the baststation object sector length is Zero then remove it from the searchquery_data.*/
-//                                    if(searchquery_data.data.param.sector.length ==0 )
-//                                        {
-//                                           searchquery_data.shift();
-//                                        }
-//                                    else
-//                                    {
-//                                        for (var m =0; m<searchquery_data[q].data.param.sector.length; m++)
-//                                        {
-//                                            for (var n=0; n<choice.length; n++)
-//                                            {
-//                                                if(type=='technology')
-//                                                {
-//                                                    /*Removing the sectors which does not match the technology choice in searchquery_data*/
-//                                                    if(choice[n] != searchquery_data[q].data.param.sector[m].technology)
-//                                                        {
-//                                                           searchquery_data.data.param.sector[m].pop()
-//                                                        }
-//                                                }
-//                                                else if (type=='vendor')
-//                                                {
-//                                                    /*Removing the sectors which does not match the vendor choice in searchquery_data*/
-//                                                    if(choice[n] != searchquery_data[q].data.param.sector[m].vendor)
-//                                                        {
-//                                                           searchquery_data.data.param.sector[m].pop()
-//                                                        }
-//                                                }
-//                                                else if (type=='sector_configured_on')
-//                                                {
-//                                                    /*Removing the sectors which does not match the sector_configured_on choice in searchquery_data*/
-//                                                    if(choice[n] != searchquery_data[q].data.param.sector[m].sector_configured_on)
-//                                                        {
-//                                                           searchquery_data.data.param.sector[m].pop()
-//                                                        }
-//                                                }
-//                                                else if (type=='circuit_ids')
-//                                                {
-//                                                    /*Removing the sectors which does not match the circuit_ids choice in searchquery_data*/
-//                                                    if(choice[n] != searchquery_data[q].data.param.sector[m].circuit_ids)
-//                                                        {
-//                                                           searchquery_data.data.param.sector[m].pop()
-//                                                        }
-//                                                }
-//                                            }
-//                                            /*If basestation sector length become Zero after removing the
-//                                            non choice sectors then delete the basestation object in the searchquery_data*/
-//                                            if(searchquery_data.data.param.sector.length ==0 )
-//                                            {
-//                                               searchquery_data.shift();
-//                                            }
-//                                        }
-//                                   }
-//                                }
-//                                for (var n=0;n<searchquery_data.data.length; n++)
-//                                {
-//                                   choice_type_device_ids_list.push(searchquery_data.id)
-//                                }
-//                        return choice_type_device_ids_list
-//                        };
 	/**
 	 * This method generates get parameter for setfilter API & call setFilter function
 	 * @method callSetFilter
@@ -505,9 +438,9 @@ function advanceSearchClass() {
         appliedAdvFilter=[];
         val_final=[];
 		for(var j=0;j<filtersInfoArray.length;j++) {
-//			var resultantObject = {};
-			var elementType = $.trim(filtersInfoArray[j].element_type);
-			var selectId = filtersInfoArray[j].key;
+
+			var elementType = $.trim(filtersInfoArray[j].element_type),
+				selectId = filtersInfoArray[j].key;
 			/*Check Element Type*/
 			if(elementType == "multiselect") {
 	            var val = $("#filter_"+selectId).select2("val");
