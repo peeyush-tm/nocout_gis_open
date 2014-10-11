@@ -14,11 +14,13 @@ import os
 import sys
 import ast
 from itertools import ifilterfalse
-from nocout_live import nocout_log
+from nocout_logger import nocout_log
+import mysql.connector
 
+logger = nocout_log()
 sys.path.insert(0, '/omd/sites/master_UA/nocout')
 try:
-	from device_interface import *
+	from bulk_upload_data_insertion import *
 except ImportError:
 	logger.debug('Device interface script not imported')
 
@@ -100,7 +102,6 @@ interface_oriented_services = [
 		'cambium_ss_connected_bs_ip_invent'
 		]
 
-logger = nocout_log()
 
 
 def main():
@@ -1018,12 +1019,9 @@ def write_new_host_rules():
 def sync():
     logger.debug('[-- sync --]')
     # Set flag for sync in mysql db
-    toggle_sync_flag()
+    #toggle_sync_flag()
     # First read all the new configs from db and write to rules.mk and hosts.mk
-    try:
-            sync_device_conf_db = entry()
-    except Exception, e:
-	    logger.debug('Error in device_interface script: ' + pprint.pformat(e))
+    #sync_device_conf_db = bulk_upload_main()
     sites_affected = []
     response = {
         "success": 1,
@@ -1072,7 +1070,7 @@ def sync():
             })
     logger.debug('[-- sync finish --]')
     # Reset the sync flag in mysql db
-    toggle_sync_flag(mode=False)
+    #toggle_sync_flag(mode=False)
     return response
 
 
@@ -1083,19 +1081,19 @@ def toggle_sync_flag(mode=True):
 			    password='root',
 			    host='localhost',
 			    db='nocout_dev_27_08_14')
+		cur = db.cursor()
+		query = 'UPDATE service_sync_flag SET '
+		if mode:
+			query += 'mode = 1'
+		else:
+			query += 'mode = 0'
+		cur.execute(query)
+		db.commit()
+		cur.close()
+		db.close()
 	except Exception, e:
 		logger.debug('Sync flag not set:' + pprint.pformat(e))
 		return 
-	cur = db.cursor()
-	query = 'UPDATE service_sync_flag SET '
-	if mode:
-		query += 'mode = 1'
-	else:
-		query += 'mode = 0'
-	cur.execute(query)
-	db.commit()
-	cur.close()
-	db.close()
 
 
 def nocout_synchronize_site(site, site_attrs, restart):
