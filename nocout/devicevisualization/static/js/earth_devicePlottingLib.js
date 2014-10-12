@@ -2,6 +2,9 @@
 var earth_self = "",
 	gexInstance = "",
 	networkMapInstance = "",
+	tech_vendor_obj = {},
+	all_vendor_array = [],
+	isFirstTime = 1,
 	ge = "",
 	plotted_bs_earth = [],
 	plotted_sector_earth = [],
@@ -358,6 +361,17 @@ function googleEarthClass() {
     		// $.grep(sectorsArray,function(sector) { 
 			for(var j=0;j<sectorsArray.length;j++) {
 
+				if(!tech_vendor_obj[sectorsArray[j].technology]) {
+					tech_vendor_obj[sectorsArray[j].technology] = [];
+				}
+				if(tech_vendor_obj[sectorsArray[j].technology].indexOf(sectorsArray[j].vendor) == -1) {
+					tech_vendor_obj[sectorsArray[j].technology].push(sectorsArray[j].vendor);
+				}
+
+				if(all_vendor_array.indexOf(sectorsArray[j].vendor) == -1) {
+					all_vendor_array.push(sectorsArray[j].vendor); 
+				}
+
 				var lon = resultantMarkers[i].data.lon,
 					lat = resultantMarkers[i].data.lat,
 					rad = 4,
@@ -483,6 +497,12 @@ function googleEarthClass() {
 		}/*End of devices list for loop.*/
 
 		if(isCallCompleted == 1) {
+
+			if(isFirstTime == 1) {
+				/*Load data for basic filters*/
+				var basic_filter_data = prepare_data_for_filter();
+				networkMapInstance.getBasicFilters(basic_filter_data);
+			}
 
 			/*Hide The loading Icon*/
 			$("#loadingIcon").hide();
@@ -720,9 +740,9 @@ function googleEarthClass() {
 
 	/**
      * This function initialize live polling
-     * @method fetchPollingTemplate_gmap
+     * @method fetchPollingTemplate_earth
      */
-    this.fetchPollingTemplate_gmap = function() {
+    this.fetchPollingTemplate_earth = function() {
 		
     	var selected_technology = $("#polling_tech").val();
 
@@ -769,7 +789,7 @@ function googleEarthClass() {
 					    });
 
 						gexInstance.edit.drawLineString(polyPlacemark.getGeometry().getOuterBoundary(),{finishCallback : function(e) {
-
+							
 						}});
 
 						/*Polygon Drawing End*/
