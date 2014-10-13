@@ -1267,7 +1267,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
             gis_bulk_obj.valid_filename = 'inventory_files/valid/{}_valid_{}.xls'.format(full_time, filename)
             gis_bulk_obj.invalid_filename = 'inventory_files/invalid/{}_invalid_{}.xls'.format(full_time, filename)
         except Exception as e:
-            logger.info(e.message)
+            print(e.message)
         gis_bulk_obj.status = 1
         gis_bulk_obj.save()
         return gis_bulk_obj.original_filename
@@ -1275,7 +1275,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
         gis_bulk_obj = GISInventoryBulkImport.objects.get(pk=gis_obj_id)
         gis_bulk_obj.status = 2
         gis_bulk_obj.save()
-        logger.info(e.message)
+        print(e.message)
 
 
 @task()
@@ -1295,20 +1295,28 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
     try:
         gis_bu_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
     except Exception as e:
-        logger.info(e.message)
+        print(e.message)
 
     # get valid or invalid sheet based upon sheettype
     if sheettype == 'valid':
-        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.valid_filename)
+        file_path = gis_bu_obj.valid_filename
+        file_path = "".join(file_path.split("/media"))
+        book = xlrd.open_workbook(MEDIA_ROOT + file_path)
     elif sheettype == 'invalid':
-        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.invalid_filename)
+        file_path = gis_bu_obj.invalid_filename
+        file_path = "".join(file_path.split("/media"))
+        book = xlrd.open_workbook(MEDIA_ROOT + file_path)
     else:
-        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.valid_filename)
+        book = ""
 
     sheet = book.sheet_by_index(0)
 
     keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
+    keys_list = [x.encode('utf-8').strip() for x in keys]
     complete_d = list()
+
+    # error rows list
+    error_rows = []
 
     # fetching excel rows values as list of key value pair dictionaries where keys are from first row of excel
     # and values are form other remaining rows
@@ -1325,7 +1333,13 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
         complete_d.append(d)
 
     try:
+        # reading of values start from 2nd row
+        row_number = 2
+
         for row in complete_d:
+            # errors in this row
+            errors = ""
+
             # initialize variables
             base_station = ""
             sub_station = ""
@@ -1340,11 +1354,24 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
             customer = ""
             circuit = ""
 
+            # insert row no. in row dictionary to identify error row number
+            row['Row No.'] = row_number
+
+            # check for error in row
+            # check for base station device
+            if 'IP' in row.keys():
+                if not ip_sanitizer(row['IP']):
+                    errors += "Base Station Device can't be created due to wrong IP."
+                else:
+                    errors += "Base Station Device "
+
+
             # if bs ip and ss ip are same in inventory then skip it's insertion in database
             if all(k in row for k in ("IP", "SS IP")):
-                if ip_sanitizer(row['IP']) == ip_sanitizer(row['SS IP']):
-                    print "************************************ Sampe IP rows - ", row['IP'], row['SS IP']
-                    continue
+                if row['IP'] and row['SS IP']:
+                    if ip_sanitizer(row['IP']) == ip_sanitizer(row['SS IP']):
+                        print "************************************ Sampe IP rows - ", row['IP'], row['SS IP']
+                        continue
 
             try:
                 # ----------------------------- Base Station Device ---------------------------
@@ -1357,10 +1384,13 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 if 'site' in result.keys():
                     site = result['site']
 
+                # device name
+                name = '{}_ne'.format(special_chars_name_sanitizer(row['SS Circuit ID']) if 'Circuit ID' in row.keys() else "")
+
                 if ip_sanitizer(row['IP']):
                     # base station data
                     base_station_data = {
-                        'device_name': row['IP'] if 'IP' in row.keys() else "",
+                        'device_name': name,
                         'organization': organization,
                         'machine': machine,
                         'site': site,
@@ -1612,7 +1642,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 try:
                     bh_configured_on = Device.objects.get(device_name=row['BH Configured On Switch/Converter'])
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 if 'BH Configured On Switch/Converter' in row.keys():
                     if ip_sanitizer(row['BH Configured On Switch/Converter']):
@@ -1661,7 +1691,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                         name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
                                                  row['State'][:3].lower() if 'State' in row.keys() else "")
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 print "************************** bs name - ", name
                 alias = row['BS Name'] if 'BS Name' in row.keys() else ""
@@ -1681,7 +1711,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     'address': row['BS Address'] if 'BS Address' in row.keys() else "",
                     'description': 'Base Station created on {}.'.format(full_time)
                 }
-
+                print "******************************** basestation_data - ", basestation_data
                 # base station object
                 basestation = ""
                 if name and alias:
@@ -1703,6 +1733,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                             'antenna': sector_antenna,
                             'description': 'Sector created on {}.'.format(full_time)
                         }
+                        print "***************************** sector data - ", sector_data
                         # sector object
                         sector = create_sector(sector_data)
                     else:
@@ -1735,7 +1766,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     'address': row['SS Customer Address'] if 'SS Customer Address' in row.keys() else "",
                     'description': 'Sub Station created on {}.'.format(full_time)
                 }
-
+                print "********************************* sub station data - ", sub_station_data
                 # sub station object
                 substation = ""
                 if name and alias:
@@ -1755,7 +1786,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                         # concatinate city and state in bs name
                         name = "{}_{}".format(name, special_chars_name_sanitizer(row['SS Circuit ID']))
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 customer_data = {
                     'name': name,
@@ -1763,12 +1794,10 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     'address': row['SS Customer Address'] if 'SS Customer Address' in row.keys() else "",
                     'description': 'SS Customer created on {}.'.format(full_time)
                 }
-
+                print "********************************** customer data - ", customer_data
                 # customer object
                 customer = ""
                 if name:
-
-
                     customer = create_customer(customer_data)
             except Exception as e:
                 customer = ""
@@ -1800,6 +1829,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     'date_of_acceptance': date_of_acceptance,
                     'description': 'Circuit created on {}.'.format(full_time)
                 }
+                print "******************************* circuit data - ", circuit_data
                 # circuit object
                 circuit = ""
                 if name and alias:
@@ -1815,6 +1845,8 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 3
         gis_obj.save()
+
+        action.send(self.request.user, verb='Created', action_object=self.object)
 
 
 @task()
@@ -1834,15 +1866,19 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
     try:
         gis_bu_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
     except Exception as e:
-        logger.info(e.message)
+        print(e.message)
 
     # get valid or invalid sheet based upon sheettype
     if sheettype == 'valid':
-        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.valid_filename)
+        file_path = gis_bu_obj.valid_filename
+        file_path = "".join(file_path.split("/media"))
+        book = xlrd.open_workbook(MEDIA_ROOT + file_path)
     elif sheettype == 'invalid':
-        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.invalid_filename)
+        file_path = gis_bu_obj.invalid_filename
+        file_path = "".join(file_path.split("/media"))
+        book = xlrd.open_workbook(MEDIA_ROOT + file_path)
     else:
-        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.valid_filename)
+        book = ""
 
     sheet = book.sheet_by_index(0)
 
@@ -1881,9 +1917,10 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
 
             # if bs ip and ss ip are same in inventory then skip it's insertion in database
             if all(k in row for k in ("IP", "SS IP")):
-                if ip_sanitizer(row['IP']) == ip_sanitizer(row['SS IP']):
-                    print "************************************ Sampe IP rows - ", row['IP'], row['SS IP']
-                    continue
+                if row['IP'] and row['SS IP']:
+                    if ip_sanitizer(row['IP']) == ip_sanitizer(row['SS IP']):
+                        print "************************************ Sampe IP rows - ", row['IP'], row['SS IP']
+                        continue
 
             try:
                 # ----------------------------- Base Station Device ---------------------------
@@ -1895,13 +1932,13 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 try:
                     machine = Machine.objects.get(name='ospf5')
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 # get site
                 try:
                     site = SiteInstance.objects.get(name='ospf5_slave_1')
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 name = special_chars_name_sanitizer(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
 
@@ -1946,13 +1983,13 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 try:
                     machine = Machine.objects.get(name='ospf5')
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 # get site
                 try:
                     site = SiteInstance.objects.get(name='ospf5_slave_1')
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 name = special_chars_name_sanitizer(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
 
@@ -1994,13 +2031,13 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 try:
                     machine = Machine.objects.get(name='ospf5')
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 # get site
                 try:
                     site = SiteInstance.objects.get(name='ospf5_slave_1')
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 if ip_sanitizer(row['BS Switch IP']):
                     # bs switch data
@@ -2039,13 +2076,13 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 try:
                     machine = Machine.objects.get(name='ospf5')
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 # get site
                 try:
                     site = SiteInstance.objects.get(name='ospf5_slave_1')
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 if ip_sanitizer(row['Aggregation Switch']):
                     # aggregation switch data
@@ -2084,13 +2121,13 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 try:
                     machine = Machine.objects.get(name='ospf5')
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 # get site
                 try:
                     site = SiteInstance.objects.get(name='ospf5_slave_1')
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 if ip_sanitizer(row['BS Converter IP']):
                     # bs converter data
@@ -2129,13 +2166,13 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 try:
                     machine = Machine.objects.get(name='ospf5')
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 # get site
                 try:
                     site = SiteInstance.objects.get(name='ospf5_slave_1')
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 if ip_sanitizer(row['POP Converter IP']):
                     # pop converter data
@@ -2176,6 +2213,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                     'mount_type': row['Antenna Mount Type'] if 'Antenna Mount Type' in row.keys() else "",
                     'description': 'Sector Antenna created on {}.'.format(full_time)
                 }
+                print "******************************** sector_antenna_data - ", sector_antenna_data
                 # sector antenna object
                 sector_antenna = create_antenna(sector_antenna_data)
 
@@ -2190,6 +2228,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                     'mount_type': row['SS Antenna Mount Type'] if 'SS Antenna Mount Type' in row.keys() else "",
                     'description': 'Sector Antenna created on {}.'.format(full_time)
                 }
+                print "******************************* substation_antenna_data - ", substation_antenna_data
                 # sub station antenna object
                 substation_antenna = create_antenna(substation_antenna_data)
             except Exception as e:
@@ -2202,7 +2241,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 try:
                     bh_configured_on = Device.objects.get(device_name=row['BH Configured On Switch/Converter'])
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 if 'BH Configured On Switch/Converter' in row.keys():
                     if ip_sanitizer(row['BH Configured On Switch/Converter']):
@@ -2227,6 +2266,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                             'description': 'Backhaul created on {}.'.format(full_time)
                         }
 
+                        print "************************************ backhaul_data - ", backhaul_data
                         # backhaul object
                         backhaul = ""
                         if row['BH Configured On Switch/Converter']:
@@ -2251,7 +2291,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                         name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
                                                  row['State'][:3].lower() if 'State' in row.keys() else "")
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 alias = row['BS Name'] if 'BS Name' in row.keys() else ""
                 basestation_data = {
@@ -2270,7 +2310,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                     'address': row['BS Address'] if 'BS Address' in row.keys() else "",
                     'description': 'Base Station created on {}.'.format(full_time)
                 }
-
+                print "****************************** basestation_data - ", basestation_data
                 # base station object
                 basestation = ""
                 if name and alias:
@@ -2324,7 +2364,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                     'address': row['SS Customer Address'] if 'SS Customer Address' in row.keys() else "",
                     'description': 'Sub Station created on {}.'.format(full_time)
                 }
-
+                print "*********************************** substation_data - ", substation_data
                 # sub station object
                 substation = ""
                 if name and alias:
@@ -2344,7 +2384,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                         # concatinate city and state in bs name
                         name = "{}_{}".format(name, special_chars_name_sanitizer(row['SS Circuit ID']))
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 customer_data = {
                     'name': name,
@@ -2352,7 +2392,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                     'address': row['SS Customer Address'] if 'SS Customer Address' in row.keys() else "",
                     'description': 'SS Customer created on {}.'.format(full_time)
                 }
-
+                print "********************************* customer_data - ", customer_data
                 # customer object
                 customer = ""
                 if name:
@@ -2393,6 +2433,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                     'date_of_acceptance': date_of_acceptance,
                     'description': 'Circuit created on {}.'.format(full_time)
                 }
+                print "********************************** circuit_data - ", circuit_data
                 # circuit object
                 circuit = ""
                 if name and alias:
@@ -2427,7 +2468,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
     try:
         gis_bu_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
     except Exception as e:
-        logger.info(e.message)
+        print(e.message)
 
     # get valid or invalid sheet based upon sheettype
     if sheettype == 'valid':
@@ -2476,14 +2517,14 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     machine = Machine.objects.get(name='ospf1')
                 except Exception as e:
                     machine = ""
-                    logger.info(e.message)
+                    print(e.message)
 
                 # get site_instance
                 try:
                     site = SiteInstance.objects.get(name='ospf1_slave_1')
                 except Exception as e:
                     site = ""
-                    logger.info(e.message)
+                    print(e.message)
 
                 # base station data
                 base_station_data = {
@@ -2517,14 +2558,14 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     machine = Machine.objects.get(name='ospf2')
                 except Exception as e:
                     machine = ""
-                    logger.info(e.message)
+                    print(e.message)
 
                 # get site_instance
                 try:
                     site = SiteInstance.objects.get(name='ospf2_slave_1')
                 except Exception as e:
                     site = ""
-                    logger.info(e.message)
+                    print(e.message)
 
                 # base station data
                 bs_switch_data = {
@@ -2558,14 +2599,14 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     machine = Machine.objects.get(name='ospf3')
                 except Exception as e:
                     machine = ""
-                    logger.info(e.message)
+                    print(e.message)
 
                 # get site_instance
                 try:
                     site = SiteInstance.objects.get(name='ospf3_slave_1')
                 except Exception as e:
                     site = ""
-                    logger.info(e.message)
+                    print(e.message)
 
                 # aggregation switch data
                 aggregation_switch_data = {
@@ -2599,14 +2640,14 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     machine = Machine.objects.get(name='ospf4')
                 except Exception as e:
                     machine = ""
-                    logger.info(e.message)
+                    print(e.message)
 
                 # get site_instance
                 try:
                     site = SiteInstance.objects.get(name='ospf4_slave_1')
                 except Exception as e:
                     site = ""
-                    logger.info(e.message)
+                    print(e.message)
 
                 # bs converter data
                 bs_converter_data = {
@@ -2640,14 +2681,14 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     machine = Machine.objects.get(name='ospf5')
                 except Exception as e:
                     machine = ""
-                    logger.info(e.message)
+                    print(e.message)
 
                 # get site_instance
                 try:
                     site = SiteInstance.objects.get(name='ospf5_slave_1')
                 except Exception as e:
                     site = ""
-                    logger.info(e.message)
+                    print(e.message)
 
                 # pop converter data
                 pop_converter_data = {
@@ -2696,7 +2737,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 try:
                     bh_configured_on = Device.objects.get(device_name=row['BH Configured On Switch/Converter'])
                 except Exception as e:
-                    logger.info(e.message)
+                    print(e.message)
 
                 backhaul_data = {
                     'ip': row['BH Configured On Switch/Converter'] if 'BH Configured On Switch/Converter' in row.keys() else "",
@@ -2809,7 +2850,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
     try:
         gis_bu_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
     except Exception as e:
-        logger.info(e.message)
+        print(e.message)
 
     # get valid or invalid sheet based upon sheettype
     if sheettype == 'valid':
@@ -2857,14 +2898,14 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                     machine = Machine.objects.get(name='ospf1')
                 except Exception as e:
                     machine = ""
-                    logger.info(e.message)
+                    print(e.message)
 
                 # get site_instance
                 try:
                     site = SiteInstance.objects.get(name='ospf1_slave_1')
                 except Exception as e:
                     site = ""
-                    logger.info(e.message)
+                    print(e.message)
 
                 # sub station data
                 sub_station_data = {
@@ -3078,6 +3119,9 @@ def create_device(device_payload):
     if 'description' in device_payload.keys():
         description = device_payload['description'] if device_payload['description'] else ""
 
+    # lat long validator
+    regex_lat_long = '^[-+]?\d*\.\d+|\d+'
+
     # update device if it exists in database
     if device_name:
         if device_name not in ['NA', 'na', 'N/A', 'n/a']:
@@ -3090,59 +3134,59 @@ def create_device(device_payload):
                     try:
                         device.device_alias = device_alias
                     except Exception as e:
-                        logger.info("Device Alias: ({} - {})".format(device_alias, e.message))
+                        print("Device Alias: ({} - {})".format(device_alias, e.message))
                 # machine
                 if machine:
                     try:
                         device.machine = machine
                     except Exception as e:
-                        logger.info("Machine: ({} - {})".format(machine, e.message))
+                        print("Machine: ({} - {})".format(machine, e.message))
                 # site instance
                 if site_instance:
                     try:
                         device.site_instance = site_instance
                     except Exception as e:
-                        logger.info("Site Instance: ({} - {})".format(site_instance, e.message))
+                        print("Site Instance: ({} - {})".format(site_instance, e.message))
                 # organization
                 try:
                     device.organization = organization
                 except Exception as e:
-                    logger.info("Organization: ({})".format(e.message))
+                    print("Organization: ({})".format(e.message))
                 # device technology
                 if device_technology:
                     try:
                         device.device_technology = device_technology
                     except Exception as e:
-                        logger.info("Device Technology: ({} - {})".format(device_technology, e.message))
+                        print("Device Technology: ({} - {})".format(device_technology, e.message))
                 # device vendor
                 if device_vendor:
                     try:
                         device.device_vendor = device_vendor
                     except Exception as e:
-                        logger.info("Device Vendor: ({} - {})".format(device_vendor, e.message))
+                        print("Device Vendor: ({} - {})".format(device_vendor, e.message))
                 # device model
                 if device_model:
                     try:
                         device.device_model = device_model
                     except Exception as e:
-                        logger.info("Device Model: ({} - {})".format(device_model, e.message))
+                        print("Device Model: ({} - {})".format(device_model, e.message))
                 # device type
                 if device_type:
                     try:
                         device.device_type = device_type
                     except Exception as e:
-                        logger.info("Device Type: ({} - {})".format(device_type, e.message))
+                        print("Device Type: ({} - {})".format(device_type, e.message))
                 # parent
                 try:
                     device.parent = Device.objects.all()[0]
                 except Exception as e:
-                    logger.info("Parent: ({})".format(e.message))
+                    print("Parent: ({})".format(e.message))
                 # mac address
                 if mac_address:
                     try:
                         device.mac_address = mac_address
                     except Exception as e:
-                        logger.info("MAC Address: ({} - {})".format(mac_address, e.message))
+                        print("MAC Address: ({} - {})".format(mac_address, e.message))
                 # netmask
                 device.netmask = '255.255.255.0'
                 # dhcp state
@@ -3152,17 +3196,17 @@ def create_device(device_payload):
                 # host state
                 device.host_state = 'Enable'
                 # latitude
-                if latitude and isinstance(latitude, float):
+                if re.match(regex_lat_long, str(latitude).strip()):
                     try:
-                        device.latitude = latitude
+                        device.latitude = float(latitude)
                     except Exception as e:
-                        logger.info("Latitude: ({} - {})".format(latitude, e.message))
+                        print("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
-                if longitude and isinstance(longitude, float):
+                if re.match(regex_lat_long, str(longitude).strip()):
                     try:
-                        device.longitude = longitude
+                        device.longitude = float(longitude)
                     except Exception as e:
-                        logger.info("Latitude: ({} - {})".format(latitude, e.message))
+                        print("Longitude: ({} - {})".format(latitude, e.message))
                 # timezone
                 device.timezone = 'Asia/Kolkata'
                 # country
@@ -3175,7 +3219,7 @@ def create_device(device_payload):
                             raise Exception("While Device Update: State Not Found")
                         device.state = device_state_id
                     except Exception as e:
-                        logger.info("State: ({})".format(e.message))
+                        print("State: ({})".format(e.message))
                 # city
                 if city:
                     try:
@@ -3187,19 +3231,19 @@ def create_device(device_payload):
                             raise Exception("While Device Update: In City: State Not Found")
                         device.city = device_city_id
                     except Exception as e:
-                        logger.info("City: ({})".format(e.message))
+                        print("City: ({})".format(e.message))
                 # address
                 if address:
                     try:
                         device.address = address
                     except Exception as e:
-                        logger.info("Address: ({} - {})".format(address, e.message))
+                        print("Address: ({} - {})".format(address, e.message))
                 # description
                 if description:
                     try:
                         device.description = description
                     except Exception as e:
-                        logger.info("Description: ({} - {})".format(description, e.message))
+                        print("Description: ({} - {})".format(description, e.message))
                 # saving device
                 device.save()
             except Exception as e:
@@ -3211,83 +3255,83 @@ def create_device(device_payload):
                     try:
                         device.device_name = device_name
                     except Exception as e:
-                        logger.info("Device Name: ({} - {})".format(device_name, e.message))
+                        print("Device Name: ({} - {})".format(device_name, e.message))
                 # device alias
                 if device_alias:
                     try:
                         device.device_alias = device_alias
                     except Exception as e:
-                        logger.info("Device Alias: ({} - {})".format(device_alias, e.message))
+                        print("Device Alias: ({} - {})".format(device_alias, e.message))
                 # machine
                 if machine:
                     try:
                         device.machine = machine
                     except Exception as e:
-                        logger.info("Machine: ({} - {})".format(machine, e.message))
+                        print("Machine: ({} - {})".format(machine, e.message))
                 # site instance
                 if site_instance:
                     try:
                         device.site_instance = site_instance
                     except Exception as e:
-                        logger.info("Site Instance: ({} - {})".format(site_instance, e.message))
+                        print("Site Instance: ({} - {})".format(site_instance, e.message))
                 # organization
                 try:
                     device.organization = organization
                 except Exception as e:
-                    logger.info("Organization: ({})".format(e.message))
+                    print("Organization: ({})".format(e.message))
                 # device technology
                 if device_technology:
                     try:
                         device.device_technology = device_technology
                     except Exception as e:
-                        logger.info("Device Technology: ({} - {})".format(device_technology, e.message))
+                        print("Device Technology: ({} - {})".format(device_technology, e.message))
                 # device vendor
                 if device_vendor:
                     try:
                         device.device_vendor = device_vendor
                     except Exception as e:
-                        logger.info("Device Vendor: ({} - {})".format(device_vendor, e.message))
+                        print("Device Vendor: ({} - {})".format(device_vendor, e.message))
                 # device model
                 if device_model:
                     try:
                         device.device_model = device_model
                     except Exception as e:
-                        logger.info("Device Vendor: ({} - {})".format(device_model, e.message))
+                        print("Device Vendor: ({} - {})".format(device_model, e.message))
                 # device type
                 if device_type:
                     try:
                         device.device_type = device_type
                     except Exception as e:
-                        logger.info("Device Type: ({} - {})".format(device_type, e.message))
+                        print("Device Type: ({} - {})".format(device_type, e.message))
                 # parent
                 try:
                     device.parent = Device.objects.all()[0]
                 except Exception as e:
-                    logger.info("Parent: ({})".format(e.message))
+                    print("Parent: ({})".format(e.message))
                 # ip address
                 if ip_address:
                     try:
                         device.ip_address = ip_address
                     except Exception as e:
-                        logger.info("IP Address: ({} - {})".format(ip_address, e.message))
+                        print("IP Address: ({} - {})".format(ip_address, e.message))
                 # mac address
                 if mac_address:
                     try:
                         device.mac_address = mac_address
                     except Exception as e:
-                        logger.info("MAC Address: ({} - {})".format(mac_address, e.message))
+                        print("MAC Address: ({} - {})".format(mac_address, e.message))
                 # latitude
-                if latitude and isinstance(latitude, float):
+                if re.match(regex_lat_long, str(latitude).strip()):
                     try:
-                        device.latitude = latitude
+                        device.latitude = float(latitude)
                     except Exception as e:
-                        logger.info("Latitude: ({} - {})".format(latitude, e.message))
+                        print("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
-                if longitude and isinstance(longitude, float):
+                if re.match(regex_lat_long, str(longitude).strip()):
                     try:
-                        device.longitude = longitude
+                        device.longitude = float(longitude)
                     except Exception as e:
-                        logger.info("Latitude: ({} - {})".format(latitude, e.message))
+                        print("Longitude: ({} - {})".format(latitude, e.message))
                 # timezone
                 device.timezone = 'Asia/Kolkata'
                 # country
@@ -3300,7 +3344,7 @@ def create_device(device_payload):
                             raise Exception("While Device Update: State Not Found")
                         device.state = device_state_id
                     except Exception as e:
-                        logger.info("State: ({})".format(e.message))
+                        print("State: ({})".format(e.message))
                 # city
                 if city:
                     try:
@@ -3312,19 +3356,19 @@ def create_device(device_payload):
                             raise Exception("While Device Update: In City: State Not Found")
                         device.city = device_city_id
                     except Exception as e:
-                        logger.info("City: ({})".format(e.message))
+                        print("City: ({})".format(e.message))
                 # address
                 if address:
                     try:
                         device.address = address
                     except Exception as e:
-                        logger.info("Address: ({} - {})".format(address, e.message))
+                        print("Address: ({} - {})".format(address, e.message))
                 # description
                 if description:
                     try:
                         device.description = description
                     except Exception as e:
-                        logger.info("Description: ({} - {})".format(description, e.message))
+                        print("Description: ({} - {})".format(description, e.message))
                 # is deleted
                 device.is_deleted = 0
                 # is added to nms
@@ -3336,7 +3380,7 @@ def create_device(device_payload):
                     device.save()
                     return device
                 except Exception as e:
-                    logger.info("Device Object: ({} - {})".format(device_name, e.message))
+                    print("Device Object: ({} - {})".format(device_name, e.message))
                     return ""
 
 
@@ -3408,54 +3452,54 @@ def create_antenna(antenna_payload):
                     try:
                         antenna.alias = alias
                     except Exception as e:
-                        logger.info("Antenna Alias: ({} - {})".format(alias, e.message))
+                        print("Antenna Alias: ({} - {})".format(alias, e.message))
                 # antenna type
                 if antenna_type:
                     try:
                         antenna.antenna_type = antenna_type
                     except Exception as e:
-                        logger.info("Antenna Type: ({} - {})".format(antenna_type, e.message))
+                        print("Antenna Type: ({} - {})".format(antenna_type, e.message))
                 # height
                 if height:
                     if isinstance(height, int) or isinstance(height, float):
                         try:
                             antenna.height = height
                         except Exception as e:
-                            logger.info("Antenna Height: ({} - {})".format(height, e.message))
+                            print("Antenna Height: ({} - {})".format(height, e.message))
                 # tilt
                 if tilt:
                     if isinstance(tilt, int) or isinstance(tilt, float):
                         try:
                             antenna.tilt = tilt
                         except Exception as e:
-                            logger.info("Antenna Tilt: ({} - {})".format(tilt, e.message))
+                            print("Antenna Tilt: ({} - {})".format(tilt, e.message))
                 # gain
                 if gain:
                     if isinstance(gain, int) or isinstance(gain, float):
                         try:
                             antenna.gain = gain
                         except Exception as e:
-                            logger.info("Antenna Gain: ({} - {})".format(gain, e.message))
+                            print("Antenna Gain: ({} - {})".format(gain, e.message))
                 # mount type
                 if mount_type:
                     try:
                         antenna.mount_type = mount_type
                     except Exception as e:
-                        logger.info("Antenna Mount Type: ({} - {})".format(mount_type, e.message))
+                        print("Antenna Mount Type: ({} - {})".format(mount_type, e.message))
                 # beam width
                 if beam_width:
                     if isinstance(beam_width, int) or isinstance(beam_width, float):
                         try:
                             antenna.beam_width = beam_width
                         except Exception as e:
-                            logger.info("Antenna Beamwidth: ({} - {})".format(beam_width, e.message))
+                            print("Antenna Beamwidth: ({} - {})".format(beam_width, e.message))
                 # azimuth angle
                 if azimuth_angle:
                     if isinstance(azimuth_angle, int) or isinstance(azimuth_angle, float):
                         try:
                             antenna.azimuth_angle = azimuth_angle
                         except Exception as e:
-                            logger.info("Azimuth Angle: ({} - {})".format(azimuth_angle, e.message))
+                            print("Azimuth Angle: ({} - {})".format(azimuth_angle, e.message))
                     else:
                         antenna.azimuth_angle = 0
                 # reflector
@@ -3463,37 +3507,37 @@ def create_antenna(antenna_payload):
                     try:
                         antenna.reflector = reflector
                     except Exception as e:
-                        logger.info("Antenna Reflector: ({} - {})".format(reflector, e.message))
+                        print("Antenna Reflector: ({} - {})".format(reflector, e.message))
                 # splitter installed
                 if splitter_installed:
                     try:
                         antenna.splitter_installed = splitter_installed
                     except Exception as e:
-                        logger.info("Antenna Alias: ({} - {})".format(alias, e.message))
+                        print("Antenna Alias: ({} - {})".format(alias, e.message))
                 # sync splitter installed
                 if sync_splitter_used:
                     try:
                         antenna.sync_splitter_used = sync_splitter_used
                     except Exception as e:
-                        logger.info("Antenna Sync Splitter Used: ({} - {})".format(sync_splitter_used, e.message))
+                        print("Antenna Sync Splitter Used: ({} - {})".format(sync_splitter_used, e.message))
                 # make of antenna
                 if make_of_antenna:
                     try:
                         antenna.make_of_antenna = make_of_antenna
                     except Exception as e:
-                        logger.info("Make Of Antenna: ({} - {})".format(make_of_antenna, e.message))
+                        print("Make Of Antenna: ({} - {})".format(make_of_antenna, e.message))
                 # polarization
                 if polarization:
                     try:
                         antenna.polarization = polarization
                     except Exception as e:
-                        logger.info("Antenna Polarization: ({} - {})".format(make_of_antenna, e.message))
+                        print("Antenna Polarization: ({} - {})".format(make_of_antenna, e.message))
                 # description
                 if description:
                     try:
                         antenna.description = description
                     except Exception as e:
-                        logger.info("Antenna Description: ({} - {})".format(description, e.message))
+                        print("Antenna Description: ({} - {})".format(description, e.message))
                 # saving antenna
                 antenna.save()
                 return antenna
@@ -3508,54 +3552,54 @@ def create_antenna(antenna_payload):
                     try:
                         antenna.alias = alias
                     except Exception as e:
-                        logger.info("Antenna Alias: ({} - {})".format(alias, e.message))
+                        print("Antenna Alias: ({} - {})".format(alias, e.message))
                 # antenna type
                 if antenna_type:
                     try:
                         antenna.antenna_type = antenna_type
                     except Exception as e:
-                        logger.info("Antenna Type: ({} - {})".format(antenna_type, e.message))
+                        print("Antenna Type: ({} - {})".format(antenna_type, e.message))
                 # height
                 if height:
                     if isinstance(height, int) or isinstance(height, float):
                         try:
                             antenna.height = height
                         except Exception as e:
-                            logger.info("Antenna Height: ({} - {})".format(height, e.message))
+                            print("Antenna Height: ({} - {})".format(height, e.message))
                 # tilt
                 if tilt:
                     if isinstance(tilt, int) or isinstance(tilt, float):
                         try:
                             antenna.tilt = tilt
                         except Exception as e:
-                            logger.info("Antenna Tilt: ({} - {})".format(tilt, e.message))
+                            print("Antenna Tilt: ({} - {})".format(tilt, e.message))
                 # gain
                 if gain:
                     if isinstance(gain, int) or isinstance(gain, float):
                         try:
                             antenna.gain = gain
                         except Exception as e:
-                            logger.info("Antenna Gain: ({} - {})".format(gain, e.message))
+                            print("Antenna Gain: ({} - {})".format(gain, e.message))
                 # mount type
                 if mount_type:
                     try:
                         antenna.mount_type = mount_type
                     except Exception as e:
-                        logger.info("Antenna Mount Type: ({} - {})".format(mount_type, e.message))
+                        print("Antenna Mount Type: ({} - {})".format(mount_type, e.message))
                 # beam width
                 if beam_width:
                     if isinstance(beam_width, int) or isinstance(beam_width, float):
                         try:
                             antenna.beam_width = beam_width
                         except Exception as e:
-                            logger.info("Antenna Beamwidth: ({} - {})".format(beam_width, e.message))
+                            print("Antenna Beamwidth: ({} - {})".format(beam_width, e.message))
                 # azimuth angle
                 if azimuth_angle:
                     if isinstance(azimuth_angle, int) or isinstance(azimuth_angle, float):
                         try:
                             antenna.azimuth_angle = azimuth_angle
                         except Exception as e:
-                            logger.info("Azimuth Angle: ({} - {})".format(azimuth_angle, e.message))
+                            print("Azimuth Angle: ({} - {})".format(azimuth_angle, e.message))
                     else:
                         antenna.azimuth_angle = 0
                 else:
@@ -3565,42 +3609,42 @@ def create_antenna(antenna_payload):
                     try:
                         antenna.reflector = reflector
                     except Exception as e:
-                        logger.info("Antenna Reflector: ({} - {})".format(reflector, e.message))
+                        print("Antenna Reflector: ({} - {})".format(reflector, e.message))
                 # splitter installed
                 if splitter_installed:
                     try:
                         antenna.splitter_installed = splitter_installed
                     except Exception as e:
-                        logger.info("Antenna Alias: ({} - {})".format(alias, e.message))
+                        print("Antenna Alias: ({} - {})".format(alias, e.message))
                 # sync splitter installed
                 if sync_splitter_used:
                     try:
                         antenna.sync_splitter_used = sync_splitter_used
                     except Exception as e:
-                        logger.info("Antenna Sync Splitter Used: ({} - {})".format(sync_splitter_used, e.message))
+                        print("Antenna Sync Splitter Used: ({} - {})".format(sync_splitter_used, e.message))
                 # make of antenna
                 if make_of_antenna:
                     try:
                         antenna.make_of_antenna = make_of_antenna
                     except Exception as e:
-                        logger.info("Make Of Antenna: ({} - {})".format(make_of_antenna, e.message))
+                        print("Make Of Antenna: ({} - {})".format(make_of_antenna, e.message))
                 # polarization
                 if polarization:
                     try:
                         antenna.polarization = polarization
                     except Exception as e:
-                        logger.info("Antenna Polarization: ({} - {})".format(make_of_antenna, e.message))
+                        print("Antenna Polarization: ({} - {})".format(make_of_antenna, e.message))
                 # description
                 if description:
                     try:
                         antenna.description = description
                     except Exception as e:
-                        logger.info("Antenna Description: ({} - {})".format(description, e.message))
+                        print("Antenna Description: ({} - {})".format(description, e.message))
                 try:
                     antenna.save()
                     return antenna
                 except Exception as e:
-                    logger.info("Antenna Object: ({} - {})".format(name, e.message))
+                    print("Antenna Object: ({} - {})".format(name, e.message))
                     return ""
 
 
@@ -3699,127 +3743,127 @@ def create_backhaul(backhaul_payload):
                     try:
                         backhaul.alias = alias
                     except Exception as e:
-                        logger.info("BH Alias: ({} - {})".format(alias, e.message))
+                        print("BH Alias: ({} - {})".format(alias, e.message))
                 # bh configured on
                 if bh_configured_on:
                     try:
                         backhaul.bh_configured_on = bh_configured_on
                     except Exception as e:
-                        logger.info("BH Configured On: ({} - {})".format(bh_configured_on, e.message))
+                        print("BH Configured On: ({} - {})".format(bh_configured_on, e.message))
                 # bh port name
                 if bh_port_name:
                     try:
                         backhaul.bh_port_name = bh_port_name
                     except Exception as e:
-                        logger.info("BH Port Name: ({} - {})".format(bh_port_name, e.message))
+                        print("BH Port Name: ({} - {})".format(bh_port_name, e.message))
                 # bh port
                 if bh_port:
                     try:
                         backhaul.bh_port = bh_port
                     except Exception as e:
-                        logger.info("BH Port: ({} - {})".format(bh_port, e.message))
+                        print("BH Port: ({} - {})".format(bh_port, e.message))
                 # bh type
                 if bh_type:
                     try:
                         backhaul.bh_type = bh_type
                     except Exception as e:
-                        logger.info("BH Type: ({} - {})".format(bh_type, e.message))
+                        print("BH Type: ({} - {})".format(bh_type, e.message))
                 # bh switch
                 if bh_switch:
                     try:
                         backhaul.bh_switch = bh_switch
                     except Exception as e:
-                        logger.info("BH Switch: ({} - {})".format(bh_switch, e.message))
+                        print("BH Switch: ({} - {})".format(bh_switch, e.message))
                 # switch port name
                 if switch_port_name:
                     try:
                         backhaul.switch_port_name = switch_port_name
                     except Exception as e:
-                        logger.info("Switch Port Name: ({} - {})".format(switch_port_name, e.message))
+                        print("Switch Port Name: ({} - {})".format(switch_port_name, e.message))
                 # switch port
                 if switch_port:
                     try:
                         backhaul.switch_port = switch_port
                     except Exception as e:
-                        logger.info("Switch Port: ({} - {})".format(switch_port, e.message))
+                        print("Switch Port: ({} - {})".format(switch_port, e.message))
                 # pop
                 if pop:
                     try:
                         backhaul.pop = pop
                     except Exception as e:
-                        logger.info("POP: ({} - {})".format(pop, e.message))
+                        print("POP: ({} - {})".format(pop, e.message))
                 # pop port name
                 if pop_port_name:
                     try:
                         backhaul.pop_port_name = pop_port_name
                     except Exception as e:
-                        logger.info("POP Port Name: ({} - {})".format(pop_port_name, e.message))
+                        print("POP Port Name: ({} - {})".format(pop_port_name, e.message))
                 # pop_port
                 if pop_port:
                     try:
                         backhaul.pop_port = pop_port
                     except Exception as e:
-                        logger.info("POP Port: ({} - {})".format(pop_port, e.message))
+                        print("POP Port: ({} - {})".format(pop_port, e.message))
                 # aggregator
                 if aggregator:
                     try:
                         backhaul.aggregator = aggregator
                     except Exception as e:
-                        logger.info("Aggregator: ({} - {})".format(aggregator, e.message))
+                        print("Aggregator: ({} - {})".format(aggregator, e.message))
                 # aggregator port name
                 if aggregator_port_name:
                     try:
                         backhaul.aggregator_port_name = aggregator_port_name
                     except Exception as e:
-                        logger.info("Aggregator Port Name: ({} - {})".format(aggregator_port_name, e.message))
+                        print("Aggregator Port Name: ({} - {})".format(aggregator_port_name, e.message))
                 # aggregator port
                 if aggregator_port:
                     try:
                         backhaul.aggregator_port = aggregator_port
                     except Exception as e:
-                        logger.info("Aggregator Port: ({} - {})".format(aggregator_port, e.message))
+                        print("Aggregator Port: ({} - {})".format(aggregator_port, e.message))
                 # pe hostname
                 if pe_hostname:
                     try:
                         backhaul.pe_hostname = pe_hostname
                     except Exception as e:
-                        logger.info("PE Hostname: ({} - {})".format(pe_hostname, e.message))
+                        print("PE Hostname: ({} - {})".format(pe_hostname, e.message))
                 # pe ip
                 if pe_ip:
                     try:
                         backhaul.pe_ip = pe_ip
                     except Exception as e:
-                        logger.info("PE IP: ({} - {})".format(pe_ip, e.message))
+                        print("PE IP: ({} - {})".format(pe_ip, e.message))
                 # bh connectivity
                 if bh_connectivity:
                     try:
                         backhaul.bh_connectivity = bh_connectivity
                     except Exception as e:
-                        logger.info("BH Connectivity: ({} - {})".format(bh_connectivity, e.message))
+                        print("BH Connectivity: ({} - {})".format(bh_connectivity, e.message))
                 # bh circuit id
                 if bh_circuit_id:
                     try:
                         backhaul.bh_circuit_id = bh_circuit_id
                     except Exception as e:
-                        logger.info("BH Circuit ID: ({} - {})".format(bh_circuit_id, e.message))
+                        print("BH Circuit ID: ({} - {})".format(bh_circuit_id, e.message))
                 # ttsl circuit id
                 if ttsl_circuit_id:
                     try:
                         backhaul.ttsl_circuit_id = ttsl_circuit_id
                     except Exception as e:
-                        logger.info("BSO Circuit IB: ({} - {})".format(ttsl_circuit_id, e.message))
+                        print("BSO Circuit IB: ({} - {})".format(ttsl_circuit_id, e.message))
                 # dr site
                 if dr_site:
                     try:
                         backhaul.dr_site = dr_site
                     except Exception as e:
-                        logger.info("DR Site: ({} - {})".format(dr_site, e.message))
+                        print("DR Site: ({} - {})".format(dr_site, e.message))
                 # description
                 if description:
                     try:
                         backhaul.description = description
                     except Exception as e:
-                        logger.info("Description: ({} - {})".format(description, e.message))
+                        print("Description: ({} - {})".format(description, e.message))
                 # saving backhaul
                 backhaul.save()
                 return backhaul
@@ -3832,138 +3876,138 @@ def create_backhaul(backhaul_payload):
                     try:
                         backhaul.name = name
                     except Exception as e:
-                        logger.info("BH Alias: ({} - {})".format(alias, e.message))
+                        print("BH Alias: ({} - {})".format(alias, e.message))
                 # alias
                 if alias:
                     try:
                         backhaul.alias = alias
                     except Exception as e:
-                        logger.info("BH Alias: ({} - {})".format(alias, e.message))
+                        print("BH Alias: ({} - {})".format(alias, e.message))
                 # bh configured on
                 if bh_configured_on:
                     try:
                         backhaul.bh_configured_on = bh_configured_on
                     except Exception as e:
-                        logger.info("BH Configured On: ({} - {})".format(bh_configured_on, e.message))
+                        print("BH Configured On: ({} - {})".format(bh_configured_on, e.message))
                 # bh port name
                 if bh_port_name:
                     try:
                         backhaul.bh_port_name = bh_port_name
                     except Exception as e:
-                        logger.info("BH Port Name: ({} - {})".format(bh_port_name, e.message))
+                        print("BH Port Name: ({} - {})".format(bh_port_name, e.message))
                 # bh port
                 if bh_port:
                     try:
                         backhaul.bh_port = bh_port
                     except Exception as e:
-                        logger.info("BH Port: ({} - {})".format(bh_port, e.message))
+                        print("BH Port: ({} - {})".format(bh_port, e.message))
                 # bh type
                 if bh_type:
                     try:
                         backhaul.bh_type = bh_type
                     except Exception as e:
-                        logger.info("BH Type: ({} - {})".format(bh_type, e.message))
+                        print("BH Type: ({} - {})".format(bh_type, e.message))
                 # bh switch
                 if bh_switch:
                     try:
                         backhaul.bh_switch = bh_switch
                     except Exception as e:
-                        logger.info("BH Switch: ({} - {})".format(bh_switch, e.message))
+                        print("BH Switch: ({} - {})".format(bh_switch, e.message))
                 # switch port name
                 if switch_port_name:
                     try:
                         backhaul.switch_port_name = switch_port_name
                     except Exception as e:
-                        logger.info("Switch Port Name: ({} - {})".format(switch_port_name, e.message))
+                        print("Switch Port Name: ({} - {})".format(switch_port_name, e.message))
                 # switch port
                 if switch_port:
                     try:
                         backhaul.switch_port = switch_port
                     except Exception as e:
-                        logger.info("Switch Port: ({} - {})".format(switch_port, e.message))
+                        print("Switch Port: ({} - {})".format(switch_port, e.message))
                 # pop
                 if pop:
                     try:
                         backhaul.pop = pop
                     except Exception as e:
-                        logger.info("POP: ({} - {})".format(pop, e.message))
+                        print("POP: ({} - {})".format(pop, e.message))
                 # pop port name
                 if pop_port_name:
                     try:
                         backhaul.pop_port_name = pop_port_name
                     except Exception as e:
-                        logger.info("POP Port Name: ({} - {})".format(pop_port_name, e.message))
+                        print("POP Port Name: ({} - {})".format(pop_port_name, e.message))
                 # pop_port
                 if pop_port:
                     try:
                         backhaul.pop_port = pop_port
                     except Exception as e:
-                        logger.info("POP Port: ({} - {})".format(pop_port, e.message))
+                        print("POP Port: ({} - {})".format(pop_port, e.message))
                 # aggregator
                 if aggregator:
                     try:
                         backhaul.aggregator = aggregator
                     except Exception as e:
-                        logger.info("Aggregator: ({} - {})".format(aggregator, e.message))
+                        print("Aggregator: ({} - {})".format(aggregator, e.message))
                 # aggregator port name
                 if aggregator_port_name:
                     try:
                         backhaul.aggregator_port_name = aggregator_port_name
                     except Exception as e:
-                        logger.info("Aggregator Port Name: ({} - {})".format(aggregator_port_name, e.message))
+                        print("Aggregator Port Name: ({} - {})".format(aggregator_port_name, e.message))
                 # aggregator port
                 if aggregator_port:
                     try:
                         backhaul.aggregator_port = aggregator_port
                     except Exception as e:
-                        logger.info("Aggregator Port: ({} - {})".format(aggregator_port, e.message))
+                        print("Aggregator Port: ({} - {})".format(aggregator_port, e.message))
                 # pe hostname
                 if pe_hostname:
                     try:
                         backhaul.pe_hostname = pe_hostname
                     except Exception as e:
-                        logger.info("PE Hostname: ({} - {})".format(pe_hostname, e.message))
+                        print("PE Hostname: ({} - {})".format(pe_hostname, e.message))
                 # pe ip
                 if pe_ip:
                     try:
                         backhaul.pe_ip = pe_ip
                     except Exception as e:
-                        logger.info("PE IP: ({} - {})".format(pe_ip, e.message))
+                        print("PE IP: ({} - {})".format(pe_ip, e.message))
                 # bh connectivity
                 if bh_connectivity:
                     try:
                         backhaul.bh_connectivity = bh_connectivity
                     except Exception as e:
-                        logger.info("BH Connectivity: ({} - {})".format(bh_connectivity, e.message))
+                        print("BH Connectivity: ({} - {})".format(bh_connectivity, e.message))
                 # bh circuit id
                 if bh_circuit_id:
                     try:
                         backhaul.bh_circuit_id = bh_circuit_id
                     except Exception as e:
-                        logger.info("BH Circuit ID: ({} - {})".format(bh_circuit_id, e.message))
+                        print("BH Circuit ID: ({} - {})".format(bh_circuit_id, e.message))
                 # ttsl circuit id
                 if ttsl_circuit_id:
                     try:
                         backhaul.ttsl_circuit_id = ttsl_circuit_id
                     except Exception as e:
-                        logger.info("BSO Circuit IB: ({} - {})".format(ttsl_circuit_id, e.message))
+                        print("BSO Circuit IB: ({} - {})".format(ttsl_circuit_id, e.message))
                 # dr site
                 if dr_site:
                     try:
                         backhaul.dr_site = dr_site
                     except Exception as e:
-                        logger.info("DR Site: ({} - {})".format(dr_site, e.message))
+                        print("DR Site: ({} - {})".format(dr_site, e.message))
                 # description
                 if description:
                     try:
                         backhaul.description = description
                     except Exception as e:
-                        logger.info("Description: ({} - {})".format(description, e.message))
+                        print("Description: ({} - {})".format(description, e.message))
                 try:
                     backhaul.save()
                     return backhaul
                 except Exception as e:
-                    logger.info("Backhaul Object: ({} - {})".format(name, e.message))
+                    print("Backhaul Object: ({} - {})".format(name, e.message))
                     return ""
 
 
@@ -4047,6 +4091,9 @@ def create_basestation(basestation_payload):
     if 'description' in basestation_payload.keys():
         description = basestation_payload['description'] if basestation_payload['description'] else ""
 
+    # lat long validator
+    regex_lat_long = '^[-+]?\d*\.\d+|\d+'
+
     if name:
         if name not in ['NA', 'na', 'N/A', 'n/a']:
             # ---------------------------- UPDATING BASE STATION -----------------------------
@@ -4059,89 +4106,99 @@ def create_basestation(basestation_payload):
                     try:
                         basestation.alias = alias
                     except Exception as e:
-                        logger.info("BH Alias: ({} - {})".format(alias, e.message))
+                        print("BH Alias: ({} - {})".format(alias, e.message))
                 # bs site id
                 if bs_site_id:
                     try:
                         basestation.bs_site_id = bs_site_id
                     except Exception as e:
-                        logger.info("BS Site ID: ({} - {})".format(bs_site_id, e.message))
+                        print("BS Site ID: ({} - {})".format(bs_site_id, e.message))
                 # bs site type
                 if bs_site_type:
                     try:
                         basestation.bs_site_type = bs_site_type
                     except Exception as e:
-                        logger.info("BS Site Type: ({} - {})".format(bs_site_type, e.message))
+                        print("BS Site Type: ({} - {})".format(bs_site_type, e.message))
                 # bs switch
                 if bs_switch:
                     try:
                         basestation.bs_switch = bs_switch
                     except Exception as e:
-                        logger.info("BS Switch: ({} - {})".format(bs_switch, e.message))
+                        print("BS Switch: ({} - {})".format(bs_switch, e.message))
                 # backhaul
                 if backhaul:
                     try:
                         basestation.backhaul = backhaul
                     except Exception as e:
-                        logger.info("Backhaul: ({} - {})".format(backhaul, e.message))
+                        print("Backhaul: ({} - {})".format(backhaul, e.message))
                 # bs type
                 if bs_type:
                     try:
                         basestation.bs_type = bs_type
                     except Exception as e:
-                        logger.info("BS Type: ({} - {})".format(bs_type, e.message))
+                        print("BS Type: ({} - {})".format(bs_type, e.message))
                 # bh bso
                 if bh_bso:
                     try:
                         basestation.bh_bso = bh_bso
                     except Exception as e:
-                        logger.info("BH BSO: ({} - {})".format(bh_bso, e.message))
+                        print("BH BSO: ({} - {})".format(bh_bso, e.message))
                 # hssu used
                 if hssu_used:
                     try:
                         basestation.hssu_used = hssu_used
                     except Exception as e:
-                        logger.info("HSSU Used: ({} - {})".format(hssu_used, e.message))
+                        print("HSSU Used: ({} - {})".format(hssu_used, e.message))
                 # latitude
-                if latitude:
-                    if isinstance(latitude, int) or isinstance(latitude, float):
-                        try:
-                            basestation.latitude = latitude
-                        except Exception as e:
-                            logger.info("Latitude: ({} - {})".format(latitude, e.message))
+                if re.match(regex_lat_long, str(latitude).strip()):
+                    try:
+                        basestation.latitude = float(latitude)
+                    except Exception as e:
+                        print("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
-                if longitude:
-                    if isinstance(longitude, int) or isinstance(longitude, float):
-                        try:
-                            basestation.longitude = longitude
-                        except Exception as e:
-                            logger.info("Longitude: ({} - {})".format(longitude, e.message))
+                if re.match(regex_lat_long, str(longitude).strip()):
+                    try:
+                        basestation.longitude = float(longitude)
+                    except Exception as e:
+                        print("Longitude: ({} - {})".format(latitude, e.message))
                 # infra provider
                 if infra_provider:
                     try:
                         basestation.infra_provider = infra_provider
                     except Exception as e:
-                        logger.info("Infra Provider: ({} - {})".format(infra_provider, e.message))
+                        print("Infra Provider: ({} - {})".format(infra_provider, e.message))
                 # gps type
                 if gps_type:
                     try:
                         basestation.gps_type = gps_type
                     except Exception as e:
-                        logger.info("GPS Type: ({} - {})".format(gps_type, e.message))
+                        print("GPS Type: ({} - {})".format(gps_type, e.message))
                 # building height
                 if building_height:
+                    print "****************************** building height - ", building_height
                     if isinstance(building_height, int) or isinstance(building_height, float):
                         try:
                             basestation.building_height = building_height
                         except Exception as e:
-                            logger.info("Building Height: ({} - {})".format(building_height, e.message))
+                            print("Building Height: ({} - {})".format(building_height, e.message))
+                    if isinstance(building_height, basestring):
+                        try:
+                            basestation.building_height = float(building_height)
+                        except Exception as e:
+                            print("Building Height: ({} - {})".format(building_height, e.message))
                 # tower height
                 if tower_height:
+                    print "****************************** tower height - ", tower_height
                     if isinstance(tower_height, int) or isinstance(tower_height, float):
                         try:
                             basestation.tower_height = tower_height
                         except Exception as e:
-                            logger.info("Tower Height: ({} - {})".format(tower_height, e.message))
+                            print("Tower Height: ({} - {})".format(tower_height, e.message))
+                    if isinstance(tower_height, basestring):
+                        try:
+                            basestation.tower_height = float(tower_height)
+                        except Exception as e:
+                            print("Tower Height: ({} - {})".format(tower_height, e.message))
                 # country
                 basestation.country = 1
                 # state
@@ -4152,7 +4209,7 @@ def create_basestation(basestation_payload):
                             raise Exception("While Base Station Update: State Not Found")
                         basestation.state = device_state_id
                     except Exception as e:
-                        logger.info("BS State: ({})".format(e.message))
+                        print("BS State: ({})".format(e.message))
                 # city
                 if city:
                     try:
@@ -4164,19 +4221,19 @@ def create_basestation(basestation_payload):
                             raise Exception("While Base Station: In City: State Not Found")
                         basestation.city = device_city_id
                     except Exception as e:
-                        logger.info("BS City: ({})".format(e.message))
+                        print("BS City: ({})".format(e.message))
                 # address
                 if address:
                     try:
                         basestation.address = address
                     except Exception as e:
-                        logger.info("BS Address: ({} - {})".format(address, e.message))
+                        print("BS Address: ({} - {})".format(address, e.message))
                 # description
                 if description:
                     try:
                         basestation.description = description
                     except Exception as e:
-                        logger.info("BS Description: ({} - {})".format(description, e.message))
+                        print("BS Description: ({} - {})".format(description, e.message))
                 # saving base station
                 basestation.save()
                 return basestation
@@ -4190,95 +4247,93 @@ def create_basestation(basestation_payload):
                     try:
                         basestation.name = name
                     except Exception as e:
-                        logger.info("BH Name: ({} - {})".format(name, e.message))
+                        print("BH Name: ({} - {})".format(name, e.message))
                 # alias
                 if alias:
                     try:
                         basestation.alias = alias
                     except Exception as e:
-                        logger.info("BH Alias: ({} - {})".format(alias, e.message))
+                        print("BH Alias: ({} - {})".format(alias, e.message))
                 # bs site id
                 if bs_site_id:
                     try:
                         basestation.bs_site_id = bs_site_id
                     except Exception as e:
-                        logger.info("BS Site ID: ({} - {})".format(bs_site_id, e.message))
+                        print("BS Site ID: ({} - {})".format(bs_site_id, e.message))
                 # bs site type
                 if bs_site_type:
                     try:
                         basestation.bs_site_type = bs_site_type
                     except Exception as e:
-                        logger.info("BS Site Type: ({} - {})".format(bs_site_type, e.message))
+                        print("BS Site Type: ({} - {})".format(bs_site_type, e.message))
                 # bs switch
                 if bs_switch:
                     try:
                         basestation.bs_switch = bs_switch
                     except Exception as e:
-                        logger.info("BS Switch: ({} - {})".format(bs_switch, e.message))
+                        print("BS Switch: ({} - {})".format(bs_switch, e.message))
                 # backhaul
                 if backhaul:
                     try:
                         basestation.backhaul = backhaul
                     except Exception as e:
-                        logger.info("Backhaul: ({} - {})".format(backhaul, e.message))
+                        print("Backhaul: ({} - {})".format(backhaul, e.message))
                 # bs type
                 if bs_type:
                     try:
                         basestation.bs_type = bs_type
                     except Exception as e:
-                        logger.info("BS Type: ({} - {})".format(bs_type, e.message))
+                        print("BS Type: ({} - {})".format(bs_type, e.message))
                 # bh bso
                 if bh_bso:
                     try:
                         basestation.bh_bso = bh_bso
                     except Exception as e:
-                        logger.info("BH BSO: ({} - {})".format(bh_bso, e.message))
+                        print("BH BSO: ({} - {})".format(bh_bso, e.message))
                 # hssu used
                 if hssu_used:
                     try:
                         basestation.hssu_used = hssu_used
                     except Exception as e:
-                        logger.info("HSSU Used: ({} - {})".format(hssu_used, e.message))
+                        print("HSSU Used: ({} - {})".format(hssu_used, e.message))
                 # latitude
-                if latitude:
-                    if isinstance(latitude, int) or isinstance(latitude, float):
-                        try:
-                            basestation.latitude = latitude
-                        except Exception as e:
-                            logger.info("Latitude: ({} - {})".format(latitude, e.message))
+                if re.match(regex_lat_long, str(latitude).strip()):
+                    try:
+                        basestation.latitude = float(latitude)
+                    except Exception as e:
+                        print("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
-                if longitude:
-                    if isinstance(longitude, int) or isinstance(longitude, float):
-                        try:
-                            basestation.longitude = longitude
-                        except Exception as e:
-                            logger.info("Longitude: ({} - {})".format(longitude, e.message))
+                if re.match(regex_lat_long, str(longitude).strip()):
+                    try:
+                        basestation.longitude = float(longitude)
+                    except Exception as e:
+                        print("Longitude: ({} - {})".format(latitude, e.message))
                 # infra provider
                 if infra_provider:
                     try:
                         basestation.infra_provider = infra_provider
                     except Exception as e:
-                        logger.info("Infra Provider: ({} - {})".format(infra_provider, e.message))
+                        print("Infra Provider: ({} - {})".format(infra_provider, e.message))
                 # gps type
                 if gps_type:
                     try:
                         basestation.gps_type = gps_type
                     except Exception as e:
-                        logger.info("GPS Type: ({} - {})".format(gps_type, e.message))
+                        print("GPS Type: ({} - {})".format(gps_type, e.message))
                 # building height
                 if building_height:
                     if isinstance(building_height, int) or isinstance(building_height, float):
                         try:
                             basestation.building_height = building_height
                         except Exception as e:
-                            logger.info("Building Height: ({} - {})".format(building_height, e.message))
+                            print("Building Height: ({} - {})".format(building_height, e.message))
                 # tower height
                 if tower_height:
                     if isinstance(tower_height, int) or isinstance(tower_height, float):
                         try:
                             basestation.tower_height = tower_height
                         except Exception as e:
-                            logger.info("Tower Height: ({} - {})".format(tower_height, e.message))
+                            print("Tower Height: ({} - {})".format(tower_height, e.message))
                 # country
                 basestation.country = 1
                 # state
@@ -4289,7 +4344,7 @@ def create_basestation(basestation_payload):
                             raise Exception("While Base Station Update: State Not Found")
                         basestation.state = device_state_id
                     except Exception as e:
-                        logger.info("BS State: ({})".format(e.message))
+                        print("BS State: ({})".format(e.message))
                 # city
                 if city:
                     try:
@@ -4301,24 +4356,24 @@ def create_basestation(basestation_payload):
                             raise Exception("While Base Station: In City: State Not Found")
                         basestation.city = device_city_id
                     except Exception as e:
-                        logger.info("BS City: ({})".format(e.message))
+                        print("BS City: ({})".format(e.message))
                 # address
                 if address:
                     try:
                         basestation.address = address
                     except Exception as e:
-                        logger.info("BS Address: ({} - {})".format(address, e.message))
+                        print("BS Address: ({} - {})".format(address, e.message))
                 # description
                 if description:
                     try:
                         basestation.description = description
                     except Exception as e:
-                        logger.info("BS Description: ({} - {})".format(description, e.message))
+                        print("BS Description: ({} - {})".format(description, e.message))
                 try:
                     basestation.save()
                     return basestation
                 except Exception as e:
-                    logger.info("Base Station Object: ({} - {})".format(name, e.message))
+                    print("Base Station Object: ({} - {})".format(name, e.message))
                     return ""
 
 
@@ -4395,103 +4450,103 @@ def create_sector(sector_payload):
                     try:
                         sector.alias = alias
                     except Exception as e:
-                        logger.info("Sector Alias: ({} - {})".format(alias, e.message))
+                        print("Sector Alias: ({} - {})".format(alias, e.message))
                 # sector id
                 if sector_id:
                     try:
                         sector.sector_id = sector_id
                     except Exception as e:
-                        logger.info("Sector ID: ({} - {})".format(sector_id, e.message))
+                        print("Sector ID: ({} - {})".format(sector_id, e.message))
                 # base station
                 if base_station:
                     try:
                         sector.base_station = base_station
                     except Exception as e:
-                        logger.info("Sector Base Station: ({} - {})".format(base_station, e.message))
+                        print("Sector Base Station: ({} - {})".format(base_station, e.message))
                 # bs technology
                 if bs_technology:
                     try:
                         sector.bs_technology = DeviceTechnology.objects.get(pk=bs_technology)
                     except Exception as e:
-                        logger.info("BS Technology: ({} - {})".format(bs_technology, e.message))
+                        print("BS Technology: ({} - {})".format(bs_technology, e.message))
                 # sector configured on
                 if sector_configured_on:
                     try:
                         sector.sector_configured_on = sector_configured_on
                     except Exception as e:
-                        logger.info("Sector Configured On: ({} - {})".format(sector_configured_on, e.message))
+                        print("Sector Configured On: ({} - {})".format(sector_configured_on, e.message))
                 # sector configured on port
                 if sector_configured_on_port:
                     try:
                         sector.sector_configured_on_port = sector_configured_on_port
                     except Exception as e:
-                        logger.info("Sector Configured On Port: ({} - {})".format(sector_configured_on_port, e.message))
+                        print("Sector Configured On Port: ({} - {})".format(sector_configured_on_port, e.message))
                 # antenna
                 if antenna:
                     try:
                         sector.antenna = antenna
                     except Exception as e:
-                        logger.info("Sector Antenna: ({} - {})".format(antenna, e.message))
+                        print("Sector Antenna: ({} - {})".format(antenna, e.message))
                 # mrc
                 if mrc:
                     try:
                         sector.mrc = mrc
                     except Exception as e:
-                        logger.info("MRC: ({} - {})".format(mrc, e.message))
+                        print("MRC: ({} - {})".format(mrc, e.message))
                 # tx power
                 if tx_power:
                     if isinstance(tx_power, int) or isinstance(tx_power, float):
                         try:
                             sector.tx_power = tx_power
                         except Exception as e:
-                            logger.info("TX Power: ({} - {})".format(tx_power, e.message))
+                            print("TX Power: ({} - {})".format(tx_power, e.message))
                 # rx power
                 if rx_power:
                     if isinstance(rx_power, int) or isinstance(rx_power, float):
                         try:
                             sector.rx_power = rx_power
                         except Exception as e:
-                            logger.info("RX Power: ({} - {})".format(rx_power, e.message))
+                            print("RX Power: ({} - {})".format(rx_power, e.message))
                 # rf bandwidth
                 if rf_bandwidth:
                     if isinstance(rf_bandwidth, int) or isinstance(rf_bandwidth, float):
                         try:
                             sector.rf_bandwidth = rf_bandwidth
                         except Exception as e:
-                            logger.info("RF Bandwidth: ({} - {})".format(rf_bandwidth, e.message))
+                            print("RF Bandwidth: ({} - {})".format(rf_bandwidth, e.message))
                 # frame length
                 if frame_length:
                     if isinstance(frame_length, int) or isinstance(frame_length, float):
                         try:
                             sector.frame_length = frame_length
                         except Exception as e:
-                            logger.info("Frame Length: ({} - {})".format(frame_length, e.message))
+                            print("Frame Length: ({} - {})".format(frame_length, e.message))
                 # cell radius
                 if cell_radius:
                     if isinstance(cell_radius, int) or isinstance(cell_radius, float):
                         try:
                             sector.cell_radius = cell_radius
                         except Exception as e:
-                            logger.info("Cell Radius: ({} - {})".format(cell_radius, e.message))
+                            print("Cell Radius: ({} - {})".format(cell_radius, e.message))
                 # frequency
                 if frequency:
                     if isinstance(frequency, int) or isinstance(frequency, float):
                         try:
                             sector.frequency = frequency
                         except Exception as e:
-                            logger.info("Frequency: ({} - {})".format(frequency, e.message))
+                            print("Frequency: ({} - {})".format(frequency, e.message))
                 # modulation
                 if modulation:
                     try:
                         sector.modulation = modulation
                     except Exception as e:
-                        logger.info("Modulation: ({} - {})".format(modulation, e.message))
+                        print("Modulation: ({} - {})".format(modulation, e.message))
                 # description
                 if description:
                     try:
                         sector.description = description
                     except Exception as e:
-                        logger.info("Sector Description: ({} - {})".format(description, e.message))
+                        print("Sector Description: ({} - {})".format(description, e.message))
                 # saving sector
                 sector.save()
                 return sector
@@ -4504,114 +4559,114 @@ def create_sector(sector_payload):
                     try:
                         sector.name = name
                     except Exception as e:
-                        logger.info("Sector Name: ({} - {})".format(name, e.message))
+                        print("Sector Name: ({} - {})".format(name, e.message))
                 # alias
                 if alias:
                     try:
                         sector.alias = alias
                     except Exception as e:
-                        logger.info("Sector Alias: ({} - {})".format(alias, e.message))
+                        print("Sector Alias: ({} - {})".format(alias, e.message))
                 # sector id
                 if sector_id:
                     try:
                         sector.sector_id = sector_id
                     except Exception as e:
-                        logger.info("Sector ID: ({} - {})".format(sector_id, e.message))
+                        print("Sector ID: ({} - {})".format(sector_id, e.message))
                 # base station
                 if base_station:
                     try:
                         sector.base_station = base_station
                     except Exception as e:
-                        logger.info("Sector Base Station: ({} - {})".format(base_station, e.message))
+                        print("Sector Base Station: ({} - {})".format(base_station, e.message))
                 # bs technology
                 if bs_technology:
                     try:
                         sector.bs_technology = DeviceTechnology.objects.get(pk=bs_technology)
                     except Exception as e:
-                        logger.info("BS Technology: ({} - {})".format(bs_technology, e.message))
+                        print("BS Technology: ({} - {})".format(bs_technology, e.message))
                 # sector configured on
                 if sector_configured_on:
                     try:
                         sector.sector_configured_on = sector_configured_on
                     except Exception as e:
-                        logger.info("Sector Configured On: ({} - {})".format(sector_configured_on, e.message))
+                        print("Sector Configured On: ({} - {})".format(sector_configured_on, e.message))
                 # sector configured on port
                 if sector_configured_on_port:
                     try:
                         sector.sector_configured_on_port = sector_configured_on_port
                     except Exception as e:
-                        logger.info("Sector Configured On Port: ({} - {})".format(sector_configured_on_port, e.message))
+                        print("Sector Configured On Port: ({} - {})".format(sector_configured_on_port, e.message))
                 # antenna
                 if antenna:
                     try:
                         sector.antenna = antenna
                     except Exception as e:
-                        logger.info("Sector Antenna: ({} - {})".format(antenna, e.message))
+                        print("Sector Antenna: ({} - {})".format(antenna, e.message))
                 # mrc
                 if mrc:
                     try:
                         sector.mrc = mrc
                     except Exception as e:
-                        logger.info("MRC: ({} - {})".format(mrc, e.message))
+                        print("MRC: ({} - {})".format(mrc, e.message))
                 # tx power
                 if tx_power:
                     if isinstance(tx_power, int) or isinstance(tx_power, float):
                         try:
                             sector.tx_power = tx_power
                         except Exception as e:
-                            logger.info("TX Power: ({} - {})".format(tx_power, e.message))
+                            print("TX Power: ({} - {})".format(tx_power, e.message))
                 # rx power
                 if rx_power:
                     if isinstance(rx_power, int) or isinstance(rx_power, float):
                         try:
                             sector.rx_power = rx_power
                         except Exception as e:
-                            logger.info("RX Power: ({} - {})".format(rx_power, e.message))
+                            print("RX Power: ({} - {})".format(rx_power, e.message))
                 # rf bandwidth
                 if rf_bandwidth:
                     if isinstance(rf_bandwidth, int) or isinstance(rf_bandwidth, float):
                         try:
                             sector.rf_bandwidth = rf_bandwidth
                         except Exception as e:
-                            logger.info("RF Bandwidth: ({} - {})".format(rf_bandwidth, e.message))
+                            print("RF Bandwidth: ({} - {})".format(rf_bandwidth, e.message))
                 # frame length
                 if frame_length:
                     if isinstance(frame_length, int) or isinstance(frame_length, float):
                         try:
                             sector.frame_length = frame_length
                         except Exception as e:
-                            logger.info("Frame Length: ({} - {})".format(frame_length, e.message))
+                            print("Frame Length: ({} - {})".format(frame_length, e.message))
                 # cell radius
                 if cell_radius:
                     if isinstance(cell_radius, int) or isinstance(cell_radius, float):
                         try:
                             sector.cell_radius = cell_radius
                         except Exception as e:
-                            logger.info("Cell Radius: ({} - {})".format(cell_radius, e.message))
+                            print("Cell Radius: ({} - {})".format(cell_radius, e.message))
                 # frequency
                 if frequency:
                     if isinstance(frequency, int) or isinstance(frequency, float):
                         try:
                             sector.frequency = frequency
                         except Exception as e:
-                            logger.info("Frequency: ({} - {})".format(frequency, e.message))
+                            print("Frequency: ({} - {})".format(frequency, e.message))
                 # modulation
                 if modulation:
                     try:
                         sector.modulation = modulation
                     except Exception as e:
-                        logger.info("Modulation: ({} - {})".format(modulation, e.message))
+                        print("Modulation: ({} - {})".format(modulation, e.message))
                 # description
                 if description:
                     try:
                         sector.description = description
                     except Exception as e:
-                        logger.info("Sector Description: ({} - {})".format(description, e.message))
+                        print("Sector Description: ({} - {})".format(description, e.message))
                 try:
                     sector.save()
                     return sector
                 except Exception as e:
-                    logger.info("Sector Object: ({} - {})".format(name, e.message))
+                    print("Sector Object: ({} - {})".format(name, e.message))
                     return ""
 
 
@@ -4666,19 +4721,19 @@ def create_customer(customer_payload):
                     try:
                         customer.alias = alias
                     except Exception as e:
-                        logger.info("Customer Alias: ({} - {})".format(alias, e.message))
+                        print("Customer Alias: ({} - {})".format(alias, e.message))
                 # address
                 if address:
                     try:
                         customer.address = address
                     except Exception as e:
-                        logger.info("Customer Address: ({} - {})".format(address, e.message))
+                        print("Customer Address: ({} - {})".format(address, e.message))
                 # description
                 if description:
                     try:
                         customer.description = description
                     except Exception as e:
-                        logger.info("Customer Description: ({} - {})".format(description, e.message))
+                        print("Customer Description: ({} - {})".format(description, e.message))
                 # saving customer
                 customer.save()
                 return customer
@@ -4691,30 +4746,30 @@ def create_customer(customer_payload):
                     try:
                         customer.name = name
                     except Exception as e:
-                        logger.info("Customer Name: ({} - {})".format(name, e.message))
+                        print("Customer Name: ({} - {})".format(name, e.message))
                 # alias
                 if alias:
                     try:
                         customer.alias = alias
                     except Exception as e:
-                        logger.info("Customer Alias: ({} - {})".format(alias, e.message))
+                        print("Customer Alias: ({} - {})".format(alias, e.message))
                 # address
                 if address:
                     try:
                         customer.address = address
                     except Exception as e:
-                        logger.info("Customer Address: ({} - {})".format(address, e.message))
+                        print("Customer Address: ({} - {})".format(address, e.message))
                 # description
                 if description:
                     try:
                         customer.description = description
                     except Exception as e:
-                        logger.info("Customer Description: ({} - {})".format(description, e.message))
+                        print("Customer Description: ({} - {})".format(description, e.message))
                 try:
                     customer.save()
                     return customer
                 except Exception as e:
-                    logger.info("Customer Object: ({} - {})".format(name, e.message))
+                    print("Customer Object: ({} - {})".format(name, e.message))
                     return ""
 
 
@@ -4809,78 +4864,78 @@ def create_substation(substation_payload):
                     try:
                         substation.alias = alias
                     except Exception as e:
-                        logger.info("Sub Station Alias: ({} - {})".format(alias, e.message))
+                        print("Sub Station Alias: ({} - {})".format(alias, e.message))
                 # device
                 if device:
                     try:
                         substation.device = device
                     except Exception as e:
-                        logger.info("Sub Station Device: ({} - {})".format(device, e.message))
+                        print("Sub Station Device: ({} - {})".format(device, e.message))
                 # antenna
                 if antenna:
                     try:
                         substation.antenna = antenna
                     except Exception as e:
-                        logger.info("Sub Station Antenna: ({} - {})".format(antenna, e.message))
+                        print("Sub Station Antenna: ({} - {})".format(antenna, e.message))
                 # version
                 if version:
                     try:
                         substation.version = version
                     except Exception as e:
-                        logger.info("Sub Station Version: ({} - {})".format(version, e.message))
+                        print("Sub Station Version: ({} - {})".format(version, e.message))
                 # serial no
                 if serial_no:
                     try:
                         substation.serial_no = serial_no
                     except Exception as e:
-                        logger.info("Sub Station Serial No.: ({} - {})".format(serial_no, e.message))
+                        print("Sub Station Serial No.: ({} - {})".format(serial_no, e.message))
                 # building_height
                 if building_height:
                     if isinstance(building_height, int) or isinstance(building_height, float):
                         try:
                             substation.building_height = building_height
                         except Exception as e:
-                            logger.info("Sub Station Building Height: ({} - {})".format(building_height, e.message))
+                            print("Sub Station Building Height: ({} - {})".format(building_height, e.message))
                 # tower_height
                 if tower_height:
                     if isinstance(tower_height, int) or isinstance(tower_height, float):
                         try:
                             substation.tower_height = tower_height
                         except Exception as e:
-                            logger.info("Sub Station Tower Height: ({} - {})".format(antenna, e.message))
+                            print("Sub Station Tower Height: ({} - {})".format(antenna, e.message))
                 # ethernet extender
                 if ethernet_extender:
                     try:
                         substation.ethernet_extender = ethernet_extender
                     except Exception as e:
-                        logger.info("Sub Station Ethernet Extender: ({} - {})".format(ethernet_extender, e.message))
+                        print("Sub Station Ethernet Extender: ({} - {})".format(ethernet_extender, e.message))
                 # cable length
                 if cable_length:
                     if isinstance(cable_length, int) or isinstance(cable_length, float):
                         try:
                             substation.cable_length = cable_length
                         except Exception as e:
-                            logger.info("Sub Station Cable Length: ({} - {})".format(cable_length, e.message))
+                            print("Sub Station Cable Length: ({} - {})".format(cable_length, e.message))
                 # latitude
                 if latitude:
                     if isinstance(latitude, int) or isinstance(latitude, float):
                         try:
                             substation.latitude = latitude
                         except Exception as e:
-                            logger.info("Sub Station Latitude: ({} - {})".format(latitude, e.message))
+                            print("Sub Station Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
                 if longitude:
                     if isinstance(longitude, int) or isinstance(longitude, float):
                         try:
                             substation.longitude = longitude
                         except Exception as e:
-                            logger.info("Sub Station Longitude: ({} - {})".format(longitude, e.message))
+                            print("Sub Station Longitude: ({} - {})".format(longitude, e.message))
                 # mac_address
                 if mac_address:
                     try:
                         substation.mac_address = mac_address
                     except Exception as e:
-                        logger.info("Sub Station MAC Address: ({} - {})".format(mac_address, e.message))
+                        print("Sub Station MAC Address: ({} - {})".format(mac_address, e.message))
                 # country
                 substation.country = 1
                 # state
@@ -4891,7 +4946,7 @@ def create_substation(substation_payload):
                             raise Exception("While Base Station Insert: State Not Found")
                         substation.state = device_state_id
                     except Exception as e:
-                        logger.info("Sub Station BS State: ({})".format(e.message))
+                        print("Sub Station BS State: ({})".format(e.message))
                 # city
                 if city:
                     try:
@@ -4903,19 +4958,19 @@ def create_substation(substation_payload):
                             raise Exception("While Base Station: In City: State Not Found")
                         substation.city = device_city_id
                     except Exception as e:
-                        logger.info("Sub Station BS City: ({})".format(e.message))
+                        print("Sub Station BS City: ({})".format(e.message))
                 # address
                 if address:
                     try:
                         substation.address = address
                     except Exception as e:
-                        logger.info("Sub Station Address: ({})".format(e.message))
+                        print("Sub Station Address: ({})".format(e.message))
                 # description
                 if description:
                     try:
                         substation.description = description
                     except Exception as e:
-                        logger.info("Sub Station Sector Description: ({} - {})".format(description, e.message))
+                        print("Sub Station Sector Description: ({} - {})".format(description, e.message))
                 # saving sub station
                 substation.save()
                 return substation
@@ -4928,84 +4983,84 @@ def create_substation(substation_payload):
                     try:
                         substation.name = name
                     except Exception as e:
-                        logger.info("Sub Station Name: ({} - {})".format(name, e.message))
+                        print("Sub Station Name: ({} - {})".format(name, e.message))
                 # alias
                 if alias:
                     try:
                         substation.alias = alias
                     except Exception as e:
-                        logger.info("Sub Station Alias: ({} - {})".format(alias, e.message))
+                        print("Sub Station Alias: ({} - {})".format(alias, e.message))
                 # device
                 if device:
                     try:
                         substation.device = device
                     except Exception as e:
-                        logger.info("Sub Station Device: ({} - {})".format(device, e.message))
+                        print("Sub Station Device: ({} - {})".format(device, e.message))
                 # antenna
                 if antenna:
                     try:
                         substation.antenna = antenna
                     except Exception as e:
-                        logger.info("Sub Station Antenna: ({} - {})".format(antenna, e.message))
+                        print("Sub Station Antenna: ({} - {})".format(antenna, e.message))
                 # version
                 if version:
                     try:
                         substation.version = version
                     except Exception as e:
-                        logger.info("Sub Station Version: ({} - {})".format(version, e.message))
+                        print("Sub Station Version: ({} - {})".format(version, e.message))
                 # serial no
                 if serial_no:
                     try:
                         substation.serial_no = serial_no
                     except Exception as e:
-                        logger.info("Sub Station Serial No.: ({} - {})".format(serial_no, e.message))
+                        print("Sub Station Serial No.: ({} - {})".format(serial_no, e.message))
                 # building_height
                 if building_height:
                     if isinstance(building_height, int) or isinstance(building_height, float):
                         try:
                             substation.building_height = building_height
                         except Exception as e:
-                            logger.info("Sub Station Building Height: ({} - {})".format(building_height, e.message))
+                            print("Sub Station Building Height: ({} - {})".format(building_height, e.message))
                 # tower_height
                 if tower_height:
                     if isinstance(tower_height, int) or isinstance(tower_height, float):
                         try:
                             substation.tower_height = tower_height
                         except Exception as e:
-                            logger.info("Sub Station Tower Height: ({} - {})".format(antenna, e.message))
+                            print("Sub Station Tower Height: ({} - {})".format(antenna, e.message))
                 # ethernet extender
                 if ethernet_extender:
                     try:
                         substation.ethernet_extender = ethernet_extender
                     except Exception as e:
-                        logger.info("Sub Station Ethernet Extender: ({} - {})".format(ethernet_extender, e.message))
+                        print("Sub Station Ethernet Extender: ({} - {})".format(ethernet_extender, e.message))
                 # cable length
                 if cable_length:
                     if isinstance(cable_length, int) or isinstance(cable_length, float):
                         try:
                             substation.cable_length = cable_length
                         except Exception as e:
-                            logger.info("Sub Station Cable Length: ({} - {})".format(cable_length, e.message))
+                            print("Sub Station Cable Length: ({} - {})".format(cable_length, e.message))
                 # latitude
                 if latitude:
                     if isinstance(latitude, int) or isinstance(latitude, float):
                         try:
                             substation.latitude = latitude
                         except Exception as e:
-                            logger.info("Sub Station Latitude: ({} - {})".format(latitude, e.message))
+                            print("Sub Station Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
                 if longitude:
                     if isinstance(longitude, int) or isinstance(longitude, float):
                         try:
                             substation.longitude = longitude
                         except Exception as e:
-                            logger.info("Sub Station Longitude: ({} - {})".format(longitude, e.message))
+                            print("Sub Station Longitude: ({} - {})".format(longitude, e.message))
                 # mac_address
                 if mac_address:
                     try:
                         substation.mac_address = mac_address
                     except Exception as e:
-                        logger.info("Sub Station MAC Address: ({} - {})".format(mac_address, e.message))
+                        print("Sub Station MAC Address: ({} - {})".format(mac_address, e.message))
                 # country
                 substation.country = 1
                 # state
@@ -5016,7 +5071,7 @@ def create_substation(substation_payload):
                             raise Exception("While Sub Station Insert: State Not Found")
                         substation.state = device_state_id
                     except Exception as e:
-                        logger.info("Sub Station BS State: ({})".format(e.message))
+                        print("Sub Station BS State: ({})".format(e.message))
                 # city
                 if city:
                     try:
@@ -5028,24 +5083,24 @@ def create_substation(substation_payload):
                             raise Exception("While Sub Station Insert: In City: State Not Found")
                         substation.city = device_city_id
                     except Exception as e:
-                        logger.info("Sub Station BS City: ({})".format(e.message))
+                        print("Sub Station BS City: ({})".format(e.message))
                 # address
                 if address:
                     try:
                         substation.address = address
                     except Exception as e:
-                        logger.info("Sub Station Address: ({})".format(e.message))
+                        print("Sub Station Address: ({})".format(e.message))
                 # description
                 if description:
                     try:
                         substation.description = description
                     except Exception as e:
-                        logger.info("Sub Station Sector Description: ({} - {})".format(description, e.message))
+                        print("Sub Station Sector Description: ({} - {})".format(description, e.message))
                 try:
                     substation.save()
                     return substation
                 except Exception as e:
-                    logger.info("Sub Station Object: ({} - {})".format(name, e.message))
+                    print("Sub Station Object: ({} - {})".format(name, e.message))
                     return ""
 
 
@@ -5121,80 +5176,80 @@ def create_circuit(circuit_payload):
                     try:
                         circuit.alias = alias
                     except Exception as e:
-                        logger.info("Circuit Alias: ({} - {})".format(alias, e.message))
+                        print("Circuit Alias: ({} - {})".format(alias, e.message))
                 # circuit type
                 if circuit_type:
                     try:
                         circuit.circuit_type = circuit_type
                     except Exception as e:
-                        logger.info("Circuit Type: ({} - {})".format(circuit_type, e.message))
+                        print("Circuit Type: ({} - {})".format(circuit_type, e.message))
                 # circuit id
                 if circuit_id:
                     try:
                         circuit.circuit_id = circuit_id
                     except Exception as e:
-                        logger.info("Circuit ID: ({} - {})".format(circuit_id, e.message))
+                        print("Circuit ID: ({} - {})".format(circuit_id, e.message))
                 # sector
                 if sector:
                     try:
                         circuit.sector = sector
                     except Exception as e:
-                        logger.info("Sector: ({} - {})".format(sector, e.message))
+                        print("Sector: ({} - {})".format(sector, e.message))
                 # customer
                 if customer:
                     try:
                         circuit.customer = customer
                     except Exception as e:
-                        logger.info("Customer: ({} - {})".format(customer, e.message))
+                        print("Customer: ({} - {})".format(customer, e.message))
                 # sub station
                 if sub_station:
                     try:
                         circuit.sub_station = sub_station
                     except Exception as e:
-                        logger.info("Sub Station: ({} - {})".format(sub_station, e.message))
+                        print("Sub Station: ({} - {})".format(sub_station, e.message))
                 # qos bandwidth
                 if qos_bandwidth:
                     if isinstance(qos_bandwidth, int) or isinstance(qos_bandwidth, float):
                         try:
                             circuit.qos_bandwidth = qos_bandwidth
                         except Exception as e:
-                            logger.info("QOS (BW): ({} - {})".format(qos_bandwidth, e.message))
+                            print("QOS (BW): ({} - {})".format(qos_bandwidth, e.message))
                 # dl rssi during acceptance
                 if dl_rssi_during_acceptance:
                     try:
                         circuit.dl_rssi_during_acceptance = dl_rssi_during_acceptance
                     except Exception as e:
-                        logger.info("RSSI During Acceptance: ({} - {})".format(dl_rssi_during_acceptance, e.message))
+                        print("RSSI During Acceptance: ({} - {})".format(dl_rssi_during_acceptance, e.message))
                 # dl cinr during acceptance
                 if dl_cinr_during_acceptance:
                     try:
                         circuit.dl_cinr_during_acceptance = dl_cinr_during_acceptance
                     except Exception as e:
-                        logger.info("CINR During Acceptance: ({} - {})".format(dl_cinr_during_acceptance, e.message))
+                        print("CINR During Acceptance: ({} - {})".format(dl_cinr_during_acceptance, e.message))
                 # jitter value during acceptance
                 if jitter_value_during_acceptance:
                     try:
                         circuit.jitter_value_during_acceptance = jitter_value_during_acceptance
                     except Exception as e:
-                        logger.info("Jitter Value During Acceptance: ({} - {})".format(jitter_value_during_acceptance, e.message))
+                        print("Jitter Value During Acceptance: ({} - {})".format(jitter_value_during_acceptance, e.message))
                 # throughput during acceptance
                 if throughput_during_acceptance:
                     try:
                         circuit.throughput_during_acceptance = throughput_during_acceptance
                     except Exception as e:
-                        logger.info("Throughput During Acceptance: ({} - {})".format(throughput_during_acceptance, e.message))
+                        print("Throughput During Acceptance: ({} - {})".format(throughput_during_acceptance, e.message))
                 # date_of_acceptance
                 if date_of_acceptance:
                     try:
                         circuit.date_of_acceptance = date_of_acceptance
                     except Exception as e:
-                        logger.info("Date Of Acceptance: ({} - {})".format(date_of_acceptance, e.message))
+                        print("Date Of Acceptance: ({} - {})".format(date_of_acceptance, e.message))
                 # description
                 if description:
                     try:
                         circuit.description = description
                     except Exception as e:
-                        logger.info("Circuit Description: ({} - {})".format(description, e.message))
+                        print("Circuit Description: ({} - {})".format(description, e.message))
                 # saving circuit
                 circuit.save()
                 return circuit
@@ -5207,91 +5262,91 @@ def create_circuit(circuit_payload):
                     try:
                         circuit.name = name
                     except Exception as e:
-                        logger.info("Circuit Name: ({} - {})".format(name, e.message))
+                        print("Circuit Name: ({} - {})".format(name, e.message))
                 # alias
                 if alias:
                     try:
                         circuit.alias = alias
                     except Exception as e:
-                        logger.info("Circuit Alias: ({} - {})".format(alias, e.message))
+                        print("Circuit Alias: ({} - {})".format(alias, e.message))
                 # circuit type
                 if circuit_type:
                     try:
                         circuit.circuit_type = circuit_type
                     except Exception as e:
-                        logger.info("Circuit Type: ({} - {})".format(circuit_type, e.message))
+                        print("Circuit Type: ({} - {})".format(circuit_type, e.message))
                 # circuit id
                 if circuit_id:
                     try:
                         circuit.circuit_id = circuit_id
                     except Exception as e:
-                        logger.info("Circuit ID: ({} - {})".format(circuit_id, e.message))
+                        print("Circuit ID: ({} - {})".format(circuit_id, e.message))
                 # sector
                 if sector:
                     try:
                         circuit.sector = sector
                     except Exception as e:
-                        logger.info("Sector: ({} - {})".format(sector, e.message))
+                        print("Sector: ({} - {})".format(sector, e.message))
                 # customer
                 if customer:
                     try:
                         circuit.customer = customer
                     except Exception as e:
-                        logger.info("Customer: ({} - {})".format(customer, e.message))
+                        print("Customer: ({} - {})".format(customer, e.message))
                 # sub station
                 if sub_station:
                     try:
                         circuit.sub_station = sub_station
                     except Exception as e:
-                        logger.info("Sub Station: ({} - {})".format(sub_station, e.message))
+                        print("Sub Station: ({} - {})".format(sub_station, e.message))
                 # qos bandwidth
                 if qos_bandwidth:
                     if isinstance(qos_bandwidth, int) or isinstance(qos_bandwidth, float):
                         try:
                             circuit.qos_bandwidth = qos_bandwidth
                         except Exception as e:
-                            logger.info("QOS (BW): ({} - {})".format(qos_bandwidth, e.message))
+                            print("QOS (BW): ({} - {})".format(qos_bandwidth, e.message))
                 # dl rssi during acceptance
                 if dl_rssi_during_acceptance:
                     try:
                         circuit.dl_rssi_during_acceptance = dl_rssi_during_acceptance
                     except Exception as e:
-                        logger.info("RSSI During Acceptance: ({} - {})".format(dl_rssi_during_acceptance, e.message))
+                        print("RSSI During Acceptance: ({} - {})".format(dl_rssi_during_acceptance, e.message))
                 # dl cinr during acceptance
                 if dl_cinr_during_acceptance:
                     try:
                         circuit.dl_cinr_during_acceptance = dl_cinr_during_acceptance
                     except Exception as e:
-                        logger.info("CINR During Acceptance: ({} - {})".format(dl_cinr_during_acceptance, e.message))
+                        print("CINR During Acceptance: ({} - {})".format(dl_cinr_during_acceptance, e.message))
                 # jitter value during acceptance
                 if jitter_value_during_acceptance:
                     try:
                         circuit.jitter_value_during_acceptance = jitter_value_during_acceptance
                     except Exception as e:
-                        logger.info("Jitter Value During Acceptance: ({} - {})".format(jitter_value_during_acceptance, e.message))
+                        print("Jitter Value During Acceptance: ({} - {})".format(jitter_value_during_acceptance, e.message))
                 # throughput during acceptance
                 if throughput_during_acceptance:
                     try:
                         circuit.throughput_during_acceptance = throughput_during_acceptance
                     except Exception as e:
-                        logger.info("Throughput During Acceptance: ({} - {})".format(throughput_during_acceptance, e.message))
+                        print("Throughput During Acceptance: ({} - {})".format(throughput_during_acceptance, e.message))
                 # date_of_acceptance
                 if date_of_acceptance:
                     try:
                         circuit.date_of_acceptance = date_of_acceptance
                     except Exception as e:
-                        logger.info("Date Of Acceptance: ({} - {})".format(date_of_acceptance, e.message))
+                        print("Date Of Acceptance: ({} - {})".format(date_of_acceptance, e.message))
                 # description
                 if description:
                     try:
                         circuit.description = description
                     except Exception as e:
-                        logger.info("Circuit Description: ({} - {})".format(description, e.message))
+                        print("Circuit Description: ({} - {})".format(description, e.message))
                 try:
                     circuit.save()
                     return circuit
                 except Exception as e:
-                    logger.info("Circuit Object: ({} - {})".format(name, e.message))
+                    print("Circuit Object: ({} - {})".format(name, e.message))
                     return ""
 
 
@@ -5326,7 +5381,7 @@ def get_ptp_machine_and_site(ip):
         else:
             machine = ""
     except Exception as e:
-        logger.info(e.message)
+        print(e.message)
     output = {'machine': machine, 'site': site}
     return output
 
