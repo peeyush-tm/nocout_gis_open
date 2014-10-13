@@ -33,7 +33,6 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
     cities_list = [str(city.city_name) for city in City.objects.all()]
     try:
         for d in complete_d:
-
             # wimax bs and pmp common fields
             if 'City' in d.keys():
                 city = d['City']
@@ -1195,6 +1194,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
             except Exception as e:
                 pass
 
+        # append errors key in keys_list
         keys_list.append('Errors')
         for val in valid_rows_dicts:
             temp_list = list()
@@ -1260,6 +1260,7 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
         # if directory for invalid excel sheets didn't exist than create one
         if not os.path.exists(MEDIA_ROOT + 'inventory_files/invalid'):
             os.makedirs(MEDIA_ROOT + 'inventory_files/invalid')
+
         wb_valid.save(MEDIA_ROOT + 'inventory_files/valid/{}_valid_{}.xls'.format(full_time, filename))
         wb_invalid.save(MEDIA_ROOT + 'inventory_files/invalid/{}_invalid_{}.xls'.format(full_time, filename))
         gis_bulk_obj = GISInventoryBulkImport.objects.get(pk=gis_obj_id)
@@ -1357,14 +1358,153 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
             # insert row no. in row dictionary to identify error row number
             row['Row No.'] = row_number
 
+            # ********************************* START PTP ERROR LOGGER *********************************
             # check for error in row
             # check for base station device
-            if 'IP' in row.keys():
-                if not ip_sanitizer(row['IP']):
-                    errors += "Base Station Device can't be created due to wrong IP."
+            if 'SS Circuit ID' in row.keys():
+                if not row['SS Circuit ID']:
+                    errors += "Base Station Device: Device can't be created with empty SS Circuit ID.\n"
+                elif row['SS Circuit ID'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "Base Station Device: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
                 else:
-                    errors += "Base Station Device "
+                    pass
 
+            # check for sub station device
+            if 'SS Circuit ID' in row.keys():
+                if not row['SS Circuit ID']:
+                    errors += "Sub Station Device: Empty SS Circuit ID.\n"
+                elif row['SS Circuit ID'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "Sub Station Device: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                else:
+                    pass
+
+            # check for bs switch
+            if 'BS Switch IP' in row.keys():
+                if not row['BS Switch IP']:
+                    errors += "BS Switch: Empty BS Switch IP.\n"
+                elif row['BS Switch IP'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "BS Switch: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                elif not ip_sanitizer(row['BS Switch IP']):
+                    errors += "BS Switch: Wrong BS Switch IP.\n"
+                else:
+                    pass
+
+            # check for aggregation switch
+            if 'Aggregation Switch' in row.keys():
+                if not row['Aggregation Switch']:
+                    errors += "Aggregation Switch: Empty Aggregation Switch.\n"
+                elif row['Aggregation Switch'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "Aggregation Switch: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                elif not ip_sanitizer(row['BS Switch IP']):
+                    errors += "Aggregation Switch: Wrong Aggregation Switch IP.\n"
+                else:
+                    pass
+
+            # check for bs converter
+            if 'BS Converter IP' in row.keys():
+                if not row['BS Converter IP']:
+                    errors += "BS Converter: Empty BS Converter IP.\n"
+                elif row['BS Converter IP'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "BS Converter: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                elif not ip_sanitizer(row['BS Converter IP']):
+                    errors += "BS Converter: Wrong BS Converter IP.\n"
+                else:
+                    pass
+
+            # check for pop converter
+            if 'POP Converter IP' in row.keys():
+                if not row['POP Converter IP']:
+                    errors += "POP Converter: Empty POP Converter IP.\n"
+                elif row['POP Converter IP'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "POP Converter: Device can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                elif not ip_sanitizer(row['POP Converter IP']):
+                    errors += "POP Converter: Wrong POP Converter IP.\n"
+                else:
+                    pass
+
+            # check for sector antenna
+            if 'SS Circuit ID' in row.keys():
+                if not row['SS Circuit ID']:
+                    errors += "Sector Antenna: Empty SS Circuit ID.\n"
+                elif row['SS Circuit ID'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "Sector Antenna: Antenna can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                else:
+                    pass
+
+            # check for sub station antenna
+            if 'SS IP' in row.keys():
+                if not row['SS IP']:
+                    errors += "Sub Station Antenna: Empty SS IP.\n"
+                elif row['SS IP'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "Sub Station Antenna: Antenna can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                elif not ip_sanitizer(row['SS IP']):
+                    errors += "Sub Station Antenna: Wrong SS IP.\n"
+                else:
+                    pass
+
+            # check for backhaul
+            if 'BH Configured On Switch/Converter' in row.keys():
+                if not row['BH Configured On Switch/Converter']:
+                    errors += "Backhaul: Empty BH Configured On Switch/Converter.\n"
+                elif row['BH Configured On Switch/Converter'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "Backhaul: Backhaul can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                elif not ip_sanitizer(row['BH Configured On Switch/Converter']):
+                    errors += "Backhaul: Wrong BH Configured On Switch/Converter.\n"
+                else:
+                    pass
+
+            # check for base station
+            if 'BS Name' in row.keys():
+                if not row['BS Name']:
+                    errors += "Base Station: Empty BS Name.\n"
+                elif row['BS Name'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "Base Station: Base Station can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                else:
+                    pass
+
+            # check for sector
+            if 'IP' in row.keys():
+                if not row['IP']:
+                    errors += "Sector: Empty IP.\n"
+                elif row['IP'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "Sector: Sector can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                elif not ip_sanitizer(row['IP']):
+                    errors += "Sector: Wrong IP.\n"
+                else:
+                    pass
+
+            # check for sub station
+            if 'SS Circuit ID' in row.keys():
+                if not row['SS Circuit ID']:
+                    errors += "Sub Station: Empty SS Circuit ID.\n"
+                elif row['SS Circuit ID'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "Sub Station: Sub Station can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                else:
+                    pass
+
+            # check for customer
+            if 'SS Customer Name' in row.keys():
+                if not row['SS Customer Name']:
+                    errors += "SS Customer: Empty SS Customer Name.\n"
+                elif row['SS Customer Name'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "SS Customer: SS Customer can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                else:
+                    pass
+
+            # check for circuit
+            if 'SS Circuit ID' in row.keys():
+                if not row['SS Circuit ID']:
+                    errors += "SS Circuit: Empty SS Circuit ID.\n"
+                elif row['SS Circuit ID'] in ['na', 'n/a', 'NA', 'N/A']:
+                    errors += "SS Circuit: SS Circuit can't be created with names 'na', 'n/a', 'NA', 'N/A'.\n"
+                else:
+                    pass
+
+            # append errors to error rows
+            if errors:
+                row['Bulk Upload Errors'] = errors
+
+            # ********************************* END PTP ERROR LOGGER *********************************
 
             # if bs ip and ss ip are same in inventory then skip it's insertion in database
             if all(k in row for k in ("IP", "SS IP")):
@@ -1385,12 +1525,14 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     site = result['site']
 
                 # device name
-                name = '{}_ne'.format(special_chars_name_sanitizer(row['SS Circuit ID']) if 'Circuit ID' in row.keys() else "")
+                name = '{}_ne'.format(special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
+                alias = '{}_NE'.format(circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
 
                 if ip_sanitizer(row['IP']):
                     # base station data
                     base_station_data = {
                         'device_name': name,
+                        'device_alias': alias,
                         'organization': organization,
                         'machine': machine,
                         'site': site,
@@ -1425,10 +1567,15 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 if 'site' in result.keys():
                     site = result['site']
 
+                # device name
+                name = special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else ""
+                alias = '{}'.format(circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
+
                 if ip_sanitizer(row['SS IP']):
                     # sub station data
                     sub_station_data = {
-                        'device_name': row['SS IP'] if 'SS IP' in row.keys() else "",
+                        'device_name': name,
+                        'device_alias': alias,
                         'organization': organization,
                         'machine': machine,
                         'site': site,
@@ -1606,8 +1753,16 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
 
             try:
                 # ------------------------------- Sector Antenna -------------------------------
+                # antenna name
+                name = '{}_ne'.format(special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
+
+                # antenna alias
+                alias = '{}_NE'.format(circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
+                
                 # sector antenna data
                 sector_antenna_data = {
+                    'antenna_name': name,
+                    'antenna_alias': alias,
                     'ip': row['IP'] if 'IP' in row.keys() else "",
                     'antenna_type': row['Antenna Type'] if 'Antenna Type' in row.keys() else "",
                     'height': row['Antenna Height'] if 'Antenna Height' in row.keys() else "",
@@ -1620,8 +1775,16 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 sector_antenna = create_antenna(sector_antenna_data)
 
                 # ------------------------------- Sub Station Antenna -------------------------------
+                # antenna name
+                name = '{}'.format(special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
+
+                # antenna alias
+                alias = '{}'.format(circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
+                
                 # sub station antenna data
                 substation_antenna_data = {
+                    'antenna_name': name,
+                    'antenna_alias': alias,
                     'ip': row['SS IP'] if 'SS IP' in row.keys() else "",
                     'antenna_type': row['SS Antenna Type'] if 'SS Antenna Type' in row.keys() else "",
                     'height': row['SS Antenna Height'] if 'SS Antenna Height' in row.keys() else "",
@@ -1683,7 +1846,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Base Station -------------------------------
                 # base station data
                 # sanitize bs name
-                name = special_chars_name_sanitizer(row['BS Name'] if 'BS Name' in row.keys() else "")
+                name = special_chars_name_sanitizer_with_lower_case(row['BS Name'] if 'BS Name' in row.keys() else "")
 
                 try:
                     if all(k in row for k in ("City", "State")):
@@ -1691,7 +1854,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                         name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
                                                  row['State'][:3].lower() if 'State' in row.keys() else "")
                 except Exception as e:
-                    print(e.message)
+                    logger.info(e.message)
 
                 print "************************** bs name - ", name
                 alias = row['BS Name'] if 'BS Name' in row.keys() else ""
@@ -1721,23 +1884,21 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
 
             try:
                 # ---------------------------------- Sector ---------------------------------
-                if 'IP' in row.keys():
-                    if ip_sanitizer(row['IP']):
-                        # sector data
-                        sector_data = {
-                            'name': row['IP'] if 'IP' in row.keys() else "",
-                            'alias': row['IP'] if 'IP' in row.keys() else "",
-                            'base_station': basestation,
-                            'bs_technology': 2,
-                            'sector_configured_on': base_station,
-                            'antenna': sector_antenna,
-                            'description': 'Sector created on {}.'.format(full_time)
-                        }
-                        print "***************************** sector data - ", sector_data
-                        # sector object
-                        sector = create_sector(sector_data)
-                    else:
-                        sector = ""
+                name = special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+                if 'SS Circuit ID' in row.keys():
+                    # sector data
+                    sector_data = {
+                        'name': name,
+                        'alias': circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "",
+                        'base_station': basestation,
+                        'bs_technology': 2,
+                        'sector_configured_on': base_station,
+                        'antenna': sector_antenna,
+                        'description': 'Sector created on {}.'.format(full_time)
+                    }
+                    print "***************************** sector data - ", sector_data
+                    # sector object
+                    sector = create_sector(sector_data)
                 else:
                     sector = ""
             except Exception as e:
@@ -1747,8 +1908,8 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Sub Station -------------------------------
                 # sub station data
                 # sanitize bs name
-                name = special_chars_name_sanitizer(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
-                alias = row['SS IP'] if 'SS IP' in row.keys() else ""
+                name = special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+                alias = circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else ""
                 substation_data = {
                     'name': name,
                     'alias': alias,
@@ -1778,13 +1939,13 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Customer -------------------------------
                 # customer data
                 # sanitize customer name
-                name = special_chars_name_sanitizer(row['SS Customer Name'] if 'SS Customer Name' in row.keys() else "")
+                name = special_chars_name_sanitizer_with_lower_case(row['SS Customer Name'] if 'SS Customer Name' in row.keys() else "")
                 alias = row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""
 
                 try:
                     if 'SS Circuit ID' in row.keys():
                         # concatinate city and state in bs name
-                        name = "{}_{}".format(name, special_chars_name_sanitizer(row['SS Circuit ID']))
+                        name = "{}_{}".format(name, special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID']))
                 except Exception as e:
                     print(e.message)
 
@@ -1805,7 +1966,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
             try:
                 # ------------------------------- Circuit -------------------------------
                 # sanitize circuit name
-                name = special_chars_name_sanitizer(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+                name = special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
 
                 # validate date of acceptance
                 if 'SS Date Of Acceptance' in row.keys():
@@ -1814,11 +1975,11 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     date_of_acceptance = ""
 
                 # circuit data
-                alias = row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else ""
+                alias = circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else ""
                 circuit_data = {
                     'name': name,
                     'alias': alias,
-                    'circuit_id': row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "",
+                    'circuit_id': circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "",
                     'circuit_type': 'Customer',
                     'sector': sector,
                     'customer': customer,
@@ -1837,6 +1998,66 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
             except Exception as e:
                 circuit = ""
 
+            # increament row number
+            row_number += 1
+
+            if errors:
+                error_rows.append(row)
+
+        # error rows list
+        error_rows_list = []
+
+        # headers for excel sheet
+        headers = keys_list
+
+        # append errors key in keys_list
+        keys_list.append('Bulk Upload Errors')
+
+        for val in error_rows:
+            temp_list = list()
+            for key in keys_list:
+                temp_list.append(val[key])
+            error_rows_list.append(temp_list)
+
+        wb_bulk_upload_errors = xlwt.Workbook()
+        ws_bulk_upload_errors = wb_bulk_upload_errors.add_sheet("PTP")
+
+        style = xlwt.easyxf('pattern: pattern solid, fore_colour tan;')
+        style_errors = xlwt.easyxf('pattern: pattern solid, fore_colour red;' 'font: colour white, bold True;')
+
+        try:
+            for i, col in enumerate(headers):
+                if col != 'Bulk Upload Errors':
+                    ws_bulk_upload_errors.write(0, i, col.decode('utf-8', 'ignore').strip(), style)
+                else:
+                    ws_bulk_upload_errors.write(0, i, col.decode('utf-8', 'ignore').strip(), style_errors)
+        except Exception as e:
+            pass
+
+        try:
+            for i, l in enumerate(error_rows_list):
+                i += 1
+                for j, col in enumerate(l):
+                    ws_bulk_upload_errors.write(i, j, col)
+        except Exception as e:
+            pass
+
+        # bulk upload errors file path
+        if sheettype == 'valid':
+            bulk_upload_file_path = file_path.replace('valid', 'bulk_upload_errors')
+        elif sheettype == 'invalid':
+            bulk_upload_file_path = file_path.replace('invalid', 'bulk_upload_errors')
+
+        # if directory for bulk upload excel sheets didn't exist than create one
+        if not os.path.exists(MEDIA_ROOT + 'inventory_files/bulk_upload_errors'):
+            os.makedirs(MEDIA_ROOT + 'inventory_files/bulk_upload_errors')
+
+        # saving bulk upload errors excel sheet
+        try:
+            wb_bulk_upload_errors.save(MEDIA_ROOT + bulk_upload_file_path)
+        except Exception as e:
+            logger.info(e.message)
+
         # updating upload status in 'GISInventoryBulkImport' model
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 2
@@ -1845,8 +2066,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 3
         gis_obj.save()
-
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        logger.exception(e.message)
 
 
 @task()
@@ -1883,6 +2103,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
     sheet = book.sheet_by_index(0)
 
     keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
+    keys_list = [x.encode('utf-8').strip() for x in keys]
     complete_d = list()
 
     # fetching excel rows values as list of key value pair dictionaries where keys are from first row of excel
@@ -1919,7 +2140,6 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
             if all(k in row for k in ("IP", "SS IP")):
                 if row['IP'] and row['SS IP']:
                     if ip_sanitizer(row['IP']) == ip_sanitizer(row['SS IP']):
-                        print "************************************ Sampe IP rows - ", row['IP'], row['SS IP']
                         continue
 
             try:
@@ -1940,14 +2160,14 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 except Exception as e:
                     print(e.message)
 
-                name = special_chars_name_sanitizer(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
+                name = special_chars_name_sanitizer_with_lower_case(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
 
                 if 'IP' in row.keys():
                     if ip_sanitizer(row['IP']):
                         # base station data
                         base_station_data = {
                             'device_name': name,
-                            'device_alias': row['Circuit ID'] if 'Circuit ID' in row.keys() else "",
+                            'device_alias': circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else "",
                             'organization': organization,
                             'machine': machine,
                             'site': site,
@@ -1991,13 +2211,13 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 except Exception as e:
                     print(e.message)
 
-                name = special_chars_name_sanitizer(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+                name = special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
 
                 if ip_sanitizer(row['SS IP']):
                     # sub station data
                     sub_station_data = {
                         'device_name': name,
-                        'device_alias': row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "",
+                        'device_alias': circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "",
                         'organization': organization,
                         'machine': machine,
                         'site': site,
@@ -2203,8 +2423,16 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
 
             try:
                 # ------------------------------- Sector Antenna -------------------------------
+                # antenna name
+                name = special_chars_name_sanitizer_with_lower_case(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
+
+                # antenna alias
+                alias = circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else ""
+
                 # sector antenna data
                 sector_antenna_data = {
+                    'antenna_name': name,
+                    'antenna_alias': alias,
                     'ip': row['IP'] if 'IP' in row.keys() else "",
                     'antenna_type': row['Antenna Type'] if 'Antenna Type' in row.keys() else "",
                     'height': row['Antenna Height'] if 'Antenna Height' in row.keys() else "",
@@ -2218,8 +2446,16 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 sector_antenna = create_antenna(sector_antenna_data)
 
                 # ------------------------------- Sub Station Antenna -------------------------------
+                # antenna name
+                name = special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+
+                # antenna alias
+                alias = circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else ""
+                
                 # sub station antenna data
                 substation_antenna_data = {
+                    'antenna_name': name,
+                    'antenna_alias': alias,
                     'ip': row['SS IP'] if 'SS IP' in row.keys() else "",
                     'antenna_type': row['SS Antenna Type'] if 'SS Antenna Type' in row.keys() else "",
                     'height': row['SS Antenna Height'] if 'SS Antenna Height' in row.keys() else "",
@@ -2283,7 +2519,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Base Station -------------------------------
                 # base station data
                 # sanitize bs name
-                name = special_chars_name_sanitizer(row['BS Name'] if 'BS Name' in row.keys() else "")
+                name = special_chars_name_sanitizer_with_lower_case(row['BS Name'] if 'BS Name' in row.keys() else "")
 
                 try:
                     if all(k in row for k in ("City", "State")):
@@ -2320,12 +2556,14 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
 
             try:
                 # ---------------------------------- Sector ---------------------------------
+                # sector name
+                name = special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
                 if 'IP' in row.keys():
                     if ip_sanitizer(row['IP']):
                         # sector data
                         sector_data = {
-                            'name': row['IP'] if 'IP' in row.keys() else "",
-                            'alias': row['IP'] if 'IP' in row.keys() else "",
+                            'name': name,
+                            'alias': circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "",
                             'base_station': basestation,
                             'bs_technology': 2,
                             'sector_configured_on': base_station,
@@ -2345,8 +2583,8 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Sub Station -------------------------------
                 # sub station data
                 # sanitize bs name
-                name = special_chars_name_sanitizer(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
-                alias = row['SS IP'] if 'SS IP' in row.keys() else ""
+                name = special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+                alias = circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else ""
                 substation_data = {
                     'name': name,
                     'alias': alias,
@@ -2376,13 +2614,13 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Customer -------------------------------
                 # customer data
                 # sanitize customer name
-                name = special_chars_name_sanitizer(row['SS Customer Name'] if 'SS Customer Name' in row.keys() else "")
+                name = special_chars_name_sanitizer_with_lower_case(row['SS Customer Name'] if 'SS Customer Name' in row.keys() else "")
                 alias = row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""
 
                 try:
                     if 'SS Circuit ID' in row.keys():
                         # concatinate city and state in bs name
-                        name = "{}_{}".format(name, special_chars_name_sanitizer(row['SS Circuit ID']))
+                        name = "{}_{}".format(name, special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID']))
                 except Exception as e:
                     print(e.message)
 
@@ -2403,7 +2641,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
             try:
                 # ------------------------------- Circuit -------------------------------
                 # sanitize circuit name
-                name = special_chars_name_sanitizer(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+                name = special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
 
                 # validate date of acceptance
                 if 'SS Date Of Acceptance' in row.keys():
@@ -2413,12 +2651,12 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
 
                 # concatinating bs circuit id and ss circuit id
                 if all(k in row for k in ("Circuit ID", "SS Circuit ID")):
-                    circuit_id = "{}#{}".format(row['SS Circuit ID'], row['Circuit ID'])
+                    circuit_id = "{}#{}".format(circuit_id_sanitizer(row['SS Circuit ID']), circuit_id_sanitizer(row['Circuit ID']))
                 else:
-                    circuit_id = row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else ""
+                    circuit_id = circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else ""
 
                 # circuit data
-                alias = row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else ""
+                alias = circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else ""
                 circuit_data = {
                     'name': name,
                     'alias': alias,
@@ -2481,6 +2719,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
     sheet = book.sheet_by_index(0)
 
     keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
+    keys_list = [x.encode('utf-8').strip() for x in keys]
     complete_d = list()
 
     # fetching excel rows values as list of key value pair dictionaries where keys are from first row of excel
@@ -2771,7 +3010,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Base Station -------------------------------
                 # base station data
                 # sanitize bs name
-                name = special_chars_name_sanitizer(row['BS Name'] if 'BS Name' in row.keys() else "")
+                name = special_chars_name_sanitizer_with_lower_case(row['BS Name'] if 'BS Name' in row.keys() else "")
                 alias = row['BS Name'] if 'BS Name' in row.keys() else ""
                 basestation_data = {
                     'name': name,
@@ -2953,7 +3192,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Sub Station -------------------------------
                 # sub station data
                 # sanitize bs name
-                name = special_chars_name_sanitizer(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
+                name = special_chars_name_sanitizer_with_lower_case(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
                 alias = row['SS IP'] if 'SS IP' in row.keys() else ""
                 substation_data = {
                     'name': name,
@@ -2982,7 +3221,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Customer -------------------------------
                 # customer data
                 # sanitize customer name
-                name = special_chars_name_sanitizer(row['Customer Name'] if 'Customer Name' in row.keys() else "")
+                name = special_chars_name_sanitizer_with_lower_case(row['Customer Name'] if 'Customer Name' in row.keys() else "")
                 alias = row['Customer Name'] if 'Customer Name' in row.keys() else ""
                 customer_data = {
                     'name': name,
@@ -3001,7 +3240,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
             try:
                 # ------------------------------- Circuit -------------------------------
                 # sanitize circuit name
-                name = special_chars_name_sanitizer(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
+                name = special_chars_name_sanitizer_with_lower_case(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
 
                 # validate date of acceptance
                 if 'Date Of Acceptance' in row.keys():
@@ -3411,8 +3650,13 @@ def create_antenna(antenna_payload):
     splitter_installed, sync_splitter_used, make_of_antenna, polarization, description = [''] * 5
 
     # get antenna parameters
-    if 'ip' in antenna_payload.keys():
+    if 'antenna_name' in antenna_payload.keys():
+        name = antenna_payload['antenna_name']
+    else:
         name = antenna_payload['ip'] if antenna_payload['ip'] else ""
+    if 'antenna_alias' in antenna_payload.keys():
+        alias = antenna_payload['antenna_alias']
+    else:
         alias = antenna_payload['ip'] if antenna_payload['ip'] else ""
     if 'antenna_type' in antenna_payload.keys():
         antenna_type = antenna_payload['antenna_type'] if antenna_payload['antenna_type'] else ""
@@ -3724,7 +3968,7 @@ def create_backhaul(backhaul_payload):
     if 'bh_circuit_id' in backhaul_payload.keys():
         bh_circuit_id = backhaul_payload['bh_circuit_id'] if backhaul_payload['bh_circuit_id'] else ""
     if 'bh_capacity' in backhaul_payload.keys():
-        pobh_capacityp = backhaul_payload['bh_capacity'] if backhaul_payload['bh_capacity'] else ""
+        bh_capacit = backhaul_payload['bh_capacity'] if backhaul_payload['bh_capacity'] else ""
     if 'ttsl_circuit_id' in backhaul_payload.keys():
         ttsl_circuit_id = backhaul_payload['ttsl_circuit_id'] if backhaul_payload['ttsl_circuit_id'] else ""
     if 'dr_site' in backhaul_payload.keys():
@@ -5426,7 +5670,7 @@ def validate_date(date_string):
         return date_string
 
 
-def special_chars_name_sanitizer(name):
+def special_chars_name_sanitizer_with_lower_case(name):
     """ Clean and remove all special characters form string and replace them (special characters) from underscore
 
     Args:
@@ -5446,6 +5690,28 @@ def special_chars_name_sanitizer(name):
         output = re.sub(r"[^\w\s+]", '_', name.encode('utf-8').strip())
         # replace all runs of whitespace with a single underscore, convert to lower chars and then strip '_'
         output = re.sub(r"\s+", '_', output).lower().strip('_')
+    else:
+        output = ""
+    return unicode(output)
+
+
+def circuit_id_sanitizer(name):
+    """ Clean and remove all special characters form string and replace them (special characters) from underscore
+
+    Args:
+        name (unicode): u'Maniyar Complex'
+
+    Returns:
+        name (str): 'Maniyar Complex'
+
+    """
+    # remove all non-word characters (everything except numbers and letters)
+    if isinstance(name, int) or isinstance(name, float):
+        name = int(name)
+        output = name
+    elif isinstance(name, str) or isinstance(name, unicode):
+        name = name.replace('.', '')
+        output = name
     else:
         output = ""
     return unicode(output)
