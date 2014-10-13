@@ -2797,8 +2797,8 @@ function devicePlottingClass_gmap() {
 			}
 
 	    	$.ajax({
-				url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
-				// url : base_url+"/"+"static/services.json",
+				// url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
+				url : base_url+"/"+"static/services.json",
 				success : function(results) {
 
 					var result = JSON.parse(results);
@@ -2873,7 +2873,7 @@ function devicePlottingClass_gmap() {
 							        defaultPixelsPerValue : 10
 							    });
 
-								var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon+""+(Math.floor(Math.random() * (4 - 1 + 1))+1)+"_small.png",
+								var newIcon = base_url+"/"+result.data.devices[allSSIds[i]].icon,
 									ss_marker = allMarkersObject_gmap['sub_station']['ss_'+allSSIds[i]],
 									sector_marker = allMarkersObject_gmap['sector_device']['sector_'+allSSIds[i]],
 									marker_polling_obj = {
