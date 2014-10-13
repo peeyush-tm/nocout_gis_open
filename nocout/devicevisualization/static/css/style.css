@@ -120,7 +120,7 @@
     white-space: nowrap;
 }
 .sideInfoContainer {
-    max-height: 300px;
+    max-height: 550px;
     overflow-y: auto;
     position:absolute;
     padding: 0px;
@@ -343,4 +343,14 @@
 
 #gis_status_txt li {
     padding: 4px;
+}
+
+.DTTT_button_xls div , .DTTT_button_xls embed {
+    width : 120px !important;
+    height: 30px !important;
+}
+
+#navigation_container button {
+    cursor: pointer;
+    margin: 5px 0px;
 }
