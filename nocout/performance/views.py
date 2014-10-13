@@ -290,6 +290,15 @@ class LivePerformanceListing(BaseDatatableView):
             else:
                 skip_device = True
 
+            try:
+                city_name = City.objects.get(id=device['city']).city_name
+            except Exception as no_city:
+                city_name = "N/A"
+            try:
+                state_name = State.objects.get(id=device['state']).state_name
+            except Exception as no_state:
+                state_name = "N/A"
+
             if not skip_device:
                 device.update({
                     "page_type":page_type,
@@ -301,8 +310,8 @@ class LivePerformanceListing(BaseDatatableView):
                     "sector_id": sector_id,
                     "circuit_id": circuit_id,
                     "bs_name": bs_name,
-                    "city": City.objects.get(id=device['city']).city_name,
-                    "state": State.objects.get(id=device['state']).state_name,
+                    "city": city_name,
+                    "state": state_name,
                     "device_type": DeviceType.objects.get(pk=int(device['device_type'])).name,
                     "device_technology": DeviceTechnology.objects.get(pk=int(device['device_technology'])).name
                 })
@@ -754,16 +763,25 @@ class Inventory_Device_Status(View):
                 planned_frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                 planned_frequency = ",".join(planned_frequency)
 
+                try:
+                    city_name = City.objects.get(id=base_station.city).city_name\
+                                                            if base_station.city\
+                                                            else "N/A"
+                except Exception as no_city:
+                    city_name = "N/A"
+                try:
+                    state_name = State.objects.get(id=base_station.state).state_name\
+                                                            if base_station.state\
+                                                            else "N/A"
+                except Exception as no_state:
+                    state_name = "N/A"
+
                 result['data']['objects']['values'].append([base_station.alias,
                                                        technology.alias,
                                                        base_station.building_height,
                                                        base_station.tower_height,
-                                                       City.objects.get(id=base_station.city).city_name
-                                                            if base_station.city
-                                                            else "N/A",
-                                                       State.objects.get(id=base_station.state).state_name
-                                                            if base_station.state
-                                                            else "N/A",
+                                                       city_name,
+                                                       state_name,
                                                        device.ip_address,
                                                        device.mac_address,
                                                        planned_frequency
@@ -794,18 +812,27 @@ class Inventory_Device_Status(View):
                     planned_frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
                     planned_frequency = ",".join(planned_frequency)
 
+                    try:
+                        city_name = City.objects.get(id=base_station.city).city_name\
+                                                            if base_station.city\
+                                                            else "N/A"
+                    except Exception as no_city:
+                        city_name = "N/A"
+                    try:
+                        state_name = State.objects.get(id=base_station.state).state_name\
+                                                            if base_station.state\
+                                                            else "N/A"
+                    except Exception as no_state:
+                        state_name = "N/A"
+
                     result['data']['objects']['values'].append([base_station.alias,
                                                            substation.alias,
                                                            circuit.circuit_id,
                                                            technology.alias,
                                                            substation.building_height,
                                                            substation.tower_height,
-                                                           City.objects.get(id=substation.city).city_name
-                                                                if substation.city
-                                                                else "N/A",
-                                                           State.objects.get(id=substation.state).state_name
-                                                                if substation.state
-                                                                else "N/A",
+                                                           city_name,
+                                                           state_name,
                                                            device.ip_address,
                                                            device.mac_address,
                                                            planned_frequency
@@ -865,10 +892,23 @@ class Inventory_Device_Service_Data_Source(View):
             }
         }
         device= Device.objects.get(id=device_id)
-        #Fetch the Service names that are configured w.r.t to a device.
-        inventory_device_service_name = DeviceServiceConfiguration.objects.filter(
-            device_name= device.device_name)\
-            .values_list('service_name', 'data_source')
+        device_type = DeviceType.objects.get(id=device.device_type)
+
+        #if there is no service present in the configuration (BULK SYNC)
+        inventory_device_service_name = device_type.service.filter().values_list('name', 'service_data_sources__name')
+
+        #
+        # #Fetch the Service names that are configured w.r.t to a device.
+        # inventory_device_service_name = DeviceServiceConfiguration.objects.filter(
+        #     device_name= device.device_name)\
+        #     .values_list('service_name', 'data_source')
+
+        configured_services = DeviceServiceConfiguration.objects.filter(
+                                device_name= device.device_name)\
+                                .values_list('service_name', 'data_source')
+
+        if len(configured_services):
+            inventory_device_service_name = configured_services
 
         # TODO:to remove this code as the services are getting multi added with their port.
         inventory_device_service_name = list(set(inventory_device_service_name))
