@@ -2066,7 +2066,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
         gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
         gis_obj.upload_status = 3
         gis_obj.save()
-        logger.exception(e.message)
+        logger.info(e.message)
 
 
 @task()
@@ -2608,6 +2608,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 if name and alias:
                     substation = create_substation(substation_data)
             except Exception as e:
+                logger.info(e.message)
                 substation = ""
 
             try:
@@ -3619,7 +3620,7 @@ def create_device(device_payload):
                     device.save()
                     return device
                 except Exception as e:
-                    print("Device Object: ({} - {})".format(device_name, e.message))
+                    logger.info("Device Object: ({} - {})".format(device_name, e.message))
                     return ""
 
 
@@ -5344,7 +5345,7 @@ def create_substation(substation_payload):
                     substation.save()
                     return substation
                 except Exception as e:
-                    print("Sub Station Object: ({} - {})".format(name, e.message))
+                    logger.info("Sub Station Object: ({} - {})".format(name, e.message))
                     return ""
 
 
