@@ -851,3 +851,17 @@ $("#show_hide_label").click(function(e) {
         }
     }
 });
+
+/**
+ * This event trigger when previous navigation button on polling widget clicked
+ */
+$("#navigation_container button#previous_polling_btn").click(function(e) {
+    networkMapInstance.show_previous_polled_icon();
+});
+
+/**
+ * This event trigger when next navigation button on polling widget clicked
+ */
+$("#navigation_container button#next_polling_btn").click(function(e) {
+    networkMapInstance.show_next_polled_icon();
+});
