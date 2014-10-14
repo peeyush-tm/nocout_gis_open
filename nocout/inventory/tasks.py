@@ -2711,11 +2711,15 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
     # get valid or invalid sheet based upon sheettype
     if sheettype == 'valid':
-        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.valid_filename)
+        file_path = gis_bu_obj.valid_filename
+        file_path = "".join(file_path.split("/media"))
+        book = xlrd.open_workbook(MEDIA_ROOT + file_path)
     elif sheettype == 'invalid':
-        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.invalid_filename)
+        file_path = gis_bu_obj.invalid_filename
+        file_path = "".join(file_path.split("/media"))
+        book = xlrd.open_workbook(MEDIA_ROOT + file_path)
     else:
-        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.valid_filename)
+        book = ""
 
     sheet = book.sheet_by_index(0)
 
@@ -3047,7 +3051,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 # sector name
                 name = ""
                 if 'Sector Name' in row.keys():
-                    name = "{}_{}".format(row['Sector Name'] if 'Sector Name' in row.keys() else "", row['ODU IP'] if 'ODU IP' in row.keys() else "")
+                    name = "{}_{}".format(row['ODU IP'] if 'ODU IP' in row.keys() else "", row['Sector Name'] if 'Sector Name' in row.keys() else "")
                 # sector data
                 sector_data = {
                     'name': name,
@@ -3094,11 +3098,15 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
 
     # get valid or invalid sheet based upon sheettype
     if sheettype == 'valid':
-        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.valid_filename)
+        file_path = gis_bu_obj.valid_filename
+        file_path = "".join(file_path.split("/media"))
+        book = xlrd.open_workbook(MEDIA_ROOT + file_path)
     elif sheettype == 'invalid':
-        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.invalid_filename)
+        file_path = gis_bu_obj.invalid_filename
+        file_path = "".join(file_path.split("/media"))
+        book = xlrd.open_workbook(MEDIA_ROOT + file_path)
     else:
-        book = xlrd.open_workbook(MEDIA_ROOT + gis_bu_obj.invalid_filename)
+        book = ""
 
     sheet = book.sheet_by_index(0)
 
