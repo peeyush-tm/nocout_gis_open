@@ -16,4 +16,4 @@ on (
 	site_instance_siteinstance.id = device_device.site_instance_id and
 	inventory_substation.device_id = device_device.id
 )
-where device_device.is_deleted=0 and device_devicetechnology.name in ("P2P","WiMAX","PMP")
+where device_device.is_deleted=0 and device_devicetechnology.name in ("P2P")
