@@ -4067,12 +4067,18 @@ function devicePlottingClass_gmap() {
                         if (move_listener_obj) {
                             var keys_array = Object.keys(move_listener_obj);
                             for(var z=0;z<keys_array.length;z++) {
-                            	var label_marker = move_listener_obj[keys_array[z]];
+                            var label_marker = move_listener_obj[keys_array[z]];
                                 if(typeof label_marker === 'object') {
-                                   if((label_marker && label_marker["name"]) && (label_marker && label_marker["bs_name"])) {
-                                        if (($.trim(label_marker.filter_data.ss_name) == ssName) && ($.trim(label_marker.filter_data.bs_name) == bsName) && ($.trim(label_marker.filter_data.sector_name) == sectorName) ) {
-                                            filtered_label.push(labelsArray[x]);
-                                        }
+                                   if((label_marker && label_marker["filter_data"]["bs_name"]) && (label_marker && label_marker["filter_data"]["sector_name"])) {
+                                   	if(label_marker.pointType == 'sector_Marker') {
+                                   	if (($.trim(label_marker.filter_data.bs_name) == bsName) && ($.trim(label_marker.filter_data.sector_name) == sectorName) ) {
+                                           filtered_label.push(labelsArray[x]);
+                                       }
+                                   	} else {
+                                       if (($.trim(label_marker.filter_data.ss_name) == ssName) && ($.trim(label_marker.filter_data.bs_name) == bsName) && ($.trim(label_marker.filter_data.sector_name) == sectorName) ) {
+                                           filtered_label.push(labelsArray[x]);
+                                       }
+                                   	}
                                    }
                                 }
                             }
