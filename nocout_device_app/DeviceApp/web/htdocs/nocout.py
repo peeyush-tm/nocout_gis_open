@@ -894,7 +894,7 @@ def set_bulk_ping_levels(ping_levels_list=[]):
 				'rta': p_l.get('rta', (1300, 1500)),
 				'packets': p_l.get('packets', 6),
 				'timeout': p_l.get('timeout', 10)
-				}, ['wan'], [p_l.get('device_type')], {}))
+				}, [p_l.get('device_type')], ['@all'], {}))
 		logger.debug('new_ping_levels: ' + pprint.pformat(new_ping_levels))
 		g_service_vars['ping_levels'] = new_ping_levels + old_ping_levels
 

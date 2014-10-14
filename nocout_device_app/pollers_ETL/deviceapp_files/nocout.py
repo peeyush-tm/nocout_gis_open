@@ -18,7 +18,7 @@ from nocout_logger import nocout_log
 import mysql.connector
 
 logger = nocout_log()
-sys.path.insert(0, '/omd/sites/master_UA/nocout')
+sys.path.insert(0, '/apps/omd/sites/master_UA/nocout')
 try:
 	from device_interface import *
 except ImportError:
@@ -894,7 +894,7 @@ def set_bulk_ping_levels(ping_levels_list=[]):
 				'rta': p_l.get('rta', (1300, 1500)),
 				'packets': p_l.get('packets', 6),
 				'timeout': p_l.get('timeout', 10)
-				}, ['wan'], [p_l.get('device_type')], {}))
+				}, [p_l.get('device_type')], ['@all'], {}))
 		logger.debug('new_ping_levels: ' + pprint.pformat(new_ping_levels))
 		g_service_vars['ping_levels'] = new_ping_levels + old_ping_levels
 
@@ -1035,9 +1035,9 @@ def sync():
 
     # Create backup for the hosts and rules file
     if os.path.exists(hosts_file):
-        os.system('rsync -a %s /omd/sites/%s/nocout/' % (hosts_file, defaults.omd_site))
+        os.system('rsync -a %s /apps/omd/sites/%s/nocout/' % (hosts_file, defaults.omd_site))
     if os.path.exists(rules_file):
-        os.system('rsync -a %s /omd/sites/%s/nocout/' % (rules_file, defaults.omd_site))
+        os.system('rsync -a %s /apps/omd/sites/%s/nocout/' % (rules_file, defaults.omd_site))
 
     nocout_create_sync_snapshot()
     nocout_sites = nocout_distributed_sites()
@@ -1058,8 +1058,8 @@ def sync():
             "message": "Config pushed to " + ','.join(sites_affected)
         })
     else:
-        if os.path.exists('/omd/sites/%s/nocout/rules.mk' % defaults.omd_site):
-            os.system('cp /omd/sites/%s/nocout/rules.mk %s' % (defaults.omd_site, rules_file))
+        if os.path.exists('/apps/omd/sites/%s/nocout/rules.mk' % defaults.omd_site):
+            os.system('cp /apps/omd/sites/%s/nocout/rules.mk %s' % (defaults.omd_site, rules_file))
             for site, attrs in nocout_sites.items():
                 response_text = nocout_synchronize_site(site, attrs, True)
             response.update({
