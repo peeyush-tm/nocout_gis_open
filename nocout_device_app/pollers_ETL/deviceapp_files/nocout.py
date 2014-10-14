@@ -18,9 +18,9 @@ from nocout_logger import nocout_log
 import mysql.connector
 
 logger = nocout_log()
-sys.path.insert(0, '/apps/omd/sites/master_UA/nocout')
+sys.path.insert(0, '/omd/sites/master_UA/nocout')
 try:
-	from bulk_upload_data_insertion import *
+	from device_interface import *
 except ImportError:
 	logger.debug('Device interface script not imported')
 
@@ -188,14 +188,14 @@ def addhost():
     load_file(hosts_file)
     add_default_checks(default_checks_file)
 
-    if len(g_host_vars['all_hosts']) > 1000:
-        response.update({
-                "success": 0,
-                "message": None,
-                "error_code": 3,
-                "error_message": "Multisite instance couldn't accept more devices"
-        })
-        return response
+    #if len(g_host_vars['all_hosts']) > 1000:
+    #    response.update({
+    #            "success": 0,
+    #            "message": None,
+    #            "error_code": 3,
+    #            "error_message": "Multisite instance couldn't accept more devices"
+    #    })
+    #    return response
     new_host = nocout_find_host(payload.get('host'))
     
     if new_host:
@@ -293,7 +293,7 @@ def addservice():
                         t = None
 		# Add device interfaces as check items, if passed in HTTP request
 		check_tuple = ([device_name], payload.get('service'), payload.get('interface'), t)
-		g_service_vars['checks'].append(check_tuple)
+		g_service_vars['checks'].insert(0, check_tuple)
             except Exception, e:
 		logger.error('Error in cmd_params : ' + pprint.pformat(e))
                 response.update({
@@ -317,7 +317,7 @@ def addservice():
                 return response
             for param, val in serv_params.items():
                 t = (val, [], [device_name], payload.get('service'))
-                g_service_vars['extra_service_conf'][param].append(t)
+                g_service_vars['extra_service_conf'][param].insert(0, t)
                 t = ()
 
             # Changing SNMP polling period from default 1 to 5 mins
@@ -331,7 +331,7 @@ def addservice():
         snmp_port_tuple = None
         if payload.get('snmp_port'):
 		snmp_port_tuple = (int(payload.get('snmp_port')), [], [device_name])
-		g_service_vars['snmp_ports'].append(snmp_port_tuple)
+		g_service_vars['snmp_ports'].insert(0, snmp_port_tuple)
         
         snmp_community = None
         if payload.get('snmp_community'):
@@ -345,7 +345,7 @@ def addservice():
                     snmp_community_list.get('security_name'),snmp_community_list.get('auth_password'),
                     snmp_community_list.get('private_phase'),snmp_community_list.get('private_passphase')),
                     [device_name])
-            g_service_vars['snmp_communities'].append(snmp_community)
+            g_service_vars['snmp_communities'].insert(0, snmp_community)
 
         flag = write_new_host_rules()
         if not flag:
@@ -902,6 +902,7 @@ def set_bulk_ping_levels(ping_levels_list=[]):
 
 
 def delete_host_rules(hostname=None, servicename=None, interface=None, flag=False, thresholds=None):
+    logger.debug('In delete host rules')
     global g_service_vars
     g_service_vars = {
         "only_hosts": None,
@@ -969,6 +970,7 @@ def delete_host_rules(hostname=None, servicename=None, interface=None, flag=Fals
                 iter_func = ifilterfalse(lambda t: hostname in t[0] and servicename in t[1] and interface in t[2], g_service_vars['checks'])
                 g_service_vars['checks'] = map(lambda x: x, iter_func)
         else:
+		logger.debug('Removing existing checks')
                 iter_func = ifilterfalse(lambda t: hostname in t[0] and servicename in t[1], g_service_vars['checks'])
                 g_service_vars['checks'] = map(lambda x: x, iter_func)
 	    
@@ -979,6 +981,7 @@ def delete_host_rules(hostname=None, servicename=None, interface=None, flag=Fals
 	if not flag:
                 g_service_vars['snmp_ports'] = filter(lambda t: hostname not in t[2], g_service_vars['snmp_ports'])
                 g_service_vars['snmp_communities'] = filter(lambda t: hostname not in t[-1], g_service_vars['snmp_communities'])
+    logger.debug('completed delete_host_rules')
 
 
 def write_new_host_rules():
@@ -1021,7 +1024,7 @@ def sync():
     # Set flag for sync in mysql db
     #toggle_sync_flag()
     # First read all the new configs from db and write to rules.mk and hosts.mk
-    #sync_device_conf_db = bulk_upload_main()
+    #sync_device_conf_db = entry()
     sites_affected = []
     response = {
         "success": 1,
@@ -1032,9 +1035,9 @@ def sync():
 
     # Create backup for the hosts and rules file
     if os.path.exists(hosts_file):
-        os.system('rsync -a %s /apps/omd/sites/%s/nocout/' % (hosts_file, defaults.omd_site))
+        os.system('rsync -a %s /omd/sites/%s/nocout/' % (hosts_file, defaults.omd_site))
     if os.path.exists(rules_file):
-        os.system('rsync -a %s /apps/omd/sites/%s/nocout/' % (rules_file, defaults.omd_site))
+        os.system('rsync -a %s /omd/sites/%s/nocout/' % (rules_file, defaults.omd_site))
 
     nocout_create_sync_snapshot()
     nocout_sites = nocout_distributed_sites()
@@ -1055,8 +1058,8 @@ def sync():
             "message": "Config pushed to " + ','.join(sites_affected)
         })
     else:
-        if os.path.exists('/apps/omd/sites/%s/nocout/rules.mk' % defaults.omd_site):
-            os.system('cp /apps/omd/sites/%s/nocout/rules.mk %s' % (defaults.omd_site, rules_file))
+        if os.path.exists('/omd/sites/%s/nocout/rules.mk' % defaults.omd_site):
+            os.system('cp /omd/sites/%s/nocout/rules.mk %s' % (defaults.omd_site, rules_file))
             for site, attrs in nocout_sites.items():
                 response_text = nocout_synchronize_site(site, attrs, True)
             response.update({

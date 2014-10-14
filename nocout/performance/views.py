@@ -135,18 +135,35 @@ class LivePerformanceListing(BaseDatatableView):
         :param qs:
         :return result_list:
         """
+        # sSearch = self.request.GET.get('sSearch', None)
+        # if sSearch:
+        #     result_list = list()
+        #     for dictionary in qs:
+        #         for key in dictionary.keys():
+        #             if isinstance(dictionary[key], str):
+        #                 dictionary[key] = unicode(dictionary[key]).strip()
+        #             elif isinstance(dictionary[key], unicode):
+        #                 dictionary[key] = dictionary[key].strip()
+        #             else:
+        #                 dictionary[key] = dictionary[key]
+        #             if sSearch.lower() in str(dictionary[key]).lower():
+        #                 result_list.append(dictionary)
+        #                 break
+        #     return result_list
+        # return qs
+
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             result_list = list()
             for dictionary in qs:
                 for key in dictionary.keys():
-                    if isinstance(dictionary[key], str):
-                        dictionary[key] = unicode(dictionary[key]).strip()
-                    elif isinstance(dictionary[key], unicode):
-                        dictionary[key] = dictionary[key].strip()
-                    else:
-                        dictionary[key] = dictionary[key]
-                    if sSearch.lower() in str(dictionary[key]).lower():
+                    #if isinstance(dictionary[key], str):
+                    #    dk = str(unicode(dictionary[key],errors='ignore').strip().lower())
+                    #elif isinstance(dictionary[key], unicode):
+                    #    dk = str(dictionary[key].strip().lower())
+                    #else:
+                    #    dk = str(unicode(dictionary[key]).strip().lower())#dictionary[key]
+                    if sSearch.lower() in [dictionary[key]]:
                         result_list.append(dictionary)
                         break
             return result_list

@@ -378,9 +378,21 @@ def prepare_result(base_station_object):
                     'param': {
                         'sub_station': [
                             {
+                                'name': 'ss_ip',
+                                'title': 'SS IP',
+                                'show': 1,
+                                'value': substation_device.ip_address if substation_device.ip_address else 'N/A'
+                            },
+                            {
+                                'name': 'ss_mac',
+                                'title': 'SS MAC',
+                                'show': 0,
+                                'value': substation_device.mac_address if substation_device.mac_address else 'N/A'
+                            },
+                            {
                                 'name': 'name',
                                 'title': 'SS Name',
-                                'show': 1,
+                                'show': 0,
                                 'value': substation.name if substation.name else 'N/A'
                             },
                             {
@@ -451,18 +463,6 @@ def prepare_result(base_station_object):
                                 'title': 'Alias',
                                 'show': 1,
                                 'value': substation_device.device_alias if substation_device.device_alias else 'N/A'
-                            },
-                            {
-                                'name': 'ss_ip',
-                                'title': 'SS IP',
-                                'show': 1,
-                                'value': substation_device.ip_address if substation_device.ip_address else 'N/A'
-                            },
-                            {
-                                'name': 'ss_mac',
-                                'title': 'SS MAC',
-                                'show': 0,
-                                'value': substation_device.mac_address if substation_device.mac_address else 'N/A'
                             },
                             {
                                 'name': 'ss_device_id',

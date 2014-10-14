@@ -313,7 +313,16 @@ function GisPerformance() {
                                 sectorPoly.perf_data_obj = sector_perf_obj;
                                 sectorPoly.setOptions({fillColor: lineColor});
                             }
+                        } else {
+                            if(sector_marker) {
+                            var new_icon_sector = this.calculatePerformanceValue("performance_icon", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+                            sector_marker.setOptions({
+                            "icon" : new google.maps.MarkerImage(base_url+'/'+new_icon_sector,null,null,null,new google.maps.Size(32,37)),
+                            "oldIcon" : new google.maps.MarkerImage(base_url+'/'+new_icon_sector,null,null,null,new google.maps.Size(32,37)),
+                            "clusterIcon" : new google.maps.MarkerImage(base_url+'/'+new_icon_sector,null,null,null,null)
+                            });
                         }
+                    }
 
                         //Get substation icon from Performance
                         var subStationIcon = this.calculatePerformanceValue("performance_icon", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
