@@ -21,8 +21,8 @@ logger = nocout_log()
 sys.path.insert(0, '/apps/omd/sites/master_UA/nocout')
 try:
 	from device_interface import *
-except ImportError:
-	logger.debug('Device interface script not imported')
+except Exception, e:
+	logger.debug('Syntax error in device_interface: ' + pprint.pformat(e))
 
 
 hosts_file = root_dir + "hosts.mk"
@@ -1024,7 +1024,7 @@ def sync():
     # Set flag for sync in mysql db
     #toggle_sync_flag()
     # First read all the new configs from db and write to rules.mk and hosts.mk
-    #sync_device_conf_db = entry()
+    sync_device_conf_db = entry()
     sites_affected = []
     response = {
         "success": 1,
