@@ -849,22 +849,7 @@ def add_device_to_nms_core(request, device_id, ping_data):
                        }
 
         device_tech = DeviceTechnology.objects.filter(id=device.device_technology)
-        if device_tech and (str(device_tech[0].name).lower() == 'pmp' or str(device_tech[0].name.lower() == 'wimax')):
-            # Check if the is SS
-            # ss_queryset = SubStation.objects.filter(device_id=device.id)
-            # if ss_queryset:
-            #     # Check whether the BS present
-            #     bs_queryset = Topology.objects.filter(connected_device_mac=device.mac_address)
-            #     if bs_queryset:
-            #         # Send in the BS also
-            #         device_data.update({
-            #         'parent_device_name': bs_queryset[0].device_name
-            #         })
-            #     else:
-            #         result['message'] = "<i class=\"fa fa-check red-dot\"></i>Could not find BS for this SS in the topology"
-            #         return json.dumps({'result': result})
-
-            #check if the device is SS
+        if len(device_tech) and device_tech[0].name.lower() in ['pmp','wimax']:
             if device.substation_set.exists():
                 try:
                     substation = device.substation_set.get()
@@ -876,9 +861,13 @@ def add_device_to_nms_core(request, device_id, ping_data):
                         device_data.update({
                             'parent_device_name': parent_device.device_name
                         })
+                    else:
+                        result['message'] = "<i class=\"fa fa-check red-dot\"></i>Could not find BS for this SS in the topology"
+                        return json.dumps({'result': result})
                 except Exception as e:
+                    result['message'] = "<i class=\"fa fa-check red-dot\"></i>Could not find BS for this SS in the topology"
                     logger.exception(e.message)
-
+                    return json.dumps({'result': result})
         # site to which configuration needs to be pushed
         master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
         # url for nocout.py
@@ -976,19 +965,24 @@ def edit_device_in_nms_core(request, device_id):
                        'mac': device.mac_address}
 
         device_tech = DeviceTechnology.objects.filter(id=device.device_technology)
-        if device_tech and (str(device_tech[0].name).lower() == 'pmp' or str(device_tech[0].name.lower() == 'wimax')):
-            # Check if the is SS
-            ss_queryset = SubStation.objects.filter(device_id=device.id)
-            if ss_queryset:
-                # Check whether the BS present
-                bs_queryset = Topology.objects.filter(connected_device_mac=device.mac_address)
-                if bs_queryset:
-                    # Send in the BS also
-                    device_data.update({
-                    'parent_device_name': bs_queryset[0].device_name
-                    })
-                else:
+        if len(device_tech) and device_tech[0].name.lower() in ['pmp','wimax']:
+            if device.substation_set.exists():
+                try:
+                    substation = device.substation_set.get()
+                    #check for the circuit
+                    if substation.circuit_set.exists():
+                        circuit = substation.circuit_set.get()
+                        sector = circuit.sector
+                        parent_device = sector.sector_configured_on
+                        device_data.update({
+                            'parent_device_name': parent_device.device_name
+                        })
+                    else:
+                        result['message'] = "<i class=\"fa fa-check red-dot\"></i>Could not find BS for this SS in the topology"
+                        return json.dumps({'result': result})
+                except Exception as e:
                     result['message'] = "<i class=\"fa fa-check red-dot\"></i>Could not find BS for this SS in the topology"
+                    logger.exception(e.message)
                     return json.dumps({'result': result})
         # site to which configuration needs to be pushed
         master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
