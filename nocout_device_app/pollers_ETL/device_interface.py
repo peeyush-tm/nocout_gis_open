@@ -16,7 +16,7 @@ g_services = ('radwin_rssi', 'radwin_uptime', 'radwin_uas', 'radwin_service_thro
 		'radwin_idu_sn_invent', 'radwin_cbw_invent', 'radwin_mimo_diversity_invent',
 		'radwin_link_distance_invent', 'radwin_ssid_invent')
 config = {}
-url  = 'http://omdadmin:omd@121.244.255.107/master_UA/check_mk/nocout.py'
+url  = 'http://omdadmin:omd@121.244.255.107:5000/master_UA/check_mk/nocout.py'
 
 def main():
 	p2p_query = """
@@ -131,25 +131,25 @@ def edit_service_template():
 			print 'response'
 			print response
 			# Update table service_servicedatasource
-			query = """
-				UPDATE service_servicedatasource
-				SET
-				is_edited = 0
-				WHERE
-			"""
-			query += " name = '%s'" % e[1]
-			print query
-			cur.execute(query)
+			#query = """
+			#	UPDATE service_servicedatasource
+			#	SET
+			#	is_edited = 0
+			#	WHERE
+			#"""
+			#query += " name = '%s'" % e[1]
+			#print query
+			#cur.execute(query)
 			# Update table service_deviceserviceconfiguration
-			query = """
-				UPDATE service_deviceserviceconfiguration
-				SET"""
-			query += " warning = %s, critical = %s" % (e[2], e[3])
-			query += " WHERE service_name = '%s'" % e[0]
-			print query
+			#query = """
+			#	UPDATE service_deviceserviceconfiguration
+			#	SET"""
+			#query += " warning = %s, critical = %s" % (e[2], e[3])
+			#query += " WHERE service_name = '%s'" % e[0]
+			#print query
 
-			cur.execute(query)
-			db.commit()
+			#cur.execute(query)
+			#db.commit()
 		except Exception, e:
 			print 'Error : ' + pprint.pformat(e)
         cur.close()
@@ -449,10 +449,10 @@ def entry(**kw):
 	global config
 	config = {}
 	config.update({
-		'user': kw.get('user', 'root'),
-		'password': kw.get('sql_passwd', 'root'),
+		'user': kw.get('user', 'nocout_root'),
+		'password': kw.get('sql_passwd', 'nocout_root_master_UA@123'),
 		'host': kw.get('ip', '121.244.255.107'),
-		'database': kw.get('sql_db', 'nocout_dev_27_08_14'),
+		'database': kw.get('sql_db', 'nocout_14_10_14'),
 		'port': kw.get('sql_port', 3200)
 		})
 	print 'config'
