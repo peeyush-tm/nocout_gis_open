@@ -20,7 +20,7 @@ import mysql.connector
 logger = nocout_log()
 sys.path.insert(0, '/apps/omd/sites/master_UA/nocout')
 try:
-	from bulk_upload_data_insertion import *
+	from device_interface import *
 except ImportError:
 	logger.debug('Device interface script not imported')
 
@@ -1019,9 +1019,9 @@ def write_new_host_rules():
 def sync():
     logger.debug('[-- sync --]')
     # Set flag for sync in mysql db
-    #toggle_sync_flag()
+    toggle_sync_flag()
     # First read all the new configs from db and write to rules.mk and hosts.mk
-    #sync_device_conf_db = bulk_upload_main()
+    sync_device_conf_db = entry()
     sites_affected = []
     response = {
         "success": 1,
@@ -1070,7 +1070,7 @@ def sync():
             })
     logger.debug('[-- sync finish --]')
     # Reset the sync flag in mysql db
-    #toggle_sync_flag(mode=False)
+    toggle_sync_flag(mode=False)
     return response
 
 
