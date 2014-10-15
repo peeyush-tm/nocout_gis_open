@@ -472,6 +472,7 @@ def device_soft_delete_form(request, value):
             child_device_descendants.append(cd)
 
     result['data']['objects']['childs'] = []
+    result['data']['objects']['eligible'] = []
     # future device parent is needs to find out only if our device is
     # associated with any other device i.e if child_devices.count() > 0
     if child_devices.count() > 0:
@@ -568,10 +569,11 @@ def device_soft_delete(request, device_id, new_parent_id):
         logger.info("No child device exists.")
 
     # assign new parent device to all child devices
-    if child_devices.count() > 0:
-        for dv in child_devices:
-            dv.parent = new_parent
-            dv.save()
+    if new_parent:
+        if child_devices.count() > 0:
+            for dv in child_devices:
+                dv.parent = new_parent
+                dv.save()
 
     # setting 'is_deleted' bit of device to 1 which means device is soft deleted
     if device.is_deleted == 0:
