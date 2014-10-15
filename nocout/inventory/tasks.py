@@ -3936,7 +3936,7 @@ def create_backhaul(backhaul_payload):
     # initializing variables
     name, alias, bh_configured_on, bh_port_name, bh_port, bh_type, bh_switch, switch_port_name, switch_port = [''] * 9
     pop, pop_port_name, pop_port, aggregator, aggregator_port_name, aggregator_port, pe_hostname, pe_ip = [''] * 8
-    bh_connectivity, bh_circuit_id, ttsl_circuit_id, dr_site, description = [''] * 5
+    bh_connectivity, bh_circuit_id, ttsl_circuit_id, dr_site, description, bh_capacity = [''] * 6
 
     # get backhaul parameters
     if 'ip' in backhaul_payload.keys():
@@ -3977,7 +3977,7 @@ def create_backhaul(backhaul_payload):
     if 'bh_circuit_id' in backhaul_payload.keys():
         bh_circuit_id = backhaul_payload['bh_circuit_id'] if backhaul_payload['bh_circuit_id'] else ""
     if 'bh_capacity' in backhaul_payload.keys():
-        bh_capacit = backhaul_payload['bh_capacity'] if backhaul_payload['bh_capacity'] else ""
+        bh_capacity = backhaul_payload['bh_capacity'] if backhaul_payload['bh_capacity'] else ""
     if 'ttsl_circuit_id' in backhaul_payload.keys():
         ttsl_circuit_id = backhaul_payload['ttsl_circuit_id'] if backhaul_payload['ttsl_circuit_id'] else ""
     if 'dr_site' in backhaul_payload.keys():
@@ -4099,6 +4099,13 @@ def create_backhaul(backhaul_payload):
                         backhaul.bh_circuit_id = bh_circuit_id
                     except Exception as e:
                         print("BH Circuit ID: ({} - {})".format(bh_circuit_id, e.message))
+                # bh capacity
+                if bh_capacity:
+                    if isinstance(bh_capacity, int):
+                        try:
+                            backhaul.bh_capacity = bh_capacity
+                        except Exception as e:
+                            print("BH Capacity: ({} - {})".format(bh_capacity, e.message))
                 # ttsl circuit id
                 if ttsl_circuit_id:
                     try:
