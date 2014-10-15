@@ -3258,11 +3258,11 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                     date_of_acceptance = ""
 
                 # circuit data
-                alias = row['Circuit ID'] if 'Circuit ID' in row.keys() else ""
+                alias = circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else ""
                 circuit_data = {
                     'name': name,
                     'alias': alias,
-                    'circuit_id': row['Circuit ID'] if 'Circuit ID' in row.keys() else "",
+                    'circuit_id': circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else "",
                     'sector': "",
                     'customer': customer,
                     'sub_station': substation,
