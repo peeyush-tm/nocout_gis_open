@@ -15,7 +15,7 @@ function createGoogleMarker(url, oldMarkerIcon) {
     //Get scaledSize setting from oldMarkerIcon
     oldMarObj['scaledSize'] = oldMarkerIcon['icon']['scaledSize'] ? oldMarkerIcon['icon']['scaledSize'] : null;
     //Get size setting from oldMarkerIcon
-    oldMarObj['size'] = oldMarkerIcon['icon']['size'] ? oldMarkerIcon['icon']['size'] : null;
+    oldMarObj['size'] = oldMarkerIcon['icon']['size'] ? oldMarkerIcon['icon']['size'] : google.maps.Size(32, 37);
     //Create a new MarkerImage with new url, and all others value from previous defined settings
     newMarkerImage = new google.maps.MarkerImage(url, oldMarObj['size'], oldMarObj['origin'], oldMarObj['anchor'], oldMarObj['scaledSize']);
     //Return newMarker
@@ -209,7 +209,7 @@ function GisPerformance() {
                     };
                     //Loop through all the SubStations in Device
                     for (var j = 0; j < bsGmapMarker["child_ss"][i]["sub_station"].length; j++) {
-                                            
+
                         var ssMarker = allMarkersObject_gmap['sub_station']['ss_'+bsGmapMarker["child_ss"][i]["sub_station"][j].name];
                         if(ssMarker && (ssMarker.map != null && ssMarker.map != "")) {
                             //Store sub_station_name, sub_station_id, and empty performance data for the substation
@@ -222,7 +222,7 @@ function GisPerformance() {
                             deviceSectorJSon["sub_station"].push(deviceSsJson);
                         }
                     }
-                    
+
                     //Push DATA sector to the deviceSectorJSon created.
                     initialdata["param"]["sector"].push(deviceSectorJSon);
                 }
@@ -248,16 +248,18 @@ function GisPerformance() {
         try {
             //Loop through devices
             for (var i = 0; i < bsMarkerObject['child_ss'].length; i++) {
-            	condition= true;
-            	var polyPathArray = [];
-            	var new_line_path = [];
+            	condition = true;
+            	var polyPathArray = [],
+            	    new_line_path = [],
+                    sector_marker = allMarkersObject_gmap['sector_device']['sector_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on)],
+                    sector_poly_marker = allMarkersObject_gmap['sector_polygon']['poly_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on)];
+
+
+
                 //Loop through sub_station of devices
                 for (var j = 0; j < bsMarkerObject['child_ss'][i]['sub_station'].length; j++) {
 
-                    var sector_marker = allMarkersObject_gmap['sector_device']['sector_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on)],
-                        sector_poly_marker = allMarkersObject_gmap['sector_polygon']['poly_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on)];
-
-                    if((sector_marker && (sector_marker.map != null && sector_marker.map != "")) || (sector_poly_marker && (sector_poly_marker.map != null && sector_poly_marker.map != ""))) {
+                    if((sector_marker && (sector_marker.map != null)) || (sector_poly_marker && (sector_poly_marker.map != null))) {
 
                         var halfPt;
                         //Step no. 3 ===> Fetch PerformanceValue for various key from GisData JSon
@@ -270,7 +272,7 @@ function GisPerformance() {
                         }
 
                         //If technology is WiMAX and PMP
-                        if ($.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) === "wimax" || $.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) === "pmp") {
+                        if($.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) === "wimax" || $.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) === "pmp") {
                             //Get sector Polyline
                             var sectorPoly = markersMasterObj['Poly'][bsMarkerObject['child_ss'][i]['sub_station'][j]['device_name']];
                             //If both sector Poly and line Color is defined
@@ -285,14 +287,14 @@ function GisPerformance() {
                                 var azimuth = this.calculatePerformanceValue("azimuth_angle", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
                                 var beam_width = this.calculatePerformanceValue("beam_width", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
                                 var polarisation = sectorPoly.polarisation ? sectorPoly.polarisation : 'vertical';
-                                
+
                                 if((new_radius && $.trim(new_radius) != "") && (azimuth && $.trim(azimuth) != "") && (beam_width && $.trim(beam_width) != "")) {
                                     /*Check to draw sector only for first time in ss loop*/
                                     if(condition) {
 
                                         networkMapInstance.createSectorData(+(sectorPoly.ptLat),+(sectorPoly.ptLon),new_radius,azimuth,beam_width,polarisation,function(pointsArray) {
                                             halfPt = Math.floor(pointsArray.length / (+2));
-                                            polyPointsArray = pointsArray;                                      
+                                            polyPointsArray = pointsArray;
                                             for(var i=0;i<pointsArray.length;i++) {
                                                 var pt = new google.maps.LatLng(pointsArray[i].lat,pointsArray[i].lon);
                                                 polyPathArray.push(pt);
@@ -300,29 +302,107 @@ function GisPerformance() {
                                         });
                                         sectorPoly.setPath(polyPathArray);
                                     }
-                                    condition= false;
                                     new_line_path = [new google.maps.LatLng(polyPointsArray[halfPt].lat,polyPointsArray[halfPt].lon),new google.maps.LatLng(googlePolyLine.ss_lat,googlePolyLine.ss_lon)];
                                 }
 
                                 if(new_line_path.length > 0) {
                                     googlePolyLine.setOptions({"bs_lat" : polyPointsArray[halfPt].lat,"bs_lon" : polyPointsArray[halfPt].lon});
                                     googlePolyLine.setPath(new_line_path);
-                                }                           
+                                }
 
                                 sectorPoly.hasPerf = 1;
                                 sectorPoly.perf_data_obj = sector_perf_obj;
                                 sectorPoly.setOptions({fillColor: lineColor});
                             }
                         } else {
-                            if(sector_marker) {
-                            var new_icon_sector = this.calculatePerformanceValue("performance_icon", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-                            sector_marker.setOptions({
-                            "icon" : new google.maps.MarkerImage(base_url+'/'+new_icon_sector,null,null,null,new google.maps.Size(32,37)),
-                            "oldIcon" : new google.maps.MarkerImage(base_url+'/'+new_icon_sector,null,null,null,new google.maps.Size(32,37)),
-                            "clusterIcon" : new google.maps.MarkerImage(base_url+'/'+new_icon_sector,null,null,null,null)
-                            });
+                            if(condition) {
+                                if(sector_marker) {
+                                    var new_icon_sector = this.calculatePerformanceValue("performance_icon", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], false);
+                                    if(new_icon_sector) {
+                                        var largeur= 32,
+                                            hauteur= 37,
+                                            divideBy= 1,
+                                            anchorX= 0,
+                                            iconUrl = base_url+"/"+new_icon_sector;
+
+                                        var old_icon_obj = new google.maps.MarkerImage(
+                                            iconUrl,
+                                            new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy)),
+                                            new google.maps.Point(0, 0),
+                                            new google.maps.Point(Math.ceil(16-(16*anchorX)), Math.ceil(hauteur/divideBy)),
+                                            new google.maps.Size(Math.ceil(largeur/divideBy), Math.ceil(hauteur/divideBy))
+                                        );
+                                        var other_icons_obj = new google.maps.MarkerImage(
+                                            base_url+'/static/img/icons/1x1.png',
+                                            null,
+                                            null,
+                                            null,
+                                            null
+                                        );
+                                        sector_marker.icon = other_icons_obj;
+                                        sector_marker.clusterIcon = other_icons_obj;
+                                        sector_marker.clusterIcon = old_icon_obj;
+                                        // sector_marker.setOptions({
+                                        //     "icon" : other_icons_obj,
+                                        //     "clusterIcon" : other_icons_obj,
+                                        //     "oldIcon" : old_icon_obj,
+                                        // });
+                                    }
+
+                                    var existing_index = -1;
+                                    for (var x = 0; x < labelsArray.length; x++) {
+                                        var move_listener_obj = labelsArray[x].moveListener_;
+                                        if (move_listener_obj) {
+                                            var keys_array = Object.keys(move_listener_obj);
+                                            for(var z=0;z<keys_array.length;z++) {
+                                                if(typeof move_listener_obj[keys_array[z]] === 'object') {
+                                                   if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["filter_data"]["sector_name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["filter_data"]["bs_name"])) {
+                                                        if (($.trim(move_listener_obj[keys_array[z]]["filter_data"]["sector_name"]) == $.trim(sector_marker.filter_data.sector_name)) && ($.trim(move_listener_obj[keys_array[z]]["filter_data"]["bs_name"]) == $.trim(sector_marker.filter_data.bs_name))) {
+                                                            existing_index = x;
+                                                            labelsArray[x].close();
+                                                        }
+                                                   }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    /*Remove that label from array*/
+                                    if (existing_index >= 0) {
+                                        labelsArray.splice(existing_index, 1);
+                                    }
+
+                                    /*Create Label on Sector Marker*/
+                                    var sector_perf_val = "";
+                                    sector_perf_val = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], false);
+                                    if(sector_perf_val && $.trim(sector_perf_val)) {
+                                        var perf_infobox = new InfoBox({
+                                            content: sector_perf_val,
+                                            boxStyle: {
+                                                border: "1px solid black",
+                                                background: "white",
+                                                textAlign: "center",
+                                                fontSize: "9pt",
+                                                color: "black",
+                                                padding: '2px 6px'
+                                            },
+                                            disableAutoPan: true,
+                                            position: new google.maps.LatLng(sector_marker.ptLat, sector_marker.ptLon),
+                                            closeBoxURL: "",
+                                            isHidden: visible_flag,
+                                            // visible : visible_flag,
+                                            enableEventPropagation: true,
+                                            zIndex: 80,
+                                        });
+
+                                        perf_infobox.open(mapInstance, sector_marker);
+                                        if(sector_marker.map && (sector_marker.map != null && sector_marker.map != "")) {
+                                            labelsArray.push(perf_infobox);
+                                        }
+                                    }
+                                }
+                            }
                         }
-                    }
 
                         //Get substation icon from Performance
                         var subStationIcon = this.calculatePerformanceValue("performance_icon", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
@@ -387,7 +467,7 @@ function GisPerformance() {
                             perf_infobox.open(mapInstance, subStationMarker);
                             if(subStationMarker.map && (subStationMarker.map != null && subStationMarker.map != "")) {
                                 labelsArray.push(perf_infobox);
-                            }                       
+                            }
                         }
 
                         subStationMarker["poll_info"] = polled_info;
@@ -400,7 +480,8 @@ function GisPerformance() {
                             subStationMarker.oldIcon = (createGoogleMarker(base_url + '/' + subStationIcon, subStationMarker));
                             subStationMarker.clusterIcon = (createGoogleMarker(base_url + '/' + subStationIcon, subStationMarker));
                         }
-
+                        /*Reset the flag*/
+                        condition= false;
                     }
                 }
 
@@ -470,19 +551,23 @@ function GisPerformance() {
         for (var i = 0; i < gisData["param"]["sector"].length; i++) {
             //If Gis Sector Name=== device
             if (gisData["param"]["sector"][i] && gisData["param"]["sector"][i]["device_name"] === device) {
-                //Loop inside device Sub Stations
-                for (var j = 0; j < gisData["param"]["sector"][i]["sub_station"].length; j++) {
-                    //If SubStation name=== devinceName passed
-                    if (gisData["param"]["sector"][i]["sub_station"][j]["device_name"] === ssName) {
-                        //Check if value is defined in SubStation
-                        if (gisData["param"]["sector"][i]["sub_station"][j]["performance_data"][key]) {
-                            //return the value
-                            return gisData["param"]["sector"][i]["sub_station"][j]["performance_data"][key];
-                        } else {
-                            //return default value
-                            return gisData["param"]["sector"][i]["performance_data"][key];
+                if(ssName) {
+                    //Loop inside device Sub Stations
+                    for(var j = 0; j < gisData["param"]["sector"][i]["sub_station"].length; j++) {
+                        //If SubStation name=== devinceName passed
+                        if (gisData["param"]["sector"][i]["sub_station"][j]["device_name"] === ssName) {
+                            //Check if value is defined in SubStation
+                            if (gisData["param"]["sector"][i]["sub_station"][j]["performance_data"][key]) {
+                                //return the value
+                                return gisData["param"]["sector"][i]["sub_station"][j]["performance_data"][key];
+                            } else {
+                                //return default value
+                                return gisData["param"]["sector"][i]["performance_data"][key];
+                            }
                         }
                     }
+                } else {
+                    return gisData["param"]["sector"][i]["performance_data"][key];
                 }
             }
         }

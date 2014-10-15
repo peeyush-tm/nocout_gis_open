@@ -16,6 +16,7 @@ g_services = ('radwin_rssi', 'radwin_uptime', 'radwin_uas', 'radwin_service_thro
 		'radwin_idu_sn_invent', 'radwin_cbw_invent', 'radwin_mimo_diversity_invent',
 		'radwin_link_distance_invent', 'radwin_ssid_invent')
 config = {}
+url  = 'http://omdadmin:omd@121.244.255.107:5000/master_UA/check_mk/nocout.py'
 
 def main():
 	p2p_query = """
@@ -110,7 +111,7 @@ def edit_service_template():
 		service_servicedatasource sd 
 		on 
 		sd.id = sds.servicedatasource_id
-		where sd.warning != "" and sd.critical != "" and sd.is_edited =1;
+		where sd.warning != "" and sd.critical != "";
 	"""
 	payload = {'mode': 'editservice'}
 	db = mysql_conn()
@@ -119,7 +120,6 @@ def edit_service_template():
         data = cur.fetchall()
         print "edited service template"
         print data
-	url  = 'http://omdadmin:omd@localhost/master_UA/check_mk/nocout.py'
 	for e in data:
 		payload['service_name'] = e[0]
 		payload['cmd_params'] = json.dumps({e[1]: {'warning': int(e[2]), 'critical': int(e[3])}})
@@ -131,25 +131,25 @@ def edit_service_template():
 			print 'response'
 			print response
 			# Update table service_servicedatasource
-			query = """
-				UPDATE service_servicedatasource
-				SET
-				is_edited = 0
-				WHERE
-			"""
-			query += " name = '%s'" % e[1]
-			print query
-			cur.execute(query)
+			#query = """
+			#	UPDATE service_servicedatasource
+			#	SET
+			#	is_edited = 0
+			#	WHERE
+			#"""
+			#query += " name = '%s'" % e[1]
+			#print query
+			#cur.execute(query)
 			# Update table service_deviceserviceconfiguration
-			query = """
-				UPDATE service_deviceserviceconfiguration
-				SET"""
-			query += " warning = %s, critical = %s" % (e[2], e[3])
-			query += " WHERE service_name = '%s'" % e[0]
-			print query
+			#query = """
+			#	UPDATE service_deviceserviceconfiguration
+			#	SET"""
+			#query += " warning = %s, critical = %s" % (e[2], e[3])
+			#query += " WHERE service_name = '%s'" % e[0]
+			#print query
 
-			cur.execute(query)
-			db.commit()
+			#cur.execute(query)
+			#db.commit()
 		except Exception, e:
 			print 'Error : ' + pprint.pformat(e)
         cur.close()
@@ -187,12 +187,9 @@ def add_hosts(data):
 	keys = ['device_name', 'device_alias', 'ip_address', 'site', 'device_type']
 	payload = {}
 	response = {}
-	url = 'http://omdadmin:omd@localhost/master_UA/check_mk/nocout.py'
 	for i, p in enumerate(data):
 		snmp_tag = extract_service_snmp_parameters(p[4])
 		snmp_tag = snmp_tag[0][0]
-		print 'snmp_tag'
-		print snmp_tag
 		if not snmp_tag:
 			snmp_tag = "snmp-v1|snmp"
 		payload = dict(zip(keys, p))
@@ -327,7 +324,6 @@ def delete_device_template():
 	device_list = cur.fetchall()
 	payload = {}
 	payload = {'mode': 'deletehost'}
-	url = 'http://omdadmin:omd@localhost/master_UA/check_mk/nocout.py'
 	for device in device_list:
 		payload.update({
                         "device_name": device[0],
@@ -355,7 +351,6 @@ def delete_service_template():
 	device_list = cur.fetchall()
 	payload = {}
 	payload = {'mode':'deleteservice'}
-	url = 'http://omdadmin:omd@localhost/master_UA/check_mk/nocout.py'
 	for entry in device_list:
 		for serv in entry[1]:
 			payload.update({
@@ -432,19 +427,21 @@ def set_ping_levels():
 			'mode': 'set_ping_levels'
 			}
 	for d in data:
-		ping_levels = {
-			'device_type': d[0],
-			'rta': (int(d[3]), int(d[4])),
-			'loss': (int(d[5]), int(d[6])),
-			'timeout': int(d[2]),
-			'packets': int(d[1])
-		}
-		#ping_levels = json.dumps(ping_levels)
-		ping_levels_list.append(ping_levels)
+		if not filter(lambda e: e is None, d):
+			ping_levels = {
+				'device_type': d[0],
+				'rta': (int(d[3]), int(d[4])),
+				'loss': (int(d[5]), int(d[6])),
+				'timeout': int(d[2]),
+				'packets': int(d[1])
+			}
+			#ping_levels = json.dumps(ping_levels)
+			ping_levels_list.append(ping_levels)
+	print '--- ping_levels_list ---'
+	print ping_levels_list
 	#ping_levels_list = json.dumps(ping_levels_list)
 	payload.update({'ping_levels_list': ping_levels_list})
 	payload = urllib.urlencode(payload)
-	url  = 'http://omdadmin:omd@localhost/master_UA/check_mk/nocout.py'
 	response = send_to_deviceapp(payload, url)
 
 
@@ -452,11 +449,11 @@ def entry(**kw):
 	global config
 	config = {}
 	config.update({
-		'user': kw.get('user'),
-		'password': kw.get('sql_passwd'),
-		'host': kw.get('ip'),
-		'database': kw.get('sql_db'),
-		'port': kw.get('sql_port')
+		'user': kw.get('user', 'nocout_root'),
+		'password': kw.get('sql_passwd', 'nocout_root_master_UA@123'),
+		'host': kw.get('ip', '121.244.255.107'),
+		'database': kw.get('sql_db', 'nocout_14_10_14'),
+		'port': kw.get('sql_port', 3200)
 		})
 	print 'config'
 	print config
@@ -483,12 +480,12 @@ def entry(**kw):
 	set_ping_levels()
 	data = main()
 	# Find the fresh devices (with is_added_to_nms is zero)
-	added_devices = add_hosts(data)
+	#added_devices = add_hosts(data)
 	service_data_sources, service_parameters = get_service_data_sources(g_services)
 	# Update is_added_to_nms and is_monitored_on_nms in the device_device flag
-	edit_flags_device_device(sum(map(lambda t: t.keys() ,added_devices), []),flag1 = "is_added_to_nms",flag2= "is_monitored_on_nms",flag3=None)
-	print '\n added devices'
-	print added_devices
+	#edit_flags_device_device(sum(map(lambda t: t.keys() ,added_devices), []),flag1 = "is_added_to_nms",flag2= "is_monitored_on_nms",flag3=None)
+	#print '\n added devices'
+	#print added_devices
 	#print '\nservice_data_sources'
 	#print service_data_sources
 	#print '\nservice_parameters'
@@ -496,29 +493,29 @@ def entry(**kw):
 
 
 	# Insert the device's config info into db
-	for d in added_devices:
-		for s in g_services:
-			data_sources = service_data_sources.get(s).split(',')
-			s_param = service_parameters.get(s)[0]
-			for ds in data_sources:
-				splitted_ds = ds.split('|')
-				this_time = (datetime.now()).strftime('%Y-%m-%d %H:%M:%S')
-				entry = (d.keys()[0], s, d.values()[0], s_param[5], splitted_ds[0], s_param[6], s_param[7],
-						s_param[1], s_param[2], s_param[3], s_param[4],
-						splitted_ds[1], splitted_ds[2], this_time, this_time, 1)
-				device_service_conf.append(entry)
+	#for d in added_devices:
+	#	for s in g_services:
+	#		data_sources = service_data_sources.get(s).split(',')
+	#		s_param = service_parameters.get(s)[0]
+	#		for ds in data_sources:
+	#			splitted_ds = ds.split('|')
+	#			this_time = (datetime.now()).strftime('%Y-%m-%d %H:%M:%S')
+	#			entry = (d.keys()[0], s, d.values()[0], s_param[5], splitted_ds[0], s_param[6], s_param[7],
+	#					s_param[1], s_param[2], s_param[3], s_param[4],
+	#					splitted_ds[1], splitted_ds[2], this_time, this_time, 1)
+	#			device_service_conf.append(entry)
 	
 	#print '\ndevice_service_conf'
 	#print device_service_conf[23:45]
 	time.sleep(1)
-	insert_data(device_service_conf, table = 'service_deviceserviceconfiguration',
-			keys = device_config_keys)
+	#insert_data(device_service_conf, table = 'service_deviceserviceconfiguration',
+	#keys = device_config_keys)
 	# Bulk service edit
 	edit_service_template()
 	# Bulk device delete	
-	delete_device_template()
+	#delete_device_template()
 	#Bulk service delete
-	delete_service_template()
+	#delete_service_template()
 	print '\nTotal time taken'
 	print time.time() - t1 
 
