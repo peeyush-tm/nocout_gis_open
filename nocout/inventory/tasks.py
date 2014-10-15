@@ -5478,14 +5478,14 @@ def create_circuit(circuit_payload):
                 if dl_rssi_during_acceptance:
                     if isinstance(dl_rssi_during_acceptance, int) or isinstance(dl_rssi_during_acceptance, float):
                         try:
-                            circuit.dl_rssi_during_acceptance = dl_rssi_during_acceptance
+                            circuit.dl_rssi_during_acceptance = int(dl_rssi_during_acceptance)
                         except Exception as e:
                             print("RSSI During Acceptance: ({} - {})".format(dl_rssi_during_acceptance, e.message))
                 # dl cinr during acceptance
                 if dl_cinr_during_acceptance:
                     if isinstance(dl_cinr_during_acceptance, int) or isinstance(dl_cinr_during_acceptance, float):
                         try:
-                            circuit.dl_cinr_during_acceptance = dl_cinr_during_acceptance
+                            circuit.dl_cinr_during_acceptance = int(dl_cinr_during_acceptance)
                         except Exception as e:
                             print("CINR During Acceptance: ({} - {})".format(dl_cinr_during_acceptance, e.message))
                 # jitter value during acceptance
