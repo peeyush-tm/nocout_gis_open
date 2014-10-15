@@ -5469,16 +5469,18 @@ def create_circuit(circuit_payload):
                             print("QOS (BW): ({} - {})".format(qos_bandwidth, e.message))
                 # dl rssi during acceptance
                 if dl_rssi_during_acceptance:
-                    try:
-                        circuit.dl_rssi_during_acceptance = dl_rssi_during_acceptance
-                    except Exception as e:
-                        print("RSSI During Acceptance: ({} - {})".format(dl_rssi_during_acceptance, e.message))
+                    if isinstance(dl_rssi_during_acceptance, int) or isinstance(dl_rssi_during_acceptance, float):
+                        try:
+                            circuit.dl_rssi_during_acceptance = dl_rssi_during_acceptance
+                        except Exception as e:
+                            print("RSSI During Acceptance: ({} - {})".format(dl_rssi_during_acceptance, e.message))
                 # dl cinr during acceptance
                 if dl_cinr_during_acceptance:
-                    try:
-                        circuit.dl_cinr_during_acceptance = dl_cinr_during_acceptance
-                    except Exception as e:
-                        print("CINR During Acceptance: ({} - {})".format(dl_cinr_during_acceptance, e.message))
+                    if isinstance(dl_cinr_during_acceptance, int) or isinstance(dl_cinr_during_acceptance, float):
+                        try:
+                            circuit.dl_cinr_during_acceptance = dl_cinr_during_acceptance
+                        except Exception as e:
+                            print("CINR During Acceptance: ({} - {})".format(dl_cinr_during_acceptance, e.message))
                 # jitter value during acceptance
                 if jitter_value_during_acceptance:
                     try:
