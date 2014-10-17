@@ -1851,8 +1851,8 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 try:
                     if all(k in row for k in ("City", "State")):
                         # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
-                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
+                        name = "{}_{}_{}".format(name, row['State'][:3].lower() if 'State' in row.keys() else "",
+                                                 row['City'][:3].lower() if 'City' in row.keys() else "")
                 except Exception as e:
                     logger.info(e.message)
 
@@ -1939,7 +1939,8 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Customer -------------------------------
                 # customer data
                 # sanitize customer name
-                name = special_chars_name_sanitizer_with_lower_case(row['SS Customer Name'] if 'SS Customer Name' in row.keys() else "")
+                name = "{}_{}".format(special_chars_name_sanitizer_with_lower_case(row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""),
+                                      special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else ""))
                 alias = row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""
 
                 try:
@@ -2184,6 +2185,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                             'address': row['BS Address'] if 'BS Address' in row.keys() else "",
                             'description': 'Base Station created on {}.'.format(full_time)
                         }
+                        print "######################################### BASE STATION - ", base_station_data
                         # base station object
                         base_station = create_device(base_station_data)
                     else:
@@ -2524,8 +2526,8 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 try:
                     if all(k in row for k in ("City", "State")):
                         # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
-                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
+                        name = "{}_{}_{}".format(name, row['State'][:3].lower() if 'State' in row.keys() else "",
+                                                 row['City'][:3].lower() if 'City' in row.keys() else "",)
                 except Exception as e:
                     print(e.message)
 
@@ -2615,7 +2617,8 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Customer -------------------------------
                 # customer data
                 # sanitize customer name
-                name = special_chars_name_sanitizer_with_lower_case(row['SS Customer Name'] if 'SS Customer Name' in row.keys() else "")
+                name = "{}_{}".format(special_chars_name_sanitizer_with_lower_case(row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""),
+                                      special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else ""))
                 alias = row['SS Customer Name'] if 'SS Customer Name' in row.keys() else ""
 
                 try:
@@ -2799,14 +2802,14 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 # get machine
                 machine = ""
                 try:
-                    machine = Machine.objects.get(name='ospf2')
+                    machine = Machine.objects.get(name='ospf1')
                 except Exception as e:
                     machine = ""
                     print(e.message)
 
                 # get site_instance
                 try:
-                    site = SiteInstance.objects.get(name='ospf2_slave_1')
+                    site = SiteInstance.objects.get(name='ospf1_slave_1')
                 except Exception as e:
                     site = ""
                     print(e.message)
@@ -2840,14 +2843,14 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 # get machine
                 machine = ""
                 try:
-                    machine = Machine.objects.get(name='ospf3')
+                    machine = Machine.objects.get(name='ospf1')
                 except Exception as e:
                     machine = ""
                     print(e.message)
 
                 # get site_instance
                 try:
-                    site = SiteInstance.objects.get(name='ospf3_slave_1')
+                    site = SiteInstance.objects.get(name='ospf1_slave_1')
                 except Exception as e:
                     site = ""
                     print(e.message)
@@ -2881,14 +2884,14 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 # get machine
                 machine = ""
                 try:
-                    machine = Machine.objects.get(name='ospf4')
+                    machine = Machine.objects.get(name='ospf1')
                 except Exception as e:
                     machine = ""
                     print(e.message)
 
                 # get site_instance
                 try:
-                    site = SiteInstance.objects.get(name='ospf4_slave_1')
+                    site = SiteInstance.objects.get(name='ospf1_slave_1')
                 except Exception as e:
                     site = ""
                     print(e.message)
@@ -2922,14 +2925,14 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 # get machine
                 machine = ""
                 try:
-                    machine = Machine.objects.get(name='ospf5')
+                    machine = Machine.objects.get(name='ospf1')
                 except Exception as e:
                     machine = ""
                     print(e.message)
 
                 # get site_instance
                 try:
-                    site = SiteInstance.objects.get(name='ospf5_slave_1')
+                    site = SiteInstance.objects.get(name='ospf1_slave_1')
                 except Exception as e:
                     site = ""
                     print(e.message)
@@ -3155,9 +3158,14 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                     site = ""
                     print(e.message)
 
+                # device name
+                name = special_chars_name_sanitizer_with_lower_case(row['Circuit ID']) if 'Circuit ID' in row.keys() else ""
+                alias = '{}'.format(circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else "")
+
                 # sub station data
                 sub_station_data = {
-                    'device_name': row['SS IP'] if 'SS IP' in row.keys() else "",
+                    'device_name': name,
+                    'device_alias': alias,
                     'organization': organization,
                     'machine': machine,
                     'site': site,
@@ -3181,8 +3189,16 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
 
             try:
                 # ------------------------------- Sub Station Antenna -------------------------------
+                # antenna name
+                name = '{}'.format(special_chars_name_sanitizer_with_lower_case(row['Circuit ID']) if 'Circuit ID' in row.keys() else "")
+
+                # antenna alias
+                alias = '{}'.format(circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else "")
+
                 # sub station antenna data
                 substation_antenna_data = {
+                    'antenna_name': name,
+                    'antenna_alias': alias,
                     'ip': row['SS IP'] if 'SS IP' in row.keys() else "",
                     'antenna_type': row['Antenna Type'] if 'Antenna Type' in row.keys() else "",
                     'height': row['Antenna Height'] if 'Antenna Height' in row.keys() else "",
@@ -3202,7 +3218,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                 # sub station data
                 # sanitize bs name
                 name = special_chars_name_sanitizer_with_lower_case(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
-                alias = row['SS IP'] if 'SS IP' in row.keys() else ""
+                alias = '{}'.format(circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else "")
                 substation_data = {
                     'name': name,
                     'alias': alias,
@@ -3230,8 +3246,10 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                 # ------------------------------- Customer -------------------------------
                 # customer data
                 # sanitize customer name
-                name = special_chars_name_sanitizer_with_lower_case(row['Customer Name'] if 'Customer Name' in row.keys() else "")
+                name = "{}_{}".format(special_chars_name_sanitizer_with_lower_case(row['Customer Name'] if 'Customer Name' in row.keys() else ""),
+                                      special_chars_name_sanitizer_with_lower_case(row['Circuit ID'] if 'Circuit ID' in row.keys() else ""))
                 alias = row['Customer Name'] if 'Customer Name' in row.keys() else ""
+
                 customer_data = {
                     'name': name,
                     'alias': alias,
@@ -3494,6 +3512,9 @@ def create_device(device_payload):
                         print("Description: ({} - {})".format(description, e.message))
                 # saving device
                 device.save()
+                print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& Updated - {}".format(device_name)
+                print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% udevice - ", device.__dict__
+                return device
             except Exception as e:
                 # ---------------------------- CREATING DEVICE -------------------------------
                 # device object
@@ -3626,9 +3647,11 @@ def create_device(device_payload):
                 # saving device
                 try:
                     device.save()
+                    print "***************************************** Created - {}".format(device_name)
+                    print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% cdevice - ", device.__dict__
                     return device
                 except Exception as e:
-                    logger.info("Device Object: ({} - {})".format(device_name, e.message))
+                    logger.exception("Device Object: ({} - {})".format(device_name, e.message))
                     return ""
 
 
@@ -4101,11 +4124,10 @@ def create_backhaul(backhaul_payload):
                         print("BH Circuit ID: ({} - {})".format(bh_circuit_id, e.message))
                 # bh capacity
                 if bh_capacity:
-                    if isinstance(bh_capacity, int):
-                        try:
-                            backhaul.bh_capacity = bh_capacity
-                        except Exception as e:
-                            print("BH Capacity: ({} - {})".format(bh_capacity, e.message))
+                    try:
+                        backhaul.bh_capacity = int(bh_capacity)
+                    except Exception as e:
+                        print("BH Capacity: ({} - {})".format(bh_capacity, e.message))
                 # ttsl circuit id
                 if ttsl_circuit_id:
                     try:
@@ -4245,6 +4267,12 @@ def create_backhaul(backhaul_payload):
                         backhaul.bh_circuit_id = bh_circuit_id
                     except Exception as e:
                         print("BH Circuit ID: ({} - {})".format(bh_circuit_id, e.message))
+                # bh capacity
+                if bh_capacity:
+                    try:
+                        backhaul.bh_capacity = int(bh_capacity)
+                    except Exception as e:
+                        print("BH Capacity: ({} - {})".format(bh_capacity, e.message))
                 # ttsl circuit id
                 if ttsl_circuit_id:
                     try:
@@ -5476,18 +5504,16 @@ def create_circuit(circuit_payload):
                             print("QOS (BW): ({} - {})".format(qos_bandwidth, e.message))
                 # dl rssi during acceptance
                 if dl_rssi_during_acceptance:
-                    if isinstance(dl_rssi_during_acceptance, int) or isinstance(dl_rssi_during_acceptance, float):
-                        try:
-                            circuit.dl_rssi_during_acceptance = int(dl_rssi_during_acceptance)
-                        except Exception as e:
-                            print("RSSI During Acceptance: ({} - {})".format(dl_rssi_during_acceptance, e.message))
+                    try:
+                        circuit.dl_rssi_during_acceptance = int(dl_rssi_during_acceptance)
+                    except Exception as e:
+                        print("RSSI During Acceptance: ({} - {})".format(dl_rssi_during_acceptance, e.message))
                 # dl cinr during acceptance
                 if dl_cinr_during_acceptance:
-                    if isinstance(dl_cinr_during_acceptance, int) or isinstance(dl_cinr_during_acceptance, float):
-                        try:
-                            circuit.dl_cinr_during_acceptance = int(dl_cinr_during_acceptance)
-                        except Exception as e:
-                            print("CINR During Acceptance: ({} - {})".format(dl_cinr_during_acceptance, e.message))
+                    try:
+                        circuit.dl_cinr_during_acceptance = int(dl_cinr_during_acceptance)
+                    except Exception as e:
+                        print("CINR During Acceptance: ({} - {})".format(dl_cinr_during_acceptance, e.message))
                 # jitter value during acceptance
                 if jitter_value_during_acceptance:
                     try:
@@ -5571,13 +5597,13 @@ def create_circuit(circuit_payload):
                 # dl rssi during acceptance
                 if dl_rssi_during_acceptance:
                     try:
-                        circuit.dl_rssi_during_acceptance = dl_rssi_during_acceptance
+                        circuit.dl_rssi_during_acceptance = int(dl_rssi_during_acceptance)
                     except Exception as e:
                         print("RSSI During Acceptance: ({} - {})".format(dl_rssi_during_acceptance, e.message))
                 # dl cinr during acceptance
                 if dl_cinr_during_acceptance:
                     try:
-                        circuit.dl_cinr_during_acceptance = dl_cinr_during_acceptance
+                        circuit.dl_cinr_during_acceptance = int(dl_cinr_during_acceptance)
                     except Exception as e:
                         print("CINR During Acceptance: ({} - {})".format(dl_cinr_during_acceptance, e.message))
                 # jitter value during acceptance
