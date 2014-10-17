@@ -2860,8 +2860,8 @@ function devicePlottingClass_gmap() {
 			}
 
 	    	$.ajax({
-				// url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
-				url : base_url+"/"+"static/services.json",
+				url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
+				// url : base_url+"/"+"static/services.json",
 				success : function(results) {
 
 					var result = JSON.parse(results);
