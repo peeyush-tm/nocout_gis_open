@@ -1442,7 +1442,7 @@ function devicePlottingClass_gmap() {
 				}
 			}
 
-			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.bs_lat+", "+contentObject.bs_lon+"</td></tr>";
+			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.nearLat+", "+contentObject.nearLon+"</td></tr>";
 			infoTable += "</tbody></table>";			
 			infoTable += "</td>";
 			/*BS-Sector Info End*/
