@@ -766,15 +766,19 @@ function devicePlottingClass_gmap() {
 		for(var i=0;i<bs_ss_devices.length;i++) {
 
 			/*Create BS state,city object*/
-			if(!state_city_obj[bs_ss_devices[i].data.state]) {
-				state_city_obj[bs_ss_devices[i].data.state] = [];
-			}
-			if(state_city_obj[bs_ss_devices[i].data.state].indexOf(bs_ss_devices[i].data.city) == -1) {
-				state_city_obj[bs_ss_devices[i].data.state].push(bs_ss_devices[i].data.city);
-			}
+			if(bs_ss_devices[i].data.state) {
 
-			if(all_cities_array.indexOf(bs_ss_devices[i].data.city) == -1) {
-				all_cities_array.push(bs_ss_devices[i].data.city); 
+				if(!state_city_obj[bs_ss_devices[i].data.state]) {
+					state_city_obj[bs_ss_devices[i].data.state] = [];
+				}
+				if(state_city_obj[bs_ss_devices[i].data.state].indexOf(bs_ss_devices[i].data.city) == -1) {
+					state_city_obj[bs_ss_devices[i].data.state].push(bs_ss_devices[i].data.city);
+				}
+			}
+			if(bs_ss_devices[i].data.city) {
+				if(all_cities_array.indexOf(bs_ss_devices[i].data.city) == -1) {
+					all_cities_array.push(bs_ss_devices[i].data.city); 
+				}
 			}
 
 
@@ -1438,7 +1442,7 @@ function devicePlottingClass_gmap() {
 				}
 			}
 
-			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.bs_lat+", "+contentObject.bs_lon+"</td></tr>";
+			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.nearLat+", "+contentObject.nearLon+"</td></tr>";
 			infoTable += "</tbody></table>";			
 			infoTable += "</td>";
 			/*BS-Sector Info End*/
@@ -2857,7 +2861,7 @@ function devicePlottingClass_gmap() {
 
 	    	$.ajax({
 				url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
-				//url : base_url+"/"+"static/services.json",
+				// url : base_url+"/"+"static/services.json",
 				success : function(results) {
 
 					var result = JSON.parse(results);

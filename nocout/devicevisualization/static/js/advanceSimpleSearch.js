@@ -223,22 +223,33 @@ function advanceSearchMainClass() {
     this.getInputArray= function() {
         var ob= {};
         var search_self= this;
-        $("form#searchInfoModal_form > div .form-group").each(function(i , formEl) {
-            var key= $(formEl).find('label.control-label').html();
+        // $("form#searchInfoModal_form > div .form-group").each(function(i , formEl) {
+        //     var key= $(formEl).find('label.control-label').html();
 
-            var selectedValues= [];
+        //     var selectedValues= [];
 
-            $(formEl).find('ul.select2-choices li.select2-search-choice').each(function(i, selectedli) {
-                selectedValues.push($(selectedli).find('div').html());
-            });
+        //     $(formEl).find('ul.select2-choices li.select2-search-choice').each(function(i, selectedli) {
+        //         selectedValues.push($(selectedli).find('div').html());
+        //     });
 
-            ob[key]= selectedValues;
+        //     ob[key]= selectedValues;
 
-            var selectedSelectId= $(formEl).find('select').select2('val');
+        //     var selectedSelectId= $(formEl).find('select').select2('val');
 
-            var forAttr= $(formEl).find('label.control-label').attr('for');
-            search_self.appliedSearch.push({field: forAttr, value: selectedSelectId});
-        });
+        //     var forAttr= $(formEl).find('label.control-label').attr('for');
+        //     search_self.appliedSearch.push({field: forAttr, value: selectedSelectId});
+        // });
+
+        var select2_boxes = $("form#searchInfoModal_form > div .form-group");
+
+        for(var i=0;i<select2_boxes.length;i++) {
+            var label_txt = select2_boxes[i].children[0].innerHTML,
+                select_box_div = select2_boxes[i].children[1].children,
+                select_box_id = select_box_div[select_box_div.length-1].id,
+                selected_values = $("#"+select_box_id).select2("val");
+                ob[label_txt] = selected_values; 
+        }
+
         return ob;
     }
 
@@ -257,6 +268,8 @@ function advanceSearchMainClass() {
 
             //check for name first
             var searchedNames= selectedInputs["BS Name"];
+            console.log(searchedNames);
+            console.log(deviceJson);
             var isNamePresent= false;
             if(searchedNames.length && searchedNames.indexOf(deviceJson["name"]) === -1) {
                 return false;
@@ -325,7 +338,7 @@ function advanceSearchMainClass() {
                             var currentSector= deviceJson["data"]["param"]["sector"][d];
                             for(var e=0; e< currentSector["sub_station"].length; e++) {
                                 var currentSs= currentSector["sub_station"][e];
-                                if($.trim(currentSs["data"]["param"]["sub_station"][1]["value"])=== circuidId) {
+                                if($.trim(currentSs["data"]["param"]["sub_station"][3]["value"])=== circuidId) {
                                     extendBound(currentSs["data"]["lat"], currentSs["data"]["lon"]);
                                     search_self.applyIconToSearchedResult(currentSs["data"]["lat"], currentSs["data"]["lon"],search_self.constants.search_ss_icon);
                                     isCircuitIdPresent= true;
