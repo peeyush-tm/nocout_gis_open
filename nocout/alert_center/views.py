@@ -1624,7 +1624,7 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
     processed_device = []
 
     for data in performance_data:
-        for bs_row in gis_information:
+        for bs_row in gis_info:
             device_type = bs_row['SECTOR_TECH']
 
             if data['device_name'] == bs_row['SECTOR_CONF_ON_NAME']:
