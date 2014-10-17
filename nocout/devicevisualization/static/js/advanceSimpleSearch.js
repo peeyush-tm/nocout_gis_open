@@ -268,8 +268,6 @@ function advanceSearchMainClass() {
 
             //check for name first
             var searchedNames= selectedInputs["BS Name"];
-            console.log(searchedNames);
-            console.log(deviceJson);
             var isNamePresent= false;
             if(searchedNames.length && searchedNames.indexOf(deviceJson["name"]) === -1) {
                 return false;
