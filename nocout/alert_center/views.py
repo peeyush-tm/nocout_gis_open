@@ -1621,9 +1621,6 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
     processed_device = []
 
     for data in performance_data:
-        print("%%"*50)
-        print(data["data_source"])
-        print("%%"*50)
         for bs_row in gis_information:
             device_type = bs_row['SECTOR_TECH']
 
