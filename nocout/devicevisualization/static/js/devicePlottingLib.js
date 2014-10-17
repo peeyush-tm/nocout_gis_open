@@ -766,15 +766,19 @@ function devicePlottingClass_gmap() {
 		for(var i=0;i<bs_ss_devices.length;i++) {
 
 			/*Create BS state,city object*/
-			if(!state_city_obj[bs_ss_devices[i].data.state]) {
-				state_city_obj[bs_ss_devices[i].data.state] = [];
-			}
-			if(state_city_obj[bs_ss_devices[i].data.state].indexOf(bs_ss_devices[i].data.city) == -1) {
-				state_city_obj[bs_ss_devices[i].data.state].push(bs_ss_devices[i].data.city);
-			}
+			if(bs_ss_devices[i].data.state) {
 
-			if(all_cities_array.indexOf(bs_ss_devices[i].data.city) == -1) {
-				all_cities_array.push(bs_ss_devices[i].data.city); 
+				if(!state_city_obj[bs_ss_devices[i].data.state]) {
+					state_city_obj[bs_ss_devices[i].data.state] = [];
+				}
+				if(state_city_obj[bs_ss_devices[i].data.state].indexOf(bs_ss_devices[i].data.city) == -1) {
+					state_city_obj[bs_ss_devices[i].data.state].push(bs_ss_devices[i].data.city);
+				}
+			}
+			if(bs_ss_devices[i].data.city) {
+				if(all_cities_array.indexOf(bs_ss_devices[i].data.city) == -1) {
+					all_cities_array.push(bs_ss_devices[i].data.city); 
+				}
 			}
 
 
