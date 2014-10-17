@@ -1607,6 +1607,9 @@ def prepare_raw_gis_info():
 
     return fetch_raw_result(query=gis_info)
 
+global gis_information
+gis_information = prepare_raw_gis_info()
+
 def prepare_raw_alert_results(device_list=[], performance_data=None):
     """
     prepare GIS result using raw query
@@ -1615,8 +1618,8 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
     :param performance_data:
     :return:
     """
-    gis_information = []
-    gis_information = prepare_raw_gis_info()
+    gis_info = []
+    gis_info = gis_information
 
     processed_device = []
 
