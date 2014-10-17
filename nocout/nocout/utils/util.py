@@ -7,6 +7,7 @@ from device_group.models import DeviceGroup
 from organization.models import Organization
 from user_group.models import UserGroup
 from user_profile.models import UserProfile
+from random import randint, uniform
 
 from django.db import connections
 
@@ -74,3 +75,34 @@ def dict_fetchall(cursor):
     ]
 
 #duplicate code: TODO : remove
+
+def format_value(format_this, type_of=None):
+    """
+
+    :param format_this:
+    :return:
+    """
+    try:
+        if not type_of:
+            return format_this if format_this else 'NA'
+        elif type_of == 'frequency_color':
+            return format_this if format_this else 'rgba(74,72,94,0.58)'
+        elif type_of == 'frequency_radius':
+            return format_this if format_this else uniform(0,3)
+        elif type_of == 'integer':
+            return format_this if format_this else 0
+        elif type_of == 'antenna':
+            return format_this if format_this else 'vertical'
+        elif type_of == 'random':
+            return format_this if format_this else randint(40,70)
+        elif type_of == 'icon':
+            if len(str(format_this)) > 5:
+                img_url = str("media/"+ str(format_this)) \
+                    if "uploaded" in str(format_this) \
+                    else "static/img/" + str(format_this)
+                return img_url
+            else:
+                return "static/img/icons/mobilephonetower10.png"
+    except:
+        pass
+    return 'NA'
