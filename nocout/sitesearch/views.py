@@ -2,6 +2,9 @@ import logging
 from inventory.models import BaseStation, Customer, Antenna
 from device.models import DeviceType, DeviceVendor, DeviceTechnology, City
 from random import randint, uniform
+
+from nocout.utils.util import format_value
+
 logger = logging.getLogger(__name__)
 
 def tech_marker_url(device_type, techno, ms=True):
@@ -138,34 +141,6 @@ def prepare_basestation(base_station, bs_city_name, bs_state_name):
         return base_station_info
     except Exception as no_basestation:
         return []
-
-def format_value(format_this, type_of=None):
-    """
-
-    :param format_this:
-    :return:
-    """
-    if not type_of:
-        return format_this if format_this else 'NA'
-    elif type_of == 'frequency_color':
-        return format_this if format_this else 'rgba(74,72,94,0.58)'
-    elif type_of == 'frequency_radius':
-        return format_this if format_this else uniform(0,3)
-    elif type_of == 'integer':
-        return format_this if format_this else 0
-    elif type_of == 'antenna':
-        return format_this if format_this else 'vertical'
-    elif type_of == 'random':
-        return format_this if format_this else randint(40,70)
-    elif type_of == 'icon':
-        if len(str(format_this)) > 5:
-            img_url = str("media/"+ str(format_this)) \
-                if "uploaded" in str(format_this) \
-                else "static/img/" + str(format_this)
-            return img_url
-        else:
-            return "static/img/icons/mobilephonetower10.png"
-    return 'NA'
 
 def prepare_raw_basestation(base_station=None):
     """

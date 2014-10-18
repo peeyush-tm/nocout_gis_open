@@ -278,3 +278,4 @@ left join
 	) as bh
 on
 	(bh.BHID = bs_info.BHID)
+Group by BSID,SECTOR_ID,CID

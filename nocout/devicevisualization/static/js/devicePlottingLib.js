@@ -645,15 +645,19 @@ function devicePlottingClass_gmap() {
 		// for(var i=0;i<bs_ss_devices.length;i++) {
 		for(var i=bs_ss_devices.length;i--;) {
 			/*Create BS state,city object*/
-			if(!state_city_obj[bs_ss_devices[i].data.state]) {
-				state_city_obj[bs_ss_devices[i].data.state] = [];
-			}
-			if(state_city_obj[bs_ss_devices[i].data.state].indexOf(bs_ss_devices[i].data.city) == -1) {
-				state_city_obj[bs_ss_devices[i].data.state].push(bs_ss_devices[i].data.city);
-			}
+			if(bs_ss_devices[i].data.state) {
 
-			if(all_cities_array.indexOf(bs_ss_devices[i].data.city) == -1) {
-				all_cities_array.push(bs_ss_devices[i].data.city); 
+				if(!state_city_obj[bs_ss_devices[i].data.state]) {
+					state_city_obj[bs_ss_devices[i].data.state] = [];
+				}
+				if(state_city_obj[bs_ss_devices[i].data.state].indexOf(bs_ss_devices[i].data.city) == -1) {
+					state_city_obj[bs_ss_devices[i].data.state].push(bs_ss_devices[i].data.city);
+				}
+			}
+			if(bs_ss_devices[i].data.city) {
+				if(all_cities_array.indexOf(bs_ss_devices[i].data.city) == -1) {
+					all_cities_array.push(bs_ss_devices[i].data.city); 
+				}
 			}
 
 
@@ -1320,7 +1324,7 @@ function devicePlottingClass_gmap() {
 				}
 			}
 
-			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.bs_lat+", "+contentObject.bs_lon+"</td></tr>";
+			infoTable += "<tr><td>Lat, Long</td><td>"+contentObject.nearLat+", "+contentObject.nearLon+"</td></tr>";
 			infoTable += "</tbody></table>";			
 			infoTable += "</td>";
 			/*BS-Sector Info End*/
@@ -2139,12 +2143,16 @@ function devicePlottingClass_gmap() {
             /*Sectors Array*/
             for(var j=0;j< current_data[i].data.param.sector.length;j++) {
                 
-                var sector = current_data[i].data.param.sector[j];
+                var sector = current_data[i].data.param.sector[j],
+                	current_tech = sector.technology ? sector.technology : '',
+                	current_vendor = sector.vendor ? sector.vendor : '',
+                	current_city = current_data[i].data.city ? current_data[i].data.city : '',
+                	current_state = current_data[i].data.state ? current_data[i].data.state : '';
 
-                if ((filtersArray['technology'] ? $.trim(filtersArray['technology'].toLowerCase()) == $.trim(sector.technology.toLowerCase()) : true) &&
-                    (filtersArray['vendor'] ? $.trim(filtersArray['vendor'].toLowerCase()) == $.trim(sector.vendor.toLowerCase()) : true) &&
-                    (filtersArray['city'] ? $.trim(filtersArray['city'].toLowerCase()) == $.trim(current_data[i].data.city.toLowerCase()) : true) &&
-                    (filtersArray['state'] ? $.trim(filtersArray['state'].toLowerCase()) == $.trim(current_data[i].data.state.toLowerCase()) : true))
+                if ((filtersArray['technology'] ? $.trim(filtersArray['technology'].toLowerCase()) == $.trim(current_tech.toLowerCase()) : true) &&
+                    (filtersArray['vendor'] ? $.trim(filtersArray['vendor'].toLowerCase()) == $.trim(current_vendor.toLowerCase()) : true) &&
+                    (filtersArray['city'] ? $.trim(filtersArray['city'].toLowerCase()) == $.trim(current_city.toLowerCase()) : true) &&
+                    (filtersArray['state'] ? $.trim(filtersArray['state'].toLowerCase()) == $.trim(current_state.toLowerCase()) : true))
                 {
                 	bs_data.data.param.sector.push(sector);
                 	
@@ -2738,8 +2746,8 @@ function devicePlottingClass_gmap() {
 			}
 
 	    	$.ajax({
-				// url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
-				url : base_url+"/"+"static/services.json",
+				url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
+				// url : base_url+"/"+"static/services.json",
 				success : function(results) {
 
 					var result = JSON.parse(results);
@@ -3687,23 +3695,18 @@ function devicePlottingClass_gmap() {
 			for(var j=0;j<sectorsArray.length;j++) {
 
 				/*Check that the current sector name is present in filtered data or not*/
-				var subStationsArray = sectorsArray[j].sub_station;
+				var subStationsArray = sectorsArray[j].sub_station,
+					sectorName = sectorsArray[j].sector_configured_on ? $.trim(sectorsArray[j].sector_configured_on) : "";
+					bsName = dataArray[i].name ? $.trim(dataArray[i].name) : "",
+					bs_marker = allMarkersObject_gmap['base_station']["bs_"+bsName],
+					sector_device = allMarkersObject_gmap['sector_device']["sector_"+sectorName],
+					sector_polygon = allMarkersObject_gmap['sector_polygon']["poly_"+sectorName];
 
 				for(var k=0;k<subStationsArray.length;k++) {
 					/*BS, SS & Sectors from filtered data array*/
 					var ssName = subStationsArray[k].name ? $.trim(subStationsArray[k].name) : "",
-						sectorName = sectorsArray[j].sector_configured_on ? $.trim(sectorsArray[j].sector_configured_on) : "";
-						bsName = dataArray[i].name ? $.trim(dataArray[i].name) : "",
-						bs_marker = allMarkersObject_gmap['base_station']["bs_"+bsName],
 						ss_marker = allMarkersObject_gmap['sub_station']["ss_"+ssName],
-						path_marker = allMarkersObject_gmap['path']["line_"+ssName],
-						sector_device = allMarkersObject_gmap['sector_device']["sector_"+sectorName],
-						sector_polygon = allMarkersObject_gmap['sector_polygon']["poly_"+sectorName];
-
-					if(bs_marker) {
-						bs_marker.setMap(mapInstance);
-						currently_plotted_bs_ss_markers.push(bs_marker);
-					}
+						path_marker = allMarkersObject_gmap['path']["line_"+ssName];
 
 					if(ss_marker) {
 						ss_marker.setMap(mapInstance);
@@ -3713,14 +3716,19 @@ function devicePlottingClass_gmap() {
 					if(path_marker) {
 						path_marker.setMap(mapInstance);
 					}
+				}
+				
+				if(sector_device) {
+					sector_device.setMap(mapInstance);
+				}
 
-					if(sector_device) {
-						sector_device.setMap(mapInstance);
-					}
+				if(sector_polygon) {
+					sector_polygon.setMap(mapInstance);
+				}
 
-					if(sector_polygon) {
-						sector_polygon.setMap(mapInstance);
-					}
+				if(bs_marker) {
+					bs_marker.setMap(mapInstance);
+					currently_plotted_bs_ss_markers.push(bs_marker);
 				}
 			}
 		}
