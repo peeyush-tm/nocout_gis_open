@@ -569,7 +569,6 @@ function devicePlottingClass_gmap() {
 							gmap_self.plotDevices_gmap([],"base_station");
 						}
 					}
-
 				},
 				/*If data not fetched*/
 				error : function(err) {					
