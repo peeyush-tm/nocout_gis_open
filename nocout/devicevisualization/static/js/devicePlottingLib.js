@@ -25,6 +25,7 @@ var isFreeze = 0,
 
 /*Global data objects & arrays of map data & filters*/
 var main_devices_data_gmaps = [],
+	 clusterOptions = {gridSize: 70, maxZoom: 8},
 	markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}},
     allMarkersObject_gmap= {'base_station': {}, 'path': {}, 'sub_station': {}, 'sector_device': {}, 'sector_polygon': {}},
     allMarkersArray_gmap = [],
@@ -392,6 +393,19 @@ function devicePlottingClass_gmap() {
 
 			/*Create Map Type Object*/
 			mapInstance = new google.maps.Map(document.getElementById(domElement),mapObject);
+
+			/*Initialize markercluster*/
+         masterClusterInstance = new MarkerClusterer(mapInstance, [], clusterOptions);
+
+         //display advance search, filter etc button when call is going on.
+			disableAdvanceButton();
+
+			/*Show The loading Icon*/
+			$("#loadingIcon").show();
+
+			/*Disable the refresh button*/
+			$("#resetFilters").button("loading");
+
 			/*Search text box object*/
 			var searchTxt = document.getElementById('google_loc_search');
 
@@ -511,192 +525,50 @@ function devicePlottingClass_gmap() {
 	 * @method getDevicesData_gmap
 	 */
 	this.getDevicesData_gmap = function() {
-		var get_param_filter = "";
-		/*If any advance filters are applied then pass the advance filer with API call else pass blank array*/
-		if(appliedAdvFilter.length > 0) {
-			get_param_filter = JSON.stringify(appliedAdvFilter);
-		} else {
-			get_param_filter = "";
-		}
-
-		//display advance search, filter etc button when call is going on.
-		disableAdvanceButton();
 
 		if(counter > 0 || counter == -999) {
-
-			/*Ajax call not completed yet*/
-			isCallCompleted = 0;
-
-			/*Show The loading Icon*/
-			$("#loadingIcon").show();
-
-			/*Disable the refresh button*/
-			$("#resetFilters").button("loading");
-
-			/*To Enable The Cross Domain Request*/
-			$.support.cors = true;
-
 			/*Ajax call to the API*/
 			$.ajax({
 				url : base_url+"/"+"device/stats/?total_count="+devicesCount+"&page_number="+hitCounter,
-				// url : base_url+"/"+"static/new_format.json",
 				type : "GET",
 				dataType : "json",
 				/*If data fetched successful*/
 				success : function(result) {
-
 					if(result.success == 1) {
-
-						if(result.data.objects != null) {
-
+						if(result.data.objects) {
 							hitCounter = hitCounter + 1;
-							/*First call case*/
-							if(devicesObject.data == undefined) {
+							main_devices_data_gmaps = main_devices_data_gmaps.concat(result.data.objects.children);
 
-								/*Save the result json to the global variable for global access*/
-								devicesObject = result;
-								/*This will update if any filer is applied*/
-								main_devices_data_gmaps = devicesObject.data.objects.children;
-
-							} else {
-
-								main_devices_data_gmaps = main_devices_data_gmaps.concat(result.data.objects.children);
-							}
-
-							// main_devices_data_gmaps = devices_gmaps;
 							data_for_filters = main_devices_data_gmaps;
 
-							if(devicesObject.data.objects.children.length > 0) {
+							/*Update device count with the received data*/
+							if(devicesCount == 0) {
+								devicesCount = result.data.meta.total_count;
+							}
 
-								/*Update the device count with the received data*/
-								if(devicesCount == 0) {
-									devicesCount = devicesObject.data.meta.total_count;
-								}
+							/*Update showLimit with the received data*/
+							showLimit = result.data.meta.limit;
 
-								/*Update the device count with the received data*/
-								if(devicesObject.data.meta.limit != undefined) {
-									showLimit = devicesObject.data.meta.limit;
-								} else {
-									showLimit = 1;
-								}
+							if(counter == -999) {
+								counter = Math.ceil(devicesCount / showLimit);
+							}
 
-								if(counter == -999) {
-									counter = Math.ceil(devicesCount / showLimit);
-								}
+							gmap_self.plotDevices_gmap(result.data.objects.children,"base_station");
 
-								/*Check that any advance filter is applied or not*/
-								if(appliedAdvFilter.length <= 0) {
+                    /*Decrement the counter*/
+							counter = counter - 1;
 
-									/*applied basic filters count*/
-									var appliedFilterLength_gmaps = Object.keys(appliedFilterObj_gmaps).length;
-
-									/*Check that any basic filter is applied or not*/
-									if(appliedFilterLength_gmaps > 0) {
-										/*If any filter is applied then plot the fetch data as per the filters*/
-										gmap_self.applyFilter_gmaps(appliedFilterObj_gmaps,'gmap');
-									} else {
-									
-										/*Call the plotDevices_gmap to show the markers on the map*/
-										gmap_self.plotDevices_gmap(result.data.objects.children,"base_station");
-										
-									}
-
-								} else {
-                                    /*Call the plotDevices_gmap to show the markers on the map*/
-									gmap_self.plotDevices_gmap(result.data.objects.children,"base_station");
-                                }
-
-                                /*Decrement the counter*/
-								counter = counter - 1;
-
-								/*Call the function after 3 sec. for lazyloading*/
-								setTimeout(function() {
-									gmap_self.getDevicesData_gmap();
-								},10);
-								
-							} else {
-								isCallCompleted = 1;
-								gmap_self.plotDevices_gmap([],"base_station");
-
-								disableAdvanceButton('no');
-
-								/*Recall the server after particular timeout if system is not freezed*/
-						        /*Hide The loading Icon*/
-								$("#loadingIcon").hide();
-
-								/*Enable the refresh button*/
-								$("#resetFilters").button("complete");
-
-								setTimeout(function(e){
-									gmap_self.recallServer_gmap();
-								},21600000);
-							}							
-
+							/*Call the function after 3 sec. for lazyloading*/
+							setTimeout(function() {
+								gmap_self.getDevicesData_gmap();
+							},10);
 						} else {
 							
 							isCallCompleted = 1;
 							disableAdvanceButton('no');
 							gmap_self.plotDevices_gmap([],"base_station");
-
-							setTimeout(function() {
-								var bs_list = getMarkerInCurrentBound();
-				            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
-				            		if(recallPerf != "") {
-				            			clearTimeout(recallPerf);
-				            			recallPerf = "";
-				            		}
-				            		gisPerformanceClass.start(bs_list);
-				            	}
-								// gisPerformanceClass.start(getMarkerInCurrentBound());
-							}, 30000);
-
-							gmap_self.addPointTool_gmap('yes');
-							gmap_self.create_old_ruler();
-							gmap_self.create_old_line();
-							gmap_self.create_old_points();
-							get_page_status();
-							/*Hide The loading Icon*/
-							$("#loadingIcon").hide();
-
-							/*Enable the refresh button*/
-							$("#resetFilters").button("complete");
-
-							setTimeout(function(e){
-								gmap_self.recallServer_gmap();
-							},21600000);
 						}
-
-					} else {
-
-						isCallCompleted = 1;
-						disableAdvanceButton('no');
-						gmap_self.plotDevices_gmap([],"base_station");
-
-						setTimeout(function() {
-							var bs_list = getMarkerInCurrentBound();
-			            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
-			            		if(recallPerf != "") {
-			            			clearTimeout(recallPerf);
-			            			recallPerf = "";
-			            		}
-			            		gisPerformanceClass.start(bs_list);
-			            	}
-							// gisPerformanceClass.start(getMarkerInCurrentBound());
-						}, 30000);
-						gmap_self.addPointTool_gmap('yes');
-						gmap_self.create_old_ruler();
-						gmap_self.create_old_line();
-						gmap_self.create_old_points();
-						get_page_status();
-						disableAdvanceButton('no, enable it.');
-
-						/*Recall the server after particular timeout if system is not freezed*/
-						setTimeout(function(e) {
-							gmap_self.recallServer_gmap();
-						},21600000);
-
 					}
-
 				},
 				/*If data not fetched*/
 				error : function(err) {					
@@ -709,13 +581,27 @@ function devicePlottingClass_gmap() {
 			            // (bool | optional) if you want it to fade out on its own or just sit there
 			            sticky: false
 			        });
-
-			        disableAdvanceButton('no');
+				},
+				always : function() {
+					disableAdvanceButton('no');
 					/*Hide The loading Icon*/
 					$("#loadingIcon").hide();
 
 					/*Enable the refresh button*/
 					$("#resetFilters").button("complete");
+
+					setTimeout(function() {
+						var bs_list = getMarkerInCurrentBound();
+		            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
+		            		if(recallPerf != "") {
+		            			clearTimeout(recallPerf);
+		            			recallPerf = "";
+		            		}
+		            		gisPerformanceClass.start(bs_list);
+		            	}
+						// gisPerformanceClass.start(getMarkerInCurrentBound());
+					}, 30000);
+
 					/*Recall the server after particular timeout if system is not freezed*/
 					setTimeout(function(e){
 						gmap_self.recallServer_gmap();
@@ -727,16 +613,8 @@ function devicePlottingClass_gmap() {
 			/*Ajax call not completed yet*/
 			isCallCompleted = 1;
 			disableAdvanceButton('no');
-			gmap_self.plotDevices_gmap([],"base_station");
-
-			disableAdvanceButton('no, enable it.');
-
-
-			gmap_self.addPointTool_gmap('yes');
-			gmap_self.create_old_ruler();
-			gmap_self.create_old_line();
-			gmap_self.create_old_points();
 			get_page_status();
+			gmap_self.plotDevices_gmap([],"base_station");
 			setTimeout(function() {
 				var bs_list = getMarkerInCurrentBound();
             	if(bs_list.length > 0 && isCallCompleted == 1) {            		
@@ -763,8 +641,8 @@ function devicePlottingClass_gmap() {
 	 */
 	this.plotDevices_gmap = function(bs_ss_devices,stationType) {
 
-		for(var i=0;i<bs_ss_devices.length;i++) {
-
+		// for(var i=0;i<bs_ss_devices.length;i++) {
+		for(var i=bs_ss_devices.length;i--;) {
 			/*Create BS state,city object*/
 			if(bs_ss_devices[i].data.state) {
 
@@ -811,6 +689,9 @@ function devicePlottingClass_gmap() {
 			/*Create BS Marker*/
 			var bs_marker = new google.maps.Marker(bs_marker_object);
 
+			/*Add BS Marker To Cluster*/
+			masterClusterInstance.addMarker(bs_marker);
+
 			//Add markers to markersMasterObj with LatLong at key so it can be fetched later.
 			markersMasterObj['BS'][String(bs_ss_devices[i].data.lat)+bs_ss_devices[i].data.lon]= bs_marker;
 			markersMasterObj['BSNamae'][String(bs_ss_devices[i].name)]= bs_marker;
@@ -820,7 +701,8 @@ function devicePlottingClass_gmap() {
 			var deviceIDArray= [];
 
 			/*Plot Sector*/
-			for(var j=0;j<sector_array.length;j++) {
+			for(var j=sector_array.length;j--;) {
+			// for(var j=0;j<sector_array.length;j++) {
 
 				if(!tech_vendor_obj[sector_array[j].technology]) {
 					tech_vendor_obj[sector_array[j].technology] = [];
@@ -950,7 +832,8 @@ function devicePlottingClass_gmap() {
 				}
 
 				/*Plot Sub-Station*/
-				for(var k=0;k<sector_child.length;k++) {
+				for(var k=sector_child.length;k--;) {
+				// for(var k=0;k<sector_child.length;k++) {
 
 					var ss_marker_obj = sector_child[k];
 
@@ -989,6 +872,9 @@ function devicePlottingClass_gmap() {
 
 				    /*Create SS Marker*/
 				    var ss_marker = new google.maps.Marker(ss_marker_object);
+
+				    /*Add BS Marker To Cluster*/
+					masterClusterInstance.addMarker(ss_marker);
 
 				    markersMasterObj['SS'][String(ss_marker_obj.data.lat)+ ss_marker_obj.data.lon]= ss_marker;
 				    markersMasterObj['SSNamae'][String(ss_marker_obj.device_name)]= ss_marker;
@@ -1106,11 +992,6 @@ function devicePlottingClass_gmap() {
 			}
 
 			gmap_self.updateAllMarkersWithNewIcon(defaultIconSize);
-
-			/*Cluster options object*/
-            var clusterOptions = {gridSize: 70, maxZoom: 8};
-            /*Add the master markers to the cluster MarkerCluster object*/
-            masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
 		}
 	};
 

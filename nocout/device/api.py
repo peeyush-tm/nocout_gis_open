@@ -377,9 +377,9 @@ class DeviceStatsApi(View):
                         ) as bh
                     on
                         (bh.BHID = bs_info.BHID)
-                    Group by BSID,SECTOR_ID,CID
-
-                where (bs_info.BSID in ({0}));
+                where (bs_info.BSID in ({0}))
+                Group by BSID,SECTOR_ID,CID
+                ;
                 """.format(', '.join(str(i) for i in bs_id))
                 # print ((fetch_raw_result(query)))
 
