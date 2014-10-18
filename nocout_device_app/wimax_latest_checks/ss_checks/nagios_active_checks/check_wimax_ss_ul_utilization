@@ -1,0 +1,74 @@
+#!/usr/bin/python2
+# -*- coding: utf-8 -*-
+#~ Author: Silvio Knizek
+#~ License: GPLv2
+#~ Version: 1.0
+
+import sys
+from telnetlib import Telnet
+import socket
+from pprint import pformat
+
+
+def connection_telnet(host_name, port,mac):
+	"""
+    	Connects to a socket, checks for the WELCOME-MSG and closes the
+    	connection.
+    	Returns nothing.
+    
+    	"""
+	try:
+    		tn = Telnet(host_name,port,timeout=3)
+	except socket.timeout:
+		exit_value = 3
+                ss_vlan_state = "UNKNOWN"
+		sys.stdout.write("UNKNOWN Output")
+		sys.exit((exit_value))
+    	tn.read_until("Login:")
+    	tn.write("admin" + "\r\n")
+    	tn.read_until("Password:")
+    	tn.write("admin" + "\r\n")
+    	tn.write("show ss measurement\r\n")
+    	tn.write("exit\r\n")
+    	data = tn.read_all()
+    	plugin_message= ""
+    	exit_value = 3
+	ul_throughput = ''
+
+	wimax_ul_utilization_state = "UNKNOWN"
+	try:
+		a = [row for row in data.split('\n')]
+		for entry in a:
+			if mac in entry:
+				params_list = [r for r in entry.split()]
+				ul_throughput = float(params_list[6])
+				exit_value = 0
+				wimax_ul_utilization_state = "OK"
+				break
+	except:
+		exit_value = 3		
+	plugin_message += "wimax_ul_utilization %s - %s|%s=%s " % (wimax_ul_utilization_state,ul_throughput,'ul_utilization',ul_throughput)
+	sys.stdout.write(plugin_message)  
+	sys.exit((exit_value))
+
+def main():
+    """
+    Parses the time it needs to got the WELCOME-MSG and returns:
+    0:  all got well
+    1:  connection is slow
+    2:  nio connection at all (or really slow)
+    3:  something really bad happend
+    
+    """
+    exit_value =3
+    try:
+	host_name = sys.argv[1]
+	mac = sys.argv[2]
+        connection_telnet(host_name, 23,mac)
+    except socket.error, message:
+        sys.stdout.write("Could not open socket: ") 
+        sys.exit((exit_value))
+
+
+if __name__ == '__main__':
+    main()

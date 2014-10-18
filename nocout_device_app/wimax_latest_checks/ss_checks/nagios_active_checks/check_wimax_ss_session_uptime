@@ -1,0 +1,77 @@
+#!/usr/bin/python2
+# -*- coding: utf-8 -*-
+#~ Author: Silvio Knizek
+#~ License: GPLv2
+#~ Version: 1.0
+
+import sys
+from telnetlib import Telnet
+import socket
+
+def connection_telnet(host_name, port,mac):
+	"""
+    	Connects to a socket, checks for the WELCOME-MSG and closes the
+    	connection.
+    	Returns nothing.
+    
+    	"""
+	try:
+    		tn = Telnet(host_name,port,timeout=3)
+	except socket.timeout:
+		exit_value = 3
+                ss_vlan_state = "UNKNOWN"
+		sys.stdout.write("UNKNOWN Output")
+		sys.exit((exit_value))
+    	tn.read_until("Login:")
+    	tn.write("admin" + "\r\n")
+    	tn.read_until("Password:")
+    	tn.write("admin" + "\r\n")
+    	tn.write("show ss uptime\r\n")
+    	tn.write("exit\r\n")
+    	data = tn.read_all()
+    	plugin_message= ""
+    	exit_value = 3
+
+
+	wimax_ss_session_uptime_state = "UNKNOWN"
+	try:
+		for i,row in enumerate(data.split("\n")):
+			if ":" in row and mac in row:
+				params_list = [r for r in row.split()]
+				year =  int(params_list[2])
+				day = int(params_list[4])
+				hour = int(params_list[6])
+				minutes = int(params_list[8])
+				seconds = int(params_list[11])
+				uptime = ((year*365*24*60) + (day * 24*60) + (hour*60) + minutes)) * 60 + seconds
+				
+				exit_value = 0
+				wimax_ss_session_uptime_state = "OK"
+				break
+	except:
+		exit_value = 3		
+	plugin_message += "wimax_ss_session_uptime %s - up since (%dd %02d:%02d:%02d)|%s=%s " % (wimax_ss_session_uptime_state,day, hour, minutes, seconds,'session_uptime',uptime)
+	sys.stdout.write(plugin_message)  
+	sys.exit((exit_value))
+
+def main():
+    """
+    Parses the time it needs to got the WELCOME-MSG and returns:
+    0:  all got well
+    1:  connection is slow
+    2:  nio connection at all (or really slow)
+    3:  something really bad happend
+    
+    """
+    exit_value =3
+    try:
+	host_name = sys.argv[1]
+	mac= sys.argv[2]
+        connection_telnet(host_name, 23,mac)
+    except socket.error, message:
+        sys.stdout.write("Could not open socket: ") 
+        sys.exit((exit_value))
+
+
+if __name__ == '__main__':
+    main()

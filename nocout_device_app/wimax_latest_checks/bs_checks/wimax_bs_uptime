@@ -1,0 +1,82 @@
+#!/usr/bin/python
+
+"""
+Cambium device uptime Poller script.
+
+This is part of device application. 
+Poller script determines the total uptime of the radwin device.
+poller script takes the snmp value of OID .1.3.6.1.2.1.1.3.0 from snmp agent of device at specific interval.
+Cambium devices total uptime is sent to device application 
+
+"""
+# ########################################################
+# Function : check_wimax_bs_uptime
+# Parameters : Info (SNMP output) _no_params (currently poller script does not support parameters),item)
+# Output : Service state ,plugin output and performance data output
+# ########################################################
+import time
+
+
+def check_wimax_bs_uptime(item, _no_params, info):
+    """
+                check_wimax_bs_uptime function calculates the total uptime
+
+                Args:
+                        item (str) Specific item on SNMP output on which we want to filter results
+                
+                Kwargs:
+                        params (tuple) Check parameters for critical and warning state of service
+
+                Returns:
+                        state (int) :
+                                        0 : OK
+                                        1 : Warning
+                                        2: Critical
+                    3: unknown
+                        infotext(string):
+                                        plugin output
+                                        Example : OK - up since Sun Jun 22 06:45:34 2014 (12d 21:06:44)
+
+                        performance_data  (list):
+                                        performance data
+                                        Example: uptime=1112804;;;;
+                        Raises:
+                                ValueError ,Exception
+    """
+    state = 3
+    uptime = None
+    infotext = "unknown_value"
+    try:
+        if info:
+            if info[0][0]:
+                uptime = int(info[0][0])
+                uptime = uptime / 100
+                seconds = uptime % 60
+                rem = uptime / 60
+                minutes = rem % 60
+                hours = (rem % 1440) / 60
+                days = rem / 1440
+                now = int(time.time())
+                since = time.strftime("%c", time.localtime(now - uptime))
+                state = 0
+                infotext = "up since %s (%dd %02d:%02d:%02d)" % (since, days, hours, minutes, seconds)
+    except ValueError:
+        infotext = "type_mismatch_value"
+    except:
+        infotext = "unkown_value"
+
+    return (state, infotext, [("uptime", uptime)])
+
+
+check_info["wimax_bs_uptime"] = {
+    'check_function': check_wimax_bs_uptime,
+    'service_description': 'wimax_bs_uptime',
+    'has_perfdata': True
+
+}
+
+"""
+	SNMP OID of the Service wimax_bs_uptime
+"""
+snmp_info["wimax_bs_uptime"] = ( ".1.3.6.1.2.1.1", ["3.0"] )
+
