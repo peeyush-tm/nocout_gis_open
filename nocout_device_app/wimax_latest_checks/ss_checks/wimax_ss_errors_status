@@ -1,0 +1,84 @@
+#!/usr/bin/python
+import re
+"""
+Link Ethernet Poller script.
+
+This is part of device application. 
+Poller script determines the all ports ethernet status. 
+poller script takes the snmp value of OID .1.3.6.1.2.1.2.2.1.8 from snmp agent of device at specific interval.
+all ports status are sent to device application 
+
+"""
+
+
+
+# ####################################################################################
+# Function : check_wimax_ss_errors_status
+#
+#Parameters: info (SNMP output ) _no_params ( No Parameters)
+#
+#Output: plugin output ,service state,performance data
+#####################################################################################
+
+
+
+def check_wimax_ss_errors_status(item, _no_params, info):
+    """
+                check_wimax_ss_errors_status function calculates the link ethernet status of the port 
+
+                Args:
+                        item (str) Specific item on SNMP output on which we want to filter results
+                
+                Kwargs:
+                        params (tuple) Check parameters for critical and warning state of service
+
+                Returns:
+                        state (int) :
+                                        0 : OK
+                                        1 : Warning
+                                        2: Critical
+                    3: unknown
+                        infotext(string):
+                                        plugin output
+                                        Example : [Management_Port_on_Odu]up [Radio_Interface]up
+
+                        performance_data  (list):
+                                        performance data
+                                        Example: Management_Port_on_Odu=up;;;; Radio_Interface=up;;;;
+                        Raises:
+                                ValueError ,Exception
+    """
+    state = 3
+    status_list = ['']
+    infotext = "unknown_value"
+    try:
+        if info[0][0]:
+            status_list = []
+            infotext = ""
+            ifout_errors = int(info[0][1])
+            ifin_errors = int(info[0][0])
+            status_list.append(('ifin_errors', ifin_errors))
+            status_list.append(('ifout_errors', ifout_errors))
+            state = 0
+            for name, status in status_list:
+                infotext += "[%s]%s " % (name, status)
+
+    except ValueError:
+        infotext = "type_mismatch_value"
+    except:
+        infotext = "unknown_value"
+
+    return (state, infotext, status_list)
+
+
+check_info["wimax_ss_errors_status"] = {
+    'check_function': check_wimax_ss_errors_status,
+    'service_description': 'wimax_ss_errors_status',
+    'has_perfdata': True,
+}
+
+#####################################################################
+#snmp OID corrosponding to ports ethernet status.
+######################################################################
+
+snmp_info["wimax_ss_errors_status"] = ( ".1.3.6.1.2.1.2.2.1", ["14.3", "20.3"] )
