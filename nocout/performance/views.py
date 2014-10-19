@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import csv
 import json
 import datetime
@@ -63,7 +64,8 @@ class Live_Performance(ListView):
             datatable_headers = [
                 # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
                 {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False, 'bVisible': False},
-                {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 # {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
@@ -82,7 +84,8 @@ class Live_Performance(ListView):
             datatable_headers = [
                 # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
                 {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False, 'bVisible': False},
-                {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 # {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
@@ -101,7 +104,8 @@ class Live_Performance(ListView):
             datatable_headers = [
                 # {'mData': 'site_instance', 'sTitle': 'Site ID', 'Width': 'null', 'bSortable': False},
                 {'mData': 'id', 'sTitle': 'Device ID', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False, 'bVisible': False},
-                {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
+                # {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'device_technology', 'sTitle': 'Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'device_type', 'sTitle': 'Type', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 # {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
@@ -135,37 +139,24 @@ class LivePerformanceListing(BaseDatatableView):
         :param qs:
         :return result_list:
         """
-        # sSearch = self.request.GET.get('sSearch', None)
-        # if sSearch:
-        #     result_list = list()
-        #     for dictionary in qs:
-        #         for key in dictionary.keys():
-        #             if isinstance(dictionary[key], str):
-        #                 dictionary[key] = unicode(dictionary[key]).strip()
-        #             elif isinstance(dictionary[key], unicode):
-        #                 dictionary[key] = dictionary[key].strip()
-        #             else:
-        #                 dictionary[key] = dictionary[key]
-        #             if sSearch.lower() in str(dictionary[key]).lower():
-        #                 result_list.append(dictionary)
-        #                 break
-        #     return result_list
-        # return qs
 
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
             result_list = list()
             for dictionary in qs:
-                for key in dictionary.keys():
-                    #if isinstance(dictionary[key], str):
-                    #    dk = str(unicode(dictionary[key],errors='ignore').strip().lower())
-                    #elif isinstance(dictionary[key], unicode):
-                    #    dk = str(dictionary[key].strip().lower())
-                    #else:
-                    #    dk = str(unicode(dictionary[key]).strip().lower())#dictionary[key]
-                    if sSearch.lower() in [dictionary[key]]:
-                        result_list.append(dictionary)
-                        break
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
+
             return result_list
         return qs
 
@@ -215,6 +206,7 @@ class LivePerformanceListing(BaseDatatableView):
                                             'machine__name',
                                             'sector_configured_on',
                                             'substation'])
+                print(devices)
             else:
                 #If the technology is not P2P then include devices which are substation.
                 devices = organization_customer_devices(kwargs['organizations'], device_technology_id).\
@@ -233,6 +225,7 @@ class LivePerformanceListing(BaseDatatableView):
             # and must be either PMP or WiMAX.
             devices = organization_network_devices(organizations=kwargs['organizations'],technology=device_technology_id).\
                 values(*self.columns + ['id',
+                                        'ip_address',
                                         'device_technology',
                                         'device_name',
                                         'machine__name',
@@ -245,6 +238,7 @@ class LivePerformanceListing(BaseDatatableView):
             # and must be either PMP or WiMAX.
             devices = organization_backhaul_devices(organizations=kwargs['organizations']).\
                 values(*self.columns + ['id',
+                                        'ip_address',
                                         'device_technology',
                                         'device_name',
                                         'machine__name',
@@ -254,7 +248,15 @@ class LivePerformanceListing(BaseDatatableView):
         else:
             return []
 
-        for device in devices:
+        return devices
+
+    def prepare_devices(self, page_type='customer', qs=[]):
+        """
+
+        :return:
+        """
+        device_list = []
+        for device in qs:
             skip_device = False
             if page_type in ["customer", "network"]:
                 sector_id = "N/A"
@@ -406,7 +408,6 @@ class LivePerformanceListing(BaseDatatableView):
 
         return device_result
 
-
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
@@ -473,6 +474,9 @@ class LivePerformanceListing(BaseDatatableView):
         """
 
         request = self.request
+
+        page_type = self.request.GET['page_type']
+
         self.initialize(*args, **kwargs)
 
         qs = self.get_initial_queryset()
@@ -480,13 +484,20 @@ class LivePerformanceListing(BaseDatatableView):
         # number of records before filtering
         total_records = len(qs)
 
-        qs = self.filter_queryset(qs)
+        # qs = self.filter_queryset(qs)
 
         # number of records after filtering
         total_display_records = len(qs)
 
         # qs = self.ordering(qs)
         qs = self.paging(qs)
+
+        #prepare devices with GIS information
+        qs = self.prepare_devices(page_type=page_type, qs=qs)
+        #end prepare devices with GIS information
+        # qs = self.ordering(qs)
+        qs = self.filter_queryset(qs)
+
         # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
