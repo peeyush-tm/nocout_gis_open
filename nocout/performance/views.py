@@ -17,7 +17,7 @@ from performance.models import PerformanceService, PerformanceNetwork, EventNetw
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
 from django.utils.dateformat import format
 from operator import itemgetter
-from alert_center.views import fetch_raw_result
+from nocout.utils.util import fetch_raw_result, dict_fetchall, format_value
 
 import logging
 

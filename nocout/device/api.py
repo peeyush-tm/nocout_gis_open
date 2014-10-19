@@ -11,6 +11,7 @@ from device.models import Device, DeviceType, DeviceVendor, \
     DeviceTechnology, DeviceModel, State, Country, City
 import requests
 from nocout.utils import logged_in_user_organizations
+from nocout.utils.util import fetch_raw_result, dict_fetchall, format_value
 from service.models import DeviceServiceConfiguration, Service, ServiceDataSource
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from site_instance.models import SiteInstance
@@ -412,40 +413,6 @@ def prepare_raw_result(bs_dict = []):
             bs_result[BSID].append(bs)
     return bs_result
 
-
-#code duplication
-def fetch_raw_result(query, machine='default'):
-    """
-    django raw query does not get result in a single call, it iterates and calls the same query a lot of time
-    which can be optmised if we pre fetch the results
-
-    :param query: query to execute
-    :param machine: machine name
-    :return:the data fetched in form of a dictionary
-    """
-
-    cursor = connections[machine].cursor()
-    cursor.execute(query)
-
-    return dict_fetchall(cursor)
-
-
-def dict_fetchall(cursor):
-    """
-    https://docs.djangoproject.com/en/1.6/topics/db/sql/
-    return the cursor in dictionary format
-
-    :param cursor: data base cursor
-    :return: dictioanry of the rows
-    """
-
-    desc = cursor.description
-    return [
-        dict(zip([col[0] for col in desc], row))
-        for row in cursor.fetchall()
-    ]
-
-#duplicate code: TODO : remove
 
 class DeviceFilterApi(View):
 
