@@ -40,16 +40,50 @@ default_checks = [
 		(['Radwin2KSS'], ['@all'], 'radwin_port_mode_status', None, ()),
 		(['Radwin2KSS'], ['@all'], 'radwin_port_speed_status', None, ()),
 		(['Radwin2KSS'], ['@all'], 'radwin_sync_state_status', None, ()),
+		(['CanopyPM100SS'], ['@all'], 'cambium_ss_frequency_invent', None, ()),
+		(['CanopyPM100AP'], ['@all'], 'cambium_bs_frequency_invent', None, ()),
+		(['CanopySM100AP'], ['@all'], 'cambium_bs_frequency_invent', None, ()),
+		(['CanopyPM100AP'], ['@all'], 'cambium_bs_ip_invent', None, ()),
+		(['CanopySM100AP'], ['@all'], 'cambium_bs_ip_invent', None, ()),
+		(['CanopyPM100AP'], ['@all'], 'cambium_bs_mac_invent', None, ()),
+		(['CanopySM100AP'], ['@all'], 'cambium_bs_mac_invent', None, ()),
+		(['CanopyPM100AP'], ['@all'], 'cambium_bs_sector_id_invent', None, ()),
+		(['CanopySM100AP'], ['@all'], 'cambium_bs_sector_id_invent', None, ()),
+		(['CanopyPM100AP'], ['@all'], 'cambium_bs_utilization', None, ()),
+		(['CanopySM100AP'], ['@all'], 'cambium_bs_utilization', None, ()),
+		(['CanopyPM100AP'], ['@all'], 'cambium_cell_radius_invent', None, ()),
+		(['CanopySM100AP'], ['@all'], 'cambium_cell_radius_invent', None, ()),
+		(['CanopyPM100AP'], ['@all'], 'cambium_color_code_invent', None, ()),
+		(['CanopySM100AP'], ['@all'], 'cambium_color_code_invent', None, ()),
+		(['CanopyPM100AP'], ['@all'], 'cambium_commanded_rx_power_invent', None, ()),
+		(['CanopySM100AP'], ['@all'], 'cambium_commanded_rx_power_invent', None, ()),
+		(['CanopyPM100AP'], ['@all'], 'cambium_data_rate_modulation_invent', None, ()),
+		(['CanopySM100AP'], ['@all'], 'cambium_data_rate_modulation_invent', None, ()),
+		(['CanopyPM100SS'], ['@all'], 'cambium_port_stats', None, ()),
+		(['CanopySM100SS'], ['@all'], 'cambium_port_stats', None, ()),
+		(['CanopyPM100SS'], ['@all'], 'cambium_port_status', None, ()),
+		(['CanopySM100SS'], ['@all'], 'cambium_port_status', None, ()),
+		(['CanopyPM100SS'], ['@all'], 'cambium_qos_invent', None, ()),
+		(['CanopySM100SS'], ['@all'], 'cambium_qos_invent', None, ()),
+		(['CanopyPM100AP'], ['@all'], 'cambium_serial_number_invent', None, ()),
+		(['CanopySM100AP'], ['@all'], 'cambium_serial_number_invent', None, ()),
+		(['CanopyPM100SS'], ['@all'], 'cambium_ss_connected_bs_ip_invent', None, ()),
+		(['CanopySM100SS'], ['@all'], 'cambium_ss_connected_bs_ip_invent', None, ()),
 		]
 
 default_snmp_ports = [
 		(161, ['Radwin2KBS'], ['@all']),
 		(161, ['Radwin2KSS'], ['@all']),
+		(161, ['CanopyPM100AP'], ['@all']),
+		(161, ['CanopyPM100SS'], ['@all']),
+		(161, ['CanopySM100AP'], ['@all']),
+		(161, ['CanopySM100SS'], ['@all']),
 		]
 
 default_snmp_communities = [
 		('public', ['Radwin2KBS'], ['@all']),
 		('public', ['Radwin2KSS'], ['@all']),
+		('Canopy', ['Cam'], ['@all']),
 		]
 
 default_extra_service_conf['normal_check_interval'] = [
