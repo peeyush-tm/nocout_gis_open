@@ -41,6 +41,7 @@ default_checks = [
 		(['Radwin2KSS'], ['@all'], 'radwin_port_speed_status', None, ()),
 		(['Radwin2KSS'], ['@all'], 'radwin_sync_state_status', None, ()),
 		(['CanopyPM100SS'], ['@all'], 'cambium_ss_frequency_invent', None, ()),
+		(['CanopySM100SS'], ['@all'], 'cambium_ss_frequency_invent', None, ()),
 		(['CanopyPM100AP'], ['@all'], 'cambium_bs_frequency_invent', None, ()),
 		(['CanopySM100AP'], ['@all'], 'cambium_bs_frequency_invent', None, ()),
 		(['CanopyPM100AP'], ['@all'], 'cambium_bs_ip_invent', None, ()),
@@ -83,7 +84,10 @@ default_snmp_ports = [
 default_snmp_communities = [
 		('public', ['Radwin2KBS'], ['@all']),
 		('public', ['Radwin2KSS'], ['@all']),
-		('Canopy', ['Cam'], ['@all']),
+		('Canopy', ['CanopyPM100AP'], ['@all']),
+		('Canopy', ['CanopyPM100SS'], ['@all']),
+		('Canopy', ['CanopySM100AP'], ['@all']),
+		('Canopy', ['CanopySM100SS'], ['@all']),
 		]
 
 default_extra_service_conf['normal_check_interval'] = [
