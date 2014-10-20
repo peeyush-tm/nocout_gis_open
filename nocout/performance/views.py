@@ -802,7 +802,10 @@ class Inventory_Device_Status(View):
             sector_objects = Sector.objects.filter(sector_configured_on=device.id)
             ss_id = SubStation.objects.filter(device_id=device.id).values('id')
             customer_name = Customer.objects.filter(id=Circuit.objects.filter(sub_station_id=ss_id).values('customer_id'))
-
+            if len(customer_name):
+                customer_name = customer_name[0].alias
+            else:
+                customer_name = "N/A"
             for sector in sector_objects:
                 base_station = sector.base_station
                 planned_frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
@@ -821,7 +824,7 @@ class Inventory_Device_Status(View):
                 except Exception as no_state:
                     state_name = "N/A"
                 result['data']['objects']['values'].append([base_station.alias,
-                                                        customer_name[0].alias,
+                                                        customer_name,
                                                        technology.alias,
                                                        base_station.building_height,
                                                        base_station.tower_height,
