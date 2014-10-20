@@ -9,8 +9,9 @@ var last_clicked_tab = "",
 
 $(".nav-tabs li a").click(function (e,isFirst) {
 
-	/*Initialize the timer in seconds.Right now its 300 sec i.e. 5 minutes*/
-	var timer = 300;
+	/*Initialize the timer in seconds.Right now its 1 year*/
+	/*86400 is 24 hrs miliseconds*/
+	var timer = 86400 * 30 * 12; /* 1 Year in seconds */
 
 	/*Clear or Reset Time out*/
 	clearTimeout(timeOutId);

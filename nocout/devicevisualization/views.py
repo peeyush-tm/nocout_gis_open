@@ -10,6 +10,7 @@ from inventory.models import ThematicSettings, UserThematicSettings
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, PerformanceStatus, PerformanceInventory, \
     PerformanceNetwork, PerformanceService, Status
 from user_profile.models import UserProfile
+from devicevisualization.models import GISPointTool
 from django.views.decorators.csrf import csrf_exempt
 import re, ast
 logger=logging.getLogger(__name__)
@@ -407,3 +408,152 @@ class Gis_Map_Performance_Data(View):
                 pass
             return performance_data
 
+" This class is used to add, update or delete point tool data"
+class PointToolClass(View):
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super(PointToolClass, self).dispatch(*args, **kwargs)
+
+    def post(self, request):
+        result = {
+            "success": 0,
+            "message": "Point can not be saved. Please Try Again.",
+            "data": {
+                "point_id":0,
+            }
+        }
+        point_data= self.request.body
+        if point_data:
+            point_data = json.loads(point_data)
+            # point_data = json_loads(point_data)
+            if(int(point_data["is_delete_req"]) > 0) :
+                GISPointTool.objects.filter(pk=point_data['point_id']).delete()
+                result["data"]["point_id"] = 0
+                result["success"] = 1
+                result["message"] = "Point Removed Successfully"
+
+            elif(int(point_data["is_update_req"]) > 0) :
+
+                current_row = GISPointTool.objects.get(pk=point_data['point_id'])
+                current_row.name = point_data['name']
+                current_row.description = point_data['desc']
+                current_row.connected_lat = point_data['connected_lat']
+                current_row.connected_lon = point_data['connected_lon']
+                current_row.connected_point_type=point_data['connected_point_type']
+                current_row.connected_point_info=point_data['connected_point_info']
+                # update row with new values
+                current_row.save()
+
+
+                result["data"]["point_id"] = point_data['point_id']
+                result["success"] = 1
+                result["message"] = "Point Updated Successfully"
+
+            else:
+                try:
+                    # check that the name already exist in db or not
+                    existing_rows_count = len(GISPointTool.objects.filter(name=point_data['name']))
+
+                    if(existing_rows_count == 0):
+                        new_row_obj = GISPointTool(
+                            name=point_data['name'],
+                            description=point_data['desc'],
+                            latitude=float(point_data['lat']),
+                            longitude=float(point_data['lon']),
+                            icon_url=point_data['icon_url'],
+                            connected_lat=0,
+                            connected_lon=0,
+                            connected_point_type='',
+                            connected_point_info='',
+                            user_id=self.request.user.id
+                        )
+                        new_row_obj.save()
+                        inserted_id = new_row_obj.id
+                        result["data"]["point_id"] = inserted_id
+                        result["success"] = 1
+                        result["message"] = "Point Saved Successfully"
+                    else:
+                        result["message"] = "Name already exist. Please enter another"
+
+                except Exception as e:
+                    print "---------------------Exception---------------------"
+                    logger.info(e.message)
+            return HttpResponse(json.dumps(result))
+        return HttpResponse(json.dumps(result))
+
+" This class retruns gmap tools(point,line,etc.) data"
+class GetToolsData(View):
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super(GetToolsData, self).dispatch(*args, **kwargs)
+
+    def get(self, request):
+
+        # initialize exchange format
+        result = {
+            "success": 0,
+            "message": "Data not fetched",
+            "data": {
+                "points": [],
+                "ruler": []
+            }
+        }
+        try:
+            # list of columns to be fetched
+            required_columns = [
+                'id',
+                'name',
+                'description',
+                'icon_url',
+                'latitude',
+                'longitude',
+                'connected_lat',
+                'connected_lon',
+                'connected_point_type',
+                'connected_point_info'
+            ]
+
+            # Fetch all the points info associated with logged in user
+            point_data_obj = GISPointTool.objects.filter(user_id=request.user.id).values(*required_columns)
+
+            # Loop fetched result & append it to points list
+            for point_data in point_data_obj :
+                data_object = {
+                    "point_id" : "",
+                    "lat" : "",
+                    "lon" : "",
+                    "name" : "",
+                    "icon_url" : "",
+                    "desc" : "",
+                    "connected_lat" : "",
+                    "connected_lon" : "",
+                    "connected_point_type" : "",
+                    "connected_point_info" : ""
+                }
+                data_object['point_id'] = point_data['id']
+                data_object['lat'] = point_data['latitude']
+                data_object['lon'] = point_data['longitude']
+                data_object['name'] = point_data['name']
+                data_object['icon_url'] = point_data['icon_url']
+                data_object['desc'] = point_data['description']
+                data_object['connected_lat'] = point_data['connected_lat']
+                data_object['connected_lon'] = point_data['connected_lon']
+                data_object['connected_point_type'] = point_data['connected_point_type']
+                data_object['connected_point_info'] = point_data['connected_point_info']
+                
+                #Append data to point list
+                result["data"]["points"].append(data_object)
+
+            result["success"] = 1
+            result["message"] = "Tools Data Fetched Successfully"
+        except Exception as e:
+            print "-------------Exception-------------"
+            print logger.info(e.message)
+            result["success"] = 0
+            result["data"]["points"] = []
+            result["data"]["ruler"] = []
+            result["message"] = "Data not Fetched."
+
+        return HttpResponse(json.dumps(result))
