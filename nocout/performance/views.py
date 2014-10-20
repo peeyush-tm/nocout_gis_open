@@ -269,7 +269,7 @@ class LivePerformanceListing(BaseDatatableView):
                 device_id = device['id']
                 for result in raw_results:
                     #if device is sector
-                    if device_id in [result['SECTOR_CONF_ON_ID'], result['SS_DEVICE_ID']]:
+                    if device_id == result['SECTOR_CONF_ON_ID']:
                         device.update({
                             "page_type":page_type,
                             "packet_loss": "",
@@ -284,6 +284,23 @@ class LivePerformanceListing(BaseDatatableView):
                             "city": format_value(result['BSSTATE']),
                             "state": format_value(result['BSCITY']),
                             "device_type": format_value(result['SECTOR_TYPE']),
+                            "device_technology": format_value(result['SECTOR_TECH'])
+                        })
+                    if device_id == result['SS_DEVICE_ID']:
+                        device.update({
+                            "page_type":page_type,
+                            "packet_loss": "",
+                            "latency": "",
+                            "last_updated": "",
+                            "last_updated_date": "",
+                            "last_updated_time": "",
+                            "sector_id": format_value(result['SECTOR_SECTOR_ID']),
+                            "circuit_id": format_value(result['CCID']),
+                            "customer_name" : format_value(result['CUST']),
+                            "bs_name": format_value(result['BSALIAS']),
+                            "city": format_value(result['BSSTATE']),
+                            "state": format_value(result['BSCITY']),
+                            "device_type": format_value(result['SS_TYPE']),
                             "device_technology": format_value(result['SECTOR_TECH'])
                         })
                     if device_id == result['BH_DEVICE_ID']:
@@ -1850,7 +1867,7 @@ def gis_raw_inventory(device_list=[]):
 
                     technology.name as SS_TECH,
                     vendor.name as SS_VENDOR,
-
+                    devicetype.name as SS_TYPE,
                     devicetype.device_icon as SS_ICON,
                     devicetype.device_gmap_icon as SS_GMAP_ICON
 
