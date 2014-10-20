@@ -10,4 +10,6 @@ urlpatterns = patterns('',
 	url(r'^googleEarth/$', views.load_earth),
 	url(r'^gis/(?P<device_name>\w+)/$', views.locate_devices),
 	url(r'^performance_data/$', views.Gis_Map_Performance_Data.as_view(), name='gis_map_performance_data'),
+	url(r'^tools/point/$', views.PointToolClass.as_view(), name='point_tool_class'),
+	url(r'^get_tools_data/$', views.GetToolsData.as_view(), name='get_tools_data')
 )
