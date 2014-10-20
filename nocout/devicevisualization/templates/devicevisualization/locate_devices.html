@@ -136,12 +136,23 @@
                 </li>
                 <li>
                     <button type="button" id="point_select" class="btn btn-info">Add Point</button>
-                    <button type="button" id="point_remove" class="btn btn-danger hide">Remove Points</button>
+                    <!-- <button type="button" id="point_remove" class="btn btn-danger hide">Remove Points</button> -->
+                    <ul class="list-unstyled list-inline hide" id="point_icons_container">
+                    <!-- If loggedin user is super admin then only show maintainance icon -->
+                        {% if user.is_superuser %}
+                            <li class="selected_icon"><img src="../../static/img/icons/tools/point/caution.png"/></li>
+                        {% endif %}
+                        <li><img src="../../static/img/icons/tools/point/icon1.png"/></li>
+                        <li><img src="../../static/img/icons/tools/point/icon2.png"/></li>
+                        <li><img src="../../static/img/icons/tools/point/icon3.png"/></li>
+                        <li><img src="../../static/img/icons/tools/point/icon4.png"/></li>
+                        <li class="close_box"><i class="fa fa-times" id="close_points_icon"> </i> </li>
+                    </ul>
                 </li>
-                <li>
+                <!-- <li>
                     <button type="button" id="line_select" class="btn btn-info">Select Line</button>
                     <button type="button" id="line_remove" class="btn btn-danger hide">Remove Line</button>
-                </li>
+                </li> -->
                 <li>
                     <button type="button" id="freeze_select" class="btn btn-info">Freeze</button>
                     <button type="button" id="freeze_remove" class="btn btn-danger hide">Un-Freeze</button>
@@ -340,8 +351,8 @@
 
             } else {
 
-                var searchString = JSON.stringify([{"field": "device_name", "value": [deviceName]}]);
-                advSearch.setFilters(searchString, setFilterApi);
+                // var searchString = JSON.stringify([{"field": "device_name", "value": [deviceName]}]);
+                // advSearch.setFilters(searchString, setFilterApi);
 
                 /*Hide Remove Filters button*/
                 if (!$("#removeFilterBtn").hasClass("hide")) {
