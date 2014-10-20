@@ -11,7 +11,7 @@ from django.views.generic.base import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
 import xlwt
 from device.models import Device, City, State, DeviceType, DeviceTechnology
-from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul
+from inventory.models import SubStation, Circuit, Sector, BaseStation, Backhaul, Customer
 from nocout.settings import P2P, WiMAX, PMP
 from performance.models import PerformanceService, PerformanceNetwork, EventNetwork, EventService, NetworkStatus, ServiceStatus, InventoryStatus, \
     PerformanceStatus, PerformanceInventory, Status, NetworkAvailabilityDaily, Topology
@@ -72,6 +72,7 @@ class Live_Performance(ListView):
                 # {'mData': 'ip_address', 'sTitle': 'IP', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'bs_name', 'sTitle': 'BS Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'circuit_id', 'sTitle': 'Circuit IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
+                {'mData': 'customer_name', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 # {'mData': 'sector_id', 'sTitle': 'Sector IDs', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'city', 'sTitle': 'City', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
                 {'mData': 'state', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False},
@@ -261,6 +262,7 @@ class LivePerformanceListing(BaseDatatableView):
             if page_type in ["customer", "network"]:
                 sector_id = "N/A"
                 circuit_id = "N/A"
+                customer_name = "N/A"
                 bs_name = "N/A"
 
                 if 'sector_configured_on' in device and device['sector_configured_on']:
@@ -283,6 +285,11 @@ class LivePerformanceListing(BaseDatatableView):
                                 circuits_id_list = [x["circuit_id"] for x in circuits]
                                 circuit_id = ",".join(map(lambda x: str(x), circuits_id_list ))
 
+                            customer_name_list = Customer.objects.filter(id__in=Circuit.objects.filter(sector__in=sector_id_list).values("customer_id")).values('alias')
+                            if len(customer_name_list):
+                                customer_name_array = [x["alias"] for x in customer_name_list]
+                                customer_name = ",".join(map(lambda x: str(x), customer_name_array ))
+
                 elif 'substation' in device and device['substation']:
                     if page_type in ['network'] \
                             and ( int(device['device_technology']) in [int(WiMAX.ID), int(PMP.ID)]):
@@ -296,6 +303,7 @@ class LivePerformanceListing(BaseDatatableView):
                             circuit = Circuit.objects.filter(sub_station=ss_object.id)
                             if len(circuit):
                                 circuit_obj = circuit[0]
+                                customer_name = circuit_obj.customer.alias
                                 circuit_id = circuit_obj.circuit_id
                                 sector_id = circuit_obj.sector.sector_id if circuit_obj.sector else "N/A"
                                 bs_name = circuit_obj.sector.base_station.alias if circuit_obj.sector else "N/A"
@@ -334,6 +342,7 @@ class LivePerformanceListing(BaseDatatableView):
                     "last_updated_time": "",
                     "sector_id": sector_id,
                     "circuit_id": circuit_id,
+                    "customer_name" : customer_name,
                     "bs_name": bs_name,
                     "city": city_name,
                     "state": state_name,
@@ -780,6 +789,7 @@ class Inventory_Device_Status(View):
 
         if device.sector_configured_on.exists():
             result['data']['objects']['headers'] = ['BS Name',
+                                                    'Customer Name',
                                                     'Technology',
                                                     'Building Height',
                                                     'Tower Height',
@@ -791,7 +801,12 @@ class Inventory_Device_Status(View):
             ]
             result['data']['objects']['values'] = []
             sector_objects = Sector.objects.filter(sector_configured_on=device.id)
-
+            ss_id = SubStation.objects.filter(device_id=device.id).values('id')
+            customer_name = Customer.objects.filter(id=Circuit.objects.filter(sub_station_id=ss_id).values('customer_id'))
+            if len(customer_name):
+                customer_name = customer_name[0].alias
+            else:
+                customer_name = "N/A"
             for sector in sector_objects:
                 base_station = sector.base_station
                 planned_frequency = [sector.frequency.value] if sector.frequency else ["N/A"]
@@ -809,8 +824,8 @@ class Inventory_Device_Status(View):
                                                             else "N/A"
                 except Exception as no_state:
                     state_name = "N/A"
-
                 result['data']['objects']['values'].append([base_station.alias,
+                                                        customer_name,
                                                        technology.alias,
                                                        base_station.building_height,
                                                        base_station.tower_height,
@@ -825,6 +840,7 @@ class Inventory_Device_Status(View):
             result['data']['objects']['headers'] = ['BS Name',
                                                     'SS Name',
                                                     'Circuit ID',
+                                                    'Customer Name',
                                                     'Technology',
                                                     'Building Height',
                                                     'Tower Height',
@@ -838,8 +854,12 @@ class Inventory_Device_Status(View):
             substation_objects = device.substation_set.filter()
             if len(substation_objects):
                 substation = substation_objects[0]
+                customer_name = "N/A"
                 if substation.circuit_set.exists():
+                    customer_id = Circuit.objects.filter(sub_station_id=substation.id).values('customer_id')
+                    customer_name = Customer.objects.filter(id=customer_id[0]["customer_id"])
                     circuit = substation.circuit_set.get()
+                    # customer_name = Customer.objects.filter(id=circuit.customer_id)
                     sector = circuit.sector
                     base_station = sector.base_station
 
@@ -858,10 +878,10 @@ class Inventory_Device_Status(View):
                                                             else "N/A"
                     except Exception as no_state:
                         state_name = "N/A"
-
                     result['data']['objects']['values'].append([base_station.alias,
                                                            substation.alias,
                                                            circuit.circuit_id,
+                                                           customer_name[0].alias,
                                                            technology.alias,
                                                            substation.building_height,
                                                            substation.tower_height,

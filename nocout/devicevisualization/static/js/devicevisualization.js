@@ -3,7 +3,6 @@ var mapPageType = "",
     hasSelectDevice = 0,
     hasTools = 0,
     freezedAt = 0,
-    isMaintained= "",
     tools_ruler= "",
     tools_line = ""
     base_url = "";
@@ -31,13 +30,12 @@ if(!$.cookie("freezedAt")) {
 /*Save cookie value to variable*/
 isFreeze = $.cookie("isFreezeSelected");
 freezedAt = $.cookie("freezedAt");
-isMaintained= $.cookie("isMaintained");
 tools_ruler = $.cookie("tools_ruler");        
 tools_line = $.cookie("tools_line");
 
 isPollingActive = 0;
 
-if(isFreeze == 1 || (isMaintained && isMaintained != 0) || (tools_ruler && tools_ruler != 0) || (tools_line && tools_line != 0) || ($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true')) {
+if(isFreeze == 1 || (tools_ruler && tools_ruler != 0) || (tools_line && tools_line != 0) || ($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true')) {
     $("#showToolsBtn").removeClass("btn-info");
     $("#showToolsBtn").addClass("btn-warning");
 } else {
@@ -380,7 +378,7 @@ function get_page_status() {
     }
 
     if(hasTools == 1) {
-        if(isFreeze == 1 || (isMaintained && isMaintained != 0) || (tools_ruler && tools_ruler != 0) || (tools_line && tools_line != 0)) {
+        if(isFreeze == 1 || (tools_ruler && tools_ruler != 0) || (tools_line && tools_line != 0)) {
             status_txt+= '<li>Gmap Tools Applied<button class="btn btn-sm btn-danger pull-right" onclick="clearTools_gmap()" style="padding: 2px 5px; margin: -3px;">Reset</button><li>';
         }
     }
@@ -629,14 +627,6 @@ function showToolsPanel() {
         $("#freeze_select").removeClass("hide");
     }
 
-    if(isMaintained && isMaintained != 0) {
-        $("#point_select").removeClass("hide");
-        $("#point_remove").removeClass("hide");
-    } else {
-        $("#point_remove").addClass("hide");
-        $("#point_select").removeClass("hide");
-    }
-
     if(tools_ruler && tools_ruler != 0) {
         $("#ruler_select").addClass("hide");
         $("#ruler_remove").removeClass("hide");
@@ -667,7 +657,7 @@ function showToolsPanel() {
 }
 
 function removetoolsPanel() {
-    pointAdd= -1;
+    pointAdded= -1;
     is_line_active= -1;
     is_ruler_active= -1;
 
@@ -679,7 +669,7 @@ function removetoolsPanel() {
 
     $("#showToolsBtn").removeClass("hide");
 
-    if(isFreeze == 1 || (isMaintained && isMaintained != 0) || (tools_ruler && tools_ruler != 0) || (tools_line && tools_line != 0) || ($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true')) {
+    if(isFreeze == 1 || (tools_ruler && tools_ruler != 0) || (tools_line && tools_line != 0) || ($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true')) {
         $("#showToolsBtn").removeClass("btn-info").addClass("btn-warning");
     } else {
         $("#showToolsBtn").removeClass("btn-warning").addClass("btn-info");
@@ -693,7 +683,7 @@ function removetoolsPanel() {
 }
 
 $("#ruler_select").click(function(e) {
-    pointAdd= -1;
+    pointAdded= -1;
     is_ruler_active= 1;
     is_line_active= -1;
 
@@ -708,7 +698,7 @@ $("#ruler_select").click(function(e) {
 });
 
 $("#ruler_remove").click(function(e) {
-    pointAdd= -1;
+    pointAdded= -1;
     is_line_active= -1;
     is_ruler_active= -1;
 
@@ -721,7 +711,7 @@ $("#ruler_remove").click(function(e) {
 });
 
 $("#line_select").click(function(e) {
-    pointAdd= -1;
+    pointAdded= -1;
     is_line_active= 1;
     is_ruler_active= -1;
 
@@ -736,7 +726,7 @@ $("#line_select").click(function(e) {
 });
 
 $("#line_remove").click(function(e) {
-    pointAdd= -1;
+    pointAdded = -1;
     is_line_active= -1;
     is_ruler_active= -1;
 
@@ -749,25 +739,41 @@ $("#line_remove").click(function(e) {
 });
 
 $("#point_select").click(function(e) {
-    pointAdd= 1;
+    pointAdded= 1;
     is_line_active= -1;
     is_ruler_active= -1;
 
     google.maps.event.clearListeners(mapInstance, 'click');
 
-    $("#point_remove").removeClass("hide");
+    // $("#point_remove").removeClass("hide");
+    $(this).removeClass('btn-info').addClass('btn-warning');
+    $("#point_icons_container li:first-child").trigger('click');
 
-    networkMapInstance.addPointTool_gmap();    
+    $("#point_icons_container").removeClass("hide");
+
+    networkMapInstance.addPointTool_gmap();
+});
+
+$("#close_points_icon").click(function(e) {
+    
+    pointAdded= -1;
+    is_line_active= -1;
+    is_ruler_active= -1;
+    $("#point_select").removeClass('btn-warning').addClass('btn-info');
+    google.maps.event.clearListeners(mapInstance, 'click');
+
+    $("#point_icons_container").addClass("hide");
 });
 
 $("#point_remove").click(function(e) {
-    pointAdd= -1;
+    pointAdded= -1;
     is_line_active= -1;
     is_ruler_active= -1;
 
     google.maps.event.clearListeners(mapInstance, 'click');
 
     $(this).addClass("hide");
+    $("#point_icons_container").addClass("hide");
 
     networkMapInstance.clearPointsTool_gmap();
 });
@@ -821,7 +827,7 @@ function clearTools_gmap() {
     is_line_active = 0;
     bootbox.confirm("Do you want to reset Maintenance Points too?", function(result) {
         if(result) {
-            pointAdd= -1;            
+            pointAdded= -1;            
             hasTools = 0;
             networkMapInstance.clearPointsTool_gmap();
             $("#showToolsBtn").addClass("btn-info");
@@ -864,4 +870,21 @@ $("#navigation_container button#previous_polling_btn").click(function(e) {
  */
 $("#navigation_container button#next_polling_btn").click(function(e) {
     networkMapInstance.show_next_polled_icon();
+});
+
+/**
+ * This event trigger when clicked on add point icons
+ */
+$("#point_icons_container li").click(function(e) {
+
+    /*Remove selected class from all li*/
+    $("#point_icons_container li").removeClass('selected_icon');
+    
+    /*Add selected class to clicked li*/
+    $(this).addClass('selected_icon');
+    
+    /*Check that 'img' tag is present in li or not*/
+    if($("#point_icons_container li.selected_icon")[0].children[0].hasAttribute('src')) {
+        point_icon_url = $("#point_icons_container li.selected_icon")[0].children[0].attributes['src'].value.split("../../")[1];
+    }
 });

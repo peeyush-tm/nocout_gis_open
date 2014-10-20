@@ -236,3 +236,8 @@ span.dept {
   padding: 0px !important;
   margin: 0px !important;
 }
+
+/*Side menu items overflow issue*/
+.sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub > li > a {
+  padding-left: 20px !important;
+}

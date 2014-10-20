@@ -54,6 +54,8 @@
     <script type="text/javascript" src={% static "js/nocout/nocoutSpinnerLib.js" %}></script>
     <!-- PURL Liberary for parsing URLS -->
     <script src={% static "js/purl.js" %}></script>
+    <!-- Script Library for COokies -->
+    <script type="text/javascript" src={% static "js/jQuery-Cookie/src/jquery.cookie.js" %}></script>
     <!-- session_security script files -->
     {% include "session_security/all.html" %}
     <!-- session_security script files -->
@@ -74,9 +76,12 @@
     <script>
         
         $(document).ready(function() {
-                
-            /*Collapse the menu*/
-            $("#sidebar-collapse").trigger("click");
+
+            var isMenuOpen = +($.cookie("isMenuOpen"));
+            if(isMenuOpen === 0) {
+                /*Collapse the menu*/
+                $("#sidebar-collapse").trigger("click");
+            }
 
             var checkInterval = 5000,
             do_session_check = true;

@@ -166,61 +166,61 @@ def prepare_raw_basestation(base_station=None):
                 'name': 'bs_site_id',
                 'title': 'BS Site Name',
                 'show': 1,
-                'value': format(base_station['BSSITEID'])
+                'value': format_value(base_station['BSSITEID'])
             },
             {
                 'name': 'bs_site_type',
                 'title': 'BS Site Type',
                 'show': 1,
-                'value': format(base_station['BSSITETYPE'])
+                'value': format_value(base_station['BSSITETYPE'])
             },
             {
                 'name': 'building_height',
                 'title': 'Building Height',
                 'show': 1,
-                'value': format(base_station['BSTOWERHEIGHT'])
+                'value': format_value(base_station['BSTOWERHEIGHT'])
             },
             {
                 'name': 'tower_height',
                 'title': 'Tower Height',
                 'show': 1,
-                'value': format(base_station['BSBUILDINGHGT'])
+                'value': format_value(base_station['BSBUILDINGHGT'])
             },
             {
                 'name': 'bs_city',
                 'title': 'City',
                 'show': 1,
-                'value': format(base_station['BSCITY'])
+                'value': format_value(base_station['BSCITY'])
             },
             {
                 'name': 'bs_state',
                 'title': 'State',
                 'show': 1,
-                'value': format(base_station['BSSTATE'])
+                'value': format_value(base_station['BSSTATE'])
             },
             {
                 'name': 'bs_address',
                 'title': 'Address',
                 'show': 1,
-                'value': format(base_station['BSADDRESS'])
+                'value': format_value(base_station['BSADDRESS'])
             },
             {
                 'name': 'bs_gps_type',
                 'title': 'GPS Type',
                 'show': 1,
-                'value': format(base_station['BSGPSTYPE'])
+                'value': format_value(base_station['BSGPSTYPE'])
             },
             {
                 'name':'bs_type',
                 'title':'BS Type',
                 'show':1,
-                'value': format(base_station['BSSITETYPE'])
+                'value': format_value(base_station['BSSITETYPE'])
             },
             {
                 'name':'bs_switch',
                 'title':'BS Switch',
                 'show':1,
-                'value': format(base_station['BSSWITCH'])
+                'value': format_value(base_station['BSSWITCH'])
             }
         ]
         return base_station_info
@@ -374,7 +374,7 @@ def prepare_raw_sector(basestations):
                     sector_configured_on_devices.append(format_value(format_this=sector['SECTOR_CONF_ON_IP']))
 
                     #circuit id prepare ?
-                    substation, circuit_ids = prepare_raw_ss_result(basestations=basestations,
+                    substation, circuit_id, substation_ip = prepare_raw_ss_result(basestations=basestations,
                                                                  sector_id=sector['SECTOR_ID'],
                                                                  frequency_color=format_value(
                                                                      format_this=sector['SECTOR_FREQUENCY_COLOR'],
@@ -384,6 +384,8 @@ def prepare_raw_sector(basestations):
                                                                      format_this=sector['SECTOR_FREQUENCY']
                                                                  )
                     )
+                    circuit_ids += circuit_id
+                    sector_configured_on_devices+=substation_ip
                     sector_info.append(
                         {
                             "color": format_value(format_this=sector['SECTOR_FREQUENCY_COLOR'],type_of='frequency_color'),
@@ -488,11 +490,15 @@ def prepare_raw_ss_result(basestations, sector_id, frequency_color, frequency):
     """
     substation_info = []
     circuit_ids = []
+    substation_ip = []
     if basestations and sector_id:
         for circuit in basestations:
-            if circuit['CID']:
+            if circuit['CCID']:
                 if circuit['SID'] and circuit['SID'] == sector_id:
-                    circuit_ids.append(circuit['CCID'])
+                    if circuit['CCID'] not in circuit_ids:
+                        circuit_ids.append(circuit['CCID'])
+                    if circuit['SSIP'] and circuit['SSIP'] not in substation_ip:
+                        substation_ip.append(circuit['SSIP'])
                     substation_info.append(
                         {
                             'id': circuit['SSID'],
@@ -513,7 +519,7 @@ def prepare_raw_ss_result(basestations, sector_id, frequency_color, frequency):
                                             'name': 'ss_ip',
                                             'title': 'SS IP',
                                             'show': 1,
-                                            'value': circuit['SSIP']
+                                            'value': format_value(circuit['SSIP'])
                                         },
                                         {
                                             'name': 'ss_mac',
@@ -525,37 +531,37 @@ def prepare_raw_ss_result(basestations, sector_id, frequency_color, frequency):
                                             'name': 'name',
                                             'title': 'SS Name',
                                             'show': 0,
-                                            'value': circuit['SS_NAME']
+                                            'value': format_value(circuit['SS_NAME'])
                                         },
                                         {
                                             'name': 'cktid',
                                             'title': 'Circuit ID',
                                             'show': 1,
-                                            'value': circuit['CCID']
+                                            'value': format_value(circuit['CCID'])
                                         },
                                         {
                                             'name': 'qos_bandwidth',
                                             'title': 'QOS(BW)',
                                             'show': 1,
-                                            'value': circuit['QOS']
+                                            'value': format_value(circuit['QOS'])
                                         },
                                         {
                                             'name': 'latitude',
                                             'title': 'Latitude',
                                             'show': 1,
-                                            'value': circuit['SS_LATITUDE']
+                                            'value': format_value(circuit['SS_LATITUDE'])
                                         },
                                         {
                                             'name': 'longitude',
                                             'title': 'Longitude',
                                             'show': 1,
-                                            'value': circuit['SS_LONGITUDE']
+                                            'value': format_value(circuit['SS_LONGITUDE'])
                                         },
                                         {
                                             'name': 'antenna_height',
                                             'title': 'Antenna Height',
                                             'show': 1,
-                                            'value': circuit['SSHGT']
+                                            'value': format_value(circuit['SSHGT'])
                                         },
                                         {
                                             'name': 'polarisation',
@@ -567,7 +573,7 @@ def prepare_raw_ss_result(basestations, sector_id, frequency_color, frequency):
                                             'name': 'ss_technology',
                                             'title': 'Technology',
                                             'show': 1,
-                                            'value': circuit['SS_TECH']
+                                            'value': format_value(circuit['SS_TECH'])
                                         },
                                         {
                                             'name': 'building_height',
@@ -647,7 +653,7 @@ def prepare_raw_ss_result(basestations, sector_id, frequency_color, frequency):
                         }
                     )
 
-    return (substation_info, circuit_ids)
+    return (substation_info, circuit_ids, substation_ip)
 
 def prepare_raw_bs_result(bs_result=None):
     """

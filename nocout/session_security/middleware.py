@@ -31,6 +31,16 @@ class SessionSecurityMiddleware(object):
         if not request.user.is_authenticated():
             return
 
+        # If user is already logged in another session.
+        # Also has logged in using current session (skipping dialog box)
+        # Log-out user from current session.
+        if hasattr(request.user, 'visitor'):
+            key_from_cookie = request.session.session_key
+            session_key_in_visitor_db = request.user.visitor.session_key
+
+            if session_key_in_visitor_db != key_from_cookie and request.path != '/sm/dialog_action/':
+                logout(request)
+
         now = datetime.now()
         self.update_last_activity(request, now)
 
