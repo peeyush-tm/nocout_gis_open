@@ -2849,6 +2849,9 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
         complete_d.append(d)
 
+    # get machine and associated sites details in dictionary; pass list of machine numbers in as argument
+    machine_and_site_info = get_ospf_machine_details([1])
+
     try:
         for row in complete_d:
             # initialize variables
@@ -2869,20 +2872,38 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 # initialize alias
                 alias = ""
 
-                # get machine
-                machine = ""
+                # get machine and site
+                machine_and_site = ""
                 try:
-                    machine = Machine.objects.get(name='ospf1')
+                    machine_and_site = get_machine_and_site(machine_and_site_info)
                 except Exception as e:
-                    machine = ""
-                    print(e.message)
+                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
 
-                # get site_instance
-                try:
-                    site = SiteInstance.objects.get(name='ospf1_slave_1')
-                except Exception as e:
+                if machine_and_site:
+                    # get machine
+                    machine = ""
+                    try:
+                        machine = machine_and_site['machine']
+                        machine_name = machine.name
+                    except Exception as e:
+                        machine = ""
+                        logger.info("Unable to get machine. Exception:", e.message)
+
+                    # get site_instance
                     site = ""
-                    print(e.message)
+                    try:
+                        site = machine_and_site['site']
+                        site_name = site.name
+                        for site_dict in machine_and_site_info[machine_name]:
+                            # 'k' is site name and 'v' is number of associated devices with that site
+                            for k, v in site_dict.iteritems():
+                                if k == site_name:
+                                    # increment number of devices corresponding to the site associated with
+                                    # current device in 'machine_and_site_info' dictionary
+                                    site_dict[k] += 1
+                    except Exception as e:
+                        site = ""
+                        logger.info("Unable to get site. Exception:", e.message)
                 
                 # device name
                 name = special_chars_name_sanitizer_with_lower_case(row['Sector ID'] if 'Sector ID' in row.keys() else "")
@@ -2917,20 +2938,38 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
             try:
                 # ------------------------------ BS Switch -----------------------------
-                # get machine
-                machine = ""
+                # get machine and site
+                machine_and_site = ""
                 try:
-                    machine = Machine.objects.get(name='ospf1')
+                    machine_and_site = get_machine_and_site(machine_and_site_info)
                 except Exception as e:
-                    machine = ""
-                    print(e.message)
+                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
 
-                # get site_instance
-                try:
-                    site = SiteInstance.objects.get(name='ospf1_slave_1')
-                except Exception as e:
+                if machine_and_site:
+                    # get machine
+                    machine = ""
+                    try:
+                        machine = machine_and_site['machine']
+                        machine_name = machine.name
+                    except Exception as e:
+                        machine = ""
+                        logger.info("Unable to get machine. Exception:", e.message)
+
+                    # get site_instance
                     site = ""
-                    print(e.message)
+                    try:
+                        site = machine_and_site['site']
+                        site_name = site.name
+                        for site_dict in machine_and_site_info[machine_name]:
+                            # 'k' is site name and 'v' is number of associated devices with that site
+                            for k, v in site_dict.iteritems():
+                                if k == site_name:
+                                    # increment number of devices corresponding to the site associated with
+                                    # current device in 'machine_and_site_info' dictionary
+                                    site_dict[k] += 1
+                    except Exception as e:
+                        site = ""
+                        logger.info("Unable to get site. Exception:", e.message)
 
                 # base station data
                 bs_switch_data = {
@@ -2958,20 +2997,38 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
             try:
                 # --------------------------- Aggregation Switch IP ---------------------------
-                # get machine
-                machine = ""
+                # get machine and site
+                machine_and_site = ""
                 try:
-                    machine = Machine.objects.get(name='ospf1')
+                    machine_and_site = get_machine_and_site(machine_and_site_info)
                 except Exception as e:
-                    machine = ""
-                    print(e.message)
+                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
 
-                # get site_instance
-                try:
-                    site = SiteInstance.objects.get(name='ospf1_slave_1')
-                except Exception as e:
+                if machine_and_site:
+                    # get machine
+                    machine = ""
+                    try:
+                        machine = machine_and_site['machine']
+                        machine_name = machine.name
+                    except Exception as e:
+                        machine = ""
+                        logger.info("Unable to get machine. Exception:", e.message)
+
+                    # get site_instance
                     site = ""
-                    print(e.message)
+                    try:
+                        site = machine_and_site['site']
+                        site_name = site.name
+                        for site_dict in machine_and_site_info[machine_name]:
+                            # 'k' is site name and 'v' is number of associated devices with that site
+                            for k, v in site_dict.iteritems():
+                                if k == site_name:
+                                    # increment number of devices corresponding to the site associated with
+                                    # current device in 'machine_and_site_info' dictionary
+                                    site_dict[k] += 1
+                    except Exception as e:
+                        site = ""
+                        logger.info("Unable to get site. Exception:", e.message)
 
                 # aggregation switch data
                 aggregation_switch_data = {
@@ -2999,20 +3056,38 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
             try:
                 # -------------------------------- BS Converter IP ---------------------------
-                # get machine
-                machine = ""
+                # get machine and site
+                machine_and_site = ""
                 try:
-                    machine = Machine.objects.get(name='ospf1')
+                    machine_and_site = get_machine_and_site(machine_and_site_info)
                 except Exception as e:
-                    machine = ""
-                    print(e.message)
+                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
 
-                # get site_instance
-                try:
-                    site = SiteInstance.objects.get(name='ospf1_slave_1')
-                except Exception as e:
+                if machine_and_site:
+                    # get machine
+                    machine = ""
+                    try:
+                        machine = machine_and_site['machine']
+                        machine_name = machine.name
+                    except Exception as e:
+                        machine = ""
+                        logger.info("Unable to get machine. Exception:", e.message)
+
+                    # get site_instance
                     site = ""
-                    print(e.message)
+                    try:
+                        site = machine_and_site['site']
+                        site_name = site.name
+                        for site_dict in machine_and_site_info[machine_name]:
+                            # 'k' is site name and 'v' is number of associated devices with that site
+                            for k, v in site_dict.iteritems():
+                                if k == site_name:
+                                    # increment number of devices corresponding to the site associated with
+                                    # current device in 'machine_and_site_info' dictionary
+                                    site_dict[k] += 1
+                    except Exception as e:
+                        site = ""
+                        logger.info("Unable to get site. Exception:", e.message)
 
                 # bs converter data
                 bs_converter_data = {
@@ -3040,20 +3115,38 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
             try:
                 # -------------------------------- POP Converter IP ---------------------------
-                # get machine
-                machine = ""
+                # get machine and site
+                machine_and_site = ""
                 try:
-                    machine = Machine.objects.get(name='ospf1')
+                    machine_and_site = get_machine_and_site(machine_and_site_info)
                 except Exception as e:
-                    machine = ""
-                    print(e.message)
+                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
 
-                # get site_instance
-                try:
-                    site = SiteInstance.objects.get(name='ospf1_slave_1')
-                except Exception as e:
+                if machine_and_site:
+                    # get machine
+                    machine = ""
+                    try:
+                        machine = machine_and_site['machine']
+                        machine_name = machine.name
+                    except Exception as e:
+                        machine = ""
+                        logger.info("Unable to get machine. Exception:", e.message)
+
+                    # get site_instance
                     site = ""
-                    print(e.message)
+                    try:
+                        site = machine_and_site['site']
+                        site_name = site.name
+                        for site_dict in machine_and_site_info[machine_name]:
+                            # 'k' is site name and 'v' is number of associated devices with that site
+                            for k, v in site_dict.iteritems():
+                                if k == site_name:
+                                    # increment number of devices corresponding to the site associated with
+                                    # current device in 'machine_and_site_info' dictionary
+                                    site_dict[k] += 1
+                    except Exception as e:
+                        site = ""
+                        logger.info("Unable to get site. Exception:", e.message)
 
                 # pop converter data
                 pop_converter_data = {
@@ -3289,6 +3382,9 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
 
         complete_d.append(d)
 
+    # get machine and associated sites details in dictionary; pass list of machine numbers in as argument
+    machine_and_site_info = get_ospf_machine_details([1])
+
     try:
         for row in complete_d:
             # initialize variables
@@ -3307,20 +3403,38 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                 # initialize alias
                 alias = ""
 
-                # get machine
-                machine = ""
+                # get machine and site
+                machine_and_site = ""
                 try:
-                    machine = Machine.objects.get(name='ospf1')
+                    machine_and_site = get_machine_and_site(machine_and_site_info)
                 except Exception as e:
-                    machine = ""
-                    print(e.message)
+                    logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
 
-                # get site_instance
-                try:
-                    site = SiteInstance.objects.get(name='ospf1_slave_1')
-                except Exception as e:
+                if machine_and_site:
+                    # get machine
+                    machine = ""
+                    try:
+                        machine = machine_and_site['machine']
+                        machine_name = machine.name
+                    except Exception as e:
+                        machine = ""
+                        logger.info("Unable to get machine. Exception:", e.message)
+
+                    # get site_instance
                     site = ""
-                    print(e.message)
+                    try:
+                        site = machine_and_site['site']
+                        site_name = site.name
+                        for site_dict in machine_and_site_info[machine_name]:
+                            # 'k' is site name and 'v' is number of associated devices with that site
+                            for k, v in site_dict.iteritems():
+                                if k == site_name:
+                                    # increment number of devices corresponding to the site associated with
+                                    # current device in 'machine_and_site_info' dictionary
+                                    site_dict[k] += 1
+                    except Exception as e:
+                        site = ""
+                        logger.info("Unable to get site. Exception:", e.message)
 
                 # device name
                 name = special_chars_name_sanitizer_with_lower_case(row['Circuit ID']) if 'Circuit ID' in row.keys() else ""
@@ -3360,10 +3474,10 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                 alias = ""
 
                 # antenna name
-                name = '{}'.format(special_chars_name_sanitizer_with_lower_case(row['Sector ID']) if 'Sector ID' in row.keys() else "")
+                name = '{}'.format(special_chars_name_sanitizer_with_lower_case(row['Circuit ID']) if 'Circuit ID' in row.keys() else "")
 
                 # antenna alias
-                alias = '{}'.format(circuit_id_sanitizer(row['Sector ID']) if 'Sector ID' in row.keys() else "")
+                alias = '{}'.format(circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else "")
 
                 # sub station antenna data
                 substation_antenna_data = {
@@ -6022,4 +6136,110 @@ def sanitize_mac_address(mac=None):
     else:
         mac = ""
     return mac
+
+
+def get_ospf_machine_details(machine_numbers):
+    """ Send dictionary containing information of requested machines
+
+    Args:
+        machine_numbers (list): [1, 2, 3, 4]
+
+    Returns:
+        ospf_machines_dict (dict):  {
+                                        'ospf4': [
+                                            {
+                                                u'ospf4_slave_1': 0
+                                            }
+                                        ],
+                                        'ospf1': [
+                                            {
+                                                u'ospf1_slave_1': 41
+                                            },
+                                            {
+                                                u'ospf1_slave_2': 0
+                                            }
+                                        ],
+                                        'ospf3': [
+                                            {
+                                                u'ospf3_slave_1': 0
+                                            }
+                                        ],
+                                        'ospf2': [
+                                            {
+                                                u'ospf2_slave_1': 0
+                                            }
+                                        ]
+                                    }
+
+    """
+
+    # machine info dictionary
+    ospf_machines_dict = dict()
+
+    if machine_numbers:
+        for machine_number in machine_numbers:
+            # machine name
+            machine_name = 'ospf' + str(machine_number)
+
+            ospf_machines_dict[machine_name] = list()
+
+            # get machine
+            machine = ""
+            try:
+                machine = Machine.objects.get(name=machine_name)
+            except Exception as e:
+                logger.info("Machine doesn't exist.:", e.message)
+
+            # get all sites associated with current machine
+            sites = machine.siteinstance_set.all()
+
+            if sites:
+                for site in sites:
+                    # site instance dictionary
+                    site_dict = dict()
+                    site_dict[site.name] = len(Device.objects.filter(site_instance=site))
+                    # append site instance in machine sites list
+                    ospf_machines_dict[machine_name].append(site_dict)
+
+        print "************************* ospf_machines_dict - ", ospf_machines_dict
+        return ospf_machines_dict
+
+
+def get_machine_and_site(machines_dict):
+    """ Send dictionary containing information of requested machines
+
+    Args:
+        machines_dict (list): {
+                                    'ospf1': [
+                                        {
+                                            u'ospf1_slave_1': 49
+                                        },
+                                        {
+                                            u'ospf1_slave_2': 0
+                                        }
+                                    ]
+                                }
+
+    Returns:
+        (dict):  {
+                    'machine': <Machine: ospf1>,
+                    'site': <SiteInstance: ospf1_slave_1>
+                }
+
+    """
+
+    print "***************************** machines_dict - ", machines_dict
+    if machines_dict:
+        for machine, sites in machines_dict.iteritems():
+            current_machine = machine
+            try:
+                current_machine = Machine.objects.get(name=machine)
+                for site in sites:
+                    for name, number_of_devices in site.iteritems():
+                        if number_of_devices < 1000:
+                            current_site = SiteInstance.objects.get(name=name)
+                            print "****************************** {'machine': current_machine, 'site': current_site} - ", {'machine': current_machine, 'site': current_site}
+                            return {'machine': current_machine, 'site': current_site}
+            except Exception as e:
+                return ""
 
