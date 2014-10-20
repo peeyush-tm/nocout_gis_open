@@ -150,9 +150,13 @@ function advanceSearchMainClass() {
     }
 
     this.prepareAdvanceSearchHtml= function(domElemet) {
-        var templateData= "", i=0, elementsArray= [], formElement= "", j=0;
-        this.filtersList= getDataForAdvanceSearch();
+        var i=0,
+            j=0,
+            templateData= "",
+            elementsArray= [],
+            formElement= "";
 
+        this.filtersList= getDataForAdvanceSearch();
         templateData+= '<div class="iframe-container"><div class="content-container"><div id="'+domElemet+'" class="advanceSearchContainer">';
         templateData += '<form id="'+domElemet+'_form"><div class="form-horizontal">';
         for(i=0; i< this.filtersList.length; i++) {
@@ -246,10 +250,12 @@ function advanceSearchMainClass() {
             var label_txt = select2_boxes[i].children[0].innerHTML,
                 select_box_div = select2_boxes[i].children[1].children,
                 select_box_id = select_box_div[select_box_div.length-1].id,
-                selected_values = $("#"+select_box_id).select2("val");
-                ob[label_txt] = selected_values; 
-        }
+                selected_values = $("#"+select_box_id).select2("val"),
+                forAttr = select2_boxes[i].children[0].attributes['for'].value;
 
+            ob[label_txt] = selected_values;;
+            search_self.appliedSearch.push({field: forAttr, value: selected_values});
+        }
         return ob;
     }
 
