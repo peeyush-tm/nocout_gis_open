@@ -1,0 +1,72 @@
+#!/usr/bin/python
+
+"""
+RSSI DL Poller script.
+
+Poller script determines the received signal strength indication.
+poller script takes the snmp value of OID 1.3.6.1.4.1.161.19.3.2.2.8.0 from snmp agent of device at specific interval.
+RSSI information is sent to device application 
+
+"""
+# ##################################################################
+# Function : check_wimax_bs_temperature_acb
+#
+#  Parameters: info(SNMP output) ,params(parameters to check the service state) 
+#
+#  Output: service state,plugin output ,performance data
+##################################################################
+
+
+
+def check_wimax_bs_temperature_acb(item, _no_params, info):
+    """
+        Check_wimax_bs_temperature_acb function calcaulates the received signal strength indication
+
+        Args:
+            item (str) Specific item on SNMP output on which we want to filter results
+
+        Kwargs:
+            params (tuple) Check parameters for critical and warning state of service
+
+        Returns:
+            state (int) :
+                    0: OK
+                    1: Warning
+                    2: Critical
+                    3: unknown
+            infotext(string):
+                    plugin output
+                    Example : Device received signal strength indication is -76
+
+            performance_data  (list):
+                    performance data
+                    Example: wimax_bs_temperature_acb=-76;-50;-80;;;
+            Raises:
+                ValueError ,Exception
+    """
+    state = 3
+    infotext = "unknown_value"
+    acb_temp = None
+
+    try:
+        if info:
+            acb_temp = int(info[0][0])
+            state = 0
+            infotext = "ACB temperature of BS is %s " % acb_temp
+    except ValueError:
+        infotext = "type_mismatch_value"
+    except:
+        infotext = "unknown_value"
+    return (state, infotext, [("acb_temp",acb_temp )])
+
+
+check_info["wimax_bs_temperature_acb"] = {
+    'check_function': check_wimax_bs_temperature_acb,
+    'service_description': 'wimax_bs_temperature_acb',
+    'has_perfdata': True,
+}
+
+#######################################################################
+#	SNMP OID
+#######################################################################
+snmp_info["wimax_bs_temperature_acb"] = ( ".1.3.6.1.2.1.99.1.1.1", ["4.20"] )

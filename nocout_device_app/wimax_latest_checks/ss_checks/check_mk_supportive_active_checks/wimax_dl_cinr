@@ -1,0 +1,30 @@
+#!/usr/bin/python
+# -*- encoding: utf-8; py-indent-offset: 4 -*-
+
+def check_wimax_dl_cinr_arguments(params):
+    description, host,settings = params
+    args =''
+    args += ' %s ' % host
+    if "socket_address" in settings:
+        args += '%s ' % quote_shell_string(settings['socket_address'])
+    if "socket_port" in settings:
+        args += '%d ' % int(settings['socket_port'])
+
+    if "mac" in settings:
+        args += '%s ' % quote_shell_string(settings['mac'])
+    if "cinr_warning" in settings:
+        args += '%d ' % int(settings['cinr_warning'])
+
+    if "cinr_critical" in settings:
+        args += '%d ' % int(settings['cinr_critical'])
+
+
+    return args
+
+active_check_info['wimax_dl_cinr'] = {
+    "command_line"        : '$USER1$/check_wimax_dl_cinr $ARG1$',
+    "argument_function"   : check_wimax_dl_cinr_arguments,
+    "service_description" : lambda params: "%s" % params[0],
+    "has_perfdata"        :True,
+}
+

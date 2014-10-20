@@ -299,12 +299,6 @@ MPTT_TREE= namedtuple('MPTT_TREE', 'lft rght level')
 
 ISOLATED_NODE= MPTT_TREE(lft=1, rght=2, level=0)
 
-# Import the local_settings.py file to override global settings
-
-try:
-    from local_settings import *
-except ImportError:
-    pass
 
 ACTSTREAM_SETTINGS = {
     'MODELS': ('auth.user', 'auth.group', 'sites.site', 'comments.comment','user_profile.userprofile', 'user_group.usergroup',
@@ -339,7 +333,7 @@ PING_PL_CRITICAL = 100
 ######################list of private IPs
 
 PRIVATE_IPS_PREFIX = ('10.', '172.', '192.', )
-GIS_MAP_MAX_DEVICE_LIMIT=10
+GIS_MAP_MAX_DEVICE_LIMIT=1000
 
 
 ###################################################################################################################
@@ -349,3 +343,10 @@ DEVICE_APPLICATION = {
         'NAME': 'master_UA',  # Or path to database file if using sqlite3.
     }
 }
+
+# Import the local_settings.py file to override global settings
+
+try:
+    from local_settings import *
+except ImportError:
+    pass

@@ -15,6 +15,8 @@ from django.db.models import Q
 from django.conf import settings
 from nocout.settings import P2P, WiMAX, PMP
 
+from nocout.utils.util import fetch_raw_result, dict_fetchall, format_value
+
 # going deep with sql cursor to fetch the db results. as the RAW query executes everythong it is recursively used
 from django.db import connections
 
@@ -192,7 +194,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
         # we should start with getting the
         # device and substation
 
-        device_list = prepare_alert_results(device_list, performance_data)
+        device_list = prepare_raw_alert_results(device_list, performance_data)
 
         return device_list
 
@@ -449,7 +451,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
         # we should start with getting the
         # device and substation
 
-        device_list = prepare_alert_results(device_list, performance_data)
+        device_list = prepare_raw_alert_results(device_list, performance_data)
 
         return device_list
 
@@ -664,7 +666,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
             )
 
 
-            device_list = prepare_alert_results(device_list,performance_data)
+            device_list = prepare_raw_alert_results(device_list,performance_data)
 
             sorted_device_list += sorted(device_list, key=itemgetter('sys_timestamp'), reverse=True)
 
@@ -875,7 +877,7 @@ class CustomerAlertListingTable(BaseDatatableView):
                                                   columns=required_data_columns,
                                                   condition= extra_query_condition )
 
-            device_list = prepare_alert_results(device_list,performance_data)
+            device_list = prepare_raw_alert_results(device_list,performance_data)
 
             sorted_device_list += sorted(device_list, key=itemgetter('sys_timestamp'), reverse=True)
 
@@ -1421,38 +1423,6 @@ def raw_prepare_result(performance_data,
     return performance_data
 
 
-def fetch_raw_result(query, machine):
-    """
-    django raw query does not get result in a single call, it iterates and calls the same query a lot of time
-    which can be optmised if we pre fetch the results
-
-    :param query: query to execute
-    :param machine: machine name
-    :return:the data fetched in form of a dictionary
-    """
-
-    cursor = connections[machine].cursor()
-    cursor.execute(query)
-
-    return dict_fetchall(cursor)
-
-
-def dict_fetchall(cursor):
-    """
-    https://docs.djangoproject.com/en/1.6/topics/db/sql/
-    return the cursor in dictionary format
-
-    :param cursor: data base cursor
-    :return: dictioanry of the rows
-    """
-
-    desc = cursor.description
-    return [
-        dict(zip([col[0] for col in desc], row))
-        for row in cursor.fetchall()
-    ]
-
-
 def filter_devices(logged_in_user, data_tab = None, page_type="customer"):
 
     """
@@ -1500,125 +1470,310 @@ def filter_machines(organization_devices):
 
     return machine_dict
 
+def prepare_raw_gis_info():
+    """
 
-def prepare_alert_results(device_list, performance_data):
+    :return: gis information
+    """
+    gis_info = """
+        select * from (
+        select basestation.id as BSID,
+                basestation.name as BSNAME,
+                basestation.alias as BSALIAS,
+                basestation.infra_provider as BSINFRAPROVIDER,
+                basestation.gps_type as BSGPSTYPE,
+                basestation.building_height as BSBUILDINGHGT,
+                basestation.tower_height as BSTOWERHEIGHT,
+                basestation.address as BSADDRESS,
+
+                city.city_name as BSCITY,
+                state.state_name as BSSTATE,
+                country.country_name as BSCOUNTRY,
+
+                sector.id as SID
+
+        from inventory_basestation as basestation
+        left join (
+            inventory_sector as sector,
+            device_country as country,
+            device_city as city,
+            device_state as state
+        )
+        on (
+            sector.base_station_id = basestation.id
+            and
+            city.id = basestation.city
+            and
+            state.id = basestation.state
+            and
+            country.id = basestation.country
+        )
+    )as bs_info
+    left join (
+        select * from (select
+
+            sector.id as SECTOR_ID,
+            sector.name as SECTOR_NAME,
+            sector.alias as SECTOR_ALIAS,
+            sector.sector_id as SECTOR_SECTOR_ID,
+            sector.base_station_id as SECTOR_BS_ID,
+
+            technology.name as SECTOR_TECH,
+            vendor.name as SECTOR_VENDOR,
+            devicetype.name as SECTOR_TYPE,
+
+            device.id as SECTOR_CONF_ON_ID,
+            device.device_name as SECTOR_CONF_ON_NAME,
+            device.ip_address as SECTOR_CONF_ON_IP,
+            device.mac_address as SECTOR_CONF_ON_MAC,
+
+            frequency.color_hex_value as SECTOR_FREQUENCY_COLOR,
+            frequency.frequency_radius as SECTOR_FREQUENCY_RADIUS,
+            frequency.value as SECTOR_FREQUENCY
+
+            from inventory_sector as sector
+            join (
+                device_device as device,
+                device_devicetechnology as technology,
+                device_devicevendor as vendor,
+                device_devicetype as devicetype
+            )
+            on (
+                device.id = sector.sector_configured_on_id
+                and
+                technology.id = device.device_technology
+                and
+                devicetype.id = device.device_type
+                and
+                vendor.id = device.device_vendor
+            ) left join (device_devicefrequency as frequency)
+            on (frequency.id = sector.frequency_id)
+        ) as sector_info
+        left join (
+            select circuit.id as CID,
+                circuit.alias as CALIAS,
+                circuit.circuit_id as CCID,
+                circuit.sector_id as SID,
+
+                customer.alias as CUST,
+                customer.address as SS_CUST_ADDR,
+
+                substation.id as SSID,
+                substation.name as SS_NAME,
+                substation.alias as SS_ALIAS,
+                substation.serial_no as SS_SERIAL_NO,
+                substation.building_height as SS_BUILDING_HGT,
+                substation.tower_height as SS_TOWER_HGT,
+                substation.latitude as SS_LATITUDE,
+                substation.longitude as SS_LONGITUDE,
+                substation.mac_address as SS_MAC,
+
+                device.id as SS_DEVICE_ID,
+                device.ip_address as SSIP,
+                device.device_alias as SSDEVICEALIAS,
+                device.device_name as SSDEVICENAME,
+
+                technology.name as SS_TECH,
+                vendor.name as SS_VENDOR
+
+            from inventory_circuit as circuit
+            join (
+                inventory_substation as substation,
+                inventory_customer as customer,
+                device_device as device,
+                device_devicetechnology as technology,
+                device_devicevendor as vendor,
+                device_devicetype as devicetype
+            )
+            on (
+                customer.id = circuit.customer_id
+                and
+                substation.id = circuit.sub_station_id
+                and
+                device.id = substation.device_id
+                and
+                technology.id = device.device_technology
+                and
+                vendor.id = device.device_vendor
+                and
+                devicetype.id = device.device_type
+            )
+        ) as ckt_info
+        on (ckt_info.SID = sector_info.SECTOR_ID)
+    ) as sect_ckt
+    on (sect_ckt.SECTOR_BS_ID = bs_info.BSID)
+    group by BSID,SECTOR_ID,CID
+    """
+
+    return fetch_raw_result(query=gis_info)
+
+global gis_information
+gis_information = prepare_raw_gis_info()
+
+def prepare_raw_alert_results(device_list=[], performance_data=None):
+    """
+    prepare GIS result using raw query
+
+    :param device_list:
+    :param performance_data:
+    :return:
+    """
+    gis_info = []
+    gis_info = gis_information
+
+    processed_device = []
 
     for data in performance_data:
-        device_object = Device.objects.get(device_name=data['device_name'])
-        device_type = DeviceType.objects.get(id=device_object.device_type).alias
-        #first assume that device is
-        #substation
-        city_objects = None
-        state_object = None
-        circuit_objects = None
-        basestation_objects = None
-        sector_objects = None
-        customer_objects = None
+        for bs_row in gis_info:
+            device_type = bs_row['SECTOR_TECH']
 
-        try:
-            city_objects = City.objects.prefetch_related('state').get(id=device_object.city)
-            state_object = city_objects.state
-        except Exception as e:
-            logger.exception(e.message)
-            pass
-
-        if device_object.substation_set.exists():
-            device_substation_objects = device_object.substation_set.filter()
-
-            if len(device_substation_objects):
-                device_substation_object = device_substation_objects[0]
-
-                try:
-                    circuit_objects = device_substation_object.circuit_set.filter()
-                    if len(circuit_objects):
-                        circuit_object = circuit_objects[0]
-                        sector_objects = circuit_object.sector
-                        basestation_objects = sector_objects.base_station
-                        customer_objects = circuit_object.customer
-
-                except Exception as e:
-                    #database is in correct
-                    # we either have multiple circuits present on the same device. that is same
-                    #substation is serving more than one circuit
-                    #which is not right. CIRCUIT strictly means (BS) -*- (sector) -1- CIRCUIT -1- (ss)
-                    logger.exception(e.message)
-                    pass
+            if data['device_name'] == bs_row['SECTOR_CONF_ON_NAME']:
+                # if data['device_name'] not in processed_device:
+                #     processed_device.append(data['device_name'])
 
                 if severity_level_check(list_to_check=[data['severity'], data['description']]):
-                    ##check the severity levels
                     device_events = {
-                        'device_name': data["device_name"],
-                        'device_type': device_type,
+                        'device_name': data['device_name'],
+                        'device_type': format_value(device_type),
                         'severity': data['severity'],
                         'ip_address': data["ip_address"],
-                        'base_station': basestation_objects.name if basestation_objects else "N/A",
-                        'circuit_id': circuit_object.circuit_id if circuit_objects else "N/A",
-                        'sector_id': sector_objects.sector_id if sector_objects else "N/A",
-                        'city': city_objects.city_name if city_objects else "N/A",
-                        'state': state_object.state_name if state_object else "N/A",
-                        'customer_name': customer_objects.alias if customer_objects else "N/A",
+                        'base_station': format_value(bs_row['BSALIAS']),
+                        'circuit_id': format_value(bs_row['CCID']),
+                        'sector_id': format_value(bs_row['SECTOR_SECTOR_ID']),
+                        'city': format_value(bs_row['BSCITY']),
+                        'state': format_value(bs_row['BSSTATE']),
+                        'customer_name': format_value(bs_row['CUST']),
                         'data_source_name': data["data_source"],
                         'current_value': data["current_value"],
                         'max_value': data["max_value"],
                         'sys_timestamp': datetime.datetime.fromtimestamp(
                             float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
                         'description': data['description']
-                        }
+                    }
                     device_list.append(device_events)
-        # else:
-        #now that we are sure the device is not in sector
-        #so this must be the PTP Near End Device
-        if device_object.sector_configured_on.exists():
-            #alright near end device. surrender now
-            device_sector_objects = device_object.sector_configured_on.filter()
-            if len(device_sector_objects):
-                device_sector_object = device_sector_objects[0] #yay!
-                try:
-                    circuit_objects = device_sector_object.circuit_set.filter()
-                    if len(circuit_objects):
-                        circuit_object = circuit_objects[0]
-                        try:
-                            customer_objects = circuit_object.customer
-                            sector_objects = circuit_object.sector
-                            basestation_objects = sector_objects.base_station
-                        except Exception as e:
-                            #database is in correct
-                            # we either have multiple circuits present on the same device. that is same
-                            #substation is serving more than one circuit
-                            #which is not right. CIRCUIT strictly means (BS) -*- (sector) -1- CIRCUIT -1- (ss)
-                            logger.exception(e.message)
-                            pass
-                    if severity_level_check(list_to_check=[data['severity'], data['description']]):
-                        ##check the severity levels
-                        device_events = {
-                            'device_name': data["device_name"],
-                            'device_type': device_type,
-                            'severity': data['severity'],
-                            'ip_address': data["ip_address"],
-                            'base_station': basestation_objects.name if basestation_objects else "N/A",
-                            'circuit_id': circuit_object.circuit_id if circuit_objects else "N/A",
-                            'sector_id': sector_objects.sector_id if sector_objects else "N/A",
-                            'city': city_objects.city_name if city_objects else "N/A",
-                            'state': state_object.state_name if state_object else "N/A",
-                            'customer_name': customer_objects.alias if customer_objects else "N/A",
-                            'data_source_name': data["data_source"],
-                            'current_value': data["current_value"],
-                            'max_value': data["max_value"],
-                            'sys_timestamp': datetime.datetime.fromtimestamp(
-                                float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                            'description': data['description']
-                            }
-                        device_list.append(device_events)
-                except Exception as e:
-                    logger.exception(e.message)
-                    pass
-            # else:
-            #     pass
-            # else:
-            #     pass
 
     return device_list
 
+
+#
+# def prepare_alert_results(device_list, performance_data):
+#
+#     for data in performance_data:
+#         device_object = Device.objects.get(device_name=data['device_name'])
+#         device_type = DeviceType.objects.get(id=device_object.device_type).alias
+#         #first assume that device is
+#         #substation
+#         city_objects = None
+#         state_object = None
+#         circuit_objects = None
+#         basestation_objects = None
+#         sector_objects = None
+#         customer_objects = None
+#
+#         try:
+#             city_objects = City.objects.prefetch_related('state').get(id=device_object.city)
+#             state_object = city_objects.state
+#         except Exception as e:
+#             logger.exception(e.message)
+#             pass
+#
+#         if device_object.substation_set.exists():
+#             device_substation_objects = device_object.substation_set.filter()
+#
+#             if len(device_substation_objects):
+#                 device_substation_object = device_substation_objects[0]
+#
+#                 try:
+#                     circuit_objects = device_substation_object.circuit_set.filter()
+#                     if len(circuit_objects):
+#                         circuit_object = circuit_objects[0]
+#                         sector_objects = circuit_object.sector
+#                         basestation_objects = sector_objects.base_station
+#                         customer_objects = circuit_object.customer
+#
+#                 except Exception as e:
+#                     #database is in correct
+#                     # we either have multiple circuits present on the same device. that is same
+#                     #substation is serving more than one circuit
+#                     #which is not right. CIRCUIT strictly means (BS) -*- (sector) -1- CIRCUIT -1- (ss)
+#                     logger.exception(e.message)
+#                     pass
+#
+#                 if severity_level_check(list_to_check=[data['severity'], data['description']]):
+#                     ##check the severity levels
+#                     device_events = {
+#                         'device_name': data["device_name"],
+#                         'device_type': device_type,
+#                         'severity': data['severity'],
+#                         'ip_address': data["ip_address"],
+#                         'base_station': basestation_objects.name if basestation_objects else "N/A",
+#                         'circuit_id': circuit_object.circuit_id if circuit_objects else "N/A",
+#                         'sector_id': sector_objects.sector_id if sector_objects else "N/A",
+#                         'city': city_objects.city_name if city_objects else "N/A",
+#                         'state': state_object.state_name if state_object else "N/A",
+#                         'customer_name': customer_objects.alias if customer_objects else "N/A",
+#                         'data_source_name': data["data_source"],
+#                         'current_value': data["current_value"],
+#                         'max_value': data["max_value"],
+#                         'sys_timestamp': datetime.datetime.fromtimestamp(
+#                             float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+#                         'description': data['description']
+#                         }
+#                     device_list.append(device_events)
+#         # else:
+#         #now that we are sure the device is not in sector
+#         #so this must be the PTP Near End Device
+#         if device_object.sector_configured_on.exists():
+#             #alright near end device. surrender now
+#             device_sector_objects = device_object.sector_configured_on.filter()
+#             if len(device_sector_objects):
+#                 device_sector_object = device_sector_objects[0] #yay!
+#                 try:
+#                     circuit_objects = device_sector_object.circuit_set.filter()
+#                     if len(circuit_objects):
+#                         circuit_object = circuit_objects[0]
+#                         try:
+#                             customer_objects = circuit_object.customer
+#                             sector_objects = circuit_object.sector
+#                             basestation_objects = sector_objects.base_station
+#                         except Exception as e:
+#                             #database is in correct
+#                             # we either have multiple circuits present on the same device. that is same
+#                             #substation is serving more than one circuit
+#                             #which is not right. CIRCUIT strictly means (BS) -*- (sector) -1- CIRCUIT -1- (ss)
+#                             logger.exception(e.message)
+#                             pass
+#                     if severity_level_check(list_to_check=[data['severity'], data['description']]):
+#                         ##check the severity levels
+#                         device_events = {
+#                             'device_name': data["device_name"],
+#                             'device_type': device_type,
+#                             'severity': data['severity'],
+#                             'ip_address': data["ip_address"],
+#                             'base_station': basestation_objects.name if basestation_objects else "N/A",
+#                             'circuit_id': circuit_object.circuit_id if circuit_objects else "N/A",
+#                             'sector_id': sector_objects.sector_id if sector_objects else "N/A",
+#                             'city': city_objects.city_name if city_objects else "N/A",
+#                             'state': state_object.state_name if state_object else "N/A",
+#                             'customer_name': customer_objects.alias if customer_objects else "N/A",
+#                             'data_source_name': data["data_source"],
+#                             'current_value': data["current_value"],
+#                             'max_value': data["max_value"],
+#                             'sys_timestamp': datetime.datetime.fromtimestamp(
+#                                 float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+#                             'description': data['description']
+#                             }
+#                         device_list.append(device_events)
+#                 except Exception as e:
+#                     logger.exception(e.message)
+#                     pass
+#             # else:
+#             #     pass
+#             # else:
+#             #     pass
+#
+#     return device_list
+#
 
 #common function to get the devices
 
