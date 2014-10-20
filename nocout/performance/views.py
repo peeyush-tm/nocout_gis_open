@@ -303,6 +303,7 @@ class LivePerformanceListing(BaseDatatableView):
                             circuit = Circuit.objects.filter(sub_station=ss_object.id)
                             if len(circuit):
                                 circuit_obj = circuit[0]
+                                customer_name = circuit_obj.customer.alias
                                 circuit_id = circuit_obj.circuit_id
                                 sector_id = circuit_obj.sector.sector_id if circuit_obj.sector else "N/A"
                                 bs_name = circuit_obj.sector.base_station.alias if circuit_obj.sector else "N/A"
