@@ -1348,11 +1348,23 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
     ospf5_machine_and_site_info = get_machine_details('ospf', [5])
     print "********************************** ospf5_machine_and_site_info - ", ospf5_machine_and_site_info
 
+    # id of last inserted row in 'device' model
+    device_latest_id = 0
+
+    # get device latest inserted in schema
+    try:
+        device_latest_id = Device.objects.latest('id').id
+    except Exception as e:
+        logger.info("No device is added in database till now. Exception: ", e.message)
+
     try:
         # reading of values start from 2nd row
         row_number = 2
 
         for row in complete_d:
+            # increment device latest id by 1
+            device_latest_id += 1
+
             # errors in this row
             errors = ""
 
@@ -1619,7 +1631,8 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     machine_name = ""
 
                 # device name
-                name = '{}_ne'.format(special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
+                # name = '{}_ne'.format(special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
+                name = device_latest_id
                 alias = '{}_NE'.format(circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
 
                 if ip_sanitizer(row['IP']):
@@ -1645,6 +1658,9 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     }
                     # base station object
                     base_station = create_device(base_station_data)
+
+                    # increment device latest id by 1
+                    device_latest_id += 1
                 else:
                     base_station = ""
             except Exception as e:
@@ -1741,7 +1757,8 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     machine_name = ""
 
                 # device name
-                name = special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else ""
+                # name = special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else ""
+                name = device_latest_id
                 alias = '{}'.format(circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
 
                 if ip_sanitizer(row['SS IP']):
@@ -1767,6 +1784,9 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     }
                     # sub station object
                     sub_station = create_device(sub_station_data)
+
+                    # increment device latest id by 1
+                    device_latest_id += 1
                 else:
                     sub_station = ""
             except Exception as e:
@@ -1810,7 +1830,8 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 if ip_sanitizer(row['BS Switch IP']):
                     # bs switch data
                     bs_switch_data = {
-                        'device_name': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
+                        # 'device_name': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
+                        'device_name': device_latest_id,
                         'organization': organization,
                         'machine': machine,
                         'site': site,
@@ -1829,6 +1850,9 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     }
                     # bs switch object
                     bs_switch = create_device(bs_switch_data)
+
+                    # increment device latest id by 1
+                    device_latest_id += 1
                 else:
                     bs_switch = ""
             except Exception as e:
@@ -1872,7 +1896,8 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 if ip_sanitizer(row['Aggregation Switch']):
                     # aggregation switch data
                     aggregation_switch_data = {
-                        'device_name': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
+                        # 'device_name': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
+                        'device_name': device_latest_id,
                         'organization': organization,
                         'machine': machine,
                         'site': site,
@@ -1891,6 +1916,9 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     }
                     # aggregation switch object
                     aggregation_switch = create_device(aggregation_switch_data)
+
+                    # increment device latest id by 1
+                    device_latest_id += 1
                 else:
                     aggregation_switch = ""
             except Exception as e:
@@ -1934,7 +1962,8 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 if ip_sanitizer(row['BS Converter IP']):
                     # bs converter data
                     bs_converter_data = {
-                        'device_name': row['BS Converter IP'] if 'BS Converter IP' in row.keys() else "",
+                        # 'device_name': row['BS Converter IP'] if 'BS Converter IP' in row.keys() else "",
+                        'device_name': device_latest_id,
                         'organization': organization,
                         'machine': machine,
                         'site': site,
@@ -1953,6 +1982,9 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     }
                     # bs converter object
                     bs_converter = create_device(bs_converter_data)
+
+                    # increment device latest id by 1
+                    device_latest_id += 1
                 else:
                     bs_converter = ""
             except Exception as e:
@@ -1996,7 +2028,8 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 if ip_sanitizer(row['POP Converter IP']):
                     # pop converter data
                     pop_converter_data = {
-                        'device_name': row['POP Converter IP'] if 'POP Converter IP' in row.keys() else "",
+                        # 'device_name': row['POP Converter IP'] if 'POP Converter IP' in row.keys() else "",
+                        'device_name': device_latest_id,
                         'organization': organization,
                         'machine': machine,
                         'site': site,
@@ -2015,6 +2048,9 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     }
                     # pop converter object
                     pop_converter = create_device(pop_converter_data)
+
+                    # increment device latest id by 1
+                    device_latest_id += 1
                 else:
                     pop_converter = ""
             except Exception as e:
@@ -2440,8 +2476,20 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
     ospf5_machine_and_site_info = get_machine_details('ospf', [5])
     print "********************************** ospf5_machine_and_site_info - ", ospf5_machine_and_site_info
 
+    # id of last inserted row in 'device' model
+    device_latest_id = 0
+
+    # get device latest inserted in schema
+    try:
+        device_latest_id = Device.objects.latest('id').id
+    except Exception as e:
+        logger.info("No device is added in database till now. Exception: ", e.message)
+
     try:
         for row in complete_d:
+            # increment device latest id by 1
+            device_latest_id += 1
+
             # initialize variables
             base_station = ""
             sub_station = ""
@@ -2500,7 +2548,9 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                         site = ""
                         logger.info("Unable to get site. Exception:", e.message)
 
-                name = special_chars_name_sanitizer_with_lower_case(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
+                # device name
+                name = device_latest_id
+                # name = special_chars_name_sanitizer_with_lower_case(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
 
                 if 'IP' in row.keys():
                     if ip_sanitizer(row['IP']):
@@ -2527,6 +2577,9 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                         print "######################################### BASE STATION - ", base_station_data
                         # base station object
                         base_station = create_device(base_station_data)
+
+                        # increment device latest id by 1
+                        device_latest_id += 1
                     else:
                         base_station = ""
                 else:
@@ -2572,7 +2625,9 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                         site = ""
                         logger.info("Unable to get site. Exception:", e.message)
 
-                name = special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
+                # device name
+                name = device_latest_id
+                # name = special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID'] if 'SS Circuit ID' in row.keys() else "")
 
                 if ip_sanitizer(row['SS IP']):
                     # sub station data
@@ -2597,6 +2652,9 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                     }
                     # sub station object
                     sub_station = create_device(sub_station_data)
+
+                    # increment device latest id by 1
+                    device_latest_id += 1
                 else:
                     sub_station = ""
             except Exception as e:
@@ -2640,7 +2698,8 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 if ip_sanitizer(row['BS Switch IP']):
                     # bs switch data
                     bs_switch_data = {
-                        'device_name': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
+                        # 'device_name': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
+                        'device_name': device_latest_id,
                         'organization': organization,
                         'machine': machine,
                         'site': site,
@@ -2659,6 +2718,9 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                     }
                     # bs switch object
                     bs_switch = create_device(bs_switch_data)
+
+                    # increment device latest id by 1
+                    device_latest_id += 1
                 else:
                     bs_switch = ""
             except Exception as e:
@@ -2702,7 +2764,8 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 if ip_sanitizer(row['Aggregation Switch']):
                     # aggregation switch data
                     aggregation_switch_data = {
-                        'device_name': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
+                        # 'device_name': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
+                        'device_name': device_latest_id,
                         'organization': organization,
                         'machine': machine,
                         'site': site,
@@ -2721,6 +2784,9 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                     }
                     # aggregation switch object
                     aggregation_switch = create_device(aggregation_switch_data)
+
+                    # increment device latest id by 1
+                    device_latest_id += 1
                 else:
                     aggregation_switch = ""
             except Exception as e:
@@ -2764,7 +2830,8 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 if ip_sanitizer(row['BS Converter IP']):
                     # bs converter data
                     bs_converter_data = {
-                        'device_name': row['BS Converter IP'] if 'BS Converter IP' in row.keys() else "",
+                        # 'device_name': row['BS Converter IP'] if 'BS Converter IP' in row.keys() else "",
+                        'device_name': device_latest_id,
                         'organization': organization,
                         'machine': machine,
                         'site': site,
@@ -2783,6 +2850,9 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                     }
                     # bs converter object
                     bs_converter = create_device(bs_converter_data)
+
+                    # increment device latest id by 1
+                    device_latest_id += 1
                 else:
                     bs_converter = ""
             except Exception as e:
@@ -2826,7 +2896,8 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 if ip_sanitizer(row['POP Converter IP']):
                     # pop converter data
                     pop_converter_data = {
-                        'device_name': row['POP Converter IP'] if 'POP Converter IP' in row.keys() else "",
+                        # 'device_name': row['POP Converter IP'] if 'POP Converter IP' in row.keys() else "",
+                        'device_name': device_latest_id,
                         'organization': organization,
                         'machine': machine,
                         'site': site,
@@ -2845,6 +2916,9 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                     }
                     # pop converter object
                     pop_converter = create_device(pop_converter_data)
+
+                    # increment device latest id by 1
+                    device_latest_id += 1
                 else:
                     pop_converter = ""
             except Exception as e:
@@ -3223,8 +3297,20 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
     ospf5_machine_and_site_info = get_machine_details('ospf', [5])
     print "********************************** ospf5_machine_and_site_info - ", ospf5_machine_and_site_info
 
+    # id of last inserted row in 'device' model
+    device_latest_id = 0
+
+    # get device latest inserted in schema
+    try:
+        device_latest_id = Device.objects.latest('id').id
+    except Exception as e:
+        logger.info("No device is added in database till now. Exception: ", e.message)
+
     try:
         for row in complete_d:
+            # increment device latest id by 1
+            device_latest_id += 1
+
             # initialize variables
             base_station = ""
             bs_switch = ""
@@ -3277,7 +3363,8 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                         logger.info("Unable to get site. Exception:", e.message)
                 
                 # device name
-                name = special_chars_name_sanitizer_with_lower_case(row['Sector ID'] if 'Sector ID' in row.keys() else "")
+                name = device_latest_id
+                # name = special_chars_name_sanitizer_with_lower_case(row['Sector ID'] if 'Sector ID' in row.keys() else "")
                 
                 # device alias
                 alias = circuit_id_sanitizer(row['Sector ID']) if 'Sector ID' in row.keys() else ""
@@ -3304,6 +3391,9 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 }
                 # base station object
                 base_station = create_device(base_station_data)
+
+                # increment device latest id by 1
+                device_latest_id += 1
             except Exception as e:
                 base_station = ""
 
@@ -3344,7 +3434,8 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
                 # base station data
                 bs_switch_data = {
-                    'device_name': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
+                    # 'device_name': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
+                    'device_name': device_latest_id,
                     'organization': organization,
                     'machine': machine,
                     'site': site,
@@ -3363,6 +3454,9 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 }
                 # base station object
                 bs_switch = create_device(bs_switch_data)
+
+                # increment device latest id by 1
+                device_latest_id += 1
             except Exception as e:
                 bs_switch = ""
 
@@ -3403,7 +3497,8 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
                 # aggregation switch data
                 aggregation_switch_data = {
-                    'device_name': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
+                    # 'device_name': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
+                    'device_name': device_latest_id,
                     'organization': organization,
                     'machine': machine,
                     'site': site,
@@ -3422,6 +3517,9 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 }
                 #  aggregation switch object
                 aggregation_switch = create_device(aggregation_switch_data)
+
+                # increment device latest id by 1
+                device_latest_id += 1
             except Exception as e:
                 aggregation_switch = ""
 
@@ -3462,7 +3560,8 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
                 # bs converter data
                 bs_converter_data = {
-                    'device_name': row['BS Converter IP'] if 'BS Converter IP' in row.keys() else "",
+                    # 'device_name': row['BS Converter IP'] if 'BS Converter IP' in row.keys() else "",
+                    'device_name': device_latest_id,
                     'organization': organization,
                     'machine': machine,
                     'site': site,
@@ -3481,6 +3580,9 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 }
                 # bs converter object
                 bs_converter = create_device(bs_converter_data)
+
+                # increment device latest id by 1
+                device_latest_id += 1
             except Exception as e:
                 bs_converter = ""
 
@@ -3521,7 +3623,8 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
                 # pop converter data
                 pop_converter_data = {
-                    'device_name': row['POP Converter IP'] if 'POP Converter IP' in row.keys() else "",
+                    # 'device_name': row['POP Converter IP'] if 'POP Converter IP' in row.keys() else "",
+                    'device_name': device_latest_id,
                     'organization': organization,
                     'machine': machine,
                     'site': site,
@@ -3540,6 +3643,9 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 }
                 # pop converter object
                 pop_converter = create_device(pop_converter_data)
+
+                # increment device latest id by 1
+                device_latest_id += 1
             except Exception as e:
                 pop_converter = ""
 
@@ -3762,9 +3868,20 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
     # get machine and associated sites details in dictionary; pass list of machine numbers in as argument
     machine_and_site_info = get_machine_details('ospf', [1])
 
+    # id of last inserted row in 'device' model
+    device_latest_id = 0
+
+    # get device latest inserted in schema
+    try:
+        device_latest_id = Device.objects.latest('id').id
+    except Exception as e:
+        logger.info("No device is added in database till now. Exception: ", e.message)
+
     try:
         for row in complete_d:
-            # initialize variables
+            # increment device latest id by 1
+            device_latest_id += 1
+
             # initialize variables
             sub_station = ""
             substation_antenna = ""
@@ -3814,7 +3931,10 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                         logger.info("Unable to get site. Exception:", e.message)
 
                 # device name
-                name = special_chars_name_sanitizer_with_lower_case(row['Circuit ID']) if 'Circuit ID' in row.keys() else ""
+                name = device_latest_id
+                # name = special_chars_name_sanitizer_with_lower_case(row['Circuit ID']) if 'Circuit ID' in row.keys() else ""
+
+                # device alias
                 alias = '{}'.format(circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else "")
 
                 # sub station data
@@ -3839,6 +3959,9 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                 }
                 # sub station object
                 sub_station = create_device(sub_station_data)
+
+                # increment device latest id by 1
+                device_latest_id += 1
             except Exception as e:
                 sub_station = ""
 
@@ -4039,7 +4162,7 @@ def create_device(device_payload):
 
     # get device parameters
     if 'device_name' in device_payload.keys():
-        device_name = device_payload['device_name'].encode('utf-8').strip() if device_payload['device_name'] else ""
+        device_name = device_payload['device_name'] if device_payload['device_name'] else ""
     if 'organization' in device_payload.keys():
         organization = device_payload['organization'] if device_payload['organization'] else ""
     if 'device_alias' in device_payload.keys():
@@ -4085,7 +4208,7 @@ def create_device(device_payload):
             # ---------------------------- UPDATING DEVICE -------------------------------
             try:
                 # device object
-                device = Device.objects.get(device_name=device_name, ip_address=ip_address)
+                device = Device.objects.get(ip_address=ip_address)
                 # device alias
                 if device_alias:
                     try:
