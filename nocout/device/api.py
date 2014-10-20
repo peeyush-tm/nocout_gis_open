@@ -11,10 +11,11 @@ from device.models import Device, DeviceType, DeviceVendor, \
     DeviceTechnology, DeviceModel, State, Country, City
 import requests
 from nocout.utils import logged_in_user_organizations
+from nocout.utils.util import fetch_raw_result, dict_fetchall, format_value
 from service.models import DeviceServiceConfiguration, Service, ServiceDataSource
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from site_instance.models import SiteInstance
-from sitesearch.views import prepare_result, prepare_raw_bs_result
+from sitesearch.views import prepare_raw_bs_result
 from nocout.settings import GIS_MAP_MAX_DEVICE_LIMIT
 
 from django.db import connections
@@ -86,16 +87,7 @@ class DeviceStatsApi(View):
                                                         { "unspiderfy_icon" : "static/img/icons/bs.png" }
                                                 }
                 self.result['data']['objects']['children']= list()
-                # for base_station_object in base_stations_and_sector_configured_on_devices:
-                #     try:
-                #         if base_station_object:
-                #             base_station_info= prepare_result(base_station_object)
-                #             self.result['data']['objects']['children'].append(base_station_info)
-                #         else:
-                #             raise
-                #     except Exception as e:
-                #         logger.error("API Error Message: %s"%(e.message)+'base_station_id:%s'%(base_station_object), exc_info=True)
-                #         pass
+
                 query = """
                     select * from (
                         select basestation.id as BSID,
@@ -412,40 +404,6 @@ def prepare_raw_result(bs_dict = []):
             bs_result[BSID].append(bs)
     return bs_result
 
-
-#code duplication
-def fetch_raw_result(query, machine='default'):
-    """
-    django raw query does not get result in a single call, it iterates and calls the same query a lot of time
-    which can be optmised if we pre fetch the results
-
-    :param query: query to execute
-    :param machine: machine name
-    :return:the data fetched in form of a dictionary
-    """
-
-    cursor = connections[machine].cursor()
-    cursor.execute(query)
-
-    return dict_fetchall(cursor)
-
-
-def dict_fetchall(cursor):
-    """
-    https://docs.djangoproject.com/en/1.6/topics/db/sql/
-    return the cursor in dictionary format
-
-    :param cursor: data base cursor
-    :return: dictioanry of the rows
-    """
-
-    desc = cursor.description
-    return [
-        dict(zip([col[0] for col in desc], row))
-        for row in cursor.fetchall()
-    ]
-
-#duplicate code: TODO : remove
 
 class DeviceFilterApi(View):
 
