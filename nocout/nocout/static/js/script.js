@@ -194,7 +194,7 @@ var App = function () {
 				var iconLeft = iconElem.getAttribute("data-icon1");
 				var iconRight = iconElem.getAttribute("data-icon2");
 				//If sidebar is collapsed
-				if(collapsed){
+				if(collapsed) {
 					/* For Navbar */
 					jQuery('.navbar-brand').removeClass("mini-menu");
 					/* For sidebar */
@@ -205,8 +205,9 @@ var App = function () {
 					/* Add placeholder from Search Bar */
 					jQuery('.search').attr('placeholder', "Search");
 					collapsed = false;
-				}
-				else {
+                    /*Set cookie value to 1*/
+                    $.cookie("isMenuOpen", 1, {path: '/', secure : true});
+				} else {
 					/* For Navbar */
 					jQuery('.navbar-brand').addClass("mini-menu");
 					/* For sidebar */
@@ -217,6 +218,8 @@ var App = function () {
 					/* Remove placeholder from Search Bar */
 					jQuery('.search').attr('placeholder', '');
 					collapsed = true;
+                    /*Set cookie value to 0*/
+                    $.cookie("isMenuOpen", 0, {path: '/', secure : true});
 				}
 				$("#main-content").on('resize', function (e) {
 					e.stopPropagation();
