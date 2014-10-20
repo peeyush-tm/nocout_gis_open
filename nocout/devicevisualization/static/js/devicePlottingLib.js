@@ -569,68 +569,7 @@ function devicePlottingClass_gmap() {
 							isCallCompleted = 1;
 							disableAdvanceButton('no');
 							gmap_self.plotDevices_gmap([],"base_station");
-<<<<<<< HEAD
 						}
-=======
-
-							setTimeout(function() {
-								var bs_list = getMarkerInCurrentBound();
-				            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
-				            		if(recallPerf != "") {
-				            			clearTimeout(recallPerf);
-				            			recallPerf = "";
-				            		}
-				            		gisPerformanceClass.start(bs_list);
-				            	}
-								// gisPerformanceClass.start(getMarkerInCurrentBound());
-							}, 30000);
-
-							/*Load tools(point,line) data*/
-							gmap_self.get_tools_data_gmap();
-							gmap_self.create_old_ruler();
-							get_page_status();
-							/*Hide The loading Icon*/
-							$("#loadingIcon").hide();
-
-							/*Enable the refresh button*/
-							$("#resetFilters").button("complete");
-
-							setTimeout(function(e){
-								gmap_self.recallServer_gmap();
-							},21600000);
-						}
-
-					} else {
-
-						isCallCompleted = 1;
-						disableAdvanceButton('no');
-						gmap_self.plotDevices_gmap([],"base_station");
-
-						setTimeout(function() {
-							var bs_list = getMarkerInCurrentBound();
-			            	if(bs_list.length > 0 && isCallCompleted == 1) {            		
-			            		if(recallPerf != "") {
-			            			clearTimeout(recallPerf);
-			            			recallPerf = "";
-			            		}
-			            		gisPerformanceClass.start(bs_list);
-			            	}
-							// gisPerformanceClass.start(getMarkerInCurrentBound());
-						}, 30000);
-						
-						/*Load tools(point,line) data*/
-						gmap_self.get_tools_data_gmap();
-
-						gmap_self.create_old_ruler();
-						get_page_status();
-						disableAdvanceButton('no, enable it.');
-
-						/*Recall the server after particular timeout if system is not freezed*/
-						setTimeout(function(e) {
-							gmap_self.recallServer_gmap();
-						},21600000);
-
->>>>>>> gmap_tools
 					}
 				},
 				/*If data not fetched*/
@@ -647,6 +586,10 @@ function devicePlottingClass_gmap() {
 				},
 				always : function() {
 					disableAdvanceButton('no');
+
+					/*Load tools(point,line) data*/
+					gmap_self.get_tools_data_gmap();
+
 					/*Hide The loading Icon*/
 					$("#loadingIcon").hide();
 
@@ -675,19 +618,15 @@ function devicePlottingClass_gmap() {
 
 			/*Ajax call not completed yet*/
 			isCallCompleted = 1;
-			disableAdvanceButton('no');
-<<<<<<< HEAD
-=======
-			gmap_self.plotDevices_gmap([],"base_station");
 
 			disableAdvanceButton('no, enable it.');
-
+			
 			/*Load tools(point,line) data*/
 			gmap_self.get_tools_data_gmap();
 
 			gmap_self.create_old_ruler();
->>>>>>> gmap_tools
 			get_page_status();
+			
 			gmap_self.plotDevices_gmap([],"base_station");
 			setTimeout(function() {
 				var bs_list = getMarkerInCurrentBound();
@@ -2761,8 +2700,8 @@ function devicePlottingClass_gmap() {
 			}
 
 	    	$.ajax({
-				// url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
-				url : base_url+"/"+"static/services.json",
+				url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
+				// url : base_url+"/"+"static/services.json",
 				success : function(results) {
 
 					var result = JSON.parse(results);
@@ -4210,20 +4149,12 @@ function devicePlottingClass_gmap() {
 					bs_marker = allMarkersObject_gmap['base_station']["bs_"+bsName],
 					sector_device = allMarkersObject_gmap['sector_device']["sector_"+sectorName],
 					sector_polygon = allMarkersObject_gmap['sector_polygon']["poly_"+sectorName];
-<<<<<<< HEAD
-=======
-
->>>>>>> gmap_tools
 
 				for(var k=0;k<subStationsArray.length;k++) {
 					/*BS, SS & Sectors from filtered data array*/
 					var ssName = subStationsArray[k].name ? $.trim(subStationsArray[k].name) : "",
 						ss_marker = allMarkersObject_gmap['sub_station']["ss_"+ssName],
 						path_marker = allMarkersObject_gmap['path']["line_"+ssName];
-<<<<<<< HEAD
-=======
-
->>>>>>> gmap_tools
 
 					if(ss_marker) {
 						ss_marker.setMap(mapInstance);
@@ -4235,32 +4166,31 @@ function devicePlottingClass_gmap() {
 					}
 				}
 				
+				if(bs_marker) {
+					bs_marker.setMap(mapInstance);
+					currently_plotted_bs_ss_markers.push(bs_marker);
+				}
+
 				if(sector_device) {
 					sector_device.setMap(mapInstance);
 				}
 
-<<<<<<< HEAD
 				if(sector_polygon) {
 					sector_polygon.setMap(mapInstance);
 				}
 
-				if(bs_marker) {
-					bs_marker.setMap(mapInstance);
-					currently_plotted_bs_ss_markers.push(bs_marker);
-=======
-					/*Loop to show/hide points connected to SS*/
-					for(var m=0;m<ss_connected_points.length;m++) {
-						var point = point_data_obj[ss_connected_points[m]],
-							line = line_data_obj[ss_connected_points[m]],
-							connected_info = point_data_obj[ss_connected_points[m]].connected_point_info,
-							pt_bs_name = connected_info ? $.trim(JSON.parse(connected_info).bs_name) : '',
-							pt_ss_name = connected_info ? $.trim(JSON.parse(connected_info).ss_name) : '',
-							pt_sector_name = connected_info ? $.trim(JSON.parse(connected_info).sector_name) : '';
+				/*Loop to show/hide points connected to SS*/
+				for(var m=0;m<ss_connected_points.length;m++) {
+					var point = point_data_obj[ss_connected_points[m]],
+						line = line_data_obj[ss_connected_points[m]],
+						connected_info = point_data_obj[ss_connected_points[m]].connected_point_info,
+						pt_bs_name = connected_info ? $.trim(JSON.parse(connected_info).bs_name) : '',
+						pt_ss_name = connected_info ? $.trim(JSON.parse(connected_info).ss_name) : '',
+						pt_sector_name = connected_info ? $.trim(JSON.parse(connected_info).sector_name) : '';
 
-						if(pt_bs_name == bsName && pt_ss_name == ssName && pt_sector_name == sectorName) {
-							point.setMap(mapInstance);
-							line.setMap(mapInstance);
-						}
+					if(pt_bs_name == bsName && pt_ss_name == ssName && pt_sector_name == sectorName) {
+						point.setMap(mapInstance);
+						line.setMap(mapInstance);
 					}
 				}
 
@@ -4275,22 +4205,7 @@ function devicePlottingClass_gmap() {
 						point.setMap(mapInstance);
 						line.setMap(mapInstance);
 					}
->>>>>>> gmap_tools
 				}
-
-				if(bs_marker) {
-					bs_marker.setMap(mapInstance);
-					currently_plotted_bs_ss_markers.push(bs_marker);
-				}
-
-				if(sector_device) {
-					sector_device.setMap(mapInstance);
-				}
-
-				if(sector_polygon) {
-					sector_polygon.setMap(mapInstance);
-				}
-
 			}
 		}
 
