@@ -3360,10 +3360,10 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                 alias = ""
 
                 # antenna name
-                name = '{}'.format(special_chars_name_sanitizer_with_lower_case(row['Circuit ID']) if 'Circuit ID' in row.keys() else "")
+                name = '{}'.format(special_chars_name_sanitizer_with_lower_case(row['Sector ID']) if 'Sector ID' in row.keys() else "")
 
                 # antenna alias
-                alias = '{}'.format(circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else "")
+                alias = '{}'.format(circuit_id_sanitizer(row['Sector ID']) if 'Sector ID' in row.keys() else "")
 
                 # sub station antenna data
                 substation_antenna_data = {
@@ -3446,6 +3446,18 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
             except Exception as e:
                 customer = ""
 
+            # ------------------------------ GET SS SECTOR ------------------------------
+            # ss sector
+            sector = ""
+
+            try:
+                ss_bs_ip = ip_sanitizer(row['AP IP'] if 'AP IP' in row else "")
+                print "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ss_bs_ip - ", ss_bs_ip
+                sector_configured_on_device = Device.objects.get(ip_address=ss_bs_ip)
+                sector = Sector.objects.get(sector_configured_on=sector_configured_on_device)
+            except Exception as e:
+                logger.info(e.message)
+
             try:
                 # ------------------------------- Circuit -------------------------------
                 # initialize name
@@ -3453,7 +3465,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
 
                 # initialize alias
                 alias = ""
-                
+
                 # sanitize circuit name
                 name = special_chars_name_sanitizer_with_lower_case(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
 
@@ -3469,7 +3481,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                     'name': name,
                     'alias': alias,
                     'circuit_id': circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else "",
-                    'sector': "",
+                    'sector': sector,
                     'customer': customer,
                     'sub_station': substation,
                     'qos_bandwidth': row['QOS (BW)'] if 'QOS (BW)' in row.keys() else "",
