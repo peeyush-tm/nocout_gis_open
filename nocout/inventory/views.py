@@ -1492,7 +1492,6 @@ class CircuitList(ListView):
         """
         context = super(CircuitList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
             {'mData': 'sector__base_station__name', 'sTitle': 'Base Station', 'sWidth': 'auto'},
@@ -1516,9 +1515,9 @@ class CircuitListingTable(BaseDatatableView):
     Class based View to render Circuit Data table.
     """
     model = Circuit
-    columns = ['name', 'alias', 'circuit_id','sector__base_station__name', 'sector__name', 'customer__name',
+    columns = ['alias', 'circuit_id','sector__base_station__name', 'sector__name', 'customer__name',
                'sub_station__name', 'date_of_acceptance', 'description']
-    order_columns = ['name', 'alias', 'circuit_id','sector__base_station__name', 'sector__name', 'customer__name',
+    order_columns = ['alias', 'circuit_id','sector__base_station__name', 'sector__name', 'customer__name',
                      'sub_station__name', 'date_of_acceptance', 'description']
 
     def filter_queryset(self, qs):
