@@ -2574,7 +2574,8 @@ class ThematicSettingsCreate(CreateView):
         self.object = form.save()
         self.object.icon_settings=icon_settings_values_list
         self.object.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        verb_string = "Create Thematic Settings : %s" %(self.object.alias)
+        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(ThematicSettingsCreate.success_url)
 
 
@@ -2608,7 +2609,7 @@ class ThematicSettingsUpdate(UpdateView):
         self.object.save()
         # self.object = form.save()
         if changed_fields_dict:
-            verb_string = 'Changed values of ThematicSettings : %s from initial values ' % (self.object.name) + ', '.join(
+            verb_string = 'Update Thematic Settings : %s, ' % (self.object.alias) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
                           ' to ' + \
