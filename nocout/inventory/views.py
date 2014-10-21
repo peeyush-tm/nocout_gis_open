@@ -281,7 +281,6 @@ class AntennaList(ListView):
         """
         context = super(AntennaList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'height', 'sTitle': 'Height', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'polarization', 'sTitle': 'Polarization', 'sWidth': 'auto', },
@@ -302,8 +301,8 @@ class AntennaListingTable(BaseDatatableView):
     Class based View to render Antenna Data table.
     """
     model = Antenna
-    columns = ['name', 'alias', 'height', 'polarization', 'tilt', 'beam_width', 'azimuth_angle']
-    order_columns = ['name', 'alias', 'height', 'polarization', 'tilt', 'beam_width', 'azimuth_angle']
+    columns = ['alias', 'height', 'polarization', 'tilt', 'beam_width', 'azimuth_angle']
+    order_columns = ['alias', 'height', 'polarization', 'tilt', 'beam_width', 'azimuth_angle']
 
     def filter_queryset(self, qs):
         """
