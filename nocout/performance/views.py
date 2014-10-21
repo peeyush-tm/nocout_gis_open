@@ -427,7 +427,7 @@ class LivePerformanceListing(BaseDatatableView):
     #     return device_list
 
 
-    def prepare_results(self, qs):
+    def prepare_results(self, qs, multi_proc=False):
         """
         Preparing the final result after fetching from the data base to render on the data table.
 
@@ -472,45 +472,78 @@ class LivePerformanceListing(BaseDatatableView):
             #Fetching the data for the device w.r.t to their machine.
             ## multi processing module here
             ## to fetch the deice results from corrosponding machines
-
-            # for machine, machine_device_list in machine_dict.items():
-            # perf_result = self.get_performance_data(machine_device_list, machine)
             model_is = self.model
-            perf_result = []
-            q = Queue()
-            jobs = [
-                Process(
-                    target=get_performance_data,
-                    args=(q,machine_device_list, machine,model_is)
-                ) for machine, machine_device_list in machine_dict.items()
-            ]
+            processed = []
+            if multi_proc:
+                model_is = self.model
+                perf_result = []
+                q = Queue()
+                jobs = [
+                    Process(
+                        target=get_multiprocessing_performance_data,
+                        args=(q,machine_device_list, machine,model_is)
+                    ) for machine, machine_device_list in machine_dict.items()
+                ]
 
-            for j in jobs:
-                j.start()
-            for k in jobs:
-                k.join()
+                for j in jobs:
+                    j.start()
+                for k in jobs:
+                    k.join()
 
-            while True:
-                if not q.empty():
-                    perf_result.append(q.get())
-                else:
-                    break
+                while True:
+                    if not q.empty():
+                        # perf_result.append(q.get())
+                        self.map_results(q.get(),qs)
+                    else:
+                        break
 
-            for dct in qs:
-                for p_result in perf_result:
-                    for p_res in p_result:
-                        result = p_result[p_res]
-                        if dct["device_name"] == result['device_name']:
-                            dct["packet_loss"] = result["packet_loss"]
-                            dct["latency"] = result["latency"]
-                            dct["last_updated"] = result["last_updated"]
-                            dct["last_updated_date"] = result["last_updated_date"]
-                            dct["last_updated_time"] = result["last_updated_time"]
+                # for dct in qs:
+                #     if dct["device_name"] not in processed:
+                #         processed.append(dct["device_name"])
+                #         for p_result in perf_result:
+                #             for p_res in p_result:
+                #                 if p_res not in processed:
+                #                     processed.append(p_res)
+                #                     result = p_result[p_res]
+                #                     if dct["device_name"] == result['device_name']:
+                #                         dct["packet_loss"] = result["packet_loss"]
+                #                         dct["latency"] = result["latency"]
+                #                         dct["last_updated"] = result["last_updated"]
+
+            else:
+                for machine, machine_device_list in machine_dict.items():
+                    perf_result = get_performance_data(machine_device_list, machine, model_is)
+                    self.map_results(perf_result,qs)
+                    # for p_result in perf_result:
+                    #     if p_result not in processed:
+                    #         processed.append(p_result)
+                    #         for dct in qs:
+                    #             result = perf_result[p_result]
+                    #             if dct["device_name"] == p_result:
+                    #                 dct["packet_loss"] = result["packet_loss"]
+                    #                 dct["latency"] = result["latency"]
+                    #                 dct["last_updated"] = result["last_updated"]
+
 
             #sorting the dict in the descending order for the qs prepared finally.
             sorted_qs = sorted(qs, key=itemgetter('last_updated'), reverse=True)
             return sorted_qs
         return device_list
+
+    def map_results(self,perf_result,qs):
+        """
+        """
+        processed = []
+        for p_result in perf_result:
+            if p_result not in processed:
+                processed.append(p_result)
+                for dct in qs:
+                    result = perf_result[p_result]
+                    if dct["device_name"] == p_result:
+                        dct["packet_loss"] = result["packet_loss"]
+                        dct["latency"] = result["latency"]
+                        dct["last_updated"] = result["last_updated"]
+
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -547,7 +580,7 @@ class LivePerformanceListing(BaseDatatableView):
             qs = list(qs)
 
         # prepare output data
-        aaData = self.prepare_results(qs)
+        aaData = self.prepare_results(qs, multi_proc=True)
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
@@ -1537,7 +1570,58 @@ def prepare_query(table_name=None, devices=None, data_sources=["pl", "rta"], col
 
     return query
 
+def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"], columns=None, condition=None):
+    """
 
+    :return:
+    """
+    in_string = lambda x: "'" + str(x) + "'"
+    query = """
+        SELECT table_1.id as id,
+            table_1.service_name as service_name,
+            table_1.device_name as device_name,
+            table_1.current_value as pl,
+            table_2.current_value as rta,
+            table_1.sys_timestamp
+        from (
+        SELECT `id`,`service_name`,`device_name`,`data_source`,`current_value`,`sys_timestamp`
+        FROM
+            (
+                SELECT `id`,
+                `service_name`,
+                `device_name`,
+                `data_source`,
+                `current_value`,
+                `sys_timestamp`
+                FROM `performance_networkstatus`
+                WHERE
+                    `performance_networkstatus`.`device_name` in ({0})
+                    AND `performance_networkstatus`.`data_source` in ( 'pl','rta' )
+            ORDER BY `performance_networkstatus`.sys_timestamp DESC) as `derived_table`
+        GROUP BY `derived_table`.`device_name`, `derived_table`.`data_source`
+        ) as table_1
+        join (
+            SELECT `id`,`service_name`,`device_name`,`data_source`,`current_value`,`sys_timestamp`
+            FROM
+                (
+                    SELECT `id`,
+                    `service_name`,
+                    `device_name`,
+                    `data_source`,
+                    `current_value`,
+                    `sys_timestamp` FROM
+                    `performance_networkstatus`
+                    WHERE
+                    `performance_networkstatus`.`device_name` in ({0})
+                    AND `performance_networkstatus`.`data_source` in ( 'pl','rta' )
+                ORDER BY `performance_networkstatus`.sys_timestamp DESC) as `derived_table`
+            GROUP BY `derived_table`.`device_name`, `derived_table`.`data_source`
+        ) as table_2
+        on (table_1.device_name = table_2.device_name and table_1.data_source != table_2.data_source)
+        group by (table_1.device_name);
+    """.format(",".join(map(in_string, devices)))
+
+    return query
 #common function to get the devices
 
 def ptp_device_circuit_backhaul():
@@ -1965,7 +2049,80 @@ def gis_raw_inventory(device_list=[]):
 ## and fetch result from the desired machine
 ## max processes = 7 (number of total machines)
 
-def get_performance_data(q,device_list, machine, model):
+def get_multiprocessing_performance_data(q,device_list, machine, model):
+    """
+    Consolidated Performance Data from the Data base.
+
+    :param q:
+    :param machine:
+    :param model:
+    :param device_list:
+    :return:
+    """
+
+    device_result = {}
+    perf_result = {"packet_loss": "N/A",
+                   "latency": "N/A",
+                   "last_updated": "N/A",
+                   "last_updated_date": "N/A",
+                   "last_updated_time": "N/A"
+                  }
+
+    query = prepare_row_query(table_name="performance_networkstatus",
+                          devices=device_list,
+                          data_sources=["pl", "rta"],
+                          columns=["id",
+                                   "service_name",
+                                   "device_name",
+                                   "data_source",
+                                   "current_value",
+                                   "sys_timestamp"
+                          ]
+    )
+    # print(query)
+    performance_data = fetch_raw_result(query=query,machine=machine)#model.objects.raw(query).using(alias=machine)
+    # print(len(performance_data))
+    for device in device_list:
+        if device not in device_result:
+            device_result[device] = perf_result
+
+    processed = []
+    for device in device_result:
+        if device not in processed:
+            processed.append(device)
+            perf_result = {"packet_loss": "N/A",
+                           "latency": "N/A",
+                           "last_updated": "N/A",
+                           "last_updated_date": "N/A",
+                           "last_updated_time": "N/A",
+                           "device_name" : "N/A",
+            }
+
+            for data in performance_data:
+                if str(data['device_name']).strip().lower() == str(device).strip().lower():
+                    perf_result['device_name'] = data['device_name']
+
+                    # d_src = str(data['data_source']).strip().lower()
+                    # current_val = str(data['current_value'])
+
+                    # if d_src == "pl":
+                    perf_result["packet_loss"] = data['pl']
+                    # if d_src == "rta":
+                    perf_result["latency"] = data['rta']
+
+                    perf_result["last_updated"] = datetime.datetime.fromtimestamp(
+                        float(data['sys_timestamp'])
+                    ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
+
+                    device_result[device] = perf_result
+    # print(device_result)
+    try:
+        q.put(device_result)
+    except Exception as e:
+        print(e.message)
+
+
+def get_performance_data(device_list, machine, model):
     """
     Consolidated Performance Data from the Data base.
 
@@ -1981,7 +2138,7 @@ def get_performance_data(q,device_list, machine, model):
                    "last_updated_time": "N/A"
                   }
 
-    query = prepare_query(table_name="performance_networkstatus",
+    query = prepare_row_query(table_name="performance_networkstatus",
                           devices=device_list,
                           data_sources=["pl", "rta"],
                           columns=["id",
@@ -1992,41 +2149,41 @@ def get_performance_data(q,device_list, machine, model):
                                    "sys_timestamp"
                           ]
     )
-    performance_data = model.objects.raw(query).using(alias=machine)
 
+    performance_data = fetch_raw_result(query=query,machine=machine)#model.objects.raw(query).using(alias=machine)
+    # print(len(performance_data))
     for device in device_list:
         if device not in device_result:
             device_result[device] = perf_result
 
+    processed = []
     for device in device_result:
-        perf_result = {"packet_loss": "N/A",
-                       "latency": "N/A",
-                       "last_updated": "N/A",
-                       "last_updated_date": "N/A",
-                       "last_updated_time": "N/A",
-                       "device_name" : "N/A",
-        }
+        if device not in processed:
+            processed.append(device)
+            perf_result = {"packet_loss": "N/A",
+                           "latency": "N/A",
+                           "last_updated": "N/A",
+                           "last_updated_date": "N/A",
+                           "last_updated_time": "N/A",
+                           "device_name" : "N/A",
+            }
 
-        for data in performance_data:
+            for data in performance_data:
+                if str(data['device_name']).strip().lower() == str(device).strip().lower():
+                    perf_result['device_name'] = data['device_name']
 
-            if str(data.device_name).strip().lower() == str(device).strip().lower():
-                perf_result['device_name'] = data.device_name
+                    # d_src = str(data['data_source']).strip().lower()
+                    # current_val = str(data['current_value'])
 
-                d_src = str(data.data_source).strip().lower()
-                current_val = str(data.current_value)
+                    # if d_src == "pl":
+                    perf_result["packet_loss"] = data['pl']
+                    # if d_src == "rta":
+                    perf_result["latency"] = data['rta']
 
-                if d_src == "pl":
-                    perf_result["packet_loss"] = current_val
-                if d_src == "rta":
-                    perf_result["latency"] = current_val
+                    perf_result["last_updated"] = datetime.datetime.fromtimestamp(
+                        float(data['sys_timestamp'])
+                    ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
 
-                perf_result["last_updated"] = datetime.datetime.fromtimestamp(
-                    float(data.sys_timestamp)
-                ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-
-                device_result[device] = perf_result
-
-    try:
-        q.put(device_result)
-    except Exception as e:
-        print(e.message)
+                    device_result[device] = perf_result
+    # print device_result
+    return device_result
