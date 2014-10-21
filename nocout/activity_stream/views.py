@@ -108,7 +108,7 @@ class ActionListingTable(BaseDatatableView):
                 for key, val in dct.items():
                     if key=='id':
                         action_object = Action.objects.get(pk= val)
-                        dct['__unicode__'] = action_object.__unicode__()
+                        dct['__unicode__'] = action_object.verb
                         dct['actor'] = action_object.actor.username
                     else:
                         dct[key] = val
