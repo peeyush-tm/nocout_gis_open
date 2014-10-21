@@ -2398,7 +2398,6 @@ class ThematicSettingsList(ListView):
         """
         context = super(ThematicSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name',                    'sTitle': 'Name',                      'sWidth': 'auto'},
             {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'auto'},
             {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'auto'},
             {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto'},
@@ -2426,8 +2425,8 @@ class ThematicSettingsListingTable(BaseDatatableView):
     Class based View to render Thematic Settings Data table.
     """
     model = ThematicSettings
-    columns = ['name', 'alias', 'threshold_template', 'icon_settings']
-    order_columns = ['name', 'alias', 'threshold_template']
+    columns = ['alias', 'threshold_template', 'icon_settings']
+    order_columns = ['alias', 'threshold_template']
     def filter_queryset(self, qs):
         """
         The filtering of the queryset with respect to the search keyword entered.
