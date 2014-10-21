@@ -357,3 +357,27 @@ class GISInventoryBulkImport(models.Model):
         """
         return self.original_filename
 
+#*********** L2 Reports Model *******************
+class CircuitL2Report(models.Model):
+    
+    # function to modify name and path of uploaded file
+    def uploaded_report_name(instance, filename):
+        timestamp = time.time()
+        full_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
+        year_month_date = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
+
+        # modified filename
+        filename = "{}_{}".format(full_time, filename)
+
+        # modified path where file is uploaded
+        path = "uploaded/l2"
+
+        return '{}/{}/{}'.format(path, year_month_date, filename)
+
+    name = models.CharField('Name', max_length=250, unique=True)
+    file_name = models.ImageField(upload_to=uploaded_report_name)
+    added_on = models.DateTimeField('Added On', null=True, blank=True, auto_now_add=True)
+    user_id = models.ForeignKey(UserProfile)
+    circuit_id = models.ForeignKey(Circuit)
+    # user_id = models.IntegerField('User Id')
+    # circuit_id = models.IntegerField('Circuit Id')

@@ -10,7 +10,7 @@ from nocout.widgets import IntReturnModelChoiceField
 from organization.models import Organization
 from user_group.models import UserGroup
 from django.forms.util import ErrorList
-from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
+from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit, CircuitL2Report
 from django.utils.html import escape
 import logging
 logger = logging.getLogger(__name__)
@@ -737,6 +737,75 @@ class CircuitForm(forms.ModelForm):
     def clean(self):
         """
         Validations for circuit form
+        """
+        name = self.cleaned_data.get('name')
+
+        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
+        try:
+            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
+                self._errors['name'] = ErrorList(
+                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
+        except Exception as e:
+            logger.info(e.message)
+        return self.cleaned_data
+
+
+#******************************* Circuit L2 Reports Form **************************
+class CircuitL2ReportForm(forms.ModelForm):
+    """
+    Class Based View CircuitL2Report Model form to update and create.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(CircuitL2ReportForm, self).__init__(*args, **kwargs)
+        self.fields['name'].required = True
+        self.fields['file_name'].required = True
+
+        try:
+            if 'instance' in kwargs:
+                self.id = kwargs['instance'].id
+        except Exception as e:
+            logger.info(e.message)
+
+        for name, field in self.fields.items():
+            if field.widget.attrs.has_key('class'):
+                field.widget.attrs['class'] += ' tip-focus form-control'
+                field.widget.attrs['data-toggle'] = 'tooltip'
+                field.widget.attrs['data-placement'] = 'right'
+                field.widget.attrs['title'] = field.help_text
+                field.widget.attrs['style'] = 'padding:0px 12px;height:40px;'
+            else:
+                field.widget.attrs.update({'class': ' tip-focus form-control'})
+                field.widget.attrs.update({'data-toggle': 'tooltip'})
+                field.widget.attrs.update({'data-placement': 'right'})
+                field.widget.attrs.update({'title': field.help_text})
+                field.widget.attrs.update({'style' : 'padding:0px 12px;height:40px;'})
+
+    class Meta:
+        """
+        Meta Information
+        """
+        model = CircuitL2Report
+        exclude = ['added_on', 'user_id', 'circuit_id']
+
+    def clean_name(self):
+        """
+        Name unique validation
+        """
+        name = self.cleaned_data['name']
+        names = CircuitL2Report.objects.filter(name=name)
+        try:
+            if self.id:
+                names = names.exclude(pk=self.id)
+        except Exception as e:
+            logger.info(e.message)
+        if names.count() > 0:
+            raise ValidationError('This name is already in use.')
+        return name
+
+    def clean(self):
+        """
+        Validations for CircuitL2Report form
         """
         name = self.cleaned_data.get('name')
 
