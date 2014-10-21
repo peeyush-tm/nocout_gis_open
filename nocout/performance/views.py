@@ -580,7 +580,7 @@ class LivePerformanceListing(BaseDatatableView):
             qs = list(qs)
 
         # prepare output data
-        aaData = self.prepare_results(qs, multi_proc=True)
+        aaData = self.prepare_results(qs, multi_proc=False)
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
