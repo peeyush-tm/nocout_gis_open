@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import ast, sys
 import json, logging
 import urllib

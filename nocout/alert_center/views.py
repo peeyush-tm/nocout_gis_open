@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json, logging, datetime, xlwt, csv
 from django.db.models import Count
 from django.db.models.query import ValuesQuerySet
