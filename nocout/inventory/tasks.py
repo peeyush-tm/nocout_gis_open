@@ -6449,7 +6449,7 @@ def create_sector(sector_payload):
         description = sector_payload['description'] if sector_payload['description'] else ""
 
     if name:
-        if name not in ['NA', 'na', 'N/A', 'n/a']:
+        if name not in ['NA', 'na', 'N/A', 'n/a', '_']:
             # ---------------------------- UPDATING SECTOR -----------------------------
             try:
                 # update sector if it exists in database
