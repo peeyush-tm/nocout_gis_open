@@ -42,7 +42,8 @@ import xlwt
 import logging
 from django.template import RequestContext
 from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory, \
-    bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory
+    bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory, \
+    bulk_upload_wimax_ss_inventory
 
 logger = logging.getLogger(__name__)
 
@@ -2968,6 +2969,10 @@ class BulkUploadValidData(View):
                     result = bulk_upload_pmp_bs_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
                 elif kwargs['sheetname'] == 'PMP SM':
                     result = bulk_upload_pmp_sm_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
+                elif kwargs['sheetname'] == 'Wimax BS':
+                    result = bulk_upload_wimax_bs_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
+                elif kwargs['sheetname'] == 'Wimax SS':
+                    result = bulk_upload_wimax_ss_inventory.delay(kwargs['id'], organization, kwargs['sheettype'])
                 else:
                     result = ""
         except Exception as e:
@@ -3157,7 +3162,7 @@ class GISInventoryBulkImportListingTable(BaseDatatableView):
             dct.update(actions='<a href="/bulk_import/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                                 <a href="/bulk_import/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.get('id')))
             try:
-                sheet_names_list = ['PTP', 'PMP BS', 'PMP SM', 'PTP BH']
+                sheet_names_list = ['PTP', 'PMP BS', 'PMP SM', 'PTP BH', 'Wimax BS', 'Wimax SS']
                 if dct.get('sheet_name'):
                     if dct.get('sheet_name') in sheet_names_list:
                         dct.update(bulk_upload_actions='<a href="/bulk_import/bulk_upload_valid_data/valid/{0}/{1}" class="bulk_import_link" title="Upload Valid Inventory"><i class="fa fa-upload text-success"></i></a>\

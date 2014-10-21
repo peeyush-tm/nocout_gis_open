@@ -3302,7 +3302,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
             try:
                 # ----------------------------- Base Station Device ---------------------------
-                if ip_sanitizer(row['ODU IP']):
+                if ip_sanitizer(row['IDU IP']):
                     # initialize name
                     name = ""
 
@@ -3360,7 +3360,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                         'device_vendor': 4,
                         'device_model': 4,
                         'device_type': 6,
-                        'ip': row['ODU IP'] if 'ODU IP' in row.keys() else "",
+                        'ip': row['IDU IP'] if 'IDU IP' in row.keys() else "",
                         'mac': "",
                         'state': row['State'] if 'State' in row.keys() else "",
                         'city': row['City'] if 'City' in row.keys() else "",
@@ -3858,8 +3858,902 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
     # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
     machine_and_site_info = get_machine_details('ospf', [1])
 
-    # get machine and associated sites details in dictionary; pass list of machine numbers in as argument
-    machine_and_site_info = get_machine_details('ospf', [1])
+    # id of last inserted row in 'device' model
+    device_latest_id = 0
+
+    # get device latest inserted in schema
+    try:
+        device_latest_id = Device.objects.latest('id').id
+    except Exception as e:
+        logger.info("No device is added in database till now. Exception: ", e.message)
+
+    try:
+        for row in complete_d:
+            # increment device latest id by 1
+            device_latest_id += 1
+
+            # initialize variables
+            sub_station = ""
+            substation_antenna = ""
+            sector = ""
+            customer = ""
+            circuit = ""
+
+            try:
+                # ----------------------------- Sub Station Device ---------------------------
+                if ip_sanitizer(row['SS IP']):
+                    # initialize name
+                    name = ""
+
+                    # initialize alias
+                    alias = ""
+
+                    # get machine and site
+                    machine_and_site = ""
+                    try:
+                        machine_and_site = get_machine_and_site(machine_and_site_info)
+                    except Exception as e:
+                        logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+
+                    if machine_and_site:
+                        # get machine
+                        machine = ""
+                        try:
+                            machine = machine_and_site['machine']
+                            machine_name = machine.name
+                        except Exception as e:
+                            machine = ""
+                            logger.info("Unable to get machine. Exception:", e.message)
+
+                        # get site_instance
+                        site = ""
+                        try:
+                            site = machine_and_site['site']
+                            site_name = site.name
+                            for site_dict in machine_and_site_info[machine_name]:
+                                # 'k' is site name and 'v' is number of associated devices with that site
+                                for k, v in site_dict.iteritems():
+                                    if k == site_name:
+                                        # increment number of devices corresponding to the site associated with
+                                        # current device in 'machine_and_site_info' dictionary
+                                        site_dict[k] += 1
+                        except Exception as e:
+                            site = ""
+                            logger.info("Unable to get site. Exception:", e.message)
+
+                    # device name
+                    name = device_latest_id
+                    # name = special_chars_name_sanitizer_with_lower_case(row['Circuit ID']) if 'Circuit ID' in row.keys() else ""
+
+                    # device alias
+                    alias = '{}'.format(circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else "")
+
+                    # sub station data
+                    sub_station_data = {
+                        'device_name': name,
+                        'device_alias': alias,
+                        'organization': organization,
+                        'machine': machine,
+                        'site': site,
+                        'device_technology': 4,
+                        'device_vendor': 4,
+                        'device_model': 5,
+                        'device_type': 9,
+                        'ip': row['SS IP'] if 'SS IP' in row.keys() else "",
+                        'mac': row['MAC'] if 'MAC' in row.keys() else "",
+                        'state': "",
+                        'city': "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'address': row['Customer Address'] if 'Customer Address' in row.keys() else "",
+                        'description': 'Sub Station created on {}.'.format(full_time)
+                    }
+                    # sub station object
+                    sub_station = create_device(sub_station_data)
+
+                    # increment device latest id by 1
+                    device_latest_id += 1
+                else:
+                    sub_station = ""
+            except Exception as e:
+                sub_station = ""
+
+            try:
+                # ------------------------------- Sub Station Antenna -------------------------------
+                # initialize name
+                name = ""
+
+                # initialize alias
+                alias = ""
+
+                # antenna name
+                name = '{}'.format(special_chars_name_sanitizer_with_lower_case(row['Circuit ID']) if 'Circuit ID' in row.keys() else "")
+
+                # antenna alias
+                alias = '{}'.format(circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else "")
+
+                # sub station antenna data
+                substation_antenna_data = {
+                    'antenna_name': name,
+                    'antenna_alias': alias,
+                    'ip': row['SS IP'] if 'SS IP' in row.keys() else "",
+                    'antenna_type': row['Antenna Type'] if 'Antenna Type' in row.keys() else "",
+                    'height': row['Antenna Height'] if 'Antenna Height' in row.keys() else "",
+                    'polarization': row['Polarization'] if 'Polarization' in row.keys() else "",
+                    'beam_width': row['Antenna Beamwidth'] if 'Antenna Beamwidth' in row.keys() else "",
+                    'reflector': row['Lens/Reflector'] if 'Lens/Reflector' in row.keys() else "",
+                    'mount_type': row['SS Mount Type'] if 'SS Mount Type' in row.keys() else "",
+                    'description': 'Sector Antenna created on {}.'.format(full_time)
+                }
+                # sub station antenna object
+                substation_antenna = create_antenna(substation_antenna_data)
+            except Exception as e:
+                substation_antenna = ""
+
+            try:
+                # ------------------------------- Sub Station -------------------------------
+                # initialize name
+                name = ""
+
+                # initialize alias
+                alias = ""
+
+                # sub station data
+                # sanitize bs name
+                name = special_chars_name_sanitizer_with_lower_case(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
+                alias = '{}'.format(circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else "")
+                substation_data = {
+                    'name': name,
+                    'alias': alias,
+                    'device': sub_station,
+                    'antenna': substation_antenna,
+                    'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
+                    'tower_height': row['Tower/Pole Height'] if 'Tower/Pole Height' in row.keys() else "",
+                    'ethernet_extender': row['Ethernet Extender'] if 'Ethernet Extender' in row.keys() else "",
+                    'cable_length': row['Cable Length'] if 'Cable Length' in row.keys() else "",
+                    'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                    'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                    'mac_address': row['MAC'] if 'MAC' in row.keys() else "",
+                    'address': row['Customer Address'] if 'Customer Address' in row.keys() else "",
+                    'description': 'Sub Station created on {}.'.format(full_time)
+                }
+
+                # sub station object
+                substation = ""
+                if name and alias:
+                    substation = create_substation(substation_data)
+            except Exception as e:
+                substation = ""
+
+            try:
+                # ------------------------------- Customer -------------------------------
+                # initialize name
+                name = ""
+
+                # initialize alias
+                alias = ""
+
+                # customer data
+                # sanitize customer name
+                name = "{}_{}".format(special_chars_name_sanitizer_with_lower_case(row['Customer Name'] if 'Customer Name' in row.keys() else ""),
+                                      special_chars_name_sanitizer_with_lower_case(row['Circuit ID'] if 'Circuit ID' in row.keys() else ""))
+                alias = row['Customer Name'] if 'Customer Name' in row.keys() else ""
+
+                customer_data = {
+                    'name': name,
+                    'alias': alias,
+                    'address': row['Customer Address'] if 'Customer Address' in row.keys() else "",
+                    'description': 'Customer created on {}.'.format(full_time)
+                }
+
+                # customer object
+                customer = ""
+                if name:
+                    customer = create_customer(customer_data)
+            except Exception as e:
+                customer = ""
+
+            # ------------------------------ GET SS SECTOR ------------------------------
+            # ss sector
+            sector = ""
+
+            try:
+                ss_bs_ip = ip_sanitizer(row['AP IP'] if 'AP IP' in row else "")
+                sector_configured_on_device = Device.objects.get(ip_address=ss_bs_ip)
+                sector = Sector.objects.get(sector_configured_on=sector_configured_on_device)
+            except Exception as e:
+                logger.info(e.message)
+
+            try:
+                # ------------------------------- Circuit -------------------------------
+                # initialize name
+                name = ""
+
+                # initialize alias
+                alias = ""
+
+                # sanitize circuit name
+                name = special_chars_name_sanitizer_with_lower_case(row['Circuit ID'] if 'Circuit ID' in row.keys() else "")
+
+                # validate date of acceptance
+                if 'Date Of Acceptance' in row.keys():
+                    date_of_acceptance = validate_date(row['Date Of Acceptance'])
+                else:
+                    date_of_acceptance = ""
+
+                # circuit data
+                alias = circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else ""
+                circuit_data = {
+                    'name': name,
+                    'alias': alias,
+                    'circuit_id': circuit_id_sanitizer(row['Circuit ID']) if 'Circuit ID' in row.keys() else "",
+                    'sector': sector,
+                    'customer': customer,
+                    'sub_station': substation,
+                    'qos_bandwidth': row['QOS (BW)'] if 'QOS (BW)' in row.keys() else "",
+                    'dl_rssi_during_acceptance': row['RSSI During Acceptance'] if 'RSSI During Acceptance' in row.keys() else "",
+                    'dl_cinr_during_acceptance': row['CINR During Acceptance'] if 'CINR During Acceptance' in row.keys() else "",
+                    'date_of_acceptance': date_of_acceptance,
+                    'description': 'Circuit created on {}.'.format(full_time)
+                }
+
+                # circuit object
+                circuit = ""
+                if name and alias:
+                    circuit = create_circuit(circuit_data)
+            except Exception as e:
+                circuit = ""
+
+        # updating upload status in 'GISInventoryBulkImport' model
+        gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
+        gis_obj.upload_status = 2
+        gis_obj.save()
+    except Exception as e:
+        gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
+        gis_obj.upload_status = 3
+        gis_obj.save()
+
+
+@task()
+def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
+    # gis bulk upload id
+    gis_id = gis_id
+
+    # current user organization
+    organization = organization
+
+    # timestamp
+    timestamp = time.time()
+    full_time = datetime.datetime.fromtimestamp(timestamp).strftime('%d-%b-%Y at %H:%M:%S')
+
+    # get object for 'GISInventoryBulkImport' model
+    gis_bu_obj = ""
+    try:
+        gis_bu_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
+    except Exception as e:
+        logger.info(e.message)
+
+    # get valid or invalid sheet based upon sheettype
+    if sheettype == 'valid':
+        file_path = gis_bu_obj.valid_filename
+        file_path = "".join(file_path.split("/media"))
+        book = xlrd.open_workbook(MEDIA_ROOT + file_path)
+    elif sheettype == 'invalid':
+        file_path = gis_bu_obj.invalid_filename
+        file_path = "".join(file_path.split("/media"))
+        book = xlrd.open_workbook(MEDIA_ROOT + file_path)
+    else:
+        book = ""
+
+    sheet = book.sheet_by_index(0)
+
+    keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
+    keys_list = [x.encode('utf-8').strip() for x in keys]
+    complete_d = list()
+
+    # fetching excel rows values as list of key value pair dictionaries where keys are from first row of excel
+    # and values are form other remaining rows
+    for row_index in xrange(1, sheet.nrows):
+        d = dict()
+        for col_index in xrange(len(keys)):
+            if isinstance(sheet.cell(row_index, col_index).value, str):
+                d[keys[col_index].encode('utf-8').strip()] = unicode(sheet.cell(row_index, col_index).value).strip()
+            elif isinstance(sheet.cell(row_index, col_index).value, unicode):
+                d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value.strip()
+            else:
+                d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value
+
+        complete_d.append(d)
+
+    # get machine and associated sites details in dictionary
+    # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
+    machine_and_site_info = get_machine_details('ospf', [2])
+
+    # get 'ospf5' machine and associated sites a in dictionary
+    # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
+    ospf5_machine_and_site_info = get_machine_details('ospf', [5])
+
+    # id of last inserted row in 'device' model
+    device_latest_id = 0
+
+    # get device latest inserted in schema
+    try:
+        device_latest_id = Device.objects.latest('id').id
+    except Exception as e:
+        logger.info("No device is added in database till now. Exception: ", e.message)
+
+    try:
+        for row in complete_d:
+            # increment device latest id by 1
+            device_latest_id += 1
+
+            # initialize variables
+            base_station = ""
+            bs_switch = ""
+            aggregation_switch = ""
+            bs_converter = ""
+            pop_converter = ""
+            backhaul = ""
+            basestation = ""
+            sector = ""
+
+            try:
+                # ----------------------------- Base Station Device ---------------------------
+                if ip_sanitizer(row['ODU IP']):
+                    # initialize name
+                    name = ""
+
+                    # initialize alias
+                    alias = ""
+
+                    # get machine and site
+                    machine_and_site = ""
+                    try:
+                        machine_and_site = get_machine_and_site(machine_and_site_info)
+                    except Exception as e:
+                        logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+
+                    if machine_and_site:
+                        # get machine
+                        machine = ""
+                        try:
+                            machine = machine_and_site['machine']
+                            machine_name = machine.name
+                        except Exception as e:
+                            machine = ""
+                            logger.info("Unable to get machine. Exception:", e.message)
+
+                        # get site_instance
+                        site = ""
+                        try:
+                            site = machine_and_site['site']
+                            site_name = site.name
+                            for site_dict in machine_and_site_info[machine_name]:
+                                # 'k' is site name and 'v' is number of associated devices with that site
+                                for k, v in site_dict.iteritems():
+                                    if k == site_name:
+                                        # increment number of devices corresponding to the site associated with
+                                        # current device in 'machine_and_site_info' dictionary
+                                        site_dict[k] += 1
+                        except Exception as e:
+                            site = ""
+                            logger.info("Unable to get site. Exception:", e.message)
+
+                    # device name
+                    name = device_latest_id
+                    # name = special_chars_name_sanitizer_with_lower_case(row['Sector ID'] if 'Sector ID' in row.keys() else "")
+
+                    # device alias
+                    alias = circuit_id_sanitizer(row['Sector ID']) if 'Sector ID' in row.keys() else ""
+
+                    # base station data
+                    base_station_data = {
+                        'device_name': name,
+                        'device_alias': alias,
+                        'organization': organization,
+                        'machine': machine,
+                        'site': site,
+                        'device_technology': 4,
+                        'device_vendor': 4,
+                        'device_model': 4,
+                        'device_type': 6,
+                        'ip': row['ODU IP'] if 'ODU IP' in row.keys() else "",
+                        'mac': "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'address': row['Address'] if 'Address' in row.keys() else "",
+                        'description': 'Base Station created on {}.'.format(full_time)
+                    }
+                    # base station object
+                    base_station = create_device(base_station_data)
+
+                    # increment device latest id by 1
+                    device_latest_id += 1
+                else:
+                    base_station = ""
+            except Exception as e:
+                base_station = ""
+
+            try:
+                # ------------------------------ BS Switch -----------------------------
+                if ip_sanitizer(row['BS Switch IP']):
+                    # get machine and site
+                    machine_and_site = ""
+                    try:
+                        machine_and_site = get_machine_and_site(ospf5_machine_and_site_info)
+                    except Exception as e:
+                        logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+
+                    if machine_and_site:
+                        # get machine
+                        machine = ""
+                        try:
+                            machine = machine_and_site['machine']
+                            machine_name = machine.name
+                        except Exception as e:
+                            machine = ""
+                            logger.info("Unable to get machine. Exception:", e.message)
+
+                        # get site_instance
+                        site = ""
+                        try:
+                            site = machine_and_site['site']
+                            site_name = site.name
+                            for site_dict in ospf5_machine_and_site_info[machine_name]:
+                                # 'k' is site name and 'v' is number of associated devices with that site
+                                for k, v in site_dict.iteritems():
+                                    if k == site_name:
+                                        # increment number of devices corresponding to the site associated with
+                                        # current device in 'machine_and_site_info' dictionary
+                                        site_dict[k] += 1
+                        except Exception as e:
+                            site = ""
+                            logger.info("Unable to get site. Exception:", e.message)
+
+                    # base station data
+                    bs_switch_data = {
+                        # 'device_name': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
+                        'device_name': device_latest_id,
+                        'organization': organization,
+                        'machine': machine,
+                        'site': site,
+                        'device_technology': 7,
+                        'device_vendor': 9,
+                        'device_model': 12,
+                        'device_type': 12,
+                        'ip': row['BS Switch IP'] if 'BS Switch IP' in row.keys() else "",
+                        'mac': "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'address': row['Address'] if 'Address' in row.keys() else "",
+                        'description': 'BS Switch created on {}.'.format(full_time)
+                    }
+                    # base station object
+                    bs_switch = create_device(bs_switch_data)
+
+                    # increment device latest id by 1
+                    device_latest_id += 1
+                else:
+                    bs_switch = ""
+            except Exception as e:
+                bs_switch = ""
+
+            try:
+                # --------------------------- Aggregation Switch IP ---------------------------
+                if ip_sanitizer(row['Aggregation Switch']):
+                    # get machine and site
+                    machine_and_site = ""
+                    try:
+                        machine_and_site = get_machine_and_site(ospf5_machine_and_site_info)
+                    except Exception as e:
+                        logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+
+                    if machine_and_site:
+                        # get machine
+                        machine = ""
+                        try:
+                            machine = machine_and_site['machine']
+                            machine_name = machine.name
+                        except Exception as e:
+                            machine = ""
+                            logger.info("Unable to get machine. Exception:", e.message)
+
+                        # get site_instance
+                        site = ""
+                        try:
+                            site = machine_and_site['site']
+                            site_name = site.name
+                            for site_dict in ospf5_machine_and_site_info[machine_name]:
+                                # 'k' is site name and 'v' is number of associated devices with that site
+                                for k, v in site_dict.iteritems():
+                                    if k == site_name:
+                                        # increment number of devices corresponding to the site associated with
+                                        # current device in 'machine_and_site_info' dictionary
+                                        site_dict[k] += 1
+                        except Exception as e:
+                            site = ""
+                            logger.info("Unable to get site. Exception:", e.message)
+
+                    # aggregation switch data
+                    aggregation_switch_data = {
+                        # 'device_name': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
+                        'device_name': device_latest_id,
+                        'organization': organization,
+                        'machine': machine,
+                        'site': site,
+                        'device_technology': 7,
+                        'device_vendor': 9,
+                        'device_model': 12,
+                        'device_type': 12,
+                        'ip': row['Aggregation Switch'] if 'Aggregation Switch' in row.keys() else "",
+                        'mac': "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'address': row['Address'] if 'Address' in row.keys() else "",
+                        'description': 'Aggregation Switch created on {}.'.format(full_time)
+                    }
+                    #  aggregation switch object
+                    aggregation_switch = create_device(aggregation_switch_data)
+
+                    # increment device latest id by 1
+                    device_latest_id += 1
+                else:
+                    aggregation_switch = ""
+            except Exception as e:
+                aggregation_switch = ""
+
+            try:
+                # -------------------------------- BS Converter IP ---------------------------
+                if ip_sanitizer(row['BS Converter IP']):
+                    # get machine and site
+                    machine_and_site = ""
+                    try:
+                        machine_and_site = get_machine_and_site(ospf5_machine_and_site_info)
+                    except Exception as e:
+                        logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+
+                    if machine_and_site:
+                        # get machine
+                        machine = ""
+                        try:
+                            machine = machine_and_site['machine']
+                            machine_name = machine.name
+                        except Exception as e:
+                            machine = ""
+                            logger.info("Unable to get machine. Exception:", e.message)
+
+                        # get site_instance
+                        site = ""
+                        try:
+                            site = machine_and_site['site']
+                            site_name = site.name
+                            for site_dict in ospf5_machine_and_site_info[machine_name]:
+                                # 'k' is site name and 'v' is number of associated devices with that site
+                                for k, v in site_dict.iteritems():
+                                    if k == site_name:
+                                        # increment number of devices corresponding to the site associated with
+                                        # current device in 'machine_and_site_info' dictionary
+                                        site_dict[k] += 1
+                        except Exception as e:
+                            site = ""
+                            logger.info("Unable to get site. Exception:", e.message)
+
+                    # bs converter data
+                    bs_converter_data = {
+                        # 'device_name': row['BS Converter IP'] if 'BS Converter IP' in row.keys() else "",
+                        'device_name': device_latest_id,
+                        'organization': organization,
+                        'machine': machine,
+                        'site': site,
+                        'device_technology': 8,
+                        'device_vendor': 8,
+                        'device_model': 10,
+                        'device_type': 13,
+                        'ip': row['BS Converter IP'] if 'BS Converter IP' in row.keys() else "",
+                        'mac': "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'address': row['Address'] if 'Address' in row.keys() else "",
+                        'description': 'BS Converter created on {}.'.format(full_time)
+                    }
+                    # bs converter object
+                    bs_converter = create_device(bs_converter_data)
+
+                    # increment device latest id by 1
+                    device_latest_id += 1
+                else:
+                    bs_converter = ""
+            except Exception as e:
+                bs_converter = ""
+
+            try:
+                # -------------------------------- POP Converter IP ---------------------------
+                if ip_sanitizer(row['POP Converter IP']):
+                    # get machine and site
+                    machine_and_site = ""
+                    try:
+                        machine_and_site = get_machine_and_site(ospf5_machine_and_site_info)
+                    except Exception as e:
+                        logger.info("No machine and site returned by function 'get_machine_and_site'. Exception:", e.message)
+
+                    if machine_and_site:
+                        # get machine
+                        machine = ""
+                        try:
+                            machine = machine_and_site['machine']
+                            machine_name = machine.name
+                        except Exception as e:
+                            machine = ""
+                            logger.info("Unable to get machine. Exception:", e.message)
+
+                        # get site_instance
+                        site = ""
+                        try:
+                            site = machine_and_site['site']
+                            site_name = site.name
+                            for site_dict in ospf5_machine_and_site_info[machine_name]:
+                                # 'k' is site name and 'v' is number of associated devices with that site
+                                for k, v in site_dict.iteritems():
+                                    if k == site_name:
+                                        # increment number of devices corresponding to the site associated with
+                                        # current device in 'machine_and_site_info' dictionary
+                                        site_dict[k] += 1
+                        except Exception as e:
+                            site = ""
+                            logger.info("Unable to get site. Exception:", e.message)
+
+                    # pop converter data
+                    pop_converter_data = {
+                        # 'device_name': row['POP Converter IP'] if 'POP Converter IP' in row.keys() else "",
+                        'device_name': device_latest_id,
+                        'organization': organization,
+                        'machine': machine,
+                        'site': site,
+                        'device_technology': 8,
+                        'device_vendor': 8,
+                        'device_model': 10,
+                        'device_type': 13,
+                        'ip': row['POP Converter IP'] if 'POP Converter IP' in row.keys() else "",
+                        'mac': "",
+                        'state': row['State'] if 'State' in row.keys() else "",
+                        'city': row['City'] if 'City' in row.keys() else "",
+                        'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                        'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                        'address': row['Address'] if 'Address' in row.keys() else "",
+                        'description': 'POP Converter created on {}.'.format(full_time)
+                    }
+                    # pop converter object
+                    pop_converter = create_device(pop_converter_data)
+
+                    # increment device latest id by 1
+                    device_latest_id += 1
+                else:
+                    pop_converter = ""
+            except Exception as e:
+                pop_converter = ""
+
+            try:
+                # ------------------------------- Sector Antenna -------------------------------
+                # initialize name
+                name = ""
+
+                # initialize alias
+                alias = ""
+
+                # antenna name
+                name = '{}'.format(special_chars_name_sanitizer_with_lower_case(row['Sector ID']) if 'Sector ID' in row.keys() else "")
+
+                # antenna alias
+                alias = '{}'.format(circuit_id_sanitizer(row['Sector ID']) if 'Sector ID' in row.keys() else "")
+
+                # sector antenna data
+                sector_antenna_data = {
+                    'antenna_name': name,
+                    'antenna_alias': alias,
+                    'ip': row['ODU IP'] if 'ODU IP' in row.keys() else "",
+                    'tilt': row['Antenna Tilt'] if 'Antenna Tilt' in row.keys() else "",
+                    'height': row['Antenna Height'] if 'Antenna Height' in row.keys() else "",
+                    'beam_width': row['Antenna Beamwidth'] if 'Antenna Beamwidth' in row.keys() else "",
+                    'azimuth_angle': row['Azimuth'] if 'Azimuth' in row.keys() else "",
+                    'polarization': row['Polarization'] if 'Polarization' in row.keys() else "",
+                    'splitter_installed': row['Installation Of Splitter'] if 'Installation Of Splitter' in row.keys() else "",
+                    'make_of_antenna': row['Make Of Antenna'] if 'Make Of Antenna' in row.keys() else "",
+                    'description': 'Sector Antenna created on {}.'.format(full_time)
+                }
+                # sector antenna object
+                sector_antenna = create_antenna(sector_antenna_data)
+
+                # ------------------------------- Backhaul -------------------------------
+                # backhaul data
+                bh_configured_on = ""
+                try:
+                    bh_configured_on = Device.objects.get(ip_address=row['BH Configured On Switch/Converter'])
+                except Exception as e:
+                    logger.info(e.message)
+
+                backhaul_data = {
+                    'ip': row['BH Configured On Switch/Converter'] if 'BH Configured On Switch/Converter' in row.keys() else "",
+                    'bh_configured_on': bh_configured_on,
+                    'bh_port_name': row['Switch/Converter Port'] if 'Switch/Converter Port' in row.keys() else "",
+                    'bh_port': 0,
+                    'bh_type': row['Backhaul Type'] if 'Backhaul Type' in row.keys() else "",
+                    'bh_switch': bs_converter,
+                    'pop': pop_converter,
+                    'aggregator': aggregation_switch,
+                    'aggregator_port_name': row['Aggregation Switch Port'] if 'Aggregation Switch Port' in row.keys() else "",
+                    'aggregator_port': 0,
+                    'pe_hostname': row['PE Hostname'] if 'PE Hostname' in row.keys() else "",
+                    'pe_ip': row['PE IP'] if 'PE IP' in row.keys() else "",
+                    'bh_connectivity': row['BH Offnet/Onnet'] if 'BH Offnet/Onnet' in row.keys() else "",
+                    'bh_circuit_id': row['BH Circuit ID'] if 'BH Circuit ID' in row.keys() else "",
+                    'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
+                    'dr_site': row['DR Site'] if 'DR Site' in row.keys() else "",
+                    'ttsl_circuit_id': row['BSO Circuit ID'] if 'BSO Circuit ID' in row.keys() else "",
+                    'description': 'Backhaul created on {}.'.format(full_time)
+                }
+
+                # backhaul object
+                backhaul = ""
+                if row['BH Configured On Switch/Converter']:
+                    if row['BH Configured On Switch/Converter'] not in ['NA', 'na', 'N/A', 'n/a']:
+                        backhaul = create_backhaul(backhaul_data)
+            except Exception as e:
+                backhaul = ""
+
+            try:
+                # ------------------------------- Base Station -------------------------------
+                # initialize name
+                name = ""
+
+                # initialize alias
+                alias = ""
+
+                # sanitize bs name
+                name = special_chars_name_sanitizer_with_lower_case(row['BS Name'] if 'BS Name' in row.keys() else "")
+
+                try:
+                    if all(k in row for k in ("City", "State")):
+                        # concatinate city and state in bs name
+                        name = "{}_{}_{}".format(name, row['State'][:3].lower() if 'State' in row.keys() else "",
+                                                 row['City'][:3].lower() if 'City' in row.keys() else "")
+                except Exception as e:
+                    logger.info(e.message)
+
+                # bs name
+                alias = row['BS Name'] if 'BS Name' in row.keys() else ""
+
+                # base station data
+                basestation_data = {
+                    'name': name,
+                    'alias': alias,
+                    'bs_switch': bs_switch,
+                    'bs_site_id': row['Site ID'] if 'Site ID' in row.keys() else "",
+                    'bs_site_type': row['Site Type'] if 'Site Type' in row.keys() else "",
+                    'bs_type': row['Type Of BS (Technology)'] if 'Type Of BS (Technology)' in row.keys() else "",
+                    'infra_provider': row['Infra Provider'] if 'Infra Provider' in row.keys() else "",
+                    'gps_type': row['Type Of GPS'] if 'Type Of GPS' in row.keys() else "",
+                    'backhaul': backhaul,
+                    'bh_bso': "",
+                    'hssu_used': "",
+                    'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
+                    'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
+                    'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
+                    'tower_height': row['Tower Height'] if 'Tower Height' in row.keys() else "",
+                    'state': row['State'] if 'State' in row.keys() else "",
+                    'city': row['City'] if 'City' in row.keys() else "",
+                    'address': row['Address'] if 'Address' in row.keys() else "",
+                    'description': 'Base Station created on {}.'.format(full_time)
+                }
+
+                # base station object
+                basestation = ""
+                if name and alias:
+                    basestation = create_basestation(basestation_data)
+            except Exception as e:
+                basestation = ""
+
+            try:
+                # ---------------------------------- Sector ---------------------------------
+                # initialize name
+                name = ""
+
+                # initialize alias
+                alias = ""
+
+                # sector name
+                name = '{}_{}'.format(special_chars_name_sanitizer_with_lower_case(row['Sector ID']) if 'Sector ID' in row.keys() else "",
+                                      row['Sector Name'] if 'Sector Name' in row.keys() else "")
+
+                # sector alias
+                alias = '{}'.format(circuit_id_sanitizer(row['Sector ID']) if 'Sector ID' in row.keys() else "")
+
+                # sector data
+                sector_data = {
+                    'name': name,
+                    'alias': alias,
+                    'base_station': basestation,
+                    'bs_technology': 4,
+                    'sector_configured_on': base_station,
+                    'antenna': sector_antenna,
+                    'description': 'Sector created on {}.'.format(full_time)
+                }
+
+                # sector object
+                sector = create_sector(sector_data)
+            except Exception as e:
+                sector = ""
+        # updating upload status in 'GISInventoryBulkImport' model
+        gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
+        gis_obj.upload_status = 2
+        gis_obj.save()
+    except Exception as e:
+        gis_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
+        gis_obj.upload_status = 3
+        gis_obj.save()
+
+
+@task()
+def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
+    # gis bulk upload id
+    gis_id = gis_id
+
+    # current user organization
+    organization = organization
+
+    # timestamp
+    timestamp = time.time()
+    full_time = datetime.datetime.fromtimestamp(timestamp).strftime('%d-%b-%Y at %H:%M:%S')
+
+    # get object for 'GISInventoryBulkImport' model
+    gis_bu_obj = ""
+    try:
+        gis_bu_obj = GISInventoryBulkImport.objects.get(pk=gis_id)
+    except Exception as e:
+        logger.info(e.message)
+
+    # get valid or invalid sheet based upon sheettype
+    if sheettype == 'valid':
+        file_path = gis_bu_obj.valid_filename
+        file_path = "".join(file_path.split("/media"))
+        book = xlrd.open_workbook(MEDIA_ROOT + file_path)
+    elif sheettype == 'invalid':
+        file_path = gis_bu_obj.invalid_filename
+        file_path = "".join(file_path.split("/media"))
+        book = xlrd.open_workbook(MEDIA_ROOT + file_path)
+    else:
+        book = ""
+
+    sheet = book.sheet_by_index(0)
+
+    keys = [sheet.cell(0, col_index).value for col_index in xrange(sheet.ncols) if sheet.cell(0, col_index).value]
+    keys_list = [x.encode('utf-8').strip() for x in keys]
+    complete_d = list()
+
+    # fetching excel rows values as list of key value pair dictionaries where keys are from first row of excel
+    # and values are form other remaining rows
+    for row_index in xrange(1, sheet.nrows):
+        d = dict()
+        for col_index in xrange(len(keys)):
+            if isinstance(sheet.cell(row_index, col_index).value, str):
+                d[keys[col_index].encode('utf-8').strip()] = unicode(sheet.cell(row_index, col_index).value).strip()
+            elif isinstance(sheet.cell(row_index, col_index).value, unicode):
+                d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value.strip()
+            else:
+                d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value
+
+        complete_d.append(d)
+
+    # get machine and associated sites details in dictionary
+    # pass machine name and list of machines postfix i.e [1, 5] for 'ospf1' and 'ospf5' as argument
+    machine_and_site_info = get_machine_details('ospf', [3, 4])
 
     # id of last inserted row in 'device' model
     device_latest_id = 0
