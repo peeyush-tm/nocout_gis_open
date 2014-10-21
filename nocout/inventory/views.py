@@ -480,7 +480,6 @@ class BaseStationList(ListView):
         """
         context = super(BaseStationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
@@ -503,9 +502,9 @@ class BaseStationListingTable(BaseDatatableView):
     Class based View to render Base Station Data table.
     """
     model = BaseStation
-    columns = ['name', 'alias', 'bs_site_id',
+    columns = ['alias', 'bs_site_id',
                'bs_switch__device_name', 'backhaul__name', 'bs_type', 'building_height', 'description']
-    order_columns = ['name', 'alias', 'bs_site_id',
+    order_columns = ['alias', 'bs_site_id',
                      'bs_switch__device_name', 'backhaul__name', 'bs_type', 'building_height', 'description']
 
     def filter_queryset(self, qs):
