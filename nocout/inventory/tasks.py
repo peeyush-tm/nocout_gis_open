@@ -1,4 +1,5 @@
 from celery import task
+from dateutil.parser import *
 from models import GISInventoryBulkImport
 from machine.models import Machine
 from site_instance.models import SiteInstance
@@ -796,15 +797,15 @@ def validate_gis_inventory_excel_sheet(gis_obj_id, complete_d, sheet_name, keys_
             except Exception as e:
                 pass
 
-            # # 'date of acceptance' validation (must be like '15-Aug-2014')
-            # try:
-            #     if date_of_acceptance:
-            #         try:
-            #             datetime.datetime.strptime(date_of_acceptance, '%d-%b-%Y')
-            #         except Exception as e:
-            #             errors += 'Date Of Acceptance must be like (15-Aug-2014).\n'
-            # except Exception as e:
-            #     pass
+            # 'date of acceptance' validation (must be like '15-Aug-2014')
+            try:
+                if date_of_acceptance:
+                    try:
+                        datetime.datetime.strptime(date_of_acceptance, '%d-%b-%Y')
+                    except Exception as e:
+                        errors += 'Date Of Acceptance must be like (15-Aug-2014).\n'
+            except Exception as e:
+                pass
 
             # 'ip' validation (must be an ip address)
             try:
@@ -1324,12 +1325,17 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
     for row_index in xrange(1, sheet.nrows):
         d = dict()
         for col_index in xrange(len(keys)):
-            if isinstance(sheet.cell(row_index, col_index).value, str):
-                d[keys[col_index].encode('utf-8').strip()] = unicode(sheet.cell(row_index, col_index).value).strip()
-            elif isinstance(sheet.cell(row_index, col_index).value, unicode):
-                d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value.strip()
+            if keys[col_index] == "SS Date Of Acceptance":
+                if isinstance(sheet.cell(row_index, col_index).value, float):
+                    d[keys[col_index].encode('utf-8').strip()] = datetime.datetime(
+                        *xlrd.xldate_as_tuple(sheet.cell(row_index, col_index).value, book.datemode)).date()
             else:
-                d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value
+                if isinstance(sheet.cell(row_index, col_index).value, str):
+                    d[keys[col_index].encode('utf-8').strip()] = unicode(sheet.cell(row_index, col_index).value).strip()
+                elif isinstance(sheet.cell(row_index, col_index).value, unicode):
+                    d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value.strip()
+                else:
+                    d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value
 
         complete_d.append(d)
 
@@ -2316,7 +2322,6 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     date_of_acceptance = validate_date(row['SS Date Of Acceptance'])
                 else:
                     date_of_acceptance = ""
-
                 # circuit data
                 alias = circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else ""
                 circuit_data = {
@@ -2453,12 +2458,17 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
     for row_index in xrange(1, sheet.nrows):
         d = dict()
         for col_index in xrange(len(keys)):
-            if isinstance(sheet.cell(row_index, col_index).value, str):
-                d[keys[col_index].encode('utf-8').strip()] = unicode(sheet.cell(row_index, col_index).value).strip()
-            elif isinstance(sheet.cell(row_index, col_index).value, unicode):
-                d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value.strip()
+            if keys[col_index] == "SS Date Of Acceptance":
+                if isinstance(sheet.cell(row_index, col_index).value, float):
+                    d[keys[col_index].encode('utf-8').strip()] = datetime.datetime(
+                        *xlrd.xldate_as_tuple(sheet.cell(row_index, col_index).value, book.datemode)).date()
             else:
-                d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value
+                if isinstance(sheet.cell(row_index, col_index).value, str):
+                    d[keys[col_index].encode('utf-8').strip()] = unicode(sheet.cell(row_index, col_index).value).strip()
+                elif isinstance(sheet.cell(row_index, col_index).value, unicode):
+                    d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value.strip()
+                else:
+                    d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value
 
         complete_d.append(d)
 
@@ -3305,7 +3315,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
             try:
                 # ----------------------------- Base Station Device ---------------------------
-                if ip_sanitizer(row['IDU IP']):
+                if ip_sanitizer(row['ODU IP']):
                     # initialize name
                     name = ""
 
@@ -3363,7 +3373,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                         'device_vendor': 4,
                         'device_model': 4,
                         'device_type': 6,
-                        'ip': row['IDU IP'] if 'IDU IP' in row.keys() else "",
+                        'ip': row['ODU IP'] if 'ODU IP' in row.keys() else "",
                         'mac': "",
                         'state': row['State'] if 'State' in row.keys() else "",
                         'city': row['City'] if 'City' in row.keys() else "",
@@ -3848,12 +3858,17 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
     for row_index in xrange(1, sheet.nrows):
         d = dict()
         for col_index in xrange(len(keys)):
-            if isinstance(sheet.cell(row_index, col_index).value, str):
-                d[keys[col_index].encode('utf-8').strip()] = unicode(sheet.cell(row_index, col_index).value).strip()
-            elif isinstance(sheet.cell(row_index, col_index).value, unicode):
-                d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value.strip()
+            if keys[col_index] == "Date Of Acceptance":
+                if isinstance(sheet.cell(row_index, col_index).value, float):
+                    d[keys[col_index].encode('utf-8').strip()] = datetime.datetime(
+                        *xlrd.xldate_as_tuple(sheet.cell(row_index, col_index).value, book.datemode)).date()
             else:
-                d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value
+                if isinstance(sheet.cell(row_index, col_index).value, str):
+                    d[keys[col_index].encode('utf-8').strip()] = unicode(sheet.cell(row_index, col_index).value).strip()
+                elif isinstance(sheet.cell(row_index, col_index).value, unicode):
+                    d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value.strip()
+                else:
+                    d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value
 
         complete_d.append(d)
 
@@ -4066,7 +4081,7 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
                 sector_configured_on_device = Device.objects.get(ip_address=ss_bs_ip)
                 sector = Sector.objects.get(sector_configured_on=sector_configured_on_device)
             except Exception as e:
-                logger.info(e.message)
+                logger.info("Sector not found. Exception:")
 
             try:
                 # ------------------------------- Circuit -------------------------------
@@ -4204,7 +4219,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
 
             try:
                 # ----------------------------- Base Station Device ---------------------------
-                if ip_sanitizer(row['ODU IP']):
+                if ip_sanitizer(row['IDU IP']):
                     # initialize name
                     name = ""
 
@@ -4262,7 +4277,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                         'device_vendor': 4,
                         'device_model': 4,
                         'device_type': 6,
-                        'ip': row['ODU IP'] if 'ODU IP' in row.keys() else "",
+                        'ip': row['IDU IP'] if 'IDU IP' in row.keys() else "",
                         'mac': "",
                         'state': row['State'] if 'State' in row.keys() else "",
                         'city': row['City'] if 'City' in row.keys() else "",
@@ -4747,12 +4762,17 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
     for row_index in xrange(1, sheet.nrows):
         d = dict()
         for col_index in xrange(len(keys)):
-            if isinstance(sheet.cell(row_index, col_index).value, str):
-                d[keys[col_index].encode('utf-8').strip()] = unicode(sheet.cell(row_index, col_index).value).strip()
-            elif isinstance(sheet.cell(row_index, col_index).value, unicode):
-                d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value.strip()
+            if keys[col_index] == "SS Date Of Acceptance":
+                if isinstance(sheet.cell(row_index, col_index).value, float):
+                    d[keys[col_index].encode('utf-8').strip()] = datetime.datetime(
+                        *xlrd.xldate_as_tuple(sheet.cell(row_index, col_index).value, book.datemode)).date()
             else:
-                d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value
+                if isinstance(sheet.cell(row_index, col_index).value, str):
+                    d[keys[col_index].encode('utf-8').strip()] = unicode(sheet.cell(row_index, col_index).value).strip()
+                elif isinstance(sheet.cell(row_index, col_index).value, unicode):
+                    d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value.strip()
+                else:
+                    d[keys[col_index].encode('utf-8').strip()] = sheet.cell(row_index, col_index).value
 
         complete_d.append(d)
 
@@ -7407,11 +7427,15 @@ def validate_date(date_string):
 
     # 'date of acceptance' validation (must be like '15-Aug-2014')
     if date_string:
+
         try:
-            datetime.datetime.strptime(date_string, '%d-%b-%Y')
-            date_string = date_string
+            # datetime.datetime.strptime(date_string, '%d-%b-%Y')
+            # date_string = date_string
+            parse(str(date_string))
+            # date_string = datetime.datetime.strptime(str(date_string), '%d-%b-%Y')
         except Exception as e:
             date_string = ""
+            logger.info("Datetime Exception", e.message)
         return date_string
 
 
