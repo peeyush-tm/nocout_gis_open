@@ -1283,7 +1283,6 @@ class SubStationList(ListView):
         """
         context = super(SubStationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'device__device_name', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'antenna__name', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -1311,9 +1310,9 @@ class SubStationListingTable(BaseDatatableView):
     Class based View to render Sub Station Data table.
     """
     model = SubStation
-    columns = ['name', 'alias', 'device__device_name', 'antenna__name', 'version', 'serial_no', 'building_height',
+    columns = ['alias', 'device__device_name', 'antenna__name', 'version', 'serial_no', 'building_height',
                'tower_height', 'city', 'state', 'address', 'description']
-    order_columns = ['name', 'alias', 'device__device_name', 'antenna__name', 'version', 'serial_no', 'building_height',
+    order_columns = ['alias', 'device__device_name', 'antenna__name', 'version', 'serial_no', 'building_height',
                      'tower_height']
 
     def filter_queryset(self, qs):
