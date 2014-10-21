@@ -1086,7 +1086,6 @@ class CustomerList(ListView):
     def get_context_data(self, **kwargs):
         context = super(CustomerList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'bSortable': False},
@@ -1104,8 +1103,8 @@ class CustomerListingTable(BaseDatatableView):
     Class based View to render Customer Data table.
     """
     model = Customer
-    columns = ['name', 'alias', 'address', 'description']
-    order_columns = ['name', 'alias']
+    columns = ['alias', 'address', 'description']
+    order_columns = ['alias']
 
     def filter_queryset(self, qs):
         """
