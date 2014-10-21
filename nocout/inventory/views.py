@@ -69,7 +69,6 @@ class InventoryListing(ListView):
         """
         context = super(InventoryListing, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'user_group__name', 'sTitle': 'User Group', 'sWidth': 'auto', },
             {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', },
@@ -89,8 +88,8 @@ class InventoryListingTable(BaseDatatableView):
     """
 
     model = Inventory
-    columns = ['name', 'alias', 'user_group__name', 'organization__name', 'description']
-    order_columns = ['name', 'alias', 'user_group__name', 'organization__name', 'description']
+    columns = ['alias', 'user_group__name', 'organization__name', 'description']
+    order_columns = ['alias', 'user_group__name', 'organization__name', 'description']
 
     def filter_queryset(self, qs):
         """
@@ -283,7 +282,6 @@ class AntennaList(ListView):
         """
         context = super(AntennaList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'height', 'sTitle': 'Height', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'polarization', 'sTitle': 'Polarization', 'sWidth': 'auto', },
@@ -304,8 +302,8 @@ class AntennaListingTable(BaseDatatableView):
     Class based View to render Antenna Data table.
     """
     model = Antenna
-    columns = ['name', 'alias', 'height', 'polarization', 'tilt', 'beam_width', 'azimuth_angle']
-    order_columns = ['name', 'alias', 'height', 'polarization', 'tilt', 'beam_width', 'azimuth_angle']
+    columns = ['alias', 'height', 'polarization', 'tilt', 'beam_width', 'azimuth_angle']
+    order_columns = ['alias', 'height', 'polarization', 'tilt', 'beam_width', 'azimuth_angle']
 
     def filter_queryset(self, qs):
         """
@@ -483,7 +481,6 @@ class BaseStationList(ListView):
         """
         context = super(BaseStationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
@@ -506,9 +503,9 @@ class BaseStationListingTable(BaseDatatableView):
     Class based View to render Base Station Data table.
     """
     model = BaseStation
-    columns = ['name', 'alias', 'bs_site_id',
+    columns = ['alias', 'bs_site_id',
                'bs_switch__device_alias', 'backhaul__name', 'bs_type', 'building_height', 'description']
-    order_columns = ['name', 'alias', 'bs_site_id',
+    order_columns = ['alias', 'bs_site_id',
                      'bs_switch__device_alias', 'backhaul__name', 'bs_type', 'building_height', 'description']
 
     def filter_queryset(self, qs):
@@ -682,7 +679,6 @@ class BackhaulList(ListView):
         """
         context = super(BackhaulList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'bh_configured_on__device_alias', 'sTitle': 'Backhaul Configured On', 'sWidth': 'auto', },
             {'mData': 'bh_port', 'sTitle': 'Backhaul Port', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -707,9 +703,9 @@ class BackhaulListingTable(BaseDatatableView):
     Class based View to render Backhaul Data table.
     """
     model = Backhaul
-    columns = ['name', 'alias', 'bh_configured_on__device_alias', 'bh_port', 'bh_type', 'pop__device_alias', 'pop_port',
+    columns = ['alias', 'bh_configured_on__device_alias', 'bh_port', 'bh_type', 'pop__device_alias', 'pop_port',
                'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
-    order_columns = ['name', 'alias', 'bh_configured_on__device_alias', 'bh_port', 'bh_type', 'pop__device_alias',
+    order_columns = ['alias', 'bh_configured_on__device_alias', 'bh_port', 'bh_type', 'pop__device_alias',
                      'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
 
     def filter_queryset(self, qs):
@@ -888,7 +884,6 @@ class SectorList(ListView):
         """
         context = super(SectorList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -914,9 +909,9 @@ class SectorListingTable(BaseDatatableView):
     Class based View to render Sector Data Table.
     """
     model = Sector
-    columns = ['name', 'alias', 'bs_technology__alias' ,'sector_id', 'sector_configured_on__device_alias',
+    columns = ['alias', 'bs_technology__alias' ,'sector_id', 'sector_configured_on__device_alias',
                'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
-    order_columns = ['name', 'alias', 'bs_technology__alias' ,'sector_id', 'sector_configured_on__device_alias',
+    order_columns = ['alias', 'bs_technology__alias' ,'sector_id', 'sector_configured_on__device_alias',
                'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
 
     def filter_queryset(self, qs):
@@ -1092,7 +1087,6 @@ class CustomerList(ListView):
     def get_context_data(self, **kwargs):
         context = super(CustomerList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'address', 'sTitle': 'Address', 'sWidth': 'auto', 'sClass': 'hidden-xs','bSortable': False},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'bSortable': False},
@@ -1110,8 +1104,8 @@ class CustomerListingTable(BaseDatatableView):
     Class based View to render Customer Data table.
     """
     model = Customer
-    columns = ['name', 'alias', 'address', 'description']
-    order_columns = ['name', 'alias']
+    columns = ['alias', 'address', 'description']
+    order_columns = ['alias']
 
     def filter_queryset(self, qs):
         """
@@ -1290,7 +1284,6 @@ class SubStationList(ListView):
         """
         context = super(SubStationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'device__device_alias', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -1318,9 +1311,9 @@ class SubStationListingTable(BaseDatatableView):
     Class based View to render Sub Station Data table.
     """
     model = SubStation
-    columns = ['name', 'alias', 'device__device_alias', 'antenna__alias', 'version', 'serial_no', 'building_height',
+    columns = ['alias', 'device__device_alias', 'antenna__alias', 'version', 'serial_no', 'building_height',
                'tower_height', 'city', 'state', 'address', 'description']
-    order_columns = ['name', 'alias', 'device__device_alias', 'antenna__alias', 'version', 'serial_no', 'building_height',
+    order_columns = ['alias', 'device__device_alias', 'antenna__alias', 'version', 'serial_no', 'building_height',
                      'tower_height']
 
     def filter_queryset(self, qs):
@@ -1500,7 +1493,6 @@ class CircuitList(ListView):
         """
         context = super(CircuitList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
             {'mData': 'sector__base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto'},
@@ -1524,9 +1516,9 @@ class CircuitListingTable(BaseDatatableView):
     Class based View to render Circuit Data table.
     """
     model = Circuit
-    columns = ['name', 'alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
+    columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
                'sub_station__alias', 'date_of_acceptance', 'description']
-    order_columns = ['name', 'alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
+    order_columns = ['alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
                      'sub_station__alias', 'date_of_acceptance', 'description']
 
     def filter_queryset(self, qs):
@@ -1812,7 +1804,6 @@ class IconSettingsList(ListView):
         """
         context = super(IconSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name',             'sTitle': 'Name',               'sWidth': 'auto'},
             {'mData': 'alias',            'sTitle': 'Alias',              'sWidth': 'auto'},
             {'mData': 'upload_image',     'sTitle': 'Image',       'sWidth': 'auto'},
             ]
@@ -1830,8 +1821,8 @@ class IconSettingsListingTable(BaseDatatableView):
     Class based View to render IconSettings Data table.
     """
     model = IconSettings
-    columns = ['name', 'alias', 'upload_image']
-    order_columns = ['name', 'alias', 'upload_image']
+    columns = ['alias', 'upload_image']
+    order_columns = ['alias', 'upload_image']
 
     def filter_queryset(self, qs):
         """
@@ -2015,7 +2006,6 @@ class LivePollingSettingsList(ListView):
         """
         context = super(LivePollingSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name',                    'sTitle': 'Name',              'sWidth': 'auto'},
             {'mData': 'alias',                   'sTitle': 'Alias',             'sWidth': 'auto'},
             {'mData': 'technology__alias',       'sTitle': 'Technology',        'sWidth': 'auto'},
             {'mData': 'service__alias',          'sTitle': 'Service',           'sWidth': 'auto'},
@@ -2035,8 +2025,8 @@ class LivePollingSettingsListingTable(BaseDatatableView):
     Class based View to render LivePollingSettings Data table.
     """
     model = LivePollingSettings
-    columns = ['name', 'alias', 'technology__alias', 'service__alias', 'data_source__alias']
-    order_columns = ['name', 'alias', 'technology__alias', 'service__alias', 'data_source__alias']
+    columns = ['alias', 'technology__alias', 'service__alias', 'data_source__alias']
+    order_columns = ['alias', 'technology__alias', 'service__alias', 'data_source__alias']
 
     def filter_queryset(self, qs):
         """
@@ -2213,7 +2203,6 @@ class ThresholdConfigurationList(ListView):
         """
         context = super(ThresholdConfigurationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name',                           'sTitle': 'Name',                   'sWidth': 'auto'},
             {'mData': 'alias',                          'sTitle': 'Alias',                  'sWidth': 'auto'},
             {'mData': 'live_polling_template__alias',   'sTitle': 'Live Polling Template',  'sWidth': 'auto'},
             ]
@@ -2231,8 +2220,8 @@ class ThresholdConfigurationListingTable(BaseDatatableView):
     Class based View to render ThresholdConfiguration Data table.
     """
     model = ThresholdConfiguration
-    columns = ['name', 'alias', 'live_polling_template__alias']
-    order_columns = ['name', 'alias', 'live_polling_template__alias']
+    columns = ['alias', 'live_polling_template__alias']
+    order_columns = ['alias', 'live_polling_template__alias']
 
     def filter_queryset(self, qs):
         """
@@ -2410,7 +2399,6 @@ class ThematicSettingsList(ListView):
         """
         context = super(ThematicSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name',                    'sTitle': 'Name',                      'sWidth': 'auto'},
             {'mData': 'alias',                   'sTitle': 'Alias',                     'sWidth': 'auto'},
             {'mData': 'threshold_template',      'sTitle': 'Threshold Template',        'sWidth': 'auto'},
             {'mData': 'icon_settings',           'sTitle': 'Icons Range',               'sWidth': 'auto'},
@@ -2438,8 +2426,8 @@ class ThematicSettingsListingTable(BaseDatatableView):
     Class based View to render Thematic Settings Data table.
     """
     model = ThematicSettings
-    columns = ['name', 'alias', 'threshold_template', 'icon_settings']
-    order_columns = ['name', 'alias', 'threshold_template']
+    columns = ['alias', 'threshold_template', 'icon_settings']
+    order_columns = ['alias', 'threshold_template']
     def filter_queryset(self, qs):
         """
         The filtering of the queryset with respect to the search keyword entered.
