@@ -1248,7 +1248,7 @@ class CustomerUpdate(UpdateView):
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Update Customer : %s, ' % (self.object.name) + ', '.join(
+            verb_string = 'Update Customer : %s, ' % (self.object.alias) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
                           ' to ' + \
