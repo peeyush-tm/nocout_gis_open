@@ -324,109 +324,6 @@ class LivePerformanceListing(BaseDatatableView):
                         })
         return devices
 
-    # def prepare_devices(self, page_type='customer', qs=[]):
-    #     """
-    #
-    #     :return:
-    #     """
-    #     device_list = []
-    #     for device in qs:
-    #         skip_device = False
-    #         if page_type in ["customer", "network"]:
-    #             sector_id = "N/A"
-    #             circuit_id = "N/A"
-    #             customer_name = "N/A"
-    #             bs_name = "N/A"
-    #
-    #             if 'sector_configured_on' in device and device['sector_configured_on']:
-    #                 if page_type in ['customer'] \
-    #                         and ( int(device['device_technology']) in [int(WiMAX.ID), int(PMP.ID)]):
-    #                     #dont process the substation for devices of WIMAX and PMP
-    #                     skip_device = True
-    #                 if not skip_device:
-    #                     sectors = Sector.objects.filter(sector_configured_on=device["id"]).values("id", "sector_id", "base_station")
-    #                     if len(sectors):
-    #                         sector_id_list = [x["id"] for x in sectors]
-    #                         sector_id = ", ".join(map(lambda x: str(x), [x["sector_id"] for x in sectors]))
-    #                         try:
-    #                             basestation = BaseStation.objects.get(id=sectors[0]["base_station"])
-    #                             bs_name = basestation.alias
-    #                         except:
-    #                             pass
-    #                         circuits = Circuit.objects.filter(sector__in=sector_id_list).values("circuit_id")
-    #                         if len(circuits):
-    #                             circuits_id_list = [x["circuit_id"] for x in circuits]
-    #                             circuit_id = ",".join(map(lambda x: str(x), circuits_id_list ))
-    #
-    #                         customer_name_list = Customer.objects.filter(id__in=Circuit.objects.filter(sector__in=sector_id_list).values("customer_id")).values('alias')
-    #                         if len(customer_name_list):
-    #                             customer_name_array = [x["alias"] for x in customer_name_list]
-    #                             customer_name = ",".join(map(lambda x: str(x), customer_name_array ))
-    #
-    #             elif 'substation' in device and device['substation']:
-    #                 if page_type in ['network'] \
-    #                         and ( int(device['device_technology']) in [int(WiMAX.ID), int(PMP.ID)]):
-    #                     #dont process the substation for devices of WIMAX and PMP
-    #                     skip_device = True
-    #
-    #                 if not skip_device:
-    #                     substation = SubStation.objects.filter(device=device["id"])
-    #                     if len(substation):
-    #                         ss_object = substation[0]
-    #                         circuit = Circuit.objects.filter(sub_station=ss_object.id)
-    #                         if len(circuit):
-    #                             circuit_obj = circuit[0]
-    #                             customer_name = circuit_obj.customer.alias
-    #                             circuit_id = circuit_obj.circuit_id
-    #                             sector_id = circuit_obj.sector.sector_id if circuit_obj.sector else "N/A"
-    #                             bs_name = circuit_obj.sector.base_station.alias if circuit_obj.sector else "N/A"
-    #
-    #         elif page_type in ["backhaul", "other"]:
-    #             bs_name = "N/A"
-    #             sector_id = "N/A"
-    #             circuit_id = "N/A"
-    #             backhaul_objects = Backhaul.objects.filter(bh_configured_on__id=device["id"])
-    #             if len(backhaul_objects):
-    #                 backhaul = backhaul_objects[0]
-    #                 basestation_objects = backhaul.basestation_set.filter()
-    #                 if len(basestation_objects):
-    #                     basestation = basestation_objects[0]
-    #                     bs_name = basestation.alias
-    #
-    #         else:
-    #             skip_device = True
-    #
-    #         try:
-    #             city_name = City.objects.get(id=device['city']).city_name
-    #         except Exception as no_city:
-    #             city_name = "N/A"
-    #         try:
-    #             state_name = State.objects.get(id=device['state']).state_name
-    #         except Exception as no_state:
-    #             state_name = "N/A"
-    #
-    #         if not skip_device:
-    #             device.update({
-    #                 "page_type":page_type,
-    #                 "packet_loss": "",
-    #                 "latency": "",
-    #                 "last_updated": "",
-    #                 "last_updated_date": "",
-    #                 "last_updated_time": "",
-    #                 "sector_id": sector_id,
-    #                 "circuit_id": circuit_id,
-    #                 "customer_name" : customer_name,
-    #                 "bs_name": bs_name,
-    #                 "city": city_name,
-    #                 "state": state_name,
-    #                 "device_type": DeviceType.objects.get(pk=int(device['device_type'])).name,
-    #                 "device_technology": DeviceTechnology.objects.get(pk=int(device['device_technology'])).name
-    #             })
-    #             device_list.append(device)
-    #
-    #     return device_list
-
-
     def prepare_results(self, qs, multi_proc=False):
         """
         Preparing the final result after fetching from the data base to render on the data table.
@@ -497,33 +394,10 @@ class LivePerformanceListing(BaseDatatableView):
                     else:
                         break
 
-                # for dct in qs:
-                #     if dct["device_name"] not in processed:
-                #         processed.append(dct["device_name"])
-                #         for p_result in perf_result:
-                #             for p_res in p_result:
-                #                 if p_res not in processed:
-                #                     processed.append(p_res)
-                #                     result = p_result[p_res]
-                #                     if dct["device_name"] == result['device_name']:
-                #                         dct["packet_loss"] = result["packet_loss"]
-                #                         dct["latency"] = result["latency"]
-                #                         dct["last_updated"] = result["last_updated"]
-
             else:
                 for machine, machine_device_list in machine_dict.items():
                     perf_result = get_performance_data(machine_device_list, machine, model_is)
                     self.map_results(perf_result,qs)
-                    # for p_result in perf_result:
-                    #     if p_result not in processed:
-                    #         processed.append(p_result)
-                    #         for dct in qs:
-                    #             result = perf_result[p_result]
-                    #             if dct["device_name"] == p_result:
-                    #                 dct["packet_loss"] = result["packet_loss"]
-                    #                 dct["latency"] = result["latency"]
-                    #                 dct["last_updated"] = result["last_updated"]
-
 
             #sorting the dict in the descending order for the qs prepared finally.
             sorted_qs = sorted(qs, key=itemgetter('last_updated'), reverse=True)
