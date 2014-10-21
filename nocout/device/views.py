@@ -1370,9 +1370,19 @@ class DeviceCreate(CreateView):
             if value != "":
                 all_non_empty_post_fields.append(key)
 
+        # id of last inserted row in 'device' model
+        device_latest_id = 1
+
+        # get device latest inserted in schema
+        try:
+            id_list = [Device.objects.latest('id').id, int(Device.objects.latest('id').device_name)]
+            device_latest_id = max(id_list) + 1
+        except Exception as e:
+            logger.info("No device is added in database till now. Exception: ", e.message)
+
         # saving device data
         device = Device()
-        device.device_name = form.cleaned_data['device_name']
+        device.device_name = device_latest_id
         device.device_alias = form.cleaned_data['device_alias']
         device.machine = form.cleaned_data['machine']
         device.site_instance = form.cleaned_data['site_instance']
@@ -1471,7 +1481,7 @@ class DeviceUpdate(UpdateView):
                 all_non_empty_post_fields.append(key)
 
         # saving device data
-        self.object.device_name = form.cleaned_data['device_name']
+        # self.object.device_name = form.cleaned_data['device_name']
         self.object.device_alias = form.cleaned_data['device_alias']
         self.object.machine = form.cleaned_data['machine']
         self.object.site_instance = form.cleaned_data['site_instance']
