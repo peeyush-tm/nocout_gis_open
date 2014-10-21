@@ -132,8 +132,8 @@ class LivePerformanceListing(BaseDatatableView):
     A generic class based view for the performance data table rendering.
 
     """
-    model = NetworkStatus  # TODO change to NETWORK STATUS. PROBLEM is with DA, DA is not puttin gin RTA just PL
-    columns = ['id', 'device_name', 'device_technology', 'device_type', 'ip_address', 'city', 'state']
+    model = NetworkStatus
+    columns = ['id', 'ip_address', 'device_technology', 'device_type', 'bs_name', 'city', 'state']
 
     def filter_queryset(self, qs):
         """
@@ -145,22 +145,24 @@ class LivePerformanceListing(BaseDatatableView):
 
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
-            result_list = list()
-            for dictionary in qs:
-                x = json.dumps(dictionary)
-                dictionary = json.loads(x)
-                for dict in dictionary:
-                    if dictionary[dict]:
-                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
-                            dictionary not in result_list
-                        ):
-                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
-                                result_list.append(dictionary)
-                        else:
-                            if sSearch == dictionary[dict] and dictionary not in result_list:
-                                result_list.append(dictionary)
+            if len(sSearch) > 3:
+                search_data = self.prepare_devices(qs)
+                result_list = list()
+                for dictionary in search_data:
+                    x = json.dumps(dictionary)
+                    dictionary = json.loads(x)
+                    for dict in dictionary:
+                        if dictionary[dict]:
+                            if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                                dictionary not in result_list
+                            ):
+                                if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                    result_list.append(dictionary)
+                            else:
+                                if sSearch == dictionary[dict] and dictionary not in result_list:
+                                    result_list.append(dictionary)
 
-            return result_list
+                return result_list
         return qs
 
     def get_initial_queryset(self):
@@ -186,13 +188,6 @@ class LivePerformanceListing(BaseDatatableView):
         :param kwargs:
         :return: list of devices
         """
-
-        # limit = min(int(self.request.REQUEST.get('iDisplayLength', 10)), self.max_display_length)
-        # # if pagination is disabled ("bPaginate": false)
-        # if limit == -1:
-        #     return []
-        # start = int(self.request.REQUEST.get('iDisplayStart', 0))
-        # offset = start + limit
 
         page_type = self.request.GET['page_type']
         device_technology_id = None
@@ -262,6 +257,19 @@ class LivePerformanceListing(BaseDatatableView):
                 "device_type": "",
                 "device_technology": ""
             })
+
+        return devices
+
+    def prepare_devices(self,qs):
+        """
+
+        :param device_list:
+        :return:
+        """
+        devices = qs
+
+        device_list = []
+        for device in devices:
             device_list.append(device['id'])
 
         if len(device_list):
@@ -273,12 +281,6 @@ class LivePerformanceListing(BaseDatatableView):
                     #if device is sector
                     if device_id == result['SECTOR_CONF_ON_ID']:
                         device.update({
-                            "page_type":page_type,
-                            "packet_loss": "",
-                            "latency": "",
-                            "last_updated": "",
-                            "last_updated_date": "",
-                            "last_updated_time": "",
                             "sector_id": format_value(result['SECTOR_SECTOR_ID']),
                             "circuit_id": format_value(result['CCID']),
                             "customer_name" : format_value(result['CUST']),
@@ -290,12 +292,6 @@ class LivePerformanceListing(BaseDatatableView):
                         })
                     if device_id == result['SS_DEVICE_ID']:
                         device.update({
-                            "page_type":page_type,
-                            "packet_loss": "",
-                            "latency": "",
-                            "last_updated": "",
-                            "last_updated_date": "",
-                            "last_updated_time": "",
                             "sector_id": format_value(result['SECTOR_SECTOR_ID']),
                             "circuit_id": format_value(result['CCID']),
                             "customer_name" : format_value(result['CUST']),
@@ -307,12 +303,6 @@ class LivePerformanceListing(BaseDatatableView):
                         })
                     if device_id == result['BH_DEVICE_ID']:
                         device.update({
-                            "page_type":page_type,
-                            "packet_loss": "",
-                            "latency": "",
-                            "last_updated": "",
-                            "last_updated_date": "",
-                            "last_updated_time": "",
                             "sector_id": format_value(result['SECTOR_SECTOR_ID']),
                             "circuit_id": format_value(result['CCID']),
                             "customer_name" : format_value(result['CUST']),
@@ -418,6 +408,39 @@ class LivePerformanceListing(BaseDatatableView):
                         dct["latency"] = result["latency"]
                         dct["last_updated"] = result["last_updated"]
 
+    def ordering(self, qs):
+        """
+        sorting for the table
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except ValueError:
+            i_sorting_cols = 0
+
+        reverse = True
+
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except ValueError:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            reverse = False if s_sort_dir == 'desc' else True
+
+        if i_sorting_cols:
+            sort_data = self.prepare_devices(qs)
+
+            sort_using = self.columns[i_sorting_cols]
+
+            sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
+
+            return sorted_qs
+        return qs
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -440,21 +463,19 @@ class LivePerformanceListing(BaseDatatableView):
         # number of records after filtering
         total_display_records = len(qs)
 
-        # qs = self.ordering(qs)
-        # qs = self.paging(qs)
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
 
         #prepare devices with GIS information
-        # qs = self.prepare_devices(page_type=page_type, qs=qs)
+        qs = self.prepare_devices(qs=qs)
         #end prepare devices with GIS information
-        # qs = self.ordering(qs)
-
 
         # if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
         if not qs and isinstance(qs, ValuesQuerySet):
             qs = list(qs)
 
         # prepare output data
-        aaData = self.prepare_results(qs, multi_proc=False)
+        aaData = self.prepare_results(qs, multi_proc=True)
         ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
                'iTotalRecords': total_records,
                'iTotalDisplayRecords': total_display_records,
@@ -1953,9 +1974,9 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
                                    "sys_timestamp"
                           ]
     )
-    # print(query)
+    # (query)
     performance_data = fetch_raw_result(query=query,machine=machine)#model.objects.raw(query).using(alias=machine)
-    # print(len(performance_data))
+    # (len(performance_data))
     for device in device_list:
         if device not in device_result:
             device_result[device] = perf_result
@@ -1989,11 +2010,11 @@ def get_multiprocessing_performance_data(q,device_list, machine, model):
                     ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
 
                     device_result[device] = perf_result
-    # print(device_result)
+    # (device_result)
     try:
         q.put(device_result)
     except Exception as e:
-        print(e.message)
+        log.exception(e.message)
 
 
 def get_performance_data(device_list, machine, model):
@@ -2025,7 +2046,7 @@ def get_performance_data(device_list, machine, model):
     )
 
     performance_data = fetch_raw_result(query=query,machine=machine)#model.objects.raw(query).using(alias=machine)
-    # print(len(performance_data))
+    # (len(performance_data))
     for device in device_list:
         if device not in device_result:
             device_result[device] = perf_result
@@ -2059,5 +2080,5 @@ def get_performance_data(device_list, machine, model):
                     ).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
 
                     device_result[device] = perf_result
-    # print device_result
+    #  device_result
     return device_result
