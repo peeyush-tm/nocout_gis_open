@@ -849,10 +849,19 @@ $("#show_hide_label").click(function(e) {
         labelsArray_filtered[x].setVisible(e.currentTarget.checked);
     }
 
-    for(var x=0;x<labelsArray.length;x++) {
-        if(labelsArray[x].moveListener_) {
-            if(labelsArray[x].moveListener_.cb && labelsArray[x].moveListener_.cb.map != null) {
-                labelsArray[x].setVisible(e.currentTarget.checked);
+
+    for (var x = 0; x < labelsArray.length; x++) {
+        var move_listener_obj = labelsArray[x].moveListener_;
+        if (move_listener_obj) {
+            var keys_array = Object.keys(move_listener_obj);
+            for(var z=0;z<keys_array.length;z++) {
+                if(typeof move_listener_obj[keys_array[z]] === 'object') {
+                   if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["bs_name"])) {
+                        if (move_listener_obj[keys_array[z]].map != "" && move_listener_obj[keys_array[z]].map != null) {
+                            labelsArray[x].setVisible(e.currentTarget.checked);
+                        }
+                   }
+                }
             }
         }
     }

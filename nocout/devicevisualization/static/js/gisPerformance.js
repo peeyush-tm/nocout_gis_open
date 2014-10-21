@@ -249,7 +249,8 @@ function GisPerformance() {
             //Loop through devices
             for (var i = 0; i < bsMarkerObject['child_ss'].length; i++) {
             	condition = true;
-            	var polyPathArray = [],
+            	var sector_perf_val = "",
+                    polyPathArray = [],
             	    new_line_path = [],
                     sector_marker = allMarkersObject_gmap['sector_device']['sector_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on)],
                     sector_poly_marker = allMarkersObject_gmap['sector_polygon']['poly_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on)];
@@ -342,64 +343,10 @@ function GisPerformance() {
                                         sector_marker.icon = other_icons_obj;
                                         sector_marker.clusterIcon = other_icons_obj;
                                         sector_marker.clusterIcon = old_icon_obj;
-                                        // sector_marker.setOptions({
-                                        //     "icon" : other_icons_obj,
-                                        //     "clusterIcon" : other_icons_obj,
-                                        //     "oldIcon" : old_icon_obj,
-                                        // });
-                                    }
-
-                                    var existing_index = -1;
-                                    for (var x = 0; x < labelsArray.length; x++) {
-                                        var move_listener_obj = labelsArray[x].moveListener_;
-                                        if (move_listener_obj) {
-                                            var keys_array = Object.keys(move_listener_obj);
-                                            for(var z=0;z<keys_array.length;z++) {
-                                                if(typeof move_listener_obj[keys_array[z]] === 'object') {
-                                                   if((move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["filter_data"]["sector_name"]) && (move_listener_obj[keys_array[z]] && move_listener_obj[keys_array[z]]["filter_data"]["bs_name"])) {
-                                                        if (($.trim(move_listener_obj[keys_array[z]]["filter_data"]["sector_name"]) == $.trim(sector_marker.filter_data.sector_name)) && ($.trim(move_listener_obj[keys_array[z]]["filter_data"]["bs_name"]) == $.trim(sector_marker.filter_data.bs_name))) {
-                                                            existing_index = x;
-                                                            labelsArray[x].close();
-                                                        }
-                                                   }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    /*Remove that label from array*/
-                                    if (existing_index >= 0) {
-                                        labelsArray.splice(existing_index, 1);
                                     }
 
                                     /*Create Label on Sector Marker*/
-                                    var sector_perf_val = "";
                                     sector_perf_val = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], false);
-                                    if(sector_perf_val && $.trim(sector_perf_val)) {
-                                        var perf_infobox = new InfoBox({
-                                            content: sector_perf_val,
-                                            boxStyle: {
-                                                border: "1px solid black",
-                                                background: "white",
-                                                textAlign: "center",
-                                                fontSize: "9pt",
-                                                color: "black",
-                                                padding: '2px 6px'
-                                            },
-                                            disableAutoPan: true,
-                                            position: new google.maps.LatLng(sector_marker.ptLat, sector_marker.ptLon),
-                                            closeBoxURL: "",
-                                            isHidden: visible_flag,
-                                            // visible : visible_flag,
-                                            enableEventPropagation: true,
-                                            zIndex: 80,
-                                        });
-
-                                        perf_infobox.open(mapInstance, sector_marker);
-                                        if(sector_marker.map && (sector_marker.map != null && sector_marker.map != "")) {
-                                            labelsArray.push(perf_infobox);
-                                        }
-                                    }
                                 }
                             }
                         }
@@ -442,8 +389,20 @@ function GisPerformance() {
                         if (!$("#show_hide_label")[0].checked) {
                             visible_flag = true;
                         }
-                        var perf_val = "";
-                        perf_val = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
+                        
+                        var ss_val = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]),
+                            perf_val = "";
+
+                        if(ss_val && sector_perf_val) {
+                            perf_val = "("+ss_val+", "+sector_perf_val+")";
+                        } else if(ss_val && !sector_perf_val) {
+                            perf_val = "("+ss_val+", N/A)";
+                        } else if(!ss_val && sector_perf_val) {
+                            perf_val = "(N/A, "+sector_perf_val+")";
+                        } else {
+                            perf_val = "";
+                        }
+
                         if(perf_val && $.trim(perf_val)) {
                             var perf_infobox = new InfoBox({
                                 content: perf_val,
@@ -453,7 +412,8 @@ function GisPerformance() {
                                     textAlign: "center",
                                     fontSize: "9pt",
                                     color: "black",
-                                    padding: '2px 6px'
+                                    padding: '2px',
+                                    width : '100px'
                                 },
                                 disableAutoPan: true,
                                 position: new google.maps.LatLng(subStationMarker.ptLat, subStationMarker.ptLon),
@@ -461,7 +421,7 @@ function GisPerformance() {
                                 isHidden: visible_flag,
                                 // visible : visible_flag,
                                 enableEventPropagation: true,
-                                zIndex: 80,
+                                zIndex: 80
                             });
 
                             perf_infobox.open(mapInstance, subStationMarker);
