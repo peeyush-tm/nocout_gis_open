@@ -815,7 +815,8 @@ class BackhaulCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        verb_string = "Create Backhaul : %s" %(self.object.alias)
+        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(BackhaulCreate.success_url)
 
 
@@ -844,7 +845,7 @@ class BackhaulUpdate(UpdateView):
 
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of Backhaul : %s from initial values ' % (self.object.name) + ', '.join(
+            verb_string = 'Updated Backhaul : %s, ' % (self.object.alias) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
                           ' to ' + \
