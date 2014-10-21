@@ -1377,7 +1377,6 @@ class DeviceCreate(CreateView):
         try:
             id_list = [Device.objects.latest('id').id, int(Device.objects.latest('id').device_name)]
             device_latest_id = max(id_list) + 1
-            print "************************** device_latest_id - ", device_latest_id
         except Exception as e:
             logger.info("No device is added in database till now. Exception: ", e.message)
 

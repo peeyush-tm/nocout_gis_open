@@ -1350,7 +1350,8 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
 
     # get device latest inserted in schema
     try:
-        device_latest_id = Device.objects.latest('id').id
+        id_list = [Device.objects.latest('id').id, int(Device.objects.latest('id').device_name)]
+        device_latest_id = max(id_list)
     except Exception as e:
         logger.info("No device is added in database till now. Exception: ", e.message)
 
@@ -2470,7 +2471,8 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
 
     # get device latest inserted in schema
     try:
-        device_latest_id = Device.objects.latest('id').id
+        id_list = [Device.objects.latest('id').id, int(Device.objects.latest('id').device_name)]
+        device_latest_id = max(id_list)
     except Exception as e:
         logger.info("No device is added in database till now. Exception: ", e.message)
 
@@ -3281,7 +3283,8 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
     # get device latest inserted in schema
     try:
-        device_latest_id = Device.objects.latest('id').id
+        id_list = [Device.objects.latest('id').id, int(Device.objects.latest('id').device_name)]
+        device_latest_id = max(id_list)
     except Exception as e:
         logger.info("No device is added in database till now. Exception: ", e.message)
 
@@ -3863,7 +3866,8 @@ def bulk_upload_pmp_sm_inventory(gis_id, organization, sheettype):
 
     # get device latest inserted in schema
     try:
-        device_latest_id = Device.objects.latest('id').id
+        id_list = [Device.objects.latest('id').id, int(Device.objects.latest('id').device_name)]
+        device_latest_id = max(id_list)
     except Exception as e:
         logger.info("No device is added in database till now. Exception: ", e.message)
 
@@ -4178,7 +4182,8 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
 
     # get device latest inserted in schema
     try:
-        device_latest_id = Device.objects.latest('id').id
+        id_list = [Device.objects.latest('id').id, int(Device.objects.latest('id').device_name)]
+        device_latest_id = max(id_list)
     except Exception as e:
         logger.info("No device is added in database till now. Exception: ", e.message)
 
@@ -4760,7 +4765,8 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
 
     # get device latest inserted in schema
     try:
-        device_latest_id = Device.objects.latest('id').id
+        id_list = [Device.objects.latest('id').id, int(Device.objects.latest('id').device_name)]
+        device_latest_id = max(id_list)
     except Exception as e:
         logger.info("No device is added in database till now. Exception: ", e.message)
 
