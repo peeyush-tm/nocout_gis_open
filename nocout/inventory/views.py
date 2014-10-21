@@ -1803,7 +1803,6 @@ class IconSettingsList(ListView):
         """
         context = super(IconSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name',             'sTitle': 'Name',               'sWidth': 'auto'},
             {'mData': 'alias',            'sTitle': 'Alias',              'sWidth': 'auto'},
             {'mData': 'upload_image',     'sTitle': 'Image',       'sWidth': 'auto'},
             ]
@@ -1821,8 +1820,8 @@ class IconSettingsListingTable(BaseDatatableView):
     Class based View to render IconSettings Data table.
     """
     model = IconSettings
-    columns = ['name', 'alias', 'upload_image']
-    order_columns = ['name', 'alias', 'upload_image']
+    columns = ['alias', 'upload_image']
+    order_columns = ['alias', 'upload_image']
 
     def filter_queryset(self, qs):
         """
