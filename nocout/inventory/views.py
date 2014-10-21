@@ -2202,7 +2202,6 @@ class ThresholdConfigurationList(ListView):
         """
         context = super(ThresholdConfigurationList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name',                           'sTitle': 'Name',                   'sWidth': 'auto'},
             {'mData': 'alias',                          'sTitle': 'Alias',                  'sWidth': 'auto'},
             {'mData': 'live_polling_template__alias',   'sTitle': 'Live Polling Template',  'sWidth': 'auto'},
             ]
@@ -2220,8 +2219,8 @@ class ThresholdConfigurationListingTable(BaseDatatableView):
     Class based View to render ThresholdConfiguration Data table.
     """
     model = ThresholdConfiguration
-    columns = ['name', 'alias', 'live_polling_template__alias']
-    order_columns = ['name', 'alias', 'live_polling_template__alias']
+    columns = ['alias', 'live_polling_template__alias']
+    order_columns = ['alias', 'live_polling_template__alias']
 
     def filter_queryset(self, qs):
         """
