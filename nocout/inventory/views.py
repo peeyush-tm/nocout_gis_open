@@ -487,7 +487,7 @@ class BaseStationList(ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
-            {'mData': 'bs_switch__device_name', 'sTitle': 'BS Switch', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'bs_switch__device_alias', 'sTitle': 'BS Switch', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'backhaul__name', 'sTitle': 'Backhaul', 'sWidth': 'auto', },
             {'mData': 'bs_type', 'sTitle': 'BS Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
@@ -507,9 +507,9 @@ class BaseStationListingTable(BaseDatatableView):
     """
     model = BaseStation
     columns = ['name', 'alias', 'bs_site_id',
-               'bs_switch__device_name', 'backhaul__name', 'bs_type', 'building_height', 'description']
+               'bs_switch__device_alias', 'backhaul__name', 'bs_type', 'building_height', 'description']
     order_columns = ['name', 'alias', 'bs_site_id',
-                     'bs_switch__device_name', 'backhaul__name', 'bs_type', 'building_height', 'description']
+                     'bs_switch__device_alias', 'backhaul__name', 'bs_type', 'building_height', 'description']
 
     def filter_queryset(self, qs):
         """
@@ -684,10 +684,10 @@ class BackhaulList(ListView):
         datatable_headers = [
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'bh_configured_on__device_name', 'sTitle': 'Backhaul Configured On', 'sWidth': 'auto', },
+            {'mData': 'bh_configured_on__device_alias', 'sTitle': 'Backhaul Configured On', 'sWidth': 'auto', },
             {'mData': 'bh_port', 'sTitle': 'Backhaul Port', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'bh_type', 'sTitle': 'Backhaul Type', 'sWidth': 'auto', },
-            {'mData': 'pop__device_name', 'sTitle': 'POP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'pop__device_alias', 'sTitle': 'POP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'pop_port', 'sTitle': 'POP Port', 'sWidth': 'auto', },
             {'mData': 'bh_connectivity', 'sTitle': 'Connectivity', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'bh_circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', },
@@ -707,9 +707,9 @@ class BackhaulListingTable(BaseDatatableView):
     Class based View to render Backhaul Data table.
     """
     model = Backhaul
-    columns = ['name', 'alias', 'bh_configured_on__device_name', 'bh_port', 'bh_type', 'pop__device_name', 'pop_port',
+    columns = ['name', 'alias', 'bh_configured_on__device_alias', 'bh_port', 'bh_type', 'pop__device_alias', 'pop_port',
                'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
-    order_columns = ['name', 'alias', 'bh_configured_on__device_name', 'bh_port', 'bh_type', 'pop__device_name',
+    order_columns = ['name', 'alias', 'bh_configured_on__device_alias', 'bh_port', 'bh_type', 'pop__device_alias',
                      'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
 
     def filter_queryset(self, qs):
@@ -892,10 +892,10 @@ class SectorList(ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'sector_configured_on__device_name', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
+            {'mData': 'sector_configured_on__device_alias', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
             {'mData': 'sector_configured_on_port__name', 'sTitle': 'Sector Configured On Port', 'sWidth': 'auto',
              'sClass': 'hidden-xs'},
-            {'mData': 'antenna__name', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'mrc', 'sTitle': 'MRC', 'sWidth': 'auto', },
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             ]
@@ -914,10 +914,10 @@ class SectorListingTable(BaseDatatableView):
     Class based View to render Sector Data Table.
     """
     model = Sector
-    columns = ['name', 'alias', 'bs_technology__alias' ,'sector_id', 'sector_configured_on__device_name',
-               'sector_configured_on_port__name', 'antenna__name', 'mrc', 'description']
-    order_columns = ['name', 'alias', 'bs_technology__alias' ,'sector_id', 'sector_configured_on__device_name',
-               'sector_configured_on_port__name', 'antenna__name', 'mrc', 'description']
+    columns = ['name', 'alias', 'bs_technology__alias' ,'sector_id', 'sector_configured_on__device_alias',
+               'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
+    order_columns = ['name', 'alias', 'bs_technology__alias' ,'sector_id', 'sector_configured_on__device_alias',
+               'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
 
     def filter_queryset(self, qs):
         """
@@ -1292,8 +1292,8 @@ class SubStationList(ListView):
         datatable_headers = [
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'device__device_name', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'antenna__name', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'device__device_alias', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', },
             {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
@@ -1318,9 +1318,9 @@ class SubStationListingTable(BaseDatatableView):
     Class based View to render Sub Station Data table.
     """
     model = SubStation
-    columns = ['name', 'alias', 'device__device_name', 'antenna__name', 'version', 'serial_no', 'building_height',
+    columns = ['name', 'alias', 'device__device_alias', 'antenna__alias', 'version', 'serial_no', 'building_height',
                'tower_height', 'city', 'state', 'address', 'description']
-    order_columns = ['name', 'alias', 'device__device_name', 'antenna__name', 'version', 'serial_no', 'building_height',
+    order_columns = ['name', 'alias', 'device__device_alias', 'antenna__alias', 'version', 'serial_no', 'building_height',
                      'tower_height']
 
     def filter_queryset(self, qs):
@@ -1503,10 +1503,10 @@ class CircuitList(ListView):
             {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto'},
-            {'mData': 'sector__base_station__name', 'sTitle': 'Base Station', 'sWidth': 'auto'},
-            {'mData': 'sector__name', 'sTitle': 'Sector', 'sWidth': 'auto', },
-            {'mData': 'customer__name', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'sub_station__name', 'sTitle': 'Sub Station', 'sWidth': 'auto', },
+            {'mData': 'sector__base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto'},
+            {'mData': 'sector__alias', 'sTitle': 'Sector', 'sWidth': 'auto', },
+            {'mData': 'customer__alias', 'sTitle': 'Customer', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'sub_station__alias', 'sTitle': 'Sub Station', 'sWidth': 'auto', },
             {'mData': 'date_of_acceptance', 'sTitle': 'Date of Acceptance', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto',  'sClass': 'hidden-xs'}
         ]
@@ -1524,10 +1524,10 @@ class CircuitListingTable(BaseDatatableView):
     Class based View to render Circuit Data table.
     """
     model = Circuit
-    columns = ['name', 'alias', 'circuit_id','sector__base_station__name', 'sector__name', 'customer__name',
-               'sub_station__name', 'date_of_acceptance', 'description']
-    order_columns = ['name', 'alias', 'circuit_id','sector__base_station__name', 'sector__name', 'customer__name',
-                     'sub_station__name', 'date_of_acceptance', 'description']
+    columns = ['name', 'alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
+               'sub_station__alias', 'date_of_acceptance', 'description']
+    order_columns = ['name', 'alias', 'circuit_id','sector__base_station__alias', 'sector__alias', 'customer__alias',
+                     'sub_station__alias', 'date_of_acceptance', 'description']
 
     def filter_queryset(self, qs):
         """ Filter datatable as per requested value
