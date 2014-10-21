@@ -68,7 +68,6 @@ class InventoryListing(ListView):
         """
         context = super(InventoryListing, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'user_group__name', 'sTitle': 'User Group', 'sWidth': 'auto', },
             {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', },
@@ -88,8 +87,8 @@ class InventoryListingTable(BaseDatatableView):
     """
 
     model = Inventory
-    columns = ['name', 'alias', 'user_group__name', 'organization__name', 'description']
-    order_columns = ['name', 'alias', 'user_group__name', 'organization__name', 'description']
+    columns = ['alias', 'user_group__name', 'organization__name', 'description']
+    order_columns = ['alias', 'user_group__name', 'organization__name', 'description']
 
     def filter_queryset(self, qs):
         """
