@@ -2005,7 +2005,6 @@ class LivePollingSettingsList(ListView):
         """
         context = super(LivePollingSettingsList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'name',                    'sTitle': 'Name',              'sWidth': 'auto'},
             {'mData': 'alias',                   'sTitle': 'Alias',             'sWidth': 'auto'},
             {'mData': 'technology__alias',       'sTitle': 'Technology',        'sWidth': 'auto'},
             {'mData': 'service__alias',          'sTitle': 'Service',           'sWidth': 'auto'},
@@ -2025,8 +2024,8 @@ class LivePollingSettingsListingTable(BaseDatatableView):
     Class based View to render LivePollingSettings Data table.
     """
     model = LivePollingSettings
-    columns = ['name', 'alias', 'technology__alias', 'service__alias', 'data_source__alias']
-    order_columns = ['name', 'alias', 'technology__alias', 'service__alias', 'data_source__alias']
+    columns = ['alias', 'technology__alias', 'service__alias', 'data_source__alias']
+    order_columns = ['alias', 'technology__alias', 'service__alias', 'data_source__alias']
 
     def filter_queryset(self, qs):
         """
