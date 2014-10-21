@@ -2182,7 +2182,7 @@ function devicePlottingClass_gmap() {
         }
 
         /*Check that after applying filters any data exist or not*/
-        if(filteredData.length === 0) {
+      if(filteredData.length === 0) {
 
         	$.gritter.add({
                 // (string | mandatory) the heading of the notification
@@ -2194,21 +2194,16 @@ function devicePlottingClass_gmap() {
             });
 
         	if(page_type && page_type == 'googleEarth') {
-            	earth_instance.clearEarthElements();
-            } else {
-	        	/*Reset the markers, polyline & filters*/
-	            gmap_self.clearGmapElements();
+         	earth_instance.clearEarthElements();
+         } else {
+            data_for_filters = [];
+            // masterMarkersObj = [];
+            gmap_self.hide_all_elements_gmap();
+            /*Filter Line & label array as per filtered data*/
+            gmap_self.getFilteredLineLabel(data_for_filters);
 
-	            masterMarkersObj = [];
-
-	            gmap_self.hide_all_elements_gmap();
-
-	            /*Filter Line & label array as per filtered data*/
-	            gmap_self.getFilteredLineLabel([]);
-            }
-
-        } else {
-
+         }
+      } else {
         	if(page_type && page_type == 'googleEarth') {
 
 	            data_for_filters_earth = filteredData;
@@ -2227,25 +2222,7 @@ function devicePlottingClass_gmap() {
 
             	/*Filter Line & label array as per filtered data*/
 	            gmap_self.getFilteredLineLabel(data_for_filters);
-
-    //         	/*Reset the markers, polyline & filters*/
-	   //          gmap_self.clearGmapElements();
-
-	   //          sector_MarkersArray = [];
-				// sectorMarkersMasterObj = {};
-				// sectorMarkerConfiguredOn = [];
-
-	   //          masterMarkersObj = [];
-
-	   //          // showRequiredSectorMarker(filteredData);
-
-	   //          tempFilteredData= filteredData;
-	   //          isCallCompleted = 1;
-	            
-	   //          /*Populate the map with the filtered markers*/
-	   //          gmap_self.plotDevices_gmap(filteredData,"base_station");
             }
-
             /*Resetting filter data to Empty.*/
             filteredData=[]
         }
