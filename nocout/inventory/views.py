@@ -25,7 +25,7 @@ from device_group.models import DeviceGroup
 from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL
 from nocout.utils.util import DictDiffer
 from models import Inventory, DeviceTechnology, IconSettings, LivePollingSettings, ThresholdConfiguration, \
-    ThematicSettings, GISInventoryBulkImport, UserThematicSettings
+    ThematicSettings, GISInventoryBulkImport, UserThematicSettings, CircuitL2Report
 from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
     ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm
 from organization.models import Organization
@@ -33,7 +33,7 @@ from site_instance.models import SiteInstance
 from user_group.models import UserGroup
 from user_profile.models import UserProfile
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
-from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm, CircuitForm
+from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm, CircuitForm, CircuitL2ReportForm
 from device.models import Country, State, City, Device
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from user_profile.models import UserProfile
@@ -1631,8 +1631,10 @@ class CircuitListingTable(BaseDatatableView):
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             dct.update(actions='<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')),
-                       date_of_acceptance=dct['date_of_acceptance'].strftime("%Y-%m-%d") if dct['date_of_acceptance'] != "" else "")
+                <a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>\
+                <a href="/circuit/l2_reports/{0}/"><i class="fa fa-sign-in text-info" title="View L2 reports for circuit"\
+                alt="View L2 reports for circuit"></i></a>'.format(dct.pop('id')),
+               date_of_acceptance=dct['date_of_acceptance'].strftime("%Y-%m-%d") if dct['date_of_acceptance'] != "" else "")
 
         return qs
 
@@ -1789,6 +1791,193 @@ class CircuitDelete(DeleteView):
         """
         return super(CircuitDelete, self).dispatch(*args, **kwargs)
 
+
+#********************************* Circuit L2 Reports*******************************************
+
+class CircuitL2Report_Init(ListView):
+    """
+    Class Based View to render Circuit based L2 reports List Page.
+    """
+    model = CircuitL2Report
+    template_name = 'circuit_l2/circuit_l2_list.html'
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+        context = super(CircuitL2Report_Init, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'file_name', 'sTitle': 'Report', 'sWidth': 'auto', },
+            {'mData': 'added_on', 'sTitle': 'Uploaded On', 'sWidth': 'auto'},
+            {'mData': 'user_id', 'sTitle': 'Uploaded By', 'sWidth': 'auto'},
+        ]
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
+        if 'admin' in user_role or 'operator' in user_role:
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        context['circuit_id'] = self.kwargs['circuit_id']
+        return context
+
+class L2ReportListingTable(BaseDatatableView):
+    """
+    Class based View to render Circuit Data table.
+    """
+    model = CircuitL2Report
+    columns = ['name', 'file_name', 'added_on', 'user_id']
+    order_columns = ['name', 'file_name', 'added_on']
+
+    def filter_queryset(self, qs):
+        """ Filter datatable as per requested value """
+
+        sSearch = self.request.GET.get('sSearch', None)
+
+        if sSearch:
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            for column in self.columns[:-1]:
+                # avoid search on 'added_on'
+                if column == 'added_on':
+                    continue
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            exec exec_query
+        return qs
+
+    def get_initial_queryset(self,circuit_id):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        circuit_instance = Circuit.objects.filter(id=circuit_id)
+        # print "******************************** circuit_id -"
+        # print self.model
+        # demo_q = self.model.objects.all()
+        # print "****************************** demo_q - ", demo_q
+        # print CircuitL2Report.objects.values(*self.columns + ['id'])
+        # return CircuitL2Report.objects.values(*self.columns + ['id'])
+        return CircuitL2Report.objects.filter(circuit_id=circuit_instance).filter(user_id=self.request.user).values(*self.columns + ['id'])
+
+    def prepare_results(self, qs):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
+        if qs:
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in qs:
+            dct.update(actions='<a href="/circuit/l2_report/download/{0}"><i class="fa fa-arrow-circle-o-down text-info"></i></a>\
+                <a href="/circuit/l2_report/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>\
+                '.format(dct.pop('id')),
+               added_on=dct['added_on'].strftime("%Y-%m-%d") if dct['added_on'] != "" else "")
+
+        return qs
+
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except Exception:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.get_order_columns()
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except Exception:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ''
+
+            sortcol = order_columns[i_sort_col]
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            key_name=order[0][1:] if '-' in order[0] else order[0]
+            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
+            return sorted_device_data
+        return qs
+
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        The main method call to fetch, search, ordering , prepare and display the data on the data table.
+        """
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        ckt_id = self.kwargs['circuit_id']
+        
+        qs = self.get_initial_queryset(ckt_id)
+
+        # number of records before filtering
+        total_records = qs.count()
+
+        qs = self.filter_queryset(qs)
+        # number of records after filtering
+        total_display_records = len(qs)
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+        }
+        return ret
+
+   
+
+
+
+class CircuitL2ReportCreate(CreateView):
+    """
+    Class based view to create new Circuit.
+    """
+
+    template_name = 'circuit_l2/circuit_l2_new.html'
+    model = CircuitL2Report
+    form_class = CircuitL2ReportForm 
+    success_url = reverse_lazy('circuit_l2_report_create')
+
+    # @method_decorator(permission_required('inventory.add_circuit', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
+        return super(CircuitL2ReportCreate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        """
+        Submit the form and to log the user activity.
+        """
+        self.object = form.save(commit=False)
+        self.object.user_id =  self.request.user
+        self.object.circuit_id =  self.kwargs['circuit_id']
+
+        self.object.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
+        return HttpResponseRedirect(CircuitL2ReportCreate.success_url)
 
 #**************************************** IconSettings *********************************************
 class IconSettingsList(ListView):
