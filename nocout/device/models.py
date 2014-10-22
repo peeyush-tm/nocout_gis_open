@@ -171,7 +171,7 @@ class Device(MPTTModel, models.Model):
     is_monitored_on_nms = models.IntegerField('Is Monitored', max_length=1, default=0)
 
     def __unicode__(self):
-        return self.device_name
+        return self.device_alias
 
 
 # model-type mapper
