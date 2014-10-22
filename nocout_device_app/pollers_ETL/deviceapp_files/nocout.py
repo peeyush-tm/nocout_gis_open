@@ -880,7 +880,11 @@ def set_bulk_ping_levels(ping_levels_list=[]):
                 del g_service_vars['__builtins__']
 	except OSError, e:
 		logger.error('Could not open rules file: ' + pprint.pformat(e))
-        
+    
+	v2_hosts = g_service_vars['bulkwalk_hosts']
+       	if not filter(lambda x: 'snmp-v2' in x[0], v2_hosts):
+               v2_hosts.append((["snmp-v2"], ALL_HOSTS))
+               g_service_vars['bulkwalk_hosts'] = v2_hosts    
 	if ping_levels_list:
 		device_types = set(map(lambda x: x.get('device_type'), ping_levels_list))
 		old_ping_levels = g_service_vars['ping_levels']
@@ -1021,6 +1025,9 @@ def write_new_host_rules():
 
 def sync():
     logger.debug('[-- sync --]')
+    load_file(hosts_file)
+    add_default_checks(default_checks_file)
+    flag = save_host(hosts_file)
     # Set flag for sync in mysql db
     #toggle_sync_flag()
     # First read all the new configs from db and write to rules.mk and hosts.mk
