@@ -434,12 +434,12 @@ class LivePerformanceListing(BaseDatatableView):
 
         if i_sorting_cols:
             sort_data = self.prepare_devices(qs)
-
-            sort_using = self.columns[i_sorting_cols]
-
-            sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
-
-            return sorted_qs
+            try:
+                sort_using = self.columns[i_sorting_cols]
+                sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
+                return sorted_qs
+            except Exception as nocolumn:
+                pass
         return qs
 
     def get_context_data(self, *args, **kwargs):
