@@ -135,7 +135,7 @@ class OperationalDeviceListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) > 3:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
 
             for dictionary in qs:
@@ -420,7 +420,7 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) > 3:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
 
             for dictionary in qs:
@@ -657,7 +657,7 @@ class DisabledDeviceListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) > 3:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
 
             for dictionary in qs:
@@ -892,7 +892,7 @@ class ArchivedDeviceListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) > 3:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
 
             for dictionary in qs:
@@ -1127,7 +1127,7 @@ class AllDeviceListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) > 3:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
 
             for dictionary in qs:
@@ -1764,7 +1764,7 @@ class DeviceTypeFieldsListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) > 3:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
             for dictionary in qs:
 
@@ -2023,7 +2023,7 @@ class DeviceTechnologyListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) > 3:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
             for dictionary in qs:
 
@@ -2319,7 +2319,7 @@ class DeviceVendorListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) > 3:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
             for dictionary in qs:
 
@@ -2616,7 +2616,7 @@ class DeviceModelListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) > 3:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
             for dictionary in qs:
 
@@ -2923,7 +2923,7 @@ class DeviceTypeListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) > 3:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
             for dictionary in qs:
 
@@ -3187,7 +3187,7 @@ class DevicePortListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) > 3:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
@@ -3391,7 +3391,7 @@ class DeviceFrequencyListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch and len(str(sSearch).strip()) > 3:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns:

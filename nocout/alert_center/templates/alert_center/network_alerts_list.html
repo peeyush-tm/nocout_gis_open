@@ -24,15 +24,19 @@
                 <ul class="nav nav-tabs">
                         <li><a href="#network_wifi_block" id="network_wifi_tab" data-toggle="tab"><span class="hidden-inline-mobile">WiMAX</span></a></li>
                         <li><a href="#network_pmp_block" id="network_pmp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PMP</span></a></li>
-                        <li class="active"><a href="#network_p2p_block" id="network_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">P2P</span></a></li>
+                        <li class="active"><a href="#network_ptp_block" id="network_ptp_tab" data-toggle="tab"><span class="hidden-inline-mobile">PTP</span></a></li>
                 </ul>
                 <div class="tab-content" style="overflow:auto;">
-                    <div class="tab-pane in active" id="network_p2p_block">
-                        <table id="network_p2p_alertlistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
+                    <!-- network_ptp_block Start -->
+                    <div class="tab-pane active" id="network_ptp_block">
+                        <table cellpadding="0" cellspacing="0" border="0"
+                               class="datatable table table-striped table-bordered table-hover"
+                               id="network_ptp_block_table">
                             <thead></thead>
                             <tbody></tbody>
                         </table>
                     </div>
+                    <!-- network_ptp_block End -->
                     <div class="tab-pane" id="network_pmp_block">
                         <table id="network_pmp_alertlistingtable" cellpadding="0" cellspacing="0" border="0" class="datatable table table-striped table-bordered table-hover">
                             <thead></thead>
@@ -59,8 +63,8 @@
     var dataTableInstance = "";
     /*This is a temporary code which is replace when data for data table is provided*/
     $(document).ready(function (e) {
-          function ourDataTableWidget()
-            {
+          /* Removing the pagination in the datatable*/
+            function ourDataTableWidget() {
                 /**
                  * This function creates the jquery data table on given domElement
                  * @class ourDataTableWidget
@@ -69,8 +73,7 @@
                  * @param tableheaders {JSON Object} It contains the grid headers object
                  * @param ajax_url "String" It contains the ajax url from which the data is to be loaded
                  */
-                this.createDataTable = function(tableId, tableheaders, ajax_url, destroy)
-                {
+                this.createDataTable = function (tableId, tableheaders, ajax_url, destroy) {
                     /*Show the spinner*/
                     showSpinner();
 
@@ -85,25 +88,27 @@
                         var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
                         length_sel.addClass('form-control input-sm');
                     });
-                    if (destroy){
-                        $("#"+tableId).dataTable().fnDestroy();
+                    if (destroy) {
+                        $("#" + tableId).dataTable().fnDestroy();
                     }
-
-                    var dtable = $("#"+tableId).DataTable({
+                    var dtable = $("#" + tableId).DataTable({
                         bAutoWidth: false,
                         bDestroy : true,
                         bPaginate: true,
-                        bProcessing : true,
+                        bProcessing: true,
                         bServerSide: false,
                         sAjaxSource: ajax_url,
                         /*This is the callback funtion for data ajax call*/
-                        fnInitComplete : function(oSettings, json) {
+                        fnInitComplete: function (oSettings, json) {
                             /*Hide the spinner*/
                             hideSpinner();
                         },
-                        aoColumns:tableheaders,
-                        sPaginationType: "full_numbers",
-                        aaSorting: [[9, 'desc'],[0, 'asc']]
+                        aoColumns: tableheaders,
+                        sPaginationType: "bs_full",
+                        aaSorting: [
+                            [9, 'desc'],
+                            [0, 'asc']
+                        ]
                     });
                 };
             }
