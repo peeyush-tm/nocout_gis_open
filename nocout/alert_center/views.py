@@ -147,7 +147,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
                                  "current_value",
                                  "max_value",
                                  "sys_timestamp",
-                                 "description"
+                                 # "description"
                                 ]
         # Unique machine from the sector_configured_on_devices
         unique_machine_list = { device['machine_name']: True for device in organization_devices }.keys()
@@ -391,7 +391,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
                                  "current_value",
                                  "max_value",
                                  "sys_timestamp",
-                                 "description"
+                                 # "description"
                                 ]
 
         # Unique machine from the sector_configured_on_devices
@@ -412,7 +412,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
             #
             # device_data += self.collective_query_result(
             #     machine = machine,
-            #     table_name = "performance_eventnetwork",
+            #     table_name = "performance_networkstatus",
             #     devices = machine_device_list,
             #     data_sources = data_sources_list,
             #     columns = required_data_columns
@@ -634,7 +634,8 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
             extra_query_condition = "AND (`{0}`.`current_value` BETWEEN 1 AND 99 ) "
         elif self.request.GET['data_source'] == 'down':
             data_sources_list = ['pl']
-            extra_query_condition = "AND (`{0}`.`current_value` = 100 ) "
+            extra_query_condition = "AND (`{0}`.`current_value` >= 100 ) "
+            search_table = "performance_networkstatus"
         elif self.request.GET['data_source'] == 'service':
             extra_query_condition = None
             search_table = "performance_eventservice"
@@ -647,7 +648,8 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
                                  "current_value",
                                  "max_value",
                                  "sys_timestamp",
-                                 "description"]
+                                 # "description"
+        ]
 
         sorted_device_list = list()
 
@@ -846,6 +848,9 @@ class CustomerAlertListingTable(BaseDatatableView):
 
         extra_query_condition = "AND (`{0}`.`current_value` > 0 ) "
 
+
+        search_table = "performance_eventnetwork"
+
         if self.request.GET['data_source'] == 'latency':
             data_sources_list = ['rta']
         elif self.request.GET['data_source'] == 'packet_drop':
@@ -853,7 +858,8 @@ class CustomerAlertListingTable(BaseDatatableView):
             extra_query_condition = "AND (`{0}`.`current_value` BETWEEN 1 AND 99 ) "
         elif self.request.GET['data_source'] == 'down':
             data_sources_list = ['pl']
-            extra_query_condition = "AND (`{0}`.`current_value` = 100 ) "
+            extra_query_condition = "AND (`{0}`.`current_value` >= 100 ) "
+            search_table = "performance_networkstatus"
 
         required_data_columns = ["id",
                                  "data_source",
@@ -863,7 +869,8 @@ class CustomerAlertListingTable(BaseDatatableView):
                                  "current_value",
                                  "max_value",
                                  "sys_timestamp",
-                                 "description"]
+                                 # "description"
+        ]
 
         sorted_device_list = list()
 
@@ -873,7 +880,7 @@ class CustomerAlertListingTable(BaseDatatableView):
 
             performance_data = raw_prepare_result(performance_data=performance_data,
                                                   machine=machine,
-                                                  table_name='performance_eventnetwork',
+                                                  table_name=search_table,
                                                   devices=machine_device_list,
                                                   data_sources=data_sources_list,
                                                   columns=required_data_columns,
@@ -907,7 +914,10 @@ class CustomerAlertListingTable(BaseDatatableView):
 
             for dct in qs:
                 device = Device.objects.get(device_name= dct['device_name'])
-                dct.update(current_value = dct["current_value"] + " " + data_unit)
+                try:
+                    dct.update(current_value = float(dct["current_value"]))
+                except:
+                    dct.update(current_value = dct["current_value"] + " " + data_unit)
                 dct.update(action='<a href="/alert_center/customer/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
                                        <a href="/performance/customer_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
                                        <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
@@ -1065,8 +1075,8 @@ class SingleDeviceAlertDetails(View):
                     " `derived_table`.`current_value` as packet_loss, " \
                     " `original_table`.`sys_timestamp`," \
                     " original_table.`description` " \
-                    " FROM `performance_eventnetwork` as original_table "\
-                    " INNER JOIN (`performance_eventnetwork` as derived_table) "\
+                    " FROM `performance_networkstatus` as original_table "\
+                    " INNER JOIN (`performance_networkstatus` as derived_table) "\
                     " ON( "\
                     "    original_table.`data_source` <> derived_table.`data_source` "\
                     "    AND "\
@@ -1280,7 +1290,7 @@ def prepare_query(table_name=None,
 
 
 def common_get_performance_data(model=EventNetwork,
-                                table_name="performance_eventnetwork",
+                                table_name="performance_networkstatus",
                                 device_list=[],
                                 data_sources_list=["pl", "rta"],
                                 columns=None):
@@ -1297,7 +1307,8 @@ def common_get_performance_data(model=EventNetwork,
     """
     if not columns:
         columns = ["id", "service_name", "ip_address", "device_name", "data_source", "severity", "current_value", "sys_timestamp",
-                   "description"]
+                   #"description"
+        ]
 
     query = prepare_query(table_name=table_name,
                           devices=device_list,
@@ -1328,7 +1339,7 @@ def common_get_performance_data(model=EventNetwork,
 
                 perf_result["sys_timestamp"] = str(datetime.datetime.fromtimestamp(float(data.sys_timestamp)))
 
-                perf_result["description"] = data.description
+                perf_result["description"] = ''#data.description
 
                 device_result[device] = perf_result
 
@@ -1344,24 +1355,34 @@ def common_prepare_results(qs):
     """
 
     for dct in qs:
-        if dct['severity'] == 'DOWN' or "CRITICAL" in dct['description'] or dct['severity'] == 'CRITICAL':
+        current_value = dct['current_value']
+        try:
+            current_value = float(current_value)
+        except:
+            pass
+        if dct['severity'].upper() == 'DOWN' \
+                or "CRITICAL" in dct['description'].upper() \
+                or dct['severity'].upper() == 'CRITICAL':
             dct['severity'] = '<i class="fa fa-circle red-dot" value="1" title="Critical"><span style="display:none">1</span></i>'
-            dct['current_value'] = '<span class="text-danger">%s</span>' % (dct['current_value'])
+            dct['current_value'] = '<span class="text-danger">%s</span>' % current_value
             dct['description'] = '<span class="text-danger">%s</span>' % (dct['description'])
 
-        elif dct['severity'] == 'WARNING' or "WARNING" in dct['description'] or "WARN" in dct['description']:
+        elif dct['severity'].upper() == 'WARNING' \
+                or "WARNING" in dct['description'].upper() \
+                or "WARN" in dct['description'].upper():
             dct['severity'] = '<i class="fa fa-circle orange-dot" value="2" title="Warning"><span style="display:none">2</span></i>'
-            dct['current_value'] = '<span class="text-warning">%s</span>' % (dct['current_value'])
+            dct['current_value'] = '<span class="text-warning">%s</span>' % current_value
             dct['description'] = '<span class="text-warning">%s</span>' % (dct['description'])
 
-        elif dct['severity'] == 'UP' or "OK" in dct['description']:
+        elif dct['severity'].upper() == 'UP' \
+                or "OK" in dct['description'].upper():
             dct['severity'] = '<i class="fa fa-circle green-dot" value="3" title="Ok"><span style="display:none">3</span></i>'
-            dct['current_value'] = '<span class="text-success">%s</span>' % (dct['current_value'])
+            dct['current_value'] = '<span class="text-success">%s</span>' % current_value
             dct['description'] = '<span class="text-success">%s</span>' % (dct['description'])
 
         else:
             dct['severity'] = '<i class="fa fa-circle grey-dot" value="4" title="Ok"><span style="display:none">4</span></i>'
-            dct['current_value'] = '<span class="text-muted" >%s</span>' % (dct['current_value'])
+            dct['current_value'] = '<span class="text-muted" >%s</span>' % current_value
             dct['description'] = '<span class="text-muted">%s</span>' % (dct['description'])
 
     return qs
@@ -1374,7 +1395,7 @@ def severity_level_check(list_to_check):
     severity_check = ['DOWN', 'CRITICAL', 'WARNING', "WARN", "CRIT"]
     for item in list_to_check:
         for severity in severity_check:
-            if severity in item:
+            if severity.lower() in item.lower():
                 return True
 
 def raw_prepare_result(performance_data,
@@ -1385,7 +1406,7 @@ def raw_prepare_result(performance_data,
                        columns=None,
                        condition=None,
                        offset=0,
-                       limit=10
+                       limit=5000
     ):
     """
 
@@ -1414,7 +1435,7 @@ def raw_prepare_result(performance_data,
                               offset=offset,
                               limit=limit
         )
-        # logger.debug(query)
+        # print(query)
         if query:
             performance_data += fetch_raw_result(query, machine)
         else:
@@ -1632,7 +1653,7 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
                 if data['device_name'] not in processed_device:
                     processed_device.append(data['device_name'])
                     #device is bs
-                    if severity_level_check(list_to_check=[data['severity'], data['description']]):
+                    if severity_level_check(list_to_check=[data['severity']]):
                         device_events = {
                             'device_name': data['device_name'],
                             'device_type': format_value(device_type),
@@ -1649,14 +1670,14 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
                             'max_value': data["max_value"],
                             'sys_timestamp': datetime.datetime.fromtimestamp(
                                 float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                            'description': data['description']
+                            'description': ''#data['description']
                         }
                         device_list.append(device_events)
             if bs_row['SSDEVICENAME'] == data['device_name']:
                 #device is ss
                 if data['device_name'] not in processed_device:
                     processed_device.append(data['device_name'])
-                    if severity_level_check(list_to_check=[data['severity'], data['description']]):
+                    if severity_level_check(list_to_check=[data['severity']]):
                         device_events = {
                             'device_name': data['device_name'],
                             'device_type': format_value(device_type),
@@ -1673,7 +1694,7 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
                             'max_value': data["max_value"],
                             'sys_timestamp': datetime.datetime.fromtimestamp(
                                 float(data["sys_timestamp"])).strftime("%m/%d/%y (%b) %H:%M:%S (%I:%M %p)"),
-                            'description': data['description']
+                            'description': ''#data['description']
                         }
                         device_list.append(device_events)
 
