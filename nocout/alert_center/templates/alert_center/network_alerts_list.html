@@ -62,6 +62,22 @@
     var dataTableInstance = "";
     /*This is a temporary code which is replace when data for data table is provided*/
     $(document).ready(function (e) {
+        var sort_index = 9;
+
+        /*Ajax url to get grid data*/
+            ajax_url_get_parameter = "";
+
+            if(/latency/i.test(window.location.pathname)) {
+                ajax_url_get_parameter='latency'
+            } else if(/packet_drop/i.test(window.location.pathname)) {
+                ajax_url_get_parameter='packet_drop'
+            } else if(/down/i.test(window.location.pathname)) {
+                ajax_url_get_parameter='down';
+            } else if(/service/i.test(window.location.pathname)) {
+                ajax_url_get_parameter='service';
+                sort_index = 10;
+            }
+
           /* Removing the pagination in the datatable*/
             function ourDataTableWidget() {
                 /**
@@ -105,7 +121,7 @@
                         aoColumns: tableheaders,
                         sPaginationType: "bs_full",
                         aaSorting: [
-                            [9, 'desc'],
+                            [sort_index, 'desc'],
                             [0, 'asc']
                         ]
                     });
@@ -115,18 +131,7 @@
             dataTableInstance = new ourDataTableWidget();
             /*Grid headers object*/
             var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
-            /*Ajax url to get grid data*/
-            ajax_url_get_parameter = "";
 
-            if(/latency/i.test(window.location.pathname)) {
-                ajax_url_get_parameter='latency'
-            } else if(/packet_drop/i.test(window.location.pathname)) {
-                ajax_url_get_parameter='packet_drop'
-            } else if(/down/i.test(window.location.pathname)) {
-                ajax_url_get_parameter='down'
-            } else if(/service/i.test(window.location.pathname)) {
-                ajax_url_get_parameter='service'
-            }
 
 
             var ajax_url_wifi= '{% url "NetworkAlertListingTable" %}'+'?data_source='+ ajax_url_get_parameter+'&data_tab=' + 'WiMAX';

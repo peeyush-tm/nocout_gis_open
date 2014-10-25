@@ -164,7 +164,7 @@ class GetCustomerAlertDetail(BaseDatatableView):
             data_sources_list = []
             device_data += self.collective_query_result(
                 machine=machine,
-                table_name="performance_eventservice",
+                table_name="performance_servicestatus",
                 devices=machine_device_list,
                 data_sources=data_sources_list,
                 columns=required_data_columns)
@@ -421,7 +421,7 @@ class GetNetworkAlertDetail(BaseDatatableView):
             data_sources_list = []
             device_data += self.collective_query_result(
                 machine = machine,
-                table_name = "performance_eventservice",
+                table_name = "performance_servicestatus",
                 devices = machine_device_list,
                 data_sources = data_sources_list,
                 columns = required_data_columns
@@ -560,7 +560,14 @@ class AlertCenterNetworkListing(ListView):
                                        'sClass': 'hidden-xs',
                                        'bSortable': True},
                              ]
-
+        if data_source == 'service':
+            datatable_headers += [
+            {'mData': 'data_source_name',
+             'sTitle': 'Data Source',
+             'sWidth': 'auto',
+             'sClass': 'hidden-xs',
+             'bSortable': True }
+            ]
         datatable_headers += [
             {'mData': 'current_value',
              'sTitle': '{0}'.format(data_source_title),
@@ -621,7 +628,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
 
         device_list, performance_data, data_sources_list = list(), list(), list()
 
-        search_table = "performance_eventnetwork"
+        search_table = "performance_networkstatus"
 
         data_sources_list = list()
 
@@ -638,7 +645,7 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
             search_table = "performance_networkstatus"
         elif self.request.GET['data_source'] == 'service':
             extra_query_condition = None
-            search_table = "performance_eventservice"
+            search_table = "performance_servicestatus"
 
         required_data_columns = ["id",
                                  "ip_address",
@@ -696,11 +703,15 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
             elif 'packet_drop' == data_source:
                 service_tab = 'packet_drop'
             elif 'service' == data_source:
+                data_unit=''
                 service_tab = 'service'
 
             for dct in qs:
                 device = Device.objects.get(device_name= dct['device_name'])
-                dct.update(current_value = dct["current_value"] + " " + data_unit)
+                try:
+                    dct.update(current_value = float(dct["current_value"]))
+                except:
+                    dct.update(current_value = dct["current_value"] + " " + data_unit)
                 dct.update(action='<a href="/alert_center/network/device/{0}/service_tab/{1}/" title="Device Alerts"><i class="fa fa-warning text-warning"></i></a>\
                                        <a href="/performance/network_live/{0}/" title="Device Performance"><i class="fa fa-bar-chart-o text-info"></i></a>\
                                        <a href="/device/{0}" title="Device Inventory"><i class="fa fa-dropbox text-muted"></i></a>'.
@@ -1044,8 +1055,8 @@ class SingleDeviceAlertDetails(View):
             data_list = EventNetwork.objects. \
                 filter(device_name=device_name,
                        data_source='pl',
-                       # current_value=100, #need to show up and down both
-                       # severity='DOWN',
+                       current_value=100, #need to show up and down both
+                       severity='DOWN',
                        sys_timestamp__gte=start_date,
                        sys_timestamp__lte=end_date). \
                 order_by("-sys_timestamp"). \
@@ -1075,8 +1086,8 @@ class SingleDeviceAlertDetails(View):
                     " `derived_table`.`current_value` as packet_loss, " \
                     " `original_table`.`sys_timestamp`," \
                     " original_table.`description` " \
-                    " FROM `performance_networkstatus` as original_table "\
-                    " INNER JOIN (`performance_networkstatus` as derived_table) "\
+                    " FROM `performance_eventnetwork` as original_table "\
+                    " INNER JOIN (`performance_eventnetwork` as derived_table) "\
                     " ON( "\
                     "    original_table.`data_source` <> derived_table.`data_source` "\
                     "    AND "\
