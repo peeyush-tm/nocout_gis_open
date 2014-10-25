@@ -804,7 +804,7 @@ function devicePlottingClass_gmap() {
 							deviceInfo 			: sector_array[j].device_info,
 							poll_info 			: [],
 							sectorName  		: sector_array[j].sector_configured_on,
-							device_name  		: sector_array[j].sector_configured_on,
+							device_name  		: sector_array[j].sector_configured_on_device,
 							name  				: bs_ss_devices[i].name,
 							filter_data 	    : {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on},
 							sector_lat  		: startEndObj["startLat"],
@@ -875,7 +875,7 @@ function devicePlottingClass_gmap() {
 				    	antenna_height   : 	ss_marker_obj.data.antenna_height,
 				    	name 		 	 : 	ss_marker_obj.name,
 				    	bs_name 		 :  bs_ss_devices[i].name,
-				    	bs_sector_device :  sector_array[j].sector_configured_on,
+				    	bs_sector_device :  sector_array[j].sector_configured_on_device,
 				    	filter_data 	 :  {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "ss_name" : ss_marker_obj.name},
 				    	device_name 	 : 	ss_marker_obj.device_name,
 				    	zIndex 			 : 	200,
@@ -2492,18 +2492,14 @@ function devicePlottingClass_gmap() {
 										if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
 											
 											if($.trim(allSS[k].technology.toLowerCase()) == "ptp" || $.trim(allSS[k].technology.toLowerCase()) == "p2p") {
-												if(allSSIds.indexOf(allSS[k].device_name) == -1) {
-													if(allSS[k].device_name) {
-														allSSIds.push(allSS[k].device_name);
-													}
+												if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
+													allSSIds.push(allSS[k].device_name);
 													polygonSelectedDevices.push(allSS[k]);
 												}
 											} else {
 												if(allSS[k].pointType == 'sub_station') {
-													if(allSSIds.indexOf(allSS[k].device_name) == -1) {
-														if(allSS[k].device_name) {
-															allSSIds.push(allSS[k].device_name);
-														}
+													if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
+														allSSIds.push(allSS[k].device_name);
 														polygonSelectedDevices.push(allSS[k]);
 													}
 												}
