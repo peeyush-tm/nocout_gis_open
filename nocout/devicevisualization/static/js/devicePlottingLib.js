@@ -2571,7 +2571,7 @@ function devicePlottingClass_gmap() {
 										devices_counter = polygonSelectedDevices[i].device_name;
 									}
 
-									if(!polled_device_count[devices_counter]) {
+                                        if(!polled_device_count[devices_counter]) {
 										polled_device_count[devices_counter]  = 1;
 									} else {
 										polled_device_count[devices_counter] = polled_device_count[devices_counter] +1;
@@ -2600,7 +2600,8 @@ function devicePlottingClass_gmap() {
 										devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
 
 									} else {
-										if(polled_device_count[devices_counter] <= 1) {
+										if(polled_device_count[devices_counter] ) //<= 1) //why do we have this condition ???
+                                        {
 											var device_end_txt = "";
 											if(polygonSelectedDevices[i].pointType == 'sub_station') {
 												device_end_txt = "Far End";
