@@ -1241,11 +1241,11 @@ class Get_Service_Type_Performance_Data(View):
         result_data, aggregate_data = list(), dict()
         for data in performance_data:
             temp_time = data.sys_timestamp
-
-            if temp_time in aggregate_data:
+            connected_mac = data.connected_device_mac
+            if connected_mac in aggregate_data:
                 continue
             else:
-                aggregate_data[temp_time] = data.sys_timestamp
+                aggregate_data[connected_mac] = data.connected_device_mac
                 result_data.append({
                         'device_name': data.device_name,
                         'ip_address': data.ip_address,
