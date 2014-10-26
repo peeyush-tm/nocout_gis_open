@@ -860,7 +860,7 @@ class CustomerAlertListingTable(BaseDatatableView):
         extra_query_condition = "AND (`{0}`.`current_value` > 0 ) "
 
 
-        search_table = "performance_eventnetwork"
+        search_table = "performance_networkstatus"
 
         if self.request.GET['data_source'] == 'latency':
             data_sources_list = ['rta']
