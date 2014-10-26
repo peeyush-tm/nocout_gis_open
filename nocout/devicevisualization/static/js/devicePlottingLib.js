@@ -2588,28 +2588,26 @@ function devicePlottingClass_gmap() {
 										}
 
 										if(polled_device_count[devices_counter] <= 1) {
-											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>Near-End '+(i+1)+'.) '+polygonSelectedDevices[i].bs_name+'</h5>';
+											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>Near-End '+(i+1)+'.) '+polygonSelectedDevices[i].bs_sector_device+'</h5>';
 											devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name2+'">';
 											devicesTemplate += '<ul id="pollVal_'+new_device_name2+'" class="list-unstyled list-inline"></ul>';
 											devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name2+'"></span></div></div>';
 										}
 
-										devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>Far-End '+(i+1)+'.) '+polygonSelectedDevices[i].name+'</h5>';
+										devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>Far-End '+(i+1)+'.) '+polygonSelectedDevices[i].device_name+'</h5>';
 										devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 										devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
 										devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
 
 									} else {
 										if(polled_device_count[devices_counter] <= 1) {
-											var point_name = "",
-												device_end_txt = "";
+											var device_end_txt = "";
 											if(polygonSelectedDevices[i].pointType == 'sub_station') {
 												device_end_txt = "Far End";
-												point_name = polygonSelectedDevices[i].name;
 											} else {
 												device_end_txt = "Near End";
-												point_name = polygonSelectedDevices[i].filter_data.sector_name;
 											}
+											var point_name = polygonSelectedDevices[i].device_name;
 
 											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+device_end_txt+''+(i+1)+'.) '+point_name+'</h5>';
 											devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
