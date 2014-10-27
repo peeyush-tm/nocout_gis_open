@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 from operator import itemgetter
 from actstream import action
@@ -133,10 +135,14 @@ class OperationalDeviceListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
 
             for dictionary in qs:
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
                 try:
                     dictionary['device_type__name'] = DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
                         if dictionary['device_type'] else ''
@@ -156,11 +162,16 @@ class OperationalDeviceListingTable(BaseDatatableView):
                 except Exception as device_state_exp:
                     dictionary['state__name'] = ""
 
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        self.pop_filter_keys(dictionary)
-                        break
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
                 map(lambda x: dictionary.pop(x) if x in dictionary else None,
                     ['device_type__name', 'device_technology__name', 'state__name'])
 
@@ -288,7 +299,8 @@ class OperationalDeviceListingTable(BaseDatatableView):
                                             <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-info" title="Delete Device"></i></a>\
                                             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-info" title="Add Services"></i></a>\
                                             <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-info" title="Edit Services"></i></a>\
-                                            <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-info" title="Delete Services"></i></a>'.format(
+                                            <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-info" title="Delete Services"></i></a>\
+                                            <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-info" title="Sync Device"></i></a>'.format(
                         dct['id']))
                     try:
                         if current_device.is_added_to_nms == 2:
@@ -297,7 +309,8 @@ class OperationalDeviceListingTable(BaseDatatableView):
                                                     <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-info" title="Add Services"></i></a>\
                                                     <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-info" title="Edit Services"></i></a>\
                                                     <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-info" title="Delete Services"></i></a>\
-                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Sync Device"></i></a>'.format(dct['id']))
+                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Edit Device"></i></a>\
+                                                    <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-info" title="Sync Device"></i></a>'.format(dct['id']))
                     except Exception as e:
                         logger.info(e.message)
             except:
@@ -310,7 +323,8 @@ class OperationalDeviceListingTable(BaseDatatableView):
                                             <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-success" title="Delete Device"></i></a>\
                                             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Services"></i></a>\
                                             <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-success" title="Edit Services"></i></a>\
-                                            <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-success" title="Delete Services"></i></a>'.format(
+                                            <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-success" title="Delete Services"></i></a>\
+                                            <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-success" title="Sync Device"></i></a>'.format(
                         dct['id']))
                     try:
                         if current_device.is_added_to_nms == 2:
@@ -319,7 +333,8 @@ class OperationalDeviceListingTable(BaseDatatableView):
                                                     <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Services"></i></a>\
                                                     <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-success" title="Edit Services"></i></a>\
                                                     <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-success" title="Delete Services"></i></a>\
-                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Sync Device"></i></a>'.format(dct['id']))
+                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-success" title="Edit Device"></i></a>\
+                                                    <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-success" title="Sync Device"></i></a>'.format(dct['id']))
                     except Exception as e:
                         logger.info(e.message)
             except:
@@ -332,7 +347,8 @@ class OperationalDeviceListingTable(BaseDatatableView):
                                             <a href="javascript:;" onclick="delete_device({0});"><i class="fa fa-minus-square text-danger" title="Delete Device"></i></a>\
                                             <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-danger" title="Add Services"></i></a>\
                                             <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-danger" title="Edit Services"></i></a>\
-                                            <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-danger" title="Delete Services"></i></a>'.format(
+                                            <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-danger" title="Delete Services"></i></a>\
+                                            <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-danger" title="Sync Device"></i></a>'.format(
                         dct['id']))
                     try:
                         if current_device.is_added_to_nms == 2:
@@ -341,7 +357,8 @@ class OperationalDeviceListingTable(BaseDatatableView):
                                                     <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-danger" title="Add Services"></i></a>\
                                                     <a href="javascript:;" onclick="Dajaxice.device.edit_service_form(get_service_edit_form, {{\'value\': {0}}})"><i class="fa fa-pencil text-danger" title="Edit Services"></i></a>\
                                                     <a href="javascript:;" onclick="Dajaxice.device.delete_service_form(get_service_delete_form, {{\'value\': {0}}})"><i class="fa fa-minus text-danger" title="Delete Services"></i></a>\
-                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Sync Device"></i></a>'.format(dct['id']))
+                                                    <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Edit Device"></i></a>\
+                                                    <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-danger" title="Sync Device"></i></a>'.format(dct['id']))
                     except Exception as e:
                         logger.info(e.message)
             except:
@@ -403,10 +420,14 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
 
             for dictionary in qs:
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
                 try:
                     dictionary['device_type__name'] = DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
                         if dictionary['device_type'] else ''
@@ -426,11 +447,17 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
                 except Exception as device_state_exp:
                     dictionary['state__name'] = ""
 
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        self.pop_filter_keys(dictionary)
-                        break
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
+
                 map(lambda x: dictionary.pop(x) if x in dictionary else None,
                     ['device_type__name', 'device_technology__name', 'state__name'])
 
@@ -630,10 +657,14 @@ class DisabledDeviceListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
 
             for dictionary in qs:
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
                 try:
                     dictionary['device_type__name'] = DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
                         if dictionary['device_type'] else ''
@@ -653,11 +684,16 @@ class DisabledDeviceListingTable(BaseDatatableView):
                 except Exception as device_state_exp:
                     dictionary['state__name'] = ""
 
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        self.pop_filter_keys(dictionary)
-                        break
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
                 map(lambda x: dictionary.pop(x) if x in dictionary else None,
                     ['device_type__name', 'device_technology__name', 'state__name'])
 
@@ -856,10 +892,14 @@ class ArchivedDeviceListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
 
             for dictionary in qs:
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
                 try:
                     dictionary['device_type__name'] = DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
                         if dictionary['device_type'] else ''
@@ -879,11 +919,16 @@ class ArchivedDeviceListingTable(BaseDatatableView):
                 except Exception as device_state_exp:
                     dictionary['state__name'] = ""
 
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        self.pop_filter_keys(dictionary)
-                        break
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
                 map(lambda x: dictionary.pop(x) if x in dictionary else None,
                     ['device_type__name', 'device_technology__name', 'state__name'])
 
@@ -1082,10 +1127,14 @@ class AllDeviceListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
 
             for dictionary in qs:
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
                 try:
                     dictionary['device_type__name'] = DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
                         if dictionary['device_type'] else ''
@@ -1105,11 +1154,16 @@ class AllDeviceListingTable(BaseDatatableView):
                 except Exception as device_state_exp:
                     dictionary['state__name'] = ""
 
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        self.pop_filter_keys(dictionary)
-                        break
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
                 map(lambda x: dictionary.pop(x) if x in dictionary else None,
                     ['device_type__name', 'device_technology__name', 'state__name'])
 
@@ -1710,13 +1764,23 @@ class DeviceTypeFieldsListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
             for dictionary in qs:
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        break
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
             return result_list
         return qs
 
@@ -1959,13 +2023,23 @@ class DeviceTechnologyListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
             for dictionary in qs:
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        break
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
             return result_list
         return qs
 
@@ -2245,12 +2319,23 @@ class DeviceVendorListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
             for dictionary in qs:
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
             return result_list
 
         return qs
@@ -2531,12 +2616,23 @@ class DeviceModelListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
             for dictionary in qs:
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
             return result_list
 
         return qs
@@ -2827,12 +2923,23 @@ class DeviceTypeListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
             for dictionary in qs:
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
             return result_list
 
         return qs
@@ -3080,7 +3187,7 @@ class DevicePortListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
@@ -3284,7 +3391,7 @@ class DeviceFrequencyListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns:
