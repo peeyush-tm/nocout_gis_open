@@ -410,7 +410,8 @@ class AntennaCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        verb_string = "Create Antenna : %s" %(self.object.alias)
+        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(AntennaCreate.success_url)
 
 
@@ -439,7 +440,7 @@ class AntennaUpdate(UpdateView):
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of Antenna : %s from initial values ' % (self.object.name) + ', '.join(
+            verb_string = 'Update Antenna : %s, ' % (self.object.alias) + ', ' .join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
                           ' to ' + \
@@ -609,7 +610,8 @@ class BaseStationCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        verb_string = "Create Base Station : %s" %(self.object.alias)
+        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(BaseStationCreate.success_url)
 
 
@@ -637,7 +639,7 @@ class BaseStationUpdate(UpdateView):
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of Base Station : %s from initial values ' % (self.object.name) + ', '.join(
+            verb_string = 'Update Base Station : %s, ' % (self.object.alias) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
                           ' to ' + \
@@ -813,7 +815,8 @@ class BackhaulCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        verb_string = "Create Backhaul : %s" %(self.object.alias)
+        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(BackhaulCreate.success_url)
 
 
@@ -842,7 +845,7 @@ class BackhaulUpdate(UpdateView):
 
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of Backhaul : %s from initial values ' % (self.object.name) + ', '.join(
+            verb_string = 'Updated Backhaul : %s, ' % (self.object.alias) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
                           ' to ' + \
@@ -1021,7 +1024,8 @@ class SectorCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        verb_string = "Create Sector : %s" %(self.object.alias)
+        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(SectorCreate.success_url)
 
 
@@ -1049,7 +1053,7 @@ class SectorUpdate(UpdateView):
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of Customer : %s from initial values ' % (self.object.name) + ', '.join(
+            verb_string = 'Update Sector : %s, ' % (self.object.alias) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
                           ' to ' + \
@@ -1215,7 +1219,8 @@ class CustomerCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        verb_string = "Create Customer : %s" %(self.object.alias)
+        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(CustomerCreate.success_url)
 
 
@@ -1243,7 +1248,7 @@ class CustomerUpdate(UpdateView):
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of Customer : %s from initial values ' % (self.object.name) + ', '.join(
+            verb_string = 'Update Customer : %s, ' % (self.object.alias) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
                           ' to ' + \
@@ -1424,7 +1429,8 @@ class SubStationCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        verb_string = "Create Sub Station : %s" %(self.object.alias)
+        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(SubStationCreate.success_url)
 
 
@@ -1451,8 +1457,8 @@ class SubStationUpdate(UpdateView):
         initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict:
-            verb_string = 'Changed values of SubStation : %s from initial values ' % (self.object.name) + ', '.join(
+        if changed_fields_dict: 
+            verb_string = 'Updaete Sub Station : %s, ' % (self.object.alias) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
                           ' to ' + \
@@ -1735,7 +1741,8 @@ class CircuitCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        verb_string = "Create Circuit : %s" %(self.object.alias)
+        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(CircuitCreate.success_url)
 
 
@@ -1763,7 +1770,7 @@ class CircuitUpdate(UpdateView):
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of Circuit : %s from initial values ' % (self.object.name) + ', '.join(
+            verb_string = 'Updatte Circuit : %s, ' % (self.object.alias) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
                           ' to ' + \
@@ -1937,7 +1944,8 @@ class IconSettingsCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        verb_string = "Create Icon Setting : %s" %(self.object.alias)
+        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(IconSettingsCreate.success_url)
 
 
@@ -1965,7 +1973,7 @@ class IconSettingsUpdate(UpdateView):
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of IconSettings : %s from initial values ' % (self.object.name) + ', '.join(
+            verb_string = 'Update Icon Settings : %s, ' % (self.object.alias) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
                           ' to ' + \
@@ -2134,7 +2142,8 @@ class LivePollingSettingsCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        verb_string = "Create Live Polling Setting : %s" %(self.object.alias)
+        action.send(self.request.user, verb=version, action_object=self.object)
         return HttpResponseRedirect(LivePollingSettingsCreate.success_url)
 
 
@@ -2162,7 +2171,7 @@ class LivePollingSettingsUpdate(UpdateView):
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of LivePollingSettings : %s from initial values ' % (self.object.name) + ', '.join(
+            verb_string = 'Update Live Polling Settings : %s, ' % (self.object.alias) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
                           ' to ' + \
@@ -2330,7 +2339,8 @@ class ThresholdConfigurationCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        verb_string = "Create Threshold Configuration : %s" %(self.object.alias)
+        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(ThresholdConfigurationCreate.success_url)
 
 
@@ -2358,7 +2368,7 @@ class ThresholdConfigurationUpdate(UpdateView):
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Changed values of ThresholdConfiguration : %s from initial values ' % (self.object.name) + ', '.join(
+            verb_string = 'Update Threshold Configuration : %s, ' % (self.object.alias) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
                           ' to ' + \
@@ -2564,7 +2574,8 @@ class ThematicSettingsCreate(CreateView):
         self.object = form.save()
         self.object.icon_settings=icon_settings_values_list
         self.object.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
+        verb_string = "Create Thematic Settings : %s" %(self.object.alias)
+        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(ThematicSettingsCreate.success_url)
 
 
@@ -2598,7 +2609,7 @@ class ThematicSettingsUpdate(UpdateView):
         self.object.save()
         # self.object = form.save()
         if changed_fields_dict:
-            verb_string = 'Changed values of ThematicSettings : %s from initial values ' % (self.object.name) + ', '.join(
+            verb_string = 'Update Thematic Settings : %s, ' % (self.object.alias) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
                           ' to ' + \
