@@ -1,6 +1,7 @@
 from django import forms
 from user_profile.models import UserProfile
 from nocout.widgets import MultipleToSingleSelectionWidget
+from user_profile.fields import PasswordField
 
 
 class UserForm(forms.ModelForm):
@@ -10,8 +11,9 @@ class UserForm(forms.ModelForm):
 
     first_name = forms.CharField(required=True)
     email = forms.CharField(label='Email', required=True)
-    password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
-    password2 = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
+    password1 = PasswordField(label='Password')
+    password2 = PasswordField(label='Password confirmation')
+
 
     def __init__(self, *args, **kwargs):
         self.request=kwargs.pop('request', None)

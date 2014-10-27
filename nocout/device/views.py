@@ -3492,7 +3492,7 @@ class DeviceFrequencyCreate(CreateView):
         """
         self.object = form.save()
         try:
-            action.send(self.request.user, verb='Created', action_object=self.object)
+            action.send(self.request.user, verb='Create device frequency of value : %s' %(self.object.value), action_object=self.object)
         except Exception as activity:
             pass
         return HttpResponseRedirect(DeviceFrequencyCreate.success_url)
@@ -3520,7 +3520,7 @@ class DeviceFrequencyUpdate(UpdateView):
         """
         self.object = form.save()
         try:
-            action.send(self.request.user, verb='Updated', action_object=self.object)
+            action.send(self.request.user, verb='Update Device Frequency whose value is : %s' %(self.object.value), action_object=self.object)
         except Exception as activity:
             pass
         return HttpResponseRedirect(DeviceFrequencyUpdate.success_url)
