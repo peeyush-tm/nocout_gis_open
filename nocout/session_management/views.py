@@ -194,7 +194,8 @@ def dialog_action(request):
     url = request.POST.get('url', '/home/')
     if request.POST.get('action') == 'continue':
         session_key = request.session.session_key
-        Session.objects.filter(session_key=request.user.visitor.session_key).delete()
+        if hasattr(request.user, 'visitor'):
+            Session.objects.filter(session_key=request.user.visitor.session_key).delete()
         Visitor.objects.create(session_key=session_key, user=request.user)
         result = {
             "success": 1,  # 0 - fail, 1 - success, 2 - exception
