@@ -418,13 +418,20 @@ function devicePlottingClass_gmap() {
                 displayCoordinates(event.latLng);
             });
 
-            // google.maps.event.addListener(mapInstance, 'zoom_changed', function() {
-
-            // });
-
             google.maps.event.addListener(mapInstance, 'idle', function() {
+            	
+            	/* When zoom level is greater than 8 show lines */
+            	if(mapInstance.getZoom() > 8) {
+						/*
+						setTimeout is added because idle is event is trigger by marker cluster library when clicked on cluster,
+						so this function not called.Hence I called it after 0.35 sec
+						*/
+						setTimeout(function(){
+							gmap_self.showLinesInBounds();
+						},350);
+	            }
 
-        		setTimeout(function() {
+        			setTimeout(function() {
             		var bs_list = getMarkerInCurrentBound();
 	            	if(bs_list.length > 0 && isCallCompleted == 1) {
 	            		if(recallPerf != "") {
@@ -1084,7 +1091,7 @@ function devicePlottingClass_gmap() {
 
 		var pathConnector = new google.maps.Polyline(linkObject);
 		/*Plot the link line between master & slave*/
-		pathConnector.setMap(mapInstance);
+		// pathConnector.setMap(mapInstance);
 
 		/*Bind Click Event on Link Path Between Master & Slave*/
 		google.maps.event.addListener(pathConnector, 'click', function(e) {
@@ -1107,6 +1114,28 @@ function devicePlottingClass_gmap() {
 
 		/*returns gmap polyline object */
 		return pathConnector;
+	};
+
+	/**
+	 * This function show connection lines within the bounds
+	 * @method showLinesInBounds
+	 */
+	this.showLinesInBounds = function() {
+		/*Loop for polylines*/
+		for(var key in allMarkersObject_gmap['path']) {
+		  if(allMarkersObject_gmap['path'].hasOwnProperty(key)) {
+		      var nearEndVisible = mapInstance.getBounds().contains(new google.maps.LatLng(allMarkersObject_gmap['path'][key].nearLat,allMarkersObject_gmap['path'][key].nearLon)),
+		      	farEndVisible = mapInstance.getBounds().contains(new google.maps.LatLng(allMarkersObject_gmap['path'][key].ss_lat,allMarkersObject_gmap['path'][key].ss_lon)),
+		      	connected_bs = allMarkersObject_gmap['base_station']['bs_'+allMarkersObject_gmap['path'][key].filter_data.bs_name],
+		      	connected_ss = allMarkersObject_gmap['sub_station']['ss_'+allMarkersObject_gmap['path'][key].filter_data.ss_name];
+
+		      if((nearEndVisible || farEndVisible) && (connected_bs.map != null && connected_ss.map != null && connected_bs.map!= "" && connected_ss.map != "")) {
+		      	allMarkersObject_gmap['path'][key].setMap(mapInstance);
+		      } else {
+		      	allMarkersObject_gmap['path'][key].setMap(null);
+		      }
+		  }
+		}
 	};
 
 	/**
@@ -2296,6 +2325,18 @@ function devicePlottingClass_gmap() {
         	} else {
 
         		gmap_self.show_all_elements_gmap();
+
+				/*Call showLinesInBounds to show the line within the bounds*/
+				/* When zoom level is greater than 8 show lines */
+				if(mapInstance.getZoom() > 8) {
+					/*
+					setTimeout is added because idle is event is trigger by marker cluster library when clicked on cluster,
+					so this function not called.Hence I called it after 0.35 sec
+					*/
+					setTimeout(function(){
+						gmap_self.showLinesInBounds();
+					},350);
+				}
 
         		/*Save updated data to global variable*/
 				data_for_filters = main_devices_data_gmaps;
@@ -4066,7 +4107,7 @@ function devicePlottingClass_gmap() {
 		}
 
 		/*Clear master marker cluster objects*/
-		if(masterClusterInstance != "") {
+		if(masterClusterInstance) {
 			masterClusterInstance.clearMarkers();
 		}
 	}
@@ -4077,9 +4118,11 @@ function devicePlottingClass_gmap() {
 	 */
 	this.show_all_elements_gmap = function() {
 
-		/*Show everything on map*/
+		/*Show everything on map except connection line*/
 		$.grep(allMarkersArray_gmap,function(marker) {
-			marker.setMap(mapInstance);
+			if(marker.pointType != 'path') {
+				marker.setMap(mapInstance);
+			}
 		});
 
 		/*Show drawn points & lines from tools*/
@@ -4107,16 +4150,15 @@ function devicePlottingClass_gmap() {
 		}
 
 		/*Clear master marker cluster objects*/
-		if(masterClusterInstance != "") {
+		if(masterClusterInstance) {
 			masterClusterInstance.clearMarkers();
 		}
 
-		/*Cluster options object*/
-        var clusterOptions = {gridSize: 70, maxZoom: 8};
-        /*Add the master markers to the cluster MarkerCluster object*/
-        masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
+		/*Add markers to cluster*/
+      masterClusterInstance.addMarkers(masterMarkersObj);
 
-        $("#resetFilters").button("complete");
+      /*Enable Reset Button*/
+		$("#resetFilters").button("complete");
 	}
 
 	/**
@@ -4162,17 +4204,17 @@ function devicePlottingClass_gmap() {
 				for(var k=0;k<subStationsArray.length;k++) {
 					/*BS, SS & Sectors from filtered data array*/
 					var ssName = subStationsArray[k].name ? $.trim(subStationsArray[k].name) : "",
-						ss_marker = allMarkersObject_gmap['sub_station']["ss_"+ssName],
-						path_marker = allMarkersObject_gmap['path']["line_"+ssName];
+						ss_marker = allMarkersObject_gmap['sub_station']["ss_"+ssName];
+						// path_marker = allMarkersObject_gmap['path']["line_"+ssName];
 
 					if(ss_marker) {
 						ss_marker.setMap(mapInstance);
 						currently_plotted_bs_ss_markers.push(ss_marker);
 					}
 
-					if(path_marker) {
-						path_marker.setMap(mapInstance);
-					}
+					// if(path_marker) {
+					// 	path_marker.setMap(mapInstance);
+					// }
 				}
 				
 				if(bs_marker) {
@@ -4219,13 +4261,23 @@ function devicePlottingClass_gmap() {
 		}
 
 		/*Clear master marker cluster objects*/
-		if(masterClusterInstance != "") {
+		if(masterClusterInstance) {
 			masterClusterInstance.clearMarkers();
 		}
-		/*Cluster options object*/
-        var clusterOptions = {gridSize: 70, maxZoom: 8};
-        /*Add the master markers to the cluster MarkerCluster object*/
-        masterClusterInstance = new MarkerClusterer(mapInstance, currently_plotted_bs_ss_markers, clusterOptions);
+		/*Add the master markers to the cluster MarkerCluster object*/
+		masterClusterInstance.addMarkers(currently_plotted_bs_ss_markers);
+
+		/*Call showLinesInBounds to show the line within the bounds*/
+		/* When zoom level is greater than 8 show lines */
+   	if(mapInstance.getZoom() > 8) {
+			/*
+			setTimeout is added because idle is event is trigger by marker cluster library when clicked on cluster,
+			so this function not called.Hence I called it after 0.35 sec
+			*/
+			setTimeout(function(){
+				gmap_self.showLinesInBounds();
+			},350);
+      }
 	};
 	
     /**
