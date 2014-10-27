@@ -1227,6 +1227,15 @@ class CustomerList(ListView):
         """
         return super(CustomerList, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        """
+        In this view no data is passed to datatable while rendering template.
+        Another ajax call is made to fill in datatable.
+        """
+        queryset = super(CustomerList, self).get_queryset()
+        queryset = queryset.none()
+        return queryset
+
     def get_context_data(self, **kwargs):
         context = super(CustomerList, self).get_context_data(**kwargs)
         datatable_headers = [
