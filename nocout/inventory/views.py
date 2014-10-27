@@ -510,6 +510,15 @@ class BaseStationList(ListView):
         """
         return super(BaseStationList, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        """
+        In this view no data is passed to datatable while rendering template.
+        Another ajax call is made to fill in datatable.
+        """
+        queryset = super(BaseStationList, self).get_queryset()
+        queryset = queryset.none()
+        return queryset
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
