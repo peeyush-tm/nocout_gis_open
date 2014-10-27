@@ -279,13 +279,21 @@ class AntennaList(ListView):
     model = Antenna
     template_name = 'antenna/antenna_list.html'
 
-
     @method_decorator(permission_required('inventory.view_antenna', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch function restricted with the permissions.
         """
         return super(AntennaList, self).dispatch(*args, **kwargs)
+
+    def get_queryset(self):
+        """
+        In this view no data is passed to datatable while rendering template.
+        Another ajax call is made to fill in datatable.
+        """
+        queryset = super(AntennaList, self).get_queryset()
+        queryset = queryset.none()
+        return queryset
 
     def get_context_data(self, **kwargs):
         """
