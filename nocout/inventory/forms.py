@@ -758,8 +758,6 @@ class CircuitL2ReportForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CircuitL2ReportForm, self).__init__(*args, **kwargs)
-        self.fields['name'].required = True
-        self.fields['file_name'].required = True
 
         try:
             if 'instance' in kwargs:
@@ -788,6 +786,15 @@ class CircuitL2ReportForm(forms.ModelForm):
         model = CircuitL2Report
         exclude = ['added_on', 'user_id', 'circuit_id']
 
+    def clean_file_name(self):
+        IMPORT_FILE_TYPES = ['.xls', '.xlsx']
+        input_excel = self.cleaned_data.get('file_name')
+        extension = os.path.splitext(input_excel.name)[1]
+        if not (extension in IMPORT_FILE_TYPES):
+            raise ValidationError( u'%s is not the supported file. Please make sure your input file is an excel(.xls) file.' % extension )
+        else:
+            return input_excel
+
     def clean_name(self):
         """
         Name unique validation
@@ -801,22 +808,8 @@ class CircuitL2ReportForm(forms.ModelForm):
             logger.info(e.message)
         if names.count() > 0:
             raise ValidationError('This name is already in use.')
+        
         return name
-
-    def clean(self):
-        """
-        Validations for CircuitL2Report form
-        """
-        name = self.cleaned_data.get('name')
-
-        # check that name must be alphanumeric & can only contains .(dot), -(hyphen), _(underscore).
-        try:
-            if not re.match(r'^[A-Za-z0-9\._-]+$', name):
-                self._errors['name'] = ErrorList(
-                    [u"Name must be alphanumeric & can only contains .(dot), -(hyphen) and _(underscore)."])
-        except Exception as e:
-            logger.info(e.message)
-        return self.cleaned_data
 
 
 #*********************************** IconSettings ***************************************

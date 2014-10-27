@@ -1863,13 +1863,21 @@ class L2ReportListingTable(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
         circuit_instance = Circuit.objects.filter(id=circuit_id)
-        # print "******************************** circuit_id -"
-        # print self.model
-        # demo_q = self.model.objects.all()
-        # print "****************************** demo_q - ", demo_q
-        # print CircuitL2Report.objects.values(*self.columns + ['id'])
-        # return CircuitL2Report.objects.values(*self.columns + ['id'])
-        return CircuitL2Report.objects.filter(circuit_id=circuit_instance).filter(user_id=self.request.user).values(*self.columns + ['id'])
+        l2ReportsResult = CircuitL2Report.objects.filter(circuit_id=circuit_instance).filter(user_id=self.request.user).values(*self.columns + ['id'])
+        report_resultset = []
+        for data in l2ReportsResult:
+            report_object = {}
+            report_object['name'] = data['name'].title()
+            filename_str_array = data['file_name'].split('/')
+            report_object['file_name'] = filename_str_array[len(filename_str_array)-1]
+            report_object['file_url'] = data['file_name']
+            report_object['added_on'] = data['added_on']
+            username = UserProfile.objects.filter(id=data['user_id']).values('username')
+            report_object['user_id'] = username[0]['username'].title()
+            report_object['id'] = data['id']
+            #add data to report_resultset list
+            report_resultset.append(report_object)
+        return report_resultset
 
     def prepare_results(self, qs):
         """
@@ -1878,8 +1886,10 @@ class L2ReportListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/circuit/l2_report/download/{0}"><i class="fa fa-arrow-circle-o-down text-info"></i></a>\
-                <a href="/circuit/l2_report/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>\
+            dct.update(actions='<a href="../../../media/'+dct['file_url']+'" target="_blank" title="Download Report">\
+                <i class="fa fa-arrow-circle-o-down text-info"></i></a>\
+                <a class="delete_l2report" style="cursor:pointer;" title="Delete Report" url="delete/{0}/">\
+                <i class="fa fa-trash-o text-danger"></i></a>\
                 '.format(dct.pop('id')),
                added_on=dct['added_on'].strftime("%Y-%m-%d") if dct['added_on'] != "" else "")
 
@@ -1934,7 +1944,7 @@ class L2ReportListingTable(BaseDatatableView):
         qs = self.get_initial_queryset(ckt_id)
 
         # number of records before filtering
-        total_records = qs.count()
+        total_records = len(qs)
 
         qs = self.filter_queryset(qs)
         # number of records after filtering
@@ -1954,10 +1964,6 @@ class L2ReportListingTable(BaseDatatableView):
         }
         return ret
 
-   
-
-
-
 class CircuitL2ReportCreate(CreateView):
     """
     Class based view to create new Circuit.
@@ -1966,9 +1972,7 @@ class CircuitL2ReportCreate(CreateView):
     template_name = 'circuit_l2/circuit_l2_new.html'
     model = CircuitL2Report
     form_class = CircuitL2ReportForm 
-    success_url = reverse_lazy('circuit_l2_report_create')
 
-    # @method_decorator(permission_required('inventory.add_circuit', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch method restricted with the permissions.
@@ -1980,12 +1984,36 @@ class CircuitL2ReportCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save(commit=False)
-        self.object.user_id =  self.request.user
-        self.object.circuit_id =  self.kwargs['circuit_id']
+        self.object.user_id =  UserProfile.objects.get(id=self.request.user.id)
+        self.object.circuit_id =  Circuit.objects.get(id=self.kwargs['circuit_id'])
 
         self.object.save()
         action.send(self.request.user, verb='Created', action_object=self.object)
-        return HttpResponseRedirect(CircuitL2ReportCreate.success_url)
+        return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs = {'circuit_id' : self.kwargs['circuit_id']}))
+
+class CircuitL2ReportDelete(DeleteView):
+
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
+        return super(CircuitL2ReportDelete, self).dispatch(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        report_id = self.kwargs['l2_id']
+        file_name = lambda x: MEDIA_ROOT + x
+        # l2 report object
+        l2_obj = CircuitL2Report.objects.filter(id=report_id).values()
+
+        # remove original file if it exists
+        try:
+            os.remove(file_name(l2_obj[0]['file_name']))
+        except Exception as e:
+            logger.info(e.message)
+
+        # delete entry from database
+        CircuitL2Report.objects.filter(id=report_id).delete()
+        return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs = {'circuit_id' : self.kwargs['circuit_id']}))
 
 #**************************************** IconSettings *********************************************
 class IconSettingsList(ListView):
