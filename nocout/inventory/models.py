@@ -2,6 +2,7 @@ import time
 from datetime import datetime
 from django.contrib.auth.models import User
 from django.db import models
+from django.dispatch import receiver
 from service.models import Service, ServiceDataSource
 from user_group.models import UserGroup
 from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency
@@ -375,7 +376,7 @@ class CircuitL2Report(models.Model):
         return '{}/{}/{}'.format(path, year_month_date, filename)
 
     name = models.CharField('Name', max_length=250, unique=True)
-    file_name = models.ImageField(upload_to=uploaded_report_name)
+    file_name = models.FileField(max_length=255, upload_to=uploaded_report_name)
     added_on = models.DateTimeField('Added On', null=True, blank=True, auto_now_add=True)
     user_id = models.ForeignKey(UserProfile)
     circuit_id = models.ForeignKey(Circuit)
