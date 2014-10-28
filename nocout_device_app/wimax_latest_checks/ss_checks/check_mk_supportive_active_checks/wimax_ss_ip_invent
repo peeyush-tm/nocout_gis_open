@@ -25,9 +25,8 @@
 # Boston, MA 02110-1301 USA.
 
 def check_wimax_ss_ip_invent_arguments(params):
-    description, host,settings = params
+    description,settings = params
     args =''
-    args += ' %s ' % host
     if "mac" in settings:
         args += '%s ' % quote_shell_string(settings['mac'])
 
