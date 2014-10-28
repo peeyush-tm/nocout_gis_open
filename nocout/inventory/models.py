@@ -380,5 +380,4 @@ class CircuitL2Report(models.Model):
     added_on = models.DateTimeField('Added On', null=True, blank=True, auto_now_add=True)
     user_id = models.ForeignKey(UserProfile)
     circuit_id = models.ForeignKey(Circuit)
-    # user_id = models.IntegerField('User Id')
-    # circuit_id = models.IntegerField('Circuit Id')
+    is_public = models.BooleanField('Is Public', default=True)

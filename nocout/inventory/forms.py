@@ -767,17 +767,23 @@ class CircuitL2ReportForm(forms.ModelForm):
 
         for name, field in self.fields.items():
             if field.widget.attrs.has_key('class'):
-                field.widget.attrs['class'] += ' tip-focus form-control'
-                field.widget.attrs['data-toggle'] = 'tooltip'
-                field.widget.attrs['data-placement'] = 'right'
-                field.widget.attrs['title'] = field.help_text
-                field.widget.attrs['style'] = 'padding:0px 12px;height:40px;'
+            	if not(isinstance(field.widget, forms.widgets.CheckboxInput)):
+	                field.widget.attrs['class'] += ' tip-focus form-control'
+	                field.widget.attrs['data-toggle'] = 'tooltip'
+	                field.widget.attrs['data-placement'] = 'right'
+	                field.widget.attrs['title'] = field.help_text
+	                field.widget.attrs['style'] = 'padding:0px 12px;height:40px;'
+                else:
+                	field.widget.attrs['checked'] = "true"
             else:
-                field.widget.attrs.update({'class': ' tip-focus form-control'})
-                field.widget.attrs.update({'data-toggle': 'tooltip'})
-                field.widget.attrs.update({'data-placement': 'right'})
-                field.widget.attrs.update({'title': field.help_text})
-                field.widget.attrs.update({'style' : 'padding:0px 12px;height:40px;'})
+            	if not(isinstance(field.widget, forms.widgets.CheckboxInput)):
+	                field.widget.attrs.update({'class': ' tip-focus form-control'})
+	                field.widget.attrs.update({'data-toggle': 'tooltip'})
+	                field.widget.attrs.update({'data-placement': 'right'})
+	                field.widget.attrs.update({'title': field.help_text})
+	                field.widget.attrs.update({'style' : 'padding:0px 12px;height:40px;'})
+                else:
+                	field.widget.attrs['checked'] = "true"
 
     class Meta:
         """
