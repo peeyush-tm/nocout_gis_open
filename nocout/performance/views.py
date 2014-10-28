@@ -434,12 +434,12 @@ class LivePerformanceListing(BaseDatatableView):
 
         if i_sorting_cols:
             sort_data = self.prepare_devices(qs)
-
-            sort_using = self.columns[i_sorting_cols]
-
-            sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
-
-            return sorted_qs
+            try:
+                sort_using = self.columns[i_sorting_cols]
+                sorted_qs = sorted(sort_data, key=itemgetter(sort_using), reverse=reverse)
+                return sorted_qs
+            except Exception as nocolumn:
+                pass
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -1241,11 +1241,11 @@ class Get_Service_Type_Performance_Data(View):
         result_data, aggregate_data = list(), dict()
         for data in performance_data:
             temp_time = data.sys_timestamp
-
-            if temp_time in aggregate_data:
+            connected_mac = data.connected_device_mac
+            if connected_mac in aggregate_data:
                 continue
             else:
-                aggregate_data[temp_time] = data.sys_timestamp
+                aggregate_data[connected_mac] = data.connected_device_mac
                 result_data.append({
                         'device_name': data.device_name,
                         'ip_address': data.ip_address,

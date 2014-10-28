@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 from operator import itemgetter
 from actstream import action
@@ -133,10 +135,14 @@ class OperationalDeviceListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
 
             for dictionary in qs:
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
                 try:
                     dictionary['device_type__name'] = DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
                         if dictionary['device_type'] else ''
@@ -156,11 +162,16 @@ class OperationalDeviceListingTable(BaseDatatableView):
                 except Exception as device_state_exp:
                     dictionary['state__name'] = ""
 
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        self.pop_filter_keys(dictionary)
-                        break
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
                 map(lambda x: dictionary.pop(x) if x in dictionary else None,
                     ['device_type__name', 'device_technology__name', 'state__name'])
 
@@ -409,10 +420,14 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
 
             for dictionary in qs:
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
                 try:
                     dictionary['device_type__name'] = DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
                         if dictionary['device_type'] else ''
@@ -432,11 +447,17 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
                 except Exception as device_state_exp:
                     dictionary['state__name'] = ""
 
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        self.pop_filter_keys(dictionary)
-                        break
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
+
                 map(lambda x: dictionary.pop(x) if x in dictionary else None,
                     ['device_type__name', 'device_technology__name', 'state__name'])
 
@@ -636,10 +657,14 @@ class DisabledDeviceListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
 
             for dictionary in qs:
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
                 try:
                     dictionary['device_type__name'] = DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
                         if dictionary['device_type'] else ''
@@ -659,11 +684,16 @@ class DisabledDeviceListingTable(BaseDatatableView):
                 except Exception as device_state_exp:
                     dictionary['state__name'] = ""
 
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        self.pop_filter_keys(dictionary)
-                        break
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
                 map(lambda x: dictionary.pop(x) if x in dictionary else None,
                     ['device_type__name', 'device_technology__name', 'state__name'])
 
@@ -862,10 +892,14 @@ class ArchivedDeviceListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
 
             for dictionary in qs:
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
                 try:
                     dictionary['device_type__name'] = DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
                         if dictionary['device_type'] else ''
@@ -885,11 +919,16 @@ class ArchivedDeviceListingTable(BaseDatatableView):
                 except Exception as device_state_exp:
                     dictionary['state__name'] = ""
 
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        self.pop_filter_keys(dictionary)
-                        break
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
                 map(lambda x: dictionary.pop(x) if x in dictionary else None,
                     ['device_type__name', 'device_technology__name', 'state__name'])
 
@@ -1088,10 +1127,14 @@ class AllDeviceListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
 
             for dictionary in qs:
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
                 try:
                     dictionary['device_type__name'] = DeviceType.objects.get(pk=int(dictionary['device_type'])).name \
                         if dictionary['device_type'] else ''
@@ -1111,11 +1154,16 @@ class AllDeviceListingTable(BaseDatatableView):
                 except Exception as device_state_exp:
                     dictionary['state__name'] = ""
 
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        self.pop_filter_keys(dictionary)
-                        break
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
                 map(lambda x: dictionary.pop(x) if x in dictionary else None,
                     ['device_type__name', 'device_technology__name', 'state__name'])
 
@@ -1716,13 +1764,23 @@ class DeviceTypeFieldsListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
             for dictionary in qs:
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        break
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
             return result_list
         return qs
 
@@ -1965,13 +2023,23 @@ class DeviceTechnologyListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
             for dictionary in qs:
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
-                        break
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
             return result_list
         return qs
 
@@ -2251,12 +2319,23 @@ class DeviceVendorListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
             for dictionary in qs:
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
             return result_list
 
         return qs
@@ -2537,12 +2616,23 @@ class DeviceModelListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
             for dictionary in qs:
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
             return result_list
 
         return qs
@@ -2833,12 +2923,23 @@ class DeviceTypeListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             result_list = list()
             for dictionary in qs:
-                for key in dictionary.keys():
-                    if sSearch.lower() in str(dictionary[key]).lower():
-                        result_list.append(dictionary)
+
+                x = json.dumps(dictionary)
+                dictionary = json.loads(x)
+
+                for dict in dictionary:
+                    if dictionary[dict]:
+                        if (isinstance(dictionary[dict], unicode) or isinstance(dictionary[dict], str)) and (
+                            dictionary not in result_list
+                        ):
+                            if sSearch.encode('utf-8').lower() in dictionary[dict].encode('utf-8').lower():
+                                result_list.append(dictionary)
+                        else:
+                            if sSearch == dictionary[dict] and dictionary not in result_list:
+                                result_list.append(dictionary)
             return result_list
 
         return qs
@@ -3086,7 +3187,7 @@ class DevicePortListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
@@ -3290,7 +3391,7 @@ class DeviceFrequencyListingTable(BaseDatatableView):
         The filtering of the queryset with respect to the search keyword entered.
         """
         sSearch = self.request.GET.get('sSearch', None)
-        if sSearch:
+        if sSearch and len(str(sSearch).strip()) >= 3:
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns:
@@ -3391,7 +3492,7 @@ class DeviceFrequencyCreate(CreateView):
         """
         self.object = form.save()
         try:
-            action.send(self.request.user, verb='Created', action_object=self.object)
+            action.send(self.request.user, verb='Create device frequency of value : %s' %(self.object.value), action_object=self.object)
         except Exception as activity:
             pass
         return HttpResponseRedirect(DeviceFrequencyCreate.success_url)
@@ -3419,7 +3520,7 @@ class DeviceFrequencyUpdate(UpdateView):
         """
         self.object = form.save()
         try:
-            action.send(self.request.user, verb='Updated', action_object=self.object)
+            action.send(self.request.user, verb='Update Device Frequency whose value is : %s' %(self.object.value), action_object=self.object)
         except Exception as activity:
             pass
         return HttpResponseRedirect(DeviceFrequencyUpdate.success_url)

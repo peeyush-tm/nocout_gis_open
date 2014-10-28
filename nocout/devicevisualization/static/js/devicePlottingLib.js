@@ -25,7 +25,7 @@ var isFreeze = 0,
 
 /*Global data objects & arrays of map data & filters*/
 var main_devices_data_gmaps = [],
-	 clusterOptions = {gridSize: 70, maxZoom: 8},
+	clusterOptions = {gridSize: 70, maxZoom: 8},
 	markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}},
     allMarkersObject_gmap= {'base_station': {}, 'path': {}, 'sub_station': {}, 'sector_device': {}, 'sector_polygon': {}},
     allMarkersArray_gmap = [],
@@ -60,7 +60,8 @@ var main_devices_data_gmaps = [],
 	complete_polled_devices_data = [],
 	complete_polled_devices_icon = {},
 	total_polled_occurence = 0,
-	nav_click_counter = 0;
+	nav_click_counter = 0,
+	polled_device_count = {};
 
 /*Tools Global Variables*/
 var is_line_active = 0,
@@ -417,13 +418,20 @@ function devicePlottingClass_gmap() {
                 displayCoordinates(event.latLng);
             });
 
-            // google.maps.event.addListener(mapInstance, 'zoom_changed', function() {
-
-            // });
-
             google.maps.event.addListener(mapInstance, 'idle', function() {
+            	
+            	/* When zoom level is greater than 8 show lines */
+            	if(mapInstance.getZoom() > 8) {
+						/*
+						setTimeout is added because idle is event is trigger by marker cluster library when clicked on cluster,
+						so this function not called.Hence I called it after 0.35 sec
+						*/
+						setTimeout(function(){
+							gmap_self.showLinesInBounds();
+						},350);
+	            }
 
-        		setTimeout(function() {
+        			setTimeout(function() {
             		var bs_list = getMarkerInCurrentBound();
 	            	if(bs_list.length > 0 && isCallCompleted == 1) {
 	            		if(recallPerf != "") {
@@ -803,7 +811,7 @@ function devicePlottingClass_gmap() {
 							deviceInfo 			: sector_array[j].device_info,
 							poll_info 			: [],
 							sectorName  		: sector_array[j].sector_configured_on,
-							device_name  		: sector_array[j].sector_configured_on,
+							device_name  		: sector_array[j].sector_configured_on_device,
 							name  				: bs_ss_devices[i].name,
 							filter_data 	    : {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on},
 							sector_lat  		: startEndObj["startLat"],
@@ -874,7 +882,7 @@ function devicePlottingClass_gmap() {
 				    	antenna_height   : 	ss_marker_obj.data.antenna_height,
 				    	name 		 	 : 	ss_marker_obj.name,
 				    	bs_name 		 :  bs_ss_devices[i].name,
-				    	bs_sector_device :  sector_array[j].sector_configured_on,
+				    	bs_sector_device :  sector_array[j].sector_configured_on_device,
 				    	filter_data 	 :  {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "ss_name" : ss_marker_obj.name},
 				    	device_name 	 : 	ss_marker_obj.device_name,
 				    	zIndex 			 : 	200,
@@ -1083,7 +1091,7 @@ function devicePlottingClass_gmap() {
 
 		var pathConnector = new google.maps.Polyline(linkObject);
 		/*Plot the link line between master & slave*/
-		pathConnector.setMap(mapInstance);
+		// pathConnector.setMap(mapInstance);
 
 		/*Bind Click Event on Link Path Between Master & Slave*/
 		google.maps.event.addListener(pathConnector, 'click', function(e) {
@@ -1106,6 +1114,28 @@ function devicePlottingClass_gmap() {
 
 		/*returns gmap polyline object */
 		return pathConnector;
+	};
+
+	/**
+	 * This function show connection lines within the bounds
+	 * @method showLinesInBounds
+	 */
+	this.showLinesInBounds = function() {
+		/*Loop for polylines*/
+		for(var key in allMarkersObject_gmap['path']) {
+		  if(allMarkersObject_gmap['path'].hasOwnProperty(key)) {
+		      var nearEndVisible = mapInstance.getBounds().contains(new google.maps.LatLng(allMarkersObject_gmap['path'][key].nearLat,allMarkersObject_gmap['path'][key].nearLon)),
+		      	farEndVisible = mapInstance.getBounds().contains(new google.maps.LatLng(allMarkersObject_gmap['path'][key].ss_lat,allMarkersObject_gmap['path'][key].ss_lon)),
+		      	connected_bs = allMarkersObject_gmap['base_station']['bs_'+allMarkersObject_gmap['path'][key].filter_data.bs_name],
+		      	connected_ss = allMarkersObject_gmap['sub_station']['ss_'+allMarkersObject_gmap['path'][key].filter_data.ss_name];
+
+		      if((nearEndVisible || farEndVisible) && (connected_bs.map != null && connected_ss.map != null && connected_bs.map!= "" && connected_ss.map != "")) {
+		      	allMarkersObject_gmap['path'][key].setMap(mapInstance);
+		      } else {
+		      	allMarkersObject_gmap['path'][key].setMap(null);
+		      }
+		  }
+		}
 	};
 
 	/**
@@ -2296,6 +2326,18 @@ function devicePlottingClass_gmap() {
 
         		gmap_self.show_all_elements_gmap();
 
+				/*Call showLinesInBounds to show the line within the bounds*/
+				/* When zoom level is greater than 8 show lines */
+				if(mapInstance.getZoom() > 8) {
+					/*
+					setTimeout is added because idle is event is trigger by marker cluster library when clicked on cluster,
+					so this function not called.Hence I called it after 0.35 sec
+					*/
+					setTimeout(function(){
+						gmap_self.showLinesInBounds();
+					},350);
+				}
+
         		/*Save updated data to global variable*/
 				data_for_filters = main_devices_data_gmaps;
 
@@ -2362,6 +2404,7 @@ function devicePlottingClass_gmap() {
 		complete_polled_devices_icon = {};
 		total_polled_occurence = 0;
 		nav_click_counter = 0;
+		polled_device_count = {};
 
     	$("#sideInfo > .panel-body > .col-md-12 > .devices_container").html("");
 
@@ -2484,29 +2527,23 @@ function devicePlottingClass_gmap() {
 							var selected_polling_technology = $("#polling_tech option:selected").text();
 
 							for(var k=0;k<allSS.length;k++) {
-
-								var point = "";
-								/*SS or sector marker present on gmap or not*/
-								if((allSS[k].map != null) && (allSS[k].map != "")) {
-
-									if($.trim(allSS[k].technology.toLowerCase()) == "ptp" || $.trim(allSS[k].technology.toLowerCase()) == "p2p") {
-										point = new google.maps.LatLng(allSS[k].ptLat,allSS[k].ptLon);
-									} else {
-										if(allSS[k].pointType == 'sub_station') {
-											point = new google.maps.LatLng(allSS[k].ptLat,allSS[k].ptLon);
-										}
-									}
-
-									if(point) {
-										if (google.maps.geometry.poly.containsLocation(point, polygon)) {
-											if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
-												if($.trim(allSS[k].technology.toLowerCase()) == "ptp" || $.trim(allSS[k].technology.toLowerCase()) == "p2p") {
+								var point = new google.maps.LatLng(allSS[k].ptLat,allSS[k].ptLon);
+								if(point) {
+									if (google.maps.geometry.poly.containsLocation(point, polygon)) {
+										if($.trim(allSS[k].technology.toLowerCase()) == $.trim(selected_polling_technology.toLowerCase())) {
+											
+											if($.trim(allSS[k].technology.toLowerCase()) == "ptp" || $.trim(allSS[k].technology.toLowerCase()) == "p2p") {
+												if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
 													allSSIds.push(allSS[k].device_name);
-													allSSIds.push(allSS[k].bs_sector_device);
-												} else {
-													allSSIds.push(allSS[k].device_name);
+													polygonSelectedDevices.push(allSS[k]);
 												}
-												polygonSelectedDevices.push(allSS[k]);
+											} else {
+												if(allSS[k].pointType == 'sub_station') {
+													if(allSS[k].device_name && (allSSIds.indexOf(allSS[k].device_name) == -1)) {
+														allSSIds.push(allSS[k].device_name);
+														polygonSelectedDevices.push(allSS[k]);
+													}
+												}
 											}
 										}
 									}
@@ -2567,6 +2604,21 @@ function devicePlottingClass_gmap() {
 										new_device_name = polygonSelectedDevices[i].device_name;
 									}
 
+									var devices_counter = "";
+									
+									if(polygonSelectedDevices[i].pointType == 'sub_station') {
+										devices_counter = polygonSelectedDevices[i].bs_sector_device;
+									} else {
+										devices_counter = polygonSelectedDevices[i].device_name;
+									}
+
+                                        if(!polled_device_count[devices_counter]) {
+										polled_device_count[devices_counter]  = 1;
+									} else {
+										polled_device_count[devices_counter] = polled_device_count[devices_counter] +1;
+									}
+
+
 									if((current_technology == 'ptp' || current_technology == 'p2p') && polygonSelectedDevices[i].pointType == 'sub_station') {
 
 										if(polygonSelectedDevices[i].bs_sector_device.indexOf(".") != -1) {
@@ -2576,22 +2628,34 @@ function devicePlottingClass_gmap() {
 											var new_device_name2 = polygonSelectedDevices[i].bs_sector_device;
 										}
 
-										devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>Near-End '+(i+1)+'.) '+polygonSelectedDevices[i].bs_name+'</h5>';
-										devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name2+'">';
-										devicesTemplate += '<ul id="pollVal_'+new_device_name2+'" class="list-unstyled list-inline"></ul>';
-										devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name2+'"></span></div></div>';
+										if(polled_device_count[devices_counter] <= 1) {
+											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>Near-End '+(i+1)+'.) '+polygonSelectedDevices[i].bs_sector_device+'</h5>';
+											devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name2+'">';
+											devicesTemplate += '<ul id="pollVal_'+new_device_name2+'" class="list-unstyled list-inline"></ul>';
+											devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name2+'"></span></div></div>';
+										}
 
-										devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>Far-End '+(i+1)+'.) '+polygonSelectedDevices[i].name+'</h5>';
+										devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>Far-End '+(i+1)+'.) '+polygonSelectedDevices[i].device_name+'</h5>';
 										devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 										devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
 										devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
 
 									} else {
-										
-										devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+(i+1)+'.) '+polygonSelectedDevices[i].name+'</h5>';
-										devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
-										devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
-										devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
+										if(polled_device_count[devices_counter] ) //<= 1) //why do we have this condition ???
+                                        {
+											var device_end_txt = "";
+											if(polygonSelectedDevices[i].pointType == 'sub_station') {
+												device_end_txt = "Far End";
+											} else {
+												device_end_txt = "Near End";
+											}
+											var point_name = polygonSelectedDevices[i].device_name;
+
+											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+device_end_txt+''+(i+1)+'.) '+point_name+'</h5>';
+											devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
+											devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
+											devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
+										}
 									}
 								}
 
@@ -2657,15 +2721,6 @@ function devicePlottingClass_gmap() {
 
     		$("#getDevicesPollingData").button("loading");
 
-    		if($("#polling_tabular_view").hasClass("hide")) {
-    			$("#polling_tabular_view").removeClass("hide");
-    		}
-
-    		/*Remove hide class to navigation container on polling widget*/
-			if($("#navigation_container").hasClass("hide")) {
-				$("#navigation_container").removeClass("hide");
-			}
-
     		/*Disable service templates dropdown*/
     		$("#lp_template_select").attr("disabled","disabled");
 
@@ -2680,9 +2735,14 @@ function devicePlottingClass_gmap() {
 				url : base_url+"/"+"device/lp_bulk_data/?ts_template="+selected_lp_template+"&devices="+JSON.stringify(allSSIds),
 				// url : base_url+"/"+"static/services.json",
 				success : function(results) {
+					var result = "";
 
-					var result = JSON.parse(results);
-
+					if(typeof results === 'string') {
+						result = JSON.parse(results);
+					} else {
+						result = results;
+					}
+					
 					if(result.success == 1) {
 
 						$("#getDevicesPollingData").button("complete");
@@ -2700,7 +2760,7 @@ function devicePlottingClass_gmap() {
 						if($(".devices_container").hasClass("hide")) {
 							$(".devices_container").removeClass("hide");
 						}
-
+						var hasPolledInfo = true;
 						for(var i=0;i<allSSIds.length;i++) {
 
 							var new_device_name = "";
@@ -2712,6 +2772,18 @@ function devicePlottingClass_gmap() {
 							}
 
 							if(result.data.devices[allSSIds[i]] != undefined) {
+
+								if(hasPolledInfo) {
+									if($("#polling_tabular_view").hasClass("hide")) {
+						    			$("#polling_tabular_view").removeClass("hide");
+						    		}
+
+						    		/*Remove hide class to navigation container on polling widget*/
+									if($("#navigation_container").hasClass("hide")) {
+										$("#navigation_container").removeClass("hide");
+									}
+									hasPolledInfo = false;
+								}
 
 								var dateObj = new Date(),
 									current_time = dateObj.getHours()+":"+dateObj.getMinutes()+":"+dateObj.getSeconds(),
@@ -3020,6 +3092,7 @@ function devicePlottingClass_gmap() {
 		complete_polled_devices_icon = {};
 		total_polled_occurence = 0;
 		nav_click_counter = 0;
+		polled_device_count = {};
 
 		/*Restart performance calling*/
     	gisPerformanceClass.restart();
@@ -4034,7 +4107,7 @@ function devicePlottingClass_gmap() {
 		}
 
 		/*Clear master marker cluster objects*/
-		if(masterClusterInstance != "") {
+		if(masterClusterInstance) {
 			masterClusterInstance.clearMarkers();
 		}
 	}
@@ -4045,9 +4118,11 @@ function devicePlottingClass_gmap() {
 	 */
 	this.show_all_elements_gmap = function() {
 
-		/*Show everything on map*/
+		/*Show everything on map except connection line*/
 		$.grep(allMarkersArray_gmap,function(marker) {
-			marker.setMap(mapInstance);
+			if(marker.pointType != 'path') {
+				marker.setMap(mapInstance);
+			}
 		});
 
 		/*Show drawn points & lines from tools*/
@@ -4075,16 +4150,15 @@ function devicePlottingClass_gmap() {
 		}
 
 		/*Clear master marker cluster objects*/
-		if(masterClusterInstance != "") {
+		if(masterClusterInstance) {
 			masterClusterInstance.clearMarkers();
 		}
 
-		/*Cluster options object*/
-        var clusterOptions = {gridSize: 70, maxZoom: 8};
-        /*Add the master markers to the cluster MarkerCluster object*/
-        masterClusterInstance = new MarkerClusterer(mapInstance, masterMarkersObj, clusterOptions);
+		/*Add markers to cluster*/
+      masterClusterInstance.addMarkers(masterMarkersObj);
 
-        $("#resetFilters").button("complete");
+      /*Enable Reset Button*/
+		$("#resetFilters").button("complete");
 	}
 
 	/**
@@ -4130,17 +4204,17 @@ function devicePlottingClass_gmap() {
 				for(var k=0;k<subStationsArray.length;k++) {
 					/*BS, SS & Sectors from filtered data array*/
 					var ssName = subStationsArray[k].name ? $.trim(subStationsArray[k].name) : "",
-						ss_marker = allMarkersObject_gmap['sub_station']["ss_"+ssName],
-						path_marker = allMarkersObject_gmap['path']["line_"+ssName];
+						ss_marker = allMarkersObject_gmap['sub_station']["ss_"+ssName];
+						// path_marker = allMarkersObject_gmap['path']["line_"+ssName];
 
 					if(ss_marker) {
 						ss_marker.setMap(mapInstance);
 						currently_plotted_bs_ss_markers.push(ss_marker);
 					}
 
-					if(path_marker) {
-						path_marker.setMap(mapInstance);
-					}
+					// if(path_marker) {
+					// 	path_marker.setMap(mapInstance);
+					// }
 				}
 				
 				if(bs_marker) {
@@ -4187,13 +4261,23 @@ function devicePlottingClass_gmap() {
 		}
 
 		/*Clear master marker cluster objects*/
-		if(masterClusterInstance != "") {
+		if(masterClusterInstance) {
 			masterClusterInstance.clearMarkers();
 		}
-		/*Cluster options object*/
-        var clusterOptions = {gridSize: 70, maxZoom: 8};
-        /*Add the master markers to the cluster MarkerCluster object*/
-        masterClusterInstance = new MarkerClusterer(mapInstance, currently_plotted_bs_ss_markers, clusterOptions);
+		/*Add the master markers to the cluster MarkerCluster object*/
+		masterClusterInstance.addMarkers(currently_plotted_bs_ss_markers);
+
+		/*Call showLinesInBounds to show the line within the bounds*/
+		/* When zoom level is greater than 8 show lines */
+   	if(mapInstance.getZoom() > 8) {
+			/*
+			setTimeout is added because idle is event is trigger by marker cluster library when clicked on cluster,
+			so this function not called.Hence I called it after 0.35 sec
+			*/
+			setTimeout(function(){
+				gmap_self.showLinesInBounds();
+			},350);
+      }
 	};
 	
     /**
