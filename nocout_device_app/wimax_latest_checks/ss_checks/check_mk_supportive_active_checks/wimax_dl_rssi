@@ -2,9 +2,8 @@
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 
 def check_wimax_dl_rssi_arguments(params):
-    description, host,settings = params
+    description,settings = params
     args =''
-    args += ' %s ' % host
     if "socket_address" in settings:
         args += '%s ' % quote_shell_string(settings['socket_address'])
     if "socket_port" in settings:
