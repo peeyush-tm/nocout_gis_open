@@ -7118,18 +7118,18 @@ def create_circuit(circuit_payload):
 
     Args:
         circuit_payload (dict): {
-                                        'sector': <Sector: 10.75.158.219>,
-                                        'description': 'Circuitcreatedon28-Sep-2014at22: 55: 03.',
-                                        'date_of_acceptance': '',
-                                        'circuit_id': u'091NEWD623009178956',
-                                        'qos_bandwidth': 256.0,
-                                        'sub_station': <SubStation: 091newd623009178956>,
-                                        'dl_rssi_during_acceptance': u'NA',
-                                        'customer': <Customer: lotte_india_corp_ltd>,
-                                        'throughput_during_acceptance': u'NA',
-                                        'name': '091newd623009178956',
-                                        'alias': u'091NEWD623009178956'
-                                    }
+                                    'sector': <Sector: 10.75.158.219>,
+                                    'description': 'Circuitcreatedon28-Sep-2014at22: 55: 03.',
+                                    'date_of_acceptance': '',
+                                    'circuit_id': u'091NEWD623009178956',
+                                    'qos_bandwidth': 256.0,
+                                    'sub_station': <SubStation: 091newd623009178956>,
+                                    'dl_rssi_during_acceptance': u'NA',
+                                    'customer': <Customer: lotte_india_corp_ltd>,
+                                    'throughput_during_acceptance': u'NA',
+                                    'name': '091newd623009178956',
+                                    'alias': u'091NEWD623009178956'
+                                }
 
     Returns:
         circuit (class 'inventory.models.Circuit'): <Circuit: 10.75.158.219>

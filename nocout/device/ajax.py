@@ -640,6 +640,96 @@ def device_soft_delete(request, device_id, new_parent_id):
     return json.dumps({'result': result})
 
 
+# generate content for soft delete popup form
+@dajaxice_register(method='GET')
+def device_restore_form(request, value):
+    """ Get data to show on device restore form
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        value (int): device id
+
+    Returns:
+        result (dictionary): dictionary contains device and it's children's values
+                            i.e. {
+                                    'message': 'Successfully render form.',
+                                    'data': {
+                                        'meta': '',
+                                        'objects': {
+                                            'alias': u'091HYDE030007077237_NE',
+                                            'id': 6247L,
+                                            'name': u'1'
+                                        }
+                                    },
+                                    'success': 1
+                                }
+
+    """
+    # device which needs to be deleted
+    device = Device.objects.get(id=value)
+
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = "Failed to render form correctly."
+    result['data']['meta'] = ''
+    result['data']['objects'] = {}
+    if device:
+        result['data']['objects']['id'] = device.id
+        result['data']['objects']['name'] = device.device_name
+        result['data']['objects']['alias'] = device.device_alias
+        result['success'] = 1
+        result['message'] = "Successfully render form."
+    return json.dumps({'result': result})
+
+
+@dajaxice_register(method='GET')
+def device_restore(request, device_id):
+    """ Restoring device to device inventory
+
+    Args:
+        request (django.core.handlers.wsgi.WSGIRequest): GET request
+        device_id (int): device id
+
+    Returns:
+        result (dictionary): dictionary contains device and it's children's values
+                            i.e. {
+                                    'message': 'Successfully restored device (091HYDE030007077237_NE).',
+                                    'data': {
+                                        'meta': '',
+                                        'objects': {
+                                            'device_name': u'1',
+                                            'device_id': u'6247'
+                                        }
+                                    },
+                                    'success': 1
+                                }
+
+    """
+    # device: device which needs to be deleted
+    device = Device.objects.get(id=device_id)
+    # result: data dictionary send in ajax response
+    result = dict()
+    result['data'] = {}
+    result['success'] = 0
+    result['message'] = "No data exists."
+    result['data']['meta'] = ''
+    result['data']['objects'] = {}
+    result['data']['objects']['device_id'] = device_id
+    result['data']['objects']['device_name'] = device.device_name
+
+    # setting 'is_deleted' bit of device to 0 which means device is restored
+    if device.is_deleted == 1:
+        device.is_deleted = 0
+        device.save()
+        result['success'] = 1
+        result['message'] = "Successfully restored device ({}).".format(device.device_alias)
+    else:
+        result['success'] = 0
+        result['message'] = "Already restored."
+    return json.dumps({'result': result})
+
+
 @dajaxice_register(method='GET')
 def update_states(request, option):
     """Updating states corresponding to the selected country
