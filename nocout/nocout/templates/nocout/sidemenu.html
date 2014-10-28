@@ -176,6 +176,10 @@
                         </a>
                         <ul class="sub-sub">
                             <li><a class="" href="/device/"><span class="sub-menu-text">Devices</span></a></li>
+                            {% for group in user.groups.all%}
+    {% if group.name == 'group_admin' or group.name == 'group_viewer' or group.name == 'group_operator' %}
+
+                            {% else %}
                             <li><a class="" href="/device_group/"><span class="sub-menu-text">Device Group</span></a></li>
                             <li><a class="" href="/device_fields/"><span class="sub-menu-text">Device Fields</span></a></li>
                             <li><a class="" href="/technology/"><span class="sub-menu-text">Device Technology</span></a></li>
@@ -191,6 +195,8 @@
                             <li><a class="" href="/device_service_configuration/"><span class="sub-menu-text">Service Configurations</span></a></li>
                             <li><a class="" href="/protocol/"><span class="sub-menu-text">SNMP Parameters</span></a></li>
                             <li><a class="" href="/command/"><span class="sub-menu-text">Commands</span></a></li>
+                            {% endif %}
+                            {% endfor %}   
                         </ul>
                     </li>
                             <li class="has-sub-sub">
@@ -208,6 +214,7 @@
                                 <li><a class="" href="/circuit/"><span class="sub-menu-text">Circuit</span></a></li>
                             </ul>
                         </li>
+
                         <li class="has-sub-sub">
                             <a class="" href="javascript:;">
                                 <span class="sub-menu-text">Bulk Import</span>
