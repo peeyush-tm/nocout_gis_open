@@ -28,6 +28,7 @@ from site_instance.models import SiteInstance
 from inventory.models import Backhaul, SubStation, Sector
 from django.contrib.staticfiles.templatetags.staticfiles import static
 
+
 from django.views.decorators.csrf import csrf_exempt
 
 import logging
@@ -44,6 +45,7 @@ class DeviceList(ListView):
     model = Device
     template_name = 'device/devices_list.html'
 
+   
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
