@@ -159,13 +159,10 @@ def log_user_action(request):
     if request.method == 'POST':
         form = UserActionForm(request.POST)
         if form.is_valid():
-            try:
-                obj = UserAction(user_id=request.user.id)
-                obj.module = form.cleaned_data['module']
-                obj.action = form.cleaned_data['action']
-                obj.save()
-            except Exception as e:
-                logger.exception(e.message)
+            obj = UserAction(user_id=request.user.id)
+            obj.module = form.cleaned_data['module']
+            obj.action = form.cleaned_data['action']
+            obj.save()
 
             return HttpResponse(json.dumps({'success':True}))
         else:
