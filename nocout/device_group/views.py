@@ -1,6 +1,5 @@
 import json
 from operator import itemgetter
-from actstream import action
 from django.contrib.auth.decorators import permission_required
 from django.db.models.query import ValuesQuerySet
 from django.http.response import HttpResponseRedirect, HttpResponse
@@ -187,10 +186,6 @@ class DeviceGroupCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object=form.save()
-        try:
-            action.send(self.request.user, verb='Created', action_object = self.object)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect( DeviceGroupCreate.success_url )
 
 
@@ -250,7 +245,6 @@ class DeviceGroupUpdate(UpdateView):
                 if len(verb_string)>=255:
                     verb_string=verb_string[:250] + '...'
 
-                action.send(self.request.user, verb=verb_string)
 
         except Exception as activity:
             pass
@@ -280,10 +274,6 @@ class DeviceGroupDelete(DeleteView):
         """
         overriding the delete method to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting device group: %s'%(self.get_object().name))
-        except Exception as activity:
-            pass
         return super(DeviceGroupDelete, self).delete(request, *args, **kwargs)
 
 def device_group_devices_wrt_organization(request):
