@@ -12,7 +12,7 @@ from session_management.models import Visitor
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 ##error pages
-
+from activity_stream.models import UserAction
 import logging
 
 logger = logging.getLogger(__name__)
@@ -94,8 +94,9 @@ def auth_view(request):
     }
 
     user_audit = {
-        "user": User.objects.get(pk=1),
-        "verb": "User Login Attempt"
+        "userid": User.objects.get(pk=1).id,
+        "module":"auth",
+        "action": "Login Attempt",
     }
 
     objects_values = dict(url='/login/')
@@ -141,9 +142,10 @@ def auth_view(request):
 
         # values to store in user audit logs
         user_audit = {
-            "user": request.user,
-            "verb": u'username : %s loggedin from IP address : %s'
-                    % (username, get_client_ip(request))
+            "userid": request.user.id,
+            "module": "auth",
+            "action": "loggedin from IP address : %s"
+                    % (get_client_ip(request)),
         }
 
         result = {
@@ -158,9 +160,10 @@ def auth_view(request):
     elif user is not None and not user.is_active:
         # values to store in user audit logs
         user_audit = {
-            "user": User.objects.get(pk=1),
-            "verb": u'a locked user is loggedin using username : %s from IP address %s, '
-                    % (username, get_client_ip(request))
+            "userid": User.objects.get(pk=1).id,
+            "module": "auth",
+            "action": "a locked user is loggedin from IP address %s, "
+                    % (get_client_ip(request))
         }
 
         result = {
@@ -180,9 +183,10 @@ def auth_view(request):
 
         # values to store in user audit logs
         user_audit = {
-            "user": User.objects.get(pk=1),
-            "verb": u'login attempt failed for the username : %s from IP address %s, '
-                    % (username, get_client_ip(request))
+            "userid": User.objects.get(pk=1).id,
+            "module": "auth",
+            "action": "login attempt failed from IP address %s "
+                    % (get_client_ip(request))
         }
 
         result = {
@@ -198,7 +202,8 @@ def auth_view(request):
         }
 
     try:
-        action.send(user_audit["user"], verb=user_audit["verb"])
+        UserAction.objects.create(user_id=user_audit["userid"], module=user_audit["module"],
+                                    action=user_audit["action"])
     except Exception as general_exception:
         if settings.DEBUG:
             logger.error(general_exception)
