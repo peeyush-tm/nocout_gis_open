@@ -575,6 +575,57 @@ def device_soft_delete(request, device_id, new_parent_id):
                 dv.parent = new_parent
                 dv.save()
 
+    # delete device from nms core if it is already added there(nms core)
+    if device.host_state != "Disable" and device.is_added_to_nms != 0:
+        # get 'agent_tag' from DeviceType model
+        agent_tag = ""
+        try:
+            agent_tag = DeviceType.objects.get(id=device.device_type).agent_tag
+        except Exception as e:
+            logger.info("Device has no device type. Exception: ", e.message)
+
+        device_data = {'mode': 'deletehost', 'device_name': device.device_name}
+
+        # site to which configuration needs to be pushed
+        master_site = SiteInstance.objects.get(name=settings.DEVICE_APPLICATION['default']['NAME'])
+
+        # url for nocout.py
+        # url = 'http://omdadmin:omd@localhost:90/master_UA/check_mk/nocout.py'
+        # url = 'http://<username>:<password>@<domain_name>:<port>/<site_name>/check_mk/nocout.py'
+        url = "http://{}:{}@{}:{}/{}/check_mk/nocout.py".format(master_site.username,
+                                                                master_site.password,
+                                                                master_site.machine.machine_ip,
+                                                                master_site.web_service_port,
+                                                                master_site.name)
+        # sending post request to device app for deleting device to nms core
+        try:
+            r = requests.post(url, data=device_data)
+        except Exception as e:
+            result['message'] = "<i class=\"fa fa-times red-dot\"></i> Something wrong with 'Machine IP' or 'Web Service Port'."
+            return json.dumps({'result': result})
+
+        # converting string in 'r' to dictionary
+        try:
+            response_dict = ast.literal_eval(r.text)
+        except Exception as e:
+            result['message'] = "<i class=\"fa fa-times red-dot\"></i> Something wrong with site 'Username' or 'Password'."
+            return json.dumps({'result': result})
+
+        if r:
+            result['data'] = device_data
+            result['success'] = 1
+            if response_dict['error_code'] is not None:
+                result['message'] = "<i class=\"fa fa-times red-dot\"></i> ", response_dict['error_message'].capitalize()
+            else:
+                result['message'] = "<i class=\"fa fa-check green-dot\"></i> ", str(response_dict['message'].capitalize())
+                # set 'is_added_to_nms' to 1 after device successfully added to nocout nms core
+                device.is_added_to_nms = 0
+                # set 'is_monitored_on_nms' to 1 if service is added successfully
+                device.is_monitored_on_nms = 0
+                device.save()
+                # remove device services from 'service_deviceserviceconfiguration' table
+                DeviceServiceConfiguration.objects.filter(device_name=device.device_name).delete()
+
     # setting 'is_deleted' bit of device to 1 which means device is soft deleted
     if device.is_deleted == 0:
         device.is_deleted = 1
