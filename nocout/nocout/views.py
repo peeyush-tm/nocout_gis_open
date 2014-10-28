@@ -218,10 +218,12 @@ def logout(request):
     """
     try:
         user_audit = {
-            "user": request.user,
-            "verb": u'username : %s : Logoff '% (request.user.username)
+            "userid": request.user.id,
+            "module": "auth",
+            "action":"Logout",
         }
-        action.send(user_audit["user"], verb=user_audit["verb"])
+        UserAction.objects.create(user_id=user_audit['userid'], module=user_audit['module'],
+                                    action=user_audit['action'])
     except:
         #dont log in case of exception
         pass
