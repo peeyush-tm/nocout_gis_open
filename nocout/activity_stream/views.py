@@ -7,8 +7,9 @@ from django.db.models import Q
 from django.conf import settings
 from user_profile.models import UserProfile
 
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponse
 from activity_stream.models import UserAction
+from activity_stream.forms import UserActionForm
 
 from datetime import datetime,timedelta
 from pytz import timezone
@@ -151,19 +152,24 @@ class ActionListingTable(BaseDatatableView):
         return ret
 
 
-def actioncreate(request):
+def log_user_action(request):
     """
+    Method based view to log the user actions.
     """
     if request.method == 'POST':
-        try:
-            obj = UserAction(user_id=request.user.id)
-            obj.module = request.POST['module']
-            obj.action = request.POST['action']
-            obj.save()
-        except Exception as e:
-            logger.exception(e.message)
+        form = UserActionForm(request.POST)
+        if form.is_valid():
+            try:
+                obj = UserAction(user_id=request.user.id)
+                obj.module = form.cleaned_data['module']
+                obj.action = form.cleaned_data['action']
+                obj.save()
+            except Exception as e:
+                logger.exception(e.message)
 
-        return HttpResponse(json.dumps({'success':True}))
+            return HttpResponse(json.dumps({'success':True}))
+        else:
+            return HttpResponse(json.dumps({'success':False}))
     else:
         return HttpResponse(json.dumps({'success':False}))
 
