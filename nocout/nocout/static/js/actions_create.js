@@ -1,7 +1,9 @@
+// javascript function to log the user actions.
+
 function LogUserAction(module, action) {
     var csrftoken = getCookie('csrftoken');
     $.ajax({
-        url : "/logs/actioncreate/", 
+        url : "/logs/actions/log/", 
         type : "POST",
         dataType: "json", 
         data : {
@@ -13,7 +15,7 @@ function LogUserAction(module, action) {
                 console.log(response)
             },
             error : function(xhr,errmsg,err) {
-                alert(xhr.status + ": " + xhr.responseText);
+                console.log(xhr.status + ": " + xhr.responseText);
             }
     });
     return false;
