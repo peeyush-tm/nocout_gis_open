@@ -1039,7 +1039,7 @@ class ArchivedDeviceListingTable(BaseDatatableView):
             # c. sub-station configured on (from model SubStation)
             dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
                <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-               <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>\
+               <a href="/device/delete/{0}"><i class="fa fa-minus text-danger" title="Hard Delete"></i></a>\
                <a href="javascript:;" onclick="Dajaxice.device.device_restore_form(get_restore_device_form, {{\'value\': {0}}})"><i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id']))
             # dct.update(nms_actions='')
             # # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
