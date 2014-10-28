@@ -625,6 +625,8 @@ def device_soft_delete(request, device_id, new_parent_id):
                 device.save()
                 # remove device services from 'service_deviceserviceconfiguration' table
                 DeviceServiceConfiguration.objects.filter(device_name=device.device_name).delete()
+                # remove device ping service from 'service_devicepingconfiguration' table
+                DevicePingConfiguration.objects.filter(device_name=device.device_name).delete()
 
     # setting 'is_deleted' bit of device to 1 which means device is soft deleted
     if device.is_deleted == 0:
@@ -1155,6 +1157,9 @@ def delete_device_from_nms_core(request, device_id):
                 device.save()
                 # remove device services from 'service_deviceserviceconfiguration' table
                 DeviceServiceConfiguration.objects.filter(device_name=device.device_name).delete()
+                # remove device ping service from 'service_devicepingconfiguration' table
+                DevicePingConfiguration.objects.filter(device_name=device.device_name).delete()
+
     else:
         result['message'] = "<i class=\"fa fa-times red-dot\"></i> Device state is disabled. First enable it than add it to nms core."
     return json.dumps({'result': result})
