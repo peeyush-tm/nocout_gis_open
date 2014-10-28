@@ -101,5 +101,5 @@ class UserAction(models.Model):
     """
     user_id = models.IntegerField()
     action = models.TextField()
-    module = models.CharField(max_length=128, null=True, blank=True)
-    date_time = models.DateTimeField(auto_now_add=True)
+    module = models.CharField(max_length=128)
+    logged_at = models.DateTimeField(auto_now_add=True)
