@@ -46,36 +46,40 @@ def topology_discovery_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	invent_service_dict = {}
 	matching_criteria = {}
 	db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
-	service = "wimax_topology_discover"
+	service = "wimax_topology"
 
 	for host in hostlist:
 		query_string = "GET services\nColumns: service_state plugin_output host_address\n" + \
 		"Filter: service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (service,host[0])
 		query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
-
 		try:
 			if query_output[0][1]:
-				plugin_output = str(query_output[0][1].split('OK- ')[1])
+				plugin_output = (query_output[0][1].split('OK-')[1])
 				plugin_output =	[mac for mac in plugin_output.split(' ')]
-				ss_mac  = filter(lambda x: x.split('=')[0],plugin_output)
-				ss_ip  = filter(lambda x: x.split('=')[1].split(',')[10],plugin_output)
-				ss_sector_id  = filter(lambda x: x.split('=')[1].split(',')[9],plugin_output)
+				ss_mac  = map(lambda x: x.split('=')[0],plugin_output)
+				ss_ip  = map(lambda x: x.split('=')[1].split(',')[9],plugin_output)
+				ss_sector_id  = map(lambda x: x.split('=')[1].split(',')[8],plugin_output)
+				print ss_sector_id
 				for sec_id in ss_sector_id:
 					if int(sec_id) == 1:
-                                		service = "check_wimax_sector_id_pmp1_invent"
+                                		service1 = "check_wimax_sector_id_pmp1_invent"
                         		elif int(sec_id) == 2:
-                                		service = " check_wimax_sector_id_pmp2_invent"
-                        		if service:
+                                		service1 = " check_wimax_sector_id_pmp2_invent"
+                        		if service1:
                                		 	query_string = "GET services\nColumns: plugin_output\nFilter: " + \
-                                		"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (service,host[0])
-                                		result= json.loads(get_from_socket(socket_ip,socket_port,query_string).strip())
-                                		if result[0][0]:
+                                		"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (service1,host[0])
+                                		result= json.loads(utility_module.get_from_socket(site,query_string).strip())
+                                		if result:
                                         		updated_ss_sector_id = str(result[0][0].split('OK-')[1])
 							ss_sec_id.append(updated_ss_sector_id)
 						else:
 							ss_sec_id.append(None)
+							print '....'
+							print ss_sec_id
 					else:
 						ss_sec_id.append(None)
+				print '-----'
+				print ss_sec_id
 				service_state = (query_output[0][0])
 				if service_state == 0:
 					service_state = "OK"
@@ -96,6 +100,7 @@ def topology_discovery_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 				service_name=service,sector_id=ss_sec_id,
 				connected_device_ip=ss_ip,
 				connected_device_mac=ss_mac,data_source=ds,site_name=site,ip_address=host_ip)
+		print topology_dict
 		matching_criteria.update({'device_name':str(host[0]),'service_name':service})
 		mongo_module.mongo_db_update(db,matching_criteria,topology_dict,"wimax_topology")
 		#mongo_module.mongo_db_insert(db,topology_dict,"inventory_services")
@@ -121,8 +126,9 @@ def topology_discovery_data_main():
 		mongo_host = desired_config.get('host')
                 mongo_port = desired_config.get('port')
                 mongo_db_name = desired_config.get('nosql_db')
-		query = "GET services\nColumns: host_name\nFilter: service_description = wimax_topology_discover\nOutputFormat: json\n"
+		query = "GET services\nColumns: host_name\nFilter: service_description = wimax_topology\nOutputFormat: json\n"
 		output = json.loads(utility_module.get_from_socket(site,query))
+		print output
 		topology_discovery_data(site,output,mongo_host,int(mongo_port),mongo_db_name)
 	except SyntaxError, e:
 		raise MKGeneralException(("Can not get performance data: %s") % (e))

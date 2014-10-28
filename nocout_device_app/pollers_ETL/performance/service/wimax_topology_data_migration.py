@@ -102,7 +102,7 @@ def read_data(start_time, end_time, **kwargs):
         db_name=kwargs.get('db_name')
     ) 
     if db:
-        cur = db.cambium_topology_data.find({
+        cur = db.wimax_topology_data.find({
             "check_timestamp": {"$gt": start_time, "$lt": end_time}
         })
         for doc in cur:
@@ -134,7 +134,8 @@ def build_data(doc):
         	doc.get('ip_address'),
 		doc.get('sector_id')[i],
 		doc.get('connected_device_ip')[i],
-		doc.get('connected_device_mac')[i]
+		doc.get('connected_device_mac')[i],
+		None
         	)
 		values_list.append(t)
 		t = ()
@@ -179,8 +180,8 @@ def insert_data(table, data_values, **kwargs):
 	if len(insert_dict['0']):		
 		query = "INSERT INTO `%s`" % table
  		query+= """(device_name, service_name, machine_name, 
-            	site_name, data_source, sys_timestamp, check_timestamp,ip_address,sector_id,connected_device_ip,connected_device_mac) 
-           	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            	site_name, data_source, sys_timestamp, check_timestamp,ip_address,sector_id,connected_device_ip,connected_device_mac,mac_address) 
+           	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s)
 		"""
     		cursor = db.cursor()
     		try:
