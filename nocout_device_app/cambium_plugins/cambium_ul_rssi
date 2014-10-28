@@ -1,95 +1,29 @@
 #!/usr/bin/python
-import binascii
-"""
-Poller script which runs on ss and calculates the ul rssi from connected BS type.
+# -*- encoding: utf-8; py-indent-offset: 4 -*-
 
-Poller script determines the received signal strength indication.
-poller script takes the snmp value of OID .1.3.6.1.4.1.161.19.3.1.4.1.21 from snmp agent of device at specific interval.
-RSSI information is sent to device application 
+def check_cambium_ul_rssi_arguments(params):
+    description, settings = params
+    args =''
+    if "socket_address" in settings:
+        args += '%s ' % quote_shell_string(settings['socket_address'])
+    if "socket_port" in settings:
+        args += '%d ' % int(settings['socket_port'])
 
-"""
-# ##################################################################
-# Function : check_cambium_ul_rssi
-#
-#  Parameters: info(SNMP output) ,params(parameters to check the service state) 
-#
-#  Output: service state,plugin output ,performance data
-##################################################################
+    if "mac" in settings:
+        args += '%s ' % quote_shell_string(settings['mac'])
+    if "rssi_warning" in settings:
+        args += '%d ' % int(settings['rssi_warning'])
 
-params = (-77, -80)
-
-def inventory_cambium_ul_rssi(info):
-        if info:
-	    for entry in info:
-		a=binascii.b2a_hex(entry[0])
-		n = 2
-		entry[0]=(':').join([a[i:i+2] for i in range(0, len(a), n)])
-		print entry
-	return []
-
-def check_cambium_ul_rssi(item, params, info):
-    """
-        Check_cambium_ul_rssi function calcaulates the received signal strength indication
-
-        Args:
-            item (str) Specific item on SNMP output on which we want to filter results
-
-        Kwargs:
-            params (tuple) Check parameters for critical and warning state of service
-
-        Returns:
-            state (int) :
-                    0: OK
-                    1: Warning
-                    2: Critical
-                    3: unknown
-            infotext(string):
-                    plugin output
-                    Example : Device received signal strength indication is -76
-
-            performance_data  (list):
-                    performance data
-                    Example: cambium_ul_rssi=-76;-50;-80;;;
-            Raises:
-                ValueError ,Exception
-    """
-    warn, crit = params
-    state = 3
-    infotext = "unknown_value"
-    rssi = None
-
-    try:
-        if info:
-	    for entry in info:
-		a=binascii.b2a_hex(entry[0])
-		n = 2
-		entry[0]=(':').join([a[i:i+2] for i in range(0, len(a), n)])
-		if item in entry:
-			rssi = (entry[1])
-			rssi = int(rssi)
-			break
-            if rssi < crit:
-                state = 2
-            elif rssi > crit and rssi < warn:
-                state = 1
-            else:
-                state = 0
-            infotext = "Device received signal strength indication is %s " % rssi
-    except ValueError:
-        infotext = "type_mismatch_value"
-    except:
-        infotext = "unknown_value"
-    return (state, infotext, [("ul_rssi", rssi, warn, crit)])
+    if "rssi_critical" in settings:
+        args += '%d ' % int(settings['rssi_critical'])
 
 
-check_info["cambium_ul_rssi"] = {
-    'check_function': check_cambium_ul_rssi,
-    'inventory_function': inventory_cambium_ul_rssi,
-    'service_description': 'cambium_ul_rssi',
-    'has_perfdata': True,
+    return args
+
+active_check_info['cambium_ul_rssi'] = {
+    "command_line"        : '$USER1$/check_cambium_ul_rssi $ARG1$',
+    "argument_function"   : check_cambium_ul_rssi_arguments,
+    "service_description" : lambda params: "%s" % params[0],
+    "has_perfdata"        :True,
 }
 
-#######################################################################
-#	SNMP OID
-#######################################################################
-snmp_info["cambium_ul_rssi"] = ( ".1.3.6.1.4.1.161.19.3.1.4.1", ["3","34"] )
