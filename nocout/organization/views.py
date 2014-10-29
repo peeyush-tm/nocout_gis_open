@@ -1,5 +1,4 @@
 import json
-from actstream import action
 from django.db.models.query import ValuesQuerySet
 from django.db.models import Q
 from django.http import HttpResponseRedirect
@@ -156,7 +155,6 @@ class OrganizationCreate(CreateView):
         """
         self.object=form.save()
         self.model.objects.rebuild()
-        action.send( self.request.user, verb='Created', action_object = self.object )
         return super(ModelFormMixin, self).form_valid(form)
 
 class OrganizationUpdate(UpdateView):
@@ -186,7 +184,6 @@ class OrganizationUpdate(UpdateView):
 
             self.object=form.save()
             self.model.objects.rebuild()
-            action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( OrganizationUpdate.success_url )
 
 
