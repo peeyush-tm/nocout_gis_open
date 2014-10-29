@@ -13,6 +13,8 @@ from .models import Organization
 from nocout.utils.jquery_datatable_generation import Datatable_Generation
 from nocout.utils.util import date_handler, DictDiffer
 from user_group.models import UserGroup
+from django.contrib.auth.decorators import permission_required
+from django.utils.decorators import method_decorator
 
 
 class OrganizationList(ListView):
@@ -22,6 +24,13 @@ class OrganizationList(ListView):
 
     model = Organization
     template_name = 'organization/organization_list.html'
+
+    @method_decorator(permission_required('organization.view_organization', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(OrganizationList, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """
@@ -150,6 +159,14 @@ class OrganizationCreate(CreateView):
     form_class = OrganizationForm
     success_url = reverse_lazy('organization_list')
 
+    @method_decorator(permission_required('organization.add_organization', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(OrganizationCreate, self).dispatch(*args, **kwargs)
+
+
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -167,6 +184,14 @@ class OrganizationUpdate(UpdateView):
     model = Organization
     form_class = OrganizationForm
     success_url = reverse_lazy('organization_list')
+
+    @method_decorator(permission_required('organization.change_organization', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(OrganizationUpdate, self).dispatch(*args, **kwargs)
+
 
 
     def form_valid(self, form):
@@ -197,6 +222,15 @@ class OrganizationDelete(DeleteView):
     model = Organization
     template_name = 'organization/organization_delete.html'
     success_url = reverse_lazy('organization_list')
+
+
+    @method_decorator(permission_required('organization.delete_organization', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(OrganizationDelete, self).dispatch(*args, **kwargs)
+
 
 
 
