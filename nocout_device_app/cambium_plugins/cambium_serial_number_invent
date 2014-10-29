@@ -42,13 +42,13 @@ def check_cambium_serial_number_invent(item, _no_params, info):
     """
     state = 3
     infotext = "unknown_value"
+    serial_number_list = []
     try:
         if info:
             if info[0][0]:
 		infotext = ""
-                serial_number = info[0][0]
 		# Check_mk gives the HEX-STRING value in binary format.Required conversion to convert in to string
-		serial_number = binascii.b2a_hex(serial_number)
+		serial_number = binascii.b2a_hex(info[0][0])
                 n = 2
                 new_serial_number = (':').join([serial_number[i:i+2] for i in range(0, len(serial_number), n)])
                 state = 0

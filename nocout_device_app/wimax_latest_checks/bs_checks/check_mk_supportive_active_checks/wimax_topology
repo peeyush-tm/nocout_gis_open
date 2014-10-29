@@ -24,17 +24,16 @@
 # to the Free Software Foundation, Inc., 51 Franklin St,  Fifth Floor,
 # Boston, MA 02110-1301 USA.
 
-def check_wimax_ss_vlan_invent_arguments(params):
-    description,settings = params
+def check_wimax_topology_arguments(params):
+    description, host,settings = params
     args =''
-    if "mac" in settings:
-        args += '%s ' % quote_shell_string(settings['mac'])
+    args += ' %s ' % host
 
     return args
 
-active_check_info['wimax_ss_vlan_invent'] = {
-    "command_line"        : '$USER1$/check_wimax_ss_vlan_invent $ARG1$',
-    "argument_function"   : check_wimax_ss_vlan_invent_arguments,
+active_check_info['wimax_topology'] = {
+    "command_line"        : '$USER1$/check_wimax_topology $ARG1$',
+    "argument_function"   : check_wimax_topology_arguments,
     "service_description" : lambda params: "%s" % params[0],
     "has_perfdata"        :True,
 }
