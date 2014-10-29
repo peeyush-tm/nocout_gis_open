@@ -22,6 +22,13 @@ class CommandList(ListView):
     model = Command
     template_name = 'command/commands_list.html'
 
+    @method_decorator(permission_required('command.view_command', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(CommandList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
