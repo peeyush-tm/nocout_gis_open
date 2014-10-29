@@ -1048,12 +1048,12 @@ function device_services_status_frame(content) {
 // ********************************** Device Restore Functions ***************************************
 // restore device
 function get_restore_device_form(content) {
-    restore_device_html = '<h5 class="">Restoring device ('+content.result.data.objects.name+')</h5><br />';
+    restore_device_html = '<h5 class="">Restoring device (' + content.result.data.objects.name + ')</h5><br />';
     restore_device_html = '<input type="hidden" id="device_id" value="' + content.result.data.objects.id + '" />';
     restore_device_html += '<h5 class="text-warning"><b>Device Info:</b></h5>';
     restore_device_html += '<dl class="dl-horizontal">';
-    restore_device_html += '<dt>Device Name</dt><dd>'+content.result.data.objects.name+'</dd>';
-    restore_device_html += '<dt>Device Alias</dt><dd>'+content.result.data.objects.alias+'</dd>';
+    restore_device_html += '<dt>Device Name</dt><dd>' + content.result.data.objects.name + '</dd>';
+    restore_device_html += '<dt>Device Alias</dt><dd>' + content.result.data.objects.alias + '</dd>';
     restore_device_html += '</dd></dl>';
 
     bootbox.dialog({
@@ -1081,9 +1081,9 @@ function get_restore_device_form(content) {
 
 // show message for device addition success/failure
 function device_restore_message(responseResult) {
-    bootbox.alert(responseResult.result.message, function(){
+    bootbox.alert(responseResult.result.message, function() {
         // reload page after clicking "OK!"
-        location = window.location.origin+"/device/#ArchivedDeviceListing";
+        location = window.location.origin + "/device/#ArchivedDeviceListing";
         location.reload();
     });
 }
