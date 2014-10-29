@@ -7427,7 +7427,6 @@ def validate_date(date_string):
 
     # 'date of acceptance' validation (must be like '15-Aug-2014')
     if date_string:
-
         try:
             # datetime.datetime.strptime(date_string, '%d-%b-%Y')
             # date_string = date_string
@@ -7590,19 +7589,23 @@ def get_machine_details(machine_name, machine_numbers=None):
     if machine_name and machine_numbers:
         for machine_number in machine_numbers:
             # machine name
-            machine_name = str(machine_name) + str(machine_number)
+            mc_name = str(machine_name) + str(machine_number)
 
             machines_dict[machine_name] = list()
 
             # get machine
             machine = ""
             try:
-                machine = Machine.objects.get(name=machine_name)
+                machine = Machine.objects.get(name=mc_name)
             except Exception as e:
                 logger.info("Machine doesn't exist.:", e.message)
 
             # get all sites associated with current machine
-            sites = machine.siteinstance_set.all()
+            try:
+                sites = machine.siteinstance_set.all()
+            except Exception as e:
+                sites = []
+                logger.info("No sites available.")
 
             if sites:
                 for site in sites:
@@ -7611,6 +7614,8 @@ def get_machine_details(machine_name, machine_numbers=None):
                     site_dict[site.name] = len(Device.objects.filter(site_instance=site))
                     # append site instance in machine sites list
                     machines_dict[machine_name].append(site_dict)
+            else:
+                machines_dict[machine_name] = {}
 
         return machines_dict
 
