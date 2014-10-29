@@ -26,12 +26,12 @@ SS mac information is sent to device application
 
 def mysql_conn():
         db = mysql.connector.connect(
-                        user='root',
-                        host='10.133.12.163',
-                        password='root',
-                        database='nocout_24_09_14',
-                        port=3200)
-
+			user=_DATABASES['user'],
+                        host=_DATABASES['host'],
+                        password=_DATABASES['password'],
+                        database=_DATABASES['database'],
+                        port=_DATABASES['port']
+                        )
         return db
 
 
