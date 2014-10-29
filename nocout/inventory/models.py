@@ -2,6 +2,7 @@ import time
 from datetime import datetime
 from django.contrib.auth.models import User
 from django.db import models
+from django.dispatch import receiver
 from service.models import Service, ServiceDataSource
 from user_group.models import UserGroup
 from device.models import Device, DevicePort, DeviceTechnology, DeviceFrequency
@@ -358,3 +359,26 @@ class GISInventoryBulkImport(models.Model):
         """
         return self.original_filename
 
+#*********** L2 Reports Model *******************
+class CircuitL2Report(models.Model):
+    
+    # function to modify name and path of uploaded file
+    def uploaded_report_name(instance, filename):
+        timestamp = time.time()
+        full_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
+        year_month_date = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
+
+        # modified filename
+        filename = "{}_{}".format(full_time, filename)
+
+        # modified path where file is uploaded
+        path = "uploaded/l2"
+
+        return '{}/{}/{}'.format(path, year_month_date, filename)
+
+    name = models.CharField('Name', max_length=250, unique=True)
+    file_name = models.FileField(max_length=255, upload_to=uploaded_report_name)
+    added_on = models.DateTimeField('Added On', null=True, blank=True, auto_now_add=True)
+    user_id = models.ForeignKey(UserProfile)
+    circuit_id = models.ForeignKey(Circuit)
+    is_public = models.BooleanField('Is Public', default=True)
