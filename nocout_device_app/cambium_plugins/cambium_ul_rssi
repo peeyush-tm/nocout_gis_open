@@ -6,6 +6,7 @@ import socket
 import json
 import os
 import mysql.connector
+from nocout_settings import _DATABASES, _LIVESTATUS
 """
 service on SS,which calculates the ss mac.
 
@@ -102,7 +103,7 @@ def live_query_ul_rssi(mac):
 
 
 
-def check_cambium_ss_mac_invent(item, params, info):
+def check_cambium_ul_rssi(item, params, info):
     """
                 check_cambium_ss_mac_invent function calculates the mac of ss
 
@@ -156,6 +157,7 @@ def check_cambium_ss_mac_invent(item, params, info):
 check_info["cambium_ul_rssi"] = {
     'check_function': check_cambium_ul_rssi,
     'service_description': 'cambium_ul_rssi',
+    'has_perfdata' : True,
 }
 
 #################################################################
