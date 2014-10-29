@@ -1,29 +1,164 @@
 #!/usr/bin/python
-# -*- encoding: utf-8; py-indent-offset: 4 -*-
+import binascii
+import sys
+from telnetlib import Telnet
+import socket
+import json
+import os
+import mysql.connector
+"""
+service on SS,which calculates the ss mac.
 
-def check_cambium_ul_rssi_arguments(params):
-    description, settings = params
-    args =''
-    if "socket_address" in settings:
-        args += '%s ' % quote_shell_string(settings['socket_address'])
-    if "socket_port" in settings:
-        args += '%d ' % int(settings['socket_port'])
+This is part of device application. 
+Poller script determines the ss ip. 
+poller script takes the snmp value of OID  1.3.6.1.4.1.161.19.3.3.1.13.0 from snmp agent of device at specific interval.
+SS mac information is sent to device application 
 
-    if "mac" in settings:
-        args += '%s ' % quote_shell_string(settings['mac'])
-    if "rssi_warning" in settings:
-        args += '%d ' % int(settings['rssi_warning'])
-
-    if "rssi_critical" in settings:
-        args += '%d ' % int(settings['rssi_critical'])
+"""
+# ######################################################################
+# Function : check_cambium_ss_mac_invent
+#
+# Parameters: info (SNMP Output) _no_params(No Parameters)
+#
+# Output: service state and plugin output
+# #####################################################################
 
 
-    return args
+def mysql_conn():
+        db = mysql.connector.connect(
+                        user='root',
+                        host='10.133.12.163',
+                        password='root',
+                        database='nocout_24_09_14',
+                        port=3200)
 
-active_check_info['cambium_ul_rssi'] = {
-    "command_line"        : '$USER1$/check_cambium_ul_rssi $ARG1$',
-    "argument_function"   : check_cambium_ul_rssi_arguments,
-    "service_description" : lambda params: "%s" % params[0],
-    "has_perfdata"        :True,
+        return db
+
+
+def extract_host_from_cambium_topology(ss_host_mac):
+        query = """
+        select device_name,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
+        db = mysql_conn()
+        cur = db.cursor()
+        cur.execute(query)
+        data = cur.fetchall()
+        cur.close()
+
+        return data
+
+def get_from_socket(socket_ip,socket_port, query):
+    """
+    Function_name : get_from_socket (collect the query data from the socket)
+
+    Args: site_name (poller on which monitoring data is to be collected)
+
+    Kwargs: query (query for which data to be collectes from nagios.)
+
+    Return : None
+
+    raise 
+         Exception: SyntaxError,socket error 
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((socket_ip,socket_port))
+    s.send(query)
+    s.shutdown(socket.SHUT_WR)
+    output = s.recv(100000000)
+    output.strip("\n")
+    return output
+
+def live_query_ul_rssi(mac):
+        """
+        Connects to a socket, checks for the WELCOME-MSG and closes the
+        connection.
+        Returns nothing.
+    
+        """
+        exit_value = 3
+        plugin_message = ''
+        ul_rssi_state = "UNKNOWN"
+        ul_rssi = None
+        host_name = extract_host_from_cambium_topology(mac)
+        try:
+                if host_name[0][0]:
+                        query_string = "GET services\nColumns: plugin_output\nFilter: " + \
+                                "service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % ("cambium_topology_discover",host_name[0][0])
+			site = host_name[0][1]
+			machine_name = host_name[0][1].split('_')[0]
+			socket_ip = _LIVESTATUS[machine_name]['host']
+			socket_port = _LIVESTATUS[machine_name][site]['port']
+                        query_output = json.loads(get_from_socket(socket_ip,int(socket_port),query_string).strip())
+                        if query_output[0][0]:
+                                plugin_output = str(query_output[0][0].split('- ')[1])
+                                plugin_output = [mac for mac in plugin_output.split(' ')]
+                                ss_params = filter(lambda x: '/' in x,plugin_output)
+                                ss_matched_params = filter(lambda x: mac in x,ss_params)
+                                ul_rssi= map(lambda x: x.split('/')[2],ss_matched_params)
+                                ul_rssi= int(ul_rssi[0])
+        except:
+		ul_rssi= None	
+	return ul_rssi	
+
+
+
+def check_cambium_ss_mac_invent(item, params, info):
+    """
+                check_cambium_ss_mac_invent function calculates the mac of ss
+
+                Args:
+                        item (str) Specific item on SNMP output on which we want to filter results
+                
+                Kwargs:
+                        params (tuple) Check parameters for critical and warning state of service
+
+                Returns:
+                        state (int) :
+                                        0 : OK
+                                        1 : Warning
+                                        2: Critical
+                    3: unknown
+                        infotext(string):
+                                        plugin output
+                                        Example : OK - BB1202020
+
+                        Raises:
+                               Exception
+    """
+    state = 3
+    ul_rssi = None
+    infotext = "unknown_value"
+    warn,crit = params
+    try:
+        if info:
+            if info[0][0]:
+                ss_mac = info[0][0]
+		a=binascii.b2a_hex(ss_mac)
+                n = 2
+                ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
+		if ss_mac:
+			ul_rssi = live_query_ul_rssi(ss_mac )
+			if isinstance(ul_rssi,int):
+				if ul_rssi < crit:
+					state  = 2
+				elif ul_rssi > crit and ul_rssi < warn:
+					state = 1
+				else:
+					state = 0
+	infotext = "Device uplink signal strength indication is %s " % ul_rssi
+    except ValueError:
+        infotext = "type_mismatch_value"
+    except:
+        infotext = "unknown_value"
+    return (state, infotext, [("ul_rssi", ul_rssi, warn, crit)])
+
+
+check_info["cambium_ul_rssi"] = {
+    'check_function': check_cambium_ul_rssi,
+    'service_description': 'cambium_ul_rssi',
 }
 
+#################################################################
+#SNMP OID value for poller script
+################################################################
+
+snmp_info["cambium_ul_rssi"] = ( ".1.3.6.1.2.1.2.2.1", ["6.1"] )
