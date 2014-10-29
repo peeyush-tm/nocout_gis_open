@@ -34,7 +34,7 @@ class ActionList(ListView):
     """
     Class Based View for the User Log Activity
     """
-    model = Action
+    model = UserAction
     template_name = 'activity_stream/actions_logs.html'
 
     def get_context_data(self, **kwargs):
@@ -43,9 +43,10 @@ class ActionList(ListView):
 
         """
         context=super(ActionList, self).get_context_data(**kwargs)
-        context['datatable_headers'] = json.dumps([ {'mData':'actor', 'sTitle' : 'User','sWidth':'15%','bSortable': True},
-                                                    {'mData':'__unicode__', 'sTitle' : 'Actions','bSortable': False},
-                                                    {'mData':'timestamp', 'sTitle': 'Timestamp','sWidth':'17%','bSortable': True} ])
+        context['datatable_headers'] = json.dumps([ {'mData':'user_id', 'sTitle' : 'User','sWidth':'15%','bSortable': True},
+                                                    {'mData':'module', 'sTitle' : 'Module','bSortable': True},
+                                                    {'mData':'action', 'sTitle' : 'Actions','bSortable': False},
+                                                    {'mData':'logged_at', 'sTitle': 'Timestamp','sWidth':'17%','bSortable': True} ])
         return context
 
 
@@ -54,9 +55,9 @@ class ActionListingTable(BaseDatatableView):
     A generic class based view for the user log activity data table rendering.
 
     """
-    model = Action
-    columns = [ 'timestamp']
-    order_columns = ['-timestamp']
+    model = UserAction
+    columns = [ 'logged_at']
+    order_columns = ['-logged_at']
 
     def filter_queryset(self, qs):
         """
@@ -67,8 +68,8 @@ class ActionListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
-            actor_objects_ids_list = UserProfile.objects.filter(username__icontains=sSearch).values_list('id', flat=True)
-            qs =Action.objects.filter( actor_object_id__in=actor_objects_ids_list ).values('id', 'timestamp')
+            user_ids_list = UserProfile.objects.filter(username__icontains=sSearch).values_list('id', flat=True)
+            qs =UserAction.objects.filter( user_id__in=user_ids_list ).values('id', 'logged_at')
         return qs
 
     def get_initial_queryset(self):
@@ -86,11 +87,11 @@ class ActionListingTable(BaseDatatableView):
         limit = 10
         offset = 0
         start = 0
-        for x in range(0, Action.objects.count(), limit):
+        for x in range(0, UserAction.objects.count(), limit):
             offset = start + limit
-            qs += Action.objects.filter(
-                timestamp__range=(startdate.strftime("%Y-%m-%d 00:00:00"), enddate.strftime("%Y-%m-%d 00:00:00"))
-            ).values("id", "timestamp")[start:offset]
+            qs += UserAction.objects.filter(
+                logged_at__range=(startdate.strftime("%Y-%m-%d 00:00:00"), enddate.strftime("%Y-%m-%d 00:00:00"))
+            ).values("id", "logged_at")[start:offset]
             start += limit
 
 
@@ -107,13 +108,14 @@ class ActionListingTable(BaseDatatableView):
 
         if qs:
             for dct in qs:
-                dct['timestamp'] = time_converter(dct['timestamp'])
+                dct['logged_at'] = time_converter(dct['logged_at'])
                 # logger.debug(dct)
                 for key, val in dct.items():
                     if key=='id':
-                        action_object = Action.objects.get(pk= val)
-                        dct['__unicode__'] = action_object.verb
-                        dct['actor'] = action_object.actor.username
+                        action_object = UserAction.objects.get(pk= val)
+                        dct['user_id'] = unicode(UserProfile.objects.get(id=action_object.user_id) )
+                        dct['module'] = action_object.module
+                        dct['action'] = action_object.action
                     else:
                         dct[key] = val
             return list(qs)
