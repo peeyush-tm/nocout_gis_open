@@ -485,7 +485,7 @@ class BaseStationList(ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
-            {'mData': 'bs_switch__device_alias', 'sTitle': 'BS Switch', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'bs_switch__id', 'sTitle': 'BS Switch', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'backhaul__name', 'sTitle': 'Backhaul', 'sWidth': 'auto', },
             {'mData': 'bs_type', 'sTitle': 'BS Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
@@ -505,9 +505,9 @@ class BaseStationListingTable(BaseDatatableView):
     """
     model = BaseStation
     columns = ['alias', 'bs_site_id',
-               'bs_switch__device_alias', 'backhaul__name', 'bs_type', 'building_height', 'description']
+               'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description']
     order_columns = ['alias', 'bs_site_id',
-                     'bs_switch__device_alias', 'backhaul__name', 'bs_type', 'building_height', 'description']
+                     'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description']
 
     def filter_queryset(self, qs):
         """
@@ -544,6 +544,15 @@ class BaseStationListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'bs_switch__id' in dct:
+                    bs_device_alias = Device.objects.get(id=dct['bs_switch__id']).device_alias
+                    bs_device_ip = Device.objects.get(id=dct['bs_switch__id']).ip_address
+                    dct['bs_switch__id'] = "{} ({})".format(bs_device_alias, bs_device_ip)
+            except Exception as e:
+                logger.info("BS Switch not present. Exception: ", e.message)
+
             dct.update(actions='<a href="/base_station/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/base_station/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
@@ -681,11 +690,11 @@ class BackhaulList(ListView):
         """
         context = super(BackhaulList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'bh_configured_on__device_alias', 'sTitle': 'Backhaul Configured On', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto'},
+            {'mData': 'bh_configured_on__id', 'sTitle': 'Backhaul Configured On', 'sWidth': 'auto'},
             {'mData': 'bh_port', 'sTitle': 'Backhaul Port', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'bh_type', 'sTitle': 'Backhaul Type', 'sWidth': 'auto', },
-            {'mData': 'pop__device_alias', 'sTitle': 'POP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'pop__id', 'sTitle': 'POP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'pop_port', 'sTitle': 'POP Port', 'sWidth': 'auto', },
             {'mData': 'bh_connectivity', 'sTitle': 'Connectivity', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'bh_circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', },
@@ -705,9 +714,9 @@ class BackhaulListingTable(BaseDatatableView):
     Class based View to render Backhaul Data table.
     """
     model = Backhaul
-    columns = ['alias', 'bh_configured_on__device_alias', 'bh_port', 'bh_type', 'pop__device_alias', 'pop_port',
+    columns = ['alias', 'bh_configured_on__id', 'bh_port', 'bh_type', 'pop__id', 'pop_port',
                'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
-    order_columns = ['alias', 'bh_configured_on__device_alias', 'bh_port', 'bh_type', 'pop__device_alias',
+    order_columns = ['alias', 'bh_configured_on__id', 'bh_port', 'bh_type', 'pop__id',
                      'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
 
     def filter_queryset(self, qs):
@@ -749,8 +758,25 @@ class BackhaulListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'bh_configured_on__id' in dct:
+                    bh_device_alias = Device.objects.get(id=dct['bh_configured_on__id']).device_alias
+                    bh_device_ip = Device.objects.get(id=dct['bh_configured_on__id']).ip_address
+                    dct['bh_configured_on__id'] = "{} ({})".format(bh_device_alias, bh_device_ip)
+            except Exception as e:
+                logger.info("Backhaul configured on not present. Exception: ", e.message)
+
+            try:
+                if 'pop__id' in dct:
+                    pop_device_alias = Device.objects.get(id=dct['pop__id']).device_alias
+                    pop_device_ip = Device.objects.get(id=dct['pop__id']).ip_address
+                    dct['pop__id'] = "{} ({})".format(pop_device_alias, pop_device_ip)
+            except Exception as e:
+                logger.info("POP not present. Exception: ", e.message)
+
             dct.update(actions='<a href="/backhaul/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/backhaul/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                <a href="/backhaul/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id']))
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -890,7 +916,7 @@ class SectorList(ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'sector_configured_on__device_alias', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
+            {'mData': 'sector_configured_on__id', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
             {'mData': 'sector_configured_on_port__name', 'sTitle': 'Sector Configured On Port', 'sWidth': 'auto',
              'sClass': 'hidden-xs'},
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -913,10 +939,10 @@ class SectorListingTable(BaseDatatableView):
     Class based View to render Sector Data Table.
     """
     model = Sector
-    columns = ['alias', 'bs_technology__alias' ,'sector_id', 'sector_configured_on__device_alias',
-            'base_station__alias', 'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
-    order_columns = ['alias', 'bs_technology__alias' ,'sector_id', 'sector_configured_on__device_alias',
-            'base_station__alias', 'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
+    columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id',
+               'base_station__alias', 'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
+    order_columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id',
+                     'base_station__alias', 'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
 
     def filter_queryset(self, qs):
         """
@@ -958,6 +984,15 @@ class SectorListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'sector_configured_on__id' in dct:
+                    sector_device_alias = Device.objects.get(id=dct['sector_configured_on__id']).device_alias
+                    sector_device_ip = Device.objects.get(id=dct['sector_configured_on__id']).ip_address
+                    dct['sector_configured_on__id'] = "{} ({})".format(sector_device_alias, sector_device_ip)
+            except Exception as e:
+                logger.info("Sector Configured On not present. Exception: ", e.message)
+
             dct.update(actions='<a href="/sector/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/sector/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
@@ -1291,7 +1326,7 @@ class SubStationList(ListView):
         context = super(SubStationList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'device__device_alias', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'device__id', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', },
             {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -1317,9 +1352,9 @@ class SubStationListingTable(BaseDatatableView):
     Class based View to render Sub Station Data table.
     """
     model = SubStation
-    columns = ['alias', 'device__device_alias', 'antenna__alias', 'version', 'serial_no', 'building_height',
+    columns = ['alias', 'device__id', 'antenna__alias', 'version', 'serial_no', 'building_height',
                'tower_height', 'city', 'state', 'address', 'description']
-    order_columns = ['alias', 'device__device_alias', 'antenna__alias', 'version', 'serial_no', 'building_height',
+    order_columns = ['alias', 'device__id', 'antenna__alias', 'version', 'serial_no', 'building_height',
                      'tower_height']
 
     def filter_queryset(self, qs):
@@ -1361,8 +1396,17 @@ class SubStationListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct['city__name']= City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
-            dct['state__name']= State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'device__id' in dct:
+                    ss_device_alias = Device.objects.get(id=dct['device__id']).device_alias
+                    ss_device_ip = Device.objects.get(id=dct['device__id']).ip_address
+                    dct['device__id'] = "{} ({})".format(ss_device_alias, ss_device_ip)
+            except Exception as e:
+                logger.info("Sub Station Device not present. Exception: ", e.message)
+
+            dct['city__name'] = City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
+            dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
             dct.update(actions='<a href="/sub_station/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/sub_station/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
@@ -2365,7 +2409,7 @@ class LivePollingSettingsCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Live Polling Setting : %s" %(self.object.alias)
-        action.send(self.request.user, verb=version, action_object=self.object)
+        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(LivePollingSettingsCreate.success_url)
 
 

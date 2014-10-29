@@ -52,7 +52,7 @@ class DeviceList(ListView):
         datatable_headers = [
             {'mData': 'status_icon', 'sTitle': '', 'sWidth': 'auto', },
             {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'site_instance__name', 'sTitle': 'Site Instance', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'machine__name', 'sTitle': 'Machine', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'device_technology__name', 'sTitle': 'Device Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs',
@@ -77,7 +77,7 @@ class DeviceList(ListView):
         datatable_headers_no_nms_actions = [
             {'mData': 'status_icon', 'sTitle': '', 'sWidth': 'auto', },
             {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'site_instance__name', 'sTitle': 'Site Instance', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'machine__name', 'sTitle': 'Machine', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'device_technology__name', 'sTitle': 'Device Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs',
@@ -118,7 +118,7 @@ class OperationalDeviceListingTable(BaseDatatableView):
     Render JQuery datatables for listing operational devices only
     """
     model = Device
-    columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
+    columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
     order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
 
@@ -249,6 +249,15 @@ class OperationalDeviceListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'device_name' in dct:
+                    device_alias = Device.objects.get(pk=dct['id']).device_alias
+                    device_ip = Device.objects.get(pk=dct['id']).ip_address
+                    dct['device_name'] = "{} ({})".format(device_alias, device_ip)
+            except Exception as e:
+                logger.info("Device not present. Exception: ", e.message)
+
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
 
@@ -403,7 +412,7 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
     Render JQuery datatables for listing non-operational devices only
     """
     model = Device
-    columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
+    columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
     order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
 
@@ -537,6 +546,15 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'device_name' in dct:
+                    device_alias = Device.objects.get(pk=dct['id']).device_alias
+                    device_ip = Device.objects.get(pk=dct['id']).ip_address
+                    dct['device_name'] = "{} ({})".format(device_alias, device_ip)
+            except Exception as e:
+                logger.info("Device not present. Exception: ", e.message)
+
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
 
@@ -640,7 +658,7 @@ class DisabledDeviceListingTable(BaseDatatableView):
     Render JQuery datatables for listing disabled devices only
     """
     model = Device
-    columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
+    columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
     order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
 
@@ -770,6 +788,15 @@ class DisabledDeviceListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'device_name' in dct:
+                    device_alias = Device.objects.get(pk=dct['id']).device_alias
+                    device_ip = Device.objects.get(pk=dct['id']).ip_address
+                    dct['device_name'] = "{} ({})".format(device_alias, device_ip)
+            except Exception as e:
+                logger.info("Device not present. Exception: ", e.message)
+
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
 
@@ -874,7 +901,7 @@ class ArchivedDeviceListingTable(BaseDatatableView):
     Render JQuery datatables for listing archived devices only
     """
     model = Device
-    columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
+    columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
     order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
 
@@ -1005,6 +1032,15 @@ class ArchivedDeviceListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'device_name' in dct:
+                    device_alias = Device.objects.get(pk=dct['id']).device_alias
+                    device_ip = Device.objects.get(pk=dct['id']).ip_address
+                    dct['device_name'] = "{} ({})".format(device_alias, device_ip)
+            except Exception as e:
+                logger.info("Device not present. Exception: ", e.message)
+
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
 
@@ -1109,7 +1145,7 @@ class AllDeviceListingTable(BaseDatatableView):
     Render JQuery datatables for listing of all devices
     """
     model = Device
-    columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
+    columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
     order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
 
@@ -1240,6 +1276,15 @@ class AllDeviceListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'device_name' in dct:
+                    device_alias = Device.objects.get(pk=dct['id']).device_alias
+                    device_ip = Device.objects.get(pk=dct['id']).ip_address
+                    dct['device_name'] = "{} ({})".format(device_alias, device_ip)
+            except Exception as e:
+                logger.info("Device not present. Exception: ", e.message)
+
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
 
