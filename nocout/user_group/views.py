@@ -1,5 +1,4 @@
 from operator import itemgetter
-from actstream import action
 from django.contrib.auth.decorators import permission_required
 from django.db.models import Q
 import json
@@ -201,10 +200,6 @@ class UserGroupCreate(CreateView):
         to log the user activity after submitting the form.
         """
         self.object = form.save()
-        try:
-            action.send(self.request.user, verb=u'created', action_object=self.object)
-        except Exception as activity:
-            pass
         return super(ModelFormMixin, self).form_valid(form)
 
 class UserGroupUpdate(UpdateView):
@@ -245,10 +240,6 @@ class UserGroupUpdate(UpdateView):
                 verb_string=verb_string[:250] + '...'
 
             self.object=form.save()
-            try:
-                action.send( self.request.user, verb=verb_string )
-            except Exception as activity:
-                pass
 
         return super(ModelFormMixin, self).form_valid(form)
 
@@ -273,10 +264,6 @@ class UserGroupDelete(DeleteView):
         """
         The delete function to overriding to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting user group: %s'%(self.get_object().name))
-        except Exception as activity:
-            pass
         return super(UserGroupDelete, self).delete(request, *args, **kwargs)
 
 def user_group_users_render_wrt_organization(request):

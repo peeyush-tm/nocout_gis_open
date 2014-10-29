@@ -12,7 +12,6 @@ import re
 from django.contrib.auth.decorators import permission_required
 from django.shortcuts import render, render_to_response
 import json
-from actstream import action
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect, HttpResponse
 from django.utils.decorators import method_decorator
@@ -193,7 +192,6 @@ class InventoryCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(InventoryCreate.success_url)
 
 
@@ -218,7 +216,6 @@ class InventoryUpdate(UpdateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(InventoryCreate.success_url)
 
 
@@ -242,7 +239,6 @@ class InventoryDelete(DeleteView):
         """
         overriding the delete method to log the user activity.
         """
-        action.send(request.user, verb='deleting inventory: %s' % (self.get_object().name))
         return super(InventoryDelete, self).delete(request, *args, **kwargs)
 
 
@@ -411,7 +407,6 @@ class AntennaCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Antenna : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(AntennaCreate.success_url)
 
 
@@ -448,7 +443,6 @@ class AntennaUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(AntennaUpdate.success_url)
 
 
@@ -611,7 +605,6 @@ class BaseStationCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Base Station : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(BaseStationCreate.success_url)
 
 
@@ -647,7 +640,6 @@ class BaseStationUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(BaseStationUpdate.success_url)
 
 
@@ -816,7 +808,6 @@ class BackhaulCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Backhaul : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(BackhaulCreate.success_url)
 
 
@@ -853,7 +844,6 @@ class BackhaulUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(BackhaulUpdate.success_url)
 
 
@@ -1025,7 +1015,6 @@ class SectorCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Sector : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(SectorCreate.success_url)
 
 
@@ -1061,7 +1050,6 @@ class SectorUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(SectorUpdate.success_url)
 
 
@@ -1220,7 +1208,6 @@ class CustomerCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Customer : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(CustomerCreate.success_url)
 
 
@@ -1256,7 +1243,6 @@ class CustomerUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(CustomerUpdate.success_url)
 
 
@@ -1430,7 +1416,6 @@ class SubStationCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Sub Station : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(SubStationCreate.success_url)
 
 
@@ -1466,7 +1451,6 @@ class SubStationUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(SubStationUpdate.success_url)
 
 
@@ -1742,7 +1726,6 @@ class CircuitCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Circuit : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(CircuitCreate.success_url)
 
 
@@ -1778,7 +1761,6 @@ class CircuitUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(CircuitUpdate.success_url)
 
 
@@ -1945,7 +1927,6 @@ class IconSettingsCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Icon Setting : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(IconSettingsCreate.success_url)
 
 
@@ -1981,7 +1962,6 @@ class IconSettingsUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(IconSettingsUpdate.success_url)
 
 
@@ -2143,7 +2123,6 @@ class LivePollingSettingsCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Live Polling Setting : %s" %(self.object.alias)
-        action.send(self.request.user, verb=version, action_object=self.object)
         return HttpResponseRedirect(LivePollingSettingsCreate.success_url)
 
 
@@ -2179,7 +2158,6 @@ class LivePollingSettingsUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(LivePollingSettingsUpdate.success_url)
 
 
@@ -2340,7 +2318,6 @@ class ThresholdConfigurationCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Threshold Configuration : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(ThresholdConfigurationCreate.success_url)
 
 
@@ -2376,7 +2353,6 @@ class ThresholdConfigurationUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(ThresholdConfigurationUpdate.success_url)
 
 
@@ -2575,7 +2551,6 @@ class ThematicSettingsCreate(CreateView):
         self.object.icon_settings=icon_settings_values_list
         self.object.save()
         verb_string = "Create Thematic Settings : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(ThematicSettingsCreate.success_url)
 
 
@@ -2616,7 +2591,6 @@ class ThematicSettingsUpdate(UpdateView):
                           ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(ThematicSettingsUpdate.success_url)
 
 
