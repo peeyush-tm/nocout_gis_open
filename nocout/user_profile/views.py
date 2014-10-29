@@ -28,6 +28,13 @@ class UserList(ListView):
     model = UserProfile
     template_name = 'user_profile/users_list.html'
 
+    @method_decorator(permission_required('user_profile.view_userprofile', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(UserList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
