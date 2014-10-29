@@ -2,7 +2,6 @@
 
 import json
 from operator import itemgetter
-from actstream import action
 from django.contrib.auth.decorators import permission_required
 from django.core.exceptions import ValidationError
 from django.db.models import Q
@@ -1536,10 +1535,6 @@ class DeviceCreate(CreateView):
                 dtfv.save()
             except Exception as e:
                 logger.info(e.message)
-        try:
-            action.send(self.request.user, verb='Created', action_object=device)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect(DeviceCreate.success_url)
 
 
@@ -1734,9 +1729,7 @@ class DeviceUpdate(UpdateView):
                 if len(verb_string) >= 255:
                     verb_string = verb_string[:250] + '...'
 
-                action.send(self.request.user, verb=verb_string)
         except Exception as user_audit_exeption:
-            action.send(self.request.user, verb="Changed the Physical Device Inventory")
             if settings.DEBUG:
                 logger.error(user_audit_exeption)
 
@@ -1763,10 +1756,6 @@ class DeviceDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting device: %s' % (self.get_object().device_name))
-        except Exception as activity:
-            pass
         return super(DeviceDelete, self).delete(request, *args, **kwargs)
 
 
@@ -1945,10 +1934,6 @@ class DeviceTypeFieldsCreate(CreateView):
         If the form is valid, redirect to the supplied URL.
         """
         self.object = form.save()
-        try:
-            action.send(self.request.user, verb='Created', action_object=self.object)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect(DeviceTypeFieldsCreate.success_url)
 
 
@@ -1994,7 +1979,6 @@ class DeviceTypeFieldsUpdate(UpdateView):
                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
                 if len(verb_string) >= 255:
                     verb_string = verb_string[:250] + '...'
-                action.send(self.request.user, verb=verb_string)
         except Exception as activity:
             pass
 
@@ -2021,10 +2005,6 @@ class DeviceTypeFieldsDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting device type field: %s' % self.get_object().field_name)
-        except Exception as activity:
-            pass
         return super(DeviceTypeFieldsDelete, self).delete(request, *args, **kwargs)
 
 
@@ -2232,10 +2212,6 @@ class DeviceTechnologyCreate(CreateView):
             tv.technology = device_technology
             tv.vendor = device_vendor
             tv.save()
-        try:
-            action.send(self.request.user, verb='Created', action_object=device_technology)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect(DeviceTechnologyCreate.success_url)
 
 
@@ -2293,7 +2269,6 @@ class DeviceTechnologyUpdate(UpdateView):
                 if len(verb_string) >= 255:
                     verb_string = verb_string[:250] + '...'
 
-                action.send(self.request.user, verb=verb_string)
         except Exception as activity:
             pass
 
@@ -2319,10 +2294,6 @@ class DeviceTechnologyDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting device technology: %s' % self.get_object().name)
-        except Exception as activity:
-            pass
         return super(DeviceTechnologyDelete, self).delete(self, request, *args, **kwargs)
 
 
@@ -2526,10 +2497,6 @@ class DeviceVendorCreate(CreateView):
             vm.vendor = device_vendor
             vm.model = device_model
             vm.save()
-        try:
-            action.send(self.request.user, verb='Created', action_object=device_vendor)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect(DeviceVendorCreate.success_url)
 
 
@@ -2589,7 +2556,6 @@ class DeviceVendorUpdate(UpdateView):
                 if len(verb_string) >= 255:
                     verb_string = verb_string[:250] + '...'
 
-                action.send(self.request.user, verb=verb_string)
         except Exception as activity:
             pass
 
@@ -2615,10 +2581,6 @@ class DeviceVendorDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting device vendor: %s' % (self.get_object().name))
-        except Exception as activity:
-            pass
         return super(DeviceVendorDelete, self).delete(request, *args, **kwargs)
 
 
@@ -2821,10 +2783,6 @@ class DeviceModelCreate(CreateView):
             mt.type = device_type
             mt.save()
 
-        try:
-            action.send(self.request.user, verb='Created', action_object=device_model)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect(DeviceModelCreate.success_url)
 
 
@@ -2884,7 +2842,6 @@ class DeviceModelUpdate(UpdateView):
                 if len(verb_string) >= 255:
                     verb_string = verb_string[:250] + '...'
 
-                action.send(self.request.user, verb=verb_string)
         except Exception as activity:
             pass
 
@@ -2910,10 +2867,6 @@ class DeviceModelDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting device model: %s' % (self.get_object().name))
-        except Exception as activity:
-            pass
         return super(DeviceModelDelete, self).delete(request, *args, **kwargs)
 
 
@@ -3121,10 +3074,6 @@ class DeviceTypeCreate(CreateView):
         If the form is valid, redirect to the supplied URL.
         """
         self.object = form.save()
-        try:
-            action.send(self.request.user, verb='Created', action_object=self.object)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect(DeviceTypeCreate.success_url)
 
 
@@ -3162,7 +3111,6 @@ class DeviceTypeUpdate(UpdateView):
                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
                 if len(verb_string) >= 255:
                     verb_string = verb_string[:250] + '...'
-                action.send(self.request.user, verb=verb_string)
         except Exception as activity:
             pass
         self.object = form.save()
@@ -3188,10 +3136,6 @@ class DeviceTypeDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting device type: %s' % (self.get_object().name))
-        except Exception as activity:
-            pass
         return super(DeviceTypeDelete, self).delete(request, *args, **kwargs)
 
 
@@ -3326,10 +3270,6 @@ class DevicePortCreate(CreateView):
         If the form is valid, redirect to the supplied URL.
         """
         self.object = form.save()
-        try:
-            action.send(self.request.user, verb='Created', action_object=self.object)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect(DevicePortCreate.success_url)
 
 
@@ -3366,7 +3306,6 @@ class DevicePortUpdate(UpdateView):
                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
                 if len(verb_string) >= 255:
                     verb_string = verb_string[:250] + '...'
-                action.send(self.request.user, verb=verb_string)
         except Exception as activity:
             pass
         self.object = form.save()
@@ -3392,10 +3331,6 @@ class DevicePortDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting device port: %s' % (self.get_object().name))
-        except Exception as activity:
-            pass
         return super(DevicePortDelete, self).delete(request, *args, **kwargs)
 
 
@@ -3536,10 +3471,6 @@ class DeviceFrequencyCreate(CreateView):
         If the form is valid, redirect to the supplied URL.
         """
         self.object = form.save()
-        try:
-            action.send(self.request.user, verb='Create device frequency of value : %s' %(self.object.value), action_object=self.object)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect(DeviceFrequencyCreate.success_url)
 
 
@@ -3564,10 +3495,6 @@ class DeviceFrequencyUpdate(UpdateView):
         If the form is valid, redirect to the supplied URL.
         """
         self.object = form.save()
-        try:
-            action.send(self.request.user, verb='Update Device Frequency whose value is : %s' %(self.object.value), action_object=self.object)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect(DeviceFrequencyUpdate.success_url)
 
 
@@ -3590,8 +3517,4 @@ class DeviceFrequencyDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting device frequency: %s' % (self.get_object().value))
-        except Exception as activity:
-            pass
         return super(DeviceFrequencyDelete, self).delete(request, *args, **kwargs)
