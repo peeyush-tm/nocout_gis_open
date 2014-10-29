@@ -73,51 +73,51 @@ function get_soft_delete_form(content) {
     });
 }
 
-function add_confirmation(id){
+function add_confirmation(id) {
     bootbox.dialog({
-      message:"Are you sure want to add this user ",
-      title: "<span class='text-danger'><i class='fa fa-times'></i>Confirmation</span>",
-      buttons: {
-          success: {
-          label: "Yes!",
+        message: "Are you sure want to add this user ",
+        title: "<span class='text-danger'><i class='fa fa-times'></i>Confirmation</span>",
+        buttons: {
+            success: {
+                label: "Yes!",
                 className: "btn-success",
                 callback: function () {
-                Dajaxice.user_profile.user_add(show_response_message, { 'user_id': id })
+                    Dajaxice.user_profile.user_add(show_response_message, { 'user_id': id })
                 }
-      },
-      danger: {
-            label: "No!",
-            className: "btn-danger",
-            callback: function () {
-                $(".bootbox").modal("hide");
-              }
+            },
+            danger: {
+                label: "No!",
+                className: "btn-danger",
+                callback: function () {
+                    $(".bootbox").modal("hide");
+                }
             }
 
-      }
-})
+        }
+    })
 }
 
-function hard_delete_confirmation(id){
+function hard_delete_confirmation(id) {
     bootbox.dialog({
-      message:"Are you sure want to delete this user",
-      title: "<span class='text-danger'><i class='fa fa-times'></i>Confirmation</span>",
-      buttons: {
-          success: {
-          label: "Yes!",
+        message: "Are you sure want to delete this user",
+        title: "<span class='text-danger'><i class='fa fa-times'></i>Confirmation</span>",
+        buttons: {
+            success: {
+                label: "Yes!",
                 className: "btn-success",
                 callback: function () {
-                Dajaxice.user_profile.user_hard_delete(show_response_message, { 'user_id': id })
+                    Dajaxice.user_profile.user_hard_delete(show_response_message, { 'user_id': id })
                 }
-      },
-      danger: {
-            label: "No!",
-            className: "btn-danger",
-            callback: function () {
-                $(".bootbox").modal("hide");
-              }
+            },
+            danger: {
+                label: "No!",
+                className: "btn-danger",
+                callback: function () {
+                    $(".bootbox").modal("hide");
+                }
             }
-      }
-})
+        }
+    })
 }
 
 
@@ -1044,3 +1044,46 @@ function device_services_status_frame(content) {
             }
     });
     }
+
+// ********************************** Device Restore Functions ***************************************
+// restore device
+function get_restore_device_form(content) {
+    restore_device_html = '<h5 class="">Restoring device (' + content.result.data.objects.name + ')</h5><br />';
+    restore_device_html = '<input type="hidden" id="device_id" value="' + content.result.data.objects.id + '" />';
+    restore_device_html += '<h5 class="text-warning"><b>Device Info:</b></h5>';
+    restore_device_html += '<dl class="dl-horizontal">';
+    restore_device_html += '<dt>Device Name</dt><dd>' + content.result.data.objects.name + '</dd>';
+    restore_device_html += '<dt>Device Alias</dt><dd>' + content.result.data.objects.alias + '</dd>';
+    restore_device_html += '</dd></dl>';
+
+    bootbox.dialog({
+        message: restore_device_html,
+        title: "<span class='text-danger'><i class='fa fa-plus'></i> RESTORE DEVICE</span>",
+        buttons: {
+            success: {
+                label: "Yes!",
+                className: "btn-success",
+                callback: function () {
+                    Dajaxice.device.device_restore(device_restore_message, {'device_id': $("#device_id").val()});
+                }
+            },
+            danger: {
+                label: "No!",
+                className: "btn-danger",
+                callback: function () {
+                    $(".bootbox").modal("hide");
+                }
+            }
+        }
+    });
+}
+
+
+// show message for device addition success/failure
+function device_restore_message(responseResult) {
+    bootbox.alert(responseResult.result.message, function() {
+        // reload page after clicking "OK!"
+        location = window.location.origin + "/device/#ArchivedDeviceListing";
+        location.reload();
+    });
+}

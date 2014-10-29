@@ -4273,10 +4273,10 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                         'organization': organization,
                         'machine': machine,
                         'site': site,
-                        'device_technology': 4,
-                        'device_vendor': 4,
-                        'device_model': 4,
-                        'device_type': 6,
+                        'device_technology': 3,
+                        'device_vendor': 3,
+                        'device_model': 3,
+                        'device_type': 4,
                         'ip': row['IDU IP'] if 'IDU IP' in row.keys() else "",
                         'mac': "",
                         'state': row['State'] if 'State' in row.keys() else "",
@@ -4858,10 +4858,10 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
                         'organization': organization,
                         'machine': machine,
                         'site': site,
-                        'device_technology': 4,
-                        'device_vendor': 4,
-                        'device_model': 5,
-                        'device_type': 9,
+                        'device_technology': 3,
+                        'device_vendor': 3,
+                        'device_model': 3,
+                        'device_type': 5,
                         'ip': row['SS IP'] if 'SS IP' in row.keys() else "",
                         'mac': row['MAC'] if 'MAC' in row.keys() else "",
                         'state': "",
@@ -7118,18 +7118,18 @@ def create_circuit(circuit_payload):
 
     Args:
         circuit_payload (dict): {
-                                        'sector': <Sector: 10.75.158.219>,
-                                        'description': 'Circuitcreatedon28-Sep-2014at22: 55: 03.',
-                                        'date_of_acceptance': '',
-                                        'circuit_id': u'091NEWD623009178956',
-                                        'qos_bandwidth': 256.0,
-                                        'sub_station': <SubStation: 091newd623009178956>,
-                                        'dl_rssi_during_acceptance': u'NA',
-                                        'customer': <Customer: lotte_india_corp_ltd>,
-                                        'throughput_during_acceptance': u'NA',
-                                        'name': '091newd623009178956',
-                                        'alias': u'091NEWD623009178956'
-                                    }
+                                    'sector': <Sector: 10.75.158.219>,
+                                    'description': 'Circuitcreatedon28-Sep-2014at22: 55: 03.',
+                                    'date_of_acceptance': '',
+                                    'circuit_id': u'091NEWD623009178956',
+                                    'qos_bandwidth': 256.0,
+                                    'sub_station': <SubStation: 091newd623009178956>,
+                                    'dl_rssi_during_acceptance': u'NA',
+                                    'customer': <Customer: lotte_india_corp_ltd>,
+                                    'throughput_during_acceptance': u'NA',
+                                    'name': '091newd623009178956',
+                                    'alias': u'091NEWD623009178956'
+                                }
 
     Returns:
         circuit (class 'inventory.models.Circuit'): <Circuit: 10.75.158.219>

@@ -43,6 +43,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 	params = []
 	perf_data =None
 	m = 0
+	perf_out = None
 	ds_index =None
 	file_paths = []
 	temp_dict = {}
@@ -89,6 +90,8 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 	for xml_file in xml_file_list:
                 replaced_host = str(host)
                 replaced_ip = str(ip)
+		data_dict.update({'host':replaced_host,'ip_address':replaced_ip})
+		status_dict.update({'host':replaced_host,'ip_address':replaced_ip})
 		interface = None
 		try:
 			tree = ET.parse(_folder + xml_file)
@@ -133,6 +136,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 					last_check = query_output[0][1]
 				else:
 					service_state= "UNKNOWN"
+					continue
 					
 			else:
 				query_string = "GET services\nColumns: service_state last_check service_perf_data\nFilter: " + \
@@ -152,19 +156,20 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 					last_check = query_output[0][1]
 				else:
 					service_state = "UNKNOWN"
+					continue
 		except:
 			service_state= "UNKNOWN"
+			continue
 	
 			#cur = db.device_service_status.find({"host":host,"service":serv_disc}).sort("_id",-1).limit(1)
 		threshold_values = get_threshold(perf_data)
-		print "...............perf_data........."
-		print perf_out
-		data_values_dict = get_threshold(perf_out)
+		if perf_out:
+			data_values_dict = get_threshold(perf_out)
 		for ds in root.findall('DATASOURCE'):
 			params.append(ds.find('NAME').text)
 			file_paths.append(ds.find('RRDFILE').text)
 		for i, path in enumerate(file_paths):
-			if params[file_paths.index(path)] == 'rtmin' or params[file_paths.index(path)] == 'rtmax':
+			if (params[file_paths.index(path)] == 'rtmin') or (params[file_paths.index(path)] == 'rtmax'):
 				continue
 			ds_index = params[file_paths.index(path)]
 			if i == 0:
@@ -187,7 +192,6 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 
                         status_dict['ds'] = ds_index
 			try:
-				print data_values_dict,host,serv_disc
 				if  perf_out and data_values_dict.get(ds_index).get('cur'):
 					if ds_index == 'pl':
 						data_value= data_values_dict.get(ds_index).get('cur').strip('%')
@@ -212,20 +216,16 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 					status_dict.get('data').append(temp_dict)	
 				else:
 					print "Error in collecting performance data from the Live query"
-					print replaced_host
-					status = collect_data_from_rrd(db,site,path,host,replaced_host,data_dict['service'],ds_index,
-						 start_time,data_dict,status_dict)
-					print data_dict
-					if status == 1:
-						continue
+					#status = collect_data_from_rrd(db,site,path,host,replaced_host,data_dict['service'],ds_index,
+					#	 start_time,data_dict,status_dict)
+					#if status == 1:
+					#	continue
 			except:
 				print "error in collecting performance data from the Live query"
-				print replaced_host
-				status= collect_data_from_rrd(db,site,path,host,replaced_host,data_dict['service'],ds_index,
-					start_time,data_dict,status_dict) 
-				print data_dict
-				if status == 1:
-					continue
+				#status= collect_data_from_rrd(db,site,path,host,replaced_host,data_dict['service'],ds_index,
+				#	start_time,data_dict,status_dict) 
+				#if status == 1:
+				#	continue
 			if interface:
 				# Write code for extracting the SS ip and SS host_name from mac and store
 				ss_device = get_ss(host=replaced_host, interface=interface)
@@ -242,7 +242,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 			
 			data_dict['severity'] = service_state
 			status_dict['severity'] = service_state
-			matching_criteria.update({'host':replaced_host,'service':data_dict['service'],'site':site,'ds':ds_index})
+			matching_criteria.update({'host':replaced_host,'service':data_dict['service'],'ds':ds_index})
 			if xml_file == '_HOST_.xml':
 				mongo_module.mongo_db_update(db,matching_criteria,status_dict,"network_perf_data")
 				mongo_module.mongo_db_insert(db,data_dict,"network_perf_data")
@@ -296,11 +296,12 @@ def get_ss(host=None, interface=None):
 	try:
 		execfile(hosts_file, l_host_vars, l_host_vars)
 		del l_host_vars['__builtins__']
-		host_row = filter(lambda t: re.match(interface, t.split('|')[1]) \
-				and re.match(host, t.split('|')[2]), l_host_vars['all_hosts'])
+		
+		host_row = filter(lambda t: re.match(interface, t.split('|')[2]) \
+				and re.match(host, t.split('|')[3]), l_host_vars['all_hosts'])
 		ss_device = host_row[0].split('|')[0]
 	except Exception, e:
-		raise Exception, e
+		return ss_device
 
 	return ss_device
 

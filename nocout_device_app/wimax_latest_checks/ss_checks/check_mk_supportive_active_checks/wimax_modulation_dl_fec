@@ -4,7 +4,6 @@
 def check_wimax_modulation_dl_fec_arguments(params):
     description, host,settings = params
     args =''
-    args += ' %s ' % host
     if "socket_address" in settings:
         args += '%s ' % quote_shell_string(settings['socket_address'])
     if "socket_port" in settings:

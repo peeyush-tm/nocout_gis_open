@@ -24,7 +24,7 @@ from device_group.models import DeviceGroup
 from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL
 from nocout.utils.util import DictDiffer
 from models import Inventory, DeviceTechnology, IconSettings, LivePollingSettings, ThresholdConfiguration, \
-    ThematicSettings, GISInventoryBulkImport, UserThematicSettings
+    ThematicSettings, GISInventoryBulkImport, UserThematicSettings, CircuitL2Report
 from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
     ThematicSettingsForm, GISInventoryBulkImportForm, GISInventoryBulkImportEditForm
 from organization.models import Organization
@@ -32,7 +32,7 @@ from site_instance.models import SiteInstance
 from user_group.models import UserGroup
 from user_profile.models import UserProfile
 from models import Antenna, BaseStation, Backhaul, Sector, Customer, SubStation, Circuit
-from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm, CircuitForm
+from forms import AntennaForm, BaseStationForm, BackhaulForm, SectorForm, CustomerForm, SubStationForm, CircuitForm, CircuitL2ReportForm
 from device.models import Country, State, City, Device
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from user_profile.models import UserProfile
@@ -479,7 +479,7 @@ class BaseStationList(ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
-            {'mData': 'bs_switch__device_alias', 'sTitle': 'BS Switch', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'bs_switch__id', 'sTitle': 'BS Switch', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'backhaul__name', 'sTitle': 'Backhaul', 'sWidth': 'auto', },
             {'mData': 'bs_type', 'sTitle': 'BS Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
@@ -499,9 +499,9 @@ class BaseStationListingTable(BaseDatatableView):
     """
     model = BaseStation
     columns = ['alias', 'bs_site_id',
-               'bs_switch__device_alias', 'backhaul__name', 'bs_type', 'building_height', 'description']
+               'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description']
     order_columns = ['alias', 'bs_site_id',
-                     'bs_switch__device_alias', 'backhaul__name', 'bs_type', 'building_height', 'description']
+                     'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description']
 
     def filter_queryset(self, qs):
         """
@@ -538,6 +538,15 @@ class BaseStationListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'bs_switch__id' in dct:
+                    bs_device_alias = Device.objects.get(id=dct['bs_switch__id']).device_alias
+                    bs_device_ip = Device.objects.get(id=dct['bs_switch__id']).ip_address
+                    dct['bs_switch__id'] = "{} ({})".format(bs_device_alias, bs_device_ip)
+            except Exception as e:
+                logger.info("BS Switch not present. Exception: ", e.message)
+
             dct.update(actions='<a href="/base_station/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/base_station/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
@@ -673,11 +682,11 @@ class BackhaulList(ListView):
         """
         context = super(BackhaulList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'bh_configured_on__device_alias', 'sTitle': 'Backhaul Configured On', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto'},
+            {'mData': 'bh_configured_on__id', 'sTitle': 'Backhaul Configured On', 'sWidth': 'auto'},
             {'mData': 'bh_port', 'sTitle': 'Backhaul Port', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'bh_type', 'sTitle': 'Backhaul Type', 'sWidth': 'auto', },
-            {'mData': 'pop__device_alias', 'sTitle': 'POP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'pop__id', 'sTitle': 'POP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'pop_port', 'sTitle': 'POP Port', 'sWidth': 'auto', },
             {'mData': 'bh_connectivity', 'sTitle': 'Connectivity', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'bh_circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', },
@@ -697,9 +706,9 @@ class BackhaulListingTable(BaseDatatableView):
     Class based View to render Backhaul Data table.
     """
     model = Backhaul
-    columns = ['alias', 'bh_configured_on__device_alias', 'bh_port', 'bh_type', 'pop__device_alias', 'pop_port',
+    columns = ['alias', 'bh_configured_on__id', 'bh_port', 'bh_type', 'pop__id', 'pop_port',
                'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
-    order_columns = ['alias', 'bh_configured_on__device_alias', 'bh_port', 'bh_type', 'pop__device_alias',
+    order_columns = ['alias', 'bh_configured_on__id', 'bh_port', 'bh_type', 'pop__id',
                      'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
 
     def filter_queryset(self, qs):
@@ -741,8 +750,25 @@ class BackhaulListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'bh_configured_on__id' in dct:
+                    bh_device_alias = Device.objects.get(id=dct['bh_configured_on__id']).device_alias
+                    bh_device_ip = Device.objects.get(id=dct['bh_configured_on__id']).ip_address
+                    dct['bh_configured_on__id'] = "{} ({})".format(bh_device_alias, bh_device_ip)
+            except Exception as e:
+                logger.info("Backhaul configured on not present. Exception: ", e.message)
+
+            try:
+                if 'pop__id' in dct:
+                    pop_device_alias = Device.objects.get(id=dct['pop__id']).device_alias
+                    pop_device_ip = Device.objects.get(id=dct['pop__id']).ip_address
+                    dct['pop__id'] = "{} ({})".format(pop_device_alias, pop_device_ip)
+            except Exception as e:
+                logger.info("POP not present. Exception: ", e.message)
+
             dct.update(actions='<a href="/backhaul/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/backhaul/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                <a href="/backhaul/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id']))
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -880,7 +906,7 @@ class SectorList(ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'sector_configured_on__device_alias', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
+            {'mData': 'sector_configured_on__id', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
             {'mData': 'sector_configured_on_port__name', 'sTitle': 'Sector Configured On Port', 'sWidth': 'auto',
              'sClass': 'hidden-xs'},
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -903,10 +929,10 @@ class SectorListingTable(BaseDatatableView):
     Class based View to render Sector Data Table.
     """
     model = Sector
-    columns = ['alias', 'bs_technology__alias' ,'sector_id', 'sector_configured_on__device_alias',
-            'base_station__alias', 'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
-    order_columns = ['alias', 'bs_technology__alias' ,'sector_id', 'sector_configured_on__device_alias',
-            'base_station__alias', 'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
+    columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id',
+               'base_station__alias', 'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
+    order_columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id',
+                     'base_station__alias', 'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
 
     def filter_queryset(self, qs):
         """
@@ -948,6 +974,15 @@ class SectorListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'sector_configured_on__id' in dct:
+                    sector_device_alias = Device.objects.get(id=dct['sector_configured_on__id']).device_alias
+                    sector_device_ip = Device.objects.get(id=dct['sector_configured_on__id']).ip_address
+                    dct['sector_configured_on__id'] = "{} ({})".format(sector_device_alias, sector_device_ip)
+            except Exception as e:
+                logger.info("Sector Configured On not present. Exception: ", e.message)
+
             dct.update(actions='<a href="/sector/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/sector/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
@@ -1277,7 +1312,7 @@ class SubStationList(ListView):
         context = super(SubStationList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'device__device_alias', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'device__id', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', },
             {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -1303,9 +1338,9 @@ class SubStationListingTable(BaseDatatableView):
     Class based View to render Sub Station Data table.
     """
     model = SubStation
-    columns = ['alias', 'device__device_alias', 'antenna__alias', 'version', 'serial_no', 'building_height',
+    columns = ['alias', 'device__id', 'antenna__alias', 'version', 'serial_no', 'building_height',
                'tower_height', 'city', 'state', 'address', 'description']
-    order_columns = ['alias', 'device__device_alias', 'antenna__alias', 'version', 'serial_no', 'building_height',
+    order_columns = ['alias', 'device__id', 'antenna__alias', 'version', 'serial_no', 'building_height',
                      'tower_height']
 
     def filter_queryset(self, qs):
@@ -1347,8 +1382,17 @@ class SubStationListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct['city__name']= City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
-            dct['state__name']= State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'device__id' in dct:
+                    ss_device_alias = Device.objects.get(id=dct['device__id']).device_alias
+                    ss_device_ip = Device.objects.get(id=dct['device__id']).ip_address
+                    dct['device__id'] = "{} ({})".format(ss_device_alias, ss_device_ip)
+            except Exception as e:
+                logger.info("Sub Station Device not present. Exception: ", e.message)
+
+            dct['city__name'] = City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
+            dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
             dct.update(actions='<a href="/sub_station/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/sub_station/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
@@ -1442,7 +1486,7 @@ class SubStationUpdate(UpdateView):
         initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict: 
+        if changed_fields_dict:
             verb_string = 'Updaete Sub Station : %s, ' % (self.object.alias) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
@@ -1622,8 +1666,10 @@ class CircuitListingTable(BaseDatatableView):
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             dct.update(actions='<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')),
-                       date_of_acceptance=dct['date_of_acceptance'].strftime("%Y-%m-%d") if dct['date_of_acceptance'] != "" else "")
+                <a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>\
+                <a href="/circuit/l2_reports/{0}/"><i class="fa fa-sign-in text-info" title="View L2 reports for circuit"\
+                alt="View L2 reports for circuit"></i></a>'.format(dct.pop('id')),
+               date_of_acceptance=dct['date_of_acceptance'].strftime("%Y-%m-%d") if dct['date_of_acceptance'] != "" else "")
 
         return qs
 
@@ -1779,6 +1825,226 @@ class CircuitDelete(DeleteView):
         """
         return super(CircuitDelete, self).dispatch(*args, **kwargs)
 
+
+#********************************* Circuit L2 Reports*******************************************
+
+class CircuitL2Report_Init(ListView):
+    """
+    Class Based View to render Circuit based L2 reports List Page.
+    """
+    model = CircuitL2Report
+    template_name = 'circuit_l2/circuit_l2_list.html'
+
+    def get_context_data(self, **kwargs):
+        """
+        Preparing the Context Variable required in the template rendering.
+        """
+        context = super(CircuitL2Report_Init, self).get_context_data(**kwargs)
+        datatable_headers = [
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'file_name', 'sTitle': 'Report', 'sWidth': 'auto', },
+            {'mData': 'added_on', 'sTitle': 'Uploaded On', 'sWidth': 'auto'},
+            {'mData': 'user_id', 'sTitle': 'Uploaded By', 'sWidth': 'auto'},
+        ]
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
+        if 'admin' in user_role or 'operator' in user_role:
+            datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+
+        context['datatable_headers'] = json.dumps(datatable_headers)
+        context['circuit_id'] = self.kwargs['circuit_id']
+        return context
+
+class L2ReportListingTable(BaseDatatableView):
+    """
+    Class based View to render Circuit Data table.
+    """
+    model = CircuitL2Report
+    columns = ['name', 'file_name', 'added_on', 'user_id']
+    order_columns = ['name', 'file_name', 'added_on']
+
+    def filter_queryset(self, qs):
+        """ Filter datatable as per requested value """
+
+        sSearch = self.request.GET.get('sSearch', None)
+
+        if sSearch:
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            for column in self.columns[:-1]:
+                # avoid search on 'added_on'
+                if column == 'added_on':
+                    continue
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            exec exec_query
+        return qs
+
+    def get_initial_queryset(self,circuit_id):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        circuit_instance = Circuit.objects.filter(id=circuit_id)
+        # condition to fetch l2 reports data from db
+        condition = (Q(user_id=self.request.user) | Q(is_public=1)) & (Q(circuit_id=circuit_instance))
+        # Query to fetch L2 reports data from db
+        l2ReportsResult = CircuitL2Report.objects.filter(condition).values(*self.columns + ['id'])
+
+        report_resultset = []
+        for data in l2ReportsResult:
+            report_object = {}
+            report_object['name'] = data['name'].title()
+            filename_str_array = data['file_name'].split('/')
+            report_object['file_name'] = filename_str_array[len(filename_str_array)-1]
+            report_object['file_url'] = data['file_name']
+            report_object['added_on'] = data['added_on']
+            username = UserProfile.objects.filter(id=data['user_id']).values('username')
+            report_object['user_id'] = username[0]['username'].title()
+            report_object['id'] = data['id']
+            #add data to report_resultset list
+            report_resultset.append(report_object)
+        return report_resultset
+
+    def prepare_results(self, qs):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
+        if qs:
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in qs:
+            dct.update(actions='<a href="../../../media/'+dct['file_url']+'" target="_blank" title="Download Report">\
+                <i class="fa fa-arrow-circle-o-down text-info"></i></a>\
+                <a class="delete_l2report" style="cursor:pointer;" title="Delete Report" url="delete/{0}/">\
+                <i class="fa fa-trash-o text-danger"></i></a>\
+                '.format(dct.pop('id')),
+               added_on=dct['added_on'].strftime("%Y-%m-%d") if dct['added_on'] != "" else "")
+
+        return qs
+
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except Exception:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.get_order_columns()
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except Exception:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ''
+
+            sortcol = order_columns[i_sort_col]
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            key_name=order[0][1:] if '-' in order[0] else order[0]
+            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
+            return sorted_device_data
+        return qs
+
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        The main method call to fetch, search, ordering , prepare and display the data on the data table.
+        """
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        ckt_id = self.kwargs['circuit_id']
+
+        qs = self.get_initial_queryset(ckt_id)
+
+        # number of records before filtering
+        total_records = len(qs)
+
+        qs = self.filter_queryset(qs)
+        # number of records after filtering
+        total_display_records = len(qs)
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+        }
+        return ret
+
+class CircuitL2ReportCreate(CreateView):
+    """
+    Class based view to create new Circuit.
+    """
+
+    template_name = 'circuit_l2/circuit_l2_new.html'
+    model = CircuitL2Report
+    form_class = CircuitL2ReportForm
+
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
+        return super(CircuitL2ReportCreate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        """
+        Submit the form and to log the user activity.
+        """
+        self.object = form.save(commit=False)
+        self.object.user_id =  UserProfile.objects.get(id=self.request.user.id)
+        self.object.circuit_id =  Circuit.objects.get(id=self.kwargs['circuit_id'])
+
+        self.object.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
+        return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs = {'circuit_id' : self.kwargs['circuit_id']}))
+
+class CircuitL2ReportDelete(DeleteView):
+
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
+        return super(CircuitL2ReportDelete, self).dispatch(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        report_id = self.kwargs['l2_id']
+        file_name = lambda x: MEDIA_ROOT + x
+        # l2 report object
+        l2_obj = CircuitL2Report.objects.filter(id=report_id).values()
+
+        # remove original file if it exists
+        try:
+            os.remove(file_name(l2_obj[0]['file_name']))
+        except Exception as e:
+            logger.info(e.message)
+
+        # delete entry from database
+        CircuitL2Report.objects.filter(id=report_id).delete()
+        return HttpResponseRedirect(reverse_lazy('circuit_l2_report', kwargs = {'circuit_id' : self.kwargs['circuit_id']}))
 
 #**************************************** IconSettings *********************************************
 class IconSettingsList(ListView):

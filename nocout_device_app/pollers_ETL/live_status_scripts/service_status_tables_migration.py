@@ -133,7 +133,7 @@ def build_data(doc):
 	if not entry:
 		continue
 	check_time_epoch = utility_module.get_epoch_time(entry.get('time'))
-    	local_time_epoch  = check_time_epoch
+    	local_time_epoch = check_time_epoch
         t = (
             #uuid,
             doc.get('host'),
@@ -170,7 +170,7 @@ def insert_data(table, data_values, **kwargs):
 	db = utility_module.mysql_conn(configs=kwargs.get('configs'))
 	for i in range(len(data_values)):
 		query = "SELECT * FROM %s " % table +\
-                	"WHERE `device_name`='%s' AND `service_name`='%s' AND `data_source` = '%s'" %(str(data_values[i][0]),data_values[i][1],data_values[i][4])
+                	"WHERE `device_name`='%s' AND  `service_name`='%s' AND `data_source` ='%s'" %(str(data_values[i][0]),data_values[i][1],data_values[i][4])
 		cursor = db.cursor()
         	try:
                 	cursor.execute(query)
@@ -189,10 +189,10 @@ def insert_data(table, data_values, **kwargs):
 		`min_value`=%s,`max_value`=%s, `avg_value`=%s, `warning_threshold`=%s,
 		`critical_threshold`=%s, `sys_timestamp`=%s,`check_timestamp`=%s,
 		`ip_address`=%s,`severity`=%s
-		WHERE `device_name`=%s AND `service_name`=%s AND `data_source` =%s
+		WHERE `device_name`=%s AND `service_name`=%s AND `data_source` = %s
 		"""
 		try:
-			data_values = map(lambda x: x + (x[0], x[1],x[4],), insert_dict.get('1'))
+			data_values = map(lambda x: x + (x[0], x[1],x[4]), insert_dict.get('1'))
                 	cursor.executemany(query, data_values)
 		except mysql.connector.Error as err:
         		raise mysql.connector.Error, err
