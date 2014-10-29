@@ -1503,14 +1503,16 @@ function devicePlottingClass_gmap() {
 	this.show_hide_info = function() {
 		
 		var tables = $(".windowContainer table");
-
+		console.log(tables);
 		if(tables.length == 1) {
 			/*Show only 5 rows, hide others*/
 			for(var i=7;i<$(".windowContainer table tbody tr").length;i++) {
+				console.log($(".windowContainer table tbody tr")[i].className.indexOf("hide"));
 				if($(".windowContainer table tbody tr")[i].className.indexOf("hide") == -1) {
 					$("#more_less_btn").html("More");
 					$(".windowContainer table tbody tr")[i].className = "hide";
 				} else {
+					console.log($("#more_less_btn"));
 					$("#more_less_btn").html("Less");
 					$(".windowContainer table tbody tr")[i].className = "";
 				}

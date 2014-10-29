@@ -486,3 +486,23 @@ img.olTileImage {
             opacity: 0.75;
             filter: alpha(opacity=75);
         }
+
+
+div.olControlPanel {
+    top: 0px;
+    left: 50px;
+    position: absolute;
+}
+.olControlPanel div {
+    display: block;
+    width:  22px;
+    height: 22px;
+    border: thin solid black;
+    margin-top: 10px;
+    background-color: white,
+    color: black;
+}
+.helpButtonItemInactive {
+    background-color: white;
+    color: black;
+}

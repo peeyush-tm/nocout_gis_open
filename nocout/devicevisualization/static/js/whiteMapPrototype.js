@@ -1,3 +1,4 @@
+var strategy = "";
 /*
 This function creates a Open Layer Map and loads it in dom. Return callback when map is finished creating.
 @param callback {Function} Return function when completed.
@@ -21,7 +22,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 				}),
 				//Pan Zoom true
 				new OpenLayers.Control.PanZoomBar(),
-				// new OpenLayers.Control.LayerSwitcher({'ascending':false}),
+				new OpenLayers.Control.LayerSwitcher({'ascending':false}),
 				new OpenLayers.Control.ScaleLine(),
 				//Enable Mouse Position
 				new OpenLayers.Control.MousePosition(),
@@ -57,7 +58,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		//Activate Click
 		mapClick.activate();
 
-		var layerListeners = {
+		var vectorLayerListener = {
 			featureclick: function(e) {
 				that.onFeatureSelect(e);
 				return false;
@@ -68,7 +69,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		};
 
 		//Create a Vector Layer which will hold Sectors
-		sectorsLayer = new OpenLayers.Layer.Vector('Sectors Layers', {eventListeners: layerListeners});
+		sectorsLayer = new OpenLayers.Layer.Vector('Sectors Layers', {eventListeners: vectorLayerListener});
 
 		//Store sectorsLayer
 		this.sectorsLayer = sectorsLayer;
@@ -77,7 +78,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		ccpl_map.addLayer(sectorsLayer);
 
 		//Create a Vector Layer which will hold Lines
-		linesLayer = new OpenLayers.Layer.Vector('Lines Layer', {eventListeners: layerListeners});
+		linesLayer = new OpenLayers.Layer.Vector('Lines Layer', {eventListeners: vectorLayerListener});
 
 		//Store linesLayer
 		this.linesLayer= linesLayer;
@@ -103,17 +104,25 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		}, {
 			context: {
 				label: function(feature) {
-					return feature.cluster.length > 1 ? feature.cluster.length : "";
+					if(feature.cluster && feature.cluster.length > 1) {
+						return feature.cluster.length > 1 ? feature.cluster.length : "";
+					} else {
+						return "";
+					}
 				},
 				cursor: function(feature) {
-					if(feature.cluster.length > 1) {
-						return "pointer";
+					if(feature.cluster && feature.cluster.length) {
+						if(feature.cluster.length > 1) {
+							return "pointer";
+						} else {
+							return "default";
+						}
 					} else {
 						return "default";
 					}
 				},
 				symbol: function(feature){
-					if (feature.cluster.length > 1){
+					if (feature.cluster && feature.cluster.length > 1){
 						if(feature.cluster.length > 1 && feature.cluster.length <= 10) {
 							return base_url+"/"+"static/js/OpenLayers/img/m1.png"
 						} else if(feature.cluster.length > 10 && feature.cluster.length <= 100) {
@@ -121,20 +130,23 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 						} else if(feature.cluster.length > 100 && feature.cluster.length <= 1000) {
 							return base_url+"/"+"static/js/OpenLayers/img/m3.png"
 						}
-					}
-					else{
-						return feature.cluster[0].style.externalGraphic
+					} else{
+						if(feature.cluster && feature.cluster.length) {
+							return feature.cluster[0].style.externalGraphic
+						} else {
+							return "";
+						}
 					}
 				},
 				graphicWidth: function(feature) {
-					if(feature.cluster.length > 1) {
+					if(feature.cluster && feature.cluster.length > 1) {
 						return 55;
 					} else {
 						return 29;
 					}
 				},
 				graphicHeight: function(feature) {
-					if(feature.cluster.length > 1) {
+					if(feature.cluster && feature.cluster.length > 1) {
 						return 55;
 					} else {
 						return 40;
@@ -147,7 +159,9 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			'default': pointStyle,
 		});
 
-		var markersVectorLayer = new OpenLayers.Layer.Vector("Markers Vector Layer", {styleMap  : styleMap,strategies: [new OpenLayers.Strategy.Cluster({distance: 70})]});
+		strategy= new OpenLayers.Strategy.Cluster({distance: 70});
+
+		var markersVectorLayer = new OpenLayers.Layer.Vector("Markers Vector Layer", {styleMap  : styleMap,strategies: [strategy]});
 
 		this.markersVectorLayer = markersVectorLayer;
 
@@ -161,11 +175,10 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		);
 
 		ccpl_map.addControl(selectCtrl);
+
 		selectCtrl.activate();
 
 		ccpl_map.addLayer(markersVectorLayer);
-
-
 
 		featuresLayer= new OpenLayers.Layer.Vector("draw features layer", {
 			eventListeners: {"beforefeatureadded": function() {featuresLayer.destroyFeatures();}}
@@ -187,6 +200,14 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		for(var key in controls) {
 			ccpl_map.addControl(controls[key]);
 		}
+
+		        var panel = new OpenLayers.Control.Panel();
+        panel.addControls([
+            new OpenLayers.Control.Button({
+                displayClass: "helpButton", trigger: function() {alert('Full screen')}, title: 'Full Screen'
+            })
+        ]);
+        ccpl_map.addControl(panel);
 		
 		//Map set Extend to our bounds
 		ccpl_map.zoomToExtent(bounds);
@@ -255,78 +276,6 @@ WhiteMapClass.prototype.closeInfoWindow = function() {
 	}
 	return 'no window';
 }
-
-function openSectorInfoWindow() {
-	var sector, sub_station, tableString = "";
-	console.log("Open Sector Info Window");
-}
-
-function openLineInfoWindow(id, lon, lat, lineRef, lineData) {
-console.log("Open Line Info Windw");
-return false;
-	var sector = "", sub_station = "", tableString = "";
-	outerLoop: for(var i=0; i< lineData.data.param.sector.length; i++) {
-		sector= lineData.data.param.sector[i];
-		if(sector.circuit_id=== id) {
-			for(var j=0; j< sector.sub_station.length; j++) {
-				sub_station = sector.sub_station[j];
-				if(sub_station.name=== lineRef.ssname) {
-					break outerLoop;
-				}
-			}
-		}
-	}
-
-	var contentToShow = [
-	{
-		"name": "Base-Station Name",
-		"value": lineData.name
-	}, {
-		"name": "SS IP",
-		"value": sub_station.data.param.sub_station[0].value
-	}, {
-		"name": "BS Site Name",
-		"value": lineData.data.param.base_station[0].value
-	}, {
-		"name": "Circuit ID",
-		"value": id
-	}, {
-		"name": "BS Site Type",
-		"value": lineData.data.param.base_station[3].value
-	}, {
-		"name": "QOS(BW)",
-		"value": sub_station.data.param.sub_station[4].value
-	}, {
-		"name": "Building Height",
-		"value": lineData.data.param.base_station[4].value
-	}, {
-		"name": "Latitude",
-		"value": sub_station.data.param.sub_station[5].value
-	}, {
-		"name": "Tower Height",
-		"value": lineData.data.param.base_station[5].value
-	}, {
-		"name": "Longitude",
-		"value": sub_station.data.param.sub_station[6].value
-	}
-	];
-tableString+= "<table>";
-	for(var i=0; i< contentToShow.length; i=i+2) {
-		tableString+= "<tr><td>"+contentToShow[i].name+"</td><td>"+contentToShow[i].value+"</td><td>"+contentToShow[i+1].name+"</td><td>"+contentToShow[i+1].value+"</td></tr>";
-	}
-tableString+= "</table>";
-	infoWindow = new OpenLayers.Popup(id,
-		new OpenLayers.LonLat(lon, lat),
-		null,
-		tableString,
-		true);
-	//Add popup to ccpl_map
-	ccpl_map.addPopup(infoWindow);
-	//Update Size for InfoWindow
-	infoWindow.updateSize();
-	//Show InfoWndow
-	infoWindow.show();
-}
 /*
 This function open Info Window for the Marker.
 @param e {Mouse Click Event} Event Info 
@@ -334,141 +283,7 @@ This function open Info Window for the Marker.
 @param markerData {Object} Data to show on InfoWindow
  */
 WhiteMapClass.prototype.openInfoWindow = function(e, marker, markerData, sectorData, subStationData) {
-	// ccpl_map.addPopup(OpenLayers.Popup.FramedCloud(marker.name, 
-	// 	ccpl_map.getLonLatFromPixel(e.xy),
-	// 	null, 
-	// 	"some text",
-	// 	null,
-	// 	false, true));
-	/*
-	This function creates the info content which is shown in Popup
-	 */
-	function createInfoContent() {
-		//Get marker type
-		var marker_type = marker.type;		
-		//Create a table
-		var tableString = "";
-		//If type is base_station
-		if(marker_type === "base_station") {
-			//Get base station data
-			var base_station_data = markerData.data.param.base_station;
-			//Create table markup
-			tableString+= "<table id='base_station_info_table'>";
-			//Object which hold content which is shown in the Data
-			var contentToShow = [{
-				"name": "Base Station Name",
-				"value": markerData.name
-			}, {
-				"name": "Base Site Name",
-				"value": base_station_data[0].value
-			}, {
-				"name": "Bs Site Type",
-				"value": base_station_data[3].value
-			}, {
-				"name": "Building Height",
-				"value": base_station_data[4].value
-			}, {
-				"name" : "Tower Height",
-				"value": base_station_data[5].value
-			}, {
-				"name": "City",
-				"value": base_station_data[6].value
-			}, {
-				"name": "State",
-				"value": base_station_data[7].value
-			}, {
-				"name": "Address",
-				"value": base_station_data[8].value
-			}
-			// , {
-			// 	"name": "GPS Type",
-			// 	"value": base_station_data[9].value
-			// }, {
-			// 	"name": "BS Type",
-			// 	"value": base_station_data[10].value
-			// }, {
-			// 	"name": "BS Switch",
-			// 	"value": base_station_data[11].value
-			// }
-			];
-
-			//Loop through the content, and append its table markup
-			for(var i=0; i< contentToShow.length; i++) {
-				tableString+= "<tr><td>"+contentToShow[i]["name"]+"</td><td>"+contentToShow[i]["value"]+"</td></tr>";
-			}
-			//finish table
-			tableString+= "</table>";
-		} else if (marker_type === "base_station_device"){
-			tableString+= "<table id='base_station_device_info_table'>";
-			var contentToShow = [
-				{
-					"name": "Device Name",
-					"value": sectorData.device_info[0].value
-				}, {
-					"name": "Technology",
-					"value": sectorData.technology
-				}, {
-					"name": "Vendor",
-					"value": sectorData.vendor
-				}, {
-					"name": "Sector Name",
-					"value": sectorData.info[0].value
-				}, {
-					"name": "Planned Frequency",
-					"value": sectorData.info[1].value
-				}, {
-					"name": "Antenna Type",
-					"value": sectorData.info[2].value
-				}, {
-					"name": "Antenna Tilt",
-					"value": sectorData.info[3].value
-				}
-			];
-
-			//Loop through the content, and append its table markup
-			for(var i=0; i< contentToShow.length; i++) {
-				tableString+= "<tr><td>"+contentToShow[i]["name"]+"</td><td>"+contentToShow[i]["value"]+"</td></tr>";
-			}
-
-			tableString+= "</table>"
-		} else if (marker_type === "sub_station") {
-			tableString+= "<table id='base_station_device_info_table'>";
-
-			var contentToShow= [
-			{
-				"name": "SS IP",
-				"value": subStationData.data.param.sub_station[0].value
-			}, {
-				"name": "Circuid ID",
-				"value": subStationData.data.param.sub_station[3].value
-			}, {
-				"name": "QOS(BW)",
-				"value": subStationData.data.param.sub_station[4].value
-			}, {
-				"name": "Latitude",
-				"value": subStationData.data.param.sub_station[5].value
-			}, {
-				"name": "Longitude",
-				"value": subStationData.data.param.sub_station[6].value
-			}, {
-				"name": "Antenna Height",
-				"value": subStationData.data.param.sub_station[7].value
-			}, {
-				"name": "Polarization",
-				"value": subStationData.data.param.sub_station[8].value
-			}
-			];
-
-			//Loop through the content, and append its table markup
-			for(var i=0; i< contentToShow.length; i++) {
-				tableString+= "<tr><td>"+contentToShow[i]["name"]+"</td><td>"+contentToShow[i]["value"]+"</td></tr>";
-			}
-			tableString+= "</table>";
-		}
-		//return tableString
-		return tableString;
-	}
-
+	
 	//If already a info window is present, hide it
 	if(infoWindow) {
 		infoWindow.hide();
@@ -479,7 +294,7 @@ WhiteMapClass.prototype.openInfoWindow = function(e, marker, markerData, sectorD
 	infoWindow = new OpenLayers.Popup(marker.name,
 		marker.lonlat,
 		null,
-		createInfoContent(),
+		contentString,
 		true);
 	//Add popup to ccpl_map
 	ccpl_map.addPopup(infoWindow);

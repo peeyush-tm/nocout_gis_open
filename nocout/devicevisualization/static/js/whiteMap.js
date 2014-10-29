@@ -1,5 +1,4 @@
-var ccpl_map;
-var base_url;
+var ccpl_map, base_url;
 /*Set the base url of application for ajax calls*/
 if(window.location.origin) {
 	base_url = window.location.origin;
@@ -11,60 +10,46 @@ function WhiteMapClass() {
 	/*
 	 *
 	 * Private Variables
-	*/
-	
+	*/	
 		var global_this = "";
-		var total_count = "", device_count= "", limit= "", loop_count = 0;
-	
-	//Variable to Store JSON data of Markers
-	var markersDataArray = [], markersDataObj = {};
+		var total_count = "", device_count= "", limit= "", loop_count = 0;	
+		//Variable to Store JSON data of Markers
+		var markersDataArray = [], markersDataObj = {};
+		//Variable to Store All Markers
+		var markerArray = [], markerObj = {};
+		//Variable to hold Markers
+		var bsMarkerObj = {}, deviceMarkerObj = {}, subStationMarkerObj = {}, cktLinesObj = {}, sectorsObj = {};
+		//Variable to hold device markers currently displayed on map
+		var devices_Marker_On_Map = [], devices_Lines_On_Map = [];
+		//Variable to hold Searched Markers List
+		var searched_markers = [];
+		//Variable to hold data after Advance Filter
+		var filtered_data = [];
+		/*
+		Variables to hold Data which Technologies, State, Cities
+		*/
+		var technology = [], vendor = [], state = [], city = [], bs_name = [], ip = [], cktId = [];
 
-	//Variable to Store All Markers
-	var markerArray = [], markerObj = {};
-
-	//Variable to hold Markers
-	var bsMarkerObj = {}, deviceMarkerObj = {}, subStationMarkerObj = {}, cktLinesObj = {}, sectorsObj = {};
-
-	//Variable to hold device markers currently displayed on map
-	var devices_Marker_On_Map = [], devices_Lines_On_Map = [];
-
-	//Variable to hold Searched Markers List
-	var searched_markers = [];
-	//Variable to hold data after Advance Filter
-	var filtered_data = [];
-
-	/*
-	Variables to hold Data which Technologies, State, Cities
-	*/
-	var technology = [], vendor = [], state = [], city = [], bs_name = [], ip = [], cktId = [];
-
-	//Layers For OpenLayers
-	//Layer for Markers
-	this.markersLayer = "";
-	//Layer for Lines
-	this.linesLayer = "";
-	//Layer for Sector
-	this.sectorsLayer = "";
-	this.featuresLayer= "";
-	this.markersVectorLayer = "";
-	this.devicesVectorLayer= "";
-
-	//Variable flag to start Performance
-	this.startPerformance = false;
-	//Variable flag to stop Performance
-	this.toStartPerformance = false;
-
-	this.controls = "";
-
-	this.goFullScreen= function() {
-		$("#content_div").hide();
-		$("#map").width("100%");
-	}
+		//Layer for Markers
+		this.markersLayer = "";
+		//Layer for Lines
+		this.linesLayer = "";
+		//Layer for Sector
+		this.sectorsLayer = "";
+		this.featuresLayer= "";
+		this.markersVectorLayer = "";
+		this.devicesVectorLayer= "";
+		//Variable flag to start Performance
+		this.startPerformance = false;
+		//Variable flag to stop Performance
+		this.toStartPerformance = false;
+		this.controls = "";
 
 	/**
 	 *
 	 * Map Events Section
 	 */
+
 		var markerSpiderfied= "";
 		this.unSpiderifyBsMarker= function() {
 			if(markerSpiderfied) {
@@ -82,7 +67,6 @@ function WhiteMapClass() {
 				markerSpiderfied= "";
 			}
 		}
-
 		this.spiderfyBsMarker= function(marker) {
 			this.unSpiderifyBsMarker();
 			var bs_marker= bsMarkerObj[marker.name];
@@ -107,6 +91,7 @@ function WhiteMapClass() {
 		Here, we closeInfoWindow. If infoWindow was present, just close window. Else, if no window was there, unSpiderify Markers too.
 		 */
 		this.mapClickEvent = function(e) {
+			console.log('Click on Map');
 			//Close Window
 			var closeInfoWindow= this.closeInfoWindow();
 			//If no window was there
@@ -116,9 +101,34 @@ function WhiteMapClass() {
 			}
 		}
 
+		var oldFeature = "";
+		this.onFeatureUnselect = function() {
+			if(oldFeature) {
+				ccpl_map.removePopup(oldFeature.popup);
+				oldFeature.popup.destroy();
+				oldFeature.popup = null;
+			}
+		}
+
+		this.onFeatureSelect = function(e) {
+			this.onFeatureUnselect();
+			// console.log("Feature clicked: ", e);
+			var infoWindowContent = gmap_self.makeWindowContent(e.feature);
+			var feature = e.feature;
+			oldFeature= feature;
+			var popup = new OpenLayers.Popup.FramedCloud("popup", feature.geometry.getBounds().getCenterLonLat(), null, infoWindowContent, null, true);
+			popup.autoSize= true;
+			popup.maxSize= new OpenLayers.Size(500, 350);
+			feature.popup = popup;
+			ccpl_map.addPopup(popup);
+			/*Update window content to show less items*/
+			gmap_self.show_hide_info();
+		}
+
 		this.markerLayerFeatureClick= function(event) {
 			var f = event.feature;
 			if (f.cluster.length > 2){
+				//Click on Cluster
 				clusterpoints = [];
 				for(var i = 0; i<f.cluster.length; i++){
 					clusterpoints.push(f.cluster[i].geometry);
@@ -126,10 +136,30 @@ function WhiteMapClass() {
 				var linestring = new OpenLayers.Geometry.LineString(clusterpoints);
 				ccpl_map.zoomToExtent(linestring.getBounds());
 			} else {
-				global_this.bsMarkerClick(event, f);
+				console.log("Click on Marker");
+				this.onFeatureUnselect();
+				var infoWindowContent = gmap_self.makeWindowContent(event.feature.cluster[0].attributes);
+
+				var feature = event.feature;
+				oldFeature= feature;
+			var popup = new OpenLayers.Popup.FramedCloud("popup",
+				feature.geometry.getBounds().getCenterLonLat(),
+				null,
+				infoWindowContent,
+				null,
+				true
+				);
+			popup.autoSize= true;
+			popup.maxSize= new OpenLayers.Size(300, 350);
+			feature.popup = popup;
+			ccpl_map.addPopup(popup);
+			/*Update window content to show less items*/
+			gmap_self.show_hide_info();
+			// popup.setSize(new OpenLayers.Size(500, 400));
+				//Click on Marker
+				// global_this.bsMarkerClick(event, f);
 			}
 		}
-
 		/*
 		This function is triggered on click of Bs Marker
 		 */
@@ -141,22 +171,6 @@ function WhiteMapClass() {
 				global_this.openInfoWindow(e, marker, markersDataObj[marker.name]);
 			}
 		}
-		this.onFeatureUnselect = function(e) {}
-
-		this.onFeatureSelect = function(e) {
-			var feature = e.feature;
-			var popup = new OpenLayers.Popup.FramedCloud("popup",
-				feature.geometry.getBounds().getCenterLonLat(),
-				null,
-				"<div style='font-size:.8em'>Feature: " + feature.id +"<br>Foo: " + feature.attributes.foo+"</div>",
-				null,
-				true
-				);
-			feature.popup = popup;
-			ccpl_map.addPopup(popup);		
-		}
-
-
 	/**
 	 *
 	 * End of Map Events Section
@@ -165,8 +179,7 @@ function WhiteMapClass() {
 	/**
 	 *
 	 * Draw Feature Section
-	 */
-	
+	 */	
 		var workingControl = "";
 		this.toggleControl= function(element) {
 			var controls = this.controls;
@@ -185,30 +198,15 @@ function WhiteMapClass() {
 	 * End of Draw Feature Section
 	 */
 
-
 	/**
 	 *
 	 * Gis Performance Section
 	 */
-	 	function updateBsMarker() {
-
-	 	}
-
-	 	function createRequestJson() {
-
-	 	}
-
-	 	function sendAjaxRequest() {
-
-	 	}
-
-	 	function gisPerformanceStop() {
-
-	 	}
-
-	 	function gisPerformanceStart() {
-
-	 	}
+	 	function updateBsMarker() {}
+	 	function createRequestJson() {}
+	 	function sendAjaxRequest() {}
+	 	function gisPerformanceStop() {}
+	 	function gisPerformanceStart() {}
 	/**
 	 *
 	 * End of Gis Performance Section
@@ -223,16 +221,13 @@ function WhiteMapClass() {
 			this.featuresLayer.destroyFeatures();
 			ccpl_map.removeLayer(this.featuresLayer);
 		}
-
 		this.startPolling= function() {
 			ccpl_map.addLayer(this.featuresLayer);
 		}
-
 		var polygon = "";
 		this.livePollingPolygonAdded = function(e) {
 			polygon = e.feature;
 		}
-
 		this.getMarkerInPolygon = function() {
 			for(var i=0; i< markersDataArray.length; i++) {
 				if(polygon){
@@ -350,12 +345,15 @@ function WhiteMapClass() {
 			} else {
 				alert("Please Enter Lattitude,Longitude.");
 			}
-		}	
+		}
+		this.goFullScreen= function() {
+			$("#content_div").hide();
+			$("#map").width("100%");
+		}
 	/**
 	 * 
 	 * End of Tools Section
 	 */
-
 
 	/**
 	 * Advance Search and Filter
@@ -363,7 +361,6 @@ function WhiteMapClass() {
 		this.updateStationMarker = function(base_station, newBaseStationObject, callback) {
 			callback();
 		}
-
 		/*
 		This function show Bs Marker
 		 */
@@ -406,51 +403,51 @@ function WhiteMapClass() {
 			}
 			global_this.markersVectorLayer.redraw();
 		}
-
-
 		/*
 		This function hides BS marker
 		 */
+		var markersToHide= [];
 		this.hideStationMarkers = function(base_station) {
 			var bs_name = base_station.name;
 			var bs_marker = bsMarkerObj[bs_name];
-			bs_marker.style = { visibility: 'hidden' };
-			// bs_marker.display(false);
-			var devicesMarkers = deviceMarkerObj[bs_name];
-			if (devicesMarkers) {
-				for (var i = 0; i < devicesMarkers.length; i++) {
-					var deviceMarker = devicesMarkers[i];
-					// deviceMarker.display(false);
-					var deviceName = deviceMarker.name;
-					var sub_stations = subStationMarkerObj[deviceName];
-					if (sub_stations) {
-						for (var j = 0; j < sub_stations.length; j++) {
-							var sub_station = sub_stations[j];
-							sub_station.style = { visibility: 'hidden' };
-						}
-					}
+			global_this.markersVectorLayer.destroyFeatures([bs_marker]);
+			bs_marker.style.display = 'none';
+			// bs_marker.style = { visibility: 'hidden' };
+			// // bs_marker.display(false);
+			// var devicesMarkers = deviceMarkerObj[bs_name];
+			// if (devicesMarkers) {
+			// 	for (var i = 0; i < devicesMarkers.length; i++) {
+			// 		var deviceMarker = devicesMarkers[i];
+			// 		// deviceMarker.display(false);
+			// 		var deviceName = deviceMarker.name;
+			// 		var sub_stations = subStationMarkerObj[deviceName];
+			// 		if (sub_stations) {
+			// 			for (var j = 0; j < sub_stations.length; j++) {
+			// 				var sub_station = sub_stations[j];
+			// 				sub_station.style = { visibility: 'hidden' };
+			// 			}
+			// 		}
 
-					var lines = cktLinesObj[deviceName];
-					if (lines) {
-						for (var j = 0; j < lines.length; j++) {
-							var line = lines[j];
-							line.style.display = 'none'
-						}
-						global_this.linesLayer.redraw();
-					}
+			// 		var lines = cktLinesObj[deviceName];
+			// 		if (lines) {
+			// 			for (var j = 0; j < lines.length; j++) {
+			// 				var line = lines[j];
+			// 				line.style.display = 'none'
+			// 			}
+			// 			global_this.linesLayer.redraw();
+			// 		}
 
-					var sectors = sectorsObj[deviceName];
-					if (sectors) {
-						for (var j = 0; j < sectors.length; j++) {
-							var sector = sectors[j];
-							sector.style.display = 'none';
-						}
-						global_this.sectorsLayer.redraw();
-					}
-				}
-			}
-			console.log(global_this.markersVectorLayer);
-			global_this.markersVectorLayer.redraw();
+			// 		var sectors = sectorsObj[deviceName];
+			// 		if (sectors) {
+			// 			for (var j = 0; j < sectors.length; j++) {
+			// 				var sector = sectors[j];
+			// 				sector.style.display = 'none';
+			// 			}
+			// 			global_this.sectorsLayer.redraw();
+			// 		}
+			// 	}
+			// }
+			// global_this.markersVectorLayer.redraw();
 		}
 		/*
 		This function is triggered when Reset Filter is done.
@@ -471,8 +468,7 @@ function WhiteMapClass() {
 
 			//Trigger resetBasicFilter()
 			this.resetBasicFilter();
-		}
-	
+		}	
 		/*
 		This function is triggered when Apply Advance Filter is triggered.
 		Here, we check for the values selected in the Multibox and filter result according to it.
@@ -588,7 +584,6 @@ function WhiteMapClass() {
 			global_this.resetAdvanceSearch();
 			global_this.resetBasicFilter();
 		}
-
 		/*
 		This function populates AdvanceFilter Multiselect dataItems
 		 */
@@ -650,11 +645,10 @@ function WhiteMapClass() {
 			//Call select2 method to create multiselect
 			$("#advance_filter_state").select2(options);
 		}
-
 		/*
 		This function reset Advance Search
 		 */
-		 var search_Markers = [];
+		var search_Markers = [];
 		this.resetAdvanceSearch = function() {
 			$("#advance_search_bs_name").select2('val', '');
 			$("#advance_search_ip").select2('val', '');
@@ -666,7 +660,6 @@ function WhiteMapClass() {
 				search_Markers[i].destroy();
 			}
 		}
-
 		/*
 		This function applies Advance Search
 		 */
@@ -810,7 +803,6 @@ function WhiteMapClass() {
 				}
 			}
 		}
-
 		/*
 		This function populate Advance Search Dropdowns
 		 */
@@ -858,63 +850,82 @@ function WhiteMapClass() {
 
 			$("#advance_search_city").select2(options);
 		}
-
 		/*
 		This function applies Basic Filter
 		 */
+		var markersToShow= [];
 		this.applyBasicFilter = function() {
 			var technologyValue = $("#technology").val();
+			// global_this.markersVectorLayer.strategies[0].deactivate();
 			var vendorValue = $("#vendor").val();
 			var stateValue = $("#state").val();
 			var cityValue = $("#city").val();
+			markersToHide= [];
+			markersToShow= [];
 			stationsLoop: for (var i = 0; i < filtered_data.length; i++) {
 				var markerData = filtered_data[i];
 				var bsMarker = bsMarkerObj[markerData.name];
 				if (true) {
 					if (technologyValue === "" && vendorValue === "" && stateValue === "" && cityValue === "") {
-						global_this.showStationMarker(markerData);
+						markersToShow.push(bsMarkerObj[markerData.name]);
 					} else {
 						if (technologyValue !== "") {
 							var baseStationTechnology = markerData.sector_ss_technology;
+							baseStationTechnology= $.trim(baseStationTechnology.toLowerCase());
+							technologyValue = $.trim(technologyValue.toLowerCase());
 							if(baseStationTechnology.indexOf(technologyValue) !== -1) {
 								global_this.showStationMarker(markerData);
 							} else {
-								global_this.hideStationMarkers(markerData);
+								markersToHide.push(markerData);
+								// global_this.hideStationMarkers(markerData);
 								continue stationsLoop;
 							}
 						}
 
 						if (vendorValue !== "") {
 							var baseStationVendor = markerData.sector_ss_vendor;
+							baseStationVendor= $.trim(baseStationVendor.toLowerCase());
+							vendorValue = $.trim(vendorValue.toLowerCase());
 							if (vendorValue === baseStationVendor) {
 								global_this.showStationMarker(markerData);
 							} else {
-								global_this.hideStationMarkers(markerData);
+								markersToHide.push(markerData);
+								// global_this.hideStationMarkers(markerData);
 								continue stationsLoop;
 							}
 						}
 
 						if (stateValue !== "") {
 							var baseStationState = markerData.data.state;
+							baseStationState= $.trim(baseStationState.toLowerCase());
+							stateValue = $.trim(stateValue.toLowerCase());
 							if (baseStationState === stateValue) {
 								global_this.showStationMarker(markerData);
 							} else {
-								global_this.hideStationMarkers(markerData);
+								markersToHide.push(markerData);
+								// global_this.hideStationMarkers(markerData);
 								continue stationsLoop;
 							}
 						}
 
 						if (cityValue !== "") {
 							var baseStationCity = markerData.data.city;
+							baseStationCity= $.trim(baseStationCity.toLowerCase());
+							cityValue = $.trim(cityValue.toLowerCase());
 							if (baseStationCity === cityValue) {
 								global_this.showStationMarker(markerData);
 							} else {
-								global_this.hideStationMarkers(markerData);
+								markersToHide.push(markerData);
+								// global_this.hideStationMarkers(markerData);
 							}
 						}
+						markersToShow.push(bsMarkerObj[markerData.name]);
 					}
 				}
 			}
+			global_this.markersVectorLayer.removeAllFeatures();
+			global_this.markersVectorLayer.addFeatures(markersToShow);
+			strategy.recluster();
 		}
 
 		this.populateBasicFilterDropdowns = function() {
@@ -950,8 +961,6 @@ function WhiteMapClass() {
 				}
 			}
 		}
-
-
 		this.resetBasicFilter = function() {
 			$("#basic_filter_technology").val('');
 			$("#basic_filter_vendor").val('');
@@ -1048,10 +1057,6 @@ function WhiteMapClass() {
 		callback(sectorDataArray);
 	};
 
-
-
-
-
 	/**
 	 *
 	 * Private Functions
@@ -1097,7 +1102,7 @@ function WhiteMapClass() {
 				var icon = base_url+"/static/img/icons/bs.png";
 				var size = new OpenLayers.Size(whiteMapSettings.size.medium.width, whiteMapSettings.size.medium.height);
 				var type = "base_station";
-				var additionalInfoObject = { id: id, name: name, type: type, visible: 'true', isSpiderfied: true }
+				var additionalInfoObject = { id: id, name: name, type: type, visible: 'true', isSpiderfied: true, dataset: markerData.data.param.base_station, bhInfo: markerData.data.param.backhual, ptLat: lat, ptLon: lon, pointType: type }
 
 				var marker = global_this.createOpenLayerVectorMarker(size, icon, lon, lat, additionalInfoObject);
 				markerVectors.push(marker);
@@ -1172,7 +1177,12 @@ function WhiteMapClass() {
 							id: sub_station_id,
 							name: sub_station_name,
 							type: sub_station_type,
-							visible: true
+							visible: true,
+							dataset: sub_station.data.param.sub_station,
+							bhInfo: [],
+							poll_info: [],
+							ptLat: sub_station_lat, ptLon: sub_station_lon, 
+							pointType: sub_station_type
 						}
 						//Create marker
 						// var sub_station_marker = global_this.createOpenLayerMarker(size, sub_station_icon, sub_station_lon, sub_station_lat, subStationAdditionalInfo);
@@ -1197,7 +1207,16 @@ function WhiteMapClass() {
 									ssname: sub_station_name,
 									ckt: device.circuit_id,
 									devicename: device.device_info[0].value,
-									type: "sector"
+									type: "sector",
+									pointType: "sector",
+									startLat: lat,
+									startLon: lon,
+									bhInfo: [],
+									dataset: device.info,
+									"bs_name" : markerData.alias,
+									"sector_name" : device.sector_configured_on,
+									ptLat: lat,
+									ptLon: lon
 								}
 								global_this.drawSector(sectorsPointArray, device.color, device.technology, sectorAdditionalInfo, function(sector) {
 									global_this.sectorsLayer.addFeatures([sector]);
@@ -1234,8 +1253,15 @@ function WhiteMapClass() {
 								"bsname": name,
 								"ssname": sub_station_name,
 								"ckt": device.circuit_id,
-									devicename: device.device_info[0].value,
-									type: "line"
+								devicename: device.device_info[0].value,
+								type: "line",
+								pointType: "path",
+								bs_info: markerData.data.param.base_station,
+								ss_info: sub_station.data.param.sub_station,
+								nearLat: lat,
+								nearLon: lon,
+								ss_lat: sub_station_lat,
+								ss_lon: sub_station_lon
 							}
 							//Draw line between BS and SS
 							var line = global_this.drawLine(lon, lat, sub_station_lon, sub_station_lat, device.color, lineAdditionalInfo);
@@ -1253,7 +1279,6 @@ function WhiteMapClass() {
 			});
 			callback();
 		}
-
 		/*
 		This function start Ajax Request to get the Data.
 		@param i {Number} Current Counter of Ajax Request
@@ -1290,6 +1315,7 @@ function WhiteMapClass() {
 									// $("#current_status").html('Loaded');
 
 									global_this.markersVectorLayer.addFeatures(markerVectors);
+									strategy.activate();
 
 									global_this.populateBasicFilterDropdowns();
 									global_this.populateAdvanceSearchDropdowns();
@@ -1311,8 +1337,7 @@ function WhiteMapClass() {
 					showErrorMessage('ajax call error', response);
 				}
 			});
-		}		
-
+		}
 	/**
 	 *
 	 * End of Private Functions

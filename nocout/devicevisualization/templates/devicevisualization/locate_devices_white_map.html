@@ -208,19 +208,19 @@
                         </li>
                         <li>
                             <!--vendor Filter-->
-                            <select name="vendor" id="vendor" class="form-control col-xs-1 input-sm" style="width: 150px;">
+                            <select name="vendor" id="vendor" class="form-control col-xs-1 input-sm" style="width: 150px;" onchange="whiteMapClass.applyBasicFilter();">
                                 <option value="">Select Vendor</option>
                             </select>
                         </li>
                         <li>
                             <!--State Filter-->
-                            <select name="state" id="state" class="form-control col-xs-1 input-sm" style="width: 150px;">
+                            <select name="state" id="state" class="form-control col-xs-1 input-sm" style="width: 150px;" onchange="whiteMapClass.applyBasicFilter();">
                                 <option value="">Select State</option>
                             </select>
                         </li>
                         <li>
                             <!--City Filter-->
-                            <select name="city" id="city" class="form-control col-xs-1 input-sm" style="width: 150px;">
+                            <select name="city" id="city" class="form-control col-xs-1 input-sm" style="width: 150px;" onchange="whiteMapClass.applyBasicFilter();">
                                 <option value="">Select City</option>
                             </select>
                         </li>
@@ -307,6 +307,7 @@
     <!--Flot Chart Library for Fresnel zone-->
     <script src={% static "js/flot/jquery.flot.min.js" %}></script>
     <script type="text/javascript" src={% static "js/bootstrap-switch/bootstrap-switch.min.js" %}></script>
+    <script type="text/javascript" src={% static "js/devicePlottingLib.js" %}></script>
     <script type="text/javascript" src={% static "js/OpenLayers/OpenLayers.js" %}></script>
     <script type="text/javascript" src={% static "js/Utils.js" %}></script>
     <script type="text/javascript" src={% static "js/configuration.js" %}></script>
@@ -314,7 +315,7 @@
     <script type="text/javascript" src={% static "js/whiteMapPrototype.js" %}></script>
     <script type="text/javascript">
 
-        var networkMapInstance = "",
+        var gmap_self = "",
                 getFilterApi = "",
                 setFilterApi = "",
                 advSearch = "",
@@ -325,9 +326,7 @@
             /*Show page controls page*/
             $("#headerToggleBtn").trigger('click');
 
-            getFilterApi = "{{get_filter_api}}";
-            setFilterApi = "{{set_filter_api}}";
-            deviceName = "{{ device_name }}";
+            gmap_self = new devicePlottingClass_gmap();
         });
     </script>
 {% endblock %}
