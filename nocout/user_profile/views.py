@@ -14,7 +14,6 @@ from django.http.response import HttpResponseRedirect
 from django.contrib.auth.hashers import make_password
 from collections import OrderedDict
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from actstream import action
 from nocout.utils.util import DictDiffer, project_group_role_dict_mapper
 from django.contrib.auth.decorators import permission_required
 from django.db.models import Q
@@ -358,8 +357,6 @@ class UserUpdate(UpdateView):
                 else:
                     cleaned_data_field_dict[field]=form.cleaned_data[field]
 
-            if cleaned_data_field_dict['password2']:
-                action.send(self.request.user, verb='Password changed for the user: %s !'%(self.object.username))
 
 
             changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
@@ -382,7 +379,6 @@ class UserUpdate(UpdateView):
                 if len(verb_string)>=255:
                     verb_string=verb_string[:250] + '...'
 
-                action.send(self.request.user, verb=verb_string)
 
         except Exception as activity:
             pass
@@ -415,10 +411,6 @@ class UserDelete(DeleteView):
         """
         To Log the activity before deleting the user.
         """
-        try:
-            action.send(request.user, verb='deleting user: %s'%(self.get_object().username))
-        except Exception as activity:
-            pass
 
         return super(UserDelete, self).delete(request, *args, **kwargs)
 
@@ -460,7 +452,6 @@ class CurrentUserProfileUpdate(UpdateView):
             kwargs.update({'password': make_password(form.cleaned_data['password2'])})
 
         try:
-            action.send(self.request.user, verb='Changed Password !')
 
             changed_fields=DictDiffer(form.cleaned_data, form.initial).changed() - set(['role','username','user_group','organization'])
             if changed_fields:
@@ -473,7 +464,6 @@ class CurrentUserProfileUpdate(UpdateView):
                 if len(verb_string)>=255:
                     verb_string=verb_string[:250] + '...'
                 #Adding the user log for the number of fileds and with the values changed.
-                action.send(self.request.user, verb=verb_string)
         except Exception as activity:
             pass
 
