@@ -10,7 +10,6 @@ from forms import SiteInstanceForm
 from django.db.models import Q
 from django.http.response import HttpResponseRedirect
 from nocout.utils.util import DictDiffer
-from actstream import action
 import json
 
 class SiteInstanceList(ListView):
@@ -149,7 +148,6 @@ class SiteInstanceCreate(CreateView):
         Submit the form and log the user activity.
         """
         self.object=form.save()
-        action.send(self.request.user, verb='Created', action_object = self.object)
         return HttpResponseRedirect(SiteInstanceCreate.success_url)
 
 class SiteInstanceUpdate(UpdateView):
@@ -186,7 +184,6 @@ class SiteInstanceUpdate(UpdateView):
                 verb_string=verb_string[:250] + '...'
 
             self.object=form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(SiteInstanceUpdate.success_url)
 
 
@@ -209,5 +206,4 @@ class SiteInstanceDelete(DeleteView):
         """
         Log the user activity before deleting the Site Instance.
         """
-        action.send(request.user, verb='deleting site instance: %s'%(self.get_object().name))
         return super(SiteInstanceDelete, self).delete(request, *args, **kwargs)
