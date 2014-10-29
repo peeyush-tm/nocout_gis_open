@@ -25,7 +25,6 @@ nocout/venv
 ^media/*
 ^nocout/static/*
 ^nocout/media/*
-^migrations/*
 
 ##newrelic conf file
 newrelic.ini
