@@ -681,11 +681,11 @@ class BackhaulList(ListView):
         """
         context = super(BackhaulList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'bh_configured_on__device_alias', 'sTitle': 'Backhaul Configured On', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto'},
+            {'mData': 'bh_configured_on__id', 'sTitle': 'Backhaul Configured On', 'sWidth': 'auto'},
             {'mData': 'bh_port', 'sTitle': 'Backhaul Port', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'bh_type', 'sTitle': 'Backhaul Type', 'sWidth': 'auto', },
-            {'mData': 'pop__device_alias', 'sTitle': 'POP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'pop__id', 'sTitle': 'POP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'pop_port', 'sTitle': 'POP Port', 'sWidth': 'auto', },
             {'mData': 'bh_connectivity', 'sTitle': 'Connectivity', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'bh_circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', },
@@ -705,9 +705,9 @@ class BackhaulListingTable(BaseDatatableView):
     Class based View to render Backhaul Data table.
     """
     model = Backhaul
-    columns = ['alias', 'bh_configured_on__device_alias', 'bh_port', 'bh_type', 'pop__device_alias', 'pop_port',
+    columns = ['alias', 'bh_configured_on__id', 'bh_port', 'bh_type', 'pop__id', 'pop_port',
                'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
-    order_columns = ['alias', 'bh_configured_on__device_alias', 'bh_port', 'bh_type', 'pop__device_alias',
+    order_columns = ['alias', 'bh_configured_on__id', 'bh_port', 'bh_type', 'pop__id',
                      'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
 
     def filter_queryset(self, qs):
@@ -749,8 +749,25 @@ class BackhaulListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'bh_configured_on__id' in dct:
+                    bh_device_alias = Device.objects.get(id=dct['bh_configured_on__id']).device_alias
+                    bh_device_ip = Device.objects.get(id=dct['bh_configured_on__id']).ip_address
+                    dct['bh_configured_on__id'] = "{} ({})".format(bh_device_alias, bh_device_ip)
+            except Exception as e:
+                logger.info("Backhaul configured on not present. Exception: ", e.message)
+
+            try:
+                if 'pop__id' in dct:
+                    pop_device_alias = Device.objects.get(id=dct['pop__id']).device_alias
+                    pop_device_ip = Device.objects.get(id=dct['pop__id']).ip_address
+                    dct['pop__id'] = "{} ({})".format(pop_device_alias, pop_device_ip)
+            except Exception as e:
+                logger.info("POP not present. Exception: ", e.message)
+
             dct.update(actions='<a href="/backhaul/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/backhaul/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                <a href="/backhaul/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id']))
         return qs
 
     def get_context_data(self, *args, **kwargs):

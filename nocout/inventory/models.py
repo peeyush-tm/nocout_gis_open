@@ -13,6 +13,7 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy
 from user_profile.models import UserProfile
 
+
 # inventory model --> mapper of user_group & device groups
 class Inventory(models.Model):
     """
