@@ -377,7 +377,7 @@ class CircuitL2Report(models.Model):
         return '{}/{}/{}'.format(path, year_month_date, filename)
 
     name = models.CharField('Name', max_length=250, unique=True)
-    file_name = models.FileField(max_length=255, upload_to=uploaded_report_name)
+    file_name = models.FileField(max_length=512, upload_to=uploaded_report_name)
     added_on = models.DateTimeField('Added On', null=True, blank=True, auto_now_add=True)
     user_id = models.ForeignKey(UserProfile)
     circuit_id = models.ForeignKey(Circuit)

@@ -191,15 +191,15 @@ function prepare_oms_object(oms_instance) {
 		/*Set the content for infowindow*/
 		infowindow.setContent(content);
 
-		if(e) {
-			/*Set The Position for InfoWindow*/
-			infowindow.setPosition(e.latLng);
-		} else {
-			/*Set The Position for InfoWindow*/
-			infowindow.setPosition(new google.maps.LatLng(marker.ptLat,marker.ptLon));
-		}
+		// if(e) {
+		// 	/*Set The Position for InfoWindow*/
+		// 	infowindow.setPosition(e.latLng);
+		// } else {
+		// 	Set The Position for InfoWindow
+		// 	infowindow.setPosition(new google.maps.LatLng(marker.ptLat,marker.ptLon));
+		// }
 		/*Open the info window*/
-		infowindow.open(mapInstance);
+		infowindow.open(mapInstance,marker);
 
 		/*Show only 5 rows, hide others*/
 		gmap_self.show_hide_info();
