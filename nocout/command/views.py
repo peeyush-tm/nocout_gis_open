@@ -1,5 +1,4 @@
 import json
-from actstream import action
 from django.contrib.auth.decorators import permission_required
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect
@@ -157,7 +156,6 @@ class CommandCreate(CreateView):
         and to log the activity in the user log
         """
         self.object=form.save()
-        action.send(self.request.user, verb='Created', action_object = self.object)
         return HttpResponseRedirect(CommandCreate.success_url)
 
 
@@ -198,7 +196,6 @@ class CommandUpdate(UpdateView):
             if len(verb_string)>=255:
                 verb_string=verb_string[:250] + '...'
             self.object=form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect( CommandUpdate.success_url )
 
 
