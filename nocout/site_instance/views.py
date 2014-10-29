@@ -20,6 +20,13 @@ class SiteInstanceList(ListView):
     model = SiteInstance
     template_name = 'site_instance/site_instance_list.html'
 
+    @method_decorator(permission_required('site_instance.view_siteinstance', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(SiteInstanceList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
