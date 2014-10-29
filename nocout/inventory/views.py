@@ -1862,9 +1862,13 @@ class L2ReportListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        
         circuit_instance = Circuit.objects.filter(id=circuit_id)
-        condition = Q(circuit_id=circuit_instance) & Q(is_public=1) | Q(user_id=self.request.user)
+        # condition to fetch l2 reports data from db
+        condition = (Q(user_id=self.request.user) | Q(is_public=1)) & (Q(circuit_id=circuit_instance))
+        # Query to fetch L2 reports data from db
         l2ReportsResult = CircuitL2Report.objects.filter(condition).values(*self.columns + ['id'])
+       
         report_resultset = []
         for data in l2ReportsResult:
             report_object = {}
