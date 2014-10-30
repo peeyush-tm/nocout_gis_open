@@ -279,11 +279,11 @@ function GisPerformance() {
                         }
 
                         //If technology is WiMAX and PMP
-                        if($.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) === "wimax" || $.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) === "pmp") {
+                        if($.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) != "ptp" && $.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) != "p2p") {
                             //Get sector Polyline
-                            var sectorPoly = markersMasterObj['Poly'][bsMarkerObject['child_ss'][i]['sub_station'][j]['device_name']];
+                            var sectorPoly = allMarkersObject_gmap['sector_polygon']['poly_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on+"_"+radius+"_"+azimuth+"_"+beamWidth)];
                             //If both sector Poly and line Color is defined
-                            if (sectorPoly && lineColor) {
+                            if (sector_poly_marker && lineColor) {
                                 var sector_perf_obj = {};
                                 sector_perf_obj["performance_paramter"] = this.calculatePerformanceValue("performance_paramter", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
                                 sector_perf_obj["performance_value"] = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
@@ -293,13 +293,13 @@ function GisPerformance() {
                                 var new_radius = this.calculatePerformanceValue("radius", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
                                 var azimuth = this.calculatePerformanceValue("azimuth_angle", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
                                 var beam_width = this.calculatePerformanceValue("beam_width", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]);
-                                var polarisation = sectorPoly.polarisation ? sectorPoly.polarisation : 'vertical';
+                                var polarisation = sector_poly_marker.polarisation ? sector_poly_marker.polarisation : 'vertical';
 
                                 if((new_radius && $.trim(new_radius) != "") && (azimuth && $.trim(azimuth) != "") && (beam_width && $.trim(beam_width) != "")) {
                                     /*Check to draw sector only for first time in ss loop*/
                                     if(condition) {
 
-                                        networkMapInstance.createSectorData(+(sectorPoly.ptLat),+(sectorPoly.ptLon),new_radius,azimuth,beam_width,polarisation,function(pointsArray) {
+                                        networkMapInstance.createSectorData(+(sector_poly_marker.ptLat),+(sector_poly_marker.ptLon),new_radius,azimuth,beam_width,polarisation,function(pointsArray) {
                                             halfPt = Math.floor(pointsArray.length / (+2));
                                             polyPointsArray = pointsArray;
                                             for(var i=0;i<pointsArray.length;i++) {
@@ -307,7 +307,7 @@ function GisPerformance() {
                                                 polyPathArray.push(pt);
                                             }
                                         });
-                                        sectorPoly.setPath(polyPathArray);
+                                        sector_poly_marker.setPath(polyPathArray);
                                     }
                                     new_line_path = [new google.maps.LatLng(polyPointsArray[halfPt].lat,polyPointsArray[halfPt].lon),new google.maps.LatLng(googlePolyLine.ss_lat,googlePolyLine.ss_lon)];
                                 }
@@ -317,9 +317,9 @@ function GisPerformance() {
                                     googlePolyLine.setPath(new_line_path);
                                 }
 
-                                sectorPoly.hasPerf = 1;
-                                sectorPoly.perf_data_obj = sector_perf_obj;
-                                sectorPoly.setOptions({fillColor: lineColor});
+                                sector_poly_marker.hasPerf = 1;
+                                sector_poly_marker.perf_data_obj = sector_perf_obj;
+                                sector_poly_marker.setOptions({fillColor: lineColor});
                             }
                         } else {
                             if(condition) {
@@ -397,16 +397,22 @@ function GisPerformance() {
                         }
                         
                         var ss_val = this.calculatePerformanceValue("performance_value", bsMarkerObject['child_ss'][i]["device_info"][0]["value"], bsMarkerObject['child_ss'][i]['sub_station'][j]["device_name"]),
-                            perf_val = "";
+                            perf_val = "",
+                            technology_condition = $.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) == "ptp" || $.trim(bsMarkerObject['child_ss'][i]["technology"].toLowerCase()) == "p2p";
 
-                        if(ss_val && sector_perf_val) {
-                            perf_val = "("+ss_val+", "+sector_perf_val+")";
-                        } else if(ss_val && !sector_perf_val) {
-                            perf_val = "("+ss_val+", N/A)";
-                        } else if(!ss_val && sector_perf_val) {
-                            perf_val = "(N/A, "+sector_perf_val+")";
+                        if(technology_condition) {
+
+                            if(ss_val && sector_perf_val) {
+                                perf_val = "("+ss_val+", "+sector_perf_val+")";
+                            } else if(ss_val && !sector_perf_val) {
+                                perf_val = "("+ss_val+", N/A)";
+                            } else if(!ss_val && sector_perf_val) {
+                                perf_val = "(N/A, "+sector_perf_val+")";
+                            } else {
+                                perf_val = "";
+                            }
                         } else {
-                            perf_val = "";
+                            perf_val = ss_val;
                         }
 
                         if(perf_val && $.trim(perf_val)) {
