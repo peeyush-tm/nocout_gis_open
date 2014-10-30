@@ -3,7 +3,7 @@ from dateutil.parser import *
 from models import GISInventoryBulkImport
 from machine.models import Machine
 from site_instance.models import SiteInstance
-from device.models import Device, DeviceTechnology
+from device.models import Device, DeviceTechnology, DevicePort
 from inventory.models import Antenna, Backhaul, BaseStation, Sector, Customer, SubStation, Circuit
 from device.models import State, City
 from nocout.settings import MEDIA_ROOT
@@ -1634,8 +1634,9 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     machine_name = ""
 
                 # device name
-                # name = '{}_ne'.format(special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
                 name = device_latest_id
+
+                # device alias
                 alias = '{}_NE'.format(circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
 
                 if ip_sanitizer(row['IP']):
@@ -1760,8 +1761,9 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     machine_name = ""
 
                 # device name
-                # name = special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else ""
                 name = device_latest_id
+
+                # device alias
                 alias = '{}'.format(circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
 
                 if ip_sanitizer(row['SS IP']):
@@ -2363,7 +2365,10 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
         for val in error_rows:
             temp_list = list()
             for key in keys_list:
-                temp_list.append(val[key])
+                try:
+                    temp_list.append(val[key])
+                except Exception as e:
+                    logger.info(e.message)
             error_rows_list.append(temp_list)
 
         wb_bulk_upload_errors = xlwt.Workbook()
@@ -4697,10 +4702,21 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                 except Exception as e:
                     logger.info("PMP not in sheet or something wrong. Exception: ", e.message)
 
+                # sector configured on port
+                port = ""
+                try:
+                    port_name = "pmp" + str(pmp)
+                    port_alias = "PMP Port " + str(pmp)
+                    port_value = pmp
+                    port = create_device_port(port_name, port_alias, port_value)
+                except Exception as e:
+                    logger.info("Sector Configured On port not present. Exception: ", e.message)
+
+
                 # sector name
                 name = '{}_{}_{}'.format(
                     special_chars_name_sanitizer_with_lower_case(row['Sector ID']) if 'Sector ID' in row.keys() else "",
-                    row['Sector Name'] if 'Sector Name' in row.keys() else "", row['PMP'] if 'PMP' in row.keys() else "")
+                    row['Sector Name'] if 'Sector Name' in row.keys() else "", pmp)
 
                 # sector alias
                 alias = '{}'.format(row['Sector ID'].strip() if 'Sector ID' in row.keys() else "")
@@ -4713,6 +4729,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     'base_station': basestation,
                     'bs_technology': 3,
                     'sector_configured_on': base_station,
+                    'sector_configured_on_port': port,
                     'antenna': sector_antenna,
                     'description': 'Sector created on {}.'.format(full_time)
                 }
@@ -7380,6 +7397,39 @@ def create_circuit(circuit_payload):
                 except Exception as e:
                     logger.info("Circuit Object: ({} - {})".format(name, e.message))
                     return ""
+
+
+def create_device_port(name, alias, value):
+    """ Create or Update device port
+
+    Args:
+        name (str): 'pmp1'
+        alias (str): 'PMP Port 1'
+        value (int): 1
+
+    Returns:
+        port (<class 'device.models.DevicePort'>): pmp1
+
+    """
+    try:
+        # ---------------------------- UPDATING DEVICE PORT -------------------------------
+        port = DevicePort.objects.get(name=name, value=value)
+        port.name = name
+        port.alias = alias
+        port.value = value
+        port.save()
+        return port
+    except Exception as e:
+        # ---------------------------- CREATING DEVICE PORT -------------------------------
+        port = DevicePort()
+        port.name = name
+        port.alias = alias
+        port.value = value
+        try:
+            port.save()
+            return port
+        except Exception as e:
+            logger.info("Port can't be created. Exception: ", e.message)
 
 
 def get_ptp_machine_and_site(ip):
