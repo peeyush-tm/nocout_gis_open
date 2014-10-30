@@ -94,3 +94,12 @@ def action_handler(verb, **kwargs):
 
 
 # action.connect(action_handler, dispatch_uid='actstream.models')
+
+class UserAction(models.Model):
+    """
+    User log models to store the user actions.
+    """
+    user_id = models.IntegerField()
+    action = models.TextField()
+    module = models.CharField(max_length=128)
+    logged_at = models.DateTimeField(auto_now_add=True)

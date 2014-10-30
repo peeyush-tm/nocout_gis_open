@@ -12,7 +12,6 @@ import re
 from django.contrib.auth.decorators import permission_required
 from django.shortcuts import render, render_to_response
 import json
-from actstream import action
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect, HttpResponse
 from django.utils.decorators import method_decorator
@@ -193,7 +192,6 @@ class InventoryCreate(CreateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(InventoryCreate.success_url)
 
 
@@ -218,7 +216,6 @@ class InventoryUpdate(UpdateView):
         Submit the form and to log the user activity.
         """
         self.object = form.save()
-        action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(InventoryCreate.success_url)
 
 
@@ -242,7 +239,6 @@ class InventoryDelete(DeleteView):
         """
         overriding the delete method to log the user activity.
         """
-        action.send(request.user, verb='deleting inventory: %s' % (self.get_object().name))
         return super(InventoryDelete, self).delete(request, *args, **kwargs)
 
 
@@ -411,7 +407,6 @@ class AntennaCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Antenna : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(AntennaCreate.success_url)
 
 
@@ -448,7 +443,6 @@ class AntennaUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(AntennaUpdate.success_url)
 
 
@@ -485,7 +479,7 @@ class BaseStationList(ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             # {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'bs_site_id', 'sTitle': 'Site ID', 'sWidth': 'auto', },
-            {'mData': 'bs_switch__device_alias', 'sTitle': 'BS Switch', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'bs_switch__id', 'sTitle': 'BS Switch', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'backhaul__name', 'sTitle': 'Backhaul', 'sWidth': 'auto', },
             {'mData': 'bs_type', 'sTitle': 'BS Type', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'building_height', 'sTitle': 'Building Height', 'sWidth': 'auto', },
@@ -505,9 +499,9 @@ class BaseStationListingTable(BaseDatatableView):
     """
     model = BaseStation
     columns = ['alias', 'bs_site_id',
-               'bs_switch__device_alias', 'backhaul__name', 'bs_type', 'building_height', 'description']
+               'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description']
     order_columns = ['alias', 'bs_site_id',
-                     'bs_switch__device_alias', 'backhaul__name', 'bs_type', 'building_height', 'description']
+                     'bs_switch__id', 'backhaul__name', 'bs_type', 'building_height', 'description']
 
     def filter_queryset(self, qs):
         """
@@ -544,6 +538,15 @@ class BaseStationListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'bs_switch__id' in dct:
+                    bs_device_alias = Device.objects.get(id=dct['bs_switch__id']).device_alias
+                    bs_device_ip = Device.objects.get(id=dct['bs_switch__id']).ip_address
+                    dct['bs_switch__id'] = "{} ({})".format(bs_device_alias, bs_device_ip)
+            except Exception as e:
+                logger.info("BS Switch not present. Exception: ", e.message)
+
             dct.update(actions='<a href="/base_station/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/base_station/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
@@ -611,7 +614,6 @@ class BaseStationCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Base Station : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(BaseStationCreate.success_url)
 
 
@@ -647,7 +649,6 @@ class BaseStationUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(BaseStationUpdate.success_url)
 
 
@@ -681,11 +682,11 @@ class BackhaulList(ListView):
         """
         context = super(BackhaulList, self).get_context_data(**kwargs)
         datatable_headers = [
-            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'bh_configured_on__device_alias', 'sTitle': 'Backhaul Configured On', 'sWidth': 'auto', },
+            {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto'},
+            {'mData': 'bh_configured_on__id', 'sTitle': 'Backhaul Configured On', 'sWidth': 'auto'},
             {'mData': 'bh_port', 'sTitle': 'Backhaul Port', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'bh_type', 'sTitle': 'Backhaul Type', 'sWidth': 'auto', },
-            {'mData': 'pop__device_alias', 'sTitle': 'POP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'pop__id', 'sTitle': 'POP', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'pop_port', 'sTitle': 'POP Port', 'sWidth': 'auto', },
             {'mData': 'bh_connectivity', 'sTitle': 'Connectivity', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'bh_circuit_id', 'sTitle': 'Circuit ID', 'sWidth': 'auto', },
@@ -705,9 +706,9 @@ class BackhaulListingTable(BaseDatatableView):
     Class based View to render Backhaul Data table.
     """
     model = Backhaul
-    columns = ['alias', 'bh_configured_on__device_alias', 'bh_port', 'bh_type', 'pop__device_alias', 'pop_port',
+    columns = ['alias', 'bh_configured_on__id', 'bh_port', 'bh_type', 'pop__id', 'pop_port',
                'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
-    order_columns = ['alias', 'bh_configured_on__device_alias', 'bh_port', 'bh_type', 'pop__device_alias',
+    order_columns = ['alias', 'bh_configured_on__id', 'bh_port', 'bh_type', 'pop__id',
                      'pop_port', 'bh_connectivity', 'bh_circuit_id', 'bh_capacity']
 
     def filter_queryset(self, qs):
@@ -749,8 +750,25 @@ class BackhaulListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'bh_configured_on__id' in dct:
+                    bh_device_alias = Device.objects.get(id=dct['bh_configured_on__id']).device_alias
+                    bh_device_ip = Device.objects.get(id=dct['bh_configured_on__id']).ip_address
+                    dct['bh_configured_on__id'] = "{} ({})".format(bh_device_alias, bh_device_ip)
+            except Exception as e:
+                logger.info("Backhaul configured on not present. Exception: ", e.message)
+
+            try:
+                if 'pop__id' in dct:
+                    pop_device_alias = Device.objects.get(id=dct['pop__id']).device_alias
+                    pop_device_ip = Device.objects.get(id=dct['pop__id']).ip_address
+                    dct['pop__id'] = "{} ({})".format(pop_device_alias, pop_device_ip)
+            except Exception as e:
+                logger.info("POP not present. Exception: ", e.message)
+
             dct.update(actions='<a href="/backhaul/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/backhaul/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+                <a href="/backhaul/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id']))
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -816,7 +834,6 @@ class BackhaulCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Backhaul : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(BackhaulCreate.success_url)
 
 
@@ -853,7 +870,6 @@ class BackhaulUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(BackhaulUpdate.success_url)
 
 
@@ -890,7 +906,7 @@ class SectorList(ListView):
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
             {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'sector_configured_on__device_alias', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
+            {'mData': 'sector_configured_on__id', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
             {'mData': 'sector_configured_on_port__name', 'sTitle': 'Sector Configured On Port', 'sWidth': 'auto',
              'sClass': 'hidden-xs'},
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -913,10 +929,10 @@ class SectorListingTable(BaseDatatableView):
     Class based View to render Sector Data Table.
     """
     model = Sector
-    columns = ['alias', 'bs_technology__alias' ,'sector_id', 'sector_configured_on__device_alias',
-            'base_station__alias', 'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
-    order_columns = ['alias', 'bs_technology__alias' ,'sector_id', 'sector_configured_on__device_alias',
-            'base_station__alias', 'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
+    columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id',
+               'base_station__alias', 'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
+    order_columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id',
+                     'base_station__alias', 'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
 
     def filter_queryset(self, qs):
         """
@@ -958,6 +974,15 @@ class SectorListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'sector_configured_on__id' in dct:
+                    sector_device_alias = Device.objects.get(id=dct['sector_configured_on__id']).device_alias
+                    sector_device_ip = Device.objects.get(id=dct['sector_configured_on__id']).ip_address
+                    dct['sector_configured_on__id'] = "{} ({})".format(sector_device_alias, sector_device_ip)
+            except Exception as e:
+                logger.info("Sector Configured On not present. Exception: ", e.message)
+
             dct.update(actions='<a href="/sector/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/sector/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
@@ -1025,7 +1050,6 @@ class SectorCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Sector : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(SectorCreate.success_url)
 
 
@@ -1061,7 +1085,6 @@ class SectorUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(SectorUpdate.success_url)
 
 
@@ -1220,7 +1243,6 @@ class CustomerCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Customer : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(CustomerCreate.success_url)
 
 
@@ -1256,7 +1278,6 @@ class CustomerUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(CustomerUpdate.success_url)
 
 
@@ -1291,7 +1312,7 @@ class SubStationList(ListView):
         context = super(SubStationList, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
-            {'mData': 'device__device_alias', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
+            {'mData': 'device__id', 'sTitle': 'Device', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'version', 'sTitle': 'Version', 'sWidth': 'auto', },
             {'mData': 'serial_no', 'sTitle': 'Serial No.', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -1317,9 +1338,9 @@ class SubStationListingTable(BaseDatatableView):
     Class based View to render Sub Station Data table.
     """
     model = SubStation
-    columns = ['alias', 'device__device_alias', 'antenna__alias', 'version', 'serial_no', 'building_height',
+    columns = ['alias', 'device__id', 'antenna__alias', 'version', 'serial_no', 'building_height',
                'tower_height', 'city', 'state', 'address', 'description']
-    order_columns = ['alias', 'device__device_alias', 'antenna__alias', 'version', 'serial_no', 'building_height',
+    order_columns = ['alias', 'device__id', 'antenna__alias', 'version', 'serial_no', 'building_height',
                      'tower_height']
 
     def filter_queryset(self, qs):
@@ -1361,8 +1382,17 @@ class SubStationListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct['city__name']= City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
-            dct['state__name']= State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'device__id' in dct:
+                    ss_device_alias = Device.objects.get(id=dct['device__id']).device_alias
+                    ss_device_ip = Device.objects.get(id=dct['device__id']).ip_address
+                    dct['device__id'] = "{} ({})".format(ss_device_alias, ss_device_ip)
+            except Exception as e:
+                logger.info("Sub Station Device not present. Exception: ", e.message)
+
+            dct['city__name'] = City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
+            dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
             dct.update(actions='<a href="/sub_station/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                 <a href="/sub_station/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
         return qs
@@ -1430,7 +1460,6 @@ class SubStationCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Sub Station : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(SubStationCreate.success_url)
 
 
@@ -1457,7 +1486,7 @@ class SubStationUpdate(UpdateView):
         initial_field_dict = {field: form.initial[field] for field in form.initial.keys()}
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
-        if changed_fields_dict: 
+        if changed_fields_dict:
             verb_string = 'Updaete Sub Station : %s, ' % (self.object.alias) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
@@ -1466,7 +1495,6 @@ class SubStationUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(SubStationUpdate.success_url)
 
 
@@ -1744,7 +1772,6 @@ class CircuitCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Circuit : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(CircuitCreate.success_url)
 
 
@@ -1780,7 +1807,6 @@ class CircuitUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(CircuitUpdate.success_url)
 
 
@@ -1862,13 +1888,13 @@ class L2ReportListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        
+
         circuit_instance = Circuit.objects.filter(id=circuit_id)
         # condition to fetch l2 reports data from db
         condition = (Q(user_id=self.request.user) | Q(is_public=1)) & (Q(circuit_id=circuit_instance))
         # Query to fetch L2 reports data from db
         l2ReportsResult = CircuitL2Report.objects.filter(condition).values(*self.columns + ['id'])
-       
+
         report_resultset = []
         for data in l2ReportsResult:
             report_object = {}
@@ -1945,7 +1971,7 @@ class L2ReportListingTable(BaseDatatableView):
         self.initialize(*args, **kwargs)
 
         ckt_id = self.kwargs['circuit_id']
-        
+
         qs = self.get_initial_queryset(ckt_id)
 
         # number of records before filtering
@@ -1976,7 +2002,7 @@ class CircuitL2ReportCreate(CreateView):
 
     template_name = 'circuit_l2/circuit_l2_new.html'
     model = CircuitL2Report
-    form_class = CircuitL2ReportForm 
+    form_class = CircuitL2ReportForm
 
     def dispatch(self, *args, **kwargs):
         """
@@ -2167,7 +2193,6 @@ class IconSettingsCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Icon Setting : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(IconSettingsCreate.success_url)
 
 
@@ -2203,7 +2228,6 @@ class IconSettingsUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(IconSettingsUpdate.success_url)
 
 
@@ -2365,7 +2389,6 @@ class LivePollingSettingsCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Live Polling Setting : %s" %(self.object.alias)
-        action.send(self.request.user, verb=version, action_object=self.object)
         return HttpResponseRedirect(LivePollingSettingsCreate.success_url)
 
 
@@ -2401,7 +2424,6 @@ class LivePollingSettingsUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(LivePollingSettingsUpdate.success_url)
 
 
@@ -2562,7 +2584,6 @@ class ThresholdConfigurationCreate(CreateView):
         """
         self.object = form.save()
         verb_string = "Create Threshold Configuration : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(ThresholdConfigurationCreate.success_url)
 
 
@@ -2598,7 +2619,6 @@ class ThresholdConfigurationUpdate(UpdateView):
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
             self.object = form.save()
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(ThresholdConfigurationUpdate.success_url)
 
 
@@ -2797,7 +2817,6 @@ class ThematicSettingsCreate(CreateView):
         self.object.icon_settings=icon_settings_values_list
         self.object.save()
         verb_string = "Create Thematic Settings : %s" %(self.object.alias)
-        action.send(self.request.user, verb=verb_string, action_object=self.object)
         return HttpResponseRedirect(ThematicSettingsCreate.success_url)
 
 
@@ -2838,7 +2857,6 @@ class ThematicSettingsUpdate(UpdateView):
                           ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
             if len(verb_string) >= 255:
                 verb_string = verb_string[:250] + '...'
-            action.send(self.request.user, verb=verb_string)
         return HttpResponseRedirect(ThematicSettingsUpdate.success_url)
 
 
