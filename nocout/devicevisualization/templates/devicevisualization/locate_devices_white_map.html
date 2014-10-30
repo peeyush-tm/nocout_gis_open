@@ -29,19 +29,19 @@
                     <b>Status</b><br/> <ul id="gis_status_txt" class="list-unstyled "></ul>
                 </li>
                 <li><button type="button" id="advSearchBtn" class="btn btn-info" data-complete-text="<i class='fa fa-filter'></i> Advance Search"
-                            data-loading-text="Please Wait..." onclick="showAdvSearch();" title="Click to Advance Search">
+                            data-loading-text="Please Wait..." onclick="whiteMapClass.showAdvanceSearch();" title="Click to Advance Search">
                     <i class="fa fa-filter"></i>Advance Search
                 </button></li>
                 <li>
-                    <button type="button" id="advFilterBtn" class="btn btn-info" onclick="showAdvFilters();"
+                    <button type="button" id="advFilterBtn" class="btn btn-info" onclick="whiteMapClass.showAdvanceFilter();"
                             data-complete-text="<i class='fa fa-filter'></i> Advance Filters"
                             data-loading-text="Please Wait...">
                         <i class='fa fa-filter'></i> Advance Filters
                     </button>
-                    <button type="button" id="removeFilterBtn" class="btn btn-danger hide" onclick="removeAdvFilters();"
-                            style="margin-left:10px;" title="Click to Advance Filter">
+                  <!--   <button type="button" id="removeFilterBtn" class="btn btn-danger hide" onclick="whiteMapClass.resetAdvanceFilter();"
+                            style="margin-left:10px;" title="Click to Reset Advance Filter">
                         <i class='fa fa-times'></i> Remove Filters
-                    </button>
+                    </button> -->
                 </li>
                 <li>
                     <button type="button" class="btn btn-info" id="createPolygonBtn"
@@ -83,12 +83,12 @@
             <div class="clearfix"></div>
 
             <div class="col-md-8 col-md-offset-2">
-                <button type="button" class="pull-right btn btn-danger" style="margin-left:10px;" id="cancelAdvSearchBtn">Cancel
+                <button type="button" class="pull-right btn btn-danger" style="margin-left:10px;" id="cancelAdvSearchBtn" onclick="whiteMapClass.hideAdvanceSearch();">Cancel
                 </button>
-                <button type="button" class="pull-right btn btn-danger" id="resetSearchForm" style="margin-left:10px;">
+                <button type="button" class="pull-right btn btn-danger hide" id="resetSearchForm" style="margin-left:10px;" onclick="whiteMapClass.resetAdvanceSearch();">
                         <i class="fa fa-times"></i> Reset Search
                     </button>
-                <button type="button" class="pull-right btn btn-success" id="setAdvSearchBtn">Search</button>
+                <button type="button" class="pull-right btn btn-success" id="setAdvSearchBtn" onclick="whiteMapClass.applyAdvanceSearch();">Search</button>
             </div>
             <div class="clearfix"></div>
             <div class="divide-20"></div>
@@ -103,9 +103,10 @@
             <div class="clearfix"></div>
 
             <div class="col-md-8 col-md-offset-2">
-                <button type="button" class="pull-right btn btn-danger" style="margin-left:10px;" id="cancelAdvFilterBtn">Cancel
+                <button type="button" class="pull-right btn btn-danger" style="margin-left:10px;" id="cancelAdvFilterBtn" onclick="whiteMapClass.hideAdvanceFilter();">Cancel
                 </button>
-                <button type="button" class="pull-right btn btn-success" id="setAdvFilterBtn">Filter</button>
+                <button type="button" class="pull-right btn btn-warning hide" style="margin-left:10px;" id="resetAdvFilterBtn" onclick="whiteMapClass.resetAdvanceFilter();">Reset Filter</button>
+                <button type="button" class="pull-right btn btn-success" id="setAdvFilterBtn" onclick="whiteMapClass.applyAdvanceFilter();">Filter</button>
             </div>
             <div class="clearfix"></div>
             <div class="divide-20"></div>
@@ -165,8 +166,8 @@
                     <input type="checkbox" name="show_hide_label" id="show_hide_label" checked=""> Show Labels
                 </li>
                 <li>Show Connectivity Lines <input type="checkbox" name="showConnLines" id="showConnLines"
-                                                   onclick="networkMapInstance.showConnectionLines_gmap()"
-                                                   style="vertical-align: text-top;" checked="checked"/></li>
+                                                   onclick="whiteMapClass.toggleLines()"
+                                                   style="vertical-align: text-top;" checked=0/></li>
                 <li class="fright">
                     <form action="#" class="form-horizontal">
                         <div class="form-group">
@@ -226,7 +227,7 @@
                         </li>
                         <li>
                             <!--Reset Button-->
-                            <button type="button" class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters"
+                            <button type="button" class="btn btn-sm btn-inverse form-control col-xs-1 input-sm" id="resetFilters" onclick="whiteMapClass.resetBasicFilter();"
                                     data-complete-text="<i class='fa fa-refresh'></i> Reset"
                                     data-loading-text="Please Wait...">
                                 <i class="fa fa-refresh">&nbsp;</i> Reset
@@ -313,6 +314,9 @@
     <script type="text/javascript" src={% static "js/configuration.js" %}></script>
     <script type="text/javascript" src={% static "js/whiteMap.js" %}></script>
     <script type="text/javascript" src={% static "js/whiteMapPrototype.js" %}></script>
+
+    <script type="text/javascript" src={% static "js/whiteMap_AdvanceFilter.js" %}></script>
+    <script type="text/javascript" src={% static "js/whiteMap_AdvanceSearch.js" %}></script>
     <script type="text/javascript">
 
         var gmap_self = "",
@@ -344,5 +348,17 @@
             whiteMapClass = new WhiteMapClass();
             whiteMapClass.init();
         });
+
+        function showToolsPanel() {
+            $("#showToolsBtn").addClass("hide");
+            $("#removeToolsBtn").removeClass("hide");
+            $("#toolsContainerBlock").removeClass("hide");
+        }
+
+        function removetoolsPanel() {
+         $("#showToolsBtn").removeClass("hide");
+            $("#removeToolsBtn").addClass("hide");
+            $("#toolsContainerBlock").addClass("hide");   
+        }
     </script>
 {% endblock %}

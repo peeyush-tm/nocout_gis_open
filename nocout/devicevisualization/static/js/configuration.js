@@ -9,7 +9,8 @@ var whiteMapSettings = {
 	units: 'degrees',
 	size: {
 		medium: {width: 20, height: 28} 
-	}
+	},
+	zoomLevelAfterLineAppears: 6
 }
 
 var clustererSettings = {

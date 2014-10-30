@@ -40,6 +40,15 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		//Create Open Layer map on '#map' with our options
 		ccpl_map = new OpenLayers.Map(domEl, options);
 
+		ccpl_map.events.register("zoomend", ccpl_map, function(){
+			if(ccpl_map.getZoom() > whiteMapSettings.zoomLevelAfterLineAppears) {
+				var selectedValue = $("#showConnLines").prop('checked', true);
+			} else {
+				var selectedValue = $("#showConnLines").prop('checked', false);
+			}
+			that.toggleLines();
+		});
+
 		//Create WMS layer to load Map from our geoserver.
 		india_Layer = new OpenLayers.Layer.WMS(
 			"india_Layer", whiteMapSettings.geoserver_url_India, {

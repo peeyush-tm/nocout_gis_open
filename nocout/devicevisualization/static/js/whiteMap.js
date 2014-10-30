@@ -18,7 +18,7 @@ function WhiteMapClass() {
 		//Variable to Store All Markers
 		var markerArray = [], markerObj = {};
 		//Variable to hold Markers
-		var bsMarkerObj = {}, deviceMarkerObj = {}, subStationMarkerObj = {}, cktLinesObj = {}, sectorsObj = {};
+		var bsMarkerObj = {}, deviceMarkerObj = {}, subStationMarkerObj = {}, cktLinesObj = {}, sectorsObj = {}, ssMarkerObj= {}, masterStationsArray= [], cktLinesBsObj = {}, sectorsBsObj= {};
 		//Variable to hold device markers currently displayed on map
 		var devices_Marker_On_Map = [], devices_Lines_On_Map = [];
 		//Variable to hold Searched Markers List
@@ -29,6 +29,9 @@ function WhiteMapClass() {
 		Variables to hold Data which Technologies, State, Cities
 		*/
 		var technology = [], vendor = [], state = [], city = [], bs_name = [], ip = [], cktId = [];
+
+		var wmAdvanceFilterClass = "";
+		var wmAdvanceSearchClass = "";
 
 		//Layer for Markers
 		this.markersLayer = "";
@@ -127,7 +130,7 @@ function WhiteMapClass() {
 
 		this.markerLayerFeatureClick= function(event) {
 			var f = event.feature;
-			if (f.cluster.length > 2){
+			if (f.cluster.length >= 2){
 				//Click on Cluster
 				clusterpoints = [];
 				for(var i = 0; i<f.cluster.length; i++){
@@ -250,29 +253,28 @@ function WhiteMapClass() {
 		This function is activated when Show/Hide Line option is changed.
 		Display or hide CktID Lines based on its value
 		 */
+		var previousValue= "";
 		this.toggleLines = function() {
 			//Checked if Show/Hide option is checked or unchecked.
-			var selectedValue = $("#tools_show_lines").attr('checked')
-			//Loop through all cktLinesObj
-			for (var keys in cktLinesObj) {
-				if (cktLinesObj.hasOwnProperty(keys)) {
-					//Ckt Line
-					var cktLines = cktLinesObj[keys];
-					//Loop through all CktLine for a Device 
-					for (var i = 0; i < cktLines.length; i++) {
-						var cktLine = cktLines[i];
-						//Set display to block if show is checked
-						if (selectedValue) {
-							cktLine.style.display = 'block';
-						//Else set display to none if hide is checked.
-						} else {
-							cktLine.style.display = 'none';
+			var selectedValue = $("#showConnLines").prop('checked');
+			if(previousValue !== selectedValue) {
+				var linesFeaturesList = [];
+				for(var key in cktLinesBsObj) {
+					var x= cktLinesBsObj[key];
+					if(x && x.length) {
+						for(var i=0; i< x.length; i++) {
+							x[i].style.display = 'block';
+							linesFeaturesList.push(x[i]);
 						}
 					}
 				}
+				global_this.linesLayer.removeAllFeatures();
+				if(selectedValue) {
+					global_this.linesLayer.addFeatures(linesFeaturesList);
+				}
+				global_this.linesLayer.redraw();
+				previousValue= selectedValue;
 			}
-			//Redraw Lines Layer to update the layer.
-			global_this.linesLayer.redraw();
 		}
 		/*
 		This function toggles all Station Markers size based on the Value selected in the dropdown.
@@ -300,51 +302,12 @@ function WhiteMapClass() {
 		/*
 		This function is triggered when Lat Lng Search is done.Validate the point, if LatLng is valid, zoom to the given lat lng.
 		 */
-		this.zoomToLonLat = function() {
-			//Longitude, Latitude entered in the textbox
-			var lonlat = $("#latLongSearch_lonlat").val();
-
-			//If textbox is non-empty
-			if (lonlat.length > 0) {
-				//Split the value entered in the lat long. If , is not specified, show alert
-				if (lonlat.split(",").length != 2) {
-					//Alert
-					alert("Please Enter Proper Lattitude,Longitude.");
-					//Reset value
-					$("#latLongSearch_lonlat").val("");
-				} else {
-					//Get lat entered.
-					var lat = +(lonlat.split(",")[0]),
-					//Get long entered
-					lng = +(lonlat.split(",")[1]),
-					//Check lat for -90 > lat > 90 condition
-					lat_check = (lat >= -90 && lat < 90),
-					lon_check = (lat >= -180 && lat < 180),
-					dms_pattern = /^(-?\d+(?:\.\d+)?)[°:d]?\s?(?:(\d+(?:\.\d+)?)['′:]?\s?(?:(\d+(?:\.\d+)?)["″]?)?)?\s?([NSEW])?/i;
-					dms_regex = new RegExp(dms_pattern);
-
-					if ((lat_check && lon_check) || (dms_regex.exec(lonlat.split(",")[0]) && dms_regex.exec(lonlat.split(",")[1]))) {
-						if ((lat_check && lon_check)) {
-							var bounds = new OpenLayers.Bounds;
-							var lonLat = new OpenLayers.LonLat(lng, lat);
-							bounds.extend(lonLat);
-							ccpl_map.zoomToExtent(bounds);
-						} else {
-							var converted_lat = dmsToDegree(dms_regex.exec(lonlat.split(",")[0]));
-							var converted_lng = dmsToDegree(dms_regex.exec(lonlat.split(",")[1]));
-							var bounds = new OpenLayers.Bounds;
-							var lonLat = new OpenLayers.LonLat(converted_lng, converted_lat);
-							bounds.extend(lonLat);
-							ccpl_map.zoomToExtent(bounds);
-						}
-					} else {
-						alert("Please Enter Proper Lattitude,Longitude.");
-						$("#latLongSearch_lonlat").val("");
-					}
-				}
-			} else {
-				alert("Please Enter Lattitude,Longitude.");
-			}
+		this.zoomToLonLat = function(lat_long_string) {
+			var lat = +lat_long_string.split(",")[0], lng = +lat_long_string.split(",")[1];
+			var bounds = new OpenLayers.Bounds;
+			var lonLat = new OpenLayers.LonLat(lng, lat);
+			bounds.extend(lonLat);
+			ccpl_map.zoomToExtent(bounds);
 		}
 		this.goFullScreen= function() {
 			$("#content_div").hide();
@@ -454,477 +417,287 @@ function WhiteMapClass() {
 		Select empty value in the Select2 boxes, update filter_data variable and reset basic filters too.
 		 */
 		this.resetAdvanceFilter = function() {
-			//Select Empty value is select boxes
-			$("#advance_filter_technology").select2('val', '');
-			$("#advance_filter_vendor").select2('val', '');
-			$("#advance_filter_state").select2('val', '');
-			$("#advance_filter_city").select2('val', '');
-
-			//Trigger applyAdvanceFilter()
-			this.applyAdvanceFilter();
-
-			//Update filtered_data variable
-			filtered_data = markersDataArray;
-
-			//Trigger resetBasicFilter()
 			this.resetBasicFilter();
-		}	
+
+			wmAdvanceFilterClass.resetAdvanceFilter();
+			this.applyAdvanceFilter();
+		}
+
+		this.hideAdvanceFilter= function() {
+			wmAdvanceFilterClass.destroyAdvFilterHtml();
+		}
 		/*
 		This function is triggered when Apply Advance Filter is triggered.
 		Here, we check for the values selected in the Multibox and filter result according to it.
 		 */
+		var filteredFeatures = {markers: [], lines: [], sectors: []};
 		this.applyAdvanceFilter = function() {
-			filtered_data = [];
-			//Values
-			var technologyValue = $("#advance_filter_technology").val(), vendorValue = $("#advance_filter_vendor").val(), stateValue = $("#advance_filter_state").val(), cityValue = $("#advance_filter_city").val();
 
-			//If no value is selected, show All Markers
-			if ((technologyValue === "" || technologyValue === null) && (vendorValue === "" || vendorValue === null) && (stateValue === "" || stateValue === null) && (cityValue === "" || cityValue === null)) {
-				filtered_data = markersDataArray;
-				markersDataArray.map(function(marker) {
-					//show marker
-					global_this.showStationMarker(marker);
-				});
-			} else {
-				//Loop through bs station
-				stationsLoop: for (var i = 0; i < markersDataArray.length; i++) {
-					var markerData = markersDataArray[i];
-					//If technology value is present
-					if (technologyValue !== "" && technologyValue !== null && technologyValue.length) {
-						var goodThing = false;
-						var baseStationTechnology = markerData.sector_ss_technology;
-						//check if marker satisfies the technology condition
-						for (var j = 0; j < technologyValue.length; j++) {
-							if (technologyValue[j] && (baseStationTechnology.indexOf(technologyValue[j])) !== -1) {
-								goodThing = true;
-							}
-						}
-						//if does not
-						if (goodThing === false) {
-							//hide station marker
-							global_this.hideStationMarkers(markerData);
-							//continue loop
-							continue stationsLoop;
-						} else {
-							//else show station marker
-							global_this.showStationMarker(markerData);
-						}
-					}
+			filtered_data= [];
+			var appliedFilter = wmAdvanceFilterClass.applyAdvFilter();
+			filtered_data = appliedFilter.filtered_data;
 
-					//If vendor value is present
-					if (vendorValue !== "" && vendorValue !== null && vendorValue.length) {
-						var baseStationVendor = markerData.sector_ss_vendor;
-						var goodThing = false;
-						//check if marker satisfies the vendor condition
-						for (var j = 0; j < vendorValue.length; j++) {
-							if (vendorValue[j] && baseStationVendor.indexOf(vendorValue[j]) !== -1) {
-								goodThing = true;
-							}
-						}
-						//if does not
-						if (goodThing === false) {
-							//hide station marker
-							global_this.hideStationMarkers(markerData);
-							//continue loop
-							continue stationsLoop;
-						} else {
-							//else show station marker
-							global_this.showStationMarker(markerData);
-						}
-					}
+			this.markersVectorLayer.removeAllFeatures();
+			this.markersVectorLayer.addFeatures(appliedFilter.filtered_Features);
+			filteredFeatures.markers = appliedFilter.filtered_Features;
 
-					//If state value is present
-					if (stateValue !== "" && stateValue !== null && stateValue.length) {
-						var baseStationState = markerData.data.state;
-						var goodThing = false;
-						//check if marker satisfies the state condition
-						for (var j = 0; j < stateValue.length; j++) {
-							if (stateValue[j] && baseStationState === stateValue[j]) {
-								goodThing = true;
-							}
-						}
-						//if does not
-						if (goodThing === false) {
-							//hide station marker
-							global_this.hideStationMarkers(markerData);
-							//continue loop
-							continue stationsLoop;
-						} else {
-							//else show station marker
-							global_this.showStationMarker(markerData);
-						}
-					}
+			this.linesLayer.removeAllFeatures();
+			this.linesLayer.addFeatures(appliedFilter.line_Features);
+			filteredFeatures.lines = appliedFilter.line_Features;
 
-					//If state value is present
-					if (cityValue !== "" && cityValue !== null && cityValue.length) {
-						var baseStationCity = markerData.data.city;
-						var goodThing = false;
-						//check if marker satisfies the state condition
-						for (var j = 0; j < cityValue.length; j++) {
-							if (cityValue[j] && baseStationCity === cityValue[j]) {
-								goodThing = true;
-							}
-						}
-						//if does not
-						if (goodThing === false) {
-							//hide station marker
-							global_this.hideStationMarkers(markerData);
-							//continue loop
-							continue stationsLoop;
-						} else {
-							//else show station marker
-							global_this.showStationMarker(markerData);
-						}
-					}
-					//push data in filtered_data
-					filtered_data.push(markerData);
-				}
-			}
-			//reset search and basic filter.
-			global_this.resetAdvanceSearch();
-			global_this.resetBasicFilter();
+			this.sectorsLayer.removeAllFeatures();
+			this.sectorsLayer.addFeatures(appliedFilter.sector_Features);
+			filteredFeatures.sectors = appliedFilter.sector_Features;
+
+			this.resetBasicFilter();
+			wmAdvanceSearchClass.setMasterData(filtered_data);
+			
+			strategy.recluster();
 		}
+
 		/*
 		This function populates AdvanceFilter Multiselect dataItems
 		 */
-		this.populateAdvanceFilterDropdown = function() {
-			var options = { width: 'resolve' };
+		this.showAdvanceFilter = function() {
+			var advFilterData= [];
+			var technologyData = { 'element_type':'multiselect', 'field_type':'string', 'key':'technology', 'title':'Technology', 'values':[] };
 			//Loop through the technology for the devices
 			if (technology.length) {
 				for (var i = 0; i < technology.length; i++) {
 					//technology[i] is a valid value
 					if (technology[i]) {
-						//Append the option in dropdown
-						$("#advance_filter_technology").append('<option value="' + technology[i] + '">' + technology[i] + '</option>');
+						technologyData.values.push(technology[i]);
 					}
 				}
 			}
+			advFilterData.push(technologyData);
 
-			//Call select2 method to create multiselect
-			$("#advance_filter_technology").select2(options);
-
+			var vendorData = { 'element_type':'multiselect', 'field_type':'string', 'key':'vendor', 'title':'Vendor', 'values':[] };
 			//Loop through the vendor for the devices
 			if (vendor.length) {
 				for (var i = 0; i < vendor.length; i++) {
 					//vendor[i] is a valid value
 					if (vendor[i]) {
-						//Append the option in dropdown
-						$("#advance_filter_vendor").append('<option value="' + vendor[i] + '">' + vendor[i] + '</option>');
+						vendorData.values.push(vendor[i]);
 					}
 				}
 			}
+			advFilterData.push(vendorData);
 
-			//Call select2 method to create multiselect
-			$("#advance_filter_vendor").select2(options);
-
+			var cityData = { 'element_type':'multiselect', 'field_type':'string', 'key':'city', 'title':'City', 'values':[] };
 			//Loop through the city for the devices
 			if (city.length) {
 				for (var i = 0; i < city.length; i++) {
 					//city[i] is a valid value
 					if (city[i]) {
-						//Append the option in dropdown
-						$("#advance_filter_city").append('<option value="' + city[i] + '">' + city[i] + '</option>');
+						cityData.values.push(city[i]);
 					}
 				}
 			}
+			advFilterData.push(cityData);
 
-			//Call select2 method to create multiselect
-			$("#advance_filter_city").select2(options);
-
+			var stateData = { 'element_type':'multiselect', 'field_type':'string', 'key':'state', 'title':'State', 'values':[] }
 			//Loop through the state for the devices
 			if (state.length) {
 				for (var i = 0; i < state.length; i++) {
 					//state[i] is a valid value
 					if (state[i]) {
-						//Append the option in dropdown
-						$("#advance_filter_state").append('<option value="' + state[i] + '">' + state[i] + '</option>');
+						stateData.values.push(state[i]);
 					}
 				}
 			}
-
-			//Call select2 method to create multiselect
-			$("#advance_filter_state").select2(options);
+			advFilterData.push(stateData);
+			wmAdvanceFilterClass.prepareAdvFilterHtml(advFilterData);
 		}
 		/*
 		This function reset Advance Search
 		 */
 		var search_Markers = [];
 		this.resetAdvanceSearch = function() {
-			$("#advance_search_bs_name").select2('val', '');
-			$("#advance_search_ip").select2('val', '');
-			$("#advance_search_cktid").select2('val', '');
-			$("#advance_search_city").select2('val', '');
-			//hide search markers here
-			for(var i=0; i< search_Markers.length; i++) {
-				this.markersLayer.removeMarker(search_Markers[i]);
-				search_Markers[i].destroy();
-			}
+			wmAdvanceSearchClass.resetAdvanceSearch();			
+			//hide search markers here			
 		}
 		/*
 		This function applies Advance Search
 		 */
 		this.applyAdvanceSearch = function() {
-			var bs_name = "", ip = "", city = "", searchCktId = "";
-			var base_stations = [];
-
-			bs_name = $("#advance_search_bs_name").val();
-			ip = $("#advance_search_ip").val();
-			city = $("#advance_search_city").val();
-			searchCktId = $("#advance_search_cktid").val();
-
-			//If no value for advance search
-			if ((bs_name === "" || bs_name === null) && (ip === "" || ip === null) && (city === "" || city === null) && (searchCktId === "" || searchCktId === null)) {
-				//do nothing
-			} else {
-				stationsLoop: for (var i = 0; i < filtered_data.length; i++) {
-					var markerData = filtered_data[i];
-					var isValid = false;
-					var ipCondition;
-					var namePresent, cktIdPresent, cityPresent;
-					//If bs_name is present
-					if (bs_name !== "" && bs_name !== null && bs_name.length) {
-
-						//Check for Undefined value because of select2
-						if (bs_name.length === 1 && !bs_name[0]) {} else {
-							namePresent= true;
-							var goodThing = false;
-							var baseStationName = markerData.name;
-							//Check for bs_name
-							for (var j = 0; j < bs_name.length; j++) {
-								if (bs_name[j] && baseStationName === bs_name[j]) {
-									goodThing = true;
-								}
-							}
-							//If bs_name fails, continue stationsLoop
-							if (goodThing === false) {
-								continue stationsLoop;
-							}
-						}
-					}
-
-					//If ip is present
-					if (ip !== "" && ip !== null && ip.length) {
-						//Check for Undefined value because of select2
-						if (ip.length === 1 && !ip[0]) {} else {
-							var goodThing = false;
-							var baseStationIps = markerData.sector_configured_on_devices;
-							//Check for ip name
-							for (var j = 0; j < ip.length; j++) {
-								if (ip[j] && baseStationIps.indexOf(ip[j]) !== -1) {
-									ipCondition= true;
-									goodThing = true;
-								}
-								for(var z=0; z< markerData.data.param.sector.length; z++) {
-									var sector= markerData.data.param.sector[z];
-									for(var y=0; y< sector.sub_station.length; y++) {
-										var sub_station = sector.sub_station[y];
-										if(sub_station.data.param.sub_station[0].value == ip[j]) {
-											base_stations.push(sub_station);
-											if(ipCondition === undefined) {
-												ipCondition = false;
-												goodThing= true;
-											}
-										}
-									}
-								}
-							}
-							//If ip fails, continue stationsLoop
-							if (goodThing === false) {
-								continue stationsLoop;
-							}
-						}
-					}
-
-					//If searchCktId is present
-					if (searchCktId !== "" && searchCktId !== null && searchCktId.length) {
-						//Check for Undefined value because of select2
-						if (searchCktId.length === 1 && !searchCktId[0]) {} else {
-							cktIdPresent= true;
-							var goodThing = false;
-							var baseStationCktId = markerData.circuit_ids;
-							//Check for searchCktId name
-							for (var j = 0; j < searchCktId.length; j++) {
-								if (searchCktId[j] && baseStationCktId.indexOf(searchCktId[j]) !== -1) {
-									for(var z=0; z< markerData.data.param.sector.length; z++) {
-										var sector= markerData.data.param.sector[z];
-										for(var y=0; y< sector.sub_station.length; y++) {
-											var sub_station = sector.sub_station[y];
-											if(sub_station.data.param.sub_station[3].value === searchCktId[j]) {
-												base_stations.push(sub_station);
-											}
-										}
-									}
-									goodThing = true;
-								}
-							}
-							//If searchCktId fails, continue stationsLoop
-							if (goodThing === false) {
-								continue stationsLoop;
-							}
-						}
-					}
-
-					//If city is present
-					if (city !== "" && city !== null && city.length) {
-						//Check for Undefined value because of select2
-						if (city.length === 1 && !city[0]) {} else {
-							cityPresent = true;
-							var goodThing = false;
-							var baseStationCity = markerData.data.city;
-							//Check for city value
-							for (var j = 0; j < city.length; j++) {
-								if (city[j] && baseStationCity === city[j]) {
-									goodThing = true;
-								}
-							}
-							//If city failes, continue stationsLoop
-							if (goodThing === false) {
-								continue stationsLoop;
-							}
-						}
-					}
-					if((ipCondition=== undefined && ipCondition !== false) || (cityPresent || cktIdPresent || namePresent)) {
-						base_stations.push(markerData);
-					}
-				}
-
-				if (base_stations.length) {
-					var bounds = new OpenLayers.Bounds();
-					for (var i = 0; i < base_stations.length; i++) {
-
-						var marker = global_this.createOpenLayerMarker(new OpenLayers.Size(21, 25), 'http://mapicons.nicolasmollet.com/wp-content/uploads/mapicons/shape-default/color-c03638/shapecolor-color/shadow-1/border-dark/symbolstyle-white/symbolshadowstyle-dark/gradient-no/pirates.png', base_stations[i].data.lon, base_stations[i].data.lat, {});
-						// this.markersLayer.addMarker(marker);
-						search_Markers.push(marker);
-						bounds.extend(new OpenLayers.LonLat(base_stations[i].data.lon, base_stations[i].data.lat));
-					}
-					ccpl_map.zoomToExtent(bounds);
-				} else {
-					alert("NO RESULT FOUND");
-				}
-			}
+			wmAdvanceSearchClass.applyAdvanceSearch();
 		}
 		/*
 		This function populate Advance Search Dropdowns
 		 */
-		this.populateAdvanceSearchDropdowns = function() {
-			var options = { width: 'resolve' };
-
+		this.showAdvanceSearch = function() {
+			var advSearchData= [];
+			var bsNameData = { 'element_type':'multiselect', 'field_type':'string', 'key':'name', 'title':'Bs Name', 'values':[] };
 			//Loop through the technology for the devices
 			if (bs_name.length) {
 				for (var i = 0; i < bs_name.length; i++) {
+					//bs_name[i] is a valid value
 					if (bs_name[i]) {
-						$("#advance_search_bs_name").append('<option value="' + bs_name[i] + '">' + bs_name[i] + '</option>');
+						bsNameData.values.push(bs_name[i]);
 					}
 				}
 			}
+			advSearchData.push(bsNameData);
 
-			$("#advance_search_bs_name").select2(options);
-
+			var ipData = { 'element_type':'multiselect', 'field_type':'string', 'key':'ip', 'title':'IP', 'values':[] };
+			//Loop through the vendor for the devices
 			if (ip.length) {
 				for (var i = 0; i < ip.length; i++) {
+					//ip[i] is a valid value
 					if (ip[i]) {
-						$("#advance_search_ip").append('<option value="' + ip[i] + '">' + ip[i] + '</option>');
+						ipData.values.push(ip[i]);
 					}
 				}
 			}
+			advSearchData.push(ipData);
 
-			$("#advance_search_ip").select2(options);
-
+			var cktIdData = { 'element_type':'multiselect', 'field_type':'string', 'key':'cktId', 'title':'Circuit ID', 'values':[] };
+			//Loop through the cktId for the devices
 			if (cktId.length) {
 				for (var i = 0; i < cktId.length; i++) {
+					//cktId[i] is a valid value
 					if (cktId[i]) {
-						$("#advance_search_cktid").append('<option value="' + cktId[i] + '">' + cktId[i] + '</option>');
+						cktIdData.values.push(cktId[i]);
 					}
 				}
 			}
+			advSearchData.push(cktIdData);
 
-			$("#advance_search_cktid").select2(options);
-
+			var cityData = { 'element_type':'multiselect', 'field_type':'string', 'key':'city', 'title':'City', 'values':[] }
+			//Loop through the city for the devices
 			if (city.length) {
 				for (var i = 0; i < city.length; i++) {
+					//city[i] is a valid value
 					if (city[i]) {
-						$("#advance_search_city").append('<option value="' + city[i] + '">' + city[i] + '</option>');
+						cityData.values.push(city[i]);
 					}
 				}
 			}
+			advSearchData.push(cityData);
+			wmAdvanceSearchClass.prepareAdvSearchHtml(advSearchData);
+		}
 
-			$("#advance_search_city").select2(options);
+		this.hideAdvanceSearch = function() {
+			wmAdvanceSearchClass.destroyAdvSearchHtml();
 		}
 		/*
 		This function applies Basic Filter
 		 */
-		var markersToShow= [];
 		this.applyBasicFilter = function() {
 			var technologyValue = $("#technology").val();
 			// global_this.markersVectorLayer.strategies[0].deactivate();
 			var vendorValue = $("#vendor").val();
 			var stateValue = $("#state").val();
 			var cityValue = $("#city").val();
-			markersToHide= [];
-			markersToShow= [];
+			var markerDataShowing = [];
+			var markersToShow= [], linesToShow= [], sectorsToShow= [];
+
 			stationsLoop: for (var i = 0; i < filtered_data.length; i++) {
 				var markerData = filtered_data[i];
 				var bsMarker = bsMarkerObj[markerData.name];
 				if (true) {
 					if (technologyValue === "" && vendorValue === "" && stateValue === "" && cityValue === "") {
-						markersToShow.push(bsMarkerObj[markerData.name]);
+						console.log('lol');
+						markerDataShowing = filtered_data;
+						markersToShow = filteredFeatures.markers;
+						linesToShow = filteredFeatures.lines;
+						sectorsToShow = filteredFeatures.sectors;
+						break stationsLoop;
 					} else {
 						if (technologyValue !== "") {
 							var baseStationTechnology = markerData.sector_ss_technology;
-							baseStationTechnology= $.trim(baseStationTechnology.toLowerCase());
-							technologyValue = $.trim(technologyValue.toLowerCase());
-							if(baseStationTechnology.indexOf(technologyValue) !== -1) {
-								global_this.showStationMarker(markerData);
+							if(baseStationTechnology) {
+								baseStationTechnology= $.trim(baseStationTechnology.toLowerCase());
+								technologyValue = $.trim(technologyValue.toLowerCase());
+								if(baseStationTechnology.indexOf(technologyValue) === -1) {
+									continue stationsLoop;
+								}
 							} else {
-								markersToHide.push(markerData);
-								// global_this.hideStationMarkers(markerData);
 								continue stationsLoop;
 							}
 						}
 
 						if (vendorValue !== "") {
 							var baseStationVendor = markerData.sector_ss_vendor;
-							baseStationVendor= $.trim(baseStationVendor.toLowerCase());
-							vendorValue = $.trim(vendorValue.toLowerCase());
-							if (vendorValue === baseStationVendor) {
-								global_this.showStationMarker(markerData);
+							if(baseStationVendor) {
+								baseStationVendor= $.trim(baseStationVendor.toLowerCase());
+								vendorValue = $.trim(vendorValue.toLowerCase());
+								if (vendorValue !== baseStationVendor) {
+									continue stationsLoop;
+								}
 							} else {
-								markersToHide.push(markerData);
-								// global_this.hideStationMarkers(markerData);
 								continue stationsLoop;
 							}
 						}
 
 						if (stateValue !== "") {
 							var baseStationState = markerData.data.state;
-							baseStationState= $.trim(baseStationState.toLowerCase());
-							stateValue = $.trim(stateValue.toLowerCase());
-							if (baseStationState === stateValue) {
-								global_this.showStationMarker(markerData);
+							if(baseStationState) {
+								baseStationState= $.trim(baseStationState.toLowerCase());
+								stateValue = $.trim(stateValue.toLowerCase());
+								if (baseStationState !== stateValue) {
+									continue stationsLoop;
+								}
 							} else {
-								markersToHide.push(markerData);
-								// global_this.hideStationMarkers(markerData);
 								continue stationsLoop;
 							}
 						}
 
 						if (cityValue !== "") {
 							var baseStationCity = markerData.data.city;
-							baseStationCity= $.trim(baseStationCity.toLowerCase());
-							cityValue = $.trim(cityValue.toLowerCase());
-							if (baseStationCity === cityValue) {
-								global_this.showStationMarker(markerData);
+							if(baseStationCity) {
+								console.log(baseStationCity, cityValue);
+								baseStationCity= $.trim(baseStationCity.toLowerCase());
+								cityValue = $.trim(cityValue.toLowerCase());
+								if (baseStationCity !== cityValue) {
+									continue stationsLoop;
+								}
 							} else {
-								markersToHide.push(markerData);
-								// global_this.hideStationMarkers(markerData);
+								continue stationsLoop;
 							}
 						}
+
+						markerDataShowing.push(markerData);
+
 						markersToShow.push(bsMarkerObj[markerData.name]);
+						var bsSubStationsMarkers = ssMarkerObj[markerData.name];
+						if(bsSubStationsMarkers && bsSubStationsMarkers.length) {
+							for(var j=0; j< bsSubStationsMarkers.length; j++) {
+								markersToShow.push(bsSubStationsMarkers[j]);
+							}
+						}
+
+						var lines = cktLinesBsObj[markerData.name];
+
+						if(lines && lines.length) {
+							for(var j=0; j< lines.length; j++) {
+								linesToShow.push(lines[j]);
+							}
+						}
+						
+						var sectors = cktLinesBsObj[markerData.name];
+						if(sectors && sectors.length) {
+							for(var j=0; j< sectors.length; j++) {
+								sectorsToShow.push(sectors[j]);
+							}
+							
+						}
 					}
 				}
 			}
+
 			global_this.markersVectorLayer.removeAllFeatures();
 			global_this.markersVectorLayer.addFeatures(markersToShow);
+
+			global_this.linesLayer.removeAllFeatures();
+			global_this.linesLayer.addFeatures(linesToShow);
+
+			global_this.sectorsLayer.removeAllFeatures();
+			global_this.sectorsLayer.addFeatures(sectorsToShow);
+
+			wmAdvanceSearchClass.setMasterData(markerDataShowing);
+
 			strategy.recluster();
 		}
 
@@ -962,10 +735,11 @@ function WhiteMapClass() {
 			}
 		}
 		this.resetBasicFilter = function() {
-			$("#basic_filter_technology").val('');
-			$("#basic_filter_vendor").val('');
-			$("#basic_filter_state").val('');
-			$("#basic_filter_city").val('');
+			$("#technology").val('');
+			$("#vendor").val('');
+			$("#state").val('');
+			$("#city").val('');
+
 			this.applyBasicFilter();
 		}
 	/**
@@ -1111,6 +885,10 @@ function WhiteMapClass() {
 				bsMarkerObj[name] = marker;
 				//push marker in markerArray
 				markerArray.push(marker);
+
+				masterStationsArray.push(marker);
+
+				filteredFeatures.markers.push(marker);
 				
 				//base station devices loop
 				var total_angle = 360;
@@ -1191,6 +969,10 @@ function WhiteMapClass() {
 						markerArray.push(sub_station_marker);
 
 						markerVectors.push(sub_station_marker);
+
+						masterStationsArray.push(sub_station_marker);
+
+						filteredFeatures.markers.push(sub_station_marker);
 						//Add marker to MarkerLayer
 						// global_this.markersLayer.addMarker(sub_station_marker);
 
@@ -1199,6 +981,13 @@ function WhiteMapClass() {
 							subStationMarkerObj[device.device_info[0].value] = [];
 						}
 						subStationMarkerObj[device.device_info[0].value].push(sub_station_marker);
+
+						if (!ssMarkerObj[name]) {
+							ssMarkerObj[name] = [];
+						}
+						ssMarkerObj[name].push(sub_station_marker);
+						
+// var filteredFeatures = {markers: [], lines: [], sectors: []};
 
 						if (device.technology.toLowerCase() !== "p2p" && device.technology.toLowerCase() != "ptp") {
 							getSectorPointsArray(lat, lon, device.radius, device.azimuth_angle, device.beam_width, device.orientation, function(sectorsPointArray) {
@@ -1226,7 +1015,15 @@ function WhiteMapClass() {
 										sectorsObj[device.device_info[0].value] = [];
 									}
 									sectorsObj[device.device_info[0].value].push(sector);
+
+									if (!sectorsBsObj[name]) {
+										sectorsBsObj[name] = [];
+									}
+									sectorsBsObj[name].push(sector);
+									filteredFeatures.sectors.push(sector);
 								});
+
+								
 
 								var lineAdditionalInfo = {
 									bsname: name,
@@ -1239,7 +1036,7 @@ function WhiteMapClass() {
 								var halfPt = Math.floor(sectorsPointArray.length / (+2));
 
 								var line = global_this.drawLine(sectorsPointArray[halfPt].lon, sectorsPointArray[halfPt].lat, sub_station_lon, sub_station_lat, device.color, lineAdditionalInfo);
-
+								line.style.display= 'none';
 								global_this.linesLayer.addFeatures([line]);
 
 								//Store CktID in an Object for later use.
@@ -1247,6 +1044,12 @@ function WhiteMapClass() {
 									cktLinesObj[device.device_info[0].value] = [];
 								}
 								cktLinesObj[device.device_info[0].value].push(line);
+
+								if (!cktLinesBsObj[name]) {
+									cktLinesBsObj[name] = [];
+								}
+								cktLinesBsObj[name].push(line);
+								filteredFeatures.lines.push(line);
 							});
 						} else {
 							var lineAdditionalInfo = {
@@ -1265,14 +1068,22 @@ function WhiteMapClass() {
 							}
 							//Draw line between BS and SS
 							var line = global_this.drawLine(lon, lat, sub_station_lon, sub_station_lat, device.color, lineAdditionalInfo);
+							line.style.display= 'none';
 							//Add line to the LinesLayer
 							global_this.linesLayer.addFeatures([line]);
+							filteredFeatures.lines.push(line);
+
 
 							//Store CktID in an Object for later use.
 							if (!cktLinesObj[device.device_info[0].value]) {
 								cktLinesObj[device.device_info[0].value] = [];
 							}
 							cktLinesObj[device.device_info[0].value].push(line);
+
+							if (!cktLinesBsObj[name]) {
+								cktLinesBsObj[name] = [];
+							}
+							cktLinesBsObj[name].push(line);
 						}
 					}
 				}
@@ -1317,9 +1128,14 @@ function WhiteMapClass() {
 									global_this.markersVectorLayer.addFeatures(markerVectors);
 									strategy.activate();
 
+
+
+									wmAdvanceFilterClass = new WmAdvanceFilter(markersDataArray, bsMarkerObj, ssMarkerObj, masterStationsArray, cktLinesBsObj, sectorsBsObj);
+									wmAdvanceSearchClass = new WmAdvanceSearch(markersDataArray);
+
 									global_this.populateBasicFilterDropdowns();
-									global_this.populateAdvanceSearchDropdowns();
-									global_this.populateAdvanceFilterDropdown();
+									// global_this.populateAdvanceSearchDropdowns();
+									// global_this.populateAdvanceFilterDropdown();
 									return;
 								}
 

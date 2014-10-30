@@ -637,3 +637,137 @@ OpenLayers.Strategy.Cluster = OpenLayers.Class(OpenLayers.Strategy, {
 });
 
 
+function createAdvanceFilterHtml(formEl) {
+    var templateData= "", formElements= "";
+    var elementsArray = [];
+    templateData += '<div class="iframe-container"><div class="content-container"><div id="whiteMapAdvanceFilter" class="advanceFiltersContainer">';
+    templateData += '<form id="white_map_filter_form"><div class="form-group form-horizontal">';
+    for(var i=0;i<formEl.length;i++) {
+        if(formEl[i] != null) {
+            formElements += '<div class="form-group"><label for="'+formEl[i].key+'" class="col-sm-4 control-label">';
+            formElements += formEl[i].title;
+            formElements += '</label><div class="col-sm-8">';
+
+            var currentKey = $.trim(formEl[i].key);
+            var elementType = $.trim(formEl[i].element_type);
+
+            /*Check Element Type*/
+            if(elementType == "multiselect") {
+
+                var filterValues = formEl[i].values;
+                if(filterValues.length > 0) {
+                    formElements += '<select multiple class="multiSelectBox col-md-12" id="filter_'+formEl[i].key+'">';
+                    for(var j=0;j<filterValues.length;j++) {
+                        formElements += '<option value="'+filterValues[j]+'">'+filterValues[j]+'</option>';
+                    }
+                    formElements += '</select>';
+                } else {
+                    formElements += '<input type="text" id="filter_'+formEl[i].key+'" name="'+formEl[i].key+'"  class="form-control"/>';
+                }
+            }
+            formElements += '</div></div>';
+            elementsArray.push(formElements);
+            formElements = "";
+        }
+    }
+    templateData += elementsArray.join('');
+    templateData += '<div class="clearfix"></div></div><div class="clearfix"></div></form>';
+    templateData += '<div class="clearfix"></div></div></div><iframe class="iframeshim" frameborder="0" scrolling="no"></iframe></div><div class="clearfix"></div>';
+
+    $("#advFilterFormContainer").html(templateData);
+
+    if($("#advFilterContainerBlock").hasClass("hide")) {
+        $("#advFilterContainerBlock").removeClass("hide");
+    }
+
+    /*Initialize the select2*/
+    $(".advanceFiltersContainer select").select2();
+}
+
+function createAdvanceSearchHtml(formEl) {
+    var templateData= "", formElements= "";
+    var elementsArray = [];
+    templateData += '<div class="iframe-container"><div class="content-container"><div id="whiteMapAdvanceSearch" class="advanceSearchContainer">';
+    templateData += '<form id="white_map_search_form"><div class="form-group form-horizontal">';
+    for(var i=0;i<formEl.length;i++) {
+        if(formEl[i] != null) {
+            formElements += '<div class="form-group"><label for="'+formEl[i].key+'" class="col-sm-4 control-label">';
+            formElements += formEl[i].title;
+            formElements += '</label><div class="col-sm-8">';
+
+            var currentKey = $.trim(formEl[i].key);
+            var elementType = $.trim(formEl[i].element_type);
+
+            /*Check Element Type*/
+            if(elementType == "multiselect") {
+
+                var filterValues = formEl[i].values;
+                if(filterValues.length > 0) {
+                    formElements += '<select multiple class="multiSelectBox col-md-12" id="search_'+formEl[i].key+'">';
+                    for(var j=0;j<filterValues.length;j++) {
+                        formElements += '<option value="'+filterValues[j]+'">'+filterValues[j]+'</option>';
+                    }
+                    formElements += '</select>';
+                } else {
+                    formElements += '<input type="text" id="search_'+formEl[i].key+'" name="'+formEl[i].key+'"  class="form-control"/>';
+                }
+            }
+            formElements += '</div></div>';
+            elementsArray.push(formElements);
+            formElements = "";
+        }
+    }
+    templateData += elementsArray.join('');
+    templateData += '<div class="clearfix"></div></div><div class="clearfix"></div></form>';
+    templateData += '<div class="clearfix"></div></div></div><iframe class="iframeshim" frameborder="0" scrolling="no"></iframe></div><div class="clearfix"></div>';
+
+    $("#advSearchFormContainer").html(templateData);
+
+    if($("#advSearchContainerBlock").hasClass("hide")) {
+        $("#advSearchContainerBlock").removeClass("hide");
+    }
+
+    /*Initialize the select2*/
+    $(".advanceSearchContainer select").select2();
+}
+
+/**
+ * This event triggers keypress event on lat,lon search text box
+ */
+function isLatLon(e) {
+
+    var entered_key_code = (e.keyCode ? e.keyCode : e.which),
+        entered_txt = $("#lat_lon_search").val();
+
+    if(entered_key_code == 13) {
+        if(entered_txt.length > 0) {
+            if(entered_txt.split(",").length != 2) {
+                alert("Please Enter Proper Lattitude,Longitude.");
+                $("#lat_lon_search").val("");
+            } else {
+                
+                var lat = +(entered_txt.split(",")[0]),
+                    lng = +(entered_txt.split(",")[1]),
+                    lat_check = (lat >= -90 && lat < 90),
+                    lon_check = (lng >= -180 && lng < 180),
+                    dms_pattern = /^(-?\d+(?:\.\d+)?)[°:d]?\s?(?:(\d+(?:\.\d+)?)['′:]?\s?(?:(\d+(?:\.\d+)?)["″]?)?)?\s?([NSEW])?/i;
+                    dms_regex = new RegExp(dms_pattern);
+                
+                if((lat_check && lon_check) || (dms_regex.exec(entered_txt.split(",")[0]) && dms_regex.exec(entered_txt.split(",")[1]))) {
+                    if((lat_check && lon_check)) {
+                        whiteMapClass.zoomToLonLat(entered_txt);
+                    } else {
+                        var converted_lat = dmsToDegree(dms_regex.exec(entered_txt.split(",")[0]));
+                        var converted_lng = dmsToDegree(dms_regex.exec(entered_txt.split(",")[1]));
+                        whiteMapClass.zoomToLonLat(converted_lat+","+converted_lng);
+                    }
+                } else {
+                    alert("Please Enter Proper Lattitude,Longitude.");
+                    $("#lat_lon_search").val("");
+                }                
+            }                
+        } else {
+            alert("Please Enter Lattitude,Longitude.");
+        }
+    }
+}
