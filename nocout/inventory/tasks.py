@@ -2072,7 +2072,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
 
                 # antenna alias
                 alias = '{}_NE'.format(circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
-                
+
                 # sector antenna data
                 sector_antenna_data = {
                     'antenna_name': name,
@@ -2100,7 +2100,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
 
                 # antenna alias
                 alias = '{}'.format(circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
-                
+
                 # sub station antenna data
                 substation_antenna_data = {
                     'antenna_name': name,
@@ -2965,7 +2965,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
 
                 # antenna alias
                 alias = circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else ""
-                
+
                 # sub station antenna data
                 substation_antenna_data = {
                     'antenna_name': name,
@@ -3669,7 +3669,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
                 # antenna alias
                 alias = '{}'.format(circuit_id_sanitizer(row['Sector ID']) if 'Sector ID' in row.keys() else "")
-                
+
                 # sector antenna data
                 sector_antenna_data = {
                     'antenna_name': name,
@@ -4201,7 +4201,6 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
         device_latest_id = max(id_list)
     except Exception as e:
         logger.info("No device is added in database till now. Exception: ", e.message)
-
     try:
         for row in complete_d:
             # increment device latest id by 1
@@ -4689,16 +4688,19 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                 alias = ""
 
                 # sector name
-                name = '{}_{}'.format(special_chars_name_sanitizer_with_lower_case(row['Sector ID']) if 'Sector ID' in row.keys() else "",
-                                      row['Sector Name'] if 'Sector Name' in row.keys() else "")
+                name = '{}_{}_{}'.format(
+                    special_chars_name_sanitizer_with_lower_case(row['Sector ID']) if 'Sector ID' in row.keys() else "",
+                    row['Sector Name'] if 'Sector Name' in row.keys() else "",
+                    row['PMP'] if 'PMP' in row.keys() else "")
 
                 # sector alias
-                alias = '{}'.format(circuit_id_sanitizer(row['Sector ID']) if 'Sector ID' in row.keys() else "")
+                alias = '{}'.format(row['Sector ID'].strip() if 'Sector ID' in row.keys() else "")
 
                 # sector data
                 sector_data = {
                     'name': name,
                     'alias': alias,
+                    'sector_id': row['Sector ID'].strip() if 'Sector ID' in row.keys() else "",
                     'base_station': basestation,
                     'bs_technology': 4,
                     'sector_configured_on': base_station,
@@ -4981,9 +4983,8 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
             sector = ""
 
             try:
-                ss_bs_ip = ip_sanitizer(row['AP IP'] if 'AP IP' in row else "")
-                sector_configured_on_device = Device.objects.get(ip_address=ss_bs_ip)
-                sector = Sector.objects.get(sector_configured_on=sector_configured_on_device)
+                sector_id = row['Sector ID'].strip() if 'Sector ID' in row.keys() else ""
+                sector = Sector.objects.get(sector_id=sector_id)
             except Exception as e:
                 logger.info(e.message)
 
@@ -7510,6 +7511,7 @@ def ip_sanitizer(name):
             name = ""
     else:
         name = ""
+
     return name
 
 
@@ -7548,7 +7550,7 @@ def sanitize_mac_address(mac=None):
     return mac
 
 
-def get_machine_details(machine_name, machine_numbers=None):
+def get_machine_details(mc_name, machine_numbers=None):
     """ Send dictionary containing information of requested machines
 
     Args:
@@ -7586,17 +7588,17 @@ def get_machine_details(machine_name, machine_numbers=None):
     # machine info dictionary
     machines_dict = dict()
 
-    if machine_name and machine_numbers:
+    if mc_name and machine_numbers:
         for machine_number in machine_numbers:
             # machine name
-            mc_name = str(machine_name) + str(machine_number)
+            machine_name = str(mc_name) + str(machine_number)
 
             machines_dict[machine_name] = list()
 
             # get machine
             machine = ""
             try:
-                machine = Machine.objects.get(name=mc_name)
+                machine = Machine.objects.get(name=machine_name)
             except Exception as e:
                 logger.info("Machine doesn't exist.:", e.message)
 
@@ -7616,12 +7618,13 @@ def get_machine_details(machine_name, machine_numbers=None):
                     machines_dict[machine_name].append(site_dict)
             else:
                 machines_dict[machine_name] = {}
+            machine_name = ""
 
         return machines_dict
 
-    elif machine_name and not machine_numbers:
+    elif mc_name and not machine_numbers:
         # machine name
-        machine_name = str(machine_name)
+        machine_name = str(mc_name)
 
         machines_dict[machine_name] = list()
 
@@ -7673,7 +7676,10 @@ def get_machine_and_site(machines_dict):
 
     if machines_dict:
         for machine, sites in machines_dict.iteritems():
-            current_machine = machine
+            try:
+                current_machine = machine
+            except Exception as e:
+                logger.info("PMP/Wimax machine. Exception: ", e.message)
             try:
                 current_machine = Machine.objects.get(name=machine)
                 for site in sites:
@@ -7682,6 +7688,7 @@ def get_machine_and_site(machines_dict):
                             current_site = SiteInstance.objects.get(name=name)
                             return {'machine': current_machine, 'site': current_site}
             except Exception as e:
+                logger.info("******************** M/C Exception: ", e.message)
                 return ""
 
 
