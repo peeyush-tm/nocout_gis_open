@@ -12,8 +12,10 @@ from inventory.models import ThematicSettings, UserThematicSettings
 @receiver(post_save, sender=UserProfile)
 def auto_assign_thematic(sender, **kwargs):
 	try:
-		thematicSetting = ThematicSettings.objects.filter(name__contains='RSSI')[0]
-		m=UserThematicSettings(thematic_template=thematicSetting, user_profile=kwargs.get('instance'))
-		m.save()
+		thematicSetting = ThematicSettings.objects.filter(name__icontains='RSSI')
+		if len(thematicSetting):
+			to_assign = thematicSetting[0]
+			m=UserThematicSettings(thematic_template=to_assign, user_profile=kwargs.get('instance'))
+			m.save()
 	except:
 		pass
