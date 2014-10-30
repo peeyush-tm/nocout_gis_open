@@ -22,30 +22,6 @@ SS mac information is sent to device application
 #
 # Output: service state and plugin output
 # #####################################################################
-
-
-def mysql_conn():
-        db = mysql.connector.connect(
-                        user='root',
-                        host='10.133.12.163',
-                        password='root',
-                        database='nocout_24_09_14',
-                        port=3200)
-
-        return db
-
-
-def extract_host_from_cambium_topology(ss_host_mac):
-        query = """
-        select device_name,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        db = mysql_conn()
-        cur = db.cursor()
-        cur.execute(query)
-        data = cur.fetchall()
-        cur.close()
-
-        return data
-
 def get_from_socket(socket_ip,socket_port, query):
     """
     Function_name : get_from_socket (collect the query data from the socket)
@@ -95,14 +71,15 @@ def live_query_reg_count(mac):
                                 ss_params = filter(lambda x: '/' in x,plugin_output)
                                 ss_matched_params = filter(lambda x: mac in x,ss_params)
                                 reg_count= map(lambda x: x.split('/')[4],ss_matched_params)
-                                reg_count= int(reg_count[0])
+				if ((reg_count != 'None') and (reg_count != None)):
+                                	reg_count= int(reg_count[0])
         except:
 		reg_count= None	
 	return reg_count	
 
 
 
-def check_cambium_ss_mac_invent(item, params, info):
+def check_cambium_reg_count(item, params, info):
     """
                 check_cambium_ss_mac_invent function calculates the mac of ss
 
@@ -156,6 +133,7 @@ def check_cambium_ss_mac_invent(item, params, info):
 check_info["cambium_reg_count"] = {
     'check_function': check_cambium_reg_count,
     'service_description': 'cambium_reg_count',
+    'has_perfdata': True,
 }
 
 #################################################################

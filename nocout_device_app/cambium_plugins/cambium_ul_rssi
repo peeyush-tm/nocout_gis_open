@@ -23,29 +23,6 @@ SS mac information is sent to device application
 # Output: service state and plugin output
 # #####################################################################
 
-
-def mysql_conn():
-        db = mysql.connector.connect(
-                        user='root',
-                        host='10.133.12.163',
-                        password='root',
-                        database='nocout_24_09_14',
-                        port=3200)
-
-        return db
-
-
-def extract_host_from_cambium_topology(ss_host_mac):
-        query = """
-        select device_name,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        db = mysql_conn()
-        cur = db.cursor()
-        cur.execute(query)
-        data = cur.fetchall()
-        cur.close()
-
-        return data
-
 def get_from_socket(socket_ip,socket_port, query):
     """
     Function_name : get_from_socket (collect the query data from the socket)
@@ -94,14 +71,16 @@ def live_query_ul_rssi(mac):
                                 ss_params = filter(lambda x: '/' in x,plugin_output)
                                 ss_matched_params = filter(lambda x: mac in x,ss_params)
                                 ul_rssi= map(lambda x: x.split('/')[2],ss_matched_params)
-                                ul_rssi= int(ul_rssi[0])
+				if ((ul_rssi != 'None') and (ul_rssi != None)):
+                                	ul_rssi= int(ul_rssi[0])
+					
         except:
 		ul_rssi= None	
 	return ul_rssi	
 
 
 
-def check_cambium_ss_mac_invent(item, params, info):
+def check_cambium_ul_rssi(item, params, info):
     """
                 check_cambium_ss_mac_invent function calculates the mac of ss
 
@@ -144,7 +123,7 @@ def check_cambium_ss_mac_invent(item, params, info):
 					state = 1
 				else:
 					state = 0
-	infotext = "Device uplink signal strength indication is %s " % ul_rssi
+	infotext = "Device uplink signal strength indication is %s " % ss_mac
     except ValueError:
         infotext = "type_mismatch_value"
     except:
@@ -155,6 +134,7 @@ def check_cambium_ss_mac_invent(item, params, info):
 check_info["cambium_ul_rssi"] = {
     'check_function': check_cambium_ul_rssi,
     'service_description': 'cambium_ul_rssi',
+    'has_perfdata': True,
 }
 
 #################################################################

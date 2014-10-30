@@ -6,6 +6,11 @@ import socket
 import json
 import os
 import mysql.connector
+try:
+    import nocout_settings
+    from nocout_settings import _DATABASES, _LIVESTATUS
+except Exception as exp:
+    print exp
 """
 service on SS,which calculates the ss mac.
 
@@ -25,13 +30,17 @@ SS mac information is sent to device application
 
 
 def mysql_conn():
-        db = mysql.connector.connect(
-                        user='root',
-                        host='10.133.12.163',
-                        password='root',
-                        database='nocout_24_09_14',
-                        port=3200)
-
+        db = None
+        try:
+            db = mysql.connector.connect(
+			user=_DATABASES['user'],
+                        host=_DATABASES['host'],
+                        password=_DATABASES['password'],
+                        database=_DATABASES['database'],
+                        port=_DATABASES['port']
+                        )
+        except Exception as exp:
+            print exp
         return db
 
 
@@ -95,14 +104,15 @@ def live_query_rereg_count(mac):
                                 ss_params = filter(lambda x: '/' in x,plugin_output)
                                 ss_matched_params = filter(lambda x: mac in x,ss_params)
                                 rereg_count= map(lambda x: x.split('/')[5],ss_matched_params)
-                                rereg_count= int(rereg_count[0])
+				if ((rereg_count != 'None') and (rereg_count != None)):
+                                	rereg_count= int(rereg_count[0])
         except:
 		rereg_count= None	
 	return rereg_count	
 
 
 
-def check_cambium_ss_mac_invent(item, params, info):
+def check_cambium_rereg_count(item, params, info):
     """
                 check_cambium_ss_mac_invent function calculates the mac of ss
 
@@ -156,6 +166,7 @@ def check_cambium_ss_mac_invent(item, params, info):
 check_info["cambium_rereg_count"] = {
     'check_function': check_cambium_rereg_count,
     'service_description': 'cambium_rereg_count',
+    'has_perfdata': True,
 }
 
 #################################################################

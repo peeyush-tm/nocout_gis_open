@@ -47,13 +47,6 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 	ds_index =None
 	file_paths = []
 	temp_dict = {}
-	interface_oriented_services = [
-			'cambium_ul_rssi',
-			'cambium_ul_jitter',
-			'cambium_reg_count',
-			'cambium_rereg_count',
-			'cambium_ss_connected_bs_ip_invent'
-			]
 	data_dict = {
 		"host": str(host),
 		"service": None,
@@ -88,11 +81,6 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 			xml_file_list.append(perf_file)
 	# Extracts the services data for each host from rrdtool
 	for xml_file in xml_file_list:
-                replaced_host = str(host)
-                replaced_ip = str(ip)
-		data_dict.update({'host':replaced_host,'ip_address':replaced_ip})
-		status_dict.update({'host':replaced_host,'ip_address':replaced_ip})
-		interface = None
 		try:
 			tree = ET.parse(_folder + xml_file)
 			root = tree.getroot()
@@ -105,24 +93,15 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 			data_dict['service'] = 'ping'
 			status_dict['service'] = 'ping'
 			serv_disc = 'ping'
-			service_for_livestatus = serv_disc 
 		else:
-			if serv_disc[:-18] in interface_oriented_services:
-				data_dict['service'] = serv_disc[:-18]
-                        	interface = serv_disc[-17:]
-                                interface = interface.replace('_', ':')
-				service_for_livestatus = root.find("NAGIOS_DISP_SERVICEDESC").text.strip()
-                        	status_dict['service'] = serv_disc[:-18]
-				serv_disc = serv_disc[:-18]
-			else:
-				data_dict['service'] = serv_disc
-				status_dict['service'] = serv_disc
-				service_for_livestatus = serv_disc 
+			data_dict['service'] = serv_disc
+			status_dict['service'] = serv_disc
 
 		if serv_disc.endswith('_status') or serv_disc == 'Check_MK':
 			continue
 		# Extracts the performance data from the rrdtool for services
 		try:
+                        service_for_livestatus = serv_disc
 			if service_for_livestatus == 'ping':
 				query_string = "GET hosts\nColumns: host_state last_check host_perf_data\nFilter: host_name = %s\nOutputFormat: json\n" % (host)
 				query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
@@ -140,7 +119,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 					
 			else:
 				query_string = "GET services\nColumns: service_state last_check service_perf_data\nFilter: " + \
-				"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (service_for_livestatus,host)
+				"service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n" % (serv_disc,host)
 				query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
 				if query_output:
 					service_state = (query_output[0][0])
@@ -158,6 +137,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 					service_state = "UNKNOWN"
 					continue
 		except:
+                        #raise
 			service_state= "UNKNOWN"
 			continue
 	
@@ -175,7 +155,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 			if i == 0:
 				# Data will be exported from last inserted entry in mongodb uptill current time
 				start_time = mongo_module.get_latest_entry(db_type='mongodb', db=db, table_name=None,
-				host=replaced_host, serv=data_dict['service'], ds=ds_index)
+				host=host, serv=data_dict['service'], ds=ds_index)
 			
 			data_dict.update({
 				"check_time": datetime.fromtimestamp(last_check),
@@ -226,15 +206,6 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 				#	start_time,data_dict,status_dict) 
 				#if status == 1:
 				#	continue
-			if interface:
-				# Write code for extracting the SS ip and SS host_name from mac and store
-				ss_device = get_ss(host=replaced_host, interface=interface)
-                                data_dict['host'] = ss_device
-                                data_dict['ip_address'] = ss_device
-                                status_dict['host'] = ss_device
-                                status_dict['ip_address'] = ss_device
-                                replaced_host = ss_device
-                                replaced_ip = ss_device
 			data_dict['meta'] = threshold_values.get(ds_index)
 			# dictionariers to hold values for the service status tables
 			status_dict['meta'] = threshold_values.get(ds_index)
@@ -242,7 +213,7 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 			
 			data_dict['severity'] = service_state
 			status_dict['severity'] = service_state
-			matching_criteria.update({'host':replaced_host,'service':data_dict['service'],'ds':ds_index})
+			matching_criteria.update({'host':str(host),'service':data_dict['service'],'ds':ds_index})
 			if xml_file == '_HOST_.xml':
 				mongo_module.mongo_db_update(db,matching_criteria,status_dict,"network_perf_data")
 				mongo_module.mongo_db_insert(db,data_dict,"network_perf_data")
@@ -253,9 +224,9 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		#status = insert_data(data_dict)
 
 			data_dict = {
-					"host": replaced_host,
+					"host": str(host),
 					"service": serv_disc,
-					"ip_address": replaced_ip,
+					"ip_address": str(ip),
 					"data": [],
 					"meta": None,
 					"severity": None,
@@ -263,9 +234,9 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 			}
 			matching_criteria = {}
 			status_dict = {
-					"host": replaced_host,
+					"host": str(host),
 					"service": serv_disc,
-					"ip_address": replaced_ip,
+					"ip_address": str(ip),
 					"data": [],
 					"meta": None,
 					"severity": None,
