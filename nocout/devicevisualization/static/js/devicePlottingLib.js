@@ -766,10 +766,6 @@ function devicePlottingClass_gmap() {
 					var halfPt = Math.floor(pointsArray.length / (+2));
 
 					if($.trim(sector_array[j].technology) != "PTP" && $.trim(sector_array[j].technology) != "P2P") {
-						if(bs_ss_devices[i].alias === 'Somajiguda' || bs_ss_devices[i].name === 'Somajiguda' ) {
-							console.log(sector_array[j]);
-							console.log("J :- "+j);
-						}
 						/*Plot sector on map with the retrived points*/
 						gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child,$.trim(sector_array[j].technology),orientation,rad,azimuth,beam_width);
 
@@ -889,6 +885,8 @@ function devicePlottingClass_gmap() {
 				    	bs_sector_device :  sector_array[j].sector_configured_on_device,
 				    	filter_data 	 :  {"bs_name" : bs_ss_devices[i].name, "sector_name" : sector_array[j].sector_configured_on, "ss_name" : ss_marker_obj.name},
 				    	device_name 	 : 	ss_marker_obj.device_name,
+				    	ss_ip 	 		 : 	ss_marker_obj.data.substation_device_ip_address,
+				    	sector_ip 		 :  sector_array[j].sector_configured_on,
 				    	zIndex 			 : 	200,
 				    	hasPerf 		 :  0,
 				    	perf_data_obj 	 :  perf_obj,
@@ -2636,13 +2634,13 @@ function devicePlottingClass_gmap() {
 										}
 
 										if(polled_device_count[devices_counter] <= 1) {
-											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>Near-End '+(i+1)+'.) '+polygonSelectedDevices[i].bs_sector_device+'</h5>';
+											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name2+'"><h5>Near-End '+(i+1)+'.) '+polygonSelectedDevices[i].sector_ip+'</h5>';
 											devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name2+'">';
 											devicesTemplate += '<ul id="pollVal_'+new_device_name2+'" class="list-unstyled list-inline"></ul>';
 											devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name2+'"></span></div></div>';
 										}
 
-										devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>Far-End '+(i+1)+'.) '+polygonSelectedDevices[i].device_name+'</h5>';
+										devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>Far-End '+(i+1)+'.) '+polygonSelectedDevices[i].ss_ip+'</h5>';
 										devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
 										devicesTemplate += '<ul id="pollVal_'+new_device_name+'" class="list-unstyled list-inline"></ul>';
 										devicesTemplate += '<span class="sparkline" id="sparkline_'+new_device_name+'"></span></div></div>';
@@ -2650,13 +2648,15 @@ function devicePlottingClass_gmap() {
 									} else {
 										if(polled_device_count[devices_counter] ) //<= 1) //why do we have this condition ???
                                         {
-											var device_end_txt = "";
+											var device_end_txt = "",
+												point_name = "";
 											if(polygonSelectedDevices[i].pointType == 'sub_station') {
 												device_end_txt = "Far End";
+												point_name = polygonSelectedDevices[i].ss_ip
 											} else {
 												device_end_txt = "Near End";
+												point_name = polygonSelectedDevices[i].sectorName
 											}
-											var point_name = polygonSelectedDevices[i].device_name;
 
 											devicesTemplate += '<div class="well well-sm" id="div_'+new_device_name+'"><h5>'+device_end_txt+''+(i+1)+'.) '+point_name+'</h5>';
 											devicesTemplate += '<div style="min-height:60px;margin-top:15px;margin-bottom: 5px;" id="livePolling_'+new_device_name+'">';
