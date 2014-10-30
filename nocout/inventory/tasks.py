@@ -3796,6 +3796,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     'name': name,
                     'alias': alias,
                     'base_station': basestation,
+                    'sector_id': row['Sector ID'].strip() if 'Sector ID' in row.keys() else "",
                     'bs_technology': 4,
                     'sector_configured_on': base_station,
                     'antenna': sector_antenna,
@@ -4260,7 +4261,6 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
 
                     # device name
                     name = device_latest_id
-                    # name = special_chars_name_sanitizer_with_lower_case(row['Sector ID'] if 'Sector ID' in row.keys() else "")
 
                     # device alias
                     alias = circuit_id_sanitizer(row['Sector ID']) if 'Sector ID' in row.keys() else ""
@@ -4687,11 +4687,20 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                 # initialize alias
                 alias = ""
 
+                # pmp name
+                pmp = ""
+                try:
+                    if 'PMP' in row.keys():
+                        pmp = row['PMP']
+                        if isinstance(pmp, basestring) or isinstance(pmp, float):
+                            pmp = int(pmp)
+                except Exception as e:
+                    logger.info("PMP not in sheet or something wrong. Exception: ", e.message)
+
                 # sector name
                 name = '{}_{}_{}'.format(
                     special_chars_name_sanitizer_with_lower_case(row['Sector ID']) if 'Sector ID' in row.keys() else "",
-                    row['Sector Name'] if 'Sector Name' in row.keys() else "",
-                    row['PMP'] if 'PMP' in row.keys() else "")
+                    row['Sector Name'] if 'Sector Name' in row.keys() else "", row['PMP'] if 'PMP' in row.keys() else "")
 
                 # sector alias
                 alias = '{}'.format(row['Sector ID'].strip() if 'Sector ID' in row.keys() else "")
@@ -4702,7 +4711,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     'alias': alias,
                     'sector_id': row['Sector ID'].strip() if 'Sector ID' in row.keys() else "",
                     'base_station': basestation,
-                    'bs_technology': 4,
+                    'bs_technology': 3,
                     'sector_configured_on': base_station,
                     'antenna': sector_antenna,
                     'description': 'Sector created on {}.'.format(full_time)
@@ -5730,7 +5739,7 @@ def create_backhaul(backhaul_payload):
     if 'ttsl_circuit_id' in backhaul_payload.keys():
         ttsl_circuit_id = backhaul_payload['ttsl_circuit_id'] if backhaul_payload['ttsl_circuit_id'] else ""
     if 'dr_site' in backhaul_payload.keys():
-        dr_site = backhaul_payload['dr_site'] if backhaul_payload['dr_site'] else ""
+        dr_site = backhaul_payload['dr_site'].lower() if backhaul_payload['dr_site'] else ""
     if 'description' in backhaul_payload.keys():
         description = backhaul_payload['description'] if backhaul_payload['description'] else ""
 
@@ -5863,7 +5872,12 @@ def create_backhaul(backhaul_payload):
                 # dr site
                 if dr_site:
                     try:
-                        backhaul.dr_site = dr_site
+                        if dr_site == "yes":
+                            backhaul.dr_site = "Yes"
+                        elif dr_site == "no":
+                            backhaul.dr_site = "No"
+                        else:
+                            backhaul.dr_site = ""
                     except Exception as e:
                         logger.info("DR Site: ({} - {})".format(dr_site, e.message))
                 # description
@@ -6008,7 +6022,12 @@ def create_backhaul(backhaul_payload):
                 # dr site
                 if dr_site:
                     try:
-                        backhaul.dr_site = dr_site
+                        if dr_site == "yes":
+                            backhaul.dr_site = "Yes"
+                        elif dr_site == "no":
+                            backhaul.dr_site = "No"
+                        else:
+                            backhaul.dr_site = ""
                     except Exception as e:
                         logger.info("DR Site: ({} - {})".format(dr_site, e.message))
                 # description
@@ -6123,7 +6142,10 @@ def create_basestation(basestation_payload):
                 # bs site id
                 if bs_site_id:
                     try:
-                        basestation.bs_site_id = bs_site_id
+                        if isinstance(bs_site_id, float):
+                            basestation.bs_site_id = int(bs_site_id)
+                        else:
+                            basestation.bs_site_id = bs_site_id
                     except Exception as e:
                         logger.info("BS Site ID: ({} - {})".format(bs_site_id, e.message))
                 # bs site type
