@@ -766,8 +766,12 @@ function devicePlottingClass_gmap() {
 					var halfPt = Math.floor(pointsArray.length / (+2));
 
 					if($.trim(sector_array[j].technology) != "PTP" && $.trim(sector_array[j].technology) != "P2P") {
+						if(bs_ss_devices[i].alias === 'Somajiguda' || bs_ss_devices[i].name === 'Somajiguda' ) {
+							console.log(sector_array[j]);
+							console.log("J :- "+j);
+						}
 						/*Plot sector on map with the retrived points*/
-						gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child,$.trim(sector_array[j].technology),orientation);
+						gmap_self.plotSector_gmap(lat,lon,pointsArray,sectorInfo,sector_color,sector_child,$.trim(sector_array[j].technology),orientation,rad,azimuth,beam_width);
 
 						startEndObj["startLat"] = pointsArray[halfPt].lat;
 						startEndObj["startLon"] = pointsArray[halfPt].lon;
@@ -1265,7 +1269,7 @@ function devicePlottingClass_gmap() {
 	 * @param technology {String}, It contains the technology of sector device.
 	 * @param polarisation {String}, It contains the polarisation(horizontal or vertical) of sector device.
 	 */
-	this.plotSector_gmap = function(lat,lon,pointsArray,sectorInfo,bgColor,sector_child,technology,polarisation) {
+	this.plotSector_gmap = function(lat,lon,pointsArray,sectorInfo,bgColor,sector_child,technology,polarisation,rad,azimuth,beam_width) {
 		var polyPathArray = [];
 		
 		var halfPt = Math.floor(pointsArray.length / (+2));
@@ -1297,6 +1301,9 @@ function devicePlottingClass_gmap() {
 			strokeOpacity    : 1,
 			fillOpacity 	 : 0.5,
 			strokeWeight     : sWidth,
+			radius 			 : rad,
+			azimuth 		 : azimuth,
+			beam_width 		 : beam_width,
 			dataset 	     : sectorInfo.info,
 			startLat 	     : startLat,
 			startLon 	     : startLon,
@@ -1311,7 +1318,7 @@ function devicePlottingClass_gmap() {
         poly.setMap(mapInstance);
         allMarkersArray_gmap.push(poly);
 
-        allMarkersObject_gmap['sector_polygon']['poly_'+sectorInfo.sector_name] = poly;
+        allMarkersObject_gmap['sector_polygon']['poly_'+sectorInfo.sector_name+"_"+rad+"_"+azimuth+"_"+beam_width] = poly;
 
 		if(sector_child) {
 			for(var i=0;i<sector_child.length;i++) {
@@ -4195,11 +4202,14 @@ function devicePlottingClass_gmap() {
 
 				/*Check that the current sector name is present in filtered data or not*/
 				var subStationsArray = sectorsArray[j].sub_station,
-					sectorName = sectorsArray[j].sector_configured_on ? $.trim(sectorsArray[j].sector_configured_on) : "";
+					sectorName = sectorsArray[j].sector_configured_on ? $.trim(sectorsArray[j].sector_configured_on) : "",
+					radius = sectorsArray[j].radius,
+					azimuth = sectorsArray[j].azimuth_angle,
+					beamWidth = sectorsArray[j].beam_width,
 					bsName = dataArray[i].name ? $.trim(dataArray[i].name) : "",
 					bs_marker = allMarkersObject_gmap['base_station']["bs_"+bsName],
 					sector_device = allMarkersObject_gmap['sector_device']["sector_"+sectorName],
-					sector_polygon = allMarkersObject_gmap['sector_polygon']["poly_"+sectorName];
+					sector_polygon = allMarkersObject_gmap['sector_polygon']["poly_"+sectorName+"_"+radius+"_"+azimuth+"_"+beamWidth];
 
 				for(var k=0;k<subStationsArray.length;k++) {
 					/*BS, SS & Sectors from filtered data array*/

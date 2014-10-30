@@ -196,7 +196,10 @@ function GisPerformance() {
                 var deviceSectorJSon = {};
 
                 var sector_marker = allMarkersObject_gmap['sector_device']['sector_'+$.trim(bsGmapMarker["child_ss"][i].sector_configured_on)],
-                    sector_poly_marker = allMarkersObject_gmap['sector_polygon']['poly_'+$.trim(bsGmapMarker["child_ss"][i].sector_configured_on)];
+                    radius = bsGmapMarker["child_ss"][i].radius,
+                    azimuth = bsGmapMarker["child_ss"][i].azimuth_angle,
+                    beamWidth = bsGmapMarker["child_ss"][i].beam_width,
+                    sector_poly_marker = allMarkersObject_gmap['sector_polygon']['poly_'+$.trim(bsGmapMarker["child_ss"][i].sector_configured_on)+"_"+radius+"_"+azimuth+"_"+beamWidth];
 
                 if((sector_marker && (sector_marker.map != null && sector_marker.map != "")) || (sector_poly_marker && (sector_poly_marker.map != null && sector_poly_marker.map != ""))) {
 
@@ -252,8 +255,11 @@ function GisPerformance() {
             	var sector_perf_val = "",
                     polyPathArray = [],
             	    new_line_path = [],
+                    radius = bsMarkerObject["child_ss"][i].radius,
+                    azimuth = bsMarkerObject["child_ss"][i].azimuth_angle,
+                    beamWidth = bsMarkerObject["child_ss"][i].beam_width,
                     sector_marker = allMarkersObject_gmap['sector_device']['sector_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on)],
-                    sector_poly_marker = allMarkersObject_gmap['sector_polygon']['poly_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on)];
+                    sector_poly_marker = allMarkersObject_gmap['sector_polygon']['poly_'+$.trim(bsMarkerObject["child_ss"][i].sector_configured_on+"_"+radius+"_"+azimuth+"_"+beamWidth)];
 
 
 
