@@ -77,8 +77,8 @@ class DeviceList(ListView):
              'bSortable': False},
             {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False}, ]
 
-        #if the user role is Admin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        #if the user role is Admin or superadmin then the action column will appear on the datatable
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True) or self.request.user.is_superuser:
             datatable_headers.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '9%', 'bSortable': False})
             datatable_headers.append(
@@ -103,7 +103,7 @@ class DeviceList(ListView):
             {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False}, ]
 
         #if the user role is Admin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True) or self.request.user.is_superuser:
             datatable_headers_no_nms_actions.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '15%', 'bSortable': False})
 
@@ -260,20 +260,8 @@ class OperationalDeviceListingTable(BaseDatatableView):
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
             # current device in loop
-            device_id = dct.pop('id')
-            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'.format(device_id)
-            if self.request.user.has_perm('device.change_device'):
-                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>'.format(device_id)
-            else:
-                edit_action = ''
-            if self.request.user.has_perm('device.delete_device'):
-                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(device_id)
-            else:
-                delete_action = ''
-            if edit_action or delete_action:
-                dct.update(actions=detail_action+edit_action+delete_action)
 
-            current_device = Device.objects.get(pk=device_id)
+            current_device = Device.objects.get(pk=dct['id'])
 
             try:
                 dct['device_type__name'] = DeviceType.objects.get(pk=int(dct['device_type'])).name if dct[
@@ -308,7 +296,18 @@ class OperationalDeviceListingTable(BaseDatatableView):
             # a. backhaul configured on (from model Backhaul)
             # b. sector configures on (from model Sector)
             # c. sub-station configured on (from model SubStation)
-            dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>'.format(device_id))
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
+            if self.request.user.has_perm('device.change_device'):
+                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('device.delete_device'):
+                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(dct['id'])
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions=detail_action+edit_action+delete_action)
+
             dct.update(nms_actions='')
 
             # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
@@ -2328,7 +2327,7 @@ class DeviceVendorList(ListView):
         """
         The request dispatch function restricted with the permissions.
         """
-        return super(DevicevendorList, self).dispatch(*args, **kwargs)
+        return super(DeviceVendorList, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """
@@ -3218,7 +3217,7 @@ class DevicePortList(ListView):
         """
         The request dispatch function restricted with the permissions.
         """
-        return super(DeviceportList, self).dispatch(*args, **kwargs)
+        return super(DevicePortList, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """
@@ -3440,7 +3439,7 @@ class DeviceFrequencyListing(ListView):
             {'mData': 'color_hex_value', 'sTitle': 'Hex Value', 'sWidth': 'auto', },
             {'mData': 'frequency_radius', 'sTitle': 'Frequency Radius (Km)', 'sWidth': 'auto', }
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if self.request.user.is_superuser:
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)
