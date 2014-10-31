@@ -3716,7 +3716,6 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     'bh_connectivity': row['BH Offnet/Onnet'] if 'BH Offnet/Onnet' in row.keys() else "",
                     'bh_circuit_id': row['BH Circuit ID'] if 'BH Circuit ID' in row.keys() else "",
                     'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
-                    'dr_site': row['DR Site'] if 'DR Site' in row.keys() else "",
                     'ttsl_circuit_id': row['BSO Circuit ID'] if 'BSO Circuit ID' in row.keys() else "",
                     'description': 'Backhaul created on {}.'.format(full_time)
                 }
@@ -3805,6 +3804,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     'bs_technology': 4,
                     'sector_configured_on': base_station,
                     'antenna': sector_antenna,
+                    'dr_site': row['DR Site'] if 'DR Site' in row.keys() else "",
                     'description': 'Sector created on {}.'.format(full_time)
                 }
 
@@ -4619,7 +4619,6 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     'bh_connectivity': row['BH Offnet/Onnet'] if 'BH Offnet/Onnet' in row.keys() else "",
                     'bh_circuit_id': row['BH Circuit ID'] if 'BH Circuit ID' in row.keys() else "",
                     'bh_capacity': row['BH Capacity'] if 'BH Capacity' in row.keys() else "",
-                    'dr_site': row['DR Site'] if 'DR Site' in row.keys() else "",
                     'ttsl_circuit_id': row['BSO Circuit ID'] if 'BSO Circuit ID' in row.keys() else "",
                     'description': 'Backhaul created on {}.'.format(full_time)
                 }
@@ -4731,6 +4730,7 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                     'sector_configured_on': base_station,
                     'sector_configured_on_port': port,
                     'antenna': sector_antenna,
+                    'dr_site': row['DR Site'] if 'DR Site' in row.keys() else "",
                     'description': 'Sector created on {}.'.format(full_time)
                 }
 
@@ -5711,7 +5711,7 @@ def create_backhaul(backhaul_payload):
     # initializing variables
     name, alias, bh_configured_on, bh_port_name, bh_port, bh_type, bh_switch, switch_port_name, switch_port = [''] * 9
     pop, pop_port_name, pop_port, aggregator, aggregator_port_name, aggregator_port, pe_hostname, pe_ip = [''] * 8
-    bh_connectivity, bh_circuit_id, ttsl_circuit_id, dr_site, description, bh_capacity = [''] * 6
+    bh_connectivity, bh_circuit_id, ttsl_circuit_id, description, bh_capacity = [''] * 5
 
     # get backhaul parameters
     if 'ip' in backhaul_payload.keys():
@@ -5755,8 +5755,6 @@ def create_backhaul(backhaul_payload):
         bh_capacity = backhaul_payload['bh_capacity'] if backhaul_payload['bh_capacity'] else ""
     if 'ttsl_circuit_id' in backhaul_payload.keys():
         ttsl_circuit_id = backhaul_payload['ttsl_circuit_id'] if backhaul_payload['ttsl_circuit_id'] else ""
-    if 'dr_site' in backhaul_payload.keys():
-        dr_site = backhaul_payload['dr_site'].lower() if backhaul_payload['dr_site'] else ""
     if 'description' in backhaul_payload.keys():
         description = backhaul_payload['description'] if backhaul_payload['description'] else ""
 
@@ -5886,17 +5884,6 @@ def create_backhaul(backhaul_payload):
                         backhaul.ttsl_circuit_id = ttsl_circuit_id
                     except Exception as e:
                         logger.info("BSO Circuit IB: ({} - {})".format(ttsl_circuit_id, e.message))
-                # dr site
-                if dr_site:
-                    try:
-                        if dr_site == "yes":
-                            backhaul.dr_site = "Yes"
-                        elif dr_site == "no":
-                            backhaul.dr_site = "No"
-                        else:
-                            backhaul.dr_site = ""
-                    except Exception as e:
-                        logger.info("DR Site: ({} - {})".format(dr_site, e.message))
                 # description
                 if description:
                     try:
@@ -6036,17 +6023,6 @@ def create_backhaul(backhaul_payload):
                         backhaul.ttsl_circuit_id = ttsl_circuit_id
                     except Exception as e:
                         logger.info("BSO Circuit IB: ({} - {})".format(ttsl_circuit_id, e.message))
-                # dr site
-                if dr_site:
-                    try:
-                        if dr_site == "yes":
-                            backhaul.dr_site = "Yes"
-                        elif dr_site == "no":
-                            backhaul.dr_site = "No"
-                        else:
-                            backhaul.dr_site = ""
-                    except Exception as e:
-                        logger.info("DR Site: ({} - {})".format(dr_site, e.message))
                 # description
                 if description:
                     try:
@@ -6450,7 +6426,7 @@ def create_sector(sector_payload):
     # initializing variables
     name, alias, sector_id, base_station, bs_technology, sector_configured_on, sector_configured_on_port = [''] * 7
     antenna, mrc, tx_power, rx_power, rf_bandwidth, frame_length, cell_radius, frequency, modulation = [''] * 9
-    description = ''
+    dr_site, description = [''] * 2
 
     # get sector parameters
     if 'name' in sector_payload.keys():
@@ -6469,6 +6445,8 @@ def create_sector(sector_payload):
         sector_configured_on_port = sector_payload['sector_configured_on_port'] if sector_payload['sector_configured_on_port'] else ""
     if 'antenna' in sector_payload.keys():
         antenna = sector_payload['antenna'] if sector_payload['antenna'] else ""
+    if 'dr_site' in sector_payload.keys():
+        dr_site = sector_payload['dr_site'].lower() if sector_payload['dr_site'] else ""
     if 'mrc' in sector_payload.keys():
         mrc = sector_payload['mrc'] if sector_payload['mrc'] else ""
     if 'tx_power' in sector_payload.keys():
@@ -6542,6 +6520,17 @@ def create_sector(sector_payload):
                         sector.mrc = mrc
                     except Exception as e:
                         logger.info("MRC: ({} - {})".format(mrc, e.message))
+                # dr site
+                if dr_site:
+                    try:
+                        if dr_site == "yes":
+                            sector.dr_site = "Yes"
+                        elif dr_site == "no":
+                            sector.dr_site = "No"
+                        else:
+                            sector.dr_site = ""
+                    except Exception as e:
+                        logger.info("DR Site: ({} - {})".format(dr_site, e.message))
                 # tx power
                 if tx_power:
                     if isinstance(tx_power, int) or isinstance(tx_power, float):
@@ -6657,6 +6646,17 @@ def create_sector(sector_payload):
                         sector.mrc = mrc
                     except Exception as e:
                         logger.info("MRC: ({} - {})".format(mrc, e.message))
+                # dr site
+                if dr_site:
+                    try:
+                        if dr_site == "yes":
+                            sector.dr_site = "Yes"
+                        elif dr_site == "no":
+                            sector.dr_site = "No"
+                        else:
+                            sector.dr_site = ""
+                    except Exception as e:
+                        logger.info("DR Site: ({} - {})".format(dr_site, e.message))
                 # tx power
                 if tx_power:
                     if isinstance(tx_power, int) or isinstance(tx_power, float):

@@ -82,7 +82,7 @@ class Backhaul(models.Model):
     bh_circuit_id = models.CharField('BH Circuit ID', max_length=250, null=True, blank=True)
     bh_capacity = models.IntegerField('BH Capacity', null=True, blank=True, help_text='Enter a number.')
     ttsl_circuit_id = models.CharField('TTSL Circuit ID', max_length=250, null=True, blank=True)
-    dr_site = models.CharField('DR Site', max_length=150, null=True, blank=True)
+    # dr_site = models.CharField('DR Site', max_length=150, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
@@ -132,6 +132,7 @@ class Sector(models.Model):
     sector_configured_on = models.ForeignKey(Device, max_length=250, null=True, blank=False, related_name='sector_configured_on')
     sector_configured_on_port = models.ForeignKey(DevicePort, null=True, blank=True)
     antenna = models.ForeignKey(Antenna, null=True, blank=True, related_name='sector')
+    dr_site = models.CharField('DR Site', max_length=150, null=True, blank=True)
     mrc = models.CharField('MRC', max_length=4, null=True, blank=True)
     tx_power = models.FloatField('TX Power', null=True, blank=True, help_text='(dB) Enter a number.')
     rx_power = models.FloatField('RX Power', null=True, blank=True, help_text='(dB) Enter a number.')
