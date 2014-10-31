@@ -341,3 +341,209 @@ function exitFullscreen() {
     document.webkitExitFullscreen();
   }
 }
+
+
+
+/**********************************Activity Stream for add,edit & delete*************************************/
+var isNewForm = window.location.href.indexOf('new'),
+    isCreateForm = window.location.href.indexOf('create'),
+    isAddForm = window.location.href.indexOf('add'),
+    isEditForm = window.location.href.indexOf('edit'),
+    isUpdateForm = window.location.href.indexOf('update'),
+    isModifyForm = window.location.href.indexOf('modify'),
+    page_title = "",
+    module_name = "",
+    isFormSubmit = 0;
+
+if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
+    
+    page_title = $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" add ");
+    module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
+
+} else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1) {
+
+    page_title = $(".formContainer .box .box-title h4")[0].innerHTML.toLowerCase().split(" edit ");
+    module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
+
+    if(isFormSubmit === 0) {
+            var oldFieldsArray = $("form input").serializeArray(),
+                select_boxes = $("select");
+
+        setTimeout(function() {
+            for(var i=0;i<select_boxes.length;i++) {
+                var select_id = select_boxes[i].attributes["id"].value,
+                    values_array = $("#"+select_id).select2("data"),
+                    selected_values = "";
+                if(values_array.length) {
+                    $.grep(values_array,function(data){
+                        if(selected_values.length > 0) {
+                            selected_values += ","+data.text;
+                        } else {
+                            selected_values += data.text;
+                        }
+                    });
+                } else {
+                    selected_values = values_array.text;
+                }
+
+                var data_obj = {
+                    "name" : select_boxes[i].attributes["name"].value,
+                    "value" : selected_values
+                };
+                oldFieldsArray.push(data_obj);
+            }
+        },300);
+    } 
+}
+
+/*Form Submit Event*/
+$("form").submit(function(e) {
+    /*Create case*/
+    if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
+        /*When first time form submitted*/
+        if(isFormSubmit === 0) {
+
+            var alias = $("form input[name*='alias']").val(),
+                action = "A new "+module_name.toLowerCase()+" is created - "+alias,
+                action_response = "";
+
+            /*Call function to save user action*/
+            save_user_action(module_name,action,function(result) {
+                action_response = result;
+                if(typeof result == 'string' && result.indexOf('success') > -1) {
+                    action_response = JSON.parse(result);
+                } else {
+                    action_response = result;
+                }
+
+                isFormSubmit = 1;
+                /*Trigger Form Submit*/
+                $("form").trigger('submit');
+            });
+        } else {
+            return true;
+        }
+    /*Edit case*/
+    } else if(isEditForm > -1 || isUpdateForm > -1 || isModifyForm > -1) {
+        /*When first time form submitted*/
+        if(isFormSubmit === 0) {
+
+            var newFieldsArray = $("form input").serializeArray(),
+                select_boxes = $("select"),
+                modifiedFieldsStr = "[";
+            /*Get New Fields*/
+            for(var i=0;i<select_boxes.length;i++) {
+                var select_id = select_boxes[i].attributes["id"] ? select_boxes[i].attributes["id"].value : "",
+                    values_array = select_id ? $("#"+select_id).select2("data") : "",
+                    selected_values = "";
+                if(values_array.length) {
+                    $.grep(values_array,function(data){
+                        if(selected_values.length > 0) {
+                            selected_values += ","+data.text;
+                        } else {
+                            selected_values += data.text;
+                        }
+                    });
+                } else {
+                    selected_values = values_array ? values_array.text : "";
+                }
+
+                var data_obj = {
+                    "name" : select_boxes[i].attributes["name"].value,
+                    "value" : selected_values
+                };
+
+                newFieldsArray.push(data_obj);
+            }
+
+            /*Get Modified Fields*/
+            for(var j=0;j<oldFieldsArray.length;j++) {
+                var old_field = oldFieldsArray[j],
+                    new_field = newFieldsArray[j];
+                if(old_field && new_field) {
+                    if($.trim(old_field.value) != $.trim(new_field.value)) {
+                        var modified_str = old_field.name+"{"+old_field.value+" To "+new_field.value+"}";
+                        if($.trim(modifiedFieldsStr) != '[') {
+                            modifiedFieldsStr += ","+modified_str;
+                        } else {
+                            modifiedFieldsStr += modified_str;
+                        }
+                    }
+                }
+            }
+            /*If any changes done then save user action else return.*/
+            if($.trim(modifiedFieldsStr) != '[') {
+                
+                modifiedFieldsStr += ']';
+                /*Call function to save user action*/
+                save_user_action(module_name,modifiedFieldsStr,function(result) {
+                    if(typeof result == 'string' && result.indexOf('success') > -1) {
+                        action_response = JSON.parse(result);
+                    } else {
+                        action_response = result;
+                    }
+
+                    isFormSubmit = 1;
+                    /*Trigger Form Submit*/
+                    $("form").trigger('submit');
+                });
+            } else {
+                return true;
+            }
+        } else {
+            return true;
+        }
+    } else {
+        return true;
+    }
+
+    return false;
+});
+
+/**
+ * This function save user action by calling respective API.
+ * @method save_user_action
+ */
+function save_user_action(module,action,callback) {
+
+    var csrftoken = $.cookie("csrftoken"),
+        base_url = "";
+
+    /*Set the base url of application for ajax calls*/
+    if(window.location.origin) {
+        base_url = window.location.origin;
+    } else {
+        base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+    }
+
+    $.ajax({
+        url : base_url+"/logs/actions/log/", 
+        type : "POST",
+        dataType: "json", 
+        data : {
+            module : module,
+            action : action,
+            csrfmiddlewaretoken : csrftoken,
+        },
+        success : function(response) {     
+            callback(response);
+        },
+        error : function(xhr,errmsg,err) {
+            callback(xhr.status + ": " + xhr.responseText)
+        }
+    });
+}
+
+
+/*Hide hightcharts.com link from charts if exist.*/
+setTimeout(function() {
+    var highcharts_link = $("svg text:last-child");
+    if(highcharts_link.length > 0) {
+        for(var i=0;i<highcharts_link.length;i++) {
+            var link_text = $("svg text:last-child")[i] ? $.trim($("svg text:last-child")[i].innerHTML.toLowerCase()) : "";
+            if(link_text === 'highcharts.com') {
+                $("svg text:last-child")[i].innerHTML = "";
+            }
+        }
+    }
+},300);

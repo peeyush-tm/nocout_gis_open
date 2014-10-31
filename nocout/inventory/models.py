@@ -14,6 +14,7 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy
 from user_profile.models import UserProfile
 
+
 # inventory model --> mapper of user_group & device groups
 class Inventory(models.Model):
     """
@@ -131,6 +132,7 @@ class Sector(models.Model):
     sector_configured_on = models.ForeignKey(Device, max_length=250, null=True, blank=False, related_name='sector_configured_on')
     sector_configured_on_port = models.ForeignKey(DevicePort, null=True, blank=True)
     antenna = models.ForeignKey(Antenna, null=True, blank=True, related_name='sector')
+    dr_site = models.CharField('DR Site', max_length=150, null=True, blank=True)
     mrc = models.CharField('MRC', max_length=4, null=True, blank=True)
     tx_power = models.FloatField('TX Power', null=True, blank=True, help_text='(dB) Enter a number.')
     rx_power = models.FloatField('RX Power', null=True, blank=True, help_text='(dB) Enter a number.')
@@ -376,7 +378,7 @@ class CircuitL2Report(models.Model):
         return '{}/{}/{}'.format(path, year_month_date, filename)
 
     name = models.CharField('Name', max_length=250, unique=True)
-    file_name = models.FileField(max_length=255, upload_to=uploaded_report_name)
+    file_name = models.FileField(max_length=512, upload_to=uploaded_report_name)
     added_on = models.DateTimeField('Added On', null=True, blank=True, auto_now_add=True)
     user_id = models.ForeignKey(UserProfile)
     circuit_id = models.ForeignKey(Circuit)

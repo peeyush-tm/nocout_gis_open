@@ -2,7 +2,6 @@
 
 import json
 from operator import itemgetter
-from actstream import action
 from django.contrib.auth.decorators import permission_required
 from django.core.exceptions import ValidationError
 from django.db.models import Q
@@ -52,7 +51,7 @@ class DeviceList(ListView):
         datatable_headers = [
             {'mData': 'status_icon', 'sTitle': '', 'sWidth': 'auto', },
             {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'site_instance__name', 'sTitle': 'Site Instance', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'machine__name', 'sTitle': 'Machine', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'device_technology__name', 'sTitle': 'Device Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs',
@@ -77,7 +76,7 @@ class DeviceList(ListView):
         datatable_headers_no_nms_actions = [
             {'mData': 'status_icon', 'sTitle': '', 'sWidth': 'auto', },
             {'mData': 'organization__name', 'sTitle': 'Organization', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
-            {'mData': 'device_alias', 'sTitle': 'Alias', 'sWidth': 'auto', },
+            {'mData': 'device_name', 'sTitle': 'Name', 'sWidth': 'auto', },
             {'mData': 'site_instance__name', 'sTitle': 'Site Instance', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'machine__name', 'sTitle': 'Machine', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'device_technology__name', 'sTitle': 'Device Technology', 'sWidth': 'auto', 'sClass': 'hidden-xs',
@@ -118,7 +117,7 @@ class OperationalDeviceListingTable(BaseDatatableView):
     Render JQuery datatables for listing operational devices only
     """
     model = Device
-    columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
+    columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
     order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
 
@@ -176,9 +175,6 @@ class OperationalDeviceListingTable(BaseDatatableView):
                     ['device_type__name', 'device_technology__name', 'state__name'])
 
             return result_list
-
-        if settings.DEBUG:
-            logger.debug(qs, exc_info=True, extra={'stack': True, 'request': self.request})
 
         return qs
 
@@ -249,6 +245,15 @@ class OperationalDeviceListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'device_name' in dct:
+                    device_alias = Device.objects.get(pk=dct['id']).device_alias
+                    device_ip = Device.objects.get(pk=dct['id']).ip_address
+                    dct['device_name'] = "{} ({})".format(device_alias, device_ip)
+            except Exception as e:
+                logger.exception("Device not present. Exception: ", e.message)
+
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
 
@@ -312,9 +317,9 @@ class OperationalDeviceListingTable(BaseDatatableView):
                                                     <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Edit Device"></i></a>\
                                                     <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-info" title="Sync Device"></i></a>'.format(dct['id']))
                     except Exception as e:
-                        logger.info(e.message)
-            except:
-                logger.info("Device is not a backhaul")
+                        logger.exception(e.message)
+            except Exception as e:
+                logger.exception("Device is not a backhaul %s" %e.message)
 
             # checking whether device is 'sector configured on' or not
             try:
@@ -336,9 +341,9 @@ class OperationalDeviceListingTable(BaseDatatableView):
                                                     <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-success" title="Edit Device"></i></a>\
                                                     <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-success" title="Sync Device"></i></a>'.format(dct['id']))
                     except Exception as e:
-                        logger.info(e.message)
-            except:
-                logger.info("Device is not sector configured on.")
+                        logger.exception(e.message)
+            except Exception as e:
+                logger.exception("Device is not sector configured on. %s" % e.message)
 
             # checking whether device is 'sub station' or not
             try:
@@ -360,9 +365,9 @@ class OperationalDeviceListingTable(BaseDatatableView):
                                                     <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Edit Device"></i></a>\
                                                     <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-danger" title="Sync Device"></i></a>'.format(dct['id']))
                     except Exception as e:
-                        logger.info(e.message)
-            except:
-                logger.info("Device is not a substation.")
+                        logger.exception(e.message)
+            except Exception as e:
+                logger.exception("Device is not a substation. %s" % e.message)
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -403,7 +408,7 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
     Render JQuery datatables for listing non-operational devices only
     """
     model = Device
-    columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
+    columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
     order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
 
@@ -462,9 +467,6 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
                     ['device_type__name', 'device_technology__name', 'state__name'])
 
             return result_list
-
-        if settings.DEBUG:
-            logger.debug(qs, exc_info=True, extra={'stack': True, 'request': self.request})
 
         return qs
 
@@ -537,6 +539,15 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'device_name' in dct:
+                    device_alias = Device.objects.get(pk=dct['id']).device_alias
+                    device_ip = Device.objects.get(pk=dct['id']).ip_address
+                    dct['device_name'] = "{} ({})".format(device_alias, device_ip)
+            except Exception as e:
+                logger.exception("Device not present. Exception: ", e.message)
+
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
 
@@ -580,24 +591,24 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
                 if Backhaul.objects.get(bh_configured_on=current_device):
                     dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form(add_device_form, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-info" title="Add Device"></i></a>'.format(
                         dct['id']))
-            except:
-                logger.info("Device is not a backhaul.")
+            except Exception as e:
+                logger.exception("Device is not a backhaul. %s " % e.message)
 
             # checking whether device is 'sector configured on' or not
             try:
                 if Sector.objects.get(sector_configured_on=current_device):
                     dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form(add_device_form, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-success" title="Add Device"></i></a>'.format(
                         dct['id']))
-            except:
-                logger.info("Device is not sector configured on.")
+            except Exception as e:
+                logger.exception("Device is not sector configured on. %s " % e.message)
 
             # checking whether device is 'sub station' or not
             try:
                 if SubStation.objects.get(device=current_device):
                     dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form(add_device_form, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-danger"></i></a>'.format(
                         dct['id']))
-            except:
-                logger.info("Device is not a substation.")
+            except Exception as e:
+                logger.exception("Device is not a substation. %s" % e.message)
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -640,7 +651,7 @@ class DisabledDeviceListingTable(BaseDatatableView):
     Render JQuery datatables for listing disabled devices only
     """
     model = Device
-    columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
+    columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
     order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
 
@@ -698,9 +709,6 @@ class DisabledDeviceListingTable(BaseDatatableView):
                     ['device_type__name', 'device_technology__name', 'state__name'])
 
             return result_list
-
-        if settings.DEBUG:
-            logger.debug(qs, exc_info=True, extra={'stack': True, 'request': self.request})
 
         return qs
 
@@ -770,6 +778,15 @@ class DisabledDeviceListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'device_name' in dct:
+                    device_alias = Device.objects.get(pk=dct['id']).device_alias
+                    device_ip = Device.objects.get(pk=dct['id']).ip_address
+                    dct['device_name'] = "{} ({})".format(device_alias, device_ip)
+            except Exception as e:
+                logger.exception("Device not present. Exception: ", e.message)
+
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
 
@@ -874,7 +891,7 @@ class ArchivedDeviceListingTable(BaseDatatableView):
     Render JQuery datatables for listing archived devices only
     """
     model = Device
-    columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
+    columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
     order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
 
@@ -933,9 +950,6 @@ class ArchivedDeviceListingTable(BaseDatatableView):
                     ['device_type__name', 'device_technology__name', 'state__name'])
 
             return result_list
-
-        if settings.DEBUG:
-            logger.debug(qs, exc_info=True, extra={'stack': True, 'request': self.request})
 
         return qs
 
@@ -1005,6 +1019,15 @@ class ArchivedDeviceListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'device_name' in dct:
+                    device_alias = Device.objects.get(pk=dct['id']).device_alias
+                    device_ip = Device.objects.get(pk=dct['id']).ip_address
+                    dct['device_name'] = "{} ({})".format(device_alias, device_ip)
+            except Exception as e:
+                logger.exception("Device not present. Exception: ", e.message)
+
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
 
@@ -1109,7 +1132,7 @@ class AllDeviceListingTable(BaseDatatableView):
     Render JQuery datatables for listing of all devices
     """
     model = Device
-    columns = ['device_alias', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
+    columns = ['device_name', 'site_instance__name', 'machine__name', 'organization__name', 'device_technology',
                'device_type', 'host_state', 'ip_address', 'mac_address', 'state']
     order_columns = ['organization__name', 'device_alias', 'site_instance__name', 'machine__name']
 
@@ -1168,9 +1191,6 @@ class AllDeviceListingTable(BaseDatatableView):
                     ['device_type__name', 'device_technology__name', 'state__name'])
 
             return result_list
-
-        if settings.DEBUG:
-            logger.debug(qs, exc_info=True, extra={'stack': True, 'request': self.request})
 
         return qs
 
@@ -1240,6 +1260,15 @@ class AllDeviceListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
+            # modify device name format in datatable i.e. <device alias> (<device ip>)
+            try:
+                if 'device_name' in dct:
+                    device_alias = Device.objects.get(pk=dct['id']).device_alias
+                    device_ip = Device.objects.get(pk=dct['id']).ip_address
+                    dct['device_name'] = "{} ({})".format(device_alias, device_ip)
+            except Exception as e:
+                logger.exception("Device not present. Exception: ", e.message)
+
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
 
@@ -1273,8 +1302,7 @@ class AllDeviceListingTable(BaseDatatableView):
                     icon = '<i class="fa fa-circle green-dot"></i>'
                 dct.update(status_icon=icon)
             except Exception as e:
-                print "********************************* Exception - "
-                logger.info(e.message)
+                logger.exception(e.message)
                 dct.update(status_icon='<img src="">')
 
             # There are two set of links in device list table
@@ -1299,7 +1327,7 @@ class AllDeviceListingTable(BaseDatatableView):
                         <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
                         dct['id']))
             except:
-                logger.info("Device is not basestation")
+                logger.exception("Device is not basestation")
 
             # checking whether device is 'sector configured on' or not
             try:
@@ -1308,7 +1336,7 @@ class AllDeviceListingTable(BaseDatatableView):
                         <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
                         dct['id']))
             except:
-                logger.info("Device is not basestation")
+                logger.exception("Device is not basestation")
 
             # checking whether device is 'sub station' or not
             try:
@@ -1317,7 +1345,7 @@ class AllDeviceListingTable(BaseDatatableView):
                         <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
                         dct['id']))
             except:
-                logger.info("Device is not substation.")
+                logger.exception("Device is not substation.")
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -1361,9 +1389,6 @@ class DeviceDetail(DetailView):
     template_name = 'device/device_detail.html'
 
     def get_context_data(self, **kwargs):
-        if settings.DEBUG:
-            logger.debug(self.object, extra={'stack': True, 'request': self.request})
-            logger.debug(kwargs, extra={'stack': True, 'request': self.request})
 
         context = super(DeviceDetail, self).get_context_data(**kwargs)
 
@@ -1383,7 +1408,7 @@ class DeviceDetail(DetailView):
             if kwargs['object'].city:
                 context['city'] = City.objects.get(pk=kwargs['object'].city).city_name
         except Exception as e:
-            logger.info(e.message)
+            logger.exception(e.message)
 
         return context
 
@@ -1432,7 +1457,7 @@ class DeviceCreate(CreateView):
             id_list = [Device.objects.latest('id').id, int(Device.objects.latest('id').device_name)]
             device_latest_id = max(id_list) + 1
         except Exception as e:
-            logger.info("No device is added in database till now. Exception: ", e.message)
+            logger.exception("No device is added in database till now. Exception: ", e.message)
 
         # saving device data
         device = Device()
@@ -1475,7 +1500,7 @@ class DeviceCreate(CreateView):
             # it gives all device fields associated with device_type object
             device_type.devicetypefields_set.all()
         except Exception as e:
-            logger.info(e.message)
+            logger.exception(e.message)
 
         # saving eav relation data i.e. device extra fields those depends on device type
         for field in all_non_empty_post_fields:
@@ -1490,11 +1515,7 @@ class DeviceCreate(CreateView):
                 dtfv.device_id = device.id
                 dtfv.save()
             except Exception as e:
-                logger.info(e.message)
-        try:
-            action.send(self.request.user, verb='Created', action_object=device)
-        except Exception as activity:
-            pass
+                logger.exception(e.message)
         return HttpResponseRedirect(DeviceCreate.success_url)
 
 
@@ -1576,7 +1597,7 @@ class DeviceUpdate(UpdateView):
         try:
             DeviceTypeFieldsValue.objects.filter(device_id=self.object.id).delete()
         except Exception as e:
-            logger.info(e.message)
+            logger.exception(e.message)
 
         # fetching device extra fields associated with 'device type'
         try:
@@ -1584,7 +1605,7 @@ class DeviceUpdate(UpdateView):
             # it gives all device fields associated with device_type object
             device_type.devicetypefields_set.all()
         except Exception as e:
-            logger.info(e.message)
+            logger.exception(e.message)
 
         # saving eav relation data i.e. device extra fields those depends on device type
         for field in all_non_empty_post_fields:
@@ -1599,7 +1620,7 @@ class DeviceUpdate(UpdateView):
                 dtfv.device_id = self.object.id
                 dtfv.save()
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
         # dictionary containing old values of current device
         initial_field_dict = form.initial
@@ -1610,7 +1631,7 @@ class DeviceUpdate(UpdateView):
                 self.object.is_added_to_nms = 2
                 self.object.save()
         except Exception as e:
-            logger.info(e.message)
+            logger.exception(e.message)
 
         # if 'ip_address' value is changed and 'is_added_to_nms' is 1 than set 'is_added_to_nms' to 2
         try:
@@ -1618,7 +1639,7 @@ class DeviceUpdate(UpdateView):
                 self.object.is_added_to_nms = 2
                 self.object.save()
         except Exception as e:
-            logger.info(e.message)
+            logger.exception(e.message)
 
 
         def cleaned_data_field():
@@ -1689,11 +1710,8 @@ class DeviceUpdate(UpdateView):
                 if len(verb_string) >= 255:
                     verb_string = verb_string[:250] + '...'
 
-                action.send(self.request.user, verb=verb_string)
         except Exception as user_audit_exeption:
-            action.send(self.request.user, verb="Changed the Physical Device Inventory")
-            if settings.DEBUG:
-                logger.error(user_audit_exeption)
+            logger.exception(user_audit_exeption.message)
 
         return HttpResponseRedirect(DeviceCreate.success_url)
 
@@ -1718,10 +1736,6 @@ class DeviceDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting device: %s' % (self.get_object().device_name))
-        except Exception as activity:
-            pass
         return super(DeviceDelete, self).delete(request, *args, **kwargs)
 
 
@@ -1900,10 +1914,6 @@ class DeviceTypeFieldsCreate(CreateView):
         If the form is valid, redirect to the supplied URL.
         """
         self.object = form.save()
-        try:
-            action.send(self.request.user, verb='Created', action_object=self.object)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect(DeviceTypeFieldsCreate.success_url)
 
 
@@ -1949,7 +1959,6 @@ class DeviceTypeFieldsUpdate(UpdateView):
                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
                 if len(verb_string) >= 255:
                     verb_string = verb_string[:250] + '...'
-                action.send(self.request.user, verb=verb_string)
         except Exception as activity:
             pass
 
@@ -1976,10 +1985,6 @@ class DeviceTypeFieldsDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting device type field: %s' % self.get_object().field_name)
-        except Exception as activity:
-            pass
         return super(DeviceTypeFieldsDelete, self).delete(request, *args, **kwargs)
 
 
@@ -2187,10 +2192,6 @@ class DeviceTechnologyCreate(CreateView):
             tv.technology = device_technology
             tv.vendor = device_vendor
             tv.save()
-        try:
-            action.send(self.request.user, verb='Created', action_object=device_technology)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect(DeviceTechnologyCreate.success_url)
 
 
@@ -2248,7 +2249,6 @@ class DeviceTechnologyUpdate(UpdateView):
                 if len(verb_string) >= 255:
                     verb_string = verb_string[:250] + '...'
 
-                action.send(self.request.user, verb=verb_string)
         except Exception as activity:
             pass
 
@@ -2274,10 +2274,6 @@ class DeviceTechnologyDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting device technology: %s' % self.get_object().name)
-        except Exception as activity:
-            pass
         return super(DeviceTechnologyDelete, self).delete(self, request, *args, **kwargs)
 
 
@@ -2481,10 +2477,6 @@ class DeviceVendorCreate(CreateView):
             vm.vendor = device_vendor
             vm.model = device_model
             vm.save()
-        try:
-            action.send(self.request.user, verb='Created', action_object=device_vendor)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect(DeviceVendorCreate.success_url)
 
 
@@ -2544,7 +2536,6 @@ class DeviceVendorUpdate(UpdateView):
                 if len(verb_string) >= 255:
                     verb_string = verb_string[:250] + '...'
 
-                action.send(self.request.user, verb=verb_string)
         except Exception as activity:
             pass
 
@@ -2570,10 +2561,6 @@ class DeviceVendorDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting device vendor: %s' % (self.get_object().name))
-        except Exception as activity:
-            pass
         return super(DeviceVendorDelete, self).delete(request, *args, **kwargs)
 
 
@@ -2776,10 +2763,6 @@ class DeviceModelCreate(CreateView):
             mt.type = device_type
             mt.save()
 
-        try:
-            action.send(self.request.user, verb='Created', action_object=device_model)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect(DeviceModelCreate.success_url)
 
 
@@ -2839,7 +2822,6 @@ class DeviceModelUpdate(UpdateView):
                 if len(verb_string) >= 255:
                     verb_string = verb_string[:250] + '...'
 
-                action.send(self.request.user, verb=verb_string)
         except Exception as activity:
             pass
 
@@ -2865,10 +2847,6 @@ class DeviceModelDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting device model: %s' % (self.get_object().name))
-        except Exception as activity:
-            pass
         return super(DeviceModelDelete, self).delete(request, *args, **kwargs)
 
 
@@ -2965,7 +2943,7 @@ class DeviceTypeListingTable(BaseDatatableView):
                     else static("img/" + dct['device_icon'])
                 dct.update(device_icon='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(device_icon_img_url))
             except Exception as e:
-                logger.info(e)
+                logger.exception(e)
 
             try:
                 device_gmap_icon_img_url = "/media/"+ (dct['device_gmap_icon']) if \
@@ -2973,7 +2951,7 @@ class DeviceTypeListingTable(BaseDatatableView):
                     else static("img/" + dct['device_gmap_icon'])
                 dct.update(device_gmap_icon='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(device_gmap_icon_img_url))
             except Exception as e:
-                logger.info(e)
+                logger.exception(e)
 
             dct.update(actions='<a href="/type/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                         <a href="/type/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
@@ -3076,10 +3054,6 @@ class DeviceTypeCreate(CreateView):
         If the form is valid, redirect to the supplied URL.
         """
         self.object = form.save()
-        try:
-            action.send(self.request.user, verb='Created', action_object=self.object)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect(DeviceTypeCreate.success_url)
 
 
@@ -3117,7 +3091,6 @@ class DeviceTypeUpdate(UpdateView):
                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
                 if len(verb_string) >= 255:
                     verb_string = verb_string[:250] + '...'
-                action.send(self.request.user, verb=verb_string)
         except Exception as activity:
             pass
         self.object = form.save()
@@ -3143,10 +3116,6 @@ class DeviceTypeDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting device type: %s' % (self.get_object().name))
-        except Exception as activity:
-            pass
         return super(DeviceTypeDelete, self).delete(request, *args, **kwargs)
 
 
@@ -3281,10 +3250,6 @@ class DevicePortCreate(CreateView):
         If the form is valid, redirect to the supplied URL.
         """
         self.object = form.save()
-        try:
-            action.send(self.request.user, verb='Created', action_object=self.object)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect(DevicePortCreate.success_url)
 
 
@@ -3321,7 +3286,6 @@ class DevicePortUpdate(UpdateView):
                               ', '.join(['%s: %s' % (k, cleaned_data_field_dict[k]) for k in changed_fields_dict])
                 if len(verb_string) >= 255:
                     verb_string = verb_string[:250] + '...'
-                action.send(self.request.user, verb=verb_string)
         except Exception as activity:
             pass
         self.object = form.save()
@@ -3347,10 +3311,6 @@ class DevicePortDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting device port: %s' % (self.get_object().name))
-        except Exception as activity:
-            pass
         return super(DevicePortDelete, self).delete(request, *args, **kwargs)
 
 
@@ -3491,10 +3451,6 @@ class DeviceFrequencyCreate(CreateView):
         If the form is valid, redirect to the supplied URL.
         """
         self.object = form.save()
-        try:
-            action.send(self.request.user, verb='Create device frequency of value : %s' %(self.object.value), action_object=self.object)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect(DeviceFrequencyCreate.success_url)
 
 
@@ -3519,10 +3475,6 @@ class DeviceFrequencyUpdate(UpdateView):
         If the form is valid, redirect to the supplied URL.
         """
         self.object = form.save()
-        try:
-            action.send(self.request.user, verb='Update Device Frequency whose value is : %s' %(self.object.value), action_object=self.object)
-        except Exception as activity:
-            pass
         return HttpResponseRedirect(DeviceFrequencyUpdate.success_url)
 
 
@@ -3545,8 +3497,4 @@ class DeviceFrequencyDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
-        try:
-            action.send(request.user, verb='deleting device frequency: %s' % (self.get_object().value))
-        except Exception as activity:
-            pass
         return super(DeviceFrequencyDelete, self).delete(request, *args, **kwargs)

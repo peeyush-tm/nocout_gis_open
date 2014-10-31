@@ -306,7 +306,6 @@ class DeviceStatsApi(View):
                                     bh_info.BH_CIRCUIT_ID as BH_CIRCUIT_ID,
                                     bh_info.BH_CAPACITY as BH_CAPACITY,
                                     bh_info.BH_TTSL_CIRCUIT_ID as BH_TTSL_CIRCUIT_ID,
-                                    bh_info.BH_DR_SITE as BH_DR_SITE,
 
                                     bh_info.BHCONF as BHCONF,
                                     bh_info.BHCONF_IP as BHCONF_IP,
@@ -324,7 +323,6 @@ class DeviceStatsApi(View):
                                     backhaul.bh_circuit_id as BH_CIRCUIT_ID,
                                     backhaul.bh_capacity as BH_CAPACITY,
                                     backhaul.ttsl_circuit_id as BH_TTSL_CIRCUIT_ID,
-                                    backhaul.dr_site as BH_DR_SITE,
 
                                     device.device_name as BHCONF,
                                     device.ip_address as BHCONF_IP

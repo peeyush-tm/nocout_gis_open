@@ -1,7 +1,6 @@
 from django.contrib.auth.decorators import permission_required
 from django.shortcuts import render
 import json
-from actstream import action
 from django.db.models.query import ValuesQuerySet
 from django.http import HttpResponseRedirect
 from django.utils.decorators import method_decorator
@@ -155,7 +154,6 @@ class MachineCreate(CreateView):
         """
 
         self.object=form.save()
-        action.send(self.request.user, verb='Created', action_object = self.object)
         return HttpResponseRedirect(MachineCreate.success_url)
 
 
@@ -192,7 +190,6 @@ class MachineUpdate(UpdateView):
                 verb_string=verb_string[:250] + '...'
 
             self.object=form.save()
-            action.send( self.request.user, verb=verb_string )
         return HttpResponseRedirect( MachineUpdate.success_url )
 
 class MachineDelete(DeleteView):
@@ -215,6 +212,5 @@ class MachineDelete(DeleteView):
         """
         overriding the delete method to log the user activity.
         """
-        action.send(request.user, verb='deleting machine: %s'%(self.get_object().name))
         return super(MachineDelete, self).delete(request, *args, **kwargs)
 
