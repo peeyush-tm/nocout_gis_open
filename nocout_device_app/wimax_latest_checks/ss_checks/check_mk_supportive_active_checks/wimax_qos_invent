@@ -17,16 +17,18 @@ Device on which Frequency operating is sent to device application
 
 """
 # ######################################################################
-# Function: check_wimax_ss_uptime
+# Function: check_wimax_qos_invent
 #
 # Parameters: info (SNMP Ouput) _no_params (No Parameters)
 #
 # Output: service state ,plugin output
 # ######################################################################
 
-def extract_hostip_from_wimax_topology(ss_host_mac):
+
+
+def extract_bs_ip_from_wimax_topology(ss_host_mac):
         query = """
-        select connected_device_ip from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
+        select ip_address from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
         db = mysql_conn()
         cur = db.cursor()
         cur.execute(query)
@@ -36,7 +38,7 @@ def extract_hostip_from_wimax_topology(ss_host_mac):
         return data
 
 
-def connection_telnet(hostip, port):
+def connection_telnet(host_name, port,mac):
         """
         Connects to a socket, checks for the WELCOME-MSG and closes the
         connection.
@@ -44,36 +46,34 @@ def connection_telnet(hostip, port):
     
         """
         try:
-                tn = Telnet(hostip,port,timeout=3)
+                tn = Telnet(host_name,port,timeout=3)
         except socket.timeout:
-		uptime = None
+		qos = None
         tn.read_until("Login:")
         tn.write("admin" + "\r\n")
         tn.read_until("Password:")
         tn.write("admin" + "\r\n")
-        tn.write("show uptime\r\n")
+        tn.write("show service-flows\r\n")
         tn.write("exit\r\n")
         data = tn.read_all()
-	uptime = None
-	try:
+
+	qos = None
+	svc_cls_index_list = []
+        try:
                 for i,row in enumerate(data.split("\n")):
-                        params_list = [r for r in row.split()]
-                        year =  int(params_list[4])
-                        day = int(params_list[6])
-                        hour = int(params_list[8])
-                        minutes = int(params_list[10])
-                        seconds = int(params_list[12])
-                        uptime = ((year*365*24*60) + (day * 24*60) + (hour*60) + minutes)) * 60 + seconds
-                        break
-
+                        if mac in row:
+                                params_list = [r for r in row.split()]
+                                svc_cls_index = int(params_list[4])
+				svc_cls_index_list.append(svc_cls_index)
+				if len(svc_cls_index_list) == 2:
+					break
         except:
-                uptime = None
-	return uptime
-                                
+		qos = None
+	return qos
 
-def check_wimax_ss_uptime(item, _no_params, info):
+def check_wimax_qos_invent(item, _no_params, info):
     """
-            check_wimax_ss_uptime function calcdlates the operating ptx
+            check_wimax_qos_invent function calcdlates the operating ptx
 
             Args:
                     item (str) Specific item on SNMP output on which we want to filter resdlts
@@ -96,7 +96,6 @@ def check_wimax_ss_uptime(item, _no_params, info):
 """
     state = 3
     infotext = "unknown_value"
-    uptime= None
     try:
 	if info[0][2]:
                 ss_mac = info[0][2]
@@ -104,27 +103,26 @@ def check_wimax_ss_uptime(item, _no_params, info):
 		n = 2
 		ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
                 if ss_mac:
-			host_ip = extract_hostip_from_wimax_topology(ss_mac)
+			host_ip = extract_bs_ip_from_wimax_topology(ss_mac)
 			if host_ip[0][0]:
-                		uptime =connection_telnet(host_ip[0][0], 23,ss_mac)
-				if uptime:
-					infotext = "SS uptime is %s" % uptime
+                		qos =connection_telnet(host_ip[0][0], 23,ss_mac)
+				if isinstance(qos,int):
+        				infotext = "%s" % qos
 					state = 0
     except ValueError:
         infotext = "type_mismatch_value"
     except:
         infotext = "unknown_value"
 
-    return (state, infotext,[("uptime", uptime)])
+    return (state, infotext)
 
 
-check_info["wimax_ss_uptime"] = {
-    'check_function': check_wimax_ss_uptime,
-    'service_description': 'wimax_ss_uptime',
-    'has_perfdata' : True,
+check_info["wimax_qos_invent"] = {
+    'check_function': check_wimax_qos_invent,
+    'service_description': 'wimax_qos_invent',
 }
 
 #########################################################################
 #	SNMP OID for the operating ptx
 #########################################################################
-snmp_info["wimax_ss_uptime"] = ( ".1.3.6.1.2.1.10.184.1.3.1.1.1", ["17.1"] )
+snmp_info["wimax_qos_invent"] = ( ".1.3.6.1.2.1.10.184.1.3.1.1.1", ["17.1"] )
