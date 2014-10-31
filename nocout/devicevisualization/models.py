@@ -1,4 +1,9 @@
 from django.db import models
+import time
+from datetime import datetime
+from user_profile.models import UserProfile
+from django.contrib.auth.models import User
+
 
 #************************** Google maps tools model **************************#
 
@@ -18,3 +23,32 @@ class GISPointTool(models.Model):
 
 	def __unicode__(self):
 	    return self.name
+
+#************************** KMZ Model *******************************#
+class KMZReport(models.Model):
+
+	#Function for modify path of upload file #
+	def KMZ_report_name(instance, filename):
+
+		timestamp = time.time()
+		full_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d-%H-%M-%S')
+		year_month_date = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
+
+		# modified filename
+		filename = "{}_{}".format(full_time, filename)
+
+		# modified path where file is uploaded
+		path = "uploaded/KMZ"
+
+		return '{}/{}/{}'.format(path, year_month_date, filename)
+
+	name = models.CharField('Name', max_length=255, unique=True)
+	filename = models.FileField(max_length=300, upload_to=KMZ_report_name)
+	added_on = models.DateTimeField('Added On',blank=True, auto_now_add=True)
+	user = models.ForeignKey(UserProfile)
+	is_public = models.BooleanField('Is Public', default=True)
+
+	
+
+	
+
