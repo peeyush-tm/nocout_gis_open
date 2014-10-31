@@ -42,7 +42,7 @@
             
             $('#KMZContainer').delegate('.delete_kmzreport','click',function(e){
                 var delete_btn = this;
-                bootbox.confirm("Are you sure you want to delete this report?",function(result){
+                bootbox.confirm("Are you sure you want to delete this kmz file?",function(result){
                     if(result) {
                         var delete_url = $(delete_btn).attr('url');
                         window.location.href = window.location.href+"delete/"+delete_url+"/";

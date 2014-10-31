@@ -654,11 +654,11 @@ class Kmzreport_listingtable(BaseDatatableView):
         for dct in qs:
             dct.update(actions='<a style="cursor:pointer;" url="{0}" class="delete_kmzreport" title="Delete kmz" >\
                 <i class="fa fa-trash-o text-danger"></i></a>\
-                <a href="gmap/{0}/" title="view on google map">\
+                <a href="view/gmap/{0}/" title="view on google map">\
                 <i class="fa fa-globe"></i></a>\
-                <a href="google_earth/{0}" title="view on google earth">\
+                <a href="view/google_earth/{0}" title="view on google earth">\
                 <i class="fa fa-globe"></i></a>\
-                <a href="white_background/{0}" title="view on white background">\
+                <a href="view/white_background/{0}" title="view on white background">\
                 <i class="fa fa-globe"></i></a>\
                 '.format(dct.pop('id')),
                added_on=dct['added_on'].strftime("%Y-%m-%d") if dct['added_on'] != "" else "")
