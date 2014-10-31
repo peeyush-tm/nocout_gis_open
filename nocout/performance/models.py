@@ -925,6 +925,7 @@ class NetworkStatus(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
+    age = models.IntegerField('Status Age', default=0)
 
     def __unicode__(self):
         return self.device_name
@@ -949,7 +950,8 @@ class ServiceStatus(models.Model):
     critical_threshold = models.CharField('Critical Threshold', max_length=20, null=True, blank=True)
     sys_timestamp = models.IntegerField('SYS Timestamp', default=0)
     check_timestamp = models.IntegerField('Check Timestamp', null=True, blank=True)
-
+    age = models.IntegerField('Status Age', default=0)
+    
     def __unicode__(self):
         return self.device_name
 
