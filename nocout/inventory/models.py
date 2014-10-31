@@ -82,7 +82,7 @@ class Backhaul(models.Model):
     bh_circuit_id = models.CharField('BH Circuit ID', max_length=250, null=True, blank=True)
     bh_capacity = models.IntegerField('BH Capacity', null=True, blank=True, help_text='Enter a number.')
     ttsl_circuit_id = models.CharField('TTSL Circuit ID', max_length=250, null=True, blank=True)
-    # dr_site = models.CharField('DR Site', max_length=150, null=True, blank=True)
+    dr_site = models.CharField('DR Site', max_length=150, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
 
     def __unicode__(self):
