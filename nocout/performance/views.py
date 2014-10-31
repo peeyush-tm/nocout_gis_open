@@ -1856,7 +1856,7 @@ def gis_raw_inventory(device_list=[]):
                         bh_info.BH_CIRCUIT_ID as BH_CIRCUIT_ID,
                         bh_info.BH_CAPACITY as BH_CAPACITY,
                         bh_info.BH_TTSL_CIRCUIT_ID as BH_TTSL_CIRCUIT_ID,
-                        bh_info.BH_DR_SITE as BH_DR_SITE,
+
 
                         bh_info.BH_DEVICE_ID as BH_DEVICE_ID,
                         bh_info.BHCONF as BHCONF,
@@ -1875,7 +1875,7 @@ def gis_raw_inventory(device_list=[]):
                         backhaul.bh_circuit_id as BH_CIRCUIT_ID,
                         backhaul.bh_capacity as BH_CAPACITY,
                         backhaul.ttsl_circuit_id as BH_TTSL_CIRCUIT_ID,
-                        backhaul.dr_site as BH_DR_SITE,
+
 
                         device.id as BH_DEVICE_ID,
                         device.device_name as BHCONF,
