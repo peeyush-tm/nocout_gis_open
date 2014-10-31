@@ -154,21 +154,24 @@ class ActionListingTable(BaseDatatableView):
         return ret
 
 
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
 def log_user_action(request):
     """
     Method based view to log the user actions.
     """
     if request.method == 'POST':
-        form = UserActionForm(request.POST)
-        if form.is_valid():
+        try:
+            #form = UserActionForm(request.POST)
             obj = UserAction(user_id=request.user.id)
-            obj.module = form.cleaned_data['module']
-            obj.action = form.cleaned_data['action']
+            obj.module = request.POST.get("module", "")# form.cleaned_data['module']
+            obj.action = request.POST.get("action", "")#form.cleaned_data['action']
             obj.save()
 
             return HttpResponse(json.dumps({'success':True}))
-        else:
+        except Exception as e:
+            logger.exception(e)
             return HttpResponse(json.dumps({'success':False}))
     else:
         return HttpResponse(json.dumps({'success':False}))
-
