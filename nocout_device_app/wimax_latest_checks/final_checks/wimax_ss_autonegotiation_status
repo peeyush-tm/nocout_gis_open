@@ -48,6 +48,7 @@ def connection_telnet_auto_status(hostip, port):
                 tn = Telnet(hostip,port,timeout=3)
         except socket.timeout:
 		autonegotiation_value = None
+		return autonegotiation_value
         tn.read_until("Login:")
         tn.write("admin" + "\r\n")
         tn.read_until("Password:")

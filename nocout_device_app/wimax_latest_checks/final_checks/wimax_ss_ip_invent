@@ -47,6 +47,7 @@ def connection_telnet(host_ip, port,mac):
                 tn = Telnet(host_ip,port,timeout=3)
         except socket.timeout:
 		ss_ip = None
+		return ss_ip
         tn.read_until("Login:")
         tn.write("admin" + "\r\n")
         tn.read_until("Password:")
