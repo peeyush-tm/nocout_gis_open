@@ -9,7 +9,8 @@ class ProcessedReportDetails(models.Model):
     report_name = models.CharField('Report Name', max_length=255)
     report_path = models.CharField('Report Path', max_length=512)
     created_on  = models.DateTimeField('Created On', auto_now=True, auto_now_add=True, blank=True)
-    orgnization_id = models.IntegerField('Organization ID', default=1)
+    report_date  = models.DateTimeField('Created On', blank=True, null=True)
+    organization_id = models.IntegerField('Organization ID', default=1)
 
 class ReportSettings(models.Model):
     """
