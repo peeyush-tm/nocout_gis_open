@@ -9,8 +9,10 @@
 {% load staticfiles %}
 
 {% block content %}
+       {% if perms.inventory.add_antenna %}
 
     <p><a href="/device/new"><i class="fa fa-plus"></i> Create Device</a></p>
+       {% endif %}
     <p><a href="/device"><i class="fa fa-table"></i> Devices List View</a></p>
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">

@@ -27,6 +27,7 @@ from site_instance.models import SiteInstance
 from inventory.models import Backhaul, SubStation, Sector
 from django.contrib.staticfiles.templatetags.staticfiles import static
 
+
 from django.views.decorators.csrf import csrf_exempt
 
 import logging
@@ -43,6 +44,15 @@ class DeviceList(ListView):
     model = Device
     template_name = 'device/devices_list.html'
 
+
+    @method_decorator(permission_required('device.view_device', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(DeviceList, self).dispatch(*args, **kwargs)
+
+   
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -66,8 +76,8 @@ class DeviceList(ListView):
              'bSortable': False},
             {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False}, ]
 
-        #if the user role is Admin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        #if the user role is Admin or superadmin then the action column will appear on the datatable
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True) or self.request.user.is_superuser:
             datatable_headers.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '9%', 'bSortable': False})
             datatable_headers.append(
@@ -92,7 +102,7 @@ class DeviceList(ListView):
             {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False}, ]
 
         #if the user role is Admin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True) or self.request.user.is_superuser:
             datatable_headers_no_nms_actions.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '15%', 'bSortable': False})
 
@@ -258,6 +268,7 @@ class OperationalDeviceListingTable(BaseDatatableView):
                 logger.info("Device not present. Exception: ", e.message)
 
             # current device in loop
+
             current_device = Device.objects.get(pk=dct['id'])
 
             try:
@@ -293,10 +304,18 @@ class OperationalDeviceListingTable(BaseDatatableView):
             # a. backhaul configured on (from model Backhaul)
             # b. sector configures on (from model Sector)
             # c. sub-station configured on (from model SubStation)
-            dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-               <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-               <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title=" Soft Delete"></i></a>'.format(
-                dct['id']))
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
+            if self.request.user.has_perm('device.change_device'):
+                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('device.delete_device'):
+                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions=detail_action+edit_action+delete_action)
+
             dct.update(nms_actions='')
 
             # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
@@ -1769,6 +1788,13 @@ class DeviceTypeFieldsList(ListView):
     model = DeviceTypeFields
     template_name = 'device_extra_fields/device_extra_fields_list.html'
 
+    @method_decorator(permission_required('device.view_devicetypefields', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(DeviceTypeFieldsList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -2016,6 +2042,13 @@ class DeviceTechnologyList(ListView):
     """
     model = DeviceTechnology
     template_name = 'device_technology/device_technology_list.html'
+
+    @method_decorator(permission_required('device.view_devicetechnology', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(DeviceTechnologyList, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """
@@ -2304,6 +2337,13 @@ class DeviceVendorList(ListView):
     """
     model = DeviceVendor
     template_name = 'device_vendor/device_vendor_list.html'
+
+    @method_decorator(permission_required('device.view_devicevendor', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(DeviceVendorList, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """
@@ -2594,6 +2634,13 @@ class DeviceModelList(ListView):
     model = DeviceModel
     template_name = 'device_model/device_model_list.html'
 
+    @method_decorator(permission_required('device.view_devicemodel', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(DeviceModelList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -2880,6 +2927,13 @@ class DeviceTypeList(ListView):
     model = DeviceType
     template_name = 'device_type/device_type_list.html'
 
+    @method_decorator(permission_required('device.view_devicetype', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(DeviceTypeList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -3147,6 +3201,13 @@ class DevicePortList(ListView):
     model = DevicePort
     template_name = 'device_port/device_ports_list.html'
 
+    @method_decorator(permission_required('device.view_deviceport', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(DevicePortList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -3341,6 +3402,13 @@ class DeviceFrequencyListing(ListView):
     model = DeviceFrequency
     template_name = 'device_frequency/device_frequency_list.html'
 
+    @method_decorator(permission_required('device.view_devicefrequency', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(DeviceFrequencyListing, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -3351,7 +3419,7 @@ class DeviceFrequencyListing(ListView):
             {'mData': 'color_hex_value', 'sTitle': 'Hex Value', 'sWidth': 'auto', },
             {'mData': 'frequency_radius', 'sTitle': 'Frequency Radius (Km)', 'sWidth': 'auto', }
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if self.request.user.is_superuser:
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)

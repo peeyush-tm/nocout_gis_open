@@ -7,11 +7,11 @@
 {% block content_title %}Icon Settings Management{% endblock %}
 {% block content_description %}List of icons settings{% endblock %}
 {% block content %}
-    {% for group in user.groups.all %}
-        {% if group.name == 'group_admin' or group.name == 'group_operator' %}
+    
+        {% if perms.inventory.add_iconsettings %}
             <p><a href="/icon_settings/new"><i class="fa fa-plus">&nbsp;</i> Create Icon Settings</a></p>
         {% endif %}
-    {% endfor %}
+    
     <div class="box border lite">
         <div id="tableContainer_div" class="box-title">
             <h4><i class="fa fa-table"></i>ICON SETTINGS LISTING</h4>
