@@ -3,7 +3,7 @@ from dateutil.parser import *
 from models import GISInventoryBulkImport
 from machine.models import Machine
 from site_instance.models import SiteInstance
-from device.models import Device, DeviceTechnology
+from device.models import Device, DeviceTechnology, DevicePort
 from inventory.models import Antenna, Backhaul, BaseStation, Sector, Customer, SubStation, Circuit
 from device.models import State, City
 from nocout.settings import MEDIA_ROOT
@@ -1634,8 +1634,9 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     machine_name = ""
 
                 # device name
-                # name = '{}_ne'.format(special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
                 name = device_latest_id
+
+                # device alias
                 alias = '{}_NE'.format(circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
 
                 if ip_sanitizer(row['IP']):
@@ -1760,8 +1761,9 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     machine_name = ""
 
                 # device name
-                # name = special_chars_name_sanitizer_with_lower_case(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else ""
                 name = device_latest_id
+
+                # device alias
                 alias = '{}'.format(circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
 
                 if ip_sanitizer(row['SS IP']):
@@ -2072,7 +2074,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
 
                 # antenna alias
                 alias = '{}_NE'.format(circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
-                
+
                 # sector antenna data
                 sector_antenna_data = {
                     'antenna_name': name,
@@ -2100,7 +2102,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
 
                 # antenna alias
                 alias = '{}'.format(circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else "")
-                
+
                 # sub station antenna data
                 substation_antenna_data = {
                     'antenna_name': name,
@@ -2363,7 +2365,10 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
         for val in error_rows:
             temp_list = list()
             for key in keys_list:
-                temp_list.append(val[key])
+                try:
+                    temp_list.append(val[key])
+                except Exception as e:
+                    logger.info(e.message)
             error_rows_list.append(temp_list)
 
         wb_bulk_upload_errors = xlwt.Workbook()
@@ -2965,7 +2970,7 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
 
                 # antenna alias
                 alias = circuit_id_sanitizer(row['SS Circuit ID']) if 'SS Circuit ID' in row.keys() else ""
-                
+
                 # sub station antenna data
                 substation_antenna_data = {
                     'antenna_name': name,
@@ -3669,7 +3674,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
 
                 # antenna alias
                 alias = '{}'.format(circuit_id_sanitizer(row['Sector ID']) if 'Sector ID' in row.keys() else "")
-                
+
                 # sector antenna data
                 sector_antenna_data = {
                     'antenna_name': name,
@@ -3796,6 +3801,7 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                     'name': name,
                     'alias': alias,
                     'base_station': basestation,
+                    'sector_id': row['Sector ID'].strip() if 'Sector ID' in row.keys() else "",
                     'bs_technology': 4,
                     'sector_configured_on': base_station,
                     'antenna': sector_antenna,
@@ -4201,7 +4207,6 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
         device_latest_id = max(id_list)
     except Exception as e:
         logger.info("No device is added in database till now. Exception: ", e.message)
-
     try:
         for row in complete_d:
             # increment device latest id by 1
@@ -4261,7 +4266,6 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
 
                     # device name
                     name = device_latest_id
-                    # name = special_chars_name_sanitizer_with_lower_case(row['Sector ID'] if 'Sector ID' in row.keys() else "")
 
                     # device alias
                     alias = circuit_id_sanitizer(row['Sector ID']) if 'Sector ID' in row.keys() else ""
@@ -4688,20 +4692,44 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                 # initialize alias
                 alias = ""
 
+                # pmp name
+                pmp = ""
+                try:
+                    if 'PMP' in row.keys():
+                        pmp = row['PMP']
+                        if isinstance(pmp, basestring) or isinstance(pmp, float):
+                            pmp = int(pmp)
+                except Exception as e:
+                    logger.info("PMP not in sheet or something wrong. Exception: ", e.message)
+
+                # sector configured on port
+                port = ""
+                try:
+                    port_name = "pmp" + str(pmp)
+                    port_alias = "PMP Port " + str(pmp)
+                    port_value = pmp
+                    port = create_device_port(port_name, port_alias, port_value)
+                except Exception as e:
+                    logger.info("Sector Configured On port not present. Exception: ", e.message)
+
+
                 # sector name
-                name = '{}_{}'.format(special_chars_name_sanitizer_with_lower_case(row['Sector ID']) if 'Sector ID' in row.keys() else "",
-                                      row['Sector Name'] if 'Sector Name' in row.keys() else "")
+                name = '{}_{}_{}'.format(
+                    special_chars_name_sanitizer_with_lower_case(row['Sector ID']) if 'Sector ID' in row.keys() else "",
+                    row['Sector Name'] if 'Sector Name' in row.keys() else "", pmp)
 
                 # sector alias
-                alias = '{}'.format(circuit_id_sanitizer(row['Sector ID']) if 'Sector ID' in row.keys() else "")
+                alias = '{}'.format(row['Sector ID'].strip() if 'Sector ID' in row.keys() else "")
 
                 # sector data
                 sector_data = {
                     'name': name,
                     'alias': alias,
+                    'sector_id': row['Sector ID'].strip() if 'Sector ID' in row.keys() else "",
                     'base_station': basestation,
-                    'bs_technology': 4,
+                    'bs_technology': 3,
                     'sector_configured_on': base_station,
+                    'sector_configured_on_port': port,
                     'antenna': sector_antenna,
                     'description': 'Sector created on {}.'.format(full_time)
                 }
@@ -4981,9 +5009,8 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
             sector = ""
 
             try:
-                ss_bs_ip = ip_sanitizer(row['AP IP'] if 'AP IP' in row else "")
-                sector_configured_on_device = Device.objects.get(ip_address=ss_bs_ip)
-                sector = Sector.objects.get(sector_configured_on=sector_configured_on_device)
+                sector_id = row['Sector ID'].strip() if 'Sector ID' in row.keys() else ""
+                sector = Sector.objects.get(sector_id=sector_id)
             except Exception as e:
                 logger.info(e.message)
 
@@ -5729,7 +5756,7 @@ def create_backhaul(backhaul_payload):
     if 'ttsl_circuit_id' in backhaul_payload.keys():
         ttsl_circuit_id = backhaul_payload['ttsl_circuit_id'] if backhaul_payload['ttsl_circuit_id'] else ""
     if 'dr_site' in backhaul_payload.keys():
-        dr_site = backhaul_payload['dr_site'] if backhaul_payload['dr_site'] else ""
+        dr_site = backhaul_payload['dr_site'].lower() if backhaul_payload['dr_site'] else ""
     if 'description' in backhaul_payload.keys():
         description = backhaul_payload['description'] if backhaul_payload['description'] else ""
 
@@ -5862,7 +5889,12 @@ def create_backhaul(backhaul_payload):
                 # dr site
                 if dr_site:
                     try:
-                        backhaul.dr_site = dr_site
+                        if dr_site == "yes":
+                            backhaul.dr_site = "Yes"
+                        elif dr_site == "no":
+                            backhaul.dr_site = "No"
+                        else:
+                            backhaul.dr_site = ""
                     except Exception as e:
                         logger.info("DR Site: ({} - {})".format(dr_site, e.message))
                 # description
@@ -6007,7 +6039,12 @@ def create_backhaul(backhaul_payload):
                 # dr site
                 if dr_site:
                     try:
-                        backhaul.dr_site = dr_site
+                        if dr_site == "yes":
+                            backhaul.dr_site = "Yes"
+                        elif dr_site == "no":
+                            backhaul.dr_site = "No"
+                        else:
+                            backhaul.dr_site = ""
                     except Exception as e:
                         logger.info("DR Site: ({} - {})".format(dr_site, e.message))
                 # description
@@ -6122,7 +6159,10 @@ def create_basestation(basestation_payload):
                 # bs site id
                 if bs_site_id:
                     try:
-                        basestation.bs_site_id = bs_site_id
+                        if isinstance(bs_site_id, float):
+                            basestation.bs_site_id = int(bs_site_id)
+                        else:
+                            basestation.bs_site_id = bs_site_id
                     except Exception as e:
                         logger.info("BS Site ID: ({} - {})".format(bs_site_id, e.message))
                 # bs site type
@@ -7359,6 +7399,39 @@ def create_circuit(circuit_payload):
                     return ""
 
 
+def create_device_port(name, alias, value):
+    """ Create or Update device port
+
+    Args:
+        name (str): 'pmp1'
+        alias (str): 'PMP Port 1'
+        value (int): 1
+
+    Returns:
+        port (<class 'device.models.DevicePort'>): pmp1
+
+    """
+    try:
+        # ---------------------------- UPDATING DEVICE PORT -------------------------------
+        port = DevicePort.objects.get(name=name, value=value)
+        port.name = name
+        port.alias = alias
+        port.value = value
+        port.save()
+        return port
+    except Exception as e:
+        # ---------------------------- CREATING DEVICE PORT -------------------------------
+        port = DevicePort()
+        port.name = name
+        port.alias = alias
+        port.value = value
+        try:
+            port.save()
+            return port
+        except Exception as e:
+            logger.info("Port can't be created. Exception: ", e.message)
+
+
 def get_ptp_machine_and_site(ip):
     """ Get PTP Machine object
 
@@ -7510,6 +7583,7 @@ def ip_sanitizer(name):
             name = ""
     else:
         name = ""
+
     return name
 
 
@@ -7548,7 +7622,7 @@ def sanitize_mac_address(mac=None):
     return mac
 
 
-def get_machine_details(machine_name, machine_numbers=None):
+def get_machine_details(mc_name, machine_numbers=None):
     """ Send dictionary containing information of requested machines
 
     Args:
@@ -7586,17 +7660,17 @@ def get_machine_details(machine_name, machine_numbers=None):
     # machine info dictionary
     machines_dict = dict()
 
-    if machine_name and machine_numbers:
+    if mc_name and machine_numbers:
         for machine_number in machine_numbers:
             # machine name
-            mc_name = str(machine_name) + str(machine_number)
+            machine_name = str(mc_name) + str(machine_number)
 
             machines_dict[machine_name] = list()
 
             # get machine
             machine = ""
             try:
-                machine = Machine.objects.get(name=mc_name)
+                machine = Machine.objects.get(name=machine_name)
             except Exception as e:
                 logger.info("Machine doesn't exist.:", e.message)
 
@@ -7616,12 +7690,13 @@ def get_machine_details(machine_name, machine_numbers=None):
                     machines_dict[machine_name].append(site_dict)
             else:
                 machines_dict[machine_name] = {}
+            machine_name = ""
 
         return machines_dict
 
-    elif machine_name and not machine_numbers:
+    elif mc_name and not machine_numbers:
         # machine name
-        machine_name = str(machine_name)
+        machine_name = str(mc_name)
 
         machines_dict[machine_name] = list()
 
@@ -7673,7 +7748,10 @@ def get_machine_and_site(machines_dict):
 
     if machines_dict:
         for machine, sites in machines_dict.iteritems():
-            current_machine = machine
+            try:
+                current_machine = machine
+            except Exception as e:
+                logger.info("PMP/Wimax machine. Exception: ", e.message)
             try:
                 current_machine = Machine.objects.get(name=machine)
                 for site in sites:
@@ -7682,6 +7760,7 @@ def get_machine_and_site(machines_dict):
                             current_site = SiteInstance.objects.get(name=name)
                             return {'machine': current_machine, 'site': current_site}
             except Exception as e:
+                logger.info("******************** M/C Exception: ", e.message)
                 return ""
 
 
