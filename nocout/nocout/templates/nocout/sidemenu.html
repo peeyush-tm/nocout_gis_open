@@ -169,6 +169,7 @@
                     <span class="arrow"></span>
                 </a>
                 <ul class="sub">
+                    {% if perms.device.view_device %}
                     <li class="has-sub-sub">
                         <a class="" href="javascript:;">
                             <span class="sub-menu-text">Device Inventory</span>
@@ -225,9 +226,10 @@
                             {% if perms.command.view_command %}
                             <li><a class="" href="/command/"><span class="sub-menu-text">Commands</span></a></li>
                             {% endif %}
-                            
-                        </ul>
+                        </ul> 
                     </li>
+                    {% endif %}
+
                             <li class="has-sub-sub">
                             <a class="" href="javascript:;">
                                 <span class="sub-menu-text">GIS Inventory</span>
