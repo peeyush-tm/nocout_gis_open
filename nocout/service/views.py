@@ -30,6 +30,13 @@ class ServiceList(ListView):
     model = Service
     template_name = 'service/services_list.html'
 
+    @method_decorator(permission_required('service.view_service', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(ServiceList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -255,6 +262,13 @@ class ServiceParametersList(ListView):
     model = ServiceParameters
     template_name = 'service_parameter/services_parameter_list.html'
 
+    @method_decorator(permission_required('service.view_serviceparameters', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(ServiceParametersList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -461,6 +475,13 @@ class ServiceDataSourceList(ListView):
     model = ServiceDataSource
     template_name = 'service_data_source/service_data_sources_list.html'
 
+    @method_decorator(permission_required('service.view_servicedatasource', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(ServiceDataSourceList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -656,6 +677,13 @@ class ProtocolList(ListView):
     """
     model = Protocol
     template_name = 'protocol/protocols_list.html'
+
+    @method_decorator(permission_required('service.view_protocol', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(ProtocolList, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """
@@ -862,6 +890,13 @@ class DeviceServiceConfigurationList(ListView):
     """
     model = DeviceServiceConfiguration
     template_name = 'device_service_configuration/device_service_configuration_list.html'
+
+    @method_decorator(permission_required('service.view_deviceserviceconfiguration', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(DeviceServiceConfigurationList, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """
