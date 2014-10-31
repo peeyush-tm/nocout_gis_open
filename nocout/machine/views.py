@@ -22,6 +22,13 @@ class MachineList(ListView):
     model = Machine
     template_name = 'machine/machines_list.html'
 
+    @method_decorator(permission_required('machine.view_machine', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(MachineList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
