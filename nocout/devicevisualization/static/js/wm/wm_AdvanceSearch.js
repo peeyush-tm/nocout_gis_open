@@ -3,6 +3,18 @@ function WmAdvanceSearch(data) {
 	var master_Data = data;
 	var previous_Stored_Values_Obj = {name: [], ip: [], cktId: [], city: []};
 
+	this.showNotification= function() {
+		if(!$("li#gis_search_status_txt").length) {
+			$("#gis_status_txt").append("<li id='gis_search_status_txt'>Advance Search Applied<button class='btn btn-sm btn-danger pull-right' style='padding:2px 5px;margin:-3px;' onclick='whiteMapClass.resetAdvanceSearch();'>Reset</button></li>");
+		}
+	}
+
+	this.hideNotification= function() {
+		if($("li#gis_search_status_txt").length) {
+			$("li#gis_search_status_txt").remove();
+		}
+	}
+
 	this.resetAdvanceSearch = function() {
 		$("#search_name").select2('val', '');
 		$("#search_ip").select2('val', '');
@@ -11,11 +23,13 @@ function WmAdvanceSearch(data) {
 
 		$("#resetSearchForm").addClass('hide');
 
+		searchMarkerLayer.removeFeatures();
+
 		previous_Stored_Values_Obj = {name: [], ip: [], cktId: [], city: []};
 	}
 
 	this.applyAdvanceSearch = function() {
-		var bs_name = "", ip = "", city = "", searchCktId = "";
+		var bs_name = "", ip = "", city = "", searchCktId = "", that= this;
 		var base_stations = [];
 
 		bs_name = $("#search_name").val();
@@ -27,6 +41,7 @@ function WmAdvanceSearch(data) {
 
 		//If no value for advance search
 		if ((bs_name === "" || bs_name === null) && (ip === "" || ip === null) && (city === "" || city === null) && (searchCktId === "" || searchCktId === null)) {
+			searchMarkerLayer.removeFeatures();
 			//do nothing
 		} else {
 			stationsLoop: for (var i = 0; i < master_Data.length; i++) {
@@ -143,12 +158,18 @@ function WmAdvanceSearch(data) {
 
 			if (base_stations.length) {
 				var bounds = new OpenLayers.Bounds();
+				var searchmarkersList = [];
 				for (var i = 0; i < base_stations.length; i++) {
-					// var marker = .createOpenLayerMarker(new OpenLayers.Size(21, 25), 'http://mapicons.nicolasmollet.com/wp-content/uploads/mapicons/shape-default/color-c03638/shapecolor-color/shadow-1/border-dark/symbolstyle-white/symbolshadowstyle-dark/gradient-no/pirates.png', base_stations[i].data.lon, base_stations[i].data.lat, {});
+					var marker = whiteMapClass.createOpenLayerVectorMarker(new OpenLayers.Size(21, 25), base_url+'/static/img/icons/bs_bounce.png', base_stations[i].data.lon, base_stations[i].data.lat, {});
+					searchmarkersList.push(marker);
 					// this.markersLayer.addMarker(marker);
 					// search_Markers.push(marker);
+					
 					bounds.extend(new OpenLayers.LonLat(base_stations[i].data.lon, base_stations[i].data.lat));
+					that.showNotification();
 				}
+				searchMarkerLayer.removeFeatures();
+				searchMarkerLayer.addFeatures(searchmarkersList);
 				$("#resetSearchForm").removeClass('hide');
 				ccpl_map.zoomToExtent(bounds);
 			} else {

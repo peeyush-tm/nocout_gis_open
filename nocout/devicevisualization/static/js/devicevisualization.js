@@ -49,10 +49,14 @@ if($.cookie("isLabelChecked") == true || $.cookie("isLabelChecked")=='true') {
     $("#show_hide_label")[0].checked= false;
 }
 
-//$.cookie("isLabelChecked", 1, {path: '/', secure : true});
-if(google.maps) {
-    google.maps.event.clearListeners(mapInstance,'click');
+if(window.location.pathname.indexOf("white_background") > -1) {
+} else {
+    if(google.maps) {
+        google.maps.event.clearListeners(mapInstance,'click');
+    }
+    
 }
+//$.cookie("isLabelChecked", 1, {path: '/', secure : true});
 
 /*Call get_page_status function to show the current status*/
 get_page_status();
@@ -116,6 +120,9 @@ $("#vendor").change(function(e) {
 /*This event trigger when technology dropdown value is changes*/
 $("#technology").change(function(e) {
 
+if(window.location.pathname.indexOf("white_background") > -1) {
+    return;
+    }
     getPageType();
     var tech_id = $(this).val(),
         tech_value= $('#technology option:selected').text();
@@ -202,11 +209,15 @@ function showAdvSearch() {
 
 $("#setAdvSearchBtn").click(function(e) {
     showSpinner();
-    advJustSearch.showNotification();
-    if(window.location.pathname.indexOf("googleEarth") > -1) {
-        advJustSearch.searchAndCenterData(data_for_filters_earth);
+    if(window.location.pathname.indexOf("white_background") > -1) {
+        whiteMapClass.applyAdvanceSearch();
     } else {
-        advJustSearch.searchAndCenterData(data_for_filters);
+        advJustSearch.showNotification();
+        if(window.location.pathname.indexOf("googleEarth") > -1) {
+            advJustSearch.searchAndCenterData(data_for_filters_earth);
+        } else {
+            advJustSearch.searchAndCenterData(data_for_filters);
+        }        
     }
 });
 
@@ -256,6 +267,9 @@ function showAdvFilters() {
 /*If 'Filter' button of advance filter is clicked*/
 $("#setAdvFilterBtn").click(function(e) {
 
+if(window.location.pathname.indexOf("white_background") > -1) {
+    return;
+    }
     /*Show spinner*/
     showSpinner();
 
@@ -271,6 +285,9 @@ $("#setAdvFilterBtn").click(function(e) {
 /*If 'Cancel' button of advance filter form is clicked*/
 $("#cancelAdvFilterBtn").click(function(e) {
 
+if(window.location.pathname.indexOf("white_background") > -1) {
+    return;
+    }
     $("#advFilterFormContainer").html("");
 
     if(!($("#advFilterContainerBlock").hasClass("hide"))) {
@@ -285,7 +302,9 @@ $("#cancelAdvFilterBtn").click(function(e) {
  * @method removeAdvFilters
  */
 function removeAdvFilters() {
-
+if(window.location.pathname.indexOf("white_background") > -1) {
+    return;
+    }
     /*Reset advance filter status flag*/
     hasAdvFilter = 0;
 
@@ -314,20 +333,24 @@ $("#createPolygonBtn").click(function(e) {
 
     $("#polling_tech").val($("#polling_tech option:first").val());
 
-    networkMapInstance.initLivePolling();
+    if(window.location.pathname.indexOf("white_background") > -1) {
+        whiteMapClass.initLivePolling();
+    } else {
+        networkMapInstance.initLivePolling();
 
-    hasSelectDevice = 1;
+        hasSelectDevice = 1;
 
-    /*Call get_page_status function to show the current status*/
-    get_page_status();
-
-
+        /*Call get_page_status function to show the current status*/
+        get_page_status();
+    }
 });
 
 $("#tech_send").click(function(e) {
 
     if(window.location.pathname.indexOf("googleEarth") > -1) {
         earth_instance.fetchPollingTemplate_earth();
+    } else if(window.location.pathname.indexOf("white_background") > -1) {
+        whiteMapClass.fetchPollingTempate();
     } else {
         networkMapInstance.fetchPollingTemplate_gmap();
     }
@@ -344,8 +367,11 @@ $("#fetch_polling").click(function(e) {
 
 /*Change event on polling technology dropdown*/
 $("#polling_tech").change(function(e) {
+    if(window.location.pathname.indexOf("white_background") > -1) {
 
-    networkMapInstance.initLivePolling();
+    } else {
+        networkMapInstance.initLivePolling();
+    }
 });
 
 /*When "Tabular View" button for polling widget clicked*/

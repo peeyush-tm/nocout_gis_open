@@ -83,6 +83,7 @@ function displayBounds(feature, lon, lat){
     var lonlat = new OpenLayers.LonLat(lon, lat);
 
     if ((lonlat.lon < bounds.left) || (lonlat.lat > bounds.top) || (lonlat.lat < bounds.bottom) ||(lonlat.lon > bounds.right) ) {
+        // console.log('out');
         return 'out';
     }
     return 'in';
@@ -771,3 +772,4 @@ function isLatLon(e) {
         }
     }
 }
+

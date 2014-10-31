@@ -17,5 +17,6 @@ var clustererSettings = {
 	fontSize: 11,
 	fontWeight: 'bold',
 	fontColor: 'black',
-	fontFamily: 'Arial,sans-serif'
+	fontFamily: 'Arial,sans-serif',
+	clustererDistance: 70
 }

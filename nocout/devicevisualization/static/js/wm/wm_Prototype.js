@@ -1,4 +1,4 @@
-var strategy = "";
+var searchMarkerLayer= "";
 /*
 This function creates a Open Layer Map and loads it in dom. Return callback when map is finished creating.
 @param callback {Function} Return function when completed.
@@ -12,27 +12,18 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			whiteMapSettings.initial_bounds[2], whiteMapSettings.initial_bounds[3]);
 
 		//Options for our White Map
-		var options = {
-				controls: [
-				//Navigation true
-				new OpenLayers.Control.Navigation({
-					dragPanOptions: {
-						enableKinetic: true
-					}
-				}),
-				//Pan Zoom true
+		var options = { controls: [
+				new OpenLayers.Control.Navigation({ dragPanOptions: { enableKinetic: true } }),
 				new OpenLayers.Control.PanZoomBar(),
-				new OpenLayers.Control.LayerSwitcher({'ascending':false}),
-				new OpenLayers.Control.ScaleLine(),
-				//Enable Mouse Position
+				// new OpenLayers.Control.LayerSwitcher({'ascending':false}),
+				// new OpenLayers.Control.ScaleLine(), 
 				new OpenLayers.Control.MousePosition(),
-				new OpenLayers.Control.KeyboardDefaults()
+				// new OpenLayers.Control.KeyboardDefaults()
 			],
 			maxExtent: bounds,
 			maxResolution: whiteMapSettings.maxResolution,
 			projection: whiteMapSettings.projection,
-			units: whiteMapSettings.units,
-			allOverlays: true
+			units: whiteMapSettings.units
 		};
 
 		var linesLayer= "", markersLayer= "", sectorsLayer= "", india_Layer= "", that= this, featuresLayer= "", controls;
@@ -49,17 +40,6 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			that.toggleLines();
 		});
 
-		//Create WMS layer to load Map from our geoserver.
-		india_Layer = new OpenLayers.Layer.WMS(
-			"india_Layer", whiteMapSettings.geoserver_url_India, {
-				layers: whiteMapSettings.layer
-			}, {
-				isBaseLayer: true
-			});
-
-		//Add layer to Map
-		ccpl_map.addLayer(india_Layer);
-
 		//Click a Click Control for OpenLayer
 		var mapClick = new OpenLayers.Control.Click();
 		//Add control to Map
@@ -67,18 +47,21 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		//Activate Click
 		mapClick.activate();
 
-		var vectorLayerListener = {
-			featureclick: function(e) {
-				that.onFeatureSelect(e);
-				return false;
-			},
-			onFeatureUnselect: function(e) {
-				that.noFeatureClick(e);
-			}
-		};
+		//Create WMS layer to load Map from our geoserver.
+		india_Layer = new OpenLayers.Layer.WMS(
+			"india_Layer", whiteMapSettings.geoserver_url_India, {
+				layers: whiteMapSettings.layer
+			}, {
+				isBaseLayer: true
+		});
+
+		//Add layer to Map
+		ccpl_map.addLayer(india_Layer);
+
+		var layerEventListener = { featureclick: function(e) { that.onFeatureSelect(e); return false; }, onFeatureUnselect: function(e) { that.noFeatureClick(e); } };
 
 		//Create a Vector Layer which will hold Sectors
-		sectorsLayer = new OpenLayers.Layer.Vector('Sectors Layers', {eventListeners: vectorLayerListener});
+		sectorsLayer = new OpenLayers.Layer.Vector('Sectors Layers', {eventListeners: layerEventListener});
 
 		//Store sectorsLayer
 		this.sectorsLayer = sectorsLayer;
@@ -87,7 +70,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		ccpl_map.addLayer(sectorsLayer);
 
 		//Create a Vector Layer which will hold Lines
-		linesLayer = new OpenLayers.Layer.Vector('Lines Layer', {eventListeners: vectorLayerListener});
+		linesLayer = new OpenLayers.Layer.Vector('Lines Layer', {eventListeners: layerEventListener});
 
 		//Store linesLayer
 		this.linesLayer= linesLayer;
@@ -95,9 +78,11 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		//Add Lines Layer to the map
 		ccpl_map.addLayer(linesLayer);
 
+		searchMarkerLayer = new OpenLayers.Layer.Vector("Search Marker Vector Layer");
+	ccpl_map.addLayer(searchMarkerLayer);
+
 		var devicesVectorLayer = new OpenLayers.Layer.Vector("Device Vector Marker Layer");
 		this.devicesVectorLayer = devicesVectorLayer;
-
 		ccpl_map.addLayer(devicesVectorLayer);		
 
 		var pointStyle = new OpenLayers.Style({
@@ -168,9 +153,11 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			'default': pointStyle,
 		});
 
-		strategy= new OpenLayers.Strategy.Cluster({distance: 70});
+		var strategy= new OpenLayers.Strategy.Cluster({distance: clustererSettings.clustererDistance});
 
 		var markersVectorLayer = new OpenLayers.Layer.Vector("Markers Vector Layer", {styleMap  : styleMap,strategies: [strategy]});
+
+		this.markerLayerStrategy = strategy;
 
 		this.markersVectorLayer = markersVectorLayer;
 
@@ -196,12 +183,9 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		this.featuresLayer = featuresLayer;
 
 		controls = {
-			// point: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Point),
-			// line: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Path),
 			polygon: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Polygon, {
 				eventListeners: {"featureadded": this.livePollingPolygonAdded}
 			})
-			// drag: new OpenLayers.Control.DragFeature(featuresLayer)
 		};
 
 		this.controls= controls;
@@ -210,17 +194,15 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			ccpl_map.addControl(controls[key]);
 		}
 
-		        var panel = new OpenLayers.Control.Panel();
-        panel.addControls([
-            new OpenLayers.Control.Button({
-                displayClass: "helpButton", trigger: function() {alert('Full screen')}, title: 'Full Screen'
-            })
-        ]);
-        ccpl_map.addControl(panel);
+		var panel = new OpenLayers.Control.Panel();
+		panel.addControls([
+			new OpenLayers.Control.Button({ displayClass: "helpButton", trigger: function() {alert('Full screen')}, title: 'Full Screen' })
+		]);
+
+		ccpl_map.addControl(panel);
 		
 		//Map set Extend to our bounds
 		ccpl_map.zoomToExtent(bounds);
-
 		//return
 		callback();
 }

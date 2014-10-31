@@ -1,5 +1,5 @@
 function WmAdvanceFilter(data, bsMarkerObj, ssMarkerObj, masterStationsArr, linesObj, sectorsObj) {
-
+// console.log(data.length);
 	var master_Data = data;
 	var master_Bs_Marker_Obj = bsMarkerObj;
 	var master_Ss_Marker_Obj = ssMarkerObj;
@@ -9,6 +9,7 @@ function WmAdvanceFilter(data, bsMarkerObj, ssMarkerObj, masterStationsArr, line
 	var previous_Stored_Values_Obj = {technology: [], vendor: [], city: [], state: []};
 
 	this.resetAdvanceFilter= function() {
+		showSpinner();
 		$("#filter_technology").select2('val', '');
 		$("#filter_vendor").select2('val', '');
 		$("#filter_state").select2('val', '');
@@ -17,6 +18,11 @@ function WmAdvanceFilter(data, bsMarkerObj, ssMarkerObj, masterStationsArr, line
 		$("#resetAdvFilterBtn").addClass('hide');
 
 		previous_Stored_Values_Obj = {technology: [], vendor: [], city: [], state: []};
+		setTimeout(function() {
+			$("#setAdvFilterBtn").trigger('click');
+			hideSpinner();
+		}, 20);
+		
 	}
 
 	this.applyAdvFilter = function() {
@@ -37,12 +43,15 @@ function WmAdvanceFilter(data, bsMarkerObj, ssMarkerObj, masterStationsArr, line
 			var markerData = master_Data[i];
 			if ((technologyValue === "" || technologyValue === null) && (vendorValue === "" || vendorValue === null) && (stateValue === "" || stateValue === null) && (cityValue === "" || cityValue === null)) {
 				filteredBsData = master_Data;
+				
 				filteredBsMarkers = master_Stations_Array;
 				for(var key in master_Lines_Obj) {
 					var lines= master_Lines_Obj[key];
 					for(var j=0; j< lines.length; j++) {
+						lines[j].filteredLine= false;
 						filteredLines.push(lines[j]);
 					}
+					master_Lines_Obj[key]= lines;
 				}
 				
 				for(var key in master_Sectors_Obj) {
@@ -50,6 +59,7 @@ function WmAdvanceFilter(data, bsMarkerObj, ssMarkerObj, masterStationsArr, line
 					for(var j=0; j< sectors.length; j++) {
 						filteredSectors.push(sectors[j]);
 					}
+					master_Sectors_Obj[key]= sectors;
 				}
 				break stationsLoop;
 			}
@@ -58,11 +68,40 @@ function WmAdvanceFilter(data, bsMarkerObj, ssMarkerObj, masterStationsArr, line
 			if (technologyValue !== "" && technologyValue !== null && technologyValue.length) {
 				var goodThing = false;
 				var baseStationTechnology = markerData.sector_ss_technology;
+
 				if(baseStationTechnology) {
 					baseStationTechnology = $.trim(baseStationTechnology.toLowerCase());
 					//check if marker satisfies the technology condition
 					for (var j = 0; j < technologyValue.length; j++) {
 						if (technologyValue[j] && (baseStationTechnology.indexOf($.trim(technologyValue[j].toLowerCase())) !== -1)) {
+							var goodString = "";
+							for(var k=0; k< markerData.data.param.sector.length; k++) {
+								if(technologyValue[j]== markerData.data.param.sector[k].technology) {
+									for(var l=0;l< markerData.data.param.sector[k].sub_station.length; l++) {
+										// console.log(markerData.data.param.sector[k].sub_station[l].name);
+										goodString+= " "+markerData.data.param.sector[k].sub_station[l].name;
+									}
+								}
+							}
+
+							var ss_Markers = master_Ss_Marker_Obj[markerData.name];
+							if(ss_Markers) {
+								for(var m=0; m< ss_Markers.length; m++) {
+									var ss_Marker_name = ss_Markers[m].attributes.name;
+									// console.log(goodString+ "      " + ss_Marker_name);
+									if(goodString.indexOf(ss_Marker_name) > -1) {
+										ss_Markers[m].isNotFiltererd = true;
+									} else {
+										console.log('here');
+										ss_Markers[m].isNotFiltererd = false;
+									}
+								}
+}
+							master_Ss_Marker_Obj[markerData.name] = ss_Markers;
+
+							var line_Markers = master_Lines_Obj[markerData.name];
+							// console.log(master_Lines_Obj);
+							
 							goodThing = true;
 						}
 					}
@@ -141,13 +180,17 @@ function WmAdvanceFilter(data, bsMarkerObj, ssMarkerObj, masterStationsArr, line
 			var bsSubStationsMarkers = master_Ss_Marker_Obj[markerData.name];
 			if(bsSubStationsMarkers && bsSubStationsMarkers.length) {
 				for(var j=0; j< bsSubStationsMarkers.length; j++) {
-					filteredBsMarkers.push(bsSubStationsMarkers[j]);
+					// if(bsSubStationsMarkers.isNotFiltererd) {
+						filteredBsMarkers.push(bsSubStationsMarkers[j]);						
+					// } 
 				}
 			}
 
 			var bsLines = master_Lines_Obj[markerData.name];
+			// console.log(bsLines);
 			if(bsLines && bsLines.length) {
 				for(var j=0; j< bsLines.length; j++) {
+					bsLines[j].filteredLine= true;
 					filteredLines.push(bsLines[j]);
 				}
 			}
