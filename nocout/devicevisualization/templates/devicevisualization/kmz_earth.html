@@ -1,0 +1,65 @@
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+    <li>Network Maps</li>
+    <li>KMZ</li>
+    <li>Google Earth</li>
+{% endblock %}
+{% block content_title %}Google Earth{% endblock %}
+{% block content_description %} {% endblock %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
+    <!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css"
+          href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
+{% endblock %}
+
+
+{% block content %}
+
+    <div class="col-md-12">
+    <div class='box border lite mapContainerBlock'>
+        <div class='box-title'>
+            <h4>Google Earth - KMZ</h4>
+            <div class="clearfix"></div>
+        </div>
+
+        <div class='box-body' style="position:relative">
+
+            <!--Map Container Start-->
+            <div id="deviceMap"></div>
+            <!--Map Container End-->
+        </div>
+        <div style="position: fixed; display: block; bottom:0; right: 20px; z-index:999;background: #fff;width: auto;padding: 10px;" id="cursor_lat_long">
+        </div>
+    </div>
+</div>
+
+    <!-- Google Map Library-->
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
+    <!-- Script Library for COokies -->
+    <script type="text/javascript" src={% static "js/jQuery-Cookie/src/jquery.cookie.js" %}></script>
+    <script type="text/javascript">
+
+        var networkMapInstance = "",
+            file_url = "";
+
+        $(document).ready(function (e) {
+            file_url = "{{file_url}}";
+            console.log(file_url)
+            // networkMapInstance.createMap("deviceMap");
+        });
+    </script>
+{% endblock %}
+
+{% block load_js %}
+    <!-- /JAVASCRIPTS -->
+
+    <script>
+        jQuery(document).ready(function () {
+
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+        });
+    </script>
+{% endblock %}

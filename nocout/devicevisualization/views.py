@@ -1,18 +1,28 @@
 import json
-from django.http import HttpResponse
+import os
+from django.http import HttpResponseRedirect, HttpResponse
+from operator import itemgetter
+from django.db.models.query import ValuesQuerySet
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 import logging
+from nocout.settings import MEDIA_ROOT, MEDIA_URL
 from django.utils.decorators import method_decorator
-from django.views.generic import View
+from django.views.generic import ListView, DetailView, TemplateView, View
+from django_datatables_view.base_datatable_view import BaseDatatableView
+from forms import KmzReportForm
+from django.views.generic.edit import CreateView, DeleteView
 from device.models import Device, DeviceFrequency, DeviceTechnology
+from django.db.models import Q
 from inventory.models import ThematicSettings, UserThematicSettings
 from performance.models import InventoryStatus, NetworkStatus, ServiceStatus, PerformanceStatus, PerformanceInventory, \
     PerformanceNetwork, PerformanceService, Status
 from user_profile.models import UserProfile
-from devicevisualization.models import GISPointTool
+from devicevisualization.models import GISPointTool, KMZReport
 from django.views.decorators.csrf import csrf_exempt
+from django.core.urlresolvers import reverse_lazy
 import re, ast
+from actstream import action
 logger=logging.getLogger(__name__)
 
 
@@ -557,3 +567,251 @@ class GetToolsData(View):
             result["message"] = "Data not Fetched."
 
         return HttpResponse(json.dumps(result))
+
+
+##************************************* KMZ Report****************************************##
+
+class KmzListing(ListView):
+   
+    model = KMZReport
+    template_name = 'devicevisualization/kmz.html'
+
+    def get_context_data(self, **kwargs):
+        
+        context = super(KmzListing, self).get_context_data(**kwargs)
+        table_headers = [
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'filename', 'sTitle': 'KMZ', 'sWidth': 'auto', },
+            {'mData': 'added_on', 'sTitle': 'Uploaded On', 'sWidth': 'auto'},
+            {'mData': 'user', 'sTitle': 'Uploaded By', 'sWidth': 'auto'},
+        ]
+        #if the user role is Admin or operator then the action column will appear on the datatable
+        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
+        if 'admin' in user_role or 'operator' in user_role:
+            table_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
+
+        context['table_headers'] = json.dumps(table_headers)
+        return context
+
+
+class Kmzreport_listingtable(BaseDatatableView):
+   
+    model = KMZReport
+    columns = ['name', 'filename', 'added_on', 'user']
+    order_columns = ['name', 'filename', 'added_on', 'user']
+
+    def filter_queryset(self, qs):
+        """ Filter datatable as per requested value """
+
+        sSearch = self.request.GET.get('sSearch', None)
+
+        if sSearch:
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            for column in self.columns[:-1]:
+                # avoid search on 'added_on'
+                if column == 'added_on':
+                    continue
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            exec exec_query
+        return qs
+
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+        
+        # condition to fetch KMZ Report data from database
+        condition = (Q(user=self.request.user) | Q(is_public=1)) 
+        # Query to fetch L2 reports data from db
+        kmzreportresult = KMZReport.objects.filter(condition).values(*self.columns + ['id'])
+       
+        report_resultset = []
+        for data in kmzreportresult:
+            report_object = {}
+            report_object['name'] = data['name'].title()
+            filename_str_array = data['filename'].split('/')
+            report_object['filename'] = filename_str_array[len(filename_str_array)-1]
+            report_object['added_on'] = data['added_on']
+            username = UserProfile.objects.filter(id=data['user']).values('username')
+            report_object['user'] = username[0]['username'].title()
+            report_object['id'] = data['id']
+            #add data to report_resultset list
+            report_resultset.append(report_object)
+        return report_resultset
+
+    def prepare_results(self, qs):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
+        if qs:
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        for dct in qs:
+            dct.update(actions='<a style="cursor:pointer;" url="{0}" class="delete_kmzreport" title="Delete kmz" >\
+                <i class="fa fa-trash-o text-danger"></i></a>\
+                <a href="gmap/{0}/" title="view on google map">\
+                <i class="fa fa-globe"></i></a>\
+                <a href="google_earth/{0}" title="view on google earth">\
+                <i class="fa fa-globe"></i></a>\
+                <a href="white_background/{0}" title="view on white background">\
+                <i class="fa fa-globe"></i></a>\
+                '.format(dct.pop('id')),
+               added_on=dct['added_on'].strftime("%Y-%m-%d") if dct['added_on'] != "" else "")
+
+        return qs
+
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except Exception:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.get_order_columns()
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except Exception:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ''
+
+            sortcol = order_columns[i_sort_col]
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            key_name=order[0][1:] if '-' in order[0] else order[0]
+            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
+            return sorted_device_data
+        return qs
+
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        The main method call to fetch, search, ordering , prepare and display the data on the data table.
+        """
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = len(qs)
+
+        qs = self.filter_queryset(qs)
+        # number of records after filtering
+        total_display_records = len(qs)
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+        }
+        return ret
+
+
+
+class KmzDelete(DeleteView):
+
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
+        return super(KmzDelete, self).dispatch(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        report_id = self.kwargs['kmz_id']
+        filename = lambda x: MEDIA_ROOT + x
+        # KMZ report object
+        kmz_obj = KMZReport.objects.filter(id=report_id).values()
+        # remove original file if it exists
+        try:
+            os.remove(filename(kmz_obj[0]['filename']))
+            print "*********************************"
+
+        except Exception as e:
+            print "***********************************"
+            print e.message
+            logger.info(e.message)
+        # delete entry from database
+        KMZReport.objects.filter(id=report_id).delete()
+        return HttpResponseRedirect(reverse_lazy('kmz_list'))
+
+# class for view kmz file on google map , google earth , white background 
+
+class KmzViewAction(View):
+    
+    template = ''
+    
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
+        return super(KmzViewAction, self).dispatch(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        context_data = {}
+        page_type = self.kwargs['page_type']
+        kmz_id = self.kwargs['kmz_id']
+
+        file_url = KMZReport.objects.filter(pk=kmz_id).values('filename')
+        context_data['file_url'] = file_url[0]['filename']
+
+        if page_type == 'white_background':
+            template = 'devicevisualization/kmz_whitebg.html'
+        elif page_type == 'google_earth':
+            template = 'devicevisualization/kmz_earth.html'
+        else:
+            template = 'devicevisualization/kmz_gmap.html'
+        
+        return render_to_response(template,
+                context_data, 
+                context_instance=RequestContext(request))
+
+##************************************ Create KMZ File class **************************************##
+class KmzCreate(CreateView):
+
+    template_name = 'devicevisualization/kmzuploadnew.html'
+    model = KMZReport
+    form_class = KmzReportForm 
+
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
+        return super(KmzCreate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        """
+        Submit the form and to log the user activity.
+        """
+        self.object = form.save(commit=False)
+        self.object.user =  UserProfile.objects.get(id=self.request.user.id)
+        
+        self.object.save()
+        action.send(self.request.user, verb='Created', action_object=self.object)
+        return HttpResponseRedirect(reverse_lazy('kmz_list'))
