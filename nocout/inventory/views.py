@@ -972,7 +972,7 @@ class SectorList(ListView):
             {'mData': 'bs_technology__alias', 'sTitle': 'Technology', 'sWidth': 'auto', },
             {'mData': 'sector_id', 'sTitle': 'ID', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'sector_configured_on__id', 'sTitle': 'Sector Configured On', 'sWidth': 'auto', },
-            {'mData': 'sector_configured_on_port__name', 'sTitle': 'Sector Configured On Port', 'sWidth': 'auto',
+            {'mData': 'sector_configured_on_port__alias', 'sTitle': 'Sector Configured On Port', 'sWidth': 'auto',
              'sClass': 'hidden-xs'},
             {'mData': 'base_station__alias', 'sTitle': 'Base Station', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
             {'mData': 'antenna__alias', 'sTitle': 'Antenna', 'sWidth': 'auto', 'sClass': 'hidden-xs'},
@@ -995,9 +995,9 @@ class SectorListingTable(BaseDatatableView):
     """
     model = Sector
     columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id',
-               'base_station__alias', 'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
+               'base_station__alias', 'sector_configured_on_port__alias', 'antenna__alias', 'mrc', 'description']
     order_columns = ['alias', 'bs_technology__alias', 'sector_id', 'sector_configured_on__id',
-                     'base_station__alias', 'sector_configured_on_port__name', 'antenna__alias', 'mrc', 'description']
+                     'base_station__alias', 'sector_configured_on_port__alias', 'antenna__alias', 'mrc', 'description']
 
     def filter_queryset(self, qs):
         """

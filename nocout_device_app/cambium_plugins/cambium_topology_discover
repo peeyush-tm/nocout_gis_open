@@ -53,15 +53,31 @@ def check_cambium_topology_discover(item, params, info):
 			a=binascii.b2a_hex(ap_mac)
 			n= 2
                 	ap_mac=(':').join([a[j:j+2] for j in range(0, len(a), n)])
-			ap_color_code = int(info[i][2])
+			try:
+				ap_color_code = int(info[i][2])
+			except:
+				ap_color_code = None
 			infotext += "%s %s:%s " %(ap_mac,ap_ip,ap_color_code)
 		else:
 			connected_ss_mac = info[i][3]
 			connected_ss_ip = info[i][4]
-			connected_ss_ul_rssi = int(info[i][5])
-			connected_ss_ul_jitter = int(info[i][6])
-			connected_ss_reg_count = int(info[i][7])
-			connected_ss_rereg_count = int(info[i][8])
+			try:
+				connected_ss_ul_rssi = int(info[i][5])
+			except:
+				connected_ss_ul_rssi = None
+			try:
+				connected_ss_ul_jitter = int(info[i][6])
+			except:
+				connected_ss_ul_rssi = None
+			try:
+				connected_ss_reg_count = int(info[i][7])
+			except:
+				connected_ss_reg_count = None
+			try:
+				connected_ss_rereg_count = int(info[i][8])
+			except:
+				connected_ss_rereg_count = None
+				
 			a=binascii.b2a_hex(connected_ss_mac)
                 	n = 2
                 	connected_ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
