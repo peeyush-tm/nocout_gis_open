@@ -8,40 +8,42 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Adding model 'GISPointTool'
-        db.create_table(u'devicevisualization_gispointtool', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=200)),
-            ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-            ('latitude', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('longitude', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('icon_url', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('connected_point_type', self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True)),
-            ('connected_point_info', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-            ('connected_lat', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('connected_lon', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('user_id', self.gf('django.db.models.fields.IntegerField')()),
-        ))
-        db.send_create_signal(u'devicevisualization', ['GISPointTool'])
+        pass
+        # # Adding model 'GISPointTool'
+        # db.create_table(u'devicevisualization_gispointtool', (
+        #     (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+        #     ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=200)),
+        #     ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        #     ('latitude', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
+        #     ('longitude', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
+        #     ('icon_url', self.gf('django.db.models.fields.CharField')(max_length=255)),
+        #     ('connected_point_type', self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True)),
+        #     ('connected_point_info', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        #     ('connected_lat', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
+        #     ('connected_lon', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
+        #     ('user_id', self.gf('django.db.models.fields.IntegerField')()),
+        # ))
+        # db.send_create_signal(u'devicevisualization', ['GISPointTool'])
 
-        # Adding model 'KMZReport'
-        db.create_table(u'devicevisualization_kmzreport', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=255)),
-            ('filename', self.gf('django.db.models.fields.files.FileField')(max_length=300)),
-            ('added_on', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
-            ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['user_profile.UserProfile'])),
-            ('is_public', self.gf('django.db.models.fields.BooleanField')(default=True)),
-        ))
-        db.send_create_signal(u'devicevisualization', ['KMZReport'])
+        # # Adding model 'KMZReport'
+        # db.create_table(u'devicevisualization_kmzreport', (
+        #     (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+        #     ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=255)),
+        #     ('filename', self.gf('django.db.models.fields.files.FileField')(max_length=300)),
+        #     ('added_on', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
+        #     ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['user_profile.UserProfile'])),
+        #     ('is_public', self.gf('django.db.models.fields.BooleanField')(default=True)),
+        # ))
+        # db.send_create_signal(u'devicevisualization', ['KMZReport'])
 
 
     def backwards(self, orm):
-        # Deleting model 'GISPointTool'
-        db.delete_table(u'devicevisualization_gispointtool')
+        pass
+        # # Deleting model 'GISPointTool'
+        # db.delete_table(u'devicevisualization_gispointtool')
 
-        # Deleting model 'KMZReport'
-        db.delete_table(u'devicevisualization_kmzreport')
+        # # Deleting model 'KMZReport'
+        # db.delete_table(u'devicevisualization_kmzreport')
 
 
     models = {
