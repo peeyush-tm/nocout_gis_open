@@ -2,6 +2,7 @@ from django import forms
 from user_profile.models import UserProfile
 from nocout.widgets import MultipleToSingleSelectionWidget
 from user_profile.fields import PasswordField
+from organization.models import Organization
 
 
 class UserForm(forms.ModelForm):
@@ -33,6 +34,11 @@ class UserForm(forms.ModelForm):
         super(UserForm, self).__init__(*args, **kwargs)
         self.fields['parent'].empty_label = 'Select'
         self.fields['organization'].empty_label = 'Select'
+        if not self.request.is_superuser:
+            logged_in_user_organization_list = self.request.userprofile.organization.get_descendants( include_self=True )
+            self.fields['organization'].queryset = logged_in_user_organization_list
+        else:
+            self.fields['organization'].queryset = Organization.objects.all()
 
         if self.instance.pk:
             self.fields['password1'].required = False
@@ -67,8 +73,8 @@ class UserForm(forms.ModelForm):
         """
         model = UserProfile
         fields = (
-            'username', 'first_name', 'last_name', 'email', 'role', 'parent', 'designation', 'company',
-            'address', 'phone_number', 'comment','organization'
+            'username', 'first_name', 'last_name', 'email', 'role', 'organization', 'parent', 'designation', 'company',
+            'address', 'phone_number', 'comment',
         )
         widgets = {
             'role': MultipleToSingleSelectionWidget,
@@ -86,3 +92,36 @@ class UserForm(forms.ModelForm):
         if (password1 or password2) and password1 != password2:
             raise forms.ValidationError("Passwords don't match")
         return password2
+
+
+    def clean_parent(self):
+        """
+
+        """
+        print ('cleaned_data..........',self.cleaned_data)
+        if 'username' in [key for key,values in self.cleaned_data.items()]:
+            parent = self.cleaned_data['parent']
+            if parent is None:
+                gisadmin = UserProfile.objects.get(username='gisadmin')
+                parent = gisadmin
+                return parent
+            else:
+                username = self.cleaned_data['username']
+                if parent.username == username:
+                    raise forms.ValidationError("User cannot be parent of itself")
+                return parent
+
+
+    def clean_role(self):
+        """
+        Restrict the user other than super user to create the admin.
+        """
+        role = self.cleaned_data['role']
+        if not self.request.is_superuser:
+            if role[0].role_name == 'admin':
+                raise forms.ValidationError("Not permitted to create admin")
+            else:
+                return role
+        else:
+            return role
+
