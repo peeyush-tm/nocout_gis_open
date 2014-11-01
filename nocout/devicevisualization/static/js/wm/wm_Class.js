@@ -76,7 +76,7 @@ function WhiteMapClass() {
 				for (var i = 0; i < bs_devices.length; i++) {
 					// console.log(bs_devices[i]);
 					bs_devices[i].style.externalGraphic = bs_devices[i].attributes.defaultIcon;
-					
+
 					bs_devices[i].move(new OpenLayers.LonLat(bs_devices[i].attributes.ptLon, bs_devices[i].attributes.ptLat));
 					devices_Marker_On_Map.push(bs_devices[i]);
 					if(i=== bs_devices.length-1) {
@@ -329,9 +329,39 @@ function WhiteMapClass() {
 		}
 		
 		this.stopPolling= function() {
-			workingControl.deactivate();
-			this.featuresLayer.destroyFeatures();
-			ccpl_map.removeLayer(this.featuresLayer);
+			if(workingControl) {
+				workingControl.deactivate();
+				workingControl= "";
+				this.featuresLayer.destroyFeatures();
+				ccpl_map.removeLayer(this.featuresLayer);
+			}
+
+			if(!$("#sideInfoContainer").hasClass("hide")) {
+			$("#sideInfoContainer").addClass("hide");
+		}		
+		/*Show Select Devices button*/
+		if($("#createPolygonBtn").hasClass("hide")) {
+			$("#createPolygonBtn").removeClass("hide");
+			$("#createPolygonBtn").button("complete");
+		}
+		/*Hide the clear selection button*/
+		if(!$("#clearPolygonBtn").hasClass("hide")) {
+			$("#clearPolygonBtn").addClass("hide");
+		}
+		/*Add hide class to tabular button on polling widget*/
+		if(!$("#polling_tabular_view").hasClass("hide")) {
+			$("#polling_tabular_view").addClass("hide");
+		}
+		/*Add hide class to navigation container on polling widget*/
+		if(!$("#navigation_container").hasClass("hide")) {
+			$("#navigation_container").addClass("hide");
+		}
+
+		/*Enable other buttons*/
+    	disableAdvanceButton("no");
+
+    	/*Enable 'Reset' button*/
+    	$("#resetFilters").button("complete");
 		}
 		this.startPolling= function() {
 			ccpl_map.addLayer(this.featuresLayer);

@@ -394,12 +394,15 @@ $("#polling_tabular_view").click(function(e) {
 
 /*triggers when clear selection button is clicked*/
 $("#clearPolygonBtn").click(function(e) {
+if(window.location.pathname.indexOf("white_background") > -1) {
+    whiteMapClass.stopPolling();
+    } else {
+        networkMapInstance.clearPolygon();
+        hasSelectDevice = 0;
 
-    networkMapInstance.clearPolygon();
-    hasSelectDevice = 0;
-
-    /*Call get_page_status function to show the current status*/
-    get_page_status();
+        /*Call get_page_status function to show the current status*/
+        get_page_status();
+    }
 });
 
 
