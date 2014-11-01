@@ -193,11 +193,6 @@
                             {% if perms.device.view_device %}
                             <li><a class="" href="/device/"><span class="sub-menu-text">Devices</span></a></li>
                             {% endif %}
-                            {% if perms.device_group.view_devicegroup %}
-
-                            <li><a class="" href="/device_group/"><span class="sub-menu-text">Device Group</span></a></li>
-
-                            {% endif %}
                             {% if perms.device.view_devicetypefields %}
                             <li><a class="" href="/device_fields/"><span class="sub-menu-text">Device Fields</span></a></li>
                             {% endif %}
@@ -293,7 +288,6 @@
                     </a>
                     <ul class="sub">
                         <li><a class="" href="/user/"><span class="sub-menu-text">Users</span></a></li>
-                        <li><a class="" href="/user_group/"><span class="sub-menu-text">User Groups</span></a></li>
                         <li><a class="" href="/sm/"><span class="sub-menu-text">User Session</span></a></li>
                         <li><a class="" href="/organization/"><span class="sub-menu-text">Organization</span></a></li>
                         
