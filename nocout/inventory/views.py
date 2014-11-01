@@ -566,7 +566,12 @@ class BaseStationListingTable(BaseDatatableView):
             for column in self.columns:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
-            exec_query += " | ".join(query)
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                organization_descendants_ids = self.request.user.userprofile.organization.get_descendants( include_self=True ).values_list('id')
+            else:
+                 organization_descendants_ids = list(str(self.request.user.userprofile.organization.id))
+
+            exec_query += " | ".join(query) + ", bs_switch__organization__in = %s"%organization_descendants_ids
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
@@ -578,7 +583,11 @@ class BaseStationListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return BaseStation.objects.values(*self.columns + ['id'])
+        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+            organizations = self.request.user.userprofile.organization.get_descendants( include_self=True )
+            return BaseStation.objects.values(*self.columns + ['id']).filter(bs_switch__organization__in=organizations)
+        else:
+            return BaseStation.objects.values(*self.columns + ['id']).filter(bs_switch__organization=self.request.user.userprofile.organization)
 
     def prepare_results(self, qs):
         """
@@ -800,7 +809,11 @@ class BackhaulListingTable(BaseDatatableView):
             for column in self.columns:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
-            exec_query += " | ".join(query)
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                organization_descendants_ids = self.request.user.userprofile.organization.get_descendants( include_self=True ).values_list('id')
+            else:
+                 organization_descendants_ids = list(str(self.request.user.userprofile.organization.id))
+            exec_query += " | ".join(query) + ", bh_configured_on__organization__in = %s"%organization_descendants_ids
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
@@ -812,7 +825,11 @@ class BackhaulListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Backhaul.objects.values(*self.columns + ['id'])
+        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+            organizations = self.request.user.userprofile.organization.get_descendants( include_self=True )
+            return Backhaul.objects.values(*self.columns + ['id']).filter(bh_configured_on__organization__in=organizations)
+        else:
+            return Backhaul.objects.values(*self.columns + ['id']).filter(bh_configured_on__organization=self.request.user.userprofile.organization)
 
     def prepare_results(self, qs):
         """
@@ -1048,7 +1065,12 @@ class SectorListingTable(BaseDatatableView):
             for column in self.columns:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
-            exec_query += " | ".join(query)
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                organization_descendants_ids = self.request.user.userprofile.organization.get_descendants( include_self=True ).values_list('id')
+            else:
+                 organization_descendants_ids = list(str(self.request.user.userprofile.organization.id))
+
+            exec_query += " | ".join(query) + ", sector_configured_on__organization__in = %s"%organization_descendants_ids
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
@@ -1060,8 +1082,11 @@ class SectorListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Sector.objects.values(*self.columns + ['id'])
-
+        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+            organizations = self.request.user.userprofile.organization.get_descendants( include_self=True )
+            return Sector.objects.values(*self.columns + ['id']).filter(sector_configured_on__organization__in=organizations)
+        else:
+            return Sector.objects.values(*self.columns + ['id']).filter(sector_configured_on__organization=self.request.user.userprofile.organization)
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
@@ -1507,7 +1532,12 @@ class SubStationListingTable(BaseDatatableView):
             for column in self.columns[:-1]:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
-            exec_query += " | ".join(query)
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                organization_descendants_ids = self.request.user.userprofile.organization.get_descendants( include_self=True ).values_list('id')
+            else:
+                 organization_descendants_ids = list(str(self.request.user.userprofile.organization.id))
+
+            exec_query += " | ".join(query) + ", device__organization__in = %s"%organization_descendants_ids
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
@@ -1519,7 +1549,11 @@ class SubStationListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return SubStation.objects.values(*self.columns + ['id'])
+        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+            organizations = self.request.user.userprofile.organization.get_descendants( include_self=True )
+            return SubStation.objects.values(*self.columns + ['id']).filter(device__organization__in=organizations)
+        else:
+            return SubStation.objects.values(*self.columns + ['id']).filter(device__organization=self.request.user.userprofile.organization)
 
     def prepare_results(self, qs):
         """
@@ -1830,7 +1864,12 @@ class CircuitListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Circuit.objects.values(*self.columns + ['id'])
+
+        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+            organizations = self.request.user.userprofile.organization.get_descendants( include_self=True )
+            return Circuit.objects.values(*self.columns + ['id']).filter(sub_station__device__organization__in=organizations)
+        else:
+            return Circuit.objects.values(*self.columns + ['id']).filter(sub_station__device__organization=self.request.user.userprofile.organization)
 
     def prepare_results(self, qs):
         """
@@ -1841,11 +1880,11 @@ class CircuitListingTable(BaseDatatableView):
         for dct in qs:
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_circuit'):
-                edit_action = '<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_circuit'):
-                delete_action = '<a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>&nbsp&nbsp'.format(device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
