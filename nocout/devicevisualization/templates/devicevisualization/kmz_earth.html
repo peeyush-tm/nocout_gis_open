@@ -1,0 +1,106 @@
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+    <li>Network Maps</li>
+    <li>KMZ</li>
+    <li>Google Earth</li>
+{% endblock %}
+{% block content_title %}Google Earth{% endblock %}
+{% block content_description %} {% endblock %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
+    <!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css"
+          href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
+{% endblock %}
+
+
+{% block content %}
+
+    <div class="col-md-12">
+    <div class='box border lite mapContainerBlock'>
+        <div class='box-title'>
+            <h4>Google Earth - KMZ</h4>
+            <div class="clearfix"></div>
+        </div>
+
+        <div class='box-body' style="position:relative">
+
+            <!--Map Container Start-->
+            <div id="deviceMap"></div>
+            <!--Map Container End-->
+        </div>
+        <div style="position: fixed; display: block; bottom:0; right: 20px; z-index:999;background: #fff;width: auto;padding: 10px;" id="cursor_lat_long">
+        </div>
+    </div>
+</div>
+
+    <!-- Google Earth Library-->
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+
+        var ge = "",
+            base_url = "",
+            file_url = "";
+
+            google.load("earth", "1");
+
+        $(document).ready(function (e) {
+
+
+            /*Set the base url of application for ajax calls*/
+            if(window.location.origin) {
+                base_url = window.location.origin;
+            } else {
+                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+            }
+
+            file_url = "{{file_url}}";
+            google.earth.createInstance("deviceMap", earthInitCallback, earthFailureCallback);
+        });
+
+        function earthInitCallback(pluginInstance) {
+
+            ge = pluginInstance;
+            ge.getWindow().setVisibility(true);
+
+            /*Set current position of google earth to india*/
+            var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+            lookAt.setLatitude(21.0000);
+            lookAt.setLongitude(78.0000);
+
+            // Update the view in Google Earth 
+            ge.getView().setAbstractView(lookAt); 
+            // add a navigation control
+            ge.getNavigationControl().setVisibility(ge.VISIBILITY_AUTO);
+
+            // add some layers
+            ge.getLayerRoot().enableLayerById(ge.LAYER_BORDERS, true);
+            ge.getLayerRoot().enableLayerById(ge.LAYER_ROADS, true);
+
+            var href = base_url+'/media/'+file_url;
+            /*Fetach KML or KMZ file data*/
+            google.earth.fetchKml(ge, href, function(kmlObject) {
+                if (kmlObject) {
+                    ge.getFeatures().appendChild(kmlObject);
+                }
+            });
+        }
+
+        function earthFailureCallback(errorCode) {
+            console.log(errorCode);
+        }
+    </script>
+{% endblock %}
+
+{% block load_js %}
+    <!-- /JAVASCRIPTS -->
+
+    <script>
+        jQuery(document).ready(function () {
+
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+        });
+    </script>
+{% endblock %}

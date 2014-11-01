@@ -1,0 +1,84 @@
+{% extends "nocout/base.html" %}
+{% block breadcrumb_title %}
+    <li>Network Maps</li>
+    <li>KMZ</li>
+    <li>Google Maps</li>
+{% endblock %}
+{% block content_title %}Google Maps{% endblock %}
+{% block content_description %} {% endblock %}
+{% load staticfiles %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href={% static "css/style.css" %}>
+    <!-- JQUERY UI-->
+    <link rel="stylesheet" type="text/css"
+          href={% static "js/jquery-ui-1.10.3.custom/css/custom-theme/jquery-ui-1.10.3.custom.min.css" %}>
+{% endblock %}
+
+
+{% block content %}
+
+    <div class="col-md-12">
+    <div class='box border lite mapContainerBlock'>
+        <div class='box-title'>
+            <h4>Google Maps - KMZ</h4>
+            <div class="clearfix"></div>
+        </div>
+
+        <div class='box-body' style="position:relative">
+
+            <!--Map Container Start-->
+            <div id="deviceMap"></div>
+            <!--Map Container End-->
+        </div>
+        <!-- <div style="position: fixed; display: block; bottom:0; right: 20px; z-index:999;background: #fff;width: auto;padding: 10px;" id="cursor_lat_long">
+        </div> -->
+    </div>
+</div>
+
+    <!-- Google Map Library-->
+    <script type="text/javascript" src="https://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript">
+
+        $(document).ready(function (e) {
+            var file_url = "{{file_url}}";
+            /*Call function to load google map with given kmz or kml file*/
+            createGoogleMap(file_url);
+        });
+
+        /*This function creates google map & load the kmz file*/
+        function createGoogleMap(kmz_file_url) {
+
+            var mapOptions = {
+                    center    : new google.maps.LatLng(21.00,78.00),
+                    zoom      : 5
+                },
+                base_url = "";
+
+            /*Set the base url of application for ajax calls*/
+            if(window.location.origin) {
+                base_url = window.location.origin;
+            } else {
+                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+            }
+
+            var map = new google.maps.Map(document.getElementById("deviceMap"), mapOptions);
+            var kmzLayer = new google.maps.KmlLayer({ 
+                url : 'https://noc-out.net'+'/media/'+kmz_file_url,
+                suppressInfoWindows: true,
+                map: map
+            });
+        }
+    </script>
+{% endblock %}
+
+{% block load_js %}
+    <!-- /JAVASCRIPTS -->
+
+    <script>
+        jQuery(document).ready(function () {
+
+            App.setPage("");  //Set current page
+            App.init(); //Initialise plugins and elements
+        });
+    </script>
+{% endblock %}

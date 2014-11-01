@@ -27,6 +27,7 @@
                     <li><a class="" href="/network_maps/gis/"><span class="sub-menu-text">Google Map</span></a></li>
                     <li><a class="" href="/network_maps/google_earth/"><span class="sub-menu-text">Google Earth</span></a></li>
                     <li><a class="" href="javascript:;"><span class="sub-menu-text">White Background</span></a></li>
+                    <li><a class="" href="/network_maps/kmz/"><span class="sub-menu-text">KMZ</span></a></li>
                 </ul>
             </li>
             <li class="has-sub">
@@ -169,45 +170,97 @@
                     <span class="arrow"></span>
                 </a>
                 <ul class="sub">
+                    {% if perms.device.view_device %}
                     <li class="has-sub-sub">
                         <a class="" href="javascript:;">
                             <span class="sub-menu-text">Device Inventory</span>
                             <span class="arrow"></span>
                         </a>
                         <ul class="sub-sub">
+                            {% if perms.device.view_device %}
                             <li><a class="" href="/device/"><span class="sub-menu-text">Devices</span></a></li>
+                            {% endif %}
+                            {% if perms.device_group.view_devicegroup %}
+
                             <li><a class="" href="/device_group/"><span class="sub-menu-text">Device Group</span></a></li>
+
+                            {% endif %}
+                            {% if perms.device.view_devicetypefields %}
                             <li><a class="" href="/device_fields/"><span class="sub-menu-text">Device Fields</span></a></li>
+                            {% endif %}
+                            {% if perms.device.view_devicetechnology %}
                             <li><a class="" href="/technology/"><span class="sub-menu-text">Device Technology</span></a></li>
+                            {% endif %}
+                            {% if perms.device.view_devicevendor %}
                             <li><a class="" href="/vendor/"><span class="sub-menu-text">Device Vendors</span></a></li>
+                            {% endif %}
+                            {% if perms.device.view_devicemodel %}
                             <li><a class="" href="/model/"><span class="sub-menu-text">Device Models</span></a></li>
+                            {% endif %}
+                            {% if perms.device.view_devicetype %}
                             <li><a class="" href="/type/"><span class="sub-menu-text">Device Types</span></a></li>
+                            {% endif %}
+                            {% if perms.device.view_deviceport %}
                             <li><a class="" href="/device_port/"><span class="sub-menu-text">Device Ports</span></a></li>
+                            {% endif %}
+                            {% if perms.machine.view_machine %}
                             <li><a class="" href="/machine/"><span class="sub-menu-text">Machine</span></a></li>
+                            {% endif %}
+                            {% if perms.site_instance.view_siteinstance %}
                             <li><a class="" href="/site/"><span class="sub-menu-text">Site Instance</span></a></li>
+                            {% endif %}
+                            {% if perms.service.view_service %}
                             <li><a class="" href="/service/"><span class="sub-menu-text">Services</span></a></li>
+                            {% endif %}
+                            {% if perms.service.view_servicedatasource %}
                             <li><a class="" href="/service_data_source/"><span class="sub-menu-text">Service Data Sources</span></a></li>
+                            {% endif %}
+                            {% if perms.service.view_serviceparameters %}
                             <li><a class="" href="/service_parameter/"><span class="sub-menu-text">Service Parameters</span></a></li>
+                            {% endif %}
+                            {% if perms.service.view_deviceserviceconfiguration %}
                             <li><a class="" href="/device_service_configuration/"><span class="sub-menu-text">Service Configurations</span></a></li>
+                            {% endif %}
+                            {% if perms.service.view_protocol %}
                             <li><a class="" href="/protocol/"><span class="sub-menu-text">SNMP Parameters</span></a></li>
+                            {% endif %}
+                            {% if perms.command.view_command %}
                             <li><a class="" href="/command/"><span class="sub-menu-text">Commands</span></a></li>
-                        </ul>
+                            {% endif %}
+                        </ul> 
                     </li>
+                    {% endif %}
+
                             <li class="has-sub-sub">
                             <a class="" href="javascript:;">
                                 <span class="sub-menu-text">GIS Inventory</span>
                                 <span class="arrow"></span>
                             </a>
                             <ul class="sub-sub">
+                                {% if perms.inventory.view_antenna %}
                                 <li><a class="" href="/antenna/"><span class="sub-menu-text">Antenna</span></a></li>
+                                {% endif %}
+                                {% if perms.inventory.view_backhaul %}
                                 <li><a class="" href="/backhaul/"><span class="sub-menu-text">Backhaul</span></a></li>
+                                {% endif %}
+                                {% if perms.inventory.view_basestation %}
                                 <li><a class="" href="/base_station/"><span class="sub-menu-text">Base Station</span></a></li>
+                                {% endif %}
+                                {% if perms.inventory.view_sector %}
                                 <li><a class="" href="/sector/"><span class="sub-menu-text">Sector/PTP Near End</span></a></li>
+                                {% endif %}
+                                {% if perms.inventory.view_substation %}
                                 <li><a class="" href="/sub_station/"><span class="sub-menu-text">Sub Station/PTP Far End</span></a></li>
+                                {% endif %}
+                                {% if perms.inventory.view_customer %}
                                 <li><a class="" href="/customer/"><span class="sub-menu-text">Customer</span></a></li>
+                                {% endif %}
+                                {% if perms.inventory.view_circuit %}
                                 <li><a class="" href="/circuit/"><span class="sub-menu-text">Circuit</span></a></li>
+                                {% endif %}
                             </ul>
                         </li>
+
                         <li class="has-sub-sub">
                             <a class="" href="javascript:;">
                                 <span class="sub-menu-text">Bulk Import</span>
@@ -219,8 +272,7 @@
                         </li>
                         </ul>
                     </li>
-            {% for group in user.groups.all %}
-            {% if group.name == 'group_admin' or group.name == 'group_operator' %}
+                {% if perms.user_profile %}
                 <li class="has-sub">
                     <a href="javascript:;" class="">
                         <i class="fa fa-user"></i> <span class="menu-text">User Management</span>
@@ -231,15 +283,13 @@
                         <li><a class="" href="/user_group/"><span class="sub-menu-text">User Groups</span></a></li>
                         <li><a class="" href="/sm/"><span class="sub-menu-text">User Session</span></a></li>
                         <li><a class="" href="/organization/"><span class="sub-menu-text">Organization</span></a></li>
-                        {% for group in user.groups.all %}
-                        {% if group.name == 'group_admin' %}
+                        
+                        {% if perms.actstream.view_action %}
                             <li><a class="" href="/logs/actions/"><span class="sub-menu-text">User Logs</span></a></li>
                         {% endif %}
-                        {% endfor %}
                     </ul>
                 </li>
             {% endif %}
-            {% endfor %}
             <li>
                 <a class="" href="/scheduling/"><i class="fa fa-calendar"></i> <span class="menu-text">Scheduling</span></a>
             </li>

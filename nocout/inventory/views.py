@@ -62,6 +62,13 @@ class InventoryListing(ListView):
     model = Inventory
     template_name = 'inventory/inventory_list.html'
 
+    @method_decorator(permission_required('inventory.view_inventory', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(InventoryListing, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -272,6 +279,14 @@ class AntennaList(ListView):
     model = Antenna
     template_name = 'antenna/antenna_list.html'
 
+
+    @method_decorator(permission_required('inventory.view_antenna', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(AntennaList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -285,9 +300,9 @@ class AntennaList(ListView):
             {'mData': 'beam_width', 'sTitle': 'Beam Width', 'sWidth': '10%', },
             {'mData': 'azimuth_angle', 'sTitle': 'Azimuth Angle', 'sWidth': '10%', }, ]
 
-        #if the user role is Admin or operator then the action column will appear on the datatable
+        #if the user role is Admin or operator or superuser then the action column will appear on the datatable
         user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        if 'admin' in user_role or 'operator' in user_role or self.request.user.is_superuser:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', 'bSortable': False})
         context['datatable_headers'] = json.dumps(datatable_headers)
         return context
@@ -339,9 +354,19 @@ class AntennaListingTable(BaseDatatableView):
         """
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+        
         for dct in qs:
-            dct.update(actions='<a href="/antenna/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/antenna/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            device_id = dct.pop('id')
+            if self.request.user.has_perm('inventory.change_antenna'):
+                edit_action = '<a href="/antenna/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('inventory.delete_antenna'):
+                delete_action = '<a href="/antenna/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions= edit_action+delete_action)
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -470,6 +495,13 @@ class BaseStationList(ListView):
     model = BaseStation
     template_name = 'base_station/base_stations_list.html'
 
+    @method_decorator(permission_required('inventory.view_basestation', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(BaseStationList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -547,8 +579,17 @@ class BaseStationListingTable(BaseDatatableView):
             except Exception as e:
                 logger.info("BS Switch not present. Exception: ", e.message)
 
-            dct.update(actions='<a href="/base_station/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/base_station/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            device_id = dct.pop('id')
+            if self.request.user.has_perm('inventory.change_basestation'):
+                edit_action = '<a href="/base_station/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('inventory.delete_basestation'):
+                delete_action = '<a href="/base_station/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions= edit_action+delete_action)
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -676,6 +717,14 @@ class BackhaulList(ListView):
     model = Backhaul
     template_name = 'backhaul/backhauls_list.html'
 
+
+    @method_decorator(permission_required('inventory.view_backhaul', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(BackhaulList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -767,8 +816,17 @@ class BackhaulListingTable(BaseDatatableView):
             except Exception as e:
                 logger.info("POP not present. Exception: ", e.message)
 
-            dct.update(actions='<a href="/backhaul/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/backhaul/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct['id']))
+            device_id = dct.pop('id')
+            if self.request.user.has_perm('inventory.change_backhaul'):
+                edit_action = '<a href="/backhaul/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('inventory.delete_backhaul'):
+                delete_action = '<a href="/backhaul/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions= edit_action+delete_action)
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -897,6 +955,13 @@ class SectorList(ListView):
     model = Sector
     template_name = 'sector/sectors_list.html'
 
+    @method_decorator(permission_required('inventory.view_sector', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(SectorList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -983,8 +1048,17 @@ class SectorListingTable(BaseDatatableView):
             except Exception as e:
                 logger.info("Sector Configured On not present. Exception: ", e.message)
 
-            dct.update(actions='<a href="/sector/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/sector/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            device_id = dct.pop('id')
+            if self.request.user.has_perm('inventory.change_sector'):
+                edit_action = '<a href="/sector/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('inventory.delete_sector'):
+                delete_action = '<a href="/sector/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions= edit_action+delete_action)
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -1112,6 +1186,13 @@ class CustomerList(ListView):
     model = Customer
     template_name = 'customer/customers_list.html'
 
+    @method_decorator(permission_required('inventory.view_customer', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(CustomerList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super(CustomerList, self).get_context_data(**kwargs)
         datatable_headers = [
@@ -1175,8 +1256,17 @@ class CustomerListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/customer/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/customer/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            device_id = dct.pop('id')
+            if self.request.user.has_perm('inventory.change_customer'):
+                edit_action = '<a href="/customer/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('inventory.delete_customer'):
+                delete_action = '<a href="/customer/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions= edit_action+delete_action)
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -1305,6 +1395,14 @@ class SubStationList(ListView):
     model = SubStation
     template_name = 'sub_station/sub_stations_list.html'
 
+
+    @method_decorator(permission_required('inventory.view_substation', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(SubStationList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -1393,8 +1491,17 @@ class SubStationListingTable(BaseDatatableView):
 
             dct['city__name'] = City.objects.get(pk=int(dct['city'])).city_name if dct['city'] else ''
             dct['state__name'] = State.objects.get(pk=int(dct['state'])).state_name if dct['state'] else ''
-            dct.update(actions='<a href="/sub_station/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/sub_station/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
+            device_id = dct.pop('id')
+            if self.request.user.has_perm('inventory.change_substation'):
+                edit_action = '<a href="/sub_station/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('inventory.delete_substation'):
+                delete_action = '<a href="/sub_station/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions= edit_action+delete_action)
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -1521,6 +1628,13 @@ class CircuitList(ListView):
     """
     model = Circuit
     template_name = 'circuit/circuits_list.html'
+
+    @method_decorator(permission_required('inventory.view_circuit', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(CircuitList, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """
@@ -1665,11 +1779,22 @@ class CircuitListingTable(BaseDatatableView):
         if qs:
             qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
         for dct in qs:
-            dct.update(actions='<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
-                <a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>\
-                <a href="/circuit/l2_reports/{0}/"><i class="fa fa-sign-in text-info" title="View L2 reports for circuit"\
-                alt="View L2 reports for circuit"></i></a>'.format(dct.pop('id')),
-               date_of_acceptance=dct['date_of_acceptance'].strftime("%Y-%m-%d") if dct['date_of_acceptance'] != "" else "")
+            device_id = dct.pop('id')
+            if self.request.user.has_perm('inventory.change_circuit'):
+                edit_action = '<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('inventory.delete_circuit'):
+                delete_action = '<a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                actions = edit_action + delete_action
+            else:
+                actions = ''
+            actions = actions + '<a href="/circuit/l2_reports/{0}/"><i class="fa fa-sign-in text-info" title="View L2 reports for circuit"\
+                            alt="View L2 reports for circuit"></i></a>'.format(device_id)
+            dct.update(actions=actions, date_of_acceptance=dct['date_of_acceptance'].strftime("%Y-%m-%d") if dct['date_of_acceptance'] != "" else "")
 
         return qs
 
@@ -2054,6 +2179,13 @@ class IconSettingsList(ListView):
     model = IconSettings
     template_name = 'icon_settings/icon_settings_list.html'
 
+    @method_decorator(permission_required('inventory.view_iconsettings', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(IconSettingsList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -2063,9 +2195,8 @@ class IconSettingsList(ListView):
             {'mData': 'alias',            'sTitle': 'Alias',              'sWidth': 'auto'},
             {'mData': 'upload_image',     'sTitle': 'Image',       'sWidth': 'auto'},
             ]
-        #if the user role is Admin or operator then the action column will appear on the datatable
-        user_role = self.request.user.userprofile.role.values_list('role_name', flat=True)
-        if 'admin' in user_role or 'operator' in user_role:
+        #if the user is superuser action column can be appeared in datatable.
+        if self.request.user.is_superuser:
             datatable_headers.append({'mData': 'actions', 'sTitle': 'Actions', 'sWidth': '10%', })
 
         context['datatable_headers'] = json.dumps(datatable_headers)
@@ -2180,7 +2311,7 @@ class IconSettingsCreate(CreateView):
     form_class = IconSettingsForm
     success_url = reverse_lazy('icon_settings_list')
 
-    @method_decorator(permission_required('inventory.add_icon_settings', raise_exception=True))
+    @method_decorator(permission_required('inventory.add_iconsettings', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch method restricted with the permissions.
@@ -2205,7 +2336,7 @@ class IconSettingsUpdate(UpdateView):
     form_class = IconSettingsForm
     success_url = reverse_lazy('icon_settings_list')
 
-    @method_decorator(permission_required('inventory.change_icon_settings', raise_exception=True))
+    @method_decorator(permission_required('inventory.change_iconsettings', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch method restricted with the permissions.
@@ -2239,7 +2370,7 @@ class IconSettingsDelete(DeleteView):
     template_name = 'icon_settings/icon_settings_delete.html'
     success_url = reverse_lazy('icon_settings_list')
 
-    @method_decorator(permission_required('inventory.delete_icon_settings', raise_exception=True))
+    @method_decorator(permission_required('inventory.delete_iconsettings', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch method restricted with the permissions.
@@ -2254,6 +2385,13 @@ class LivePollingSettingsList(ListView):
     """
     model = LivePollingSettings
     template_name = 'live_polling_settings/live_polling_settings_list.html'
+
+    @method_decorator(permission_required('inventory.view_livepollingsettings', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(LivePollingSettingsList, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """
@@ -2376,7 +2514,7 @@ class LivePollingSettingsCreate(CreateView):
     form_class = LivePollingSettingsForm
     success_url = reverse_lazy('live_polling_settings_list')
 
-    @method_decorator(permission_required('inventory.add_live_polling_settings', raise_exception=True))
+    @method_decorator(permission_required('inventory.add_livepollingsettings', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch method restricted with the permissions.
@@ -2401,7 +2539,7 @@ class LivePollingSettingsUpdate(UpdateView):
     form_class = LivePollingSettingsForm
     success_url = reverse_lazy('live_polling_settings_list')
 
-    @method_decorator(permission_required('inventory.change_live_polling_settings', raise_exception=True))
+    @method_decorator(permission_required('inventory.change_livepollingsettings', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch method restricted with the permissions.
@@ -2435,7 +2573,7 @@ class LivePollingSettingsDelete(DeleteView):
     template_name = 'live_polling_settings/live_polling_settings_delete.html'
     success_url = reverse_lazy('live_polling_settings_list')
 
-    @method_decorator(permission_required('inventory.delete_live_polling_settings', raise_exception=True))
+    @method_decorator(permission_required('inventory.delete_livepollingsettings', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch method restricted with the permissions.
@@ -2450,6 +2588,14 @@ class ThresholdConfigurationList(ListView):
     """
     model = ThresholdConfiguration
     template_name = 'threshold_configuration/threshold_configuration_list.html'
+
+    @method_decorator(permission_required('inventory.view_thresholdconfiguration', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(ThresholdConfigurationList, self).dispatch(*args, **kwargs)
+
 
     def get_context_data(self, **kwargs):
         """
@@ -2646,6 +2792,14 @@ class ThematicSettingsList(ListView):
     model = ThematicSettings
     template_name = 'thematic_settings/thematic_settings_list.html'
 
+    @method_decorator(permission_required('inventory.view_thematicsettings', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(ThematicSettingsList, self).dispatch(*args, **kwargs)
+
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -2800,7 +2954,7 @@ class ThematicSettingsCreate(CreateView):
     form_class = ThematicSettingsForm
     success_url = reverse_lazy('thematic_settings_list')
 
-    @method_decorator(permission_required('inventory.add_thematic_settings', raise_exception=True))
+    @method_decorator(permission_required('inventory.add_thematicsettings', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch method restricted with the permissions.
@@ -2829,7 +2983,7 @@ class ThematicSettingsUpdate(UpdateView):
     form_class = ThematicSettingsForm
     success_url = reverse_lazy('thematic_settings_list')
 
-    @method_decorator(permission_required('inventory.change_thematic_settings', raise_exception=True))
+    @method_decorator(permission_required('inventory.change_thematicsettings', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch method restricted with the permissions.
@@ -2868,7 +3022,7 @@ class ThematicSettingsDelete(DeleteView):
     template_name = 'thematic_settings/thematic_settings_delete.html'
     success_url = reverse_lazy('thematic_settings_list')
 
-    @method_decorator(permission_required('inventory.delete_thematic_settings', raise_exception=True))
+    @method_decorator(permission_required('inventory.delete_thematicsettings', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch method restricted with the permissions.
