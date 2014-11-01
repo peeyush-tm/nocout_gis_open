@@ -222,7 +222,7 @@ class Circuit(models.Model):
     date_of_acceptance = models.DateField('Date of Acceptance', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
     organization = models.ForeignKey(Organization, default=get_default_org)
-    
+
     def __unicode__(self):
         return self.name
 

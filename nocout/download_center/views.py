@@ -41,7 +41,7 @@ class DownloadCenter(ListView):
         context = super(DownloadCenter, self).get_context_data(**kwargs)
         datatable_headers = [
             {'mData': 'report_name', 'sTitle': 'Name', 'sWidth': 'auto'},
-            {'mData': 'report_path', 'sTitle': 'Alias', 'sWidth': 'auto'},
+            {'mData': 'path', 'sTitle': 'Alias', 'sWidth': 'auto'},
             {'mData': 'created_on', 'sTitle': 'Created On', 'sWidth': 'auto'},
             {'mData': 'report_date', 'sTitle': 'Report Date', 'sWidth': 'auto'},
         ]
@@ -60,8 +60,8 @@ class DownloadCenterListing(BaseDatatableView):
     A generic class based view for the reports data table rendering.
     """
     model = ProcessedReportDetails
-    columns = ['report_name', 'report_path', 'created_on', 'report_date']
-    order_columns = ['report_name', 'report_path', 'created_on', 'report_date']
+    columns = ['report_name', 'path', 'created_on', 'report_date']
+    order_columns = ['report_name', 'path', 'created_on', 'report_date']
 
     def filter_queryset(self, qs):
         """
@@ -131,11 +131,11 @@ class DownloadCenterListing(BaseDatatableView):
             # full path of report
             report_path = ""
             try:
-                report_path = dct['report_path']
+                report_path = dct['path']
             except Exception as e:
                 logger.info(e.message)
             dct.update(
-                report_path='<a href="{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
+                path='<a href="{}"><img src="{}" style="float:left; display:block; height:25px; width:25px;">'.format(
                     report_path, excel_green))
             dct.update(
                 actions='<a href="/download_center/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(
@@ -198,7 +198,7 @@ class DownloadCenterReportDelete(DeleteView):
 
         # remove report file if it exists
         try:
-            os.remove(report_obj.report_path)
+            os.remove(report_obj.path)
         except Exception as e:
             logger.info(e.message)
 

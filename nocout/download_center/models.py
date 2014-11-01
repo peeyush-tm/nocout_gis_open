@@ -1,12 +1,12 @@
 from django.db import models
-
+from django.conf import settings
 
 class ProcessedReportDetails(models.Model):
     """
     class for putting in processed data excel
     """
     report_name = models.CharField('Report Name', max_length=255)
-    report_path = models.CharField('Report Path', max_length=512)
+    path = models.CharField('Report Path', max_length=512, default=settings.REPORT_PATH)
     created_on = models.DateTimeField('Created On', auto_now=True, auto_now_add=True, blank=True)
     report_date = models.DateTimeField('Report Date', blank=True, null=True)
     organization_id = models.IntegerField('Organization ID', default=1)

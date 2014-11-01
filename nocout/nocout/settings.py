@@ -344,6 +344,11 @@ DEVICE_APPLICATION = {
     }
 }
 
+
+###################REPORT_PATH
+
+REPORT_PATH = '/opt/nocout/nocout_gis/nocout/media/download_center/reports'
+
 # Import the local_settings.py file to override global settings
 
 try:
