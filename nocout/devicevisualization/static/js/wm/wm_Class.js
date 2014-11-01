@@ -60,36 +60,33 @@ function WhiteMapClass() {
 		var markerSpiderfied= "";
 		this.unSpiderifyBsMarker= function() {
 			if(markerSpiderfied) {
-				//This function hides Device Marker shown on the map
-				function hideDevices() {
-					for (var i = 0; i < devices_Marker_On_Map.length; i++) {
-						devices_Marker_On_Map[i].style.externalGraphic = base_url + "static/img/icons/1x1.png";
-						if(i=== devices_Marker_On_Map.length-1) {
-							global_this.devicesVectorLayer.redraw();	
-						}
-					}
-				}
-				hideDevices();
-				markerSpiderfied.isSpiderfied = true;
-				markerSpiderfied= "";
+				global_this.devicesVectorLayer.removeAllFeatures();
+				markerSpiderfied= "";				
 			}
 		}
-		this.spiderfyBsMarker= function(marker) {
+
+		this.spiderfyBsMarker= function(markername) {
 			this.unSpiderifyBsMarker();
-			var bs_marker= bsMarkerObj[marker.name];
-			var bs_devices = deviceMarkerObj[marker.name];
+			var bs_marker= bsMarkerObj[markername];
+			var bs_devices = deviceMarkerObj[markername];
 			var map_Zoom_Level = ccpl_map.getZoom();
+			devices_Marker_On_Map= [];
 			if(bs_devices) {
 				//Loop through the devices
 				for (var i = 0; i < bs_devices.length; i++) {
+					// console.log(bs_devices[i]);
 					bs_devices[i].style.externalGraphic = bs_devices[i].attributes.defaultIcon;
+					
+					bs_devices[i].move(new OpenLayers.LonLat(bs_devices[i].attributes.ptLon, bs_devices[i].attributes.ptLat));
 					devices_Marker_On_Map.push(bs_devices[i]);
 					if(i=== bs_devices.length-1) {
+						global_this.devicesVectorLayer.removeAllFeatures();
+						global_this.devicesVectorLayer.addFeatures(devices_Marker_On_Map);
 						global_this.devicesVectorLayer.redraw();
 					}
 				}
-				marker.isSpiderfied = false;
-				markerSpiderfied= marker;
+				bs_marker.isSpiderfied = false;
+				markerSpiderfied= bs_marker;
 			}
 		}
 		/*
@@ -119,8 +116,13 @@ function WhiteMapClass() {
 
 		this.onFeatureSelect = function(e) {
 			this.onFeatureUnselect();
-			// console.log("Feature clicked: ", e);
-			var infoWindowContent = gmap_self.makeWindowContent(e.feature);
+			var infoWindowContent;
+			if(e.feature.attributes && e.feature.attributes.pointType === "sector_Marker") {
+				infoWindowContent = gmap_self.makeWindowContent(e.feature.attributes);
+			} else {
+				infoWindowContent = gmap_self.makeWindowContent(e.feature);
+			}
+
 			var feature = e.feature;
 			oldFeature= feature;
 			var popup = new OpenLayers.Popup.FramedCloud("popup", feature.geometry.getBounds().getCenterLonLat(), null, infoWindowContent, null, true);
@@ -133,39 +135,50 @@ function WhiteMapClass() {
 		}
 
 		this.markerLayerFeatureClick= function(event) {
-			var f = event.feature;
-			if (f.cluster.length >= 2){
-				//Click on Cluster
-				clusterpoints = [];
-				for(var i = 0; i<f.cluster.length; i++){
-					clusterpoints.push(f.cluster[i].geometry);
-				}
-				var linestring = new OpenLayers.Geometry.LineString(clusterpoints);
-				ccpl_map.zoomToExtent(linestring.getBounds());
-			} else {
-				console.log("Click on Marker");
-				this.onFeatureUnselect();
-				console.log(event.feature);
-				var infoWindowContent = gmap_self.makeWindowContent(event.feature.cluster[0].attributes);
 
-				var feature = event.feature;
-				oldFeature= feature;
-			var popup = new OpenLayers.Popup.FramedCloud("popup",
-				feature.geometry.getBounds().getCenterLonLat(),
-				null,
-				infoWindowContent,
-				null,
-				true
-				);
-			popup.autoSize= true;
-			popup.maxSize= new OpenLayers.Size(300, 350);
-			feature.popup = popup;
-			ccpl_map.addPopup(popup);
-			/*Update window content to show less items*/
-			gmap_self.show_hide_info();
-			// popup.setSize(new OpenLayers.Size(500, 400));
-				//Click on Marker
-				// global_this.bsMarkerClick(event, f);
+			if(event.feature.cluster.length) {
+				if(event.feature.cluster.length === 1 && event.feature.cluster[0].attributes.pointType=== "base_station" && !markerSpiderfied) {
+					this.unSpiderifyBsMarker();
+					this.spiderfyBsMarker( event.feature.cluster[0].attributes.name);
+					markerSpiderfied = event.feature.cluster[0];
+					event.feature.cluster[0].attributes.isSpiderfied = false;
+				} else {
+					var f = event.feature;
+					if (f.cluster.length >= 2){
+						//Click on Cluster
+						clusterpoints = [];
+						for(var i = 0; i<f.cluster.length; i++){
+							clusterpoints.push(f.cluster[i].geometry);
+						}
+						var linestring = new OpenLayers.Geometry.LineString(clusterpoints);
+						ccpl_map.zoomToExtent(linestring.getBounds());
+					} else {
+						this.onFeatureUnselect();
+						var infoWindowContent = gmap_self.makeWindowContent(event.feature.cluster[0].attributes);
+
+						var feature = event.feature;
+						oldFeature= feature;
+						var popup = new OpenLayers.Popup.FramedCloud("popup",
+							feature.geometry.getBounds().getCenterLonLat(),
+							null,
+							infoWindowContent,
+							null,
+							true
+							);
+					popup.autoSize= true;
+					popup.maxSize= new OpenLayers.Size(300, 350);
+					feature.popup = popup;
+					ccpl_map.addPopup(popup);
+					/*Update window content to show less items*/
+					gmap_self.show_hide_info();
+					// popup.setSize(new OpenLayers.Size(500, 400));
+						//Click on Marker
+						// global_this.bsMarkerClick(event, f);
+					}
+				}
+				
+			} else {
+				console.log('what happened');
 			}
 		}
 		/*
@@ -1045,7 +1058,18 @@ console.log(polygonSelectedDevices);
 
 				//base station 
 				var id = markerData.id, name = markerData.name, lon = markerData.data.lon, lat = markerData.data.lat, icon = base_url+"/static/img/icons/bs.png", size = new OpenLayers.Size(whiteMapSettings.size.medium.width, whiteMapSettings.size.medium.height), type = "base_station";
-				var additionalInfoObject = { id: id, name: name, type: type, visible: 'true', isSpiderfied: true, dataset: markerData.data.param.base_station, bhInfo: markerData.data.param.backhual, ptLat: lat, ptLon: lon, pointType: type }
+				var additionalInfoObject = { 
+					id: id, 
+					name: name, 
+					type: type, 
+					visible: 'true', 
+					isSpiderfied: true, 
+					dataset: markerData.data.param.base_station, 
+					bhInfo: markerData.data.param.backhual, 
+					ptLat: lat, 
+					ptLon: lon, 
+					pointType: type 
+				}
 
 				var marker = global_this.createOpenLayerVectorMarker(size, icon, lon, lat, additionalInfoObject);
 
@@ -1094,22 +1118,28 @@ console.log(polygonSelectedDevices);
 							visible: false,
 							defaultIcon:  base_url+"/"+device.markerUrl,
 							clusterIcon: base_url+'/static/img/icons/1x1.png',
-							lat: deviceLatLngObject.lat,
-							lon: deviceLatLngObject.lon,
+							lat: lat,
+							lon: lon,
 							technology: device.technology,
 							ptLat: deviceLatLngObject.lat,
 							ptLon: deviceLatLngObject.lon,
 							device_name : device.sector_configured_on_device,
-							sectorName  		: device.sector_configured_on
+							sectorName: device.sector_configured_on,
+							pointType 		 	: 'sector_Marker',
+							vendor 				: device.vendor,
+							deviceExtraInfo 	: device.info,
+							deviceInfo 			: device.device_info,
+							poll_info 			: [],
+							perf_data_obj  		: {}
 						}
 						//Create deviceMarker
-						var deviceMarker = global_this.createOpenLayerVectorMarker(size, deviceIcon, deviceLatLngObject.lon, deviceLatLngObject.lat, deviceAdditionalInfo);
+						var deviceMarker = global_this.createOpenLayerVectorMarker(size, deviceIcon, lon, lat, deviceAdditionalInfo);
 
 						ssAndDeviceArray.push(deviceMarker);
 						device_features_master_array.push(deviceMarker);
 						device_features_master_obj[name] = deviceMarker;
 
-						global_this.devicesVectorLayer.addFeatures(deviceMarker);
+						// global_this.devicesVectorLayer.addFeatures(deviceMarker);
 						//Add marker to markerArray
 						markerArray.push(deviceMarker);
 
@@ -1228,7 +1258,15 @@ console.log(polygonSelectedDevices);
 								ssname: sub_station_name,
 								ckt: device.circuit_id,
 								devicename: device.device_info[0].value,
-								type: "line"
+								type: "line",
+								pointType: "path",
+								bs_info: markerData.data.param.base_station,
+								ss_info: sub_station.data.param.sub_station,
+								nearLat: lat,
+								nearLon: lon,
+								ss_lat: sub_station_lat,
+								ss_lon: sub_station_lon,
+								filteredLine: true
 							}
 
 							var halfPt = Math.floor(sectorPintsArray.length / (+2));
@@ -1268,7 +1306,8 @@ console.log(polygonSelectedDevices);
 								nearLat: lat,
 								nearLon: lon,
 								ss_lat: sub_station_lat,
-								ss_lon: sub_station_lon
+								ss_lon: sub_station_lon,
+								filteredLine: true
 							}
 							//Draw line between BS and SS
 							var line = global_this.drawLine(lon, lat, sub_station_lon, sub_station_lat, device.color, lineAdditionalInfo);

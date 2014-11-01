@@ -15,7 +15,7 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		var options = { controls: [
 				new OpenLayers.Control.Navigation({ dragPanOptions: { enableKinetic: true } }),
 				new OpenLayers.Control.PanZoomBar(),
-				// new OpenLayers.Control.LayerSwitcher({'ascending':false}),
+				new OpenLayers.Control.LayerSwitcher({'ascending':false}),
 				// new OpenLayers.Control.ScaleLine(), 
 				new OpenLayers.Control.MousePosition(),
 				// new OpenLayers.Control.KeyboardDefaults()
@@ -79,9 +79,9 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 		ccpl_map.addLayer(linesLayer);
 
 		searchMarkerLayer = new OpenLayers.Layer.Vector("Search Marker Vector Layer");
-	ccpl_map.addLayer(searchMarkerLayer);
+		ccpl_map.addLayer(searchMarkerLayer);
 
-		var devicesVectorLayer = new OpenLayers.Layer.Vector("Device Vector Marker Layer");
+		var devicesVectorLayer = new OpenLayers.Layer.Vector("Device Vector Marker Layer", {eventListeners: layerEventListener});
 		this.devicesVectorLayer = devicesVectorLayer;
 		ccpl_map.addLayer(devicesVectorLayer);		
 
@@ -163,9 +163,10 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 
 		var selectCtrl = new OpenLayers.Control.SelectFeature(
 			markersVectorLayer, {
-				clickout: true,
+				clickout: true, toggle: true,
+				multiple: true, hover: false,
 				eventListeners: {
-					featurehighlighted: function(feature) {that.markerLayerFeatureClick(feature); return false;}
+					featurehighlighted: function(feature) {that.markerLayerFeatureClick(feature); selectCtrl.unselectAll(); 	return false;}
 				}
 			}
 		);

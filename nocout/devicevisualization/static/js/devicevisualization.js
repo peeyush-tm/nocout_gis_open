@@ -81,6 +81,10 @@ city_options = []
 /*This event trigger when state dropdown value is changes*/
 $("#state").change(function(e) {
 
+
+    if(window.location.pathname.indexOf("white_background") > -1) {
+        return;
+}
     getPageType();
 
     var state_id = $(this).val(),
@@ -106,6 +110,9 @@ $("#state").change(function(e) {
 /*This event trigger when city dropdown value is changes*/
 $("#city").change(function(e) {
 
+    if(window.location.pathname.indexOf("white_background") > -1) {
+        return;
+}
     getPageType();
     networkMapInstance.makeFiltersArray(mapPageType);
 });
@@ -113,6 +120,9 @@ $("#city").change(function(e) {
 /*This event trigger when vendor dropdown value is changes*/
 $("#vendor").change(function(e) {
 
+    if(window.location.pathname.indexOf("white_background") > -1) {
+        return;
+}
     getPageType();
     networkMapInstance.makeFiltersArray(mapPageType);
 });
@@ -147,7 +157,9 @@ if(window.location.pathname.indexOf("white_background") > -1) {
 
 /*This event triggers when Reset Filter button clicked*/
 $("#resetFilters").click(function(e) {
-
+if(window.location.pathname.indexOf("white_background") > -1) {
+        return;
+}
     $("#resetFilters").button("loading");
     /*Reset The basic filters dropdown*/
     $("#technology").val($("#technology option:first").val());
