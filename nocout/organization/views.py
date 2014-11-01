@@ -63,7 +63,10 @@ class OrganizationListingTable(BaseDatatableView):
         """
         return the logged in user descendants organization ids.
         """
-        return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
+        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+            return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
+        else:
+            return list(str(self.request.user.userprofile.organization.id))
 
     def filter_queryset(self, qs):
         """
