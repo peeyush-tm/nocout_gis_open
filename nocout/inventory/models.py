@@ -13,7 +13,14 @@ from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 from django.utils.translation import ugettext_lazy
 from user_profile.models import UserProfile
+from organization.models import Organization
 
+def get_default_org():
+    """
+
+    :return: organisation ID = 1
+    """
+    return Organization.objects.get(id=1)
 
 # inventory model --> mapper of user_group & device groups
 class Inventory(models.Model):
@@ -51,6 +58,7 @@ class Antenna(models.Model):
     sync_splitter_used = models.CharField('Sync Splitter User', max_length=4, null=True, blank=True)
     make_of_antenna = models.CharField('Make Of Antenna', max_length=40, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
+    organization = models.ForeignKey(Organization, default=get_default_org)
 
     def __unicode__(self):
         return self.name
@@ -84,6 +92,7 @@ class Backhaul(models.Model):
     ttsl_circuit_id = models.CharField('TTSL Circuit ID', max_length=250, null=True, blank=True)
     dr_site = models.CharField('DR Site', max_length=150, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
+    organization = models.ForeignKey(Organization, default=get_default_org)
 
     def __unicode__(self):
         return self.name
@@ -114,6 +123,7 @@ class BaseStation(models.Model):
     city = models.IntegerField('City', null=True, blank=True)
     address = models.TextField('Address', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
+    organization = models.ForeignKey(Organization, default=get_default_org)
 
     def __unicode__(self):
         return self.name
@@ -142,6 +152,7 @@ class Sector(models.Model):
     frequency = models.ForeignKey(DeviceFrequency, null=True, blank=True)
     modulation = models.CharField('Modulation', max_length=250, null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
+    organization = models.ForeignKey(Organization, default=get_default_org)
 
     def __unicode__(self):
         return self.name
@@ -156,6 +167,7 @@ class Customer(models.Model):
     alias = models.CharField('Alias', max_length=250)
     address = models.TextField('Address', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
+    organization = models.ForeignKey(Organization, default=get_default_org)
 
     def __unicode__(self):
         return self.name
@@ -184,6 +196,7 @@ class SubStation(models.Model):
     city = models.IntegerField('City', null=True, blank=True)
     address = models.TextField('Address', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
+    organization = models.ForeignKey(Organization, default=get_default_org)
 
     def __unicode__(self):
         return self.name
@@ -208,7 +221,8 @@ class Circuit(models.Model):
     throughput_during_acceptance = models.CharField('Throughput During Acceptance', max_length=100, null=True, blank=True)
     date_of_acceptance = models.DateField('Date of Acceptance', null=True, blank=True)
     description = models.TextField('Description', null=True, blank=True)
-
+    organization = models.ForeignKey(Organization, default=get_default_org)
+    
     def __unicode__(self):
         return self.name
 

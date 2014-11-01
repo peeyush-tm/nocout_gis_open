@@ -14,11 +14,10 @@
 {% endblock %}
 {% load staticfiles %}
 {% block content %}
-    {% for group in user.groups.all %}
-        {% if group.name == 'group_admin' %}
+        {% if perms.device.add_device %}
             <p><a href="/device/new"><i class="fa fa-plus"></i> Create Device</a></p>
         {% endif %}
-    {% endfor %}
+    
     <p><a href="/device/treeview"><i class="fa fa-sitemap"></i> Devices Tree View</a></p>
 
     <div class="box border lite">

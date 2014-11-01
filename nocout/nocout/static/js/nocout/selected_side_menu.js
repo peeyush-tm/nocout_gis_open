@@ -366,10 +366,11 @@ if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
     module_name = page_title.length > 1 ? page_title[1].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()}) :  page_title[0].replace(/\b[a-z]/g, function(letter) {return letter.toUpperCase()});
 
     if(isFormSubmit === 0) {
-            var oldFieldsArray = $("form input").serializeArray(),
-                select_boxes = $("select");
+        var oldFieldsArray = $("form input").serializeArray(),
+            select_boxes = $("select");
 
         setTimeout(function() {
+
             for(var i=0;i<select_boxes.length;i++) {
                 var select_id = select_boxes[i].attributes["id"].value,
                     values_array = $("#"+select_id).select2("data"),
@@ -377,13 +378,13 @@ if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
                 if(values_array.length) {
                     $.grep(values_array,function(data){
                         if(selected_values.length > 0) {
-                            selected_values += ","+data.text;
+                            selected_values +=  data.text ? ","+data.text : "";
                         } else {
-                            selected_values += data.text;
+                            selected_values += data.text ? data.text : "";
                         }
                     });
                 } else {
-                    selected_values = values_array.text;
+                    selected_values = values_array ? values_array.text : "";
                 }
 
                 var data_obj = {
@@ -392,7 +393,7 @@ if(isCreateForm > -1 || isNewForm > -1 || isAddForm > -1) {
                 };
                 oldFieldsArray.push(data_obj);
             }
-        },300);
+        },500);
     } 
 }
 
@@ -439,9 +440,9 @@ $("form").submit(function(e) {
                 if(values_array.length) {
                     $.grep(values_array,function(data){
                         if(selected_values.length > 0) {
-                            selected_values += ","+data.text;
+                            selected_values += data.text ? ","+data.text : "";
                         } else {
-                            selected_values += data.text;
+                            selected_values += data.text ? data.text : "";
                         }
                     });
                 } else {
@@ -462,7 +463,9 @@ $("form").submit(function(e) {
                     new_field = newFieldsArray[j];
                 if(old_field && new_field) {
                     if($.trim(old_field.value) != $.trim(new_field.value)) {
-                        var modified_str = old_field.name+"{"+old_field.value+" To "+new_field.value+"}";
+                        var new_val = new_field.value.toLowerCase() != 'select' ? new_field.value : "",
+                            old_val = old_field.value.toLowerCase() != 'select' ? old_field.value : "",
+                            modified_str = old_field.name+"{"+old_val+" To "+new_val+"}";
                         if($.trim(modifiedFieldsStr) != '[') {
                             modifiedFieldsStr += ","+modified_str;
                         } else {

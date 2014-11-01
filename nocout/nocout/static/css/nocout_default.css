@@ -241,3 +241,22 @@ span.dept {
 .sidebar-menu > ul > li > ul.sub .has-sub-sub ul.sub-sub > li > a {
   padding-left: 20px !important;
 }
+
+/*by navi 011114*/
+.Tbl_FixHeight {
+  height:588px;
+}
+
+/*for laptop screen*/
+@media screen and (max-width:1366px), screen and (max-height: 768px) { 
+.Tbl_FixHeight {
+  height:458px;
+}
+}
+/*for 1024*768 resolution*/
+@media screen and (width:1024px), screen and (height: 768px) { 
+.Tbl_FixHeight {
+  height:540px;
+}
+}
+}

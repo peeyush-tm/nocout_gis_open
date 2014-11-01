@@ -64,6 +64,22 @@ def load_earth(request):
     return render_to_response('devicevisualization/locate_devices_earth.html',
                                 template_data, 
                                 context_instance=RequestContext(request))    
+
+
+def load_white_background(request , device_name = "default_device_name"):
+    """
+    Returns the Context Variable to GIS Map page.
+    """
+    template_data = { 'username' : request.user.username,
+                    'device_name' : device_name,
+                    'get_filter_api': get_url(request, 'GET'),
+                    'set_filter_api': get_url(request, 'POST')
+                    }
+
+    return render_to_response('devicevisualization/locate_devices_white_map.html',
+                                template_data, 
+                                context_instance=RequestContext(request))
+
     
 def get_url(req, method):
     """
@@ -189,7 +205,9 @@ class Gis_Map_Performance_Data(View):
                             device_frequency = device_frequency[0].current_value
                         else:
                             device_frequency = ''
-
+                    performance_data.update({
+                    'frequency':device_frequency
+                    })
                 except Exception as e:
                     logger.info(device)
                     logger.info(e.message)
@@ -654,11 +672,11 @@ class Kmzreport_listingtable(BaseDatatableView):
         for dct in qs:
             dct.update(actions='<a style="cursor:pointer;" url="{0}" class="delete_kmzreport" title="Delete kmz" >\
                 <i class="fa fa-trash-o text-danger"></i></a>\
-                <a href="gmap/{0}/" title="view on google map">\
+                <a href="view/gmap/{0}/" title="view on google map">\
                 <i class="fa fa-globe"></i></a>\
-                <a href="google_earth/{0}" title="view on google earth">\
+                <a href="view/google_earth/{0}" title="view on google earth">\
                 <i class="fa fa-globe"></i></a>\
-                <a href="white_background/{0}" title="view on white background">\
+                <a href="view/white_background/{0}" title="view on white background">\
                 <i class="fa fa-globe"></i></a>\
                 '.format(dct.pop('id')),
                added_on=dct['added_on'].strftime("%Y-%m-%d") if dct['added_on'] != "" else "")
@@ -815,3 +833,154 @@ class KmzCreate(CreateView):
         self.object.save()
         action.send(self.request.user, verb='Created', action_object=self.object)
         return HttpResponseRedirect(reverse_lazy('kmz_list'))
+
+
+##################################### Points Listing #################################
+class PointListingInit(ListView):
+
+    model = GISPointTool
+    template_name = 'devicevisualization/points_listing.html'
+
+    def get_context_data(self, **kwargs):
+        
+        context = super(PointListingInit, self).get_context_data(**kwargs)
+        table_headers = [
+            {'mData': 'name', 'sTitle': 'Name', 'sWidth': 'auto', },
+            {'mData': 'description', 'sTitle': 'Description', 'sWidth': 'auto', },
+            {'mData': 'icon_url', 'sTitle': 'Icon', 'sWidth': 'auto', },
+            {'mData': 'latitude', 'sTitle': 'Lattitude', 'sWidth': 'auto'},
+            {'mData': 'longitude', 'sTitle': 'Longitude', 'sWidth': 'auto'},
+            {'mData': 'connected_lat', 'sTitle': 'Connected Lattitude', 'sWidth': 'auto'},
+            {'mData': 'connected_lon', 'sTitle': 'Connected Longitude', 'sWidth': 'auto'}
+        ]
+
+        context['table_headers'] = json.dumps(table_headers)
+        return context
+
+
+class PointListingTable(BaseDatatableView):
+   
+    model = GISPointTool
+    columns = ['name', 'description', 'icon_url', 'latitude', 'longitude', 'connected_lat', 'connected_lon']
+    order_columns = ['name', 'description', 'latitude', 'longitude', 'connected_lat', 'connected_lon']
+
+    def filter_queryset(self, qs):
+        """ Filter datatable as per requested value """
+
+        sSearch = self.request.GET.get('sSearch', None)
+
+        if sSearch:
+            query = []
+            exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            for column in self.columns[:-1]:
+                # avoid search on 'added_on'
+                if column == 'added_on':
+                    continue
+                query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
+
+            exec_query += " | ".join(query)
+            exec_query += ").values(*" + str(self.columns + ['id']) + ")"
+            exec exec_query
+        return qs
+
+    def get_initial_queryset(self):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
+        if not self.model:
+            raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
+
+        # Query to fetch L2 reports data from db
+        pointsresult = GISPointTool.objects.filter(user_id=self.request.user.id).values(*self.columns + ['id'])
+
+        report_resultset = []
+        for data in pointsresult:
+            report_object = {}
+            report_object['name'] = data['name'].title()
+            report_object['description'] = data['description'].title()
+            report_object['icon_url'] = "<img src='../../"+data['icon_url']+"' width='32px' height='37px'/>"
+            report_object['latitude'] = data['latitude']
+            report_object['longitude'] = data['longitude']
+            report_object['connected_lat'] = data['connected_lat']
+            report_object['connected_lon'] = data['connected_lon']
+            report_object['id'] = data['id']
+            #add data to report_resultset list
+            report_resultset.append(report_object)
+        return report_resultset
+
+    def prepare_results(self, qs):
+        """
+        Preparing  Initial Queryset for the for rendering the data table.
+        """
+        if qs:
+            qs = [{key: val if val else "" for key, val in dct.items()} for dct in qs]
+
+        return qs
+
+    def ordering(self, qs):
+        """ Get parameters from the request and prepare order by clause
+        """
+        request = self.request
+        # Number of columns that are used in sorting
+        try:
+            i_sorting_cols = int(request.REQUEST.get('iSortingCols', 0))
+        except Exception:
+            i_sorting_cols = 0
+
+        order = []
+        order_columns = self.get_order_columns()
+        for i in range(i_sorting_cols):
+            # sorting column
+            try:
+                i_sort_col = int(request.REQUEST.get('iSortCol_%s' % i))
+            except Exception:
+                i_sort_col = 0
+            # sorting order
+            s_sort_dir = request.REQUEST.get('sSortDir_%s' % i)
+
+            sdir = '-' if s_sort_dir == 'desc' else ''
+
+            sortcol = order_columns[i_sort_col]
+            if isinstance(sortcol, list):
+                for sc in sortcol:
+                    order.append('%s%s' % (sdir, sc))
+            else:
+                order.append('%s%s' % (sdir, sortcol))
+        if order:
+            key_name=order[0][1:] if '-' in order[0] else order[0]
+            sorted_device_data = sorted(qs, key=itemgetter(key_name), reverse= True if '-' in order[0] else False)
+            return sorted_device_data
+        return qs
+
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        The main method call to fetch, search, ordering , prepare and display the data on the data table.
+        """
+
+        request = self.request
+        self.initialize(*args, **kwargs)
+
+        
+        qs = self.get_initial_queryset()
+
+        # number of records before filtering
+        total_records = len(qs)
+
+        qs = self.filter_queryset(qs)
+        # number of records after filtering
+        total_display_records = len(qs)
+
+        qs = self.ordering(qs)
+        qs = self.paging(qs)
+        #if the qs is empty then JSON is unable to serialize the empty ValuesQuerySet.Therefore changing its type to list.
+        if not qs and isinstance(qs, ValuesQuerySet):
+            qs = list(qs)
+
+        aaData = self.prepare_results(qs)
+        ret = {'sEcho': int(request.REQUEST.get('sEcho', 0)),
+               'iTotalRecords': total_records,
+               'iTotalDisplayRecords': total_display_records,
+               'aaData': aaData
+        }
+        return ret

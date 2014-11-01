@@ -9,31 +9,33 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         # Adding model 'ProcessedReportDetails'
-        db.create_table(u'download_center_processedreportdetails', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('report_name', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('report_path', self.gf('django.db.models.fields.CharField')(max_length=512)),
-            ('created_on', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, auto_now_add=True, blank=True)),
-            ('orgnization_id', self.gf('django.db.models.fields.IntegerField')(default=1)),
-        ))
-        db.send_create_signal(u'download_center', ['ProcessedReportDetails'])
+        # db.create_table(u'download_center_processedreportdetails', (
+        #     (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+        #     ('report_name', self.gf('django.db.models.fields.CharField')(max_length=255)),
+        #     ('report_path', self.gf('django.db.models.fields.CharField')(max_length=512)),
+        #     ('created_on', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, auto_now_add=True, blank=True)),
+        #     ('orgnization_id', self.gf('django.db.models.fields.IntegerField')(default=1)),
+        # ))
+        # db.send_create_signal(u'download_center', ['ProcessedReportDetails'])
 
-        # Adding model 'ReportSettings'
-        db.create_table(u'download_center_reportsettings', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('page_name', self.gf('django.db.models.fields.CharField')(max_length=128)),
-            ('report_name', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('report_frequency', self.gf('django.db.models.fields.CharField')(max_length=128)),
-        ))
-        db.send_create_signal(u'download_center', ['ReportSettings'])
+        # # Adding model 'ReportSettings'
+        # db.create_table(u'download_center_reportsettings', (
+        #     (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+        #     ('page_name', self.gf('django.db.models.fields.CharField')(max_length=128)),
+        #     ('report_name', self.gf('django.db.models.fields.CharField')(max_length=255)),
+        #     ('report_frequency', self.gf('django.db.models.fields.CharField')(max_length=128)),
+        # ))
+        # db.send_create_signal(u'download_center', ['ReportSettings'])
+        pass
 
 
     def backwards(self, orm):
         # Deleting model 'ProcessedReportDetails'
-        db.delete_table(u'download_center_processedreportdetails')
+        # db.delete_table(u'download_center_processedreportdetails')
 
-        # Deleting model 'ReportSettings'
-        db.delete_table(u'download_center_reportsettings')
+        # # Deleting model 'ReportSettings'
+        # db.delete_table(u'download_center_reportsettings')
+        pass
 
 
     models = {

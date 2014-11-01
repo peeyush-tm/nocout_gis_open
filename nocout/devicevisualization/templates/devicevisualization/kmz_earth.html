@@ -35,20 +35,61 @@
     </div>
 </div>
 
-    <!-- Google Map Library-->
-    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
-    <!-- Script Library for COokies -->
-    <script type="text/javascript" src={% static "js/jQuery-Cookie/src/jquery.cookie.js" %}></script>
+    <!-- Google Earth Library-->
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
     <script type="text/javascript">
 
-        var networkMapInstance = "",
+        var ge = "",
+            base_url = "",
             file_url = "";
 
+            google.load("earth", "1");
+
         $(document).ready(function (e) {
+
+
+            /*Set the base url of application for ajax calls*/
+            if(window.location.origin) {
+                base_url = window.location.origin;
+            } else {
+                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+            }
+
             file_url = "{{file_url}}";
-            console.log(file_url)
-            // networkMapInstance.createMap("deviceMap");
+            google.earth.createInstance("deviceMap", earthInitCallback, earthFailureCallback);
         });
+
+        function earthInitCallback(pluginInstance) {
+
+            ge = pluginInstance;
+            ge.getWindow().setVisibility(true);
+
+            /*Set current position of google earth to india*/
+            var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+            lookAt.setLatitude(21.0000);
+            lookAt.setLongitude(78.0000);
+
+            // Update the view in Google Earth 
+            ge.getView().setAbstractView(lookAt); 
+            // add a navigation control
+            ge.getNavigationControl().setVisibility(ge.VISIBILITY_AUTO);
+
+            // add some layers
+            ge.getLayerRoot().enableLayerById(ge.LAYER_BORDERS, true);
+            ge.getLayerRoot().enableLayerById(ge.LAYER_ROADS, true);
+
+            var href = base_url+'/media/'+file_url;
+            /*Fetach KML or KMZ file data*/
+            google.earth.fetchKml(ge, href, function(kmlObject) {
+                if (kmlObject) {
+                    ge.getFeatures().appendChild(kmlObject);
+                }
+            });
+        }
+
+        function earthFailureCallback(errorCode) {
+            console.log(errorCode);
+        }
     </script>
 {% endblock %}
 

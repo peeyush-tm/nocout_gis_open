@@ -30,25 +30,44 @@
             <div id="deviceMap"></div>
             <!--Map Container End-->
         </div>
-        <div style="position: fixed; display: block; bottom:0; right: 20px; z-index:999;background: #fff;width: auto;padding: 10px;" id="cursor_lat_long">
-        </div>
+        <!-- <div style="position: fixed; display: block; bottom:0; right: 20px; z-index:999;background: #fff;width: auto;padding: 10px;" id="cursor_lat_long">
+        </div> -->
     </div>
 </div>
 
     <!-- Google Map Library-->
-    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry,places&key=AIzaSyAjtKHrKGlr-mw6JcNt3nxDH1LyUngeyGw&sensor=false"></script>
-    <!-- Script Library for COokies -->
-    <script type="text/javascript" src={% static "js/jQuery-Cookie/src/jquery.cookie.js" %}></script>
+    <script type="text/javascript" src="https://maps.google.com/maps/api/js?sensor=false"></script>
     <script type="text/javascript">
 
-        var networkMapInstance = "",
-            file_url = "";
-
         $(document).ready(function (e) {
-            file_url = "{{file_url}}";
-            console.log(file_url)
-            // networkMapInstance.createMap("deviceMap");
+            var file_url = "{{file_url}}";
+            /*Call function to load google map with given kmz or kml file*/
+            createGoogleMap(file_url);
         });
+
+        /*This function creates google map & load the kmz file*/
+        function createGoogleMap(kmz_file_url) {
+
+            var mapOptions = {
+                    center    : new google.maps.LatLng(21.00,78.00),
+                    zoom      : 5
+                },
+                base_url = "";
+
+            /*Set the base url of application for ajax calls*/
+            if(window.location.origin) {
+                base_url = window.location.origin;
+            } else {
+                base_url = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+            }
+
+            var map = new google.maps.Map(document.getElementById("deviceMap"), mapOptions);
+            var kmzLayer = new google.maps.KmlLayer({ 
+                url : 'https://noc-out.net'+'/media/'+kmz_file_url,
+                suppressInfoWindows: true,
+                map: map
+            });
+        }
     </script>
 {% endblock %}
 
