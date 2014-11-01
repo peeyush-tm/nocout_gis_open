@@ -105,6 +105,8 @@ def check_wimax_ss_duplex_status(item, _no_params, info):
 			if host_ip[0][0]:
                 		duplex_value =connection_telnet_duplex_status(host_ip[0][0], 23)
 				if duplex_value:
+					duplex_value = duplex_value.strip('\r')
+					duplex_value = duplex_value.replace(' ','_')
 					infotext = "SS ethernet duples status is %s" % duplex_value
 					state = 0
     except ValueError:

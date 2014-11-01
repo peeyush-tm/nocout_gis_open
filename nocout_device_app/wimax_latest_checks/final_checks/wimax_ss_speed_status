@@ -103,6 +103,7 @@ def check_wimax_ss_speed_status(item, _no_params, info):
 			if host_ip[0][0]:
                 		ss_speed =connection_telnet_for_speed_status(host_ip[0][0], 23)
 				if ss_speed:
+					ss_speed = ss_speed.strip('\r')
 					infotext = "SS ethernet speed is %s" % ss_speed
 					state = 0
     except ValueError:

@@ -12,6 +12,7 @@ from nocout_site_name import *
 import socket,json
 import time
 import imp
+import re
 
 
 
@@ -79,6 +80,7 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 	invent_service_dict = {}
 	matching_criteria = {}
 	interface_oriented_service = ["cambium_ss_connected_bs_ip_invent"]
+	multiple_ds_services = []
 	db = mongo_module.mongo_conn(host = mongo_host,port = mongo_port,db_name =mongo_db_name)
 	for host in hostlist:
 		query = "GET hosts\nColumns: host_services\nFilter: host_name = %s\n" %(host[0])
@@ -118,26 +120,27 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 				continue
 			current_time = int(time.time())
 			if interface_oriented_service[0] in service:
+				contiune
 				interface = service.split(' ')[1]
 				service = service.split(' ')[0]
 				replaced_host = get_ss(host=host[0], interface=interface)
 				host_ip = replaced_host 	
 
-			if service == "cambium_qos_invent":
-				qos_plugin_output = plugin_output.split(' ')
-				qos_ds = map(lambda x: x.split("=")[0],qos_plugin_output)
-				qos_value_list = map(lambda x: x.split("=")[1],qos_plugin_output)
+			plugin_output = plugin_output.split(' ')
+			if len(plugin_output) > 1:
+				ds_list = map(lambda x: x.split("=")[0],plugin_output)
+				value_list = map(lambda x: x.split("=")[1],plugin_output)
 
-				for index in range(len(qos_ds)):
-					if qos_value_list[index]:
+				for index in range(len(ds_list)):
+					if value_list[index]:
 						invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,
 						device_name=replaced_host,
-						service_name=service,current_value=qos_value_list[index],min_value=0,max_value=0,avg_value=0,
-						data_source=qos_ds[index],severity=service_state,site_name=site,warning_threshold=0,
+						service_name=service,current_value=value_list[index],min_value=0,max_value=0,avg_value=0,
+						data_source=ds_list[index],severity=service_state,site_name=site,warning_threshold=0,
 						critical_threshold=0,ip_address=host_ip)
 						
 						matching_criteria.update({'device_name':str(host[0]),'service_name':service,
-						'site_name':site,'data_source':qos_ds[index]})
+						'site_name':site,'data_source':ds_list[index]})
 						
 						mongo_module.mongo_db_update(db,matching_criteria,invent_service_dict,"inventory_services")
 						mongo_module.mongo_db_insert(db,invent_service_dict,"inventory_services")
@@ -145,7 +148,7 @@ def inventory_perf_data(site,hostlist,mongo_host,mongo_port,mongo_db_name):
 						invent_service_dict = {}
 			else:
 				invent_service_dict = dict (sys_timestamp=current_time,check_timestamp=current_time,device_name=replaced_host,
-						service_name=service,current_value=plugin_output,min_value=0,max_value=0,avg_value=0,
+						service_name=service,current_value=plugin_output[0],min_value=0,max_value=0,avg_value=0,
 						data_source=ds,severity=service_state,site_name=site,warning_threshold=0,
 						critical_threshold=0,ip_address=host_ip)
 			matching_criteria.update({'device_name':replaced_host,'service_name':service,'site_name':site})
