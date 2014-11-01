@@ -20,7 +20,7 @@ def auto_assign_thematic(sender, instance=None, created=False, **kwargs):
     # Technology P2P
     thematic_setting_p2p = ThematicSettings.objects.filter(
             threshold_template__live_polling_template__technology__name='P2P',
-            name__contains="RSSI",
+            name__icontains="RSSI",
     )[:1]
 
     if len(thematic_setting_p2p)>0:
@@ -33,7 +33,7 @@ def auto_assign_thematic(sender, instance=None, created=False, **kwargs):
     # Technology PMP
     thematic_setting_pmp = ThematicSettings.objects.filter(
             threshold_template__live_polling_template__technology__name='PMP',
-            name__contains="RSSI",
+            name__icontains="RSSI",
     )[:1]
 
     if len(thematic_setting_pmp)>0:
@@ -46,7 +46,7 @@ def auto_assign_thematic(sender, instance=None, created=False, **kwargs):
     # Technology WiMAX
     thematic_setting_wimax = ThematicSettings.objects.filter(
             threshold_template__live_polling_template__technology__name='WIMAX',
-            name__contains="RSSI",
+            name__icontains="RSSI",
     )[:1]
 
     if len(thematic_setting_wimax)>0:
