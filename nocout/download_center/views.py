@@ -10,6 +10,8 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.views.generic.edit import DeleteView
 from models import ProcessedReportDetails, ReportSettings
 from django.db.models import Q
+from django.conf import settings
+
 import os
 import logging
 
@@ -132,6 +134,9 @@ class DownloadCenterListing(BaseDatatableView):
             report_path = ""
             try:
                 report_path = dct['path']
+                splitter = settings.REPORT_RELATIVE_PATH
+                report_link = report_path.split(splitter)[1]
+                report_path = report_link
             except Exception as e:
                 logger.info(e.message)
             dct.update(
