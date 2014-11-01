@@ -1519,23 +1519,39 @@ def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"],
     return query
 #common function to get the devices
 
-def ptp_device_circuit_backhaul():
+def ptp_device_circuit_backhaul(specify_type='all'):
     """
     Special case fot PTP technology devices. Wherein Circuit type backhaul is required
     :return:
     """
-    device_list_with_circuit_type_backhaul = Device.objects.filter(
-        Q(id__in=Sector.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
-                                        values_list('sector', flat=True)).
-                                        values_list('sector_configured_on', flat=True))
-        |
-        Q(id__in=SubStation.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
-                                        values_list('sub_station', flat=True)).
-                                        values_list('device', flat=True))
-    )
+    if specify_type == 'all':
+        device_list_with_circuit_type_backhaul = Device.objects.filter(
+            Q(id__in=Sector.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                            values_list('sector', flat=True)).
+                                            values_list('sector_configured_on', flat=True))
+            |
+            Q(id__in=SubStation.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                            values_list('sub_station', flat=True)).
+                                            values_list('device', flat=True))
+        )
+    elif specify_type == 'ss':
+        device_list_with_circuit_type_backhaul = Device.objects.filter(
+            Q(id__in=SubStation.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                            values_list('sub_station', flat=True)).
+                                            values_list('device', flat=True))
+        )
+    elif specify_type == 'bs':
+        device_list_with_circuit_type_backhaul = Device.objects.filter(
+            Q(id__in=Sector.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                            values_list('sector', flat=True)).
+                                            values_list('sector_configured_on', flat=True))
+        )
+    else:
+        device_list_with_circuit_type_backhaul = []
+
     return device_list_with_circuit_type_backhaul
 
-def organization_customer_devices(organizations, technology = None):
+def organization_customer_devices(organizations, technology = None, specify_ptp_type='all'):
     """
     To result back the all the customer devices from the respective organization..
 
@@ -1551,13 +1567,30 @@ def organization_customer_devices(organizations, technology = None):
         )
     else:
         if int(technology) == int(P2P.ID):
-            organization_customer_devices = Device.objects.filter(
-                ~Q(id__in=ptp_device_circuit_backhaul()),
-                is_added_to_nms= 1,
-                is_deleted= 0,
-                organization__in= organizations,
-                device_technology= technology
-            )
+            if specify_ptp_type in ['ss','bs']:
+                choose_ss_bs = None
+                if specify_ptp_type == 'ss':
+                    choose_ss_bs = Q(substation__isnull=False)
+                else:
+                    choose_ss_bs = Q(sector_configured_on__isnull=False)
+                organization_customer_devices = Device.objects.filter(
+                    ~Q(id__in=ptp_device_circuit_backhaul(specify_type=specify_ptp_type)),
+                    choose_ss_bs,  #calls the specific set of devices
+                    substation__isnull=False,
+                    is_added_to_nms= 1,
+                    is_deleted= 0,
+                    organization__in= organizations,
+                    device_technology= technology
+                )
+            else:
+                organization_customer_devices = Device.objects.filter(
+                    ~Q(id__in=ptp_device_circuit_backhaul()),
+                    substation__isnull=False,
+                    is_added_to_nms= 1,
+                    is_deleted= 0,
+                    organization__in= organizations,
+                    device_technology= technology
+                )
         else:
             organization_customer_devices = Device.objects.filter(
                 is_added_to_nms= 1,
@@ -1569,7 +1602,7 @@ def organization_customer_devices(organizations, technology = None):
 
     return organization_customer_devices
 
-def organization_network_devices(organizations, technology = None):
+def organization_network_devices(organizations, technology = None, specify_ptp_bh_type='all'):
     """
     To result back the all the network devices from the respective organization..
 
@@ -1579,11 +1612,10 @@ def organization_network_devices(organizations, technology = None):
     :return list of network devices
     """
 
-    device_list_with_circuit_type_backhaul = ptp_device_circuit_backhaul()
 
     if not technology:
         organization_network_devices = Device.objects.filter(
-                                        Q(id__in= device_list_with_circuit_type_backhaul)
+                                        Q(id__in= ptp_device_circuit_backhaul())
                                         |
                                         Q(device_technology = int(WiMAX.ID))
                                         |
@@ -1594,12 +1626,20 @@ def organization_network_devices(organizations, technology = None):
         )
     else:
         if int(technology) == int(P2P.ID):
-            organization_network_devices = Device.objects.filter(
-                                        Q(id__in= device_list_with_circuit_type_backhaul),
-                                        is_added_to_nms=1,
-                                        is_deleted=0,
-                                        organization__in= organizations
-            )
+            if specify_ptp_bh_type in ['ss', 'bs']:
+                organization_network_devices = Device.objects.filter(
+                                            Q(id__in= ptp_device_circuit_backhaul(specify_type=specify_ptp_bh_type)),
+                                            is_added_to_nms=1,
+                                            is_deleted=0,
+                                            organization__in= organizations
+                )
+            else:
+                organization_network_devices = Device.objects.filter(
+                                            Q(id__in= ptp_device_circuit_backhaul()),
+                                            is_added_to_nms=1,
+                                            is_deleted=0,
+                                            organization__in= organizations
+                )
         else:
             organization_network_devices = Device.objects.filter(
                                             Q(device_technology = int(technology),
