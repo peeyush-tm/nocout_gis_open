@@ -35,6 +35,9 @@
     /*padding: 8px;
     border-radius: 10px;*/
 }
+.windowContainer tr td {
+    word-break: break-all;
+}
 .windowContainer .innerTable
 {
     width: 200px;

@@ -64,6 +64,22 @@ def load_earth(request):
     return render_to_response('devicevisualization/locate_devices_earth.html',
                                 template_data, 
                                 context_instance=RequestContext(request))    
+
+
+def load_white_background(request , device_name = "default_device_name"):
+    """
+    Returns the Context Variable to GIS Map page.
+    """
+    template_data = { 'username' : request.user.username,
+                    'device_name' : device_name,
+                    'get_filter_api': get_url(request, 'GET'),
+                    'set_filter_api': get_url(request, 'POST')
+                    }
+
+    return render_to_response('devicevisualization/locate_devices_white_map.html',
+                                template_data, 
+                                context_instance=RequestContext(request))
+
     
 def get_url(req, method):
     """
