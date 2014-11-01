@@ -205,7 +205,9 @@ class Gis_Map_Performance_Data(View):
                             device_frequency = device_frequency[0].current_value
                         else:
                             device_frequency = ''
-
+                    performance_data.update({
+                    'frequency':device_frequency
+                    })
                 except Exception as e:
                     logger.info(device)
                     logger.info(e.message)

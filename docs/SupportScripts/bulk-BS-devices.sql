@@ -1,6 +1,6 @@
 select 
+DISTINCT(device_device.ip_address),
 device_device.device_name,
-device_device.ip_address,
 device_devicetype.name,
 device_device.mac_address,
 device_device.ip_address,
