@@ -97,7 +97,7 @@ def check_wimax_pmp_cyclic_prefix_invent(item, _no_params, info):
                 if bs_ip:
                 	pmp1_prefix,pmp2_prefix =connection_telnet_bs_for_cyclic_prefix(bs_ip, 23)
 			if pmp1_prefix or pmp2_prefix:
-				infotext = "%s %s" % (pmp1_prefix,pmp2_prefix)
+				infotext = "pmp1_prefix=%s pmp2_prefix=%s" % (pmp1_prefix,pmp2_prefix)
 				state = 0
     except ValueError:
         infotext = "type_mismatch_value"

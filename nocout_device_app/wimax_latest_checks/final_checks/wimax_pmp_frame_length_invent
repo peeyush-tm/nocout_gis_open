@@ -98,7 +98,7 @@ def check_wimax_pmp_frame_length_invent(item, _no_params, info):
                 if bs_ip:
                 	pmp1_fr_len,pmp2_fr_len =connection_telnet_bs_for_frame_length(bs_ip, 23)
 			if pmp1_fr_len or pmp2_fr_len:
-				infotext = "%s %s" % (pmp1_fr_len,pmp2_fr_len)
+				infotext = "pmp1_fr_len=%s pmp2_fr_len=%s" % (pmp1_fr_len,pmp2_fr_len)
 				state = 0
     except ValueError:
         infotext = "type_mismatch_value"

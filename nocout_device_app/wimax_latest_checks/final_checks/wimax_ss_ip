@@ -17,18 +17,16 @@ Device on which Frequency operating is sent to device application
 
 """
 # ######################################################################
-# Function: check_wimax_ss_mac_invent
+# Function: check_wimax_ss_ip
 #
 # Parameters: info (SNMP Ouput) _no_params (No Parameters)
 #
 # Output: service state ,plugin output
 # ######################################################################
 
-
-
-def extract_host_from_wimax_topology(ss_host_mac):
+def extract_hostip_from_wimax_topology(ss_host_mac):
         query = """
-        select device_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
+        select connected_device_ip from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
         db = mysql_conn()
         cur = db.cursor()
         cur.execute(query)
@@ -38,42 +36,40 @@ def extract_host_from_wimax_topology(ss_host_mac):
         return data
 
 
-def connection_telnet_ss_mac(host_name, port,mac):
-        """
+def connection_telnet(host_ip, port,mac):
+	"""
         Connects to a socket, checks for the WELCOME-MSG and closes the
         connection.
         Returns nothing.
     
         """
         try:
-                tn = Telnet(host_name,port,timeout=3)
+                tn = Telnet(host_ip,port,timeout=3)
         except socket.timeout:
-                exit_value = 3
-                ss_mac_state = "UNKNOWN"
-                sys.stdout.write("UNKNOWN Output")
-                sys.exit((exit_value))
+		ss_ip = None
+		return ss_ip
         tn.read_until("Login:")
         tn.write("admin" + "\r\n")
         tn.read_until("Password:")
         tn.write("admin" + "\r\n")
-        tn.write("show connectivity-table ss %s\r\n" % mac)
+        tn.write("show connectivity ss %s\r\n" % mac)
         tn.write("exit\r\n")
         data = tn.read_all()
-
-	ss_mac = None
+	ss_ip = None
         try:
                 for i,row in enumerate(data.split("\n")):
-                        if "SS-VLAN:" in row:
+                        if "IP Address:" in row:
                                 params_list = [r for r in row.split()]
-                                ss_mac = int(params_list[1])
+                                ss_ip = params_list[4]
                                 break
-        except:
-		ss_mac = None
-	return ss_mac
 
-def check_wimax_ss_mac_invent(item, params, info):
+        except:
+		ss_ip = None
+	return ss_ip
+
+def check_wimax_ss_ip(item, _no_params, info):
     """
-            check_wimax_ss_mac_invent function calcdlates the operating ptx
+            check_wimax_ss_ip function calcdlates the operating ptx
 
             Args:
                     item (str) Specific item on SNMP output on which we want to filter resdlts
@@ -96,28 +92,34 @@ def check_wimax_ss_mac_invent(item, params, info):
 """
     state = 3
     infotext = "unknown_value"
+    ss_ip = None
     try:
 	if info[1]:
                 ss_mac = info[1][0]
 		a=binascii.b2a_hex(ss_mac)
 		n = 2
 		ss_mac=(':').join([a[i:i+2] for i in range(0, len(a), n)])
-        	infotext = "%s" % ss_mac
-		state = 0
+                if ss_mac:
+			host_ip = extract_hostip_from_wimax_topology(ss_mac)
+			if host_ip[0][0]:
+				ss_ip = host_ip[0][0]
+				state = 0
+        			infotext = "%s" % ss_ip
     except ValueError:
         infotext = "type_mismatch_value"
     except:
         infotext = "unknown_value"
 
-    return (state, infotext)
+    return (state, infotext,[("ss_ip",ss_ip)])
 
 
-check_info["wimax_ss_mac_invent"] = {
-    'check_function': check_wimax_ss_mac_invent,
-    'service_description': 'wimax_ss_mac_invent',
+check_info["wimax_ss_ip"] = {
+    'check_function': check_wimax_ss_ip,
+    'service_description': 'wimax_ss_ip',
+    'has_perfdata' : True,
 }
 
 #########################################################################
 #	SNMP OID for the operating ptx
 #########################################################################
-snmp_info["wimax_ss_mac_invent"] = ( ".1.3.6.1.2.1.10.184.1.3.1.1.1", ["17.1"] )
+snmp_info["wimax_ss_ip"] = ( ".1.3.6.1.2.1.10.184.1.3.1.1.1", ["17.1"] )

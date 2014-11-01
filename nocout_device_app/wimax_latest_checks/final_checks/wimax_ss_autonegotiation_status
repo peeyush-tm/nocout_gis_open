@@ -105,6 +105,7 @@ def check_wimax_ss_autonegotiation_status(item, _no_params, info):
 			if host_ip[0][0]:
                 		autonegotiation_value =connection_telnet_auto_status(host_ip[0][0], 23)
 				if autonegotiation_value:
+					autonegotiation_value = autonegotiation_value.strip('\r')
 					infotext = "SS ethernet autonegotiation is %s" % autonegotiation_value
 					state = 0
     except ValueError:

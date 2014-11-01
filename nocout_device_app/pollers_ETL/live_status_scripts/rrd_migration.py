@@ -80,6 +80,8 @@ def build_export(site, host, ip, mongo_host, mongo_db, mongo_port):
 		if perf_file.endswith(".xml"):
 			xml_file_list.append(perf_file)
 	# Extracts the services data for each host from rrdtool
+	if any('wimax' in service for service in xml_file_list):
+		collect_data_for_wimax(host,site,db)
 	for xml_file in xml_file_list:
 		try:
 			tree = ET.parse(_folder + xml_file)
@@ -548,6 +550,50 @@ def rrd_migration_main(site,host,services,ip, mongo_host, mongo_db, mongo_port):
 """if __name__ == '__main__':
     build_export('BT','AM-400','PING')
 """
+
+
+
+def collect_data_for_wimax(host,site,db):
+		matching_criteria = {}
+		wimax_service_list = ['wimax_modulation_dl_fec','wimax_modulation_ul_fec','wimax_dl_intrf','wimax_ul_intrf','wimax_ss_ip','wimax_ss_mac']
+                for service in wimax_service_list:
+                        query_string = "GET services\nColumns: service_state service_perf_data host_address last_check\nFilter: " + \
+                        "service_description = %s\nFilter: host_name = %s\nOutputFormat: json\n"                % (service,host)
+                        query_output = json.loads(utility_module.get_from_socket(site,query_string).strip())
+                        try:
+                                if query_output[0][1]:
+                                        perf_data_output = str(query_output[0][1])
+                                        service_state = (query_output[0][0])
+                                        host_ip = str(query_output[0][2])
+					last_check = (query_output[0][3])
+                                        if service_state == 0:
+                                                service_state = "OK"
+                                        elif service_state == 1:
+                                                service_state = "WARNING"
+                                        elif service_state == 2:
+                                                service_state = "CRITICAL"
+                                        elif service_state == 3:
+                                                service_state = "UNKNOWN"
+                                        perf_data = utility_module.get_threshold(perf_data_output)
+                                else:
+                                        continue
+                        except:
+                                continue
+                        for datasource in perf_data.iterkeys():
+				data = []
+                                cur =perf_data.get(datasource).get('cur')
+                                war =perf_data.get(datasource).get('war')
+                                crit =perf_data.get(datasource).get('cric')
+				temp_dict = dict(value = cur,time = pivot_timestamp_fwd(datetime.fromtimestamp(last_check)))
+                                wimax_service_dict = dict (check_time=datetime.fromtimestamp(last_check),
+						local_timestamp=pivot_timestamp_fwd(datetime.fromtimestamp(last_check)),host=str(host),
+                                                service=service,data=[temp_dict],meta ={'cur':cur,'war':war,'cric':crit},
+                                                ds=datasource,severity=service_state,site=site,ip_address=host_ip)
+                                matching_criteria.update({'host':str(host),'service':service,'ds':datasource})
+                                mongo_module.mongo_db_update(db,matching_criteria,wimax_service_dict,"serv_perf_data")
+                                mongo_module.mongo_db_insert(db,wimax_service_dict,"serv_perf_data")
+				matching_criteria = {}
+                wimax_service_dict = {}
 
 
 def collect_data_from_rrd(db,site,path,host,replaced_host,service,ds_index,start_time,data_dict,status_dict):
