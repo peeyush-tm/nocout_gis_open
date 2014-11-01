@@ -26,6 +26,7 @@ from django.conf import settings                                      # Importin
 from site_instance.models import SiteInstance
 from inventory.models import Backhaul, SubStation, Sector
 from django.contrib.staticfiles.templatetags.staticfiles import static
+from nocout.utils import logged_in_user_organizations
 
 
 from django.views.decorators.csrf import csrf_exempt
@@ -222,14 +223,14 @@ class OperationalDeviceListingTable(BaseDatatableView):
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
 
-    def logged_in_user_organization_ids(self):
-        """
-        Get logged in user's descendants organizations id's
-        """
-        organization_descendants_ids = list(
-            self.request.user.userprofile.organization.get_descendants(include_self=True) \
-            .values_list('id', flat=True))
-        return organization_descendants_ids
+    # def logged_in_user_organization_ids(self):
+    #     """
+    #     Get logged in user's descendants organizations id's
+    #     """
+    #     organization_descendants_ids = list(
+    #         self.request.user.userprofile.organization.get_descendants(include_self=True) )
+    #     print '..................',organization_descendants_ids
+    #     return organization_descendants_ids
 
     def get_initial_queryset(self):
         """
@@ -243,8 +244,8 @@ class OperationalDeviceListingTable(BaseDatatableView):
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        organization_descendants_ids = self.logged_in_user_organization_ids()
-        return Device.objects.filter(organization__in=organization_descendants_ids,
+        organization_descendants = logged_in_user_organizations(self)
+        return Device.objects.filter(organization__in=organization_descendants,
                                      is_deleted=0,
                                      is_added_to_nms__in=[1, 2]).values(*self.columns + ['id'])
 
@@ -523,14 +524,14 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
 
-    def logged_in_user_organization_ids(self):
-        """
-        Get logged in user's descendants organizations id's
-        """
-        organization_descendants_ids = list(
-            self.request.user.userprofile.organization.get_descendants(include_self=True)
-            .values_list('id', flat=True))
-        return organization_descendants_ids
+    # def logged_in_user_organization_ids(self):
+    #     """
+    #     Get logged in user's descendants organizations id's
+    #     """
+    #     organization_descendants_ids = list(
+    #         self.request.user.userprofile.organization.get_descendants(include_self=True)
+    #         .values_list('id', flat=True))
+    #     return organization_descendants_ids
 
     def get_initial_queryset(self):
         """
@@ -544,8 +545,8 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        organization_descendants_ids = self.logged_in_user_organization_ids()
-        return Device.objects.filter(organization__in=organization_descendants_ids,
+        organization_descendants = logged_in_user_organizations(self)
+        return Device.objects.filter(organization__in=organization_descendants,
                                      is_deleted=0,
                                      is_monitored_on_nms=0,
                                      is_added_to_nms=0,
@@ -599,10 +600,22 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
             # a. backhaul configured on (from model Backhaul)
             # b. sector configures on (from model Sector)
             # c. sub-station configured on (from model SubStation)
-            dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-               <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-               <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title=" Soft Delete"></i></a>'.format(
-                dct['id']))
+            # dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+            #    <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+            #    <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title=" Soft Delete"></i></a>'.format(
+            #     dct['id']))
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
+            if self.request.user.has_perm('device.change_device'):
+                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('device.delete_device'):
+                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions=detail_action+edit_action+delete_action)
+
             dct.update(nms_actions='')
             # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
             # checking whether device is 'backhaul configured on' or not
@@ -838,11 +851,22 @@ class DisabledDeviceListingTable(BaseDatatableView):
             # a. backhaul configured on (from model Backhaul)
             # b. sector configures on (from model Sector)
             # c. sub-station configured on (from model SubStation)
-            dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-               <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-               <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(
-                dct['id']))
-            # dct.update(nms_actions='')
+            # dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+            #    <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+            #    <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(
+            #     dct['id']))
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
+            if self.request.user.has_perm('device.change_device'):
+                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('device.delete_device'):
+                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions=detail_action+edit_action+delete_action)
+            dct.update(nms_actions='')
             # # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
             # # checking whether device is 'backhaul configured on' or not
             # try:
@@ -1006,14 +1030,14 @@ class ArchivedDeviceListingTable(BaseDatatableView):
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
 
-    def logged_in_user_organization_ids(self):
-        """
-        Get logged in user's descendants organizations id's
-        """
-        organization_descendants_ids = list(
-            self.request.user.userprofile.organization.get_descendants(include_self=True)
-            .values_list('id', flat=True))
-        return organization_descendants_ids
+    # def logged_in_user_organization_ids(self):
+    #     """
+    #     Get logged in user's descendants organizations id's
+    #     """
+    #     organization_descendants_ids = list(
+    #         self.request.user.userprofile.organization.get_descendants(include_self=True)
+    #         .values_list('id', flat=True))
+    #     return organization_descendants_ids
 
     def get_initial_queryset(self):
         """
@@ -1027,8 +1051,8 @@ class ArchivedDeviceListingTable(BaseDatatableView):
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        organization_descendants_ids = self.logged_in_user_organization_ids()
-        return Device.objects.filter(organization__in=organization_descendants_ids, is_deleted=1) \
+        organization_descendants = logged_in_user_organizations(self)
+        return Device.objects.filter(organization__in=organization_descendants, is_deleted=1) \
             .values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
@@ -1079,10 +1103,25 @@ class ArchivedDeviceListingTable(BaseDatatableView):
             # a. backhaul configured on (from model Backhaul)
             # b. sector configures on (from model Sector)
             # c. sub-station configured on (from model SubStation)
-            dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-               <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-               <a href="/device/delete/{0}"><i class="fa fa-minus text-danger" title="Hard Delete"></i></a>\
-               <a href="javascript:;" onclick="Dajaxice.device.device_restore_form(get_restore_device_form, {{\'value\': {0}}})"><i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id']))
+            # dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+            #    <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+            #    <a href="/device/delete/{0}"><i class="fa fa-minus text-danger" title="Hard Delete"></i></a>\
+            #    <a href="javascript:;" onclick="Dajaxice.device.device_restore_form(get_restore_device_form, {{\'value\': {0}}})"><i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id']))
+            if self.request.user.is_superuser:
+                add_action = '<a href="javascript:;" onclick="Dajaxice.device.device_restore_form(get_restore_device_form, {{\'value\': {0}}})"><i class="fa fa-plus green-dot" title="Restore"></i></a>'.format(dct['id'])
+            else:
+                add_action = ''
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
+            if self.request.user.has_perm('device.change_device'):
+                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(dct['id'])
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('device.delete_device'):
+                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>&nbsp'.format(dct['id'])
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions=detail_action+edit_action+delete_action+add_action)
             # dct.update(nms_actions='')
             # # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
             # # checking whether device is 'backhaul configured on' or not
@@ -1247,14 +1286,14 @@ class AllDeviceListingTable(BaseDatatableView):
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
 
-    def logged_in_user_organization_ids(self):
-        """
-        Get logged in user's descendants organizations id's
-        """
-        organization_descendants_ids = list(
-            self.request.user.userprofile.organization.get_descendants(include_self=True)
-            .values_list('id', flat=True))
-        return organization_descendants_ids
+    # def logged_in_user_organization_ids(self):
+    #     """
+    #     Get logged in user's descendants organizations id's
+    #     """
+    #     organization_descendants_ids = list(
+    #         self.request.user.userprofile.organization.get_descendants(include_self=True)
+    #         .values_list('id', flat=True))
+    #     return organization_descendants_ids
 
     def get_initial_queryset(self):
         """
@@ -1268,8 +1307,8 @@ class AllDeviceListingTable(BaseDatatableView):
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        organization_descendants_ids = self.logged_in_user_organization_ids()
-        return Device.objects.filter(organization__in=organization_descendants_ids, is_deleted=0) \
+        organization_descendants = logged_in_user_organizations(self)
+        return Device.objects.filter(organization__in=organization_descendants, is_deleted=0) \
             .values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
@@ -1332,11 +1371,22 @@ class AllDeviceListingTable(BaseDatatableView):
             # a. backhaul configured on (from model Backhaul)
             # b. sector configures on (from model Sector)
             # c. sub-station configured on (from model SubStation)
-            dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-               <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-               <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})">\
-               <i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(
-                dct['id']))
+            # dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
+            #    <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
+            #    <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})">\
+            #    <i class="fa fa-trash-o text-danger" title="Delete"></i></a>'.format(
+            #     dct['id']))
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
+            if self.request.user.has_perm('device.change_device'):
+                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('device.delete_device'):
+                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions=detail_action+edit_action+delete_action)
             dct.update(nms_actions='')
             # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
             # checking whether device is 'backhaul configured on' or not
