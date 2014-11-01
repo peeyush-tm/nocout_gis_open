@@ -27,6 +27,7 @@ from site_instance.models import SiteInstance
 from inventory.models import Backhaul, SubStation, Sector
 from django.contrib.staticfiles.templatetags.staticfiles import static
 
+
 from django.views.decorators.csrf import csrf_exempt
 
 import logging
@@ -43,6 +44,15 @@ class DeviceList(ListView):
     model = Device
     template_name = 'device/devices_list.html'
 
+
+    @method_decorator(permission_required('device.view_device', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(DeviceList, self).dispatch(*args, **kwargs)
+
+   
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -66,8 +76,8 @@ class DeviceList(ListView):
              'bSortable': False},
             {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False}, ]
 
-        #if the user role is Admin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        #if the user role is Admin or superadmin then the action column will appear on the datatable
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True) or self.request.user.is_superuser:
             datatable_headers.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '9%', 'bSortable': False})
             datatable_headers.append(
@@ -92,7 +102,7 @@ class DeviceList(ListView):
             {'mData': 'state__name', 'sTitle': 'State', 'sWidth': 'auto', 'sClass': 'hidden-xs', 'bSortable': False}, ]
 
         #if the user role is Admin then the action column will appear on the datatable
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True) or self.request.user.is_superuser:
             datatable_headers_no_nms_actions.append(
                 {'mData': 'actions', 'sTitle': 'Device Actions', 'sWidth': '15%', 'bSortable': False})
 
@@ -176,9 +186,6 @@ class OperationalDeviceListingTable(BaseDatatableView):
 
             return result_list
 
-        if settings.DEBUG:
-            logger.debug(qs, exc_info=True, extra={'stack': True, 'request': self.request})
-
         return qs
 
     def ordering(self, qs):
@@ -255,9 +262,10 @@ class OperationalDeviceListingTable(BaseDatatableView):
                     device_ip = Device.objects.get(pk=dct['id']).ip_address
                     dct['device_name'] = "{} ({})".format(device_alias, device_ip)
             except Exception as e:
-                logger.info("Device not present. Exception: ", e.message)
+                logger.exception("Device not present. Exception: ", e.message)
 
             # current device in loop
+
             current_device = Device.objects.get(pk=dct['id'])
 
             try:
@@ -293,10 +301,18 @@ class OperationalDeviceListingTable(BaseDatatableView):
             # a. backhaul configured on (from model Backhaul)
             # b. sector configures on (from model Sector)
             # c. sub-station configured on (from model SubStation)
-            dct.update(actions='<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>\
-               <a href="/device/edit/{0}"><i class="fa fa-pencil text-dark" title="Edit"></i></a>\
-               <a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title=" Soft Delete"></i></a>'.format(
-                dct['id']))
+            detail_action = '<a href="/device/{0}"><i class="fa fa-list-alt text-info" title="Detail"></i></a>&nbsp&nbsp'.format(dct['id'])
+            if self.request.user.has_perm('device.change_device'):
+                edit_action = '<a href="/device/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(dct['id'])
+            else:
+                edit_action = ''
+            if self.request.user.has_perm('device.delete_device'):
+                delete_action = '<a href="javascript:;" onclick="Dajaxice.device.device_soft_delete_form(get_soft_delete_form, {{\'value\': {0}}})"><i class="fa fa-trash-o text-danger" title="Soft Delete"></i></a>'.format(dct['id'])
+            else:
+                delete_action = ''
+            if edit_action or delete_action:
+                dct.update(actions=detail_action+edit_action+delete_action)
+
             dct.update(nms_actions='')
 
             # device is monitored only if it's a backhaul configured on, sector configured on or sub-station
@@ -320,9 +336,9 @@ class OperationalDeviceListingTable(BaseDatatableView):
                                                     <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Edit Device"></i></a>\
                                                     <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-info" title="Sync Device"></i></a>'.format(dct['id']))
                     except Exception as e:
-                        logger.info(e.message)
-            except:
-                logger.info("Device is not a backhaul")
+                        logger.exception(e.message)
+            except Exception as e:
+                logger.exception("Device is not a backhaul %s" %e.message)
 
             # checking whether device is 'sector configured on' or not
             try:
@@ -344,9 +360,9 @@ class OperationalDeviceListingTable(BaseDatatableView):
                                                     <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-success" title="Edit Device"></i></a>\
                                                     <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-success" title="Sync Device"></i></a>'.format(dct['id']))
                     except Exception as e:
-                        logger.info(e.message)
-            except:
-                logger.info("Device is not sector configured on.")
+                        logger.exception(e.message)
+            except Exception as e:
+                logger.exception("Device is not sector configured on. %s" % e.message)
 
             # checking whether device is 'sub station' or not
             try:
@@ -368,9 +384,9 @@ class OperationalDeviceListingTable(BaseDatatableView):
                                                     <a href="javascript:;" onclick="Dajaxice.device.edit_device_in_nms_core(device_edit_message, {{\'device_id\': {0}}})"><i class="fa fa-share-square text-dark" title="Edit Device"></i></a>\
                                                     <a href="javascript:;" onclick="sync_devices();"><i class="fa fa-refresh text-danger" title="Sync Device"></i></a>'.format(dct['id']))
                     except Exception as e:
-                        logger.info(e.message)
-            except:
-                logger.info("Device is not a substation.")
+                        logger.exception(e.message)
+            except Exception as e:
+                logger.exception("Device is not a substation. %s" % e.message)
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -471,9 +487,6 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
 
             return result_list
 
-        if settings.DEBUG:
-            logger.debug(qs, exc_info=True, extra={'stack': True, 'request': self.request})
-
         return qs
 
     def ordering(self, qs):
@@ -552,7 +565,7 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
                     device_ip = Device.objects.get(pk=dct['id']).ip_address
                     dct['device_name'] = "{} ({})".format(device_alias, device_ip)
             except Exception as e:
-                logger.info("Device not present. Exception: ", e.message)
+                logger.exception("Device not present. Exception: ", e.message)
 
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
@@ -597,24 +610,24 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
                 if Backhaul.objects.get(bh_configured_on=current_device):
                     dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form(add_device_form, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-info" title="Add Device"></i></a>'.format(
                         dct['id']))
-            except:
-                logger.info("Device is not a backhaul.")
+            except Exception as e:
+                logger.exception("Device is not a backhaul. %s " % e.message)
 
             # checking whether device is 'sector configured on' or not
             try:
                 if Sector.objects.get(sector_configured_on=current_device):
                     dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form(add_device_form, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-success" title="Add Device"></i></a>'.format(
                         dct['id']))
-            except:
-                logger.info("Device is not sector configured on.")
+            except Exception as e:
+                logger.exception("Device is not sector configured on. %s " % e.message)
 
             # checking whether device is 'sub station' or not
             try:
                 if SubStation.objects.get(device=current_device):
                     dct.update(nms_actions='<a href="javascript:;" onclick="Dajaxice.device.add_device_to_nms_core_form(add_device_form, {{\'device_id\': {0}}})"><i class="fa fa-plus-square text-danger"></i></a>'.format(
                         dct['id']))
-            except:
-                logger.info("Device is not a substation.")
+            except Exception as e:
+                logger.exception("Device is not a substation. %s" % e.message)
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -716,9 +729,6 @@ class DisabledDeviceListingTable(BaseDatatableView):
 
             return result_list
 
-        if settings.DEBUG:
-            logger.debug(qs, exc_info=True, extra={'stack': True, 'request': self.request})
-
         return qs
 
     def ordering(self, qs):
@@ -794,7 +804,7 @@ class DisabledDeviceListingTable(BaseDatatableView):
                     device_ip = Device.objects.get(pk=dct['id']).ip_address
                     dct['device_name'] = "{} ({})".format(device_alias, device_ip)
             except Exception as e:
-                logger.info("Device not present. Exception: ", e.message)
+                logger.exception("Device not present. Exception: ", e.message)
 
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
@@ -960,9 +970,6 @@ class ArchivedDeviceListingTable(BaseDatatableView):
 
             return result_list
 
-        if settings.DEBUG:
-            logger.debug(qs, exc_info=True, extra={'stack': True, 'request': self.request})
-
         return qs
 
     def ordering(self, qs):
@@ -1038,7 +1045,7 @@ class ArchivedDeviceListingTable(BaseDatatableView):
                     device_ip = Device.objects.get(pk=dct['id']).ip_address
                     dct['device_name'] = "{} ({})".format(device_alias, device_ip)
             except Exception as e:
-                logger.info("Device not present. Exception: ", e.message)
+                logger.exception("Device not present. Exception: ", e.message)
 
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
@@ -1204,9 +1211,6 @@ class AllDeviceListingTable(BaseDatatableView):
 
             return result_list
 
-        if settings.DEBUG:
-            logger.debug(qs, exc_info=True, extra={'stack': True, 'request': self.request})
-
         return qs
 
     def ordering(self, qs):
@@ -1282,7 +1286,7 @@ class AllDeviceListingTable(BaseDatatableView):
                     device_ip = Device.objects.get(pk=dct['id']).ip_address
                     dct['device_name'] = "{} ({})".format(device_alias, device_ip)
             except Exception as e:
-                logger.info("Device not present. Exception: ", e.message)
+                logger.exception("Device not present. Exception: ", e.message)
 
             # current device in loop
             current_device = Device.objects.get(pk=dct['id'])
@@ -1317,8 +1321,7 @@ class AllDeviceListingTable(BaseDatatableView):
                     icon = '<i class="fa fa-circle green-dot"></i>'
                 dct.update(status_icon=icon)
             except Exception as e:
-                print "********************************* Exception - "
-                logger.info(e.message)
+                logger.exception(e.message)
                 dct.update(status_icon='<img src="">')
 
             # There are two set of links in device list table
@@ -1343,7 +1346,7 @@ class AllDeviceListingTable(BaseDatatableView):
                         <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
                         dct['id']))
             except:
-                logger.info("Device is not basestation")
+                logger.exception("Device is not basestation")
 
             # checking whether device is 'sector configured on' or not
             try:
@@ -1352,7 +1355,7 @@ class AllDeviceListingTable(BaseDatatableView):
                         <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
                         dct['id']))
             except:
-                logger.info("Device is not basestation")
+                logger.exception("Device is not basestation")
 
             # checking whether device is 'sub station' or not
             try:
@@ -1361,7 +1364,7 @@ class AllDeviceListingTable(BaseDatatableView):
                         <a href="javascript:;" onclick="Dajaxice.device.add_service_form(get_service_add_form, {{\'value\': {0}}})"><i class="fa fa-plus text-success" title="Add Service"></i></a>'.format(
                         dct['id']))
             except:
-                logger.info("Device is not substation.")
+                logger.exception("Device is not substation.")
         return qs
 
     def get_context_data(self, *args, **kwargs):
@@ -1405,9 +1408,6 @@ class DeviceDetail(DetailView):
     template_name = 'device/device_detail.html'
 
     def get_context_data(self, **kwargs):
-        if settings.DEBUG:
-            logger.debug(self.object, extra={'stack': True, 'request': self.request})
-            logger.debug(kwargs, extra={'stack': True, 'request': self.request})
 
         context = super(DeviceDetail, self).get_context_data(**kwargs)
 
@@ -1427,7 +1427,7 @@ class DeviceDetail(DetailView):
             if kwargs['object'].city:
                 context['city'] = City.objects.get(pk=kwargs['object'].city).city_name
         except Exception as e:
-            logger.info(e.message)
+            logger.exception(e.message)
 
         return context
 
@@ -1476,7 +1476,7 @@ class DeviceCreate(CreateView):
             id_list = [Device.objects.latest('id').id, int(Device.objects.latest('id').device_name)]
             device_latest_id = max(id_list) + 1
         except Exception as e:
-            logger.info("No device is added in database till now. Exception: ", e.message)
+            logger.exception("No device is added in database till now. Exception: ", e.message)
 
         # saving device data
         device = Device()
@@ -1519,7 +1519,7 @@ class DeviceCreate(CreateView):
             # it gives all device fields associated with device_type object
             device_type.devicetypefields_set.all()
         except Exception as e:
-            logger.info(e.message)
+            logger.exception(e.message)
 
         # saving eav relation data i.e. device extra fields those depends on device type
         for field in all_non_empty_post_fields:
@@ -1534,7 +1534,7 @@ class DeviceCreate(CreateView):
                 dtfv.device_id = device.id
                 dtfv.save()
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
         return HttpResponseRedirect(DeviceCreate.success_url)
 
 
@@ -1616,7 +1616,7 @@ class DeviceUpdate(UpdateView):
         try:
             DeviceTypeFieldsValue.objects.filter(device_id=self.object.id).delete()
         except Exception as e:
-            logger.info(e.message)
+            logger.exception(e.message)
 
         # fetching device extra fields associated with 'device type'
         try:
@@ -1624,7 +1624,7 @@ class DeviceUpdate(UpdateView):
             # it gives all device fields associated with device_type object
             device_type.devicetypefields_set.all()
         except Exception as e:
-            logger.info(e.message)
+            logger.exception(e.message)
 
         # saving eav relation data i.e. device extra fields those depends on device type
         for field in all_non_empty_post_fields:
@@ -1639,7 +1639,7 @@ class DeviceUpdate(UpdateView):
                 dtfv.device_id = self.object.id
                 dtfv.save()
             except Exception as e:
-                logger.info(e.message)
+                logger.exception(e.message)
 
         # dictionary containing old values of current device
         initial_field_dict = form.initial
@@ -1650,7 +1650,7 @@ class DeviceUpdate(UpdateView):
                 self.object.is_added_to_nms = 2
                 self.object.save()
         except Exception as e:
-            logger.info(e.message)
+            logger.exception(e.message)
 
         # if 'ip_address' value is changed and 'is_added_to_nms' is 1 than set 'is_added_to_nms' to 2
         try:
@@ -1658,7 +1658,7 @@ class DeviceUpdate(UpdateView):
                 self.object.is_added_to_nms = 2
                 self.object.save()
         except Exception as e:
-            logger.info(e.message)
+            logger.exception(e.message)
 
 
         def cleaned_data_field():
@@ -1730,8 +1730,7 @@ class DeviceUpdate(UpdateView):
                     verb_string = verb_string[:250] + '...'
 
         except Exception as user_audit_exeption:
-            if settings.DEBUG:
-                logger.error(user_audit_exeption)
+            logger.exception(user_audit_exeption.message)
 
         return HttpResponseRedirect(DeviceCreate.success_url)
 
@@ -1768,6 +1767,13 @@ class DeviceTypeFieldsList(ListView):
     """
     model = DeviceTypeFields
     template_name = 'device_extra_fields/device_extra_fields_list.html'
+
+    @method_decorator(permission_required('device.view_devicetypefields', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(DeviceTypeFieldsList, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """
@@ -2016,6 +2022,13 @@ class DeviceTechnologyList(ListView):
     """
     model = DeviceTechnology
     template_name = 'device_technology/device_technology_list.html'
+
+    @method_decorator(permission_required('device.view_devicetechnology', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(DeviceTechnologyList, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """
@@ -2304,6 +2317,13 @@ class DeviceVendorList(ListView):
     """
     model = DeviceVendor
     template_name = 'device_vendor/device_vendor_list.html'
+
+    @method_decorator(permission_required('device.view_devicevendor', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(DeviceVendorList, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """
@@ -2594,6 +2614,13 @@ class DeviceModelList(ListView):
     model = DeviceModel
     template_name = 'device_model/device_model_list.html'
 
+    @method_decorator(permission_required('device.view_devicemodel', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(DeviceModelList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -2880,6 +2907,13 @@ class DeviceTypeList(ListView):
     model = DeviceType
     template_name = 'device_type/device_type_list.html'
 
+    @method_decorator(permission_required('device.view_devicetype', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(DeviceTypeList, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -2963,7 +2997,7 @@ class DeviceTypeListingTable(BaseDatatableView):
                     else static("img/" + dct['device_icon'])
                 dct.update(device_icon='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(device_icon_img_url))
             except Exception as e:
-                logger.info(e)
+                logger.exception(e)
 
             try:
                 device_gmap_icon_img_url = "/media/"+ (dct['device_gmap_icon']) if \
@@ -2971,7 +3005,7 @@ class DeviceTypeListingTable(BaseDatatableView):
                     else static("img/" + dct['device_gmap_icon'])
                 dct.update(device_gmap_icon='<img src="{0}" style="float:left; display:block; height:25px; width:25px;">'.format(device_gmap_icon_img_url))
             except Exception as e:
-                logger.info(e)
+                logger.exception(e)
 
             dct.update(actions='<a href="/type/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>\
                         <a href="/type/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(dct.pop('id')))
@@ -3146,6 +3180,13 @@ class DevicePortList(ListView):
     """
     model = DevicePort
     template_name = 'device_port/device_ports_list.html'
+
+    @method_decorator(permission_required('device.view_deviceport', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(DevicePortList, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """
@@ -3341,6 +3382,13 @@ class DeviceFrequencyListing(ListView):
     model = DeviceFrequency
     template_name = 'device_frequency/device_frequency_list.html'
 
+    @method_decorator(permission_required('device.view_devicefrequency', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(DeviceFrequencyListing, self).dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -3351,7 +3399,7 @@ class DeviceFrequencyListing(ListView):
             {'mData': 'color_hex_value', 'sTitle': 'Hex Value', 'sWidth': 'auto', },
             {'mData': 'frequency_radius', 'sTitle': 'Frequency Radius (Km)', 'sWidth': 'auto', }
         ]
-        if 'admin' in self.request.user.userprofile.role.values_list('role_name', flat=True):
+        if self.request.user.is_superuser:
             datatable_headers.append({'mData':'actions', 'sTitle':'Actions', 'sWidth':'5%', 'bSortable': False})
 
         context['datatable_headers'] = json.dumps(datatable_headers)

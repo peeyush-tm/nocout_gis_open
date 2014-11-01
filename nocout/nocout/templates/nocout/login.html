@@ -140,7 +140,8 @@
           var mandatory_gritter = $.gritter.add({
             title: "Mandatory Fields",
             text: blank_field_msg,
-            sticky: true,
+            sticky: false,
+            time : 2000,
             after_close: function () {
               $.gritter.remove(mandatory_gritter);
             }
@@ -208,7 +209,8 @@
                 var unique_gritter = $.gritter.add({
                   title: data.message,
                   text: data.data.objects.reason,
-                  sticky: true,
+                  sticky: false,
+                  time : 2000,
                   after_close: function () {
                       $.gritter.removeAll();
                   }

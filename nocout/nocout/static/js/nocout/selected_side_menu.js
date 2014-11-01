@@ -533,3 +533,17 @@ function save_user_action(module,action,callback) {
         }
     });
 }
+
+
+/*Hide hightcharts.com link from charts if exist.*/
+setTimeout(function() {
+    var highcharts_link = $("svg text:last-child");
+    if(highcharts_link.length > 0) {
+        for(var i=0;i<highcharts_link.length;i++) {
+            var link_text = $("svg text:last-child")[i] ? $.trim($("svg text:last-child")[i].innerHTML.toLowerCase()) : "";
+            if(link_text === 'highcharts.com') {
+                $("svg text:last-child")[i].innerHTML = "";
+            }
+        }
+    }
+},300);

@@ -1607,6 +1607,9 @@ def prepare_raw_gis_info():
                 device.device_alias as SSDEVICEALIAS,
                 device.device_name as SSDEVICENAME,
 
+                devicetype.name as SSDEVICETYPE,
+				devicetype.alias as SSDEVICETYPEALIAS,
+
                 technology.name as SS_TECH,
                 vendor.name as SS_VENDOR
 
@@ -1667,7 +1670,7 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
                     if severity_level_check(list_to_check=[data['severity']]):
                         device_events = {
                             'device_name': data['device_name'],
-                            'device_type': format_value(device_type),
+                            'device_type': format_value(bs_row['SECTOR_TYPE']),
                             'severity': data['severity'],
                             'ip_address': data["ip_address"],
                             'base_station': format_value(bs_row['BSALIAS']),
@@ -1691,7 +1694,7 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
                     if severity_level_check(list_to_check=[data['severity']]):
                         device_events = {
                             'device_name': data['device_name'],
-                            'device_type': format_value(device_type),
+                            'device_type': format_value(bs_row['SSDEVICETYPE']),
                             'severity': data['severity'],
                             'ip_address': data["ip_address"],
                             'base_station': format_value(bs_row['BSALIAS']),
