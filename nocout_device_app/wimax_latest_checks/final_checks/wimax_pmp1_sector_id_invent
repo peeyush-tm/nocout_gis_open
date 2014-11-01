@@ -10,16 +10,16 @@ BS mac information is sent to device application
 
 """
 # ######################################################################
-# Function : check_wimax_sector_id_pmp1_invent
+# Function : check_wimax_pmp1_sector_id_invent
 #
 # Parameters: info (SNMP Output) _no_params(No Parameters)
 #
 # Output: service state and plugin output
 # #####################################################################
 
-def check_wimax_sector_id_pmp1_invent(item, _no_params, info):
+def check_wimax_pmp1_sector_id_invent(item, _no_params, info):
     """
-                check_wimax_sector_id_pmp1_invent function calculates the mac of bs
+                check_wimax_pmp1_sector_id_invent function calculates the mac of bs
 
                 Args:
                         item (str) Specific item on SNMP output on which we want to filter results
@@ -56,13 +56,13 @@ def check_wimax_sector_id_pmp1_invent(item, _no_params, info):
     return (state, infotext)
 
 
-check_info["wimax_sector_id_pmp1_invent"] = {
-    'check_function': check_wimax_sector_id_pmp1_invent,
-    'service_description': 'wimax_sector_id_pmp1_invent',
+check_info["wimax_pmp1_sector_id_invent"] = {
+    'check_function': check_wimax_pmp1_sector_id_invent,
+    'service_description': 'wimax_pmp1_sector_id_invent',
 }
 
 #################################################################
 #SNMP OID value for poller script
 ################################################################
 
-snmp_info["wimax_sector_id_pmp1_invent"] = ( ".1.3.6.1.4.1.5812.2000.11.2.1", ["4.100"] )
+snmp_info["wimax_pmp1_sector_id_invent"] = ( ".1.3.6.1.4.1.5812.2000.11.2.1", ["4.100"] )

@@ -10,7 +10,7 @@ Device on which Frequency operating is sent to device application
 
 """
 # ######################################################################
-# Function: check_wimax_transmit_power_pmp2_invent
+# Function: check_wimax_pmp2_transmit_pwr_invent
 #
 # Parameters: info (SNMP Ouput) _no_params (No Parameters)
 #
@@ -18,9 +18,9 @@ Device on which Frequency operating is sent to device application
 # ######################################################################
 
 
-def check_wimax_transmit_power_pmp2_invent(item, _no_params, info):
+def check_wimax_pmp2_transmit_pwr_invent(item, _no_params, info):
     """
-            check_wimax_transmit_power_pmp2_invent function calculates the transmitted power
+            check_wimax_pmp2_transmit_pwr_invent function calculates the transmitted power
 
             Args:
                     item (str) Specific item on SNMP output on which we want to filter results
@@ -56,12 +56,12 @@ def check_wimax_transmit_power_pmp2_invent(item, _no_params, info):
     return (state, infotext)
 
 
-check_info["wimax_transmit_power_pmp2_invent"] = {
-    'check_function': check_wimax_transmit_power_pmp2_invent,
-    'service_description': 'wimax_transmit_power_pmp2_invent',
+check_info["wimax_pmp2_transmit_pwr_invent"] = {
+    'check_function': check_wimax_pmp2_transmit_pwr_invent,
+    'service_description': 'wimax_pmp2_transmit_pwr_invent',
 }
 
 #########################################################################
 #	SNMP OID for the operating frequency
 #########################################################################
-snmp_info["wimax_transmit_power_pmp2_invent"] = ( ".1.3.6.1.4.1.5812.2000.11.2.1", ["1.200"] )
+snmp_info["wimax_pmp2_transmit_pwr_invent"] = ( ".1.3.6.1.4.1.5812.2000.11.2.1", ["1.200"] )
