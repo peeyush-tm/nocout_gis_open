@@ -36,7 +36,7 @@
 </div>
 
     <!-- Google Map Library-->
-    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript" src="https://maps.google.com/maps/api/js?sensor=false"></script>
     <script type="text/javascript">
 
         $(document).ready(function (e) {
@@ -63,7 +63,7 @@
 
             var map = new google.maps.Map(document.getElementById("deviceMap"), mapOptions);
             var kmzLayer = new google.maps.KmlLayer({ 
-                url : base_url+'/media/'+kmz_file_url,
+                url : 'https://noc-out.net'+'/media/'+kmz_file_url,
                 suppressInfoWindows: true,
                 map: map
             });

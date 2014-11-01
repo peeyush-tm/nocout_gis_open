@@ -6,6 +6,8 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.db.models import Q
 from django.conf import settings
 from user_profile.models import UserProfile
+from django.contrib.auth.decorators import permission_required
+from django.utils.decorators import method_decorator
 
 from django.http import HttpResponse
 from activity_stream.models import UserAction
@@ -36,6 +38,13 @@ class ActionList(ListView):
     """
     model = UserAction
     template_name = 'activity_stream/actions_logs.html'
+
+    @method_decorator(permission_required('actstream.view_action', raise_exception=True))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch function restricted with the permissions.
+        """
+        return super(ActionList, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """
@@ -154,21 +163,24 @@ class ActionListingTable(BaseDatatableView):
         return ret
 
 
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
 def log_user_action(request):
     """
     Method based view to log the user actions.
     """
     if request.method == 'POST':
-        form = UserActionForm(request.POST)
-        if form.is_valid():
+        try:
+            #form = UserActionForm(request.POST)
             obj = UserAction(user_id=request.user.id)
-            obj.module = form.cleaned_data['module']
-            obj.action = form.cleaned_data['action']
+            obj.module = request.POST.get("module", "")# form.cleaned_data['module']
+            obj.action = request.POST.get("action", "")#form.cleaned_data['action']
             obj.save()
 
             return HttpResponse(json.dumps({'success':True}))
-        else:
+        except Exception as e:
+            logger.exception(e)
             return HttpResponse(json.dumps({'success':False}))
     else:
         return HttpResponse(json.dumps({'success':False}))
-
