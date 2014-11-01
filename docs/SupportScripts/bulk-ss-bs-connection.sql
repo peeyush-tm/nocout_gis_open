@@ -1,10 +1,10 @@
 select 
+distinct(SSIP),
 original.device_name as BSNAME, 
 original.mac_address as BSMAC,
 original.ip_address as BSIP, 
 SSNAME, 
 SSMAC, 
-SSIP, 
 DEVICETYPE, 
 TAG, 
 SITE,
@@ -37,6 +37,6 @@ inventory_circuit.sub_station_id = inventory_substation.id and
 !isnull(inventory_circuit.sector_id) and
 inventory_sector.id = inventory_circuit.sector_id
 )
-where device_device.is_deleted=0 and device_devicetechnology.name in ("PMP") ) as dupli
+where device_device.is_deleted=0 and device_devicetechnology.name in ("PMP","P2P") ) as dupli
 )
 on (original.id = dupli.matcher)
