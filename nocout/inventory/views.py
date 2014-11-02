@@ -3380,17 +3380,18 @@ class BulkUploadValidData(View):
         ## we need to reset caching, as soon as
         ##user bulk uploads
         try:
-            cached_functions = ['prepare_raw_gis_info',
-                                'organization_backhaul_devices',
-                                'organization_network_devices',
-                                'organization_customer_devices',
-                                'ptp_device_circuit_backhaul',
-                                'perf_gis_raw_inventory'
-                                ]
-            keys = []
-            for cf in cached_functions:
-                keys.append(cache_get_key(cf))
-            cache.delete_many(keys)
+            # cached_functions = ['prepare_raw_gis_info',
+            #                     'organization_backhaul_devices',
+            #                     'organization_network_devices',
+            #                     'organization_customer_devices',
+            #                     'ptp_device_circuit_backhaul',
+            #                     'perf_gis_raw_inventory'
+            #                     ]
+            # keys = []
+            # for cf in cached_functions:
+            #     keys.append(cache_get_key(cf))
+            # cache.delete_many(keys)
+            cache.clear() #delete GIS cache on bulk upload
         except Exception as caching_exp:
             logger.exception(caching_exp.message)
         return HttpResponseRedirect('/bulk_import/')

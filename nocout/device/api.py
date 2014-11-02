@@ -88,7 +88,7 @@ class DeviceStatsApi(View):
                 for result in processed_bs[:]:
                     if int(bs) == int(result['BSID']):
                         extract_info.append(result)
-                    
+
             raw_result = prepare_raw_result(extract_info)
             ##TODO: optimise looping here
 
