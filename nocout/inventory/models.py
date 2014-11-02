@@ -128,6 +128,9 @@ class BaseStation(models.Model):
     def __unicode__(self):
         return self.name
 
+    class Meta:
+        ordering = ['city','state']
+
 
 # gis sector model
 class Sector(models.Model):

@@ -25,7 +25,7 @@ var isFreeze = 0,
 
 /*Global data objects & arrays of map data & filters*/
 var main_devices_data_gmaps = [],
-	clusterOptions = {gridSize: 70, maxZoom: 8},
+	clusterOptions = {gridSize: 60, maxZoom: 8},
 	markersMasterObj= {'BS': {}, 'Lines': {}, 'SS': {}, 'BSNamae': {}, 'SSNamae': {}, 'LinesName': {}, 'Poly': {}},
     allMarkersObject_gmap= {'base_station': {}, 'path': {}, 'sub_station': {}, 'sector_device': {}, 'sector_polygon': {}},
     allMarkersArray_gmap = [],
@@ -1000,19 +1000,19 @@ function devicePlottingClass_gmap() {
 			}
 
 			/*Loop to change the icon for same location SS markers(to cluster icon)*/
-			for(var k=0;k<oms_ss_markers.length;k++) {
-				
-				if(oms_ss_markers[k] != undefined) {
-	
-					/*if two BS or SS on same position*/
-					var bsLatOccurence = $.grep(ssLatArray, function (elem) {return elem === oms_ss_markers[k].ptLat;}).length;
-					var bsLonOccurence = $.grep(ssLonArray, function (elem) {return elem === oms_ss_markers[k].ptLon;}).length;
-
-					if(bsLatOccurence > 1 && bsLonOccurence > 1) {
-						oms_ss_markers[k].setOptions({"icon" : new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,new google.maps.Size(1,1))});
-					}
-				}
-			}
+//			for(var k=0;k<oms_ss_markers.length;k++) {
+//
+//				if(oms_ss_markers[k] != undefined) {
+//
+//					/*if two BS or SS on same position*/
+//					var bsLatOccurence = $.grep(ssLatArray, function (elem) {return elem === oms_ss_markers[k].ptLat;}).length;
+//					var bsLonOccurence = $.grep(ssLonArray, function (elem) {return elem === oms_ss_markers[k].ptLon;}).length;
+//
+//					if(bsLatOccurence > 1 && bsLonOccurence > 1) {
+//						oms_ss_markers[k].setOptions({"icon" : new google.maps.MarkerImage(base_url+'/static/img/icons/1x1.png',null,null,null,new google.maps.Size(1,1))});
+//					}
+//				}
+//			}
 
 			gmap_self.updateAllMarkersWithNewIcon(defaultIconSize);
 		}
