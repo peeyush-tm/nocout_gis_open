@@ -69,6 +69,7 @@
 
             if(/latency/i.test(window.location.pathname)) {
                 ajax_url_get_parameter='latency'
+                sort_index = 10;
             } else if(/packet_drop/i.test(window.location.pathname)) {
                 ajax_url_get_parameter='packet_drop'
             } else if(/down/i.test(window.location.pathname)) {
