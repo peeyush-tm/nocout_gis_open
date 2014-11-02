@@ -4971,7 +4971,6 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
                     'address': row['Customer Address'] if 'Customer Address' in row.keys() else "",
                     'description': 'Sub Station created on {}.'.format(full_time)
                 }
-
                 # sub station object
                 substation = ""
                 if name and alias:
@@ -7007,7 +7006,7 @@ def create_substation(substation_payload):
                     except Exception as e:
                         logger.info("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
-                if re.match(substation, str(longitude).strip()):
+                if re.match(regex_lat_long, str(longitude).strip()):
                     try:
                         substation.longitude = Decimal(longitude)
                     except Exception as e:
@@ -7135,7 +7134,7 @@ def create_substation(substation_payload):
                     except Exception as e:
                         logger.info("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
-                if re.match(substation, str(longitude).strip()):
+                if re.match(regex_lat_long, str(longitude).strip()):
                     try:
                         substation.longitude = Decimal(longitude)
                     except Exception as e:
