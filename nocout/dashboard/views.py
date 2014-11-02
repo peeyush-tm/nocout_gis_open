@@ -3,14 +3,22 @@ import json
 from django.core.urlresolvers import reverse_lazy
 from django.db.models import Q
 from django.db.models.query import ValuesQuerySet
+from django.shortcuts import render, render_to_response
+from django.http import HttpResponse
 from django.views.generic import ListView, DetailView
+from django.views.generic.base import View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import user_passes_test
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
+from nocout.utils import logged_in_user_organizations
+from device.models import DeviceTechnology
+from performance.models import ServiceStatus, NetworkAvailabilityDaily
+from performance.views import organization_customer_devices, organization_network_devices
 from dashboard.models import DashboardSetting
 from dashboard.forms import DashboardSettingForm
+from dashboard.utils import get_service_status_results, get_dashboard_status_range_counter, get_pie_chart_json_response_dict
 
 
 class DashbaordSettingsListView(ListView):
@@ -217,3 +225,152 @@ class DashbaordSettingsDeleteView(DeleteView):
         The request dispatch method restricted with the permissions.
         """
         return super(DashbaordSettingsDeleteView, self).dispatch(*args, **kwargs)
+
+
+#****************************************** RF PERFORMANCE DASHBOARD ********************************************
+
+
+class PerformanceDashboardMixin(object):
+    """
+    Provide common method get for Performance Dashboard.
+
+    To use this Mixin set `template_name` and implement method get_init_data to provide following attributes:
+
+        - data_source_config
+        - technology
+        - devices_method_to_call
+        - devices_method_kwargs
+    """
+
+    def get(self, request):
+        """
+        Handles the get request
+
+        :param request:
+        :return Http response object:
+        """
+        data_source_config, technology, devices_method_to_call, devices_method_kwargs = self.get_init_data()
+        template_dict = {'data_sources': json.dumps(data_source_config.keys())}
+
+        data_source = request.GET.get('data_source')
+        if not data_source:
+            return render(self.request, self.template_name, dictionary=template_dict)
+
+        # Get Service Name from queried data_source
+        try:
+            service_name = data_source_config[data_source]['service_name']
+            model = data_source_config[data_source]['model']
+        except KeyError as e:
+            return render(self.request, self.template_name, dictionary=template_dict)
+
+        try:
+            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='rf_dashboard', name=data_source)
+        except DashboardSetting.DoesNotExist as e:
+            return HttpResponse(json.dumps({
+                "message": "Corresponding dashboard seting is not available.",
+                "success": 0
+            }))
+
+        # Get User's organizations
+        # (admin : organization + sub organization)
+        # (operator + viewer : same organization)
+        user_organizations = logged_in_user_organizations(self)
+
+        # Get Devices of User's Organizations. [and are Sub Station]
+        user_devices = devices_method_to_call(user_organizations, technology, **devices_method_kwargs)
+
+        service_status_results = get_service_status_results(
+            user_devices, model=model, service_name=service_name, data_source=data_source
+        )
+
+        range_counter = get_dashboard_status_range_counter(dashboard_setting, service_status_results)
+
+        response_dict = get_pie_chart_json_response_dict(data_source, range_counter)
+
+        return HttpResponse(json.dumps(response_dict))
+
+
+class WiMAX_Performance_Dashboard(View):
+    """
+    The Class based View to get performance dashboard page requested.
+
+    """
+
+    def get(self, request):
+        """
+        Handles the get request
+
+        :param request:
+        :return Http response object:
+        """
+        return render(self.request, 'home/home.html')
+
+
+class PMP_Performance_Dashboard(PerformanceDashboardMixin, View):
+    """
+    The Class based View to get performance dashboard page requested.
+
+    """
+    template_name = 'rf_performance/pmp.html'
+
+    def get_init_data(self):
+        """
+        Provide data for mixin's get method.
+        """
+
+        data_source_config = {
+            'ul_jitter': {'service_name': 'cambium_ul_jitter', 'model': ServiceStatus},
+            'dl_jitter': {'service_name': 'cambium_dl_jitter', 'model': ServiceStatus},
+            'rereg_count': {'service_name': 'cambium_rereg_count', 'model': ServiceStatus},
+            'ul_rssi': {'service_name': 'cambium_ul_rssi', 'model': ServiceStatus},
+            'dl_rssi': {'service_name': 'cambium_dl_rssi', 'model': ServiceStatus},
+        }
+        technology = DeviceTechnology.objects.get(name='PMP').id
+        devices_method_to_call = organization_customer_devices
+        devices_method_kwargs = dict(specify_ptp_type='all')
+        return data_source_config, technology, devices_method_to_call, devices_method_kwargs
+
+
+class PTP_Performance_Dashboard(PerformanceDashboardMixin, View):
+    """
+    The Class based View to get performance dashboard page requested.
+
+    """
+    template_name = 'rf_performance/ptp.html'
+
+    def get_init_data(self):
+        """
+        Provide data for mixin's get method.
+        """
+
+        data_source_config = {
+            'rssi': {'service_name': 'radwin_rssi', 'model': ServiceStatus},
+            'uas': {'service_name': 'radwin_uas', 'model': ServiceStatus},
+        }
+        technology = DeviceTechnology.objects.get(name='P2P').id
+        devices_method_to_call = organization_customer_devices
+        devices_method_kwargs = dict(specify_ptp_bh_type='ss')
+        return data_source_config, technology, devices_method_to_call, devices_method_kwargs
+
+
+class PTPBH_Performance_Dashboard(PerformanceDashboardMixin, View):
+    """
+    The Class based View to get performance dashboard page requested.
+
+    """
+    template_name = 'rf_performance/ptp_bh.html'
+
+    def get_init_data(self):
+        """
+        Provide data for mixin's get method.
+        """
+
+        data_source_config = {
+            'rssi': {'service_name': 'radwin_rssi', 'model': ServiceStatus},
+            'availability': {'service_name': 'availability', 'model': NetworkAvailabilityDaily},
+            'uas': {'service_name': 'radwin_uas', 'model': NetworkAvailabilityDaily},
+        }
+        technology = DeviceTechnology.objects.get(name='P2P').id
+        devices_method_to_call = organization_network_devices
+        devices_method_kwargs = dict(specify_ptp_bh_type='ss')
+        return data_source_config, technology, devices_method_to_call, devices_method_kwargs
