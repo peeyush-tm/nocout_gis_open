@@ -2179,8 +2179,8 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 try:
                     if all(k in row for k in ("City", "State")):
                         # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['State'][:3].lower() if 'State' in row.keys() else "",
-                                                 row['City'][:3].lower() if 'City' in row.keys() else "")
+                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
+                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
                 except Exception as e:
                     logger.info(e.message)
 
@@ -3048,8 +3048,8 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 try:
                     if all(k in row for k in ("City", "State")):
                         # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['State'][:3].lower() if 'State' in row.keys() else "",
-                                                 row['City'][:3].lower() if 'City' in row.keys() else "")
+                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
+                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
                 except Exception as e:
                     logger.info(e.message)
 
@@ -3744,8 +3744,8 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 try:
                     if all(k in row for k in ("City", "State")):
                         # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['State'][:3].lower() if 'State' in row.keys() else "",
-                                                 row['City'][:3].lower() if 'City' in row.keys() else "")
+                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
+                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
                 except Exception as e:
                     logger.info(e.message)
 
@@ -4648,8 +4648,8 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                 try:
                     if all(k in row for k in ("City", "State")):
                         # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['State'][:3].lower() if 'State' in row.keys() else "",
-                                                 row['City'][:3].lower() if 'City' in row.keys() else "")
+                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
+                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
                 except Exception as e:
                     logger.info(e.message)
 
