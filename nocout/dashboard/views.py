@@ -4,7 +4,7 @@ from django.core.urlresolvers import reverse_lazy
 from django.db.models import Q
 from django.db.models.query import ValuesQuerySet
 from django.views.generic import ListView, DetailView
-from django.views.generic.edit import CreateView, UpdateView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import user_passes_test
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -200,3 +200,20 @@ class DashbaordSettingsUpdateView(UpdateView):
         The request dispatch method restricted with the permissions.
         """
         return super(DashbaordSettingsUpdateView, self).dispatch(*args, **kwargs)
+
+
+class DashbaordSettingsDeleteView(DeleteView):
+    """
+    Class based View to delete the Dashboard Setting.
+
+    """
+    model = DashboardSetting
+    template_name = 'dashboard/dashboard_settings_delete.html'
+    success_url = reverse_lazy('dashboard-settings')
+
+    @method_decorator(user_passes_test(lambda u: u.is_superuser))
+    def dispatch(self, *args, **kwargs):
+        """
+        The request dispatch method restricted with the permissions.
+        """
+        return super(DashbaordSettingsDeleteView, self).dispatch(*args, **kwargs)
