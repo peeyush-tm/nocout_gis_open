@@ -529,8 +529,8 @@ class AlertCenterNetworkListing(ListView):
         """
         context = super(AlertCenterNetworkListing, self).get_context_data(**kwargs)
         data_source=self.kwargs.get('data_source','')
-        data_source_title = "Latency Average (ms) " \
-                            if data_source in ["latency"] \
+        data_source_title = "Latency Avg (ms) " \
+                            if data_source == "latency" \
                             else ("value".title() if data_source in ["service"] else "packet drop (%)".title())
 
         data_tab = self.request.GET.get('data_tab','P2P')
@@ -574,6 +574,16 @@ class AlertCenterNetworkListing(ListView):
              'sWidth': 'auto',
              'sClass': 'hidden-xs',
              'bSortable': True },
+        ]
+        if data_source == "latency":
+            datatable_headers += [
+            {'mData': 'max_value',
+             'sTitle': 'Latency Max (ms)',
+             'sWidth': 'auto',
+             'sClass': 'hidden-xs',
+             'bSortable': True }
+            ]
+        datatable_headers += [
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True},
             ]
@@ -590,9 +600,9 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
     """
     model = EventNetwork
     columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
-               'current_value', 'sys_timestamp', 'description']
+               'current_value', 'max_value', 'sys_timestamp', 'description']
     order_columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
-                     'current_value', 'sys_timestamp', 'description']
+                     'current_value', 'max_value', 'sys_timestamp', 'description']
 
     def filter_queryset(self, qs):
 
@@ -795,8 +805,18 @@ class CustomerAlertList(ListView):
             {'mData': 'current_value', 'sTitle': 'Packet Drop (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
              'bSortable': True }
              if data_source.lower() in ['down','packet_drop'] else
-            {'mData': 'current_value', 'sTitle': 'Latency Average (ms) ', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+            {'mData': 'current_value', 'sTitle': 'Latency Avg (ms) ', 'sWidth': 'auto', 'sClass': 'hidden-xs',
              'bSortable': True },
+        ]
+        if data_source.lower() == "latency":
+            datatable_headers += [
+            {'mData': 'max_value',
+             'sTitle': 'Latency Max (ms)',
+             'sWidth': 'auto',
+             'sClass': 'hidden-xs',
+             'bSortable': True }
+            ]
+        datatable_headers += [
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'customer_name', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True},
