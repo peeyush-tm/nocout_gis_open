@@ -4962,7 +4962,7 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
                     'antenna': substation_antenna,
                     'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
                     'tower_height': row['Tower/Pole Height'] if 'Tower/Pole Height' in row.keys() else "",
-                    'ethernet_extender': row['Ethernet Extender'] if 'Ethernet Extender' in row.keys() else "",
+                    'ethernet_extender': row['Ethernet Extender'].lower() if 'Ethernet Extender' in row.keys() else "",
                     'cable_length': row['Cable Length'] if 'Cable Length' in row.keys() else "",
                     'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
                     'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
@@ -6981,9 +6981,14 @@ def create_substation(substation_payload):
                 # ethernet extender
                 if ethernet_extender:
                     try:
-                        substation.ethernet_extender = ethernet_extender
+                        if ethernet_extender == "yes":
+                            substation.ethernet_extender = "Yes"
+                        elif ethernet_extender == "no":
+                            substation.ethernet_extender = "No"
+                        else:
+                            substation.ethernet_extender = ""
                     except Exception as e:
-                        logger.info("Sub Station Ethernet Extender: ({} - {})".format(ethernet_extender, e.message))
+                        logger.info("Ethernet Extender: ({} - {})".format(ethernet_extender, e.message))
                 # cable length
                 if cable_length:
                     if isinstance(cable_length, int) or isinstance(cable_length, float):
@@ -7106,9 +7111,14 @@ def create_substation(substation_payload):
                 # ethernet extender
                 if ethernet_extender:
                     try:
-                        substation.ethernet_extender = ethernet_extender
+                        if ethernet_extender == "yes":
+                            substation.ethernet_extender = "Yes"
+                        elif ethernet_extender == "no":
+                            substation.ethernet_extender = "No"
+                        else:
+                            substation.ethernet_extender = ""
                     except Exception as e:
-                        logger.info("Sub Station Ethernet Extender: ({} - {})".format(ethernet_extender, e.message))
+                        logger.info("Ethernet Extender: ({} - {})".format(ethernet_extender, e.message))
                 # cable length
                 if cable_length:
                     if isinstance(cable_length, int) or isinstance(cable_length, float):
