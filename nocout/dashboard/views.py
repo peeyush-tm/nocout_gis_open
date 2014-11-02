@@ -3,7 +3,7 @@ import json
 from django.core.urlresolvers import reverse_lazy
 from django.db.models import Q
 from django.db.models.query import ValuesQuerySet
-from django.views.generic import ListView
+from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import user_passes_test
@@ -175,3 +175,11 @@ class DashbaordSettingsCreateView(CreateView):
         The request dispatch method restricted with the permissions.
         """
         return super(DashbaordSettingsCreateView, self).dispatch(*args, **kwargs)
+
+
+class DashbaordSettingsDetailView(DetailView):
+    """
+    Class based view to render the Dashboard Setting detail.
+    """
+    model = DashboardSetting
+    template_name = 'dashboard/dashboard_detail.html'
