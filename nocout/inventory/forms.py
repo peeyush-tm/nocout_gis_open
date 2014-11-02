@@ -593,7 +593,7 @@ class SubStationForm(forms.ModelForm):
     ETHERNET_EXTENDER = (
         ('', 'Select'),
         ('Yes', 'Yes'),
-        ('Yo', 'No')
+        ('No', 'No')
     )
 
     ethernet_extender = forms.TypedChoiceField(choices=ETHERNET_EXTENDER, required=False)

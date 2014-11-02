@@ -8,6 +8,7 @@ from inventory.models import Antenna, Backhaul, BaseStation, Sector, Customer, S
 from device.models import State, City
 from nocout.settings import MEDIA_ROOT
 from IPy import IP
+from decimal import *
 import os
 import re
 import time
@@ -2178,8 +2179,8 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                 try:
                     if all(k in row for k in ("City", "State")):
                         # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['State'][:3].lower() if 'State' in row.keys() else "",
-                                                 row['City'][:3].lower() if 'City' in row.keys() else "")
+                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
+                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
                 except Exception as e:
                     logger.info(e.message)
 
@@ -3047,8 +3048,8 @@ def bulk_upload_ptp_bh_inventory(gis_id, organization, sheettype):
                 try:
                     if all(k in row for k in ("City", "State")):
                         # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['State'][:3].lower() if 'State' in row.keys() else "",
-                                                 row['City'][:3].lower() if 'City' in row.keys() else "")
+                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
+                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
                 except Exception as e:
                     logger.info(e.message)
 
@@ -3743,8 +3744,8 @@ def bulk_upload_pmp_bs_inventory(gis_id, organization, sheettype):
                 try:
                     if all(k in row for k in ("City", "State")):
                         # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['State'][:3].lower() if 'State' in row.keys() else "",
-                                                 row['City'][:3].lower() if 'City' in row.keys() else "")
+                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
+                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
                 except Exception as e:
                     logger.info(e.message)
 
@@ -4647,8 +4648,8 @@ def bulk_upload_wimax_bs_inventory(gis_id, organization, sheettype):
                 try:
                     if all(k in row for k in ("City", "State")):
                         # concatinate city and state in bs name
-                        name = "{}_{}_{}".format(name, row['State'][:3].lower() if 'State' in row.keys() else "",
-                                                 row['City'][:3].lower() if 'City' in row.keys() else "")
+                        name = "{}_{}_{}".format(name, row['City'][:3].lower() if 'City' in row.keys() else "",
+                                                 row['State'][:3].lower() if 'State' in row.keys() else "")
                 except Exception as e:
                     logger.info(e.message)
 
@@ -4962,7 +4963,7 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
                     'antenna': substation_antenna,
                     'building_height': row['Building Height'] if 'Building Height' in row.keys() else "",
                     'tower_height': row['Tower/Pole Height'] if 'Tower/Pole Height' in row.keys() else "",
-                    'ethernet_extender': row['Ethernet Extender'] if 'Ethernet Extender' in row.keys() else "",
+                    'ethernet_extender': row['Ethernet Extender'].lower() if 'Ethernet Extender' in row.keys() else "",
                     'cable_length': row['Cable Length'] if 'Cable Length' in row.keys() else "",
                     'longitude': row['Longitude'] if 'Longitude' in row.keys() else "",
                     'latitude': row['Latitude'] if 'Latitude' in row.keys() else "",
@@ -4970,7 +4971,6 @@ def bulk_upload_wimax_ss_inventory(gis_id, organization, sheettype):
                     'address': row['Customer Address'] if 'Customer Address' in row.keys() else "",
                     'description': 'Sub Station created on {}.'.format(full_time)
                 }
-
                 # sub station object
                 substation = ""
                 if name and alias:
@@ -5222,13 +5222,13 @@ def create_device(device_payload):
                 # latitude
                 if re.match(regex_lat_long, str(latitude).strip()):
                     try:
-                        device.latitude = float(latitude)
+                        device.latitude = Decimal(latitude)
                     except Exception as e:
                         logger.info("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
                 if re.match(regex_lat_long, str(longitude).strip()):
                     try:
-                        device.longitude = float(longitude)
+                        device.longitude = Decimal(longitude)
                     except Exception as e:
                         logger.info("Longitude: ({} - {})".format(latitude, e.message))
                 # timezone
@@ -5348,13 +5348,13 @@ def create_device(device_payload):
                 # latitude
                 if re.match(regex_lat_long, str(latitude).strip()):
                     try:
-                        device.latitude = float(latitude)
+                        device.latitude = Decimal(latitude)
                     except Exception as e:
                         logger.info("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
                 if re.match(regex_lat_long, str(longitude).strip()):
                     try:
-                        device.longitude = float(longitude)
+                        device.longitude = Decimal(longitude)
                     except Exception as e:
                         logger.info("Longitude: ({} - {})".format(latitude, e.message))
                 # timezone
@@ -6206,13 +6206,13 @@ def create_basestation(basestation_payload):
                 # latitude
                 if re.match(regex_lat_long, str(latitude).strip()):
                     try:
-                        basestation.latitude = float(latitude)
+                        basestation.latitude = Decimal(latitude)
                     except Exception as e:
                         logger.info("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
                 if re.match(regex_lat_long, str(longitude).strip()):
                     try:
-                        basestation.longitude = float(longitude)
+                        basestation.longitude = Decimal(longitude)
                     except Exception as e:
                         logger.info("Longitude: ({} - {})".format(latitude, e.message))
                 # infra provider
@@ -6350,13 +6350,13 @@ def create_basestation(basestation_payload):
                 # latitude
                 if re.match(regex_lat_long, str(latitude).strip()):
                     try:
-                        basestation.latitude = float(latitude)
+                        basestation.latitude = Decimal(latitude)
                     except Exception as e:
                         logger.info("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
                 if re.match(regex_lat_long, str(longitude).strip()):
                     try:
-                        basestation.longitude = float(longitude)
+                        basestation.longitude = Decimal(longitude)
                     except Exception as e:
                         logger.info("Longitude: ({} - {})".format(latitude, e.message))
                 # infra provider
@@ -6886,6 +6886,9 @@ def create_substation(substation_payload):
     # dictionary containing substation payload
     substation_payload = substation_payload
 
+    # lat long validator
+    regex_lat_long = '^[-+]?\d*\.\d+|\d+'
+
     # initializing variables
     name, alias, device, antenna, version, serial_no, building_height, tower_height, ethernet_extender = [''] * 9
     cable_length, latitude, longitude, mac_address, country, state, city, address, description = [''] * 9
@@ -6981,9 +6984,14 @@ def create_substation(substation_payload):
                 # ethernet extender
                 if ethernet_extender:
                     try:
-                        substation.ethernet_extender = ethernet_extender
+                        if ethernet_extender == "yes":
+                            substation.ethernet_extender = "Yes"
+                        elif ethernet_extender == "no":
+                            substation.ethernet_extender = "No"
+                        else:
+                            substation.ethernet_extender = ""
                     except Exception as e:
-                        logger.info("Sub Station Ethernet Extender: ({} - {})".format(ethernet_extender, e.message))
+                        logger.info("Ethernet Extender: ({} - {})".format(ethernet_extender, e.message))
                 # cable length
                 if cable_length:
                     if isinstance(cable_length, int) or isinstance(cable_length, float):
@@ -6992,19 +7000,17 @@ def create_substation(substation_payload):
                         except Exception as e:
                             logger.info("Sub Station Cable Length: ({} - {})".format(cable_length, e.message))
                 # latitude
-                if latitude:
-                    if isinstance(latitude, int) or isinstance(latitude, float):
-                        try:
-                            substation.latitude = latitude
-                        except Exception as e:
-                            logger.info("Sub Station Latitude: ({} - {})".format(latitude, e.message))
+                if re.match(regex_lat_long, str(latitude).strip()):
+                    try:
+                        substation.latitude = Decimal(latitude)
+                    except Exception as e:
+                        logger.info("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
-                if longitude:
-                    if isinstance(longitude, int) or isinstance(longitude, float):
-                        try:
-                            substation.longitude = longitude
-                        except Exception as e:
-                            logger.info("Sub Station Longitude: ({} - {})".format(longitude, e.message))
+                if re.match(regex_lat_long, str(longitude).strip()):
+                    try:
+                        substation.longitude = Decimal(longitude)
+                    except Exception as e:
+                        logger.info("Longitude: ({} - {})".format(latitude, e.message))
                 # mac_address
                 if mac_address:
                     try:
@@ -7106,9 +7112,14 @@ def create_substation(substation_payload):
                 # ethernet extender
                 if ethernet_extender:
                     try:
-                        substation.ethernet_extender = ethernet_extender
+                        if ethernet_extender == "yes":
+                            substation.ethernet_extender = "Yes"
+                        elif ethernet_extender == "no":
+                            substation.ethernet_extender = "No"
+                        else:
+                            substation.ethernet_extender = ""
                     except Exception as e:
-                        logger.info("Sub Station Ethernet Extender: ({} - {})".format(ethernet_extender, e.message))
+                        logger.info("Ethernet Extender: ({} - {})".format(ethernet_extender, e.message))
                 # cable length
                 if cable_length:
                     if isinstance(cable_length, int) or isinstance(cable_length, float):
@@ -7117,19 +7128,17 @@ def create_substation(substation_payload):
                         except Exception as e:
                             logger.info("Sub Station Cable Length: ({} - {})".format(cable_length, e.message))
                 # latitude
-                if latitude:
-                    if isinstance(latitude, int) or isinstance(latitude, float):
-                        try:
-                            substation.latitude = latitude
-                        except Exception as e:
-                            logger.info("Sub Station Latitude: ({} - {})".format(latitude, e.message))
+                if re.match(regex_lat_long, str(latitude).strip()):
+                    try:
+                        substation.latitude = Decimal(latitude)
+                    except Exception as e:
+                        logger.info("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
-                if longitude:
-                    if isinstance(longitude, int) or isinstance(longitude, float):
-                        try:
-                            substation.longitude = longitude
-                        except Exception as e:
-                            logger.info("Sub Station Longitude: ({} - {})".format(longitude, e.message))
+                if re.match(regex_lat_long, str(longitude).strip()):
+                    try:
+                        substation.longitude = Decimal(longitude)
+                    except Exception as e:
+                        logger.info("Longitude: ({} - {})".format(latitude, e.message))
                 # mac_address
                 if mac_address:
                     try:
