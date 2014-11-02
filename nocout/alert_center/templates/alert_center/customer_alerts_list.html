@@ -100,6 +100,7 @@
                     if (destroy){
                         $("#"+tableId).dataTable().fnDestroy();
                     }
+                    console.log(tableheaders);
                     var dtable = $("#"+tableId).DataTable({
                         bAutoWidth: false,
                         bDestroy : true,

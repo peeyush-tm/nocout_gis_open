@@ -18,7 +18,9 @@ from performance.models import PerformanceService, PerformanceNetwork, EventNetw
 from service.models import ServiceDataSource, Service, DeviceServiceConfiguration
 from django.utils.dateformat import format
 from operator import itemgetter
-from nocout.utils.util import fetch_raw_result, dict_fetchall, format_value
+from nocout.utils.util import fetch_raw_result, dict_fetchall, \
+    format_value, cache_for, \
+    cached_all_gis_inventory, query_all_gis_inventory
 
 from multiprocessing import Process, Queue
 
@@ -41,6 +43,10 @@ SERVICE_DATA_SOURCE = {
 SERVICES = {
 
 }
+
+global gis_information
+gis_information = cached_all_gis_inventory(query_all_gis_inventory())
+
 
 # def uptime_to_days(uptime=0):
 #     if uptime:
@@ -268,20 +274,31 @@ class LivePerformanceListing(BaseDatatableView):
         """
         devices = qs
 
+        page_type = self.request.GET['page_type']
+
         device_list = []
         for device in devices:
-            device_list.append(device['id'])
+            if device['id'] not in device_list:
+                device_list.append(device['id'])
 
         if len(device_list):
-            raw_results = fetch_raw_result(gis_raw_inventory(device_list))
+            raw_results = gis_information
 
             for device in devices:
                 device_id = device['id']
+                sector_id = []
+                circuit_id = []
+                bh_id = []
+
                 for result in raw_results:
                     #if device is sector
-                    if device_id == result['SECTOR_CONF_ON_ID']:
+                    if page_type == 'network' \
+                            and device_id == result['SECTOR_CONF_ON_ID'] \
+                            and result['SECTOR_SECTOR_ID'] not in sector_id:
+
+                        sector_id.append(format_value(result['SECTOR_SECTOR_ID']))
                         device.update({
-                            "sector_id": format_value(result['SECTOR_SECTOR_ID']),
+                            "sector_id": ", ".join(sector_id),
                             "circuit_id": format_value(result['CCID']),
                             "customer_name" : format_value(result['CUST']),
                             "bs_name": format_value(result['BSALIAS']),
@@ -290,7 +307,10 @@ class LivePerformanceListing(BaseDatatableView):
                             "device_type": format_value(result['SECTOR_TYPE']),
                             "device_technology": format_value(result['SECTOR_TECH'])
                         })
-                    if device_id == result['SS_DEVICE_ID']:
+                    elif page_type == 'customer' \
+                            and device_id == result['SS_DEVICE_ID']\
+                            and result['CCID'] not in circuit_id:
+                        circuit_id.append(result['CCID'])
                         device.update({
                             "sector_id": format_value(result['SECTOR_SECTOR_ID']),
                             "circuit_id": format_value(result['CCID']),
@@ -301,7 +321,10 @@ class LivePerformanceListing(BaseDatatableView):
                             "device_type": format_value(result['SS_TYPE']),
                             "device_technology": format_value(result['SECTOR_TECH'])
                         })
-                    if device_id == result['BH_DEVICE_ID']:
+                    elif page_type == 'other' \
+                            and device_id == result['BH_DEVICE_ID']\
+                            and result['BH_DEVICE_ID'] not in bh_id:
+                        bh_id.append(result['BH_DEVICE_ID'])
                         device.update({
                             "sector_id": format_value(result['SECTOR_SECTOR_ID']),
                             "circuit_id": format_value(result['CCID']),
@@ -309,9 +332,11 @@ class LivePerformanceListing(BaseDatatableView):
                             "bs_name": format_value(result['BSALIAS']),
                             "city": format_value(result['BSSTATE']),
                             "state": format_value(result['BSCITY']),
-                            "device_type": '',
-                            "device_technology": ''
+                            "device_type": format_value(result['BHTYPE']),
+                            "device_technology": format_value(result['BHTECH'])
                         })
+                    else:
+                        pass
         return devices
 
     def prepare_results(self, qs, multi_proc=False):
@@ -1517,8 +1542,9 @@ def prepare_row_query(table_name=None, devices=None, data_sources=["pl", "rta"],
     """.format(",".join(map(in_string, devices)))
 
     return query
-#common function to get the devices
 
+#common function to get the devices
+@cache_for(3600)
 def ptp_device_circuit_backhaul(specify_type='all'):
     """
     Special case fot PTP technology devices. Wherein Circuit type backhaul is required
@@ -1551,6 +1577,7 @@ def ptp_device_circuit_backhaul(specify_type='all'):
 
     return device_list_with_circuit_type_backhaul
 
+@cache_for(3600)
 def organization_customer_devices(organizations, technology = None, specify_ptp_type='all'):
     """
     To result back the all the customer devices from the respective organization..
@@ -1602,6 +1629,7 @@ def organization_customer_devices(organizations, technology = None, specify_ptp_
 
     return organization_customer_devices
 
+@cache_for(3600)
 def organization_network_devices(organizations, technology = None, specify_ptp_bh_type='all'):
     """
     To result back the all the network devices from the respective organization..
@@ -1642,16 +1670,16 @@ def organization_network_devices(organizations, technology = None, specify_ptp_b
                 )
         else:
             organization_network_devices = Device.objects.filter(
-                                            Q(device_technology = int(technology),
+                                            device_technology = int(technology),
                                             is_added_to_nms=1,
                                             sector_configured_on__isnull = False,
                                             is_deleted=0,
                                             organization__in= organizations
-            ))
+            ).annotate(dcount=Count('id'))
 
     return organization_network_devices
 
-
+@cache_for(3600)
 def organization_backhaul_devices(organizations, technology = None):
     """
     To result back the all the network devices from the respective organization..
@@ -1669,314 +1697,6 @@ def organization_backhaul_devices(organizations, technology = None):
                                     organization__in= organizations
     )
 
-
-## TODO: remove the duplicate code for GIS inventory data
-
-def gis_raw_inventory(device_list=[]):
-    """
-
-    :return: raw GIS inventory data
-    """
-    if len(device_list):
-        devices = ",".join(str(x) for x in device_list)
-        gis = '''
-        select * from (
-            select basestation.id as BSID,
-                    basestation.name as BSNAME,
-                    basestation.alias as BSALIAS,
-                    basestation.bs_site_id as BSSITEID,
-                    basestation.bs_site_type as BSSITETYPE,
-
-                    device.ip_address as BSSWITCH,
-
-                    basestation.bs_type as BSTYPE,
-                    basestation.bh_bso as BSBHBSO,
-                    basestation.hssu_used as BSHSSUUSED,
-                    basestation.latitude as BSLAT,
-                    basestation.longitude as BSLONG,
-
-                    basestation.infra_provider as BSINFRAPROVIDER,
-                    basestation.gps_type as BSGPSTYPE,
-                    basestation.building_height as BSBUILDINGHGT,
-                    basestation.tower_height as BSTOWERHEIGHT,
-
-                    city.city_name as BSCITY,
-                    state.state_name as BSSTATE,
-                    country.country_name as BSCOUNTRY,
-
-                    basestation.address as BSADDRESS,
-
-                    backhaul.id as BHID,
-                    sector.id as SID
-
-            from inventory_basestation as basestation
-            left join (
-                inventory_sector as sector,
-                inventory_backhaul as backhaul,
-                device_country as country,
-                device_city as city,
-                device_state as state,
-                device_device as device
-            )
-            on (
-                sector.base_station_id = basestation.id
-            and
-                backhaul.id = basestation.backhaul_id
-            and
-                city.id = basestation.city
-            and
-                state.id = basestation.state
-            and
-                country.id = basestation.country
-            and
-                device.id = basestation.bs_switch_id
-            )
-        )as bs_info
-        left join (
-            select * from (select
-
-                sector.id as SECTOR_ID,
-                sector.name as SECTOR_NAME,
-                sector.alias as SECTOR_ALIAS,
-                sector.sector_id as SECTOR_SECTOR_ID,
-                sector.base_station_id as SECTOR_BS_ID,
-                sector.mrc as SECTOR_MRC,
-                sector.tx_power as SECTOR_TX,
-                sector.rx_power as SECTOR_RX,
-                sector.rf_bandwidth as SECTOR_RFBW,
-                sector.frame_length as SECTOR_FRAME_LENGTH,
-                sector.cell_radius as SECTOR_CELL_RADIUS,
-                sector.modulation as SECTOR_MODULATION,
-
-                technology.name as SECTOR_TECH,
-                vendor.name as SECTOR_VENDOR,
-                devicetype.name as SECTOR_TYPE,
-                devicetype.device_icon as SECTOR_ICON,
-                devicetype.device_gmap_icon as SECTOR_GMAP_ICON,
-
-                device.id as SECTOR_CONF_ON_ID,
-                device.device_name as SECTOR_CONF_ON,
-                device.ip_address as SECTOR_CONF_ON_IP,
-                device.mac_address as SECTOR_CONF_ON_MAC,
-
-                antenna.antenna_type as SECTOR_ANTENNA_TYPE,
-                antenna.height as SECTOR_ANTENNA_HEIGHT,
-                antenna.polarization as SECTOR_ANTENNA_POLARIZATION,
-                antenna.tilt as SECTOR_ANTENNA_TILT,
-                antenna.gain as SECTOR_ANTENNA_GAIN,
-                antenna.mount_type as SECTORANTENNAMOUNTTYPE,
-                antenna.beam_width as SECTOR_BEAM_WIDTH,
-                antenna.azimuth_angle as SECTOR_ANTENNA_AZMINUTH_ANGLE,
-                antenna.reflector as SECTOR_ANTENNA_REFLECTOR,
-                antenna.splitter_installed as SECTOR_ANTENNA_SPLITTER,
-                antenna.sync_splitter_used as SECTOR_ANTENNA_SYNC_SPLITTER,
-                antenna.make_of_antenna as SECTOR_ANTENNA_MAKE,
-
-                frequency.color_hex_value as SECTOR_FREQUENCY_COLOR,
-                frequency.frequency_radius as SECTOR_FREQUENCY_RADIUS,
-                frequency.value as SECTOR_FREQUENCY
-
-                from inventory_sector as sector
-                join (
-                    device_device as device,
-                    inventory_antenna as antenna,
-                    device_devicetechnology as technology,
-                    device_devicevendor as vendor,
-                    device_devicetype as devicetype
-                )
-                on (
-                    device.id = sector.sector_configured_on_id
-                and
-                    antenna.id = sector.antenna_id
-                and
-                    technology.id = device.device_technology
-                and
-                    devicetype.id = device.device_type
-                and
-                    vendor.id = device.device_vendor
-                ) left join (device_devicefrequency as frequency)
-                on (
-                    frequency.id = sector.frequency_id
-                )
-            ) as sector_info
-            left join (
-                select circuit.id as CID,
-                    circuit.alias as CALIAS,
-                    circuit.circuit_id as CCID,
-                    circuit.sector_id as SID,
-
-                    circuit.circuit_type as CIRCUIT_TYPE,
-                    circuit.qos_bandwidth as QOS,
-                    circuit.dl_rssi_during_acceptance as RSSI,
-                    circuit.dl_cinr_during_acceptance as CINR,
-                    circuit.jitter_value_during_acceptance as JITTER,
-                    circuit.throughput_during_acceptance as THROUHPUT,
-                    circuit.date_of_acceptance as DATE_OF_ACCEPT,
-
-                    customer.alias as CUST,
-                    customer.address as SS_CUST_ADDR,
-
-                    substation.id as SSID,
-                    substation.name as SS_NAME,
-                    substation.alias as SS_ALIAS,
-                    substation.version as SS_VERSION,
-                    substation.serial_no as SS_SERIAL_NO,
-                    substation.building_height as SS_BUILDING_HGT,
-                    substation.tower_height as SS_TOWER_HGT,
-                    substation.ethernet_extender as SS_ETH_EXT,
-                    substation.cable_length as SS_CABLE_LENGTH,
-                    substation.latitude as SS_LATITUDE,
-                    substation.longitude as SS_LONGITUDE,
-                    substation.mac_address as SS_MAC,
-
-                    antenna.height as SSHGT,
-                    antenna.antenna_type as SS_ANTENNA_TYPE,
-                    antenna.height as SS_ANTENNA_HEIGHT,
-                    antenna.polarization as SS_ANTENNA_POLARIZATION,
-                    antenna.tilt as SS_ANTENNA_TILT,
-                    antenna.gain as SS_ANTENNA_GAIN,
-                    antenna.mount_type as SSANTENNAMOUNTTYPE,
-                    antenna.beam_width as SS_BEAM_WIDTH,
-                    antenna.azimuth_angle as SS_ANTENNA_AZMINUTH_ANGLE,
-                    antenna.reflector as SS_ANTENNA_REFLECTOR,
-                    antenna.splitter_installed as SS_ANTENNA_SPLITTER,
-                    antenna.sync_splitter_used as SS_ANTENNA_SYNC_SPLITTER,
-                    antenna.make_of_antenna as SS_ANTENNA_MAKE,
-
-                    device.ip_address as SSIP,
-                    device.id as SS_DEVICE_ID,
-                    device.device_alias as SSDEVICEALIAS,
-                    device.device_name as SSDEVICENAME,
-
-                    technology.name as SS_TECH,
-                    vendor.name as SS_VENDOR,
-                    devicetype.name as SS_TYPE,
-                    devicetype.device_icon as SS_ICON,
-                    devicetype.device_gmap_icon as SS_GMAP_ICON
-
-                from inventory_circuit as circuit
-                join (
-                    inventory_substation as substation,
-                    inventory_customer as customer,
-                    inventory_antenna as antenna,
-                    device_device as device,
-                    device_devicetechnology as technology,
-                    device_devicevendor as vendor,
-                    device_devicetype as devicetype
-                )
-                on (
-                    customer.id = circuit.customer_id
-                and
-                    substation.id = circuit.sub_station_id
-                and
-                    antenna.id = substation.antenna_id
-                and
-                    device.id = substation.device_id
-                and
-                    technology.id = device.device_technology
-                and
-                    vendor.id = device.device_vendor
-                and
-                    devicetype.id = device.device_type
-                )
-            ) as ckt_info
-            on (
-                ckt_info.SID = sector_info.SECTOR_ID
-            )
-        ) as sect_ckt
-        on (sect_ckt.SECTOR_BS_ID = bs_info.BSID)
-        left join
-            (
-                select bh_info.BHID as BHID,
-                        bh_info.BH_PORT as BH_PORT,
-                        bh_info.BH_TYPE as BH_TYPE,
-                        bh_info.BH_PE_HOSTNAME as BH_PE_HOSTNAME,
-                        bh_info.BH_PE_IP as BH_PE_IP,
-                        bh_info.BH_CONNECTIVITY as BH_CONNECTIVITY,
-                        bh_info.BH_CIRCUIT_ID as BH_CIRCUIT_ID,
-                        bh_info.BH_CAPACITY as BH_CAPACITY,
-                        bh_info.BH_TTSL_CIRCUIT_ID as BH_TTSL_CIRCUIT_ID,
-
-
-                        bh_info.BH_DEVICE_ID as BH_DEVICE_ID,
-                        bh_info.BHCONF as BHCONF,
-                        bh_info.BHCONF_IP as BHCONF_IP,
-                        POP_IP,
-                        AGGR_IP,
-                        BSCONV_IP
-
-                from (
-                select backhaul.id as BHID,
-                        backhaul.bh_port_name as BH_PORT,
-                        backhaul.bh_type as BH_TYPE,
-                        backhaul.pe_hostname as BH_PE_HOSTNAME,
-                        backhaul.pe_ip as BH_PE_IP,
-                        backhaul.bh_connectivity as BH_CONNECTIVITY,
-                        backhaul.bh_circuit_id as BH_CIRCUIT_ID,
-                        backhaul.bh_capacity as BH_CAPACITY,
-                        backhaul.ttsl_circuit_id as BH_TTSL_CIRCUIT_ID,
-
-
-                        device.id as BH_DEVICE_ID,
-                        device.device_name as BHCONF,
-                        device.ip_address as BHCONF_IP
-
-                from inventory_backhaul as backhaul
-                join (
-                    device_device as device
-                )
-                on (
-                    device.id = backhaul.bh_configured_on_id
-                )
-                ) as bh_info left join (
-                        select backhaul.id as BHID, device.device_name as POP, device.ip_address as POP_IP from inventory_backhaul as backhaul
-                        left join (
-                            device_device as device
-                        )
-                        on (
-                            device.id = backhaul.pop_id
-                        )
-                ) as pop_info
-                on (bh_info.BHID = pop_info.BHID)
-                left join ((
-                        select backhaul.id as BHID, device.device_name as BSCONV, device.ip_address as BSCONV_IP from inventory_backhaul as backhaul
-                        left join (
-                            device_device as device
-                        )
-                        on (
-                            device.id = backhaul.bh_switch_id
-                        )
-                ) as bscon_info
-                ) on (bh_info.BHID = bscon_info.BHID)
-                left join ((
-                        select backhaul.id as BHID, device.device_name as AGGR, device.ip_address as AGGR_IP from inventory_backhaul as backhaul
-                        left join (
-                            device_device as device
-                        )
-                        on (
-                            device.id = backhaul.aggregator_id
-                        )
-                ) as aggr_info
-                ) on (bh_info.BHID = aggr_info.BHID)
-
-            ) as bh
-        on
-            (bh.BHID = bs_info.BHID)
-        where (
-            SECTOR_CONF_ON_ID in ({0})
-            or
-            SS_DEVICE_ID in ({0})
-            or
-            BH_DEVICE_ID in ({0})
-        )
-        Group by BSID,SECTOR_ID,CID
-        ;
-        '''.format(devices)
-        return gis
-    else:
-        return None
-
-## TODO: remove the duplicate code for GIS inventory data
 
 
 ## for distributed performance collection
