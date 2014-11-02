@@ -8,6 +8,7 @@ from inventory.models import Antenna, Backhaul, BaseStation, Sector, Customer, S
 from device.models import State, City
 from nocout.settings import MEDIA_ROOT
 from IPy import IP
+from decimal import *
 import os
 import re
 import time
@@ -5222,13 +5223,13 @@ def create_device(device_payload):
                 # latitude
                 if re.match(regex_lat_long, str(latitude).strip()):
                     try:
-                        device.latitude = float(latitude)
+                        device.latitude = Decimal(latitude)
                     except Exception as e:
                         logger.info("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
                 if re.match(regex_lat_long, str(longitude).strip()):
                     try:
-                        device.longitude = float(longitude)
+                        device.longitude = Decimal(longitude)
                     except Exception as e:
                         logger.info("Longitude: ({} - {})".format(latitude, e.message))
                 # timezone
@@ -5348,13 +5349,13 @@ def create_device(device_payload):
                 # latitude
                 if re.match(regex_lat_long, str(latitude).strip()):
                     try:
-                        device.latitude = float(latitude)
+                        device.latitude = Decimal(latitude)
                     except Exception as e:
                         logger.info("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
                 if re.match(regex_lat_long, str(longitude).strip()):
                     try:
-                        device.longitude = float(longitude)
+                        device.longitude = Decimal(longitude)
                     except Exception as e:
                         logger.info("Longitude: ({} - {})".format(latitude, e.message))
                 # timezone
@@ -6206,13 +6207,13 @@ def create_basestation(basestation_payload):
                 # latitude
                 if re.match(regex_lat_long, str(latitude).strip()):
                     try:
-                        basestation.latitude = float(latitude)
+                        basestation.latitude = Decimal(latitude)
                     except Exception as e:
                         logger.info("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
                 if re.match(regex_lat_long, str(longitude).strip()):
                     try:
-                        basestation.longitude = float(longitude)
+                        basestation.longitude = Decimal(longitude)
                     except Exception as e:
                         logger.info("Longitude: ({} - {})".format(latitude, e.message))
                 # infra provider
@@ -6350,13 +6351,13 @@ def create_basestation(basestation_payload):
                 # latitude
                 if re.match(regex_lat_long, str(latitude).strip()):
                     try:
-                        basestation.latitude = float(latitude)
+                        basestation.latitude = Decimal(latitude)
                     except Exception as e:
                         logger.info("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
                 if re.match(regex_lat_long, str(longitude).strip()):
                     try:
-                        basestation.longitude = float(longitude)
+                        basestation.longitude = Decimal(longitude)
                     except Exception as e:
                         logger.info("Longitude: ({} - {})".format(latitude, e.message))
                 # infra provider
@@ -6886,6 +6887,9 @@ def create_substation(substation_payload):
     # dictionary containing substation payload
     substation_payload = substation_payload
 
+    # lat long validator
+    regex_lat_long = '^[-+]?\d*\.\d+|\d+'
+
     # initializing variables
     name, alias, device, antenna, version, serial_no, building_height, tower_height, ethernet_extender = [''] * 9
     cable_length, latitude, longitude, mac_address, country, state, city, address, description = [''] * 9
@@ -6997,19 +7001,17 @@ def create_substation(substation_payload):
                         except Exception as e:
                             logger.info("Sub Station Cable Length: ({} - {})".format(cable_length, e.message))
                 # latitude
-                if latitude:
-                    if isinstance(latitude, int) or isinstance(latitude, float):
-                        try:
-                            substation.latitude = latitude
-                        except Exception as e:
-                            logger.info("Sub Station Latitude: ({} - {})".format(latitude, e.message))
+                if re.match(regex_lat_long, str(latitude).strip()):
+                    try:
+                        substation.latitude = Decimal(latitude)
+                    except Exception as e:
+                        logger.info("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
-                if longitude:
-                    if isinstance(longitude, int) or isinstance(longitude, float):
-                        try:
-                            substation.longitude = longitude
-                        except Exception as e:
-                            logger.info("Sub Station Longitude: ({} - {})".format(longitude, e.message))
+                if re.match(substation, str(longitude).strip()):
+                    try:
+                        substation.longitude = Decimal(longitude)
+                    except Exception as e:
+                        logger.info("Longitude: ({} - {})".format(latitude, e.message))
                 # mac_address
                 if mac_address:
                     try:
@@ -7127,19 +7129,17 @@ def create_substation(substation_payload):
                         except Exception as e:
                             logger.info("Sub Station Cable Length: ({} - {})".format(cable_length, e.message))
                 # latitude
-                if latitude:
-                    if isinstance(latitude, int) or isinstance(latitude, float):
-                        try:
-                            substation.latitude = latitude
-                        except Exception as e:
-                            logger.info("Sub Station Latitude: ({} - {})".format(latitude, e.message))
+                if re.match(regex_lat_long, str(latitude).strip()):
+                    try:
+                        substation.latitude = Decimal(latitude)
+                    except Exception as e:
+                        logger.info("Latitude: ({} - {})".format(latitude, e.message))
                 # longitude
-                if longitude:
-                    if isinstance(longitude, int) or isinstance(longitude, float):
-                        try:
-                            substation.longitude = longitude
-                        except Exception as e:
-                            logger.info("Sub Station Longitude: ({} - {})".format(longitude, e.message))
+                if re.match(substation, str(longitude).strip()):
+                    try:
+                        substation.longitude = Decimal(longitude)
+                    except Exception as e:
+                        logger.info("Longitude: ({} - {})".format(latitude, e.message))
                 # mac_address
                 if mac_address:
                     try:
