@@ -285,7 +285,7 @@ class PerformanceDashboardMixin(object):
 
         range_counter = get_dashboard_status_range_counter(dashboard_setting, service_status_results)
 
-        response_dict = get_pie_chart_json_response_dict(data_source, range_counter)
+        response_dict = get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter)
 
         return HttpResponse(json.dumps(response_dict))
 

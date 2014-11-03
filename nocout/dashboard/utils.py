@@ -95,9 +95,19 @@ def get_dashboard_status_range_counter(dashboard_setting, service_status_results
     return range_counter
 
 
-def get_pie_chart_json_response_dict(data_source, range_counter):
+def get_pie_chart_json_response_dict(dashboard_setting, data_source, range_counter):
 
     display_name = data_source.replace('_', ' ')
+
+    chart_data = []
+    colors = []
+    for count in range(1, 11):
+        chart_data.append(['range%d' %count, range_counter['range%d' %count]])
+        color = getattr(dashboard_setting, 'range%d_color_hex_value' %count)
+        if color:
+            colors.append(color)
+        else:
+            colors.append("#000000")
 
     response_dict = {
         "message": "Device Performance Data Fetched Successfully To Plot Graphs.",
@@ -107,10 +117,11 @@ def get_pie_chart_json_response_dict(data_source, range_counter):
                 "plot_type": "charts",
                 "display_name": display_name,
                 "valuesuffix": "dB",
+                "colors": colors,
                 "chart_data": [{
                     "type": 'pie',
                     "name": display_name.upper(),
-                    "data": range_counter.items()
+                    "data": chart_data
                 }]
             }
         },
