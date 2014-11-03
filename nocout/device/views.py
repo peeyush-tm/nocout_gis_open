@@ -244,8 +244,7 @@ class OperationalDeviceListingTable(BaseDatatableView):
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        organization_descendants = logged_in_user_organizations(self)
-        return Device.objects.filter(organization__in=organization_descendants,
+        return Device.objects.filter(organization__in=logged_in_user_organizations(self),
                                      is_deleted=0,
                                      is_added_to_nms__in=[1, 2]).values(*self.columns + ['id'])
 
@@ -545,8 +544,7 @@ class NonOperationalDeviceListingTable(BaseDatatableView):
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        organization_descendants = logged_in_user_organizations(self)
-        return Device.objects.filter(organization__in=organization_descendants,
+        return Device.objects.filter(organization__in=logged_in_user_organizations(self),
                                      is_deleted=0,
                                      is_monitored_on_nms=0,
                                      is_added_to_nms=0,
@@ -778,15 +776,7 @@ class DisabledDeviceListingTable(BaseDatatableView):
             return sorted(qs, key=itemgetter(order[0][1:]), reverse=True if '-' in order[0] else False)
         return qs
 
-    def logged_in_user_organization_ids(self):
-        """
-        Get logged in user's descendants organizations id's
-        """
-        organization_descendants_ids = list(
-            self.request.user.userprofile.organization.get_descendants(include_self=True)
-            .values_list('id', flat=True))
-        return organization_descendants_ids
-
+   
     def get_initial_queryset(self):
         """
         Preparing  Initial Queryset for the for rendering the data table.
@@ -799,8 +789,7 @@ class DisabledDeviceListingTable(BaseDatatableView):
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        organization_descendants_ids = self.logged_in_user_organization_ids()
-        return Device.objects.filter(organization__in=organization_descendants_ids, is_deleted=0, host_state="Disable") \
+        return Device.objects.filter(organization__in=logged_in_user_organizations(self), is_deleted=0, host_state="Disable") \
             .values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
@@ -1051,8 +1040,7 @@ class ArchivedDeviceListingTable(BaseDatatableView):
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        organization_descendants = logged_in_user_organizations(self)
-        return Device.objects.filter(organization__in=organization_descendants, is_deleted=1) \
+        return Device.objects.filter(organization__in=logged_in_user_organizations(self), is_deleted=1) \
             .values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
@@ -1307,8 +1295,7 @@ class AllDeviceListingTable(BaseDatatableView):
 
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        organization_descendants = logged_in_user_organizations(self)
-        return Device.objects.filter(organization__in=organization_descendants, is_deleted=0) \
+        return Device.objects.filter(organization__in=logged_in_user_organizations(self), is_deleted=0) \
             .values(*self.columns + ['id'])
 
     def prepare_results(self, qs):
