@@ -40,6 +40,7 @@ import xlrd
 import xlwt
 import logging
 from django.template import RequestContext
+from nocout.utils import logged_in_user_organizations
 from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory, \
     bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory, \
     bulk_upload_wimax_ss_inventory
@@ -279,13 +280,21 @@ class AntennaList(ListView):
     model = Antenna
     template_name = 'antenna/antenna_list.html'
 
-
     @method_decorator(permission_required('inventory.view_antenna', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch function restricted with the permissions.
         """
         return super(AntennaList, self).dispatch(*args, **kwargs)
+
+    def get_queryset(self):
+        """
+        In this view no data is passed to datatable while rendering template.
+        Another ajax call is made to fill in datatable.
+        """
+        queryset = super(AntennaList, self).get_queryset()
+        queryset = queryset.none()
+        return queryset
 
     def get_context_data(self, **kwargs):
         """
@@ -324,10 +333,15 @@ class AntennaListingTable(BaseDatatableView):
         :return qs:
 
         """
+        qs = super(AntennaListingTable, self).filter_queryset(qs)
+        if not self.request.user.is_superuser:
+            qs = qs.filter(organization__in=logged_in_user_organizations(self))
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
@@ -342,7 +356,7 @@ class AntennaListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Antenna.objects.values(*self.columns + ['id'])
+        return Antenna.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
 
     def prepare_results(self, qs):
         """
@@ -451,6 +465,8 @@ class AntennaUpdate(UpdateView):
         """
         return super(AntennaUpdate, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        return Antenna.objects.filter(organization__in=logged_in_user_organizations(self))
 
     def form_valid(self, form):
         """
@@ -502,6 +518,15 @@ class BaseStationList(ListView):
         """
         return super(BaseStationList, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        """
+        In this view no data is passed to datatable while rendering template.
+        Another ajax call is made to fill in datatable.
+        """
+        queryset = super(BaseStationList, self).get_queryset()
+        queryset = queryset.none()
+        return queryset
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -542,10 +567,15 @@ class BaseStationListingTable(BaseDatatableView):
         :param qs:
         :return qs:
         """
+        qs = super(BaseStationListingTable, self).filter_queryset(qs)
+        if not self.request.user.is_superuser:
+            qs = qs.filter(organization__in=logged_in_user_organizations(self))
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
@@ -561,7 +591,9 @@ class BaseStationListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return BaseStation.objects.values(*self.columns + ['id'])
+
+        return BaseStation.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
+       
 
     def prepare_results(self, qs):
         """
@@ -667,12 +699,16 @@ class BaseStationUpdate(UpdateView):
     form_class = BaseStationForm
     success_url = reverse_lazy('base_stations_list')
 
+
     @method_decorator(permission_required('inventory.change_basestation', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch method restricted with the permissions.
         """
         return super(BaseStationUpdate, self).dispatch(*args, **kwargs)
+
+    def get_queryset(self):
+        return BaseStation.objects.filter(organization__in=logged_in_user_organizations(self))
 
     def form_valid(self, form):
         """
@@ -717,13 +753,21 @@ class BackhaulList(ListView):
     model = Backhaul
     template_name = 'backhaul/backhauls_list.html'
 
-
     @method_decorator(permission_required('inventory.view_backhaul', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch function restricted with the permissions.
         """
         return super(BackhaulList, self).dispatch(*args, **kwargs)
+
+    def get_queryset(self):
+        """
+        In this view no data is passed to datatable while rendering template.
+        Another ajax call is made to fill in datatable.
+        """
+        queryset = super(BackhaulList, self).get_queryset()
+        queryset = queryset.none()
+        return queryset
 
     def get_context_data(self, **kwargs):
         """
@@ -768,10 +812,15 @@ class BackhaulListingTable(BaseDatatableView):
         :return qs:
 
         """
+        qs = super(BackhaulListingTable, self).filter_queryset(qs)
+        if not self.request.user.is_superuser:
+            qs = qs.filter(organization__in=logged_in_user_organizations(self))
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
@@ -787,7 +836,8 @@ class BackhaulListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Backhaul.objects.values(*self.columns + ['id'])
+
+        return Backhaul.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
 
     def prepare_results(self, qs):
         """
@@ -904,12 +954,16 @@ class BackhaulUpdate(UpdateView):
     form_class = BackhaulForm
     success_url = reverse_lazy('backhauls_list')
 
+
     @method_decorator(permission_required('inventory.change_backhaul', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch method restricted with the permissions.
         """
         return super(BackhaulUpdate, self).dispatch(*args, **kwargs)
+
+    def get_queryset(self):
+        return Backhaul.objects.filter(organization__in=logged_in_user_organizations(self))
 
     def form_valid(self, form):
         """
@@ -962,6 +1016,15 @@ class SectorList(ListView):
         """
         return super(SectorList, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        """
+        In this view no data is passed to datatable while rendering template.
+        Another ajax call is made to fill in datatable.
+        """
+        queryset = super(SectorList, self).get_queryset()
+        queryset = queryset.none()
+        return queryset
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -1007,14 +1070,20 @@ class SectorListingTable(BaseDatatableView):
         :return qs:
 
         """
+        qs = super(SectorListingTable, self).filter_queryset(qs)
+        if not self.request.user.is_superuser:
+            qs = qs.filter(organization__in=logged_in_user_organizations(self))
+
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
-            exec_query += " | ".join(query)
+            exec_query += " | ".join(query) 
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
@@ -1026,8 +1095,8 @@ class SectorListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Sector.objects.values(*self.columns + ['id'])
-
+        
+        return Sector.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
@@ -1143,6 +1212,9 @@ class SectorUpdate(UpdateView):
         """
         return super(SectorUpdate, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        return Sector.objects.filter(organization__in=logged_in_user_organizations(self))
+
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -1193,6 +1265,15 @@ class CustomerList(ListView):
         """
         return super(CustomerList, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        """
+        In this view no data is passed to datatable while rendering template.
+        Another ajax call is made to fill in datatable.
+        """
+        queryset = super(CustomerList, self).get_queryset()
+        queryset = queryset.none()
+        return queryset
+
     def get_context_data(self, **kwargs):
         context = super(CustomerList, self).get_context_data(**kwargs)
         datatable_headers = [
@@ -1224,10 +1305,16 @@ class CustomerListingTable(BaseDatatableView):
         :return qs:
 
         """
+        qs = super(CustomerListingTable, self).filter_queryset(qs)
+        if not self.request.user.is_superuser:
+            qs = qs.filter(organization__in=logged_in_user_organizations(self))
+
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
@@ -1243,7 +1330,7 @@ class CustomerListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Customer.objects.values(*self.columns + ['id'])
+        return Customer.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
 
     def prepare_results(self, qs):
         """
@@ -1352,6 +1439,9 @@ class CustomerUpdate(UpdateView):
         """
         return super(CustomerUpdate, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        return Customer.objects.filter(organization__in=logged_in_user_organizations(self))
+
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -1395,13 +1485,21 @@ class SubStationList(ListView):
     model = SubStation
     template_name = 'sub_station/sub_stations_list.html'
 
-
     @method_decorator(permission_required('inventory.view_substation', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch function restricted with the permissions.
         """
         return super(SubStationList, self).dispatch(*args, **kwargs)
+
+    def get_queryset(self):
+        """
+        In this view no data is passed to datatable while rendering template.
+        Another ajax call is made to fill in datatable.
+        """
+        queryset = super(SubStationList, self).get_queryset()
+        queryset = queryset.none()
+        return queryset
 
     def get_context_data(self, **kwargs):
         """
@@ -1449,10 +1547,16 @@ class SubStationListingTable(BaseDatatableView):
         :return qs:
 
         """
+        qs = super(SubStationListingTable, self).filter_queryset(qs)
+        if not self.request.user.is_superuser:
+            qs = qs.filter(organization__in=logged_in_user_organizations(self))
+
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns[:-1]:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
@@ -1468,7 +1572,8 @@ class SubStationListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return SubStation.objects.values(*self.columns + ['id'])
+
+        return SubStation.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
 
     def prepare_results(self, qs):
         """
@@ -1586,6 +1691,9 @@ class SubStationUpdate(UpdateView):
         """
         return super(SubStationUpdate, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        return SubStation.objects.filter(organization__in=logged_in_user_organizations(self))
+
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -1635,6 +1743,15 @@ class CircuitList(ListView):
         The request dispatch function restricted with the permissions.
         """
         return super(CircuitList, self).dispatch(*args, **kwargs)
+
+    def get_queryset(self):
+        """
+        In this view no data is passed to datatable while rendering template.
+        Another ajax call is made to fill in datatable.
+        """
+        queryset = super(CircuitList, self).get_queryset()
+        queryset = queryset.none()
+        return queryset
 
     def get_context_data(self, **kwargs):
         """
@@ -1744,6 +1861,9 @@ class CircuitListingTable(BaseDatatableView):
                                                             ]
 
         """
+        qs = super(CircuitListingTable, self).filter_queryset(qs)
+        if not self.request.user.is_superuser:
+            qs = qs.filter(organization__in=logged_in_user_organizations(self))
 
         sSearch = self.request.GET.get('sSearch', None)
 
@@ -1751,8 +1871,10 @@ class CircuitListingTable(BaseDatatableView):
         # 'sector__name', 'customer__name', 'sub_station__name', 'date_of_acceptance', 'description']
 
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns[:-1]:
                 # avoid search on 'date_of_acceptance'
                 if column == 'date_of_acceptance':
@@ -1770,7 +1892,8 @@ class CircuitListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Circuit.objects.values(*self.columns + ['id'])
+
+        return Circuit.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
 
     def prepare_results(self, qs):
         """
@@ -1781,11 +1904,11 @@ class CircuitListingTable(BaseDatatableView):
         for dct in qs:
             device_id = dct.pop('id')
             if self.request.user.has_perm('inventory.change_circuit'):
-                edit_action = '<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp'.format(device_id)
+                edit_action = '<a href="/circuit/edit/{0}"><i class="fa fa-pencil text-dark"></i></a>&nbsp&nbsp'.format(device_id)
             else:
                 edit_action = ''
             if self.request.user.has_perm('inventory.delete_circuit'):
-                delete_action = '<a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>'.format(device_id)
+                delete_action = '<a href="/circuit/delete/{0}"><i class="fa fa-trash-o text-danger"></i></a>&nbsp&nbsp'.format(device_id)
             else:
                 delete_action = ''
             if edit_action or delete_action:
@@ -1916,6 +2039,9 @@ class CircuitUpdate(UpdateView):
         """
         return super(CircuitUpdate, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        return Circuit.objects.filter(organization__in=logged_in_user_organizations(self))
+
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -1924,7 +2050,7 @@ class CircuitUpdate(UpdateView):
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Updatte Circuit : %s, ' % (self.object.alias) + ', '.join(
+            verb_string = 'Update Circuit : %s, ' % (self.object.alias) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
                           ' to ' + \
@@ -2220,6 +2346,7 @@ class IconSettingsListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
@@ -2430,6 +2557,7 @@ class LivePollingSettingsListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns:
@@ -2632,6 +2760,7 @@ class ThresholdConfigurationListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns:
@@ -2845,6 +2974,7 @@ class ThematicSettingsListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns:

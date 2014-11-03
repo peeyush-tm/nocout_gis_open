@@ -17,6 +17,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from nocout.utils.util import DictDiffer, project_group_role_dict_mapper
 from django.contrib.auth.decorators import permission_required
 from django.db.models import Q
+from nocout.utils import logged_in_user_organizations
 
 
 class UserList(ListView):
@@ -70,7 +71,10 @@ class UserListingTable(BaseDatatableView):
         """
         to return logged in user organization and organization descendants
         """
-        return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
+        if self.request.user.userprofile.role.values_list( 'role_name', flat=True)[0] =='admin':
+            return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
+        else:
+            return list(str(self.request.user.userprofile.organization.id))
 
     def filter_queryset(self, qs):
         """
@@ -81,6 +85,7 @@ class UserListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query=[]
             organization_descendants_ids= self.logged_in_user_organization_ids()
             exec_query = "qs = %s.objects.filter("%(self.model.__name__)
@@ -181,13 +186,20 @@ class UserArchivedListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query=[]
             exec_query = "qs = %s.objects.filter("%(self.model.__name__)
+            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+                organization_descendants_ids = list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
+            else:
+                organization_descendants_ids = list(str(self.request.user.userprofile.organization.id))
             for column in self.columns[:-1]:
                 query.append("Q(%s__icontains="%column + "\"" +sSearch +"\"" +")")
 
-            exec_query += " | ".join(query)
-            exec_query += ").values(*"+str(self.columns+['id'])+")"
+            archieve_query = ", is_deleted = 1"
+            exec_query += " | ".join(query) + archieve_query + ", organization__in = %s)"%organization_descendants_ids + \
+                          ".values(*"+str(self.columns+['id'])+")"
+           
             exec exec_query
 
         return qs
@@ -198,8 +210,11 @@ class UserArchivedListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        organization_descendants_ids= list(self.request.user.userprofile.organization.get_descendants(include_self=True)
+        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+            organization_descendants_ids= list(self.request.user.userprofile.organization.get_descendants(include_self=True)
                                            .values_list('id', flat=True))
+        else:
+            organization_descendants_ids= list(str(self.request.user.userprofile.organization.id))
         return UserProfile.objects.filter(organization__in = organization_descendants_ids, is_deleted=1).values(*self.columns+['id'])
 
     def prepare_results(self, qs):
@@ -322,6 +337,9 @@ class UserUpdate(UpdateView):
         """
         return super(UserUpdate, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
+
     def get_form_kwargs(self):
         """
         Returns the keyword arguments with the request object for instantiating the form.
@@ -413,6 +431,9 @@ class UserDelete(DeleteView):
         To surpass the delete confirmation and delete the user directly.
         """
         return self.post(*args, **kwargs)
+
+    def get_queryset(self):
+        return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
 
     def delete(self, request, *args, **kwargs):
         """

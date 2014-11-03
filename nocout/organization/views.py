@@ -14,6 +14,7 @@ from nocout.utils.util import date_handler, DictDiffer
 from user_group.models import UserGroup
 from django.contrib.auth.decorators import permission_required
 from django.utils.decorators import method_decorator
+from nocout.utils import logged_in_user_organizations
 
 
 class OrganizationList(ListView):
@@ -63,7 +64,10 @@ class OrganizationListingTable(BaseDatatableView):
         """
         return the logged in user descendants organization ids.
         """
-        return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
+        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+            return list(self.request.user.userprofile.organization.get_descendants(include_self=True).values_list('id', flat=True))
+        else:
+            return list(str(self.request.user.userprofile.organization.id))
 
     def filter_queryset(self, qs):
         """
@@ -74,6 +78,7 @@ class OrganizationListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query=[]
             organization_descendants_ids= self.logged_in_user_organization_ids()
             exec_query = "qs = %s.objects.filter("%(self.model.__name__)
@@ -190,7 +195,8 @@ class OrganizationUpdate(UpdateView):
         """
         return super(OrganizationUpdate, self).dispatch(*args, **kwargs)
 
-
+    def get_queryset(self):
+        return logged_in_user_organizations(self)
 
     def form_valid(self, form):
         """
@@ -227,6 +233,10 @@ class OrganizationDelete(DeleteView):
         The request dispatch function restricted with the permissions.
         """
         return super(OrganizationDelete, self).dispatch(*args, **kwargs)
+
+
+    def get_queryset(self):
+        return logged_in_user_organizations(self)
 
 
 
