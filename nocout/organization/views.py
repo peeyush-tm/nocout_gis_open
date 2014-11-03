@@ -14,6 +14,7 @@ from nocout.utils.util import date_handler, DictDiffer
 from user_group.models import UserGroup
 from django.contrib.auth.decorators import permission_required
 from django.utils.decorators import method_decorator
+from nocout.utils import logged_in_user_organizations
 
 
 class OrganizationList(ListView):
@@ -194,7 +195,8 @@ class OrganizationUpdate(UpdateView):
         """
         return super(OrganizationUpdate, self).dispatch(*args, **kwargs)
 
-
+    def get_queryset(self):
+        return logged_in_user_organizations(self)
 
     def form_valid(self, form):
         """
@@ -231,6 +233,10 @@ class OrganizationDelete(DeleteView):
         The request dispatch function restricted with the permissions.
         """
         return super(OrganizationDelete, self).dispatch(*args, **kwargs)
+
+
+    def get_queryset(self):
+        return logged_in_user_organizations(self)
 
 
 
