@@ -114,7 +114,18 @@
                     <li><a class="" href="/performance/customer_live/"><span class="sub-menu-text">Customer Live</span></a></li>
                     <li><a class="" href="/performance/network_live/"><span class="sub-menu-text">Network Live</span></a></li>
                     <li><a class="" href="/performance/other_live/"><span class="sub-menu-text">Other</span></a></li>
-                    <li><a class="" href="/performance/performance_dashboard/"><span class="sub-menu-text">RF Performance Dashboard</span></a></li>
+                    <li class="has-sub-sub">
+                        <a class="" href="javascript:;">
+                            <span class="sub-menu-text">RF Performance Dashboard</span>
+                            <span class="arrow"></span>
+                        </a>
+                        <ul class="sub-sub">
+                            <li><a class="" href="{% url 'dashboard-rf-performance-wimax' %}"><span class="sub-menu-text">WiMAX</span></a></li>
+                            <li><a class="" href="{% url 'dashboard-rf-performance-pmp' %}"><span class="sub-menu-text">PMP</span></a></li>
+                            <li><a class="" href="{% url 'dashboard-rf-performance-ptp' %}"><span class="sub-menu-text">PTP</span></a></li>
+                            <li><a class="" href="{% url 'dashboard-rf-performance-ptp-bh' %}"><span class="sub-menu-text">PTP BH</span></a></li>
+                        </ul>
+                    </li>
                     <li><a class="" href="/performance/sector_dashboard/"><span class="sub-menu-text">Sector Dashboard</span></a></li>
                 </ul>
             </li>
@@ -320,6 +331,7 @@
                 {% else %}
                     <li><a class="" href="/thematic_settings/"><span class="sub-menu-text">Thematic Settings</span></a></li>
                 {% endif %}
+                <li><a class="" href="{% url 'dashboard-settings' %}"><span class="sub-menu-text">Dashboard Settings</span></a></li>
                 </ul>
             </li>
 
