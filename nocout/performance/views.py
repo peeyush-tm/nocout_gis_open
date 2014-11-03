@@ -29,16 +29,145 @@ import logging
 log = logging.getLogger(__name__)
 
 SERVICE_DATA_SOURCE = {
-    "uas": {"display_name": "UAS", "type": "area", "valuesuffix": "seconds", "valuetext": "Seconds", "formula": None},
-    "rssi": {"display_name": "RSSI", "type": "column", "valuesuffix": "dB", "valuetext": "dB", "formula": None},
-    "uptime": {"display_name": "UPTIME", "type": "line", "valuesuffix": " seconds", "valuetext": "up since (timeticks)", "formula": None},
-    "rta": {"display_name": "Latency","type": "area", "valuesuffix": "ms", "valuetext": "ms", "formula": None},
-    "pl": {"display_name": "Packet Drop", "type": "column", "valuesuffix": "%", "valuetext": "Percentage (%)", "formula": None},
-    "service_throughput": {"display_name": "Service throughput", "type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
-    "management_port_on_odu": {"display_name": "Management Port on ODU", "type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
-    "radio_interface": {"display_name": "Radio Interface" ,"type": "area", "valuesuffix": " mbps", "valuetext": " mbps", "formula": None},
-    "availability": {"display_name": "Availability", "type": "column", "valuesuffix": " %", "valuetext": " %", "formula": None},
-    }
+    "uas": {
+        "display_name": "UAS",
+        "type": "area",
+        "valuesuffix": "seconds",
+        "valuetext": "Seconds",
+        "formula": None
+    },
+    "rssi": {
+        "display_name": "RSSI",
+        "type": "column",
+        "valuesuffix": "dB",
+        "valuetext": "dB",
+        "formula": None
+    },
+    "uptime": {
+        "display_name": "UPTIME",
+        "type": "line",
+        "valuesuffix": " seconds",
+        "valuetext": "up since (timeticks)",
+        "formula": None
+    },
+    "rta": {
+        "display_name": "Latency",
+        "type": "area", "valuesuffix":
+        "ms", "valuetext": "ms",
+        "formula": None
+    },
+    "pl": {
+        "display_name": "Packet Drop",
+        "type": "column",
+        "valuesuffix": "%",
+        "valuetext": "Percentage (%)",
+        "formula": None
+    },
+    "service_throughput": {
+        "display_name": "Service throughput",
+        "type": "area",
+        "valuesuffix": " mbps",
+        "valuetext": " mbps",
+        "formula": None
+    },
+    "management_port_on_odu": {
+        "display_name": "Management Port on ODU",
+        "type": "area",
+        "valuesuffix": " mbps",
+        "valuetext": " mbps",
+        "formula": None
+    },
+    "radio_interface": {
+        "display_name": "Radio Interface" ,
+        "type": "area",
+        "valuesuffix": " mbps",
+        "valuetext": " mbps",
+        "formula": None
+    },
+    "availability": {
+        "display_name": "Availability",
+        "type": "column",
+        "valuesuffix": " %",
+        "valuetext": " %",
+        "formula": None
+    },
+    ##listing there special performance checks with type string
+    #wimax_ss_ip#ss_ip
+    #wimax_modulation_dl_fec#modulation_dl_fec
+    #wimax_ss_sector_id#ss_sector_id
+    #wimax_ss_frequency#frequency
+    #wimax_modulation_ul_fec#modulation_ul_fec
+    #wimax_ul_intrf#ul_intrf
+    #wimax_dl_intrf#dl_intrf
+    #wimax_ss_mac#ss_mac
+    ##listing there special performance checks with type string
+
+    "ss_ip": {
+        "display_name": "ss_ip",
+        "type": "table",
+        "valuesuffix": " ",
+        "valuetext": " ",
+        "formula": None
+    },
+
+    "modulation_dl_fec": {
+        "display_name": "modulation_dl_fec",
+        "type": "table",
+        "valuesuffix": " ",
+        "valuetext": " ",
+        "formula": None
+    },
+
+    "ss_sector_id": {
+        "display_name": "ss_sector_id",
+        "type": "table",
+        "valuesuffix": " ",
+        "valuetext": " ",
+        "formula": None
+    },
+
+    "frequency": {
+        "display_name": "frequency",
+        "type": "table",
+        "valuesuffix": " MHz",
+        "valuetext": " MHz",
+        "formula": None
+    },
+
+    "modulation_ul_fec": {
+        "display_name": "modulation_ul_fec",
+        "type": "table",
+        "valuesuffix": " ",
+        "valuetext": " ",
+        "formula": None
+    },
+
+    "ul_intrf": {
+        "display_name": "ul_intrf",
+        "type": "table",
+        "valuesuffix": " ",
+        "valuetext": " ",
+        "formula": None
+    },
+
+    "dl_intrf": {
+        "display_name": "dl_intrf",
+        "type": "table",
+        "valuesuffix": " ",
+        "valuetext": " ",
+        "formula": None
+    },
+
+    "ss_mac": {
+        "display_name": "ss_mac",
+        "type": "table",
+        "valuesuffix": " ",
+        "valuetext": " ",
+        "formula": None
+    },
+
+
+}
 
 SERVICES = {
 
@@ -1133,7 +1262,7 @@ class Get_Service_Type_Performance_Data(View):
                                                                 sys_timestamp__lte=end_date).using(
                                                                 alias=inventory_device_machine_name)
 
-            result = self.get_performance_data_result_for_status_and_invent_data_source(performance_data)
+            result = self.get_perf_table_result(performance_data)
 
         elif '_invent' in service_name:
             if not isSet:
@@ -1146,7 +1275,7 @@ class Get_Service_Type_Performance_Data(View):
                                                                    sys_timestamp__lte= end_date).using(
                                                                    alias=inventory_device_machine_name)
 
-            result = self.get_performance_data_result_for_status_and_invent_data_source(performance_data)
+            result = self.get_perf_table_result(performance_data)
         else:
             if not isSet:
                 end_date = format(datetime.datetime.now(), 'U')
@@ -1157,8 +1286,14 @@ class Get_Service_Type_Performance_Data(View):
                                                                  sys_timestamp__gte= start_date,
                                                                  sys_timestamp__lte= end_date).using(
                                                                  alias=inventory_device_machine_name)
+            #to check of string based dashboards
+            #need to return a table
+            if service_data_source_type.lower() in SERVICE_DATA_SOURCE\
+                and SERVICE_DATA_SOURCE[service_data_source_type.lower()]['type'] == 'table':
+                result = self.get_perf_table_result(performance_data)
 
-            result = self.get_performance_data_result(performance_data)
+            else:
+                result = self.get_performance_data_result(performance_data)
 
         download_excel= self.request.GET.get('download_excel', '')
         download_csv= self.request.GET.get('download_csv', '')
@@ -1236,7 +1371,7 @@ class Get_Service_Type_Performance_Data(View):
         return table_data, table_header
 
 
-    def get_performance_data_result_for_status_and_invent_data_source(self, performance_data):
+    def get_perf_table_result(self, performance_data):
 
         result_data, aggregate_data = list(), dict()
         for data in performance_data:

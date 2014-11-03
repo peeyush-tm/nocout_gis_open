@@ -3309,6 +3309,9 @@ function devicePlottingClass_gmap() {
 				
 				var ruler_line = gmap_self.createLink_gmaps(latLonObj);
 
+				/*Show Line on Map*/
+				ruler_line.setMap(mapInstance);
+
 				tools_rule_array.push(ruler_line);
 
 				$.cookie('tools_ruler',JSON.stringify(latLonObj),{path: '/', secure : true});
@@ -3762,6 +3765,9 @@ function devicePlottingClass_gmap() {
 
 		/*Create line between the point & device*/
 		var current_line =  gmap_self.createLink_gmaps(line_obj);
+
+		/*Show Line on Map*/
+		current_line.setMap(mapInstance);
 		
 		/*Update Connected Lat Lon info in marker object*/
 		point_data_obj[current_pt].connected_lat = connected_end_obj.lat;
