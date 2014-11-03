@@ -77,6 +77,7 @@ class OrganizationListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query=[]
             organization_descendants_ids= self.logged_in_user_organization_ids()
             exec_query = "qs = %s.objects.filter("%(self.model.__name__)
