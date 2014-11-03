@@ -53,11 +53,14 @@ def poll_device():
 	response = []
 	wimax_service_list = ['wimax_dl_cinr','wimax_ul_cinr','wimax_dl_rssi','wimax_ul_rssi','wimax_ul_intrf','wimax_dl_intrf',
 	'wimax_modulation_dl_fec','wimax_modulation_ul_fec']
-	logger.info('[Polling Iteration Start]')
-	device_list = literal_eval(html.var('device_list'))
-	service_list = literal_eval(html.var('service_list'))
-	bs_name_ss_mac_mapping = literal_eval(html.var('bs_name_ss_mac_mapping'))
-	ss_name_mac_mapping = literal_eval(html.var('ss_name_mac_mapping'))
+	try:
+		logger.info('[Polling Iteration Start]')
+		device_list = literal_eval(html.var('device_list'))
+		service_list = literal_eval(html.var('service_list'))
+		bs_name_ss_mac_mapping = literal_eval(html.var('bs_name_ss_mac_mapping'))
+		ss_name_mac_mapping = literal_eval(html.var('ss_name_mac_mapping'))
+	except Exception as e:
+		logger.info('excep: ' + pformat(e))
 	logger.info('device_list: ' + pformat(device_list))
 	logger.info('service_list: ' + pformat(service_list))
 	logger.info('device_list : %s and service_list : %s' % (device_list, service_list))

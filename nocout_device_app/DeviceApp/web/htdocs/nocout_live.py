@@ -169,8 +169,8 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
      #signal.alarm(0.5)
      ss_mac_list, bs_device_list = [], []
      for service in service_list:
-	     logger.info('service: ' + pformat(service))
 	     device = old_device
+	     old_service = service
              if service in wimax_services:
 			old_service = service
 			service = 'wimax_topology'
@@ -244,24 +244,30 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
 			 	q.put(data_dict)
 			 	return
 		elif old_service in wimax_services:
+			filtered_ss_data =[]
 			try:
 				data_value = []	
 				check_output = filter(lambda t: 'wimax_topology' in t, check_output.split('\n'))
-				check_output = check_output.split('- ')[1].split(' ')
-				filtered_ss_data = map(lambda t: t.upper() in check_output,bs_name_ss_mac_mapping.get(device))
+				check_output = check_output[0].split('- ')[1].split(' ')
+				for ss_mac_entry in bs_name_ss_mac_mapping.get(device):
+					filtered_ss_output = filter(lambda t:  ss_mac_entry.upper() in t,check_output)
+					filtered_ss_data.extend(filtered_ss_output)
 				index = wimax_services.index(old_service)
 				for entry in filtered_ss_data:
 					data_value = entry.split('=')[1].split(',')[index]
 					cal_ss_mac = entry.split('=')[0]
 					# MARK
-					host_name_entry = filter(lambda t: cal_ss_mac.lower() in t.values(),ss_name_mac_mapping)
-					data_dict = {host_name_entry.keys()[0]:data_value}
-					q.put(data_dict)			
+					for host_name,mac_value in ss_name_mac_mapping.items():
+						if mac_value ==  cal_ss_mac.lower():
+							ss_host_name = host_name
+							break
+					data_dict = {ss_host_name:data_value}
+					q.put(data_dict)
+							
 			except Exception, e:
-				for mac in bs_name_ss_mac_mapping.get(device):
-					host_name_entry = filter(lambda t: mac.lower() in t.values(),ss_name_mac_mapping)
-					data_dict = {host_name_entry.keys()[0]:[]}
-			 		logger.error('Empty check_output: ' + pformat(e))
+			 	logger.error('Empty check_output: ' + pformat(e))
+				for host_name,mac_value in ss_name_mac_mapping.items():
+					data_dict = {host_name:[]}
 			 		q.put(data_dict)
 			 	return
 				
@@ -310,36 +316,6 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None, b
      #q.put(host_data_dict)
      #return data_dict
 
-
-
-def mysql_conn():
-        db = None
-        try:
-            db = mysql.connector.connect(
-                        user=_DATABASES['user'],
-                        host=_DATABASES['host'],
-                        password=_DATABASES['password'],
-                        database=_DATABASES['database'],
-                        port=_DATABASES['port']
-                        )
-        except Exception as exp:
-            print exp
-        return db
-
-
-
-def extract_host_for_live_polling(ss_host_mac):
-	logger.info('live_polling' + pformat(ss_host_mac))
-        query = """
-        select device_name ,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
-        db = mysql_conn()
-        cur = db.cursor()
-        cur.execute(query)
-        data = cur.fetchall()
-        cur.close()
-	logger.info('data' + pformat(data))
-	
-        return data
 
 
 def alarm_handler(signum, frame):
