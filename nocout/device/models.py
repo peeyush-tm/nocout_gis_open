@@ -173,6 +173,9 @@ class Device(MPTTModel, models.Model):
     def __unicode__(self):
         return self.device_alias
 
+    class Meta:
+        ordering = ['machine']
+
 
 # model-type mapper
 class ModelType(models.Model):

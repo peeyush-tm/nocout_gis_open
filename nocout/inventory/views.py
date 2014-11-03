@@ -22,7 +22,9 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.db.models import Q
 from device_group.models import DeviceGroup
 from nocout.settings import GISADMIN, NOCOUT_USER, MEDIA_ROOT, MEDIA_URL
-from nocout.utils.util import DictDiffer
+
+from nocout.utils.util import DictDiffer, cache_for, cache_get_key
+
 from models import Inventory, DeviceTechnology, IconSettings, LivePollingSettings, ThresholdConfiguration, \
     ThematicSettings, GISInventoryBulkImport, UserThematicSettings, CircuitL2Report
 from forms import InventoryForm, IconSettingsForm, LivePollingSettingsForm, ThresholdConfigurationForm, \
@@ -46,6 +48,9 @@ from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory,
 
 logger = logging.getLogger(__name__)
 
+##caching
+from django.core.cache import cache
+##caching
 
 # **************************************** Inventory *********************************************
 def inventory(request):
@@ -3371,7 +3376,24 @@ class BulkUploadValidData(View):
                     result = ""
         except Exception as e:
             logger.info("Current User Organization:", e.message)
-
+        ##we are using caching for GIS inventory
+        ## we need to reset caching, as soon as
+        ##user bulk uploads
+        try:
+            # cached_functions = ['prepare_raw_gis_info',
+            #                     'organization_backhaul_devices',
+            #                     'organization_network_devices',
+            #                     'organization_customer_devices',
+            #                     'ptp_device_circuit_backhaul',
+            #                     'perf_gis_raw_inventory'
+            #                     ]
+            # keys = []
+            # for cf in cached_functions:
+            #     keys.append(cache_get_key(cf))
+            # cache.delete_many(keys)
+            cache.clear() #delete GIS cache on bulk upload
+        except Exception as caching_exp:
+            logger.exception(caching_exp.message)
         return HttpResponseRedirect('/bulk_import/')
 
 

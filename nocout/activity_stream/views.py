@@ -120,13 +120,16 @@ class ActionListingTable(BaseDatatableView):
                 dct['logged_at'] = time_converter(dct['logged_at'])
                 # logger.debug(dct)
                 for key, val in dct.items():
-                    if key=='id':
-                        action_object = UserAction.objects.get(pk= val)
-                        dct['user_id'] = unicode(UserProfile.objects.get(id=action_object.user_id) )
-                        dct['module'] = action_object.module
-                        dct['action'] = action_object.action
-                    else:
-                        dct[key] = val
+                    try:
+                        if key=='id':
+                            action_object = UserAction.objects.get(pk= val)
+                            dct['user_id'] = unicode(UserProfile.objects.get(id=action_object.user_id) )
+                            dct['module'] = action_object.module
+                            dct['action'] = action_object.action
+                        else:
+                            dct[key] = val
+                    except:
+                        pass  #no user no logs to display
             return list(qs)
         return []
 

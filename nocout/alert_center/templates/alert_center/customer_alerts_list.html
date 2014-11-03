@@ -57,6 +57,20 @@
     var dataTableInstance = "";
     /*This is a temporary code which is replace when data for data table is provided*/
     $(document).ready(function (e) {
+        var sort_index = 9;
+        /*Grid headers object*/
+        var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
+        /*Ajax url to get grid data*/
+        ajax_url_get_parameter = "";
+
+        if(/latency/i.test(window.location.pathname)) {
+            ajax_url_get_parameter='latency';
+            sort_index = 10;
+        } else if(/packet_drop/i.test(window.location.pathname)) {
+            ajax_url_get_parameter='packet_drop'
+        } else if(/down/i.test(window.location.pathname)) {
+            ajax_url_get_parameter='down'
+        }
           function ourDataTableWidget()
             {
                 /**
@@ -86,6 +100,7 @@
                     if (destroy){
                         $("#"+tableId).dataTable().fnDestroy();
                     }
+                    console.log(tableheaders);
                     var dtable = $("#"+tableId).DataTable({
                         bAutoWidth: false,
                         bDestroy : true,
@@ -100,25 +115,12 @@
                         },
                         aoColumns:tableheaders,
                         sPaginationType: "full_numbers",
-                        aaSorting: [[9, 'desc'],[0, 'asc']]
+                        aaSorting: [[sort_index, 'desc'],[0, 'asc']]
                     });
                 };
             }
             /*Make a instance of ourDataTableWidget class */
             dataTableInstance = new ourDataTableWidget();
-            /*Grid headers object*/
-            var gridHeadersObj = $.parseJSON('{{ datatable_headers|safe }}');
-            /*Ajax url to get grid data*/
-            ajax_url_get_parameter = "";
-            
-            if(/latency/i.test(window.location.pathname)) {
-                ajax_url_get_parameter='latency' 
-            } else if(/packet_drop/i.test(window.location.pathname)) {
-                ajax_url_get_parameter='packet_drop'
-            } else if(/down/i.test(window.location.pathname)) {
-                ajax_url_get_parameter='down'
-            }
-
 
             var ajax_url_wifi= '{% url "CustomerAlertListingTable" %}'+'?data_source='+ ajax_url_get_parameter+'&data_tab=' + 'WiMAX';
             var ajax_url_pmp=  '{% url "CustomerAlertListingTable" %}'+'?data_source=' + ajax_url_get_parameter+'&data_tab=' + 'PMP';

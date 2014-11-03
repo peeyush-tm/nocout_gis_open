@@ -118,6 +118,9 @@ TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
 )
 
 MIDDLEWARE_CLASSES = (
+    #caching
+    # 'django.middleware.cache.UpdateCacheMiddleware',
+    #caching
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -132,6 +135,10 @@ MIDDLEWARE_CLASSES = (
     # Uncomment the next line for simple clickjacking protection
     #required for GISS SCAN
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    #caching
+    # 'django.middleware.cache.FetchFromCacheMiddleware',
+    #caching
 )
 
 #cookies settings
@@ -188,6 +195,13 @@ INSTALLED_APPS = (
     'jsonify',
     'djcelery'
 )
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': 'nocout_cache',
+    }
+}
 
 '''
 # RabbitMQ configuration for django-celery
