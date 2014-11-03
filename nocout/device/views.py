@@ -1591,6 +1591,9 @@ class DeviceUpdate(UpdateView):
         """
         return super(DeviceUpdate, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        return Device.objects.filter(organization__in=logged_in_user_organizations(self))
+
     def form_valid(self, form):
         """
         If the form is valid, redirect to the supplied URL.
