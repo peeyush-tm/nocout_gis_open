@@ -123,16 +123,26 @@ class ActionListingTable(BaseDatatableView):
                 dct['logged_at'] = time_converter(dct['logged_at'])
                 # logger.debug(dct)
                 for key, val in dct.items():
-                    if key=='id':
-                        action_object = UserAction.objects.get(pk= val)
-                        try:
+                    try:
+                        if key =='id':
+                            action_object = UserAction.objects.get(pk= val)
                             dct['user_id'] = unicode(UserProfile.objects.get(id=action_object.user_id) )
-                        except:
-                            dct['user_id'] = 'User no more exists'
-                        dct['module'] = action_object.module
-                        dct['action'] = action_object.action
-                    else:
-                        dct[key] = val
+                            dct['module'] = action_object.module
+                            dct['action'] = action_object.action
+                        else:
+                            dct[key] = val
+                    except Exception as deleted_user:
+                        if key =='id':
+                            action_object = UserAction.objects.get(pk= val)
+                            dct['user_id'] = 'User Unknown/Deleted'
+                            dct['module'] = 'Unknown : (System Exception):[%s]' % (action_object.module)
+                            dct['action'] = 'Failed to Fetch Action for ' \
+                                            'Deleted User (System Exception):[%s : %s]' % (
+                                deleted_user.message,
+                                action_object.action
+                            )
+                        else:
+                            dct[key] = val
             return list(qs)
         return []
 

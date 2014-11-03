@@ -16,7 +16,9 @@ from django.db.models import Q
 from django.conf import settings
 from nocout.settings import P2P, WiMAX, PMP
 
-from nocout.utils.util import fetch_raw_result, dict_fetchall, format_value
+from nocout.utils.util import fetch_raw_result, dict_fetchall, \
+    format_value, cache_for, \
+    cached_all_gis_inventory,query_all_gis_inventory
 
 # going deep with sql cursor to fetch the db results. as the RAW query executes everythong it is recursively used
 from django.db import connections
@@ -85,7 +87,7 @@ def getCustomerAlertDetail(request):
         {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
+         'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric" },
         {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
         {'mData': 'customer_name', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'bSortable': True},
         {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'sClass': 'hidden-xs',
@@ -289,7 +291,7 @@ def getNetworkAlertDetail(request):
         {'mData': 'data_source_name', 'sTitle': 'Data Source Name', 'sWidth': 'auto', 'sClass': 'hidden-xs',
          'bSortable': True},
         {'mData': 'current_value', 'sTitle': 'Value', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-         'bSortable': True},
+         'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric" },
         {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
         {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True},
         ]
@@ -529,8 +531,8 @@ class AlertCenterNetworkListing(ListView):
         """
         context = super(AlertCenterNetworkListing, self).get_context_data(**kwargs)
         data_source=self.kwargs.get('data_source','')
-        data_source_title = "Latency Average (ms) " \
-                            if data_source in ["latency"] \
+        data_source_title = "Latency Avg (ms) " \
+                            if data_source == "latency" \
                             else ("value".title() if data_source in ["service"] else "packet drop (%)".title())
 
         data_tab = self.request.GET.get('data_tab','P2P')
@@ -573,7 +575,17 @@ class AlertCenterNetworkListing(ListView):
              'sTitle': '{0}'.format(data_source_title),
              'sWidth': 'auto',
              'sClass': 'hidden-xs',
-             'bSortable': True },
+             'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric" },
+        ]
+        if data_source == "latency":
+            datatable_headers += [
+            {'mData': 'max_value',
+             'sTitle': 'Latency Max (ms)',
+             'sWidth': 'auto',
+             'sClass': 'hidden-xs',
+             'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"  }
+            ]
+        datatable_headers += [
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True},
             ]
@@ -590,9 +602,9 @@ class AlertCenterNetworkListingTable(BaseDatatableView):
     """
     model = EventNetwork
     columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
-               'current_value', 'sys_timestamp', 'description']
+               'current_value', 'max_value', 'sys_timestamp', 'description']
     order_columns = ['device_name', 'device_type', 'machine_name', 'site_name', 'ip_address', 'severity',
-                     'current_value', 'sys_timestamp', 'description']
+                     'current_value', 'max_value', 'sys_timestamp', 'description']
 
     def filter_queryset(self, qs):
 
@@ -793,10 +805,20 @@ class CustomerAlertList(ListView):
             {'mData': 'sector_id', 'sTitle': 'Sector ID', 'sWidth': 'auto', 'sClass': 'hidden-xs',
              'bSortable': True},
             {'mData': 'current_value', 'sTitle': 'Packet Drop (%)', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True }
+             'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"  }
              if data_source.lower() in ['down','packet_drop'] else
-            {'mData': 'current_value', 'sTitle': 'Latency Average (ms) ', 'sWidth': 'auto', 'sClass': 'hidden-xs',
-             'bSortable': True },
+            {'mData': 'current_value', 'sTitle': 'Latency Avg (ms) ', 'sWidth': 'auto', 'sClass': 'hidden-xs',
+             'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"  },
+        ]
+        if data_source.lower() == "latency":
+            datatable_headers += [
+            {'mData': 'max_value',
+             'sTitle': 'Latency Max (ms)',
+             'sWidth': 'auto',
+             'sClass': 'hidden-xs',
+             'bSortable': True, "sSortDataType": "dom-text", "sType": "numeric"  }
+            ]
+        datatable_headers += [
             {'mData': 'sys_timestamp', 'sTitle': 'Timestamp', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'customer_name', 'sTitle': 'Customer Name', 'sWidth': 'auto', 'bSortable': True},
             {'mData': 'action', 'sTitle': 'Action', 'sWidth': 'auto', 'bSortable': True},
@@ -1504,148 +1526,8 @@ def filter_machines(organization_devices):
 
     return machine_dict
 
-def prepare_raw_gis_info():
-    """
-
-    :return: gis information
-    """
-    gis_info = """
-        select * from (
-        select basestation.id as BSID,
-                basestation.name as BSNAME,
-                basestation.alias as BSALIAS,
-                basestation.infra_provider as BSINFRAPROVIDER,
-                basestation.gps_type as BSGPSTYPE,
-                basestation.building_height as BSBUILDINGHGT,
-                basestation.tower_height as BSTOWERHEIGHT,
-                basestation.address as BSADDRESS,
-
-                city.city_name as BSCITY,
-                state.state_name as BSSTATE,
-                country.country_name as BSCOUNTRY,
-
-                sector.id as SID
-
-        from inventory_basestation as basestation
-        left join (
-            inventory_sector as sector,
-            device_country as country,
-            device_city as city,
-            device_state as state
-        )
-        on (
-            sector.base_station_id = basestation.id
-            and
-            city.id = basestation.city
-            and
-            state.id = basestation.state
-            and
-            country.id = basestation.country
-        )
-    )as bs_info
-    left join (
-        select * from (select
-
-            sector.id as SECTOR_ID,
-            sector.name as SECTOR_NAME,
-            sector.alias as SECTOR_ALIAS,
-            sector.sector_id as SECTOR_SECTOR_ID,
-            sector.base_station_id as SECTOR_BS_ID,
-
-            technology.name as SECTOR_TECH,
-            vendor.name as SECTOR_VENDOR,
-            devicetype.name as SECTOR_TYPE,
-
-            device.id as SECTOR_CONF_ON_ID,
-            device.device_name as SECTOR_CONF_ON_NAME,
-            device.ip_address as SECTOR_CONF_ON_IP,
-            device.mac_address as SECTOR_CONF_ON_MAC,
-
-            frequency.color_hex_value as SECTOR_FREQUENCY_COLOR,
-            frequency.frequency_radius as SECTOR_FREQUENCY_RADIUS,
-            frequency.value as SECTOR_FREQUENCY
-
-            from inventory_sector as sector
-            join (
-                device_device as device,
-                device_devicetechnology as technology,
-                device_devicevendor as vendor,
-                device_devicetype as devicetype
-            )
-            on (
-                device.id = sector.sector_configured_on_id
-                and
-                technology.id = device.device_technology
-                and
-                devicetype.id = device.device_type
-                and
-                vendor.id = device.device_vendor
-            ) left join (device_devicefrequency as frequency)
-            on (frequency.id = sector.frequency_id)
-        ) as sector_info
-        left join (
-            select circuit.id as CID,
-                circuit.alias as CALIAS,
-                circuit.circuit_id as CCID,
-                circuit.sector_id as SID,
-
-                customer.alias as CUST,
-                customer.address as SS_CUST_ADDR,
-
-                substation.id as SSID,
-                substation.name as SS_NAME,
-                substation.alias as SS_ALIAS,
-                substation.serial_no as SS_SERIAL_NO,
-                substation.building_height as SS_BUILDING_HGT,
-                substation.tower_height as SS_TOWER_HGT,
-                substation.latitude as SS_LATITUDE,
-                substation.longitude as SS_LONGITUDE,
-                substation.mac_address as SS_MAC,
-
-                device.id as SS_DEVICE_ID,
-                device.ip_address as SSIP,
-                device.device_alias as SSDEVICEALIAS,
-                device.device_name as SSDEVICENAME,
-
-                devicetype.name as SSDEVICETYPE,
-				devicetype.alias as SSDEVICETYPEALIAS,
-
-                technology.name as SS_TECH,
-                vendor.name as SS_VENDOR
-
-            from inventory_circuit as circuit
-            join (
-                inventory_substation as substation,
-                inventory_customer as customer,
-                device_device as device,
-                device_devicetechnology as technology,
-                device_devicevendor as vendor,
-                device_devicetype as devicetype
-            )
-            on (
-                customer.id = circuit.customer_id
-                and
-                substation.id = circuit.sub_station_id
-                and
-                device.id = substation.device_id
-                and
-                technology.id = device.device_technology
-                and
-                vendor.id = device.device_vendor
-                and
-                devicetype.id = device.device_type
-            )
-        ) as ckt_info
-        on (ckt_info.SID = sector_info.SECTOR_ID)
-    ) as sect_ckt
-    on (sect_ckt.SECTOR_BS_ID = bs_info.BSID)
-    group by BSID,SECTOR_ID,CID
-    """
-
-    return fetch_raw_result(query=gis_info)
-
 global gis_information
-gis_information = prepare_raw_gis_info()
+gis_information = cached_all_gis_inventory(query_all_gis_inventory())
 
 def prepare_raw_alert_results(device_list=[], performance_data=None):
     """
@@ -1714,24 +1596,42 @@ def prepare_raw_alert_results(device_list=[], performance_data=None):
 
     return device_list
 
-
-def ptp_device_circuit_backhaul():
+#common function to get the devices
+@cache_for(3600)
+def ptp_device_circuit_backhaul(specify_type='all'):
     """
     Special case fot PTP technology devices. Wherein Circuit type backhaul is required
     :return:
     """
-    device_list_with_circuit_type_backhaul = Device.objects.filter(
-        Q(id__in=Sector.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
-                                        values_list('sector', flat=True)).
-                                        values_list('sector_configured_on', flat=True))
-        |
-        Q(id__in=SubStation.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
-                                        values_list('sub_station', flat=True)).
-                                        values_list('device', flat=True))
-    )
+    if specify_type == 'all':
+        device_list_with_circuit_type_backhaul = Device.objects.filter(
+            Q(id__in=Sector.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                            values_list('sector', flat=True)).
+                                            values_list('sector_configured_on', flat=True))
+            |
+            Q(id__in=SubStation.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                            values_list('sub_station', flat=True)).
+                                            values_list('device', flat=True))
+        )
+    elif specify_type == 'ss':
+        device_list_with_circuit_type_backhaul = Device.objects.filter(
+            Q(id__in=SubStation.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                            values_list('sub_station', flat=True)).
+                                            values_list('device', flat=True))
+        )
+    elif specify_type == 'bs':
+        device_list_with_circuit_type_backhaul = Device.objects.filter(
+            Q(id__in=Sector.objects.filter(id__in=Circuit.objects.filter(circuit_type__icontains="Backhaul").
+                                            values_list('sector', flat=True)).
+                                            values_list('sector_configured_on', flat=True))
+        )
+    else:
+        device_list_with_circuit_type_backhaul = []
+
     return device_list_with_circuit_type_backhaul
 
-def organization_customer_devices(organizations, technology = None):
+@cache_for(3600)
+def organization_customer_devices(organizations, technology = None, specify_ptp_type='all'):
     """
     To result back the all the customer devices from the respective organization..
 
@@ -1747,13 +1647,30 @@ def organization_customer_devices(organizations, technology = None):
         )
     else:
         if int(technology) == int(P2P.ID):
-            organization_customer_devices = Device.objects.filter(
-                ~Q(id__in=ptp_device_circuit_backhaul()),
-                is_added_to_nms= 1,
-                is_deleted= 0,
-                organization__in= organizations,
-                device_technology= technology
-            )
+            if specify_ptp_type in ['ss','bs']:
+                choose_ss_bs = None
+                if specify_ptp_type == 'ss':
+                    choose_ss_bs = Q(substation__isnull=False)
+                else:
+                    choose_ss_bs = Q(sector_configured_on__isnull=False)
+                organization_customer_devices = Device.objects.filter(
+                    ~Q(id__in=ptp_device_circuit_backhaul(specify_type=specify_ptp_type)),
+                    choose_ss_bs,  #calls the specific set of devices
+                    substation__isnull=False,
+                    is_added_to_nms= 1,
+                    is_deleted= 0,
+                    organization__in= organizations,
+                    device_technology= technology
+                )
+            else:
+                organization_customer_devices = Device.objects.filter(
+                    ~Q(id__in=ptp_device_circuit_backhaul()),
+                    substation__isnull=False,
+                    is_added_to_nms= 1,
+                    is_deleted= 0,
+                    organization__in= organizations,
+                    device_technology= technology
+                )
         else:
             organization_customer_devices = Device.objects.filter(
                 is_added_to_nms= 1,
@@ -1765,7 +1682,8 @@ def organization_customer_devices(organizations, technology = None):
 
     return organization_customer_devices
 
-def organization_network_devices(organizations, technology = None):
+@cache_for(3600)
+def organization_network_devices(organizations, technology = None, specify_ptp_bh_type='all'):
     """
     To result back the all the network devices from the respective organization..
 
@@ -1775,11 +1693,10 @@ def organization_network_devices(organizations, technology = None):
     :return list of network devices
     """
 
-    device_list_with_circuit_type_backhaul = ptp_device_circuit_backhaul()
 
     if not technology:
         organization_network_devices = Device.objects.filter(
-                                        Q(id__in= device_list_with_circuit_type_backhaul)
+                                        Q(id__in= ptp_device_circuit_backhaul())
                                         |
                                         Q(device_technology = int(WiMAX.ID))
                                         |
@@ -1790,19 +1707,46 @@ def organization_network_devices(organizations, technology = None):
         )
     else:
         if int(technology) == int(P2P.ID):
-            organization_network_devices = Device.objects.filter(
-                                        Q(id__in= device_list_with_circuit_type_backhaul),
-                                        is_added_to_nms=1,
-                                        is_deleted=0,
-                                        organization__in= organizations
-            )
+            if specify_ptp_bh_type in ['ss', 'bs']:
+                organization_network_devices = Device.objects.filter(
+                                            Q(id__in= ptp_device_circuit_backhaul(specify_type=specify_ptp_bh_type)),
+                                            is_added_to_nms=1,
+                                            is_deleted=0,
+                                            organization__in= organizations
+                )
+            else:
+                organization_network_devices = Device.objects.filter(
+                                            Q(id__in= ptp_device_circuit_backhaul()),
+                                            is_added_to_nms=1,
+                                            is_deleted=0,
+                                            organization__in= organizations
+                )
         else:
             organization_network_devices = Device.objects.filter(
-                                            Q(device_technology = int(technology),
+                                            device_technology = int(technology),
                                             is_added_to_nms=1,
                                             sector_configured_on__isnull = False,
                                             is_deleted=0,
                                             organization__in= organizations
-            ))
+            ).annotate(dcount=Count('id'))
 
     return organization_network_devices
+
+@cache_for(3600)
+def organization_backhaul_devices(organizations, technology = None):
+    """
+    To result back the all the network devices from the respective organization..
+
+    :param organizations:
+    :param technology:
+    :param organization:
+    :return list of network devices
+    """
+
+    return  Device.objects.filter(
+                                    backhaul__isnull=False,
+                                    is_added_to_nms=1,
+                                    is_deleted=0,
+                                    organization__in= organizations
+    )
+
