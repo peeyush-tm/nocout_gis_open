@@ -10,12 +10,13 @@ from nocout.utils.jquery_datatable_generation import Datatable_Generation
 from user_profile.models import UserProfile, Roles
 from organization.models import Organization
 from forms import UserForm
-from django.http.response import HttpResponseRedirect
+from django.http.response import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.hashers import make_password
 from collections import OrderedDict
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from nocout.utils.util import DictDiffer, project_group_role_dict_mapper
 from django.contrib.auth.decorators import permission_required
+from django.template.loader import render_to_string
 from django.db.models import Q
 from nocout.utils import logged_in_user_organizations
 
@@ -498,3 +499,19 @@ class CurrentUserProfileUpdate(UpdateView):
         UserProfile.objects.filter(id=self.object.id).update(**kwargs)
         return super(ModelFormMixin, self).form_valid(form)
 
+
+def organisation_user_list(request):
+    """
+    To fetch the user based on the organisation for the user-profile form.
+    """
+    if request.is_ajax():
+        parent_list = UserProfile.objects.filter(organization__id=request.GET['organisation_id'])
+        ctx_dict = {
+                'parent_list': parent_list,
+            }
+        # get the user list in the html <option> format.
+        parent_list_option = render_to_string('user_profile/parent_list_option.html', ctx_dict)
+        parent_list_option.content_subtype = "html"
+        return HttpResponse( parent_list_option )
+    else:
+        return HttpResponse("Invalid Url")
