@@ -1663,7 +1663,7 @@ def bulk_upload_ptp_inventory(gis_id, organization, sheettype):
                     }
                     # base station object
                     base_station = create_device(base_station_data)
-                    
+
                     # increment device latest id by 1
                     device_latest_id += 1
                 else:

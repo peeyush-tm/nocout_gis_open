@@ -111,6 +111,7 @@ class BaseStation(models.Model):
     backhaul = models.ForeignKey(Backhaul, null=True, blank=True, on_delete=models.SET_NULL, default=None)
     bh_port_name = models.CharField(max_length=40, verbose_name=" BH Port Name", null=True, blank=True)
     bh_port = models.IntegerField('BH Port', null=True, blank=True)
+    bh_capacity = models.IntegerField('BH Capacity', null=True, blank=True, help_text='Enter a number.')
     bs_type = models.CharField('BS Type', max_length=40, null=True, blank=True)
     bh_bso = models.CharField('BH BSO', max_length=40, null=True, blank=True)
     hssu_used = models.CharField('HSSU Used', max_length=40, null=True, blank=True)
