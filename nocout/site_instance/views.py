@@ -11,6 +11,7 @@ from django.db.models import Q
 from django.http.response import HttpResponseRedirect
 from nocout.utils.util import DictDiffer
 import json
+from activity_stream.models import UserAction
 
 class SiteInstanceList(ListView):
     """
@@ -213,4 +214,9 @@ class SiteInstanceDelete(DeleteView):
         """
         Log the user activity before deleting the Site Instance.
         """
+        try:
+            UserAction.objects.create(user_id=self.request.user.id, module='Site Instance',
+                         action='A site instance is deleted - {}'.format(self.get_object().name) )
+        except:
+            pass
         return super(SiteInstanceDelete, self).delete(request, *args, **kwargs)
