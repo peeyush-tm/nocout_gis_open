@@ -549,4 +549,4 @@ setTimeout(function() {
             }
         }
     }
-},300);
+},500);
