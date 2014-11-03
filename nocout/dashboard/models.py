@@ -1,12 +1,17 @@
 from django.db import models
 
 from device.models import DeviceTechnology
+from dashboard.config import dashboards
 
 
 PAGE_NAME_CHOICES = (
     ('rf_dashboard', 'RF Performance Dashboard'),
     ('sector_dashboard', 'Sector Dashboard'),
 )
+
+
+def get_dashboard_name_choices():
+    return [(dashboard['dashboard_name'], dashboard['dashboard_name']) for dashboard in dashboards]
 
 
 class DashboardSetting(models.Model):
@@ -17,10 +22,11 @@ class DashboardSetting(models.Model):
     - One dashboard will have just one dashboard setting.
     """
 
-    name = models.CharField('Dashboard Name', max_length=250)
-    dashboard_type = models.CharField('Dashboard Type', max_length=3, choices=(('INT', 'Numeric'), ('STR', 'String')))
     page_name = models.CharField('Page Name', max_length=30, choices=PAGE_NAME_CHOICES)
     technology = models.ForeignKey(DeviceTechnology)
+    is_bh = models.BooleanField(default=False)
+    name = models.CharField('Dashboard Name', max_length=250, choices=get_dashboard_name_choices())
+    dashboard_type = models.CharField('Dashboard Type', max_length=3, choices=(('INT', 'Numeric'), ('STR', 'String')))
 
     range1_start = models.CharField('Range1 Start', max_length=20, null=True, blank=True)
     range1_end = models.CharField('Range1 End', max_length=20, null=True, blank=True)
@@ -63,7 +69,7 @@ class DashboardSetting(models.Model):
     range10_color_hex_value = models.CharField('Range-10 Color', max_length=100, null=True, blank=True)
 
     class Meta:
-        unique_together = ('name', 'page_name', 'technology')
+        unique_together = ('name', 'page_name', 'technology', 'is_bh')
         verbose_name = "dashboard setting"
         verbose_name_plural = "dashboard settings"
 

@@ -266,7 +266,7 @@ class PerformanceDashboardMixin(object):
         :param request:
         :return Http response object:
         """
-        data_source_config, technology, devices_method_to_call, devices_method_kwargs = self.get_init_data()
+        data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh = self.get_init_data()
         template_dict = {'data_sources': json.dumps(data_source_config.keys())}
 
         data_source = request.GET.get('data_source')
@@ -281,7 +281,7 @@ class PerformanceDashboardMixin(object):
             return render(self.request, self.template_name, dictionary=template_dict)
 
         try:
-            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='rf_dashboard', name=data_source)
+            dashboard_setting = DashboardSetting.objects.get(technology=technology, page_name='rf_dashboard', name=data_source, is_bh=is_bh)
         except DashboardSetting.DoesNotExist as e:
             return HttpResponse(json.dumps({
                 "message": "Corresponding dashboard seting is not available.",
@@ -345,7 +345,8 @@ class PMP_Performance_Dashboard(PerformanceDashboardMixin, View):
         technology = DeviceTechnology.objects.get(name='PMP').id
         devices_method_to_call = organization_customer_devices
         devices_method_kwargs = dict(specify_ptp_type='all')
-        return data_source_config, technology, devices_method_to_call, devices_method_kwargs
+        is_bh = False
+        return data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh
 
 
 class PTP_Performance_Dashboard(PerformanceDashboardMixin, View):
@@ -367,7 +368,8 @@ class PTP_Performance_Dashboard(PerformanceDashboardMixin, View):
         technology = DeviceTechnology.objects.get(name='P2P').id
         devices_method_to_call = organization_customer_devices
         devices_method_kwargs = dict(specify_ptp_bh_type='ss')
-        return data_source_config, technology, devices_method_to_call, devices_method_kwargs
+        is_bh = False
+        return data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh
 
 
 class PTPBH_Performance_Dashboard(PerformanceDashboardMixin, View):
@@ -390,4 +392,5 @@ class PTPBH_Performance_Dashboard(PerformanceDashboardMixin, View):
         technology = DeviceTechnology.objects.get(name='P2P').id
         devices_method_to_call = organization_network_devices
         devices_method_kwargs = dict(specify_ptp_bh_type='ss')
-        return data_source_config, technology, devices_method_to_call, devices_method_kwargs
+        is_bh = True
+        return data_source_config, technology, devices_method_to_call, devices_method_kwargs, is_bh
