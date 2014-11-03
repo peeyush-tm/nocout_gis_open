@@ -658,14 +658,14 @@ class Get_Perfomance(View):
         isSet = False
 
         if len(start_date) and len(end_date):
-            start_date_object= datetime.datetime.strptime( start_date +" 00:00:00", "%d-%m-%Y %H:%M:%S" )
-            end_date_object= datetime.datetime.strptime( end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S" )
+            start_date_object= datetime.datetime.strptime( start_date, "%d-%m-%Y %H:%M:%S" )
+            end_date_object= datetime.datetime.strptime( end_date, "%d-%m-%Y %H:%M:%S" )
             start_date= format( start_date_object, 'U')
             end_date= format( end_date_object, 'U')
             isSet = True
             if start_date == end_date:
                 # Converting the end date to the highest time in a day.
-                end_date_object = datetime.datetime.strptime(end_date + " 23:59:59", "%d-%m-%Y %H:%M:%S")
+                end_date_object = datetime.datetime.strptime(end_date, "%d-%m-%Y %H:%M:%S")
         else:
             # The end date is the end limit we need to make query till.
             end_date_object = datetime.datetime.now()

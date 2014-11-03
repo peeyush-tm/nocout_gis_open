@@ -320,10 +320,11 @@ function nocoutPerfLib() {
 		}
 
 		function getTomorrowDate(date) {
-			var tomorowDate = new Date();
+			var tomorowDate = new Date(date);
 			tomorowDate.setFullYear(date.getFullYear());
 			tomorowDate.setMonth(date.getMonth());
 			tomorowDate.setDate(date.getDate() + 1);
+			console.log(tomorowDate);
 			return tomorowDate;
 		}
 
@@ -473,13 +474,27 @@ function nocoutPerfLib() {
 				$('#' + table_id).dataTable().fnAddData(row_val);
 			}
 		}
+var firstDayTime = "", lastDayTime = "";
+		function sendAjax(ajax_start_date, ajax_end_date, firstDay) {
+			if(!(ajax_start_date && ajax_end_date)) {
+				hideSpinner();
+return ;
+			}
+var startTime = "00:00:00";
+var endTime = "23:59:59";
+			if(ajax_start_date===ajax_end_date) {
+				endTime = lastDayTime;
+			}
 
-		function sendAjax(ajax_start_date, ajax_end_date) {
+			if(firstDay) {
+				startTime = firstDayTime;
+			}
+			
 			$.ajax({
 				url: get_url,
 				data: {
-					'start_date': getDateinStringFormat(ajax_start_date),
-					'end_date': getDateinStringFormat(ajax_start_date)
+					'start_date': getDateinStringFormat(ajax_start_date)+' '+startTime,
+					'end_date': getDateinStringFormat(ajax_start_date)+' '+endTime
 				},
 				type: "GET",
 				dataType: "json",
@@ -507,7 +522,7 @@ function nocoutPerfLib() {
 						$('#' + service_id + '_chart').html(result.message);
 					}
 
-					if ($.trim(ajax_start_date) && $.trim(ajax_end_date) && (ajax_start_date <= ajax_end_date)) {	
+					if ($.trim(ajax_start_date) && $.trim(ajax_end_date) && (ajax_start_date < ajax_end_date)) {
 						timeInterval = setTimeout(function() {
 							sendAjax(getTomorrowDate(ajax_start_date), ajax_end_date);
 						}, 200);
@@ -525,9 +540,15 @@ function nocoutPerfLib() {
 		}
 
 		if (start_date && end_date) {
-			var js_start_date = getDate(start_date);
-			var js_end_date = getDate(end_date);
-			sendAjax(js_start_date, js_end_date);
+			var js_start_date = getDate(start_date.split("%20")[0]);
+			var js_start_time = start_date.split("%20")[1];
+			firstDayTime = js_start_time.split("%3A");
+			firstDayTime = firstDayTime[0] + ":" + firstDayTime[1] + ":" + firstDayTime[2];
+			var js_end_date = getDate(end_date.split("%20")[0]);
+			var js_end_time = start_date.split("%20")[1];
+			lastDayTime = js_end_time.split("%3A");
+			lastDayTime = lastDayTime[0] + ":" + lastDayTime[1] + ":" + lastDayTime[2];
+			sendAjax(js_start_date, js_end_date, 'first');
 		} else {
 			sendAjax('', '');
 		}
