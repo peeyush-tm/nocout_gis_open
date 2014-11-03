@@ -3457,6 +3457,7 @@ class DeviceFrequencyListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch and len(str(sSearch).strip()) >= 3:
+            sSearch = sSearch.replace("\\","")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns:
