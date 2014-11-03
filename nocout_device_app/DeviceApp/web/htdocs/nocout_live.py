@@ -13,6 +13,14 @@ import subprocess
 import re
 from ast import literal_eval
 from nocout import get_parent
+import mysql.connector
+logger = nocout_log()
+
+try:
+	import nocout_settings
+	from nocout_settings import _DATABASES, _LIVESTATUS
+except Exception as exp:
+	logger.info('Error:' + pformat(exp))
 
 
 interface_services = [
@@ -56,7 +64,6 @@ interface_services = [
 #    return logger
 
 
-logger = nocout_log()
 
 
 def main():
@@ -150,6 +157,8 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None):
      #response = []
      # Teramatrix poller on which this device is being monitored
      site_name = get_site_name()
+     wimax_services = ['wimax_dl_rssi','wimax_ul_rssi','wimax_dl_cinr','wimax_ul_cinr','wimax_dl_intrf','wimax_ul_intrf',
+        'wimax_modulation_dl_fec','wimax_modulation_ul_fec']
      ss_device, ss_mac, bs_device = None, None, None
      old_device = device
      #logger.debug('service_list: ' + pformat(service_list))
@@ -158,8 +167,37 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None):
      #signal.signal(signal.SIGALRM, alarm_handler)
      # Set timeout to 1sec (excepts floats only)
      #signal.alarm(0.5)
+     ss_mac_list, bs_device_list = [], []
      for service in service_list:
+	     logger.info('service: ' + pformat(service))
 	     device = old_device
+             if service in wimax_services:
+			for d in old_device:
+				ss_mac, __ = get_parent(host=d, db=False)
+				ss_mac_list.append(ss_mac)
+				logger.info('ss_mac ' + pformat(ss_mac_list))
+				bs_device,site_name=extract_host_for_live_polling(ss_mac.upper())[0]
+				logger.info('bs_device ' + pformat(bs_device))
+				bs_device_list.append(bs_device)				
+				# Reading bs_device and site_name from topology
+				#bs_device_list.append(bs_device)
+			logger.info('ss_list: ' + pformat(ss_mac_list))
+			logger.info('bs_list: ' + pformat(bs_device_list))
+			#ss_mac, bs_device = map(lambda t: get_parent(host=t[0], db=False),old_device)
+			devicename_ssmac_mapping = zip(ss_mac_list,old_device)
+		        #logger.debug('wimax ss_mac and bs_device:' + pformat(ss_mac) + ' and ' + pformat(bs_device[0]))
+			if ss_mac_list and bs_device_list:
+			     old_device = device
+			     device = str(bs_device_list[0])
+			     old_service = service
+			     service = 'wimax_topology'
+		     	else:
+				for d1 in device:
+					logger.info('Wimax BS name or SS mac did not found for SS and service ' + \
+					 pformat(d1)  + ' ' + pformat(service))
+			 		data_dict = {d1: []}
+			 		q.put(data_dict)
+			 	return
 	     if service in interface_services:
 		     # Replace the device with bs_device for these services
 		     ss_mac, bs_device = get_parent(host=device, db=False) 
@@ -168,6 +206,8 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None):
 		     if ss_mac and bs_device:
 			     old_device = device
 			     device = bs_device
+			     old_service = service
+			     service = 'cambium_topology_discover'
 		     else:
 			 logger.info('BS name or SS mac did not found for SS and service ' + \
 					 pformat(device)  + ' ' + pformat(service))
@@ -175,7 +215,8 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None):
 			 q.put(data_dict)
 			 return 
 	     # Getting result from compiled checks output
-             cmd = '/omd/sites/%s/bin/cmk -nvp --checks=%s %s' % (site_name, service, device)
+             cmd = '/omd/sites/%s/bin/cmk -nvp --checks=%s %s' % (str(site_name), service, device)
+	     logger.info('cmd: ' + pformat(cmd))
 	     #start = datetime.datetime.now()
              # Fork a subprocess
              p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
@@ -198,60 +239,129 @@ def get_current_value(q,device=None, service_list=None, data_source_list=None):
 	     #"""
 	     logger.debug(' Check_output: ' + pformat(check_output))
              if check_output:
-		 if service in interface_services:
-			 check_output = filter(lambda t: ss_mac in t, check_output.split('\n'))
-		         logger.debug('check_output after filtering:' + pformat(check_output))
-			 try:
-			 	check_output = check_output[0]
-			 except Exception, e:
+		if old_service in interface_services:
+			data_value = []
+			check_output = filter(lambda t: ss_mac in t, check_output.split('\n'))
+		        logger.debug('check_output after filtering:' + pformat(check_output))
+			try:
+				check_output = check_output[0]
+		 		output =check_output.split(' ')
+		 		ss_entry = filter(lambda t: ss_mac.upper() in t ,output)
+		 		if ss_entry:
+		 			if old_service == 'cambium_ul_rssi':
+						data_value = ss_entry.split('/')[2]
+		 			elif old_service == 'cambium_ul_jitter':
+						data_value = ss_entry.split('/')[3]
+		 			elif old_service == 'cambium_reg_count':
+						data_value = ss_entry.split('/')[4]
+		 			elif old_service == 'cambium_rereg_count':
+						data_value = ss_entry.split('/')[5] 
+				 	data_dict = {old_device: data_value}
+			 		q.put(data_dict)
+				else:	
+			 		logger.error('Empty check_output: ' + pformat(e))
+					data_dict = {old_device: []}
+			 		q.put(data_dict)
+			except Exception, e:
 			 	logger.error('Empty check_output: ' + pformat(e))
 				data_dict = {old_device: []}
 			 	q.put(data_dict)
 			 	return
-                 reg_exp1 = re.compile(r'(?<=\()[^)]*(?=\)$)', re.MULTILINE)
-                 # Parse perfdata for all services running on that device
-                 ds_current_states = re.findall(reg_exp1, check_output)
-                 logger.info('ds_current_states : %s' % ds_current_states)
- 
-                 # Placing all the ds values into one single list
-                 if ds_current_states:
-                         ds_values = ds_current_states[0].split(' ')
-                         logger.info('ds_values : %s' % ds_values)
-                         for ds in data_source_list:
-                                 # Parse the output to get current value for that data source
-                                 desired_ds = filter(lambda x: ds in x.split('=')[0], ds_values)
-                                 logger.debug('desired_ds : %s' % desired_ds)
-                                 data_values = (map(lambda x: x.split('=')[1].split(';')[0], desired_ds))
-				 #logger.debug('data_values:' + pformat(data_values))
-				 data_dict = {old_device: data_values}
-				 q.put(data_dict)
-				 #q.task_done()
-				# Foramt for multiple serivces
-				# if data_values:
-				#	 if device in host_data_dict.keys():
-				#		 host_data_dict[device].update(
-				#				 {
-				#					 service: data_values
-				#					 }
-				#				 )
-				#	 else:
-				#		 host_data_dict.update(
-				#				 {
-				#					 device: {
-				#						 service: data_values
-				#						 }
-				#					 }
-				#				 )
-				#	 #response.append(data_dict)
-				#	 logger.debug('current_values: ' + pformat(q.qsize()))
-		 else:
-			 data_dict = {old_device: []}
-			 q.put(data_dict)
+		elif old_service in wimax_services:
+			try:
+				data_value = []	
+				check_output = filter(lambda t: 'wimax_topology' in t, check_output.split('\n'))
+				check_output = check_output.split('- ')[1].split(' ')
+				filtered_ss_data = map(lambda t: t.upper() in check_output,ss_mac_list)
+				index = wimax_services.index(old_service)
+				for entry in filtered_ss_data:
+					data_value = entry.split('=')[1].split(',')[index]
+					cal_ss_mac = entry.split('=')[0]
+					host_name_entry = filter(lambda t: cal_ss_mac.lower() in t,devicename_ssmac_mapping)
+					data_dict = {host_name_entry[0][1]:data_value}
+					q.put(data_dict)			
+			except Exception, e:
+				for d1 in old_device:
+			 		logger.error('Empty check_output: ' + pformat(e))
+					data_dict = {d1: []}
+			 		q.put(data_dict)
+			 	return
+				
+		else:
+			reg_exp1 = re.compile(r'(?<=\()[^)]*(?=\)$)', re.MULTILINE)
+                 	# Parse perfdata for all services running on that device
+                 	ds_current_states = re.findall(reg_exp1, check_output)
+                 	logger.info('ds_current_states : %s' % ds_current_states)
+                 	# Placing all the ds values into one single list
+                 	if ds_current_states:
+                        	ds_values = ds_current_states[0].split(' ')
+                         	logger.info('ds_values : %s' % ds_values)
+                         	for ds in data_source_list:
+                                	 # Parse the output to get current value for that data source
+                                 	desired_ds = filter(lambda x: ds in x.split('=')[0], ds_values)
+                                 	logger.debug('desired_ds : %s' % desired_ds)
+                                 	data_values = (map(lambda x: x.split('=')[1].split(';')[0], desired_ds))
+				 	#logger.debug('data_values:' + pformat(data_values))
+				 	data_dict = {old_device: data_values}
+				 	q.put(data_dict)
+				 	#q.task_done()
+					# Foramt for multiple serivces
+					# if data_values:
+					#	 if device in host_data_dict.keys():
+					#		 host_data_dict[device].update(
+					#				 {
+					#					 service: data_values
+					#					 }
+					#				 )
+					#	 else:
+					#		 host_data_dict.update(
+					#				 {
+					#					 device: {
+					#						 service: data_values
+					#						 }
+					#					 }
+					#				 )
+					#	 #response.append(data_dict)
+					#	 logger.debug('current_values: ' + pformat(q.qsize()))
+		 	else:
+				data_dict = {old_device: []}
+			 	q.put(data_dict)
              #if error:
 		     # Log the process error code
 		     #logging.debug('Process exits with error code: ' + pformat(error))
      #q.put(host_data_dict)
      #return data_dict
+
+
+
+def mysql_conn():
+        db = None
+        try:
+            db = mysql.connector.connect(
+                        user=_DATABASES['user'],
+                        host=_DATABASES['host'],
+                        password=_DATABASES['password'],
+                        database=_DATABASES['database'],
+                        port=_DATABASES['port']
+                        )
+        except Exception as exp:
+            print exp
+        return db
+
+
+
+def extract_host_for_live_polling(ss_host_mac):
+	logger.info('live_polling' + pformat(ss_host_mac))
+        query = """
+        select device_name ,site_name from performance_topology where connected_device_mac ='%s' """ %(ss_host_mac)
+        db = mysql_conn()
+        cur = db.cursor()
+        cur.execute(query)
+        data = cur.fetchall()
+        cur.close()
+	logger.info('data' + pformat(data))
+	
+        return data
 
 
 def alarm_handler(signum, frame):

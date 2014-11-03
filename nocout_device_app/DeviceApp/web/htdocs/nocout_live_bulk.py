@@ -12,7 +12,9 @@ from multiprocessing import Process, Queue
 from ast import literal_eval
 #import Queue
 from nocout_live import get_current_value, nocout_log
-
+from itertools import groupby
+from operator import itemgetter
+from nocout import get_parent
 
 logger = nocout_log()
 
@@ -49,9 +51,25 @@ def main():
 
 def poll_device():
 	response = []
+	wimax_service_list = ['wimax_dl_cinr','wimax_ul_cinr','wimax_dl_rssi','wimax_ul_rssi','wimax_ul_intrf','wimax_dl_intrf',
+	'wimax_modulation_dl_fec','wimax_modulation_ul_fec']
 	logger.info('[Polling Iteration Start]')
 	device_list = literal_eval(html.var('device_list'))
 	service_list = literal_eval(html.var('service_list'))
+	logger.info('device_list: ' + pformat(device_list))
+	logger.info('service_list: ' + pformat(service_list))
+	parent_list = []
+	if service_list[0] in wimax_service_list:
+		for d in device_list:
+			__, parent_device = get_parent(host=d, db=False)
+			parent_list.append(parent_device)
+		logger.info('parent_list' + pformat(parent_list))
+		ss_bs_list = zip(device_list,parent_list)
+		ss_bs_list.sort(key = itemgetter(1))
+		groups = groupby(ss_bs_list, itemgetter(1))
+		device_list =[[item[0] for item in data] for (key, data) in groups]
+		logger.info('device_list' + pformat(device_list))
+  
 	logger.info('device_list : %s and service_list : %s' % (device_list, service_list))
 	# If in case no `ds` supplied in req obj, [''] would be supplied as default
 	try:
