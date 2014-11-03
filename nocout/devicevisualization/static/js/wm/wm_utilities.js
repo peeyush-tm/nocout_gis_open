@@ -504,7 +504,7 @@ OpenLayers.Strategy.Cluster = OpenLayers.Class(OpenLayers.Strategy, {
                 var feature, clustered, cluster;
                 for(var i=0; i<this.features.length; ++i) {
                     feature = this.features[i];
-                    if(feature.geometry) {
+                    if(feature && feature.geometry) {
                         clustered = false;
                         for(var j=clusters.length-1; j>=0; --j) {
                             cluster = clusters[j];

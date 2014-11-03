@@ -28,10 +28,10 @@ WhiteMapClass.prototype.createOpenLayerMap = function(callback) {
 			units: whiteMapSettings.units
 		};
 
-
 		//Create Open Layer map on '#map' with our options
 		ccpl_map = new OpenLayers.Map(domEl, options);
 
+		//Map Zoom event of trigger mapZoomChangeEvent in events file.
 		ccpl_map.events.register("zoomend", ccpl_map, function(){
 			that.mapZoomChangeEvent(arguments);
 		});
@@ -295,7 +295,7 @@ WhiteMapClass.prototype.openInfoWindow = function(e, marker, markerData, sectorD
 }
 
 //Function to draw line
-WhiteMapClass.prototype.drawLine = function(startingLon, startingLat, endingLon, endingLat, color, additionalInfo) {
+WhiteMapClass.prototype.plotLines_wmap = function(startingLon, startingLat, endingLon, endingLat, color, additionalInfo) {
 	var point1 = new OpenLayers.Geometry.Point(startingLon, startingLat);
 	var point2 = new OpenLayers.Geometry.Point(endingLon, endingLat);
 	//creating an instance of OpenLayers.Geometry.LineString class
@@ -304,7 +304,8 @@ WhiteMapClass.prototype.drawLine = function(startingLon, startingLat, endingLon,
 	var vector = new OpenLayers.Feature.Vector(line, {}, {
 		strokeColor: color,
 		strokeOpacity: 1,
-		strokeWidth: 2
+		strokeWidth: 2,
+		strokeWeight: 3
 	});
 
 	vector.type = "line";
