@@ -40,6 +40,7 @@ import xlrd
 import xlwt
 import logging
 from django.template import RequestContext
+from nocout.utils import logged_in_user_organizations
 from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory, \
     bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory, \
     bulk_upload_wimax_ss_inventory
@@ -332,10 +333,15 @@ class AntennaListingTable(BaseDatatableView):
         :return qs:
 
         """
+        qs = super(AntennaListingTable, self).filter_queryset(qs)
+        if not self.request.user.is_superuser:
+            qs = qs.filter(organization__in=logged_in_user_organizations(self))
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
@@ -350,7 +356,7 @@ class AntennaListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Antenna.objects.values(*self.columns + ['id'])
+        return Antenna.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
 
     def prepare_results(self, qs):
         """
@@ -559,19 +565,19 @@ class BaseStationListingTable(BaseDatatableView):
         :param qs:
         :return qs:
         """
+        qs = super(BaseStationListingTable, self).filter_queryset(qs)
+        if not self.request.user.is_superuser:
+            qs = qs.filter(organization__in=logged_in_user_organizations(self))
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
-            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-                organization_descendants_ids = self.request.user.userprofile.organization.get_descendants( include_self=True ).values_list('id')
-            else:
-                 organization_descendants_ids = list(str(self.request.user.userprofile.organization.id))
-
-            exec_query += " | ".join(query) + ", bs_switch__organization__in = %s"%organization_descendants_ids
+            exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
@@ -583,11 +589,9 @@ class BaseStationListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-            organizations = self.request.user.userprofile.organization.get_descendants( include_self=True )
-            return BaseStation.objects.values(*self.columns + ['id']).filter(bs_switch__organization__in=organizations)
-        else:
-            return BaseStation.objects.values(*self.columns + ['id']).filter(bs_switch__organization=self.request.user.userprofile.organization)
+
+        return BaseStation.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
+       
 
     def prepare_results(self, qs):
         """
@@ -802,18 +806,19 @@ class BackhaulListingTable(BaseDatatableView):
         :return qs:
 
         """
+        qs = super(BackhaulListingTable, self).filter_queryset(qs)
+        if not self.request.user.is_superuser:
+            qs = qs.filter(organization__in=logged_in_user_organizations(self))
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
-            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-                organization_descendants_ids = self.request.user.userprofile.organization.get_descendants( include_self=True ).values_list('id')
-            else:
-                 organization_descendants_ids = list(str(self.request.user.userprofile.organization.id))
-            exec_query += " | ".join(query) + ", bh_configured_on__organization__in = %s"%organization_descendants_ids
+            exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
@@ -825,11 +830,8 @@ class BackhaulListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-            organizations = self.request.user.userprofile.organization.get_descendants( include_self=True )
-            return Backhaul.objects.values(*self.columns + ['id']).filter(bh_configured_on__organization__in=organizations)
-        else:
-            return Backhaul.objects.values(*self.columns + ['id']).filter(bh_configured_on__organization=self.request.user.userprofile.organization)
+
+        return Backhaul.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
 
     def prepare_results(self, qs):
         """
@@ -1058,19 +1060,20 @@ class SectorListingTable(BaseDatatableView):
         :return qs:
 
         """
+        qs = super(SectorListingTable, self).filter_queryset(qs)
+        if not self.request.user.is_superuser:
+            qs = qs.filter(organization__in=logged_in_user_organizations(self))
+
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
-            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-                organization_descendants_ids = self.request.user.userprofile.organization.get_descendants( include_self=True ).values_list('id')
-            else:
-                 organization_descendants_ids = list(str(self.request.user.userprofile.organization.id))
-
-            exec_query += " | ".join(query) + ", sector_configured_on__organization__in = %s"%organization_descendants_ids
+            exec_query += " | ".join(query) 
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
@@ -1082,11 +1085,8 @@ class SectorListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-            organizations = self.request.user.userprofile.organization.get_descendants( include_self=True )
-            return Sector.objects.values(*self.columns + ['id']).filter(sector_configured_on__organization__in=organizations)
-        else:
-            return Sector.objects.values(*self.columns + ['id']).filter(sector_configured_on__organization=self.request.user.userprofile.organization)
+        
+        return Sector.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
     def prepare_results(self, qs):
         """
         Preparing the final result after fetching from the data base to render on the data table.
@@ -1292,10 +1292,16 @@ class CustomerListingTable(BaseDatatableView):
         :return qs:
 
         """
+        qs = super(CustomerListingTable, self).filter_queryset(qs)
+        if not self.request.user.is_superuser:
+            qs = qs.filter(organization__in=logged_in_user_organizations(self))
+
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
@@ -1311,7 +1317,7 @@ class CustomerListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        return Customer.objects.values(*self.columns + ['id'])
+        return Customer.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
 
     def prepare_results(self, qs):
         """
@@ -1525,19 +1531,20 @@ class SubStationListingTable(BaseDatatableView):
         :return qs:
 
         """
+        qs = super(SubStationListingTable, self).filter_queryset(qs)
+        if not self.request.user.is_superuser:
+            qs = qs.filter(organization__in=logged_in_user_organizations(self))
+
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns[:-1]:
                 query.append("Q(%s__icontains=" % column + "\"" + sSearch + "\"" + ")")
 
-            if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-                organization_descendants_ids = self.request.user.userprofile.organization.get_descendants( include_self=True ).values_list('id')
-            else:
-                 organization_descendants_ids = list(str(self.request.user.userprofile.organization.id))
-
-            exec_query += " | ".join(query) + ", device__organization__in = %s"%organization_descendants_ids
+            exec_query += " | ".join(query)
             exec_query += ").values(*" + str(self.columns + ['id']) + ")"
             exec exec_query
 
@@ -1549,11 +1556,8 @@ class SubStationListingTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-            organizations = self.request.user.userprofile.organization.get_descendants( include_self=True )
-            return SubStation.objects.values(*self.columns + ['id']).filter(device__organization__in=organizations)
-        else:
-            return SubStation.objects.values(*self.columns + ['id']).filter(device__organization=self.request.user.userprofile.organization)
+
+        return SubStation.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
 
     def prepare_results(self, qs):
         """
@@ -1838,6 +1842,9 @@ class CircuitListingTable(BaseDatatableView):
                                                             ]
 
         """
+        qs = super(CircuitListingTable, self).filter_queryset(qs)
+        if not self.request.user.is_superuser:
+            qs = qs.filter(organization__in=logged_in_user_organizations(self))
 
         sSearch = self.request.GET.get('sSearch', None)
 
@@ -1845,8 +1852,10 @@ class CircuitListingTable(BaseDatatableView):
         # 'sector__name', 'customer__name', 'sub_station__name', 'date_of_acceptance', 'description']
 
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
+            exec_query = "qs = qs.filter("
             for column in self.columns[:-1]:
                 # avoid search on 'date_of_acceptance'
                 if column == 'date_of_acceptance':
@@ -1865,11 +1874,7 @@ class CircuitListingTable(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
-            organizations = self.request.user.userprofile.organization.get_descendants( include_self=True )
-            return Circuit.objects.values(*self.columns + ['id']).filter(sub_station__device__organization__in=organizations)
-        else:
-            return Circuit.objects.values(*self.columns + ['id']).filter(sub_station__device__organization=self.request.user.userprofile.organization)
+        return Circuit.objects.values(*self.columns + ['id']).filter(organization=logged_in_user_organizations(self))
 
     def prepare_results(self, qs):
         """
@@ -2319,6 +2324,7 @@ class IconSettingsListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns[:-1]:
@@ -2529,6 +2535,7 @@ class LivePollingSettingsListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns:
@@ -2731,6 +2738,7 @@ class ThresholdConfigurationListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns:
@@ -2944,6 +2952,7 @@ class ThematicSettingsListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query = []
             exec_query = "qs = %s.objects.filter(" % (self.model.__name__)
             for column in self.columns:
