@@ -44,6 +44,7 @@ from nocout.utils import logged_in_user_organizations
 from tasks import validate_gis_inventory_excel_sheet, bulk_upload_ptp_inventory, bulk_upload_pmp_sm_inventory, \
     bulk_upload_pmp_bs_inventory, bulk_upload_ptp_bh_inventory, bulk_upload_wimax_bs_inventory, \
     bulk_upload_wimax_ss_inventory
+from activity_stream.models import UserAction
 
 logger = logging.getLogger(__name__)
 
@@ -243,10 +244,17 @@ class InventoryDelete(DeleteView):
         """
         return super(InventoryDelete, self).dispatch(*args, **kwargs)
 
+    @method_decorator(permission_required('inventory.delete_inventory', raise_exception=True))
     def delete(self, request, *args, **kwargs):
         """
         overriding the delete method to log the user activity.
         """
+        try:
+            obj = self.get_object()
+            action='A inventory is deleted - {}'.format(obj.alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Inventory', action=action)
+        except:
+            pass
         return super(InventoryDelete, self).delete(request, *args, **kwargs)
 
 
@@ -502,6 +510,19 @@ class AntennaDelete(DeleteView):
         """
         return super(AntennaDelete, self).dispatch(*args, **kwargs)
 
+    @method_decorator(permission_required('inventory.delete_antenna', raise_exception=True))
+    def delete(self, request, *args, **kwargs):
+        """
+        overriding the delete method to log the user activity on deletion.
+        """
+        try:
+            obj = self.get_object()
+            action='A antenna is deleted - {}'.format(obj.alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Antenna', action=action)
+        except:
+            pass
+        return super(AntennaDelete, self).delete(request, *args, **kwargs)
+
 
 #****************************************** Base Station ********************************************
 class BaseStationList(ListView):
@@ -743,6 +764,21 @@ class BaseStationDelete(DeleteView):
         The request dispatch method restricted with the permissions.
         """
         return super(BaseStationDelete, self).dispatch(*args, **kwargs)
+
+    @method_decorator(permission_required('inventory.delete_basestation', raise_exception=True))
+    def delete(self, request, *args, **kwargs):
+        """
+        overriding the delete method to log the user activity on deletion.
+        """
+        try:
+            obj = self.get_object()
+            action='A base station is deleted - {}(latitude: {}, longitude: {})'.format(obj.alias,
+                                                obj.latitude, obj.longitude)
+            UserAction.objects.create(user_id=self.request.user.id, module='BaseStation', action=action)
+        except:
+            pass
+        return super(BaseStationDelete, self).delete(request, *args, **kwargs)
+
 
 
 #**************************************** Backhaul *********************************************
@@ -1000,6 +1036,20 @@ class BackhaulDelete(DeleteView):
         """
         return super(BackhaulDelete, self).dispatch(*args, **kwargs)
 
+    @method_decorator(permission_required('inventory.delete_backhaul', raise_exception=True))
+    def delete(self, request, *args, **kwargs):
+        """
+        overriding the delete method to log the user activity on deletion.
+        """
+        try:
+            obj = self.get_object()
+            action='A backhaul is deleted - {}(BH port name- {}, BH port- {}))'.format(obj.alias,
+                    obj.bh_port_name, obj.bh_port)
+            UserAction.objects.create(user_id=self.request.user.id, module='Backhaul', action=action)
+        except:
+            pass
+        return super(BackhaulDelete, self).delete(request, *args, **kwargs)
+
 
 #**************************************** Sector *********************************************
 class SectorList(ListView):
@@ -1249,6 +1299,20 @@ class SectorDelete(DeleteView):
         """
         return super(SectorDelete, self).dispatch(*args, **kwargs)
 
+    @method_decorator(permission_required('inventory.delete_sector', raise_exception=True))
+    def delete(self, request, *args, **kwargs):
+        """
+        overriding the delete method to log the user activity on deletion.
+        """
+        try:
+            obj = self.get_object()
+            technology = DeviceTechnology.objects.get(name=obj.bs_technology).alias
+            action='A sector is deleted - {}(Technology- {})'.format(obj.alias, technology)
+            UserAction.objects.create(user_id=self.request.user.id, module='Sector', action=action)
+        except:
+            pass
+        return super(SectorDelete, self).delete(request, *args, **kwargs)
+
 
 #**************************************** Customer *********************************************
 class CustomerList(ListView):
@@ -1475,6 +1539,19 @@ class CustomerDelete(DeleteView):
         The request dispatch method restricted with the permissions.
         """
         return super(CustomerDelete, self).dispatch(*args, **kwargs)
+
+    @method_decorator(permission_required('inventory.delete_customer', raise_exception=True))
+    def delete(self, request, *args, **kwargs):
+        """
+        overriding the delete method to log the user activity on deletion.
+        """
+        try:
+            obj = self.get_object()
+            action='A customer is deleted - {}'.format(obj.alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Customer', action=action)
+        except:
+            pass
+        return super(CustomerDelete, self).delete(request, *args, **kwargs)
 
 
 #**************************************** Sub Station *********************************************
@@ -1727,6 +1804,21 @@ class SubStationDelete(DeleteView):
         The request dispatch method restricted with the permissions.
         """
         return super(SubStationDelete, self).dispatch(*args, **kwargs)
+
+    @method_decorator(permission_required('inventory.delete_substation', raise_exception=True))
+    def delete(self, request, *args, **kwargs):
+        """
+        overriding the delete method to log the user activity on deletion.
+        """
+        try:
+            obj = self.get_object()
+            action='A sub station is deleted - {}(Latitude- {}, Longitude- {}, Mac Address- {})'.format(obj.alias,
+                            obj.latitude, obj.longitude, obj.mac_address)
+            UserAction.objects.create(user_id=self.request.user.id, module='Sub Station', action=action)
+        except:
+            pass
+        return super(SubStationDelete, self).delete(request, *args, **kwargs)
+
 
 
 #**************************************** Circuit *********************************************
@@ -2075,6 +2167,19 @@ class CircuitDelete(DeleteView):
         The request dispatch method restricted with the permissions.
         """
         return super(CircuitDelete, self).dispatch(*args, **kwargs)
+
+    @method_decorator(permission_required('inventory.delete_circuit', raise_exception=True))
+    def delete(self, request, *args, **kwargs):
+        """
+        overriding the delete method to log the user activity on deletion.
+        """
+        try:
+            obj = self.get_object()
+            action='A circuit is deleted - {}(Circuit ID- {})'.format(obj.alias, obj.circuit_id)
+            UserAction.objects.create(user_id=self.request.user.id, module='Circuit', action=action)
+        except:
+            pass
+        return super(CircuitDelete, self).delete(request, *args, **kwargs)
 
 
 #********************************* Circuit L2 Reports*******************************************
@@ -2504,6 +2609,19 @@ class IconSettingsDelete(DeleteView):
         """
         return super(IconSettingsDelete, self).dispatch(*args, **kwargs)
 
+    @method_decorator(permission_required('inventory.delete_iconsettings', raise_exception=True))
+    def delete(self, request, *args, **kwargs):
+        """
+        overriding the delete method to log the user activity on deletion.
+        """
+        try:
+            obj = self.get_object()
+            action='A icon setting is deleted - {}'.format(obj.alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Icon Setting', action=action)
+        except:
+            pass
+        return super(IconSettingsDelete, self).delete(request, *args, **kwargs)
+
 
 #**************************************** LivePollingSettings *********************************************
 class LivePollingSettingsList(ListView):
@@ -2708,6 +2826,19 @@ class LivePollingSettingsDelete(DeleteView):
         """
         return super(LivePollingSettingsDelete, self).dispatch(*args, **kwargs)
 
+    @method_decorator(permission_required('inventory.delete_livepollingsettings', raise_exception=True))
+    def delete(self, request, *args, **kwargs):
+        """
+        overriding the delete method to log the user activity on deletion.
+        """
+        try:
+            obj = self.get_object()
+            action='A live polling setting is deleted - {}'.format(obj.alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Live Polling Setting', action=action)
+        except:
+            pass
+        return super(LivePollingSettingsDelete, self).delete(request, *args, **kwargs)
+
 
 #**************************************** ThresholdConfiguration *********************************************
 class ThresholdConfigurationList(ListView):
@@ -2911,6 +3042,20 @@ class ThresholdConfigurationDelete(DeleteView):
         The request dispatch method restricted with the permissions.
         """
         return super(ThresholdConfigurationDelete, self).dispatch(*args, **kwargs)
+
+    @method_decorator(permission_required('inventory.delete_threshold_configuration', raise_exception=True))
+    def delete(self, request, *args, **kwargs):
+        """
+        overriding the delete method to log the user activity on deletion.
+        """
+        try:
+            obj = self.get_object()
+            action='A threshold configuration is deleted - {}'.format(obj.alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Threshold Configuration', action=action)
+        except:
+            pass
+        return super(ThresholdConfigurationDelete, self).delete(request, *args, **kwargs)
+
 
 
 #**************************************** ThematicSettings *********************************************
@@ -3158,6 +3303,20 @@ class ThematicSettingsDelete(DeleteView):
         The request dispatch method restricted with the permissions.
         """
         return super(ThematicSettingsDelete, self).dispatch(*args, **kwargs)
+
+    @method_decorator(permission_required('inventory.delete_thematicsettings', raise_exception=True))
+    def delete(self, request, *args, **kwargs):
+        """
+        overriding the delete method to log the user activity on deletion.
+        """
+        try:
+            obj = self.get_object()
+            action='A thematic settings is deleted - {}'.format(obj.alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Thematic Settings', action=action)
+        except:
+            pass
+        return super(ThematicSettingsDelete, self).delete(request, *args, **kwargs)
+
 
 
 class Get_Threshold_Ranges_And_Icon_For_Thematic_Settings(View):

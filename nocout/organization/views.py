@@ -16,6 +16,8 @@ from django.contrib.auth.decorators import permission_required
 from django.utils.decorators import method_decorator
 from nocout.utils import logged_in_user_organizations
 
+from activity_stream.models import UserAction
+
 
 class OrganizationList(ListView):
     """
@@ -226,18 +228,19 @@ class OrganizationDelete(DeleteView):
     template_name = 'organization/organization_delete.html'
     success_url = reverse_lazy('organization_list')
 
-
-    @method_decorator(permission_required('organization.delete_organization', raise_exception=True))
-    def dispatch(self, *args, **kwargs):
-        """
-        The request dispatch function restricted with the permissions.
-        """
-        return super(OrganizationDelete, self).dispatch(*args, **kwargs)
-
-
     def get_queryset(self):
         return logged_in_user_organizations(self)
 
-
-
-
+    @method_decorator(permission_required('organization.delete_organization', raise_exception=True))
+    def delete(self, *args, **kwargs):
+        """
+        Log the user action as the organisation is deleted.
+        """
+        try:
+            organization_obj = self.get_object()
+            action ='A organization is deleted - {}(country- {}, State- {}, City- {})'.format(organization_obj.alias,
+                    organization_obj.country, organization_obj.state, organization_obj.city)
+            UserAction.objects.create(user_id=self.request.user.id, module='Organization', action=action )
+        except:
+            pass
+        return super(OrganizationDelete, self).delete(*args, **kwargs)

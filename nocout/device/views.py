@@ -27,6 +27,7 @@ from site_instance.models import SiteInstance
 from inventory.models import Backhaul, SubStation, Sector
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from nocout.utils import logged_in_user_organizations
+from activity_stream.models import UserAction
 
 
 from django.views.decorators.csrf import csrf_exempt
@@ -53,7 +54,7 @@ class DeviceList(ListView):
         """
         return super(DeviceList, self).dispatch(*args, **kwargs)
 
-   
+
     def get_context_data(self, **kwargs):
         """
         Preparing the Context Variable required in the template rendering.
@@ -1795,6 +1796,12 @@ class DeviceDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
+        try:
+            obj = self.get_object()
+            action='A device is deleted - {}'.format(obj.device_alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Device', action=action)
+        except:
+            pass
         return super(DeviceDelete, self).delete(request, *args, **kwargs)
 
 
@@ -2051,6 +2058,12 @@ class DeviceTypeFieldsDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
+        try:
+            obj = self.get_object()
+            action='A device field is deleted - {}'.format(obj.field_display_name)
+            UserAction.objects.create(user_id=self.request.user.id, module='Device Field', action=action)
+        except:
+            pass
         return super(DeviceTypeFieldsDelete, self).delete(request, *args, **kwargs)
 
 
@@ -2347,6 +2360,12 @@ class DeviceTechnologyDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
+        try:
+            obj = self.get_object()
+            action='A device technology is deleted - {}'.format(obj.alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Device Technology', action=action)
+        except:
+            pass
         return super(DeviceTechnologyDelete, self).delete(self, request, *args, **kwargs)
 
 
@@ -2641,6 +2660,12 @@ class DeviceVendorDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
+        try:
+            obj = self.get_object()
+            action='A device vendor is deleted - {}'.format(obj.alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Device Vendor', action=action)
+        except:
+            pass
         return super(DeviceVendorDelete, self).delete(request, *args, **kwargs)
 
 
@@ -2934,6 +2959,12 @@ class DeviceModelDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
+        try:
+            obj = self.get_object()
+            action='A device model is deleted - {}'.format(obj.alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Device Model', action=action)
+        except:
+            pass
         return super(DeviceModelDelete, self).delete(request, *args, **kwargs)
 
 
@@ -3210,6 +3241,12 @@ class DeviceTypeDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
+        try:
+            obj = self.get_object()
+            action='A device type is deleted - {}'.format(obj.alias)
+            UserAction.objects.create(user_id=self.request.user.id, module='Device Type', action=action)
+        except:
+            pass
         return super(DeviceTypeDelete, self).delete(request, *args, **kwargs)
 
 
@@ -3412,6 +3449,12 @@ class DevicePortDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
+        try:
+            obj = self.get_object()
+            action='A device port is deleted - {}(value- {})'.format(obj.alias, obj.value)
+            UserAction.objects.create(user_id=self.request.user.id, module='Device Port', action=action)
+        except:
+            pass
         return super(DevicePortDelete, self).delete(request, *args, **kwargs)
 
 

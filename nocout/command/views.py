@@ -11,6 +11,7 @@ from models import Command
 from .forms import CommandForm
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
+from activity_stream.models import UserAction
 
 
 class CommandList(ListView):
@@ -223,3 +224,15 @@ class CommandDelete(DeleteView):
         """
         return super(CommandDelete, self).dispatch(*args, **kwargs)
 
+    @method_decorator(permission_required('command.delete_command', raise_exception=True))
+    def delete(self, request, *args, **kwargs):
+        """
+        Overriding the delete method to log the user activity.
+        """
+        try:
+            obj = self.get_object()
+            action='A command is deleted - {}'.format(obj.name)
+            UserAction.objects.create(user_id=self.request.user.id, module='Command', action=action)
+        except:
+            pass
+        return super(CommandDelete, self).delete(request, *args, **kwargs)

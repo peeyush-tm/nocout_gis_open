@@ -128,7 +128,7 @@ class ActionListingTable(BaseDatatableView):
                         try:
                             dct['user_id'] = unicode(UserProfile.objects.get(id=action_object.user_id) )
                         except:
-                            dct['user_id'] = 'Unknown User'
+                            dct['user_id'] = 'User no more exists'
                         dct['module'] = action_object.module
                         dct['action'] = action_object.action
                     else:
