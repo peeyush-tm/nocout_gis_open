@@ -90,11 +90,13 @@ class UserStatusTable(BaseDatatableView):
         """
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
-        logged_in_user= self.request.user.userprofile
-        organization_descendants_ids= list(logged_in_user.organization.get_descendants(include_self=True)
+       
+        if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
+            organization_descendants_ids= list(self.request.user.userprofile.organization.get_descendants(include_self=True)
                                     .values_list('id', flat=True))
-
-        return UserProfile.objects.exclude(id= logged_in_user.id).filter(organization__in = \
+        else:
+            organization_descendants_ids= list(str(self.request.user.userprofile.organization.id))
+        return UserProfile.objects.exclude(id= self.request.user.userprofile.id).filter(organization__in = \
                organization_descendants_ids, is_deleted=0).values(*self.columns+['id', 'is_active'])
 
     def prepare_results(self, qs):

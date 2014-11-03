@@ -59,6 +59,51 @@
         $(document).ready(function(){
             // Initialize the select2 selectbox.
             $(".select2select").select2();
+
+            //Check weather the organization and parent is selected or not
+            if ($("#id_organization").val() == "") {
+                $("#id_parent").empty();
+            }
+            else if ($("#id_parent").val() == ""){
+                $("#id_parent").empty();
+                list_parent_according_to_organisation()
+            }
+            else{
+                list_parent_according_to_organisation()
+            }
+
+            //on change of the organisation list the parent list.
+            $('#id_organization').change(function(){
+                list_parent_according_to_organisation()
+            })
+
+            //function to get the list of the parent according to the ogranisation.
+            function list_parent_according_to_organisation(){
+                var organisation_id = $('#id_organization option:selected').val()
+                console.log(parent)
+                //if no organisation is selected.
+                if(organisation_id == '' ){
+                    $('#id_parent').html("<option value=>Select</option>").change();
+                }
+                else{
+                    $.ajax({
+                        url : "/user/organisation/user/list/",
+                        type : "GET",
+                        dataType: "html",
+                        data: {
+                            organisation_id : organisation_id
+                        },
+                        success : function(parent_list_option) {
+                            $('#id_parent').html(parent_list_option);
+                            $('#id_parent').change();
+                        },
+                        error : function(xhr,errmsg,err) {
+                            alert(xhr.status + ": " + xhr.responseText);
+                        }
+                    });
+                    return false;
+                }
+            }
         })
     </script>
 {% endblock %}

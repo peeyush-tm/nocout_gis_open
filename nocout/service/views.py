@@ -11,6 +11,7 @@ from models import Service, ServiceParameters, ServiceDataSource, Protocol, Devi
 from .forms import ServiceForm, ServiceParametersForm, ServiceDataSourceForm, ProtocolForm
 from nocout.utils.util import DictDiffer
 from django.db.models import Q
+from activity_stream.models import UserAction
 
 # ########################################################
 from django.conf import settings
@@ -251,6 +252,11 @@ class ServiceDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
+        try:
+            UserAction.objects.create(user_id=self.request.user.id, module='Service',
+                         action='A service is deleted - {}'.format(self.get_object().alias) )
+        except:
+            pass
         return super(ServiceDelete, self).delete(request, *args, **kwargs)
 
 
@@ -464,6 +470,11 @@ class ServiceParametersDelete(DeleteView):
         """
         Log the user activity before deleting the Service Parameters.
         """
+        try:
+            UserAction.objects.create(user_id=self.request.user.id, module='Service Parameters',
+                         action='A service parameters is deleted - {}'.format(self.get_object().parameter_description) )
+        except:
+            pass
         return super(ServiceParametersDelete, self).delete(request, *args, **kwargs)
 
 
@@ -667,6 +678,11 @@ class ServiceDataSourceDelete(DeleteView):
         """
         Overriding delete method to log the user activity.
         """
+        try:
+            UserAction.objects.create(user_id=self.request.user.id, module='Service Data Source',
+                         action='A service sata source is deleted - {}'.format(self.get_object().alias) )
+        except:
+            pass
         return super(ServiceDataSourceDelete, self).delete(request, *args, **kwargs)
 
 
@@ -880,6 +896,13 @@ class ProtocolDelete(DeleteView):
         """
         Overriding the delete method to log the user activity.
         """
+        try:
+            protocol_obj = self.get_object()
+            UserAction.objects.create(user_id=self.request.user.id, module='Protocol',
+                         action='A protocol is deleted - {}(port - {}, version - {})'.format(protocol_obj.protocol_name,
+                                                protocol_obj.port, protocol_obj.version) )
+        except:
+            pass
         return super(ProtocolDelete, self).delete( request, *args, **kwargs)
 
     
