@@ -227,6 +227,8 @@ def query_all_gis_inventory():
 
                 device.id as SECTOR_CONF_ON_ID,
                 device.device_name as SECTOR_CONF_ON,
+                device.device_name as SECTOR_CONF_ON_NAME,
+                device.device_alias as SECTOR_CONF_ON_ALIAS,
                 device.ip_address as SECTOR_CONF_ON_IP,
                 device.mac_address as SECTOR_CONF_ON_MAC,
 
@@ -322,6 +324,7 @@ def query_all_gis_inventory():
                     technology.name as SS_TECH,
                     vendor.name as SS_VENDOR,
                     devicetype.name as SS_TYPE,
+                    devicetype.name as SSDEVICETYPE,
                     devicetype.device_icon as SS_ICON,
                     devicetype.device_gmap_icon as SS_GMAP_ICON
 
