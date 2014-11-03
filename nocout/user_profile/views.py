@@ -85,6 +85,7 @@ class UserListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query=[]
             organization_descendants_ids= self.logged_in_user_organization_ids()
             exec_query = "qs = %s.objects.filter("%(self.model.__name__)
@@ -185,6 +186,7 @@ class UserArchivedListingTable(BaseDatatableView):
         """
         sSearch = self.request.GET.get('sSearch', None)
         if sSearch:
+            sSearch = sSearch.replace("\\", "")
             query=[]
             exec_query = "qs = %s.objects.filter("%(self.model.__name__)
             if self.request.user.userprofile.role.values_list( 'role_name', flat=True )[0] =='admin':
