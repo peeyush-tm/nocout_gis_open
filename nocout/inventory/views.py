@@ -465,6 +465,8 @@ class AntennaUpdate(UpdateView):
         """
         return super(AntennaUpdate, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        return Antenna.objects.filter(organization__in=logged_in_user_organizations(self))
 
     def form_valid(self, form):
         """
@@ -697,12 +699,16 @@ class BaseStationUpdate(UpdateView):
     form_class = BaseStationForm
     success_url = reverse_lazy('base_stations_list')
 
+
     @method_decorator(permission_required('inventory.change_basestation', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch method restricted with the permissions.
         """
         return super(BaseStationUpdate, self).dispatch(*args, **kwargs)
+
+    def get_queryset(self):
+        return BaseStation.objects.filter(organization__in=logged_in_user_organizations(self))
 
     def form_valid(self, form):
         """
@@ -948,12 +954,16 @@ class BackhaulUpdate(UpdateView):
     form_class = BackhaulForm
     success_url = reverse_lazy('backhauls_list')
 
+
     @method_decorator(permission_required('inventory.change_backhaul', raise_exception=True))
     def dispatch(self, *args, **kwargs):
         """
         The request dispatch method restricted with the permissions.
         """
         return super(BackhaulUpdate, self).dispatch(*args, **kwargs)
+
+    def get_queryset(self):
+        return Backhaul.objects.filter(organization__in=logged_in_user_organizations(self))
 
     def form_valid(self, form):
         """
@@ -1202,6 +1212,9 @@ class SectorUpdate(UpdateView):
         """
         return super(SectorUpdate, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        return Sector.objects.filter(organization__in=logged_in_user_organizations(self))
+
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -1425,6 +1438,9 @@ class CustomerUpdate(UpdateView):
         The request dispatch method restricted with the permissions.
         """
         return super(CustomerUpdate, self).dispatch(*args, **kwargs)
+
+    def get_queryset(self):
+        return Customer.objects.filter(organization__in=logged_in_user_organizations(self))
 
     def form_valid(self, form):
         """
@@ -1675,6 +1691,9 @@ class SubStationUpdate(UpdateView):
         """
         return super(SubStationUpdate, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        return SubStation.objects.filter(organization__in=logged_in_user_organizations(self))
+
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -1874,7 +1893,7 @@ class CircuitListingTable(BaseDatatableView):
         if not self.model:
             raise NotImplementedError("Need to provide a model or implement get_initial_queryset!")
 
-        return Circuit.objects.values(*self.columns + ['id']).filter(organization=logged_in_user_organizations(self))
+        return Circuit.objects.values(*self.columns + ['id']).filter(organization__in=logged_in_user_organizations(self))
 
     def prepare_results(self, qs):
         """
@@ -2020,6 +2039,9 @@ class CircuitUpdate(UpdateView):
         """
         return super(CircuitUpdate, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        return Circuit.objects.filter(organization__in=logged_in_user_organizations(self))
+
     def form_valid(self, form):
         """
         Submit the form and to log the user activity.
@@ -2028,7 +2050,7 @@ class CircuitUpdate(UpdateView):
         cleaned_data_field_dict = {field: form.cleaned_data[field] for field in form.cleaned_data.keys()}
         changed_fields_dict = DictDiffer(initial_field_dict, cleaned_data_field_dict).changed()
         if changed_fields_dict:
-            verb_string = 'Updatte Circuit : %s, ' % (self.object.alias) + ', '.join(
+            verb_string = 'Update Circuit : %s, ' % (self.object.alias) + ', '.join(
                 ['%s: %s' % (k, initial_field_dict[k]) \
                  for k in changed_fields_dict]) + \
                           ' to ' + \
