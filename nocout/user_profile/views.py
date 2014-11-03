@@ -337,6 +337,9 @@ class UserUpdate(UpdateView):
         """
         return super(UserUpdate, self).dispatch(*args, **kwargs)
 
+    def get_queryset(self):
+        return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
+
     def get_form_kwargs(self):
         """
         Returns the keyword arguments with the request object for instantiating the form.
@@ -428,6 +431,9 @@ class UserDelete(DeleteView):
         To surpass the delete confirmation and delete the user directly.
         """
         return self.post(*args, **kwargs)
+
+    def get_queryset(self):
+        return UserProfile.objects.filter(organization__in=logged_in_user_organizations(self))
 
     def delete(self, request, *args, **kwargs):
         """
