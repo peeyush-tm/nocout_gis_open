@@ -1,0 +1,93 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% load staticfiles %}
+{% block breadcrumb_title %}
+    <li>Dashboard</li>
+    <li><a href="{% url 'dashboard-settings' %}">Settings</a></li>
+    <li>New</li>
+{% endblock %}
+{% block content_title %}Dashboard Management{% endblock %}
+{% block content_description %}Create Dashboard settings{% endblock %}
+{% block content %}
+    <div class="row formContainer">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="box border lite">
+                        <div class="box-title">
+                            <h4><i class="fa fa-bars"></i> ADD DASHBOARD SETTINGS</h4>
+                        </div>
+                            <div class="box-body">
+                                <div class="col-md-8"><br />
+                                    <form action="{% url 'dashboard-settings-new' %}" method="post" class="form-horizontal" role="form">{% csrf_token %}
+                                        <div class="form-group">
+                                            {% for field in form %}
+                                                <div class="form-group">
+                                                    <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">{% if field.field.required %}<span class="mandatory">* </span>{% endif %}{{ field.label|title }}</label>
+                                                    <div class="col-sm-9">
+                                                        <div class="col-md-8">
+                                                            {{ field }} {{ field.errors }}
+                                                        </div>
+                                                        <div class="col-md-4 help_text">
+                                                            {# field.help_text #}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-3 col-sm-9">
+                                                <button type="submit" class="btn btn-success"><i class="fa fa-pencil"></i>Create</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-warning" onclick="resetForm();"><i class="fa fa-refresh"></i>Reset</button>
+                                                &nbsp;
+                                                <button type="reset" class="btn btn-danger" onclick="window.location.replace('{% url 'dashboard-settings' %}')"><i class="fa fa-times"></i>Cancel</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="clearfix"></div>
+                            </div>
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% block content_js %}
+        <script type="text/javascript" src={% static "js/nocout/nocout_forms.js" %}></script>
+    {% endblock %}
+    <script>
+        $(document).ready(function () {
+            // Initialize the select2 selectbox.
+            $(".select2select").select2();
+            $('.tip-focus').tooltip({
+                placement: 'right',
+                trigger: 'focus'
+            });
+        })
+    $(document).ready(function(){
+        $(".colorpicker").spectrum({
+            preferredFormat: "rgb",
+            flat: false,
+            showInitial: true,
+            showPalette: true,
+            showPaletteOnly: false,
+            togglePaletteOnly: true,
+            togglePaletteMoreText: 'more',
+            togglePaletteLessText: 'less',
+            showSelectionPalette: true,
+            showAlpha: true,
+            color: $(".colorpicker").text(),
+            palette: [
+                ["rgba(0, 0, 0, 1)","rgba(68, 68, 68, 1)","rgba(102, 102, 102, 1)","rgba(153, 153, 153, 1)","rgba(204, 204, 204, 1)","rgba(238, 238, 238, 1)","rgba(243, 243, 243, 1)","rgba(255, 255, 255, 1)"],
+                ["#f00","#f90","#ff0","#0f0","#0ff","#00f","#90f","#f0f"],
+                ["#f4cccc","#fce5cd","#fff2cc","#d9ead3","#d0e0e3","#cfe2f3","#d9d2e9","#ead1dc"],
+                ["#ea9999","#f9cb9c","#ffe599","#b6d7a8","#a2c4c9","#9fc5e8","#b4a7d6","#d5a6bd"],
+                ["#e06666","#f6b26b","#ffd966","#93c47d","#76a5af","#6fa8dc","#8e7cc3","#c27ba0"],
+                ["#c00","#e69138","#f1c232","#6aa84f","#45818e","#3d85c6","#674ea7","#a64d79"],
+                ["#900","#b45f06","#bf9000","#38761d","#134f5c","#0b5394","#351c75","#741b47"],
+                ["#600","#783f04","#7f6000","#274e13","#0c343d","#073763","#20124d","#4c1130"]
+            ]
+        });
+    });
+    </script>
+{% endblock %}
